@@ -13,13 +13,13 @@ import os
 from datetime import timedelta
 from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
-    UserNote, TimeEntry, Project, Company, SystemConfiguration
+    UserNote, TimeEntry, Project, Company, SystemConfiguration, Document
 )
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
     TicketAttachmentForm, CategoryForm, UserTicketForm, UserTicketEditForm, 
     TicketCommentForm, UserNoteForm, TimeEntryStartForm, TimeEntryEndForm, 
-    TimeEntryEditForm, ProjectForm, CompanyForm, SystemConfigurationForm
+    TimeEntryEditForm, ProjectForm, CompanyForm, SystemConfigurationForm, DocumentForm
 )
 from .utils import is_agent, is_regular_user, get_user_role, assign_user_to_group
 
@@ -109,6 +109,16 @@ def dashboard_view(request):
         unassigned_tickets = all_tickets.filter(assigned_to__isnull=True).count()
         my_assigned_tickets = all_tickets.filter(assigned_to=request.user).count()
         
+        # Obtener horas diarias
+        daily_hours = 0
+        try:
+            daily_hours = request.user.userprofile.get_daily_hours()
+        except AttributeError:
+            # Crear UserProfile si no existe
+            from tickets.models import UserProfile
+            profile, created = UserProfile.objects.get_or_create(user=request.user)
+            daily_hours = profile.get_daily_hours()
+        
         context = {
             'total_tickets': total_tickets,
             'open_tickets': open_tickets,
@@ -119,6 +129,7 @@ def dashboard_view(request):
             'my_assigned_tickets': my_assigned_tickets,
             'user_role': user_role,
             'is_agent': True,
+            'daily_hours': daily_hours,
         }
     else:
         # Estadísticas para usuarios regulares (solo sus tickets)
@@ -129,6 +140,16 @@ def dashboard_view(request):
         resolved_tickets = user_tickets.filter(status='resolved').count()
         recent_tickets = user_tickets[:5]
         
+        # Obtener horas diarias
+        daily_hours = 0
+        try:
+            daily_hours = request.user.userprofile.get_daily_hours()
+        except AttributeError:
+            # Crear UserProfile si no existe
+            from tickets.models import UserProfile
+            profile, created = UserProfile.objects.get_or_create(user=request.user)
+            daily_hours = profile.get_daily_hours()
+        
         context = {
             'total_tickets': total_tickets,
             'open_tickets': open_tickets,
@@ -137,6 +158,7 @@ def dashboard_view(request):
             'recent_tickets': recent_tickets,
             'user_role': user_role,
             'is_agent': False,
+            'daily_hours': daily_hours,
         }
     
     return render(request, 'tickets/dashboard.html', context)
@@ -961,14 +983,23 @@ def time_clock_view(request):
     
     # Obtener registros recientes (última semana)
     from datetime import timedelta
-    una_semana_atras = timezone.now() - timedelta(days=7)
+    # Calcular el inicio de la semana actual (lunes)
+    now = timezone.now()
+    start_week = now - timedelta(days=now.weekday())
+    start_week = start_week.replace(hour=0, minute=0, second=0, microsecond=0)
+    
     recent_entries = TimeEntry.objects.filter(
         user=request.user,
-        fecha_entrada__gte=una_semana_atras
+        fecha_entrada__gte=start_week
     ).order_by('-fecha_entrada')[:10]
     
-    # Calcular estadísticas de la semana
-    total_minutos = sum(entry.duracion_trabajada for entry in recent_entries if entry.fecha_salida)
+    # Calcular estadísticas de la semana actual
+    week_entries = TimeEntry.objects.filter(
+        user=request.user,
+        fecha_entrada__gte=start_week,
+        fecha_salida__isnull=False  # Solo entradas completadas
+    )
+    total_minutos = sum(entry.duracion_trabajada for entry in week_entries)
     total_horas = round(total_minutos / 60, 2)
     
     context = {
@@ -1377,16 +1408,30 @@ def attendance_overview(request):
     total_entries = queryset.count()
     active_entries = queryset.filter(fecha_salida__isnull=True).count()
     
-    # Calcular total de horas
+    # Calcular total de horas y promedio
     total_hours = 0
+    completed_entries = 0
+    completed_hours = 0
+    
     for entry in queryset:
         if entry.fecha_salida:
+            # Jornada completada
             duration = (entry.fecha_salida - entry.fecha_entrada).total_seconds()
+            completed_hours += duration
+            completed_entries += 1
         else:
+            # Jornada activa - solo para el total
             duration = (timezone.now() - entry.fecha_entrada).total_seconds()
+        
         total_hours += duration
     
     total_hours = round(total_hours / 3600, 2)
+    
+    # Calcular promedio por jornada (solo jornadas completadas)
+    if completed_entries > 0:
+        avg_hours_per_session = round(completed_hours / 3600 / completed_entries, 2)
+    else:
+        avg_hours_per_session = 0
     
     # Paginación
     paginator = Paginator(queryset, 20)
@@ -1405,6 +1450,7 @@ def attendance_overview(request):
         'total_entries': total_entries,
         'active_entries': active_entries,
         'total_hours': total_hours,
+        'avg_hours_per_session': avg_hours_per_session,
         'fecha_desde': fecha_desde.strftime('%Y-%m-%d'),
         'fecha_hasta': fecha_hasta.strftime('%Y-%m-%d'),
         'proyectos': proyectos,
@@ -1605,3 +1651,210 @@ def system_configuration_view(request):
     }
     
     return render(request, 'tickets/system_configuration.html', context)
+
+
+# =============================================================================
+# VISTAS PARA GESTIÓN DE DOCUMENTOS
+# =============================================================================
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def document_list_view(request):
+    """Vista para listar todos los documentos"""
+    search_query = request.GET.get('search', '').strip()
+    company_filter = request.GET.get('company', '')
+    tag_filter = request.GET.get('tag', '').strip()
+    
+    # Filtro base
+    queryset = Document.objects.select_related('created_by', 'company').order_by('-created_at')
+    
+    # Aplicar filtros
+    if search_query:
+        queryset = queryset.filter(
+            Q(title__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(tags__icontains=search_query)
+        )
+    
+    if company_filter:
+        if company_filter == 'none':
+            queryset = queryset.filter(company__isnull=True)
+        else:
+            queryset = queryset.filter(company_id=company_filter)
+    
+    if tag_filter:
+        queryset = queryset.filter(tags__icontains=tag_filter)
+    
+    # Paginación
+    paginator = Paginator(queryset, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Datos para filtros
+    companies = Company.objects.filter(is_active=True).order_by('name')
+    
+    # Obtener todas las etiquetas únicas
+    all_tags = set()
+    for doc in Document.objects.exclude(tags=''):
+        for tag in doc.get_tags_list():
+            all_tags.add(tag)
+    all_tags = sorted(list(all_tags))
+    
+    context = {
+        'page_title': 'Gestión de Documentos',
+        'page_obj': page_obj,
+        'search_query': search_query,
+        'company_filter': company_filter,
+        'tag_filter': tag_filter,
+        'companies': companies,
+        'all_tags': all_tags,
+        'total_documents': Document.objects.count(),
+    }
+    
+    return render(request, 'tickets/document_list.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def document_create_view(request):
+    """Vista para crear un nuevo documento"""
+    if request.method == 'POST':
+        form = DocumentForm(request.POST, request.FILES)
+        if form.is_valid():
+            document = form.save(commit=False)
+            document.created_by = request.user
+            document.save()
+            messages.success(request, f'El documento "{document.title}" ha sido creado exitosamente.')
+            return redirect('document_list')
+    else:
+        form = DocumentForm()
+    
+    context = {
+        'page_title': 'Subir Nuevo Documento',
+        'form': form,
+        'is_create': True,
+    }
+    
+    return render(request, 'tickets/document_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def document_detail_view(request, document_id):
+    """Vista para ver detalles de un documento"""
+    document = get_object_or_404(Document, id=document_id)
+    
+    context = {
+        'page_title': f'Documento: {document.title}',
+        'document': document,
+    }
+    
+    return render(request, 'tickets/document_detail.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def document_edit_view(request, document_id):
+    """Vista para editar un documento"""
+    document = get_object_or_404(Document, id=document_id)
+    
+    if request.method == 'POST':
+        form = DocumentForm(request.POST, request.FILES, instance=document)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'El documento "{document.title}" ha sido actualizado exitosamente.')
+            return redirect('document_detail', document_id=document.id)
+    else:
+        form = DocumentForm(instance=document)
+    
+    context = {
+        'page_title': f'Editar Documento: {document.title}',
+        'form': form,
+        'document': document,
+        'is_create': False,
+    }
+    
+    return render(request, 'tickets/document_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def document_delete_view(request, document_id):
+    """Vista para eliminar un documento"""
+    document = get_object_or_404(Document, id=document_id)
+    
+    if request.method == 'POST':
+        document_title = document.title
+        # Eliminar archivo físico
+        if document.file:
+            document.file.delete(save=False)
+        document.delete()
+        messages.success(request, f'El documento "{document_title}" ha sido eliminado exitosamente.')
+        return redirect('document_list')
+    
+    context = {
+        'page_title': f'Eliminar Documento: {document.title}',
+        'document': document,
+    }
+    
+    return render(request, 'tickets/document_delete.html', context)
+
+
+def document_public_view(request, token):
+    """Vista pública para compartir documentos sin autenticación"""
+    document = get_object_or_404(Document, public_share_token=token, is_public=True)
+    
+    context = {
+        'document': document,
+        'page_title': f'Documento Compartido: {document.title}',
+    }
+    
+    return render(request, 'tickets/document_public.html', context)
+
+
+def document_download_view(request, token):
+    """Vista para descargar documentos públicos"""
+    document = get_object_or_404(Document, public_share_token=token, is_public=True)
+    
+    # Incrementar contador de descargas
+    document.increment_download_count()
+    
+    # Servir el archivo
+    from django.http import HttpResponse, Http404
+    import os
+    
+    if not document.file or not os.path.exists(document.file.path):
+        raise Http404("Archivo no encontrado")
+    
+    response = HttpResponse(
+        document.file.read(),
+        content_type='application/octet-stream'
+    )
+    response['Content-Disposition'] = f'attachment; filename="{document.file.name}"'
+    
+    return response
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def document_download_private_view(request, document_id):
+    """Vista para descargar documentos con autenticación"""
+    document = get_object_or_404(Document, id=document_id)
+    
+    # Incrementar contador de descargas
+    document.increment_download_count()
+    
+    # Servir el archivo
+    from django.http import HttpResponse, Http404
+    import os
+    
+    if not document.file or not os.path.exists(document.file.path):
+        raise Http404("Archivo no encontrado")
+    
+    response = HttpResponse(
+        document.file.read(),
+        content_type='application/octet-stream'
+    )
+    response['Content-Disposition'] = f'attachment; filename="{document.file.name}"'
+    
+    return response

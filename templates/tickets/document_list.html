@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestión de Documentos - TicketProo{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>
+        <i class="bi bi-file-earmark-text"></i> Gestión de Documentos
+        <span class="badge bg-secondary ms-2">{{ total_documents }}</span>
+    </h1>
+    <a href="{% url 'document_create' %}" class="btn btn-primary">
+        <i class="bi bi-cloud-upload"></i> Subir Documento
+    </a>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="search" class="form-label">Buscar</label>
+                <input type="text" class="form-control" id="search" name="search" 
+                       value="{{ search_query|default:'' }}" placeholder="Título, descripción, etiquetas...">
+            </div>
+            
+            <div class="col-md-3">
+                <label for="company" class="form-label">Empresa/Cliente</label>
+                <select class="form-select" id="company" name="company">
+                    <option value="">Todas las empresas</option>
+                    <option value="none" {% if company_filter == 'none' %}selected{% endif %}>Sin empresa</option>
+                    {% for company in companies %}
+                        <option value="{{ company.id }}" {% if company_filter == company.id|stringformat:'s' %}selected{% endif %}>
+                            {{ company.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <label for="tag" class="form-label">Etiqueta</label>
+                <select class="form-select" id="tag" name="tag">
+                    <option value="">Todas las etiquetas</option>
+                    {% for tag in all_tags %}
+                        <option value="{{ tag }}" {% if tag_filter == tag %}selected{% endif %}>{{ tag }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-outline-primary me-2">
+                    <i class="bi bi-search"></i> Filtrar
+                </button>
+                <a href="{% url 'document_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x"></i> Limpiar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista de documentos -->
+{% if page_obj %}
+<div class="row">
+    {% for document in page_obj %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-file-earmark-{{ document.file_type|lower }}"></i>
+                        {{ document.title }}
+                    </h5>
+                    {% if document.is_public %}
+                        <span class="badge bg-success">Público</span>
+                    {% else %}
+                        <span class="badge bg-warning">Privado</span>
+                    {% endif %}
+                </div>
+                
+                {% if document.description %}
+                <p class="card-text text-muted">{{ document.description|truncatechars:100 }}</p>
+                {% endif %}
+                
+                <div class="mb-2">
+                    <small class="text-muted">
+                        <i class="bi bi-file-earmark"></i> {{ document.file_type }} - {{ document.file_size_formatted }}
+                    </small>
+                </div>
+                
+                {% if document.company %}
+                <div class="mb-2">
+                    <small class="text-muted">
+                        <i class="bi bi-building"></i> {{ document.company.name }}
+                    </small>
+                </div>
+                {% endif %}
+                
+                {% if document.get_tags_list %}
+                <div class="mb-2">
+                    {% for tag in document.get_tags_list %}
+                        <span class="badge bg-light text-dark me-1">{{ tag }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <div class="mb-2">
+                    <small class="text-muted">
+                        <i class="bi bi-download"></i> {{ document.download_count }} descargas
+                    </small>
+                </div>
+                
+                <div class="mb-3">
+                    <small class="text-muted">
+                        <i class="bi bi-clock"></i> {{ document.created_at|date:"d/m/Y H:i" }}
+                        por {{ document.created_by.username }}
+                    </small>
+                </div>
+            </div>
+            
+            <div class="card-footer">
+                <div class="btn-group w-100" role="group">
+                    <a href="{% url 'document_detail' document.id %}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-eye"></i> Ver
+                    </a>
+                    <a href="{% url 'document_download_private' document.id %}" class="btn btn-sm btn-outline-success">
+                        <i class="bi bi-download"></i> Descargar
+                    </a>
+                    <a href="{% url 'document_edit' document.id %}" class="btn btn-sm btn-outline-warning">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a>
+                    <a href="{% url 'document_delete' document.id %}" class="btn btn-sm btn-outline-danger">
+                        <i class="bi bi-trash"></i> Eliminar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Paginación -->
+{% if page_obj.has_other_pages %}
+<div class="d-flex justify-content-center mt-4">
+    <nav aria-label="Paginación de documentos">
+        <ul class="pagination">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if company_filter %}&company={{ company_filter }}{% endif %}{% if tag_filter %}&tag={{ tag_filter }}{% endif %}">
+                        <i class="bi bi-chevron-double-left"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if company_filter %}&company={{ company_filter }}{% endif %}{% if tag_filter %}&tag={{ tag_filter }}{% endif %}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+            {% endif %}
+            
+            <li class="page-item active">
+                <span class="page-link">
+                    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                </span>
+            </li>
+            
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if company_filter %}&company={{ company_filter }}{% endif %}{% if tag_filter %}&tag={{ tag_filter }}{% endif %}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if company_filter %}&company={{ company_filter }}{% endif %}{% if tag_filter %}&tag={{ tag_filter }}{% endif %}">
+                        <i class="bi bi-chevron-double-right"></i>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endif %}
+
+{% else %}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="bi bi-file-earmark-text display-4 text-muted mb-3"></i>
+        <h5 class="text-muted">No se encontraron documentos</h5>
+        {% if search_query or company_filter or tag_filter %}
+            <p class="text-muted">No hay documentos que coincidan con los filtros seleccionados.</p>
+            <a href="{% url 'document_list' %}" class="btn btn-outline-primary me-2">
+                <i class="bi bi-x"></i> Limpiar filtros
+            </a>
+        {% endif %}
+        <a href="{% url 'document_create' %}" class="btn btn-primary">
+            <i class="bi bi-cloud-upload"></i> Subir Primer Documento
+        </a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

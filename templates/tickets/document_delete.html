@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="text-danger">
+        <i class="bi bi-exclamation-triangle"></i> {{ page_title }}
+    </h1>
+    <a href="{% url 'document_detail' document.id %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Volver
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-exclamation-triangle"></i> Confirmar eliminación
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger">
+                    <h6><i class="bi bi-exclamation-triangle"></i> ¡Atención!</h6>
+                    <p class="mb-0">
+                        Esta acción no se puede deshacer. El documento y su archivo 
+                        serán eliminados permanentemente del sistema.
+                    </p>
+                </div>
+                
+                <h6>Documento a eliminar:</h6>
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h5 class="card-title">
+                                    <i class="bi bi-file-earmark-{{ document.file_type|lower }}"></i>
+                                    {{ document.title }}
+                                </h5>
+                                {% if document.description %}
+                                <p class="card-text">{{ document.description }}</p>
+                                {% endif %}
+                                
+                                <div class="small text-muted">
+                                    <div><strong>Archivo:</strong> {{ document.file.name }}</div>
+                                    <div><strong>Tamaño:</strong> {{ document.file_size_formatted }}</div>
+                                    <div><strong>Tipo:</strong> {{ document.file_type }}</div>
+                                    <div><strong>Descargas:</strong> {{ document.download_count }}</div>
+                                    <div><strong>Creado:</strong> {{ document.created_at|date:"d/m/Y H:i" }}</div>
+                                    {% if document.company %}
+                                    <div><strong>Empresa:</strong> {{ document.company.name }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                {% if document.is_public %}
+                                    <span class="badge bg-success mb-2">Público</span>
+                                {% else %}
+                                    <span class="badge bg-warning mb-2">Privado</span>
+                                {% endif %}
+                                
+                                {% if document.get_tags_list %}
+                                <div>
+                                    {% for tag in document.get_tags_list %}
+                                        <span class="badge bg-light text-dark me-1">{{ tag }}</span>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if document.is_public %}
+                <div class="alert alert-warning">
+                    <h6><i class="bi bi-exclamation-triangle"></i> Documento público</h6>
+                    <p class="mb-0">
+                        Este documento está marcado como público y puede estar siendo 
+                        compartido con clientes. Asegúrate de que no se necesite más 
+                        antes de eliminarlo.
+                    </p>
+                </div>
+                {% endif %}
+                
+                {% if document.download_count > 0 %}
+                <div class="alert alert-info">
+                    <h6><i class="bi bi-info-circle"></i> Documento descargado</h6>
+                    <p class="mb-0">
+                        Este documento ha sido descargado {{ document.download_count }} 
+                        {% if document.download_count == 1 %}vez{% else %}veces{% endif %}.
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="card-footer">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'document_detail' document.id %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Sí, eliminar documento
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

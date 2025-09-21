@@ -1,7 +1,12 @@
 {% extends 'base.html' %}
-{% load django_bootstrap5 %}
-
-{% block title %}{{ page_title }}{% endblock %}
+{% load django_bootstrap5                     <h4 class="text-warning mb-0">
+                        {% if avg_hours_per_session %}
+                            {{ avg_hours_per_session|floatformat:1 }}h
+                        {% else %}
+                            0h
+                        {% endif %}
+                    </h4>
+                    <small class="text-muted">Promedio por Jornada</small>lock title %}{{ page_title }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">

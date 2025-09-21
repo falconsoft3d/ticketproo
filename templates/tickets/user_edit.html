@@ -186,6 +186,42 @@
                         </div>
                     </div>
                     
+                    <!-- Información de Cargo -->
+                    <div class="card bg-light mb-3">
+                        <div class="card-body">
+                            <h6 class="card-title">Información del Cargo</h6>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="mb-3">
+                                        <label for="{{ form.cargo.id_for_label }}" class="form-label">{{ form.cargo.label }}</label>
+                                        {{ form.cargo }}
+                                        {% if form.cargo.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.cargo.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                        <small class="form-text text-muted">
+                                            Posición o título del cargo del usuario
+                                        </small>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="{{ form.descripcion_cargo.id_for_label }}" class="form-label">{{ form.descripcion_cargo.label }}</label>
+                                        {{ form.descripcion_cargo }}
+                                        {% if form.descripcion_cargo.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.descripcion_cargo.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                        <small class="form-text text-muted">
+                                            Descripción detallada de las responsabilidades del cargo
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <!-- Información adicional -->
                     <div class="card bg-light mb-3">
                         <div class="card-body">

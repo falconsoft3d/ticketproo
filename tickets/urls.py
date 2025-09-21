@@ -84,4 +84,16 @@ urlpatterns = [
     
     # URL de configuración del sistema (solo para agentes)
     path('system/configuration/', views.system_configuration_view, name='system_configuration'),
+    
+    # URLs de gestión de documentos (solo para agentes)
+    path('documents/', views.document_list_view, name='document_list'),
+    path('documents/create/', views.document_create_view, name='document_create'),
+    path('documents/<int:document_id>/', views.document_detail_view, name='document_detail'),
+    path('documents/<int:document_id>/edit/', views.document_edit_view, name='document_edit'),
+    path('documents/<int:document_id>/delete/', views.document_delete_view, name='document_delete'),
+    path('documents/<int:document_id>/download/', views.document_download_private_view, name='document_download_private'),
+    
+    # URLs públicas para compartir documentos (sin autenticación)
+    path('document/public/<uuid:token>/', views.document_public_view, name='document_public'),
+    path('document/download/<uuid:token>/', views.document_download_view, name='document_download'),
 ]

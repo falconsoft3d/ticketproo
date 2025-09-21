@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserNote, 
-    TimeEntry, Project, Company, SystemConfiguration
+    TimeEntry, Project, Company, SystemConfiguration, Document, UserProfile
 )
 
 # Configuración del sitio de administración
@@ -384,3 +384,85 @@ class SystemConfigurationAdmin(admin.ModelAdmin):
         """Asegurar que solo exista una instancia"""
         obj.pk = 1
         super().save_model(request, obj, form, change)
+
+
+@admin.register(Document)
+class DocumentAdmin(admin.ModelAdmin):
+    """Administración de documentos"""
+    
+    list_display = ('title', 'file_type', 'file_size_formatted', 'is_public', 'download_count', 'company', 'created_by', 'created_at')
+    list_filter = ('is_public', 'file_type', 'created_at', 'company', 'created_by')
+    search_fields = ('title', 'description', 'tags', 'file_type', 'created_by__username', 'company__name')
+    list_editable = ('is_public',)
+    ordering = ('-created_at',)
+    date_hierarchy = 'created_at'
+    readonly_fields = ('public_share_token', 'file_size', 'file_type', 'download_count', 'created_at', 'updated_at', 'public_url')
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('title', 'description', 'file')
+        }),
+        ('Clasificación', {
+            'fields': ('company', 'tags')
+        }),
+        ('Configuración de Compartir', {
+            'fields': ('is_public', 'public_share_token', 'public_url')
+        }),
+        ('Información del Archivo', {
+            'fields': ('file_type', 'file_size', 'download_count'),
+            'classes': ('collapse',)
+        }),
+        ('Autoría y Fechas', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def save_model(self, request, obj, form, change):
+        if not change:  # Si es un nuevo objeto
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+    
+    def get_queryset(self, request):
+        """Optimizar consultas con select_related"""
+        queryset = super().get_queryset(request)
+        return queryset.select_related('created_by', 'company')
+    
+    def public_url(self, obj):
+        """Muestra la URL pública si está disponible"""
+        if obj.is_public:
+            return obj.public_url
+        return 'No disponible (documento privado)'
+    public_url.short_description = 'URL Pública'
+
+
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'cargo', 'company', 'phone')
+    list_filter = ('company', 'cargo')
+    search_fields = ('user__username', 'user__first_name', 'user__last_name', 'cargo', 'phone')
+    raw_id_fields = ('user',)
+    ordering = ('user__username',)
+    
+    fieldsets = (
+        ('Información del Usuario', {
+            'fields': ('user',)
+        }),
+        ('Información Profesional', {
+            'fields': ('cargo', 'descripcion_cargo', 'company')
+        }),
+        ('Información de Contacto', {
+            'fields': ('phone',)
+        }),
+        ('Información Personal', {
+            'fields': ('bio',),
+            'classes': ('collapse',)
+        }),
+        ('Configuración', {
+            'fields': ('notification_preferences',),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('user', 'company')

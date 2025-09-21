@@ -3,7 +3,7 @@ from django.contrib.auth.models import User, Group
 from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
 from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
-    UserNote, TimeEntry, Project, Company, SystemConfiguration
+    UserNote, TimeEntry, Project, Company, SystemConfiguration, Document
 )
 
 class CategoryForm(forms.ModelForm):
@@ -492,9 +492,31 @@ class UserEditForm(forms.ModelForm):
         help_text='Coste interno por hora de trabajo'
     )
     
+    cargo = forms.CharField(
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Ej: Diseñador, Desarrollador, Gerente...'
+        }),
+        label='Cargo',
+        help_text='Cargo o posición del usuario en la empresa'
+    )
+    
+    descripcion_cargo = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 3,
+            'placeholder': 'Describe las responsabilidades del cargo...'
+        }),
+        label='Descripción del Cargo',
+        help_text='Descripción detallada de las responsabilidades del cargo'
+    )
+    
     class Meta:
         model = User
-        fields = ('username', 'first_name', 'last_name', 'email', 'is_active', 'role', 'company', 'precio_hora', 'coste_hora')
+        fields = ('username', 'first_name', 'last_name', 'email', 'is_active', 'role', 'company', 'precio_hora', 'coste_hora', 'cargo', 'descripcion_cargo')
         widgets = {
             'username': forms.TextInput(attrs={
                 'class': 'form-control'
@@ -537,6 +559,9 @@ class UserEditForm(forms.ModelForm):
                 # Cargar valores de precio y coste por hora
                 self.fields['precio_hora'].initial = profile.precio_hora
                 self.fields['coste_hora'].initial = profile.coste_hora
+                # Cargar valores de cargo
+                self.fields['cargo'].initial = profile.cargo
+                self.fields['descripcion_cargo'].initial = profile.descripcion_cargo
             except UserProfile.DoesNotExist:
                 pass
     
@@ -549,10 +574,14 @@ class UserEditForm(forms.ModelForm):
             company = self.cleaned_data.get('company')
             precio_hora = self.cleaned_data.get('precio_hora', 0.00)
             coste_hora = self.cleaned_data.get('coste_hora', 0.00)
+            cargo = self.cleaned_data.get('cargo', '')
+            descripcion_cargo = self.cleaned_data.get('descripcion_cargo', '')
             
             profile.company = company
             profile.precio_hora = precio_hora
             profile.coste_hora = coste_hora
+            profile.cargo = cargo
+            profile.descripcion_cargo = descripcion_cargo
             profile.save()
             
             # Actualizar grupos del usuario
@@ -699,7 +728,7 @@ class UserProfileForm(forms.ModelForm):
     
     class Meta:
         model = UserProfile
-        fields = ['phone', 'bio', 'company']
+        fields = ['phone', 'bio', 'cargo', 'descripcion_cargo', 'company']
         widgets = {
             'phone': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -710,6 +739,15 @@ class UserProfileForm(forms.ModelForm):
                 'rows': 3,
                 'placeholder': 'Cuéntanos algo sobre ti...'
             }),
+            'cargo': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Diseñador, Desarrollador, Gerente...'
+            }),
+            'descripcion_cargo': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Describe las responsabilidades de tu cargo...'
+            }),
             'company': forms.Select(attrs={
                 'class': 'form-select'
             }),
@@ -717,6 +755,8 @@ class UserProfileForm(forms.ModelForm):
         labels = {
             'phone': 'Teléfono',
             'bio': 'Biografía',
+            'cargo': 'Cargo',
+            'descripcion_cargo': 'Descripción del Cargo',
             'company': 'Empresa',
         }
     
@@ -1094,3 +1134,110 @@ class SystemConfigurationForm(forms.ModelForm):
             raise forms.ValidationError('El nombre del sitio no puede exceder 100 caracteres.')
         
         return site_name
+
+
+class DocumentForm(forms.ModelForm):
+    """Formulario para crear y editar documentos"""
+    
+    class Meta:
+        model = Document
+        fields = ['title', 'description', 'file', 'company', 'tags', 'is_public']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título del documento',
+                'maxlength': '200'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción opcional del documento...',
+                'maxlength': '500'
+            }),
+            'file': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': '.pdf,.doc,.docx,.txt,.rtf,.odt,.xls,.xlsx,.ods,.ppt,.pptx,.odp,.jpg,.jpeg,.png,.gif,.bmp,.svg,.zip,.rar,.7z,.tar,.gz'
+            }),
+            'company': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'tags': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Etiquetas separadas por comas (ej: manual, tutorial, guía)',
+                'maxlength': '300'
+            }),
+            'is_public': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'title': 'Título',
+            'description': 'Descripción',
+            'file': 'Archivo',
+            'company': 'Empresa/Cliente',
+            'tags': 'Etiquetas',
+            'is_public': 'Disponible públicamente',
+        }
+        help_texts = {
+            'file': 'Archivos permitidos: PDF, DOC, DOCX, TXT, imágenes, etc. Máximo 10MB',
+            'tags': 'Etiquetas para categorizar y buscar el documento',
+            'is_public': 'Si está marcado, el documento puede ser accedido sin autenticación',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Filtrar solo empresas activas
+        self.fields['company'].queryset = Company.objects.filter(is_active=True).order_by('name')
+        self.fields['company'].empty_label = "Sin empresa asociada"
+    
+    def clean_file(self):
+        """Validar el archivo subido"""
+        file = self.cleaned_data.get('file')
+        
+        if not file:
+            return file
+        
+        # Validar tamaño
+        from django.conf import settings
+        max_size = getattr(settings, 'DOCUMENT_UPLOAD_MAX_SIZE', 10 * 1024 * 1024)
+        if file.size > max_size:
+            raise forms.ValidationError(f'El archivo es demasiado grande. Máximo permitido: {max_size // (1024*1024)}MB')
+        
+        # Validar extensión
+        allowed_extensions = getattr(settings, 'DOCUMENT_ALLOWED_EXTENSIONS', [])
+        if allowed_extensions:
+            file_extension = file.name.split('.')[-1].lower() if '.' in file.name else ''
+            if file_extension not in allowed_extensions:
+                raise forms.ValidationError(f'Tipo de archivo no permitido. Extensiones permitidas: {", ".join(allowed_extensions)}')
+        
+        return file
+    
+    def clean_title(self):
+        """Validar el título"""
+        title = self.cleaned_data.get('title', '').strip()
+        
+        if not title:
+            raise forms.ValidationError('El título es requerido.')
+        
+        if len(title) < 3:
+            raise forms.ValidationError('El título debe tener al menos 3 caracteres.')
+        
+        return title
+    
+    def clean_tags(self):
+        """Limpiar y validar etiquetas"""
+        tags = self.cleaned_data.get('tags', '').strip()
+        
+        if tags:
+            # Limpiar etiquetas: eliminar espacios extras y vacías
+            tag_list = [tag.strip() for tag in tags.split(',') if tag.strip()]
+            
+            # Validar longitud de etiquetas individuales
+            for tag in tag_list:
+                if len(tag) > 50:
+                    raise forms.ValidationError('Las etiquetas individuales no pueden exceder 50 caracteres.')
+            
+            # Reunir las etiquetas limpias
+            tags = ', '.join(tag_list)
+        
+        return tags

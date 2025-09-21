@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title }}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .document-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .header-section {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            padding: 2rem;
+        }
+        .download-btn {
+            background: #28a745;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+        }
+        .download-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40,167,69,0.3);
+        }
+        .info-card {
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border-radius: 10px;
+        }
+        .file-icon {
+            font-size: 4rem;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="document-container">
+                    <!-- Encabezado -->
+                    <div class="header-section text-center">
+                        <div class="file-icon mb-3">
+                            <i class="bi bi-file-earmark-{{ document.file_type|lower }} text-white"></i>
+                        </div>
+                        <h1 class="mb-3">{{ document.title }}</h1>
+                        {% if document.description %}
+                        <p class="lead mb-0">{{ document.description }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Contenido principal -->
+                    <div class="p-4">
+                        <!-- Información del archivo -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="info-card card h-100">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-info-circle text-primary fs-2 mb-3"></i>
+                                        <h5>Información del archivo</h5>
+                                        <ul class="list-unstyled">
+                                            <li><strong>Tipo:</strong> {{ document.file_type }}</li>
+                                            <li><strong>Tamaño:</strong> {{ document.file_size_formatted }}</li>
+                                            <li><strong>Subido:</strong> {{ document.created_at|date:"d/m/Y" }}</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="info-card card h-100">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-download text-success fs-2 mb-3"></i>
+                                        <h5>Descargas</h5>
+                                        <p class="fs-4 fw-bold text-success mb-2">{{ document.download_count }}</p>
+                                        <small class="text-muted">veces descargado</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Información adicional -->
+                        {% if document.company %}
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="info-card card">
+                                    <div class="card-body">
+                                        <h6><i class="bi bi-building"></i> Empresa/Cliente</h6>
+                                        <p class="mb-0">{{ document.company.name }}</p>
+                                        {% if document.company.description %}
+                                        <small class="text-muted">{{ document.company.description }}</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if document.get_tags_list %}
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="info-card card">
+                                    <div class="card-body">
+                                        <h6><i class="bi bi-tags"></i> Etiquetas</h6>
+                                        <div>
+                                            {% for tag in document.get_tags_list %}
+                                                <span class="badge bg-primary me-1">{{ tag }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Botón de descarga principal -->
+                        <div class="text-center">
+                            <a href="{% url 'document_download' document.public_share_token %}" 
+                               class="btn btn-success download-btn"
+                               onclick="trackDownload()">
+                                <i class="bi bi-download"></i>
+                                Descargar {{ document.file_type }}
+                            </a>
+                        </div>
+                        
+                        <!-- Información de seguridad -->
+                        <div class="mt-4">
+                            <div class="alert alert-info">
+                                <h6><i class="bi bi-shield-check"></i> Información de seguridad</h6>
+                                <ul class="mb-0 small">
+                                    <li>Este documento ha sido compartido de forma segura</li>
+                                    <li>La descarga es gratuita y no requiere registro</li>
+                                    <li>No se recopila información personal</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Footer -->
+                <div class="text-center mt-4">
+                    <p class="text-muted">
+                        <small>
+                            Powered by <strong>TicketPro</strong> - Sistema de Gestión de Documentos
+                        </small>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+    function trackDownload() {
+        // Aquí podrías agregar analytics o tracking si es necesario
+        console.log('Descarga iniciada para: {{ document.title }}');
+    }
+    </script>
+</body>
+</html>

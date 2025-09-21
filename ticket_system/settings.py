@@ -126,6 +126,15 @@ STATICFILES_DIRS = [
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# Document upload settings
+DOCUMENT_UPLOAD_MAX_SIZE = 10 * 1024 * 1024  # 10MB máximo
+DOCUMENT_ALLOWED_EXTENSIONS = [
+    'pdf', 'doc', 'docx', 'txt', 'rtf', 'odt',
+    'xls', 'xlsx', 'ods', 'ppt', 'pptx', 'odp',
+    'jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg',
+    'zip', 'rar', '7z', 'tar', 'gz'
+]
+
 # Login URLs
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'

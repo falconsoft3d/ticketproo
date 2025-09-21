@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>
+        <i class="bi bi-file-earmark-text"></i> {{ document.title }}
+        {% if document.is_public %}
+            <span class="badge bg-success ms-2">Público</span>
+        {% else %}
+            <span class="badge bg-warning ms-2">Privado</span>
+        {% endif %}
+    </h1>
+    
+    <div class="btn-group">
+        <a href="{% url 'document_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+        <a href="{% url 'document_download_private' document.id %}" class="btn btn-success">
+            <i class="bi bi-download"></i> Descargar
+        </a>
+        <a href="{% url 'document_edit' document.id %}" class="btn btn-warning">
+            <i class="bi bi-pencil"></i> Editar
+        </a>
+        <a href="{% url 'document_delete' document.id %}" class="btn btn-danger">
+            <i class="bi bi-trash"></i> Eliminar
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Información principal del documento -->
+        <div class="card mb-4">
+            <div class="card-body">
+                {% if document.description %}
+                <p class="lead">{{ document.description }}</p>
+                {% endif %}
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Información del archivo:</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Tipo:</strong> {{ document.file_type }}</li>
+                            <li><strong>Tamaño:</strong> {{ document.file_size_formatted }}</li>
+                            <li><strong>Nombre del archivo:</strong> {{ document.file.name }}</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6>Estadísticas:</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Descargas:</strong> {{ document.download_count }}</li>
+                            <li><strong>Creado el:</strong> {{ document.created_at|date:"d/m/Y H:i" }}</li>
+                            <li><strong>Actualizado:</strong> {{ document.updated_at|date:"d/m/Y H:i" }}</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                {% if document.company %}
+                <div class="mt-3">
+                    <h6>Empresa/Cliente asociado:</h6>
+                    <p>
+                        <i class="bi bi-building"></i> 
+                        <strong>{{ document.company.name }}</strong>
+                        {% if document.company.description %}
+                            - {{ document.company.description }}
+                        {% endif %}
+                    </p>
+                </div>
+                {% endif %}
+                
+                {% if document.get_tags_list %}
+                <div class="mt-3">
+                    <h6>Etiquetas:</h6>
+                    <div>
+                        {% for tag in document.get_tags_list %}
+                            <span class="badge bg-primary me-1">{{ tag }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="mt-3">
+                    <h6>Creado por:</h6>
+                    <p>
+                        <i class="bi bi-person"></i> 
+                        <strong>{{ document.created_by.get_full_name|default:document.created_by.username }}</strong>
+                        ({{ document.created_by.username }})
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Panel de acciones -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-gear"></i> Acciones
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'document_download_private' document.id %}" class="btn btn-success">
+                        <i class="bi bi-download"></i> Descargar archivo
+                    </a>
+                    <a href="{% url 'document_edit' document.id %}" class="btn btn-warning">
+                        <i class="bi bi-pencil"></i> Editar documento
+                    </a>
+                    {% if document.is_public %}
+                    <button class="btn btn-info" onclick="copyPublicLink()">
+                        <i class="bi bi-link-45deg"></i> Copiar enlace público
+                    </button>
+                    {% endif %}
+                    <hr>
+                    <a href="{% url 'document_delete' document.id %}" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Eliminar documento
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        {% if document.is_public %}
+        <!-- Panel de compartir público -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-share"></i> Compartir públicamente
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="small text-muted">
+                    Este documento puede ser accedido por cualquier persona con el enlace, 
+                    sin necesidad de autenticación.
+                </p>
+                
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" id="publicLink" 
+                           value="{{ request.scheme }}://{{ request.get_host }}{{ document.public_url }}" readonly>
+                    <button class="btn btn-outline-secondary" type="button" onclick="copyPublicLink()">
+                        <i class="bi bi-clipboard"></i>
+                    </button>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <a href="{{ document.public_url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-eye"></i> Ver vista pública
+                    </a>
+                    <a href="{% url 'document_download' document.public_share_token %}" class="btn btn-outline-success btn-sm">
+                        <i class="bi bi-download"></i> Enlace de descarga directa
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function copyPublicLink() {
+    const publicLink = document.getElementById('publicLink');
+    publicLink.select();
+    publicLink.setSelectionRange(0, 99999); // Para móviles
+    
+    try {
+        document.execCommand('copy');
+        // Mostrar mensaje de éxito
+        const button = event.target.closest('button');
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="bi bi-check"></i> ¡Copiado!';
+        button.classList.remove('btn-info', 'btn-outline-secondary');
+        button.classList.add('btn-success');
+        
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.classList.remove('btn-success');
+            if (button.classList.contains('btn-outline-secondary') === false) {
+                button.classList.add('btn-info');
+            } else {
+                button.classList.add('btn-outline-secondary');
+            }
+        }, 2000);
+    } catch (err) {
+        console.error('Error al copiar el enlace: ', err);
+    }
+}
+</script>
+{% endblock %}

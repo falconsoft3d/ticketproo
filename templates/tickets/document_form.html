@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>
+        <i class="bi bi-{% if is_create %}cloud-upload{% else %}pencil{% endif %}"></i> {{ page_title }}
+    </h1>
+    <a href="{% url 'document_list' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Volver a Documentos
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <!-- Título -->
+                    <div class="mb-3">
+                        <label for="{{ form.title.id_for_label }}" class="form-label">
+                            {{ form.title.label }} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.title.errors.0 }}
+                            </div>
+                        {% endif %}
+                        {% if form.title.help_text %}
+                            <div class="form-text">{{ form.title.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Descripción -->
+                    <div class="mb-3">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">
+                            {{ form.description.label }}
+                        </label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.description.errors.0 }}
+                            </div>
+                        {% endif %}
+                        {% if form.description.help_text %}
+                            <div class="form-text">{{ form.description.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Archivo -->
+                    <div class="mb-3">
+                        <label for="{{ form.file.id_for_label }}" class="form-label">
+                            {{ form.file.label }} <span class="text-danger">*</span>
+                        </label>
+                        {% if not is_create and document.file %}
+                            <div class="mb-2">
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle"></i>
+                                    Archivo actual: <strong>{{ document.file.name }}</strong> 
+                                    ({{ document.file_size_formatted }})
+                                    <br>
+                                    <small>Selecciona un nuevo archivo para reemplazarlo, o déjalo vacío para mantener el actual.</small>
+                                </div>
+                            </div>
+                        {% endif %}
+                        {{ form.file }}
+                        {% if form.file.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.file.errors.0 }}
+                            </div>
+                        {% endif %}
+                        {% if form.file.help_text %}
+                            <div class="form-text">{{ form.file.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Empresa/Cliente -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.company.id_for_label }}" class="form-label">
+                                    {{ form.company.label }}
+                                </label>
+                                {{ form.company }}
+                                {% if form.company.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.company.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Disponibilidad pública -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    {{ form.is_public }}
+                                    <label class="form-check-label" for="{{ form.is_public.id_for_label }}">
+                                        {{ form.is_public.label }}
+                                    </label>
+                                </div>
+                                {% if form.is_public.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.is_public.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.is_public.help_text %}
+                                    <div class="form-text">{{ form.is_public.help_text }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Etiquetas -->
+                    <div class="mb-4">
+                        <label for="{{ form.tags.id_for_label }}" class="form-label">
+                            {{ form.tags.label }}
+                        </label>
+                        {{ form.tags }}
+                        {% if form.tags.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.tags.errors.0 }}
+                            </div>
+                        {% endif %}
+                        {% if form.tags.help_text %}
+                            <div class="form-text">{{ form.tags.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Botones de acción -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'document_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-{% if is_create %}cloud-upload{% else %}check-circle{% endif %}"></i>
+                            {% if is_create %}Subir Documento{% else %}Guardar Cambios{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle"></i> Información
+                </h5>
+            </div>
+            <div class="card-body">
+                <h6>Tipos de archivo permitidos:</h6>
+                <ul class="small text-muted">
+                    <li><strong>Documentos:</strong> PDF, DOC, DOCX, TXT, RTF, ODT</li>
+                    <li><strong>Hojas de cálculo:</strong> XLS, XLSX, ODS</li>
+                    <li><strong>Presentaciones:</strong> PPT, PPTX, ODP</li>
+                    <li><strong>Imágenes:</strong> JPG, PNG, GIF, BMP, SVG</li>
+                    <li><strong>Archivos comprimidos:</strong> ZIP, RAR, 7Z</li>
+                </ul>
+                
+                <hr>
+                
+                <h6>Límites:</h6>
+                <ul class="small text-muted">
+                    <li>Tamaño máximo: <strong>10MB</strong></li>
+                    <li>Título: máximo 200 caracteres</li>
+                    <li>Descripción: máximo 500 caracteres</li>
+                    <li>Etiquetas: máximo 300 caracteres</li>
+                </ul>
+                
+                {% if not is_create %}
+                <hr>
+                
+                <h6>Compartir públicamente:</h6>
+                <p class="small text-muted">
+                    Si el documento está marcado como público, podrás compartir 
+                    el enlace directo con clientes sin que necesiten autenticarse.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

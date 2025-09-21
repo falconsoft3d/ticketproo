@@ -528,6 +528,20 @@ class UserProfile(models.Model):
         verbose_name='Biografía',
         help_text='Descripción corta del usuario'
     )
+    cargo = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='Cargo',
+        help_text='Cargo o posición del usuario en la empresa'
+    )
+    descripcion_cargo = models.TextField(
+        max_length=300,
+        blank=True,
+        null=True,
+        verbose_name='Descripción del Cargo',
+        help_text='Descripción detallada de las responsabilidades del cargo'
+    )
     notification_preferences = models.JSONField(
         default=dict,
         blank=True,
@@ -943,3 +957,128 @@ class SystemConfiguration(models.Model):
         # Asegurar que solo exista una instancia de configuración
         self.pk = 1
         super().save(*args, **kwargs)
+
+
+class Document(models.Model):
+    """Modelo para archivos de documentación compartibles públicamente"""
+    
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título',
+        help_text='Nombre descriptivo del documento'
+    )
+    description = models.TextField(
+        max_length=500,
+        blank=True,
+        verbose_name='Descripción',
+        help_text='Descripción opcional del contenido del documento'
+    )
+    file = models.FileField(
+        upload_to='documents/%Y/%m/',
+        verbose_name='Archivo',
+        help_text='Archivo de documentación (PDF, DOC, DOCX, TXT, etc.)'
+    )
+    file_size = models.PositiveIntegerField(
+        verbose_name='Tamaño del archivo (bytes)',
+        editable=False
+    )
+    file_type = models.CharField(
+        max_length=100,
+        verbose_name='Tipo de archivo',
+        editable=False
+    )
+    
+    # Sistema de compartir público (como en tickets)
+    public_share_token = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+        verbose_name='Token de compartir público',
+        help_text='Token único para compartir el documento públicamente'
+    )
+    is_public = models.BooleanField(
+        default=True,
+        verbose_name='Disponible públicamente',
+        help_text='Si está marcado, el documento puede ser accedido sin autenticación'
+    )
+    download_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Número de descargas',
+        help_text='Contador de veces que se ha descargado el documento'
+    )
+    
+    # Metadatos del documento
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='created_documents',
+        verbose_name='Creado por'
+    )
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='documents',
+        verbose_name='Empresa/Cliente',
+        help_text='Empresa o cliente asociado al documento'
+    )
+    tags = models.CharField(
+        max_length=300,
+        blank=True,
+        verbose_name='Etiquetas',
+        help_text='Etiquetas separadas por comas para categorizar el documento'
+    )
+    
+    # Timestamps
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Documento'
+        verbose_name_plural = 'Documentos'
+    
+    def __str__(self):
+        return self.title
+    
+    def save(self, *args, **kwargs):
+        if self.file:
+            self.file_size = self.file.size
+            self.file_type = self.file.name.split('.')[-1].upper() if '.' in self.file.name else 'UNKNOWN'
+        super().save(*args, **kwargs)
+    
+    @property
+    def file_size_formatted(self):
+        """Retorna el tamaño del archivo en formato legible"""
+        if self.file_size < 1024:
+            return f"{self.file_size} B"
+        elif self.file_size < 1024 * 1024:
+            return f"{self.file_size / 1024:.1f} KB"
+        elif self.file_size < 1024 * 1024 * 1024:
+            return f"{self.file_size / (1024 * 1024):.1f} MB"
+        else:
+            return f"{self.file_size / (1024 * 1024 * 1024):.1f} GB"
+    
+    @property
+    def public_url(self):
+        """URL pública para compartir el documento"""
+        from django.urls import reverse
+        return reverse('document_public', kwargs={'token': self.public_share_token})
+    
+    def increment_download_count(self):
+        """Incrementa el contador de descargas"""
+        self.download_count += 1
+        self.save(update_fields=['download_count'])
+    
+    def get_tags_list(self):
+        """Retorna las etiquetas como lista"""
+        if self.tags:
+            return [tag.strip() for tag in self.tags.split(',') if tag.strip()]
+        return []
