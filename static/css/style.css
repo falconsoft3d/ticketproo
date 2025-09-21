@@ -73,25 +73,28 @@ body {
     }
 }
 
-/* Estilos para el dashboard */
+/* Estilos para el dashboard - Diseño minimalista */
 .dashboard-stat-card {
-    border-left: 4px solid;
+    border-left: 4px solid #212529;
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
     cursor: pointer;
+    background-color: #ffffff;
+    border: 1px solid #e9ecef;
 }
 
 .dashboard-stat-card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.2);
+    box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.15);
+    border-color: #212529;
 }
 
 /* Estilos para enlaces de estadísticas */
 a .dashboard-stat-card {
-    color: inherit;
+    color: #212529;
 }
 
 a:hover .dashboard-stat-card {
-    color: inherit;
+    color: #212529;
     text-decoration: none;
 }
 
@@ -103,7 +106,7 @@ a:hover .dashboard-stat-card {
     right: 10px;
     width: 8px;
     height: 8px;
-    background-color: rgba(255, 255, 255, 0.3);
+    background-color: rgba(0, 0, 0, 0.2);
     border-radius: 50%;
     opacity: 0;
     transition: opacity 0.2s ease-in-out;
@@ -117,20 +120,30 @@ a:hover .dashboard-stat-card {
     position: relative;
 }
 
-.dashboard-stat-card.primary {
-    border-left-color: #0d6efd;
+/* Tarjetas minimalistas con diferentes intensidades de gris */
+.dashboard-stat-card.card-dark {
+    background-color: #212529;
+    color: #ffffff;
+    border-left-color: #ffffff;
 }
 
-.dashboard-stat-card.warning {
-    border-left-color: #ffc107;
+.dashboard-stat-card.card-secondary {
+    background-color: #6c757d;
+    color: #ffffff;
+    border-left-color: #ffffff;
 }
 
-.dashboard-stat-card.info {
-    border-left-color: #0dcaf0;
+.dashboard-stat-card.card-light {
+    background-color: #f8f9fa;
+    color: #212529;
+    border-left-color: #212529;
 }
 
-.dashboard-stat-card.success {
-    border-left-color: #198754;
+.dashboard-stat-card.card-white {
+    background-color: #ffffff;
+    color: #212529;
+    border-left-color: #495057;
+    border: 1px solid #dee2e6;
 }
 
 /* Estilos para paginación */

@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load django_bootstrap5 %}
+{% load project_extras %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
@@ -70,66 +71,96 @@
                 </div>
                 <div class="card-body">
                     {% if page_obj.object_list %}
-                        <div class="row">
-                            {% for project in page_obj.object_list %}
-                            <div class="col-md-6 col-lg-4 mb-4">
-                                <div class="card h-100 border-start" style="border-left: 4px solid {{ project.color }} !important;">
-                                    <div class="card-body">
-                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                            <h6 class="card-title mb-0">{{ project.name }}</h6>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Proyecto</th>
+                                        <th>Estado</th>
+                                        <th class="text-center">Total Horas</th>
+                                        <th class="text-center">Trabajadores</th>
+                                        <th class="text-end">Coste Total</th>
+                                        <th class="text-end">Venta Total</th>
+                                        <th class="text-end">Beneficio</th>
+                                        <th class="text-center">Margen</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for project in page_obj.object_list %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="me-2" style="width: 4px; height: 30px; background-color: {{ project.color }}; border-radius: 2px;"></div>
+                                                <div>
+                                                    <div class="fw-bold">{{ project.name }}</div>
+                                                    {% if project.description %}
+                                                        <small class="text-muted">{{ project.description|truncatechars:50 }}</small>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
                                             <span class="badge bg-{% if project.status == 'active' %}success{% elif project.status == 'completed' %}primary{% elif project.status == 'on_hold' %}warning{% elif project.status == 'cancelled' %}danger{% else %}secondary{% endif %}">
                                                 {{ project.get_status_display }}
                                             </span>
-                                        </div>
-                                        
-                                        {% if project.description %}
-                                            <p class="card-text text-muted small">
-                                                {{ project.description|truncatechars:100 }}
-                                            </p>
-                                        {% endif %}
-                                        
-                                        <div class="row text-center mb-3">
-                                            <div class="col-6">
-                                                <small class="text-muted">Total Horas</small>
-                                                <div class="fw-bold text-primary">{{ project.get_total_hours }}h</div>
-                                            </div>
-                                            <div class="col-6">
-                                                <small class="text-muted">Trabajadores Activos</small>
-                                                <div class="fw-bold text-success">{{ project.get_active_workers_count }}</div>
-                                            </div>
-                                        </div>
-                                        
-                                        {% if project.start_date or project.end_date %}
-                                        <div class="mb-3">
-                                            <small class="text-muted">
-                                                {% if project.start_date %}
-                                                    <i class="bi bi-calendar-event"></i> {{ project.start_date|date:"d/m/Y" }}
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="fw-bold text-primary">{{ project.get_total_hours }}h</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="fw-bold text-info">{{ project.get_active_workers_count }}</span>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="fw-bold text-danger">€{{ project.get_total_cost|floatformat:2 }}</span>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="fw-bold text-success">€{{ project.get_total_revenue|floatformat:2 }}</span>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="fw-bold {% if project.get_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                                €{{ project.get_profit|floatformat:2 }}
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="fw-bold {% if project.get_profit_margin >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                                {{ project.get_profit_margin|floatformat:1 }}%
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a href="{% url 'project_detail' project.id %}" 
+                                                   class="btn btn-outline-primary btn-sm" title="Ver detalles">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                {% if project.can_edit|default:True %}
+                                                <a href="{% url 'project_edit' project.id %}" 
+                                                   class="btn btn-outline-secondary btn-sm" title="Editar">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
                                                 {% endif %}
-                                                {% if project.end_date %}
-                                                    - {{ project.end_date|date:"d/m/Y" }}
-                                                {% endif %}
-                                            </small>
-                                        </div>
-                                        {% endif %}
-                                    </div>
-                                    
-                                    <div class="card-footer bg-transparent">
-                                        <div class="btn-group w-100" role="group">
-                                            <a href="{% url 'project_detail' project.id %}" 
-                                               class="btn btn-outline-primary btn-sm">
-                                                <i class="bi bi-eye"></i> Ver
-                                            </a>
-                                            {% if project.can_edit|default:True %}
-                                            <a href="{% url 'project_edit' project.id %}" 
-                                               class="btn btn-outline-secondary btn-sm">
-                                                <i class="bi bi-pencil"></i> Editar
-                                            </a>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot class="table-light">
+                                    <tr class="fw-bold">
+                                        <td colspan="4" class="text-end">TOTALES:</td>
+                                        <td class="text-end text-danger">
+                                            €{{ page_obj.object_list|sum_cost|floatformat:2 }}
+                                        </td>
+                                        <td class="text-end text-success">
+                                            €{{ page_obj.object_list|sum_revenue|floatformat:2 }}
+                                        </td>
+                                        <td class="text-end {% if page_obj.object_list|sum_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                            €{{ page_obj.object_list|sum_profit|floatformat:2 }}
+                                        </td>
+                                        <td></td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
                         </div>
 
                         <!-- Paginación -->

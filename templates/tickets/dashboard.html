@@ -22,7 +22,7 @@
 <div class="row mb-4">
     <div class="col-md-3 mb-3">
         <a href="{% url 'ticket_list' %}" class="text-decoration-none">
-            <div class="card bg-primary text-white dashboard-stat-card">
+            <div class="card dashboard-stat-card card-dark">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
@@ -42,7 +42,7 @@
     
     <div class="col-md-3 mb-3">
         <a href="{% url 'ticket_list' %}?status=open" class="text-decoration-none">
-            <div class="card bg-warning text-white dashboard-stat-card">
+            <div class="card dashboard-stat-card card-secondary">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
@@ -60,7 +60,7 @@
     
     <div class="col-md-3 mb-3">
         <a href="{% url 'ticket_list' %}?status=in_progress" class="text-decoration-none">
-            <div class="card bg-info text-white dashboard-stat-card">
+            <div class="card dashboard-stat-card card-light">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
@@ -78,7 +78,7 @@
     
     <div class="col-md-3 mb-3">
         <a href="{% url 'ticket_list' %}?status=resolved" class="text-decoration-none">
-            <div class="card bg-success text-white dashboard-stat-card">
+            <div class="card dashboard-stat-card card-white">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
@@ -100,7 +100,7 @@
 <div class="row mb-4">
     <div class="col-md-6 mb-3">
         <a href="{% url 'ticket_list' %}?assigned_to=unassigned" class="text-decoration-none">
-            <div class="card bg-warning text-white dashboard-stat-card">
+            <div class="card dashboard-stat-card card-light">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
@@ -118,7 +118,7 @@
     
     <div class="col-md-6 mb-3">
         <a href="{% url 'ticket_list' %}?assigned_to=me" class="text-decoration-none">
-            <div class="card bg-info text-white dashboard-stat-card">
+            <div class="card dashboard-stat-card card-white">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
@@ -138,8 +138,8 @@
 <!-- Control de Horario (solo para agentes) -->
 <div class="row mb-4">
     <div class="col-12">
-        <div class="card border-primary">
-            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <div class="card border-dark">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">
                     <i class="bi bi-clock"></i> Control de Horario
                 </h5>
@@ -151,11 +151,11 @@
                 <div class="row align-items-center">
                     <div class="col-md-6">
                         {% if active_time_entry %}
-                            <div class="alert alert-success border-success">
+                            <div class="alert alert-dark border-dark">
                                 <div class="d-flex align-items-center">
                                     <div class="flex-grow-1">
                                         <h6 class="mb-1">
-                                            <i class="bi bi-play-fill text-success"></i> Jornada Activa
+                                            <i class="bi bi-play-fill text-dark"></i> Jornada Activa
                                         </h6>
                                         <p class="mb-0">
                                             <strong>Inicio:</strong> {{ active_time_entry.fecha_entrada|date:"H:i" }}
@@ -181,22 +181,22 @@
                     
                     <div class="col-md-6 text-center">
                         {% if can_start_work %}
-                            <a href="{% url 'time_start_work' %}" class="btn btn-success btn-lg me-2">
+                            <a href="{% url 'time_start_work' %}" class="btn btn-dark btn-lg me-2">
                                 <i class="bi bi-play-fill"></i> Iniciar
                             </a>
                         {% endif %}
                         
                         {% if can_end_work %}
-                            <a href="{% url 'time_end_work' %}" class="btn btn-danger btn-lg">
+                            <a href="{% url 'time_end_work' %}" class="btn btn-secondary btn-lg">
                                 <i class="bi bi-stop-fill"></i> Finalizar
                             </a>
                         {% endif %}
                         
                         <div class="mt-2">
-                            <a href="{% url 'time_entries_list' %}" class="btn btn-sm btn-outline-primary me-2">
+                            <a href="{% url 'time_entries_list' %}" class="btn btn-sm btn-outline-dark me-2">
                                 <i class="bi bi-list"></i> Mis Registros
                             </a>
-                            <a href="{% url 'attendance_overview' %}" class="btn btn-sm btn-outline-info">
+                            <a href="{% url 'attendance_overview' %}" class="btn btn-sm btn-outline-secondary">
                                 <i class="bi bi-people-fill"></i> Ver Todos
                             </a>
                         </div>
@@ -210,8 +210,8 @@
 <!-- Gestión de Proyectos (solo para agentes) -->
 <div class="row mb-4">
     <div class="col-12">
-        <div class="card border-info">
-            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+        <div class="card border-secondary">
+            <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">
                     <i class="bi bi-folder"></i> Gestión de Proyectos
                 </h5>
@@ -223,10 +223,10 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="d-grid gap-2">
-                            <a href="{% url 'project_list' %}" class="btn btn-outline-info">
+                            <a href="{% url 'project_list' %}" class="btn btn-outline-dark">
                                 <i class="bi bi-list"></i> Ver Todos los Proyectos
                             </a>
-                            <a href="{% url 'project_create' %}" class="btn btn-outline-success">
+                            <a href="{% url 'project_create' %}" class="btn btn-outline-secondary">
                                 <i class="bi bi-plus-circle"></i> Crear Nuevo Proyecto
                             </a>
                         </div>

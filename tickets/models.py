@@ -178,6 +178,43 @@ class Project(models.Model):
         """Verifica si el usuario puede eliminar este proyecto"""
         from .utils import is_agent
         return is_agent(user) or user == self.created_by
+    
+    def get_total_cost(self):
+        """Calcula el coste total del proyecto basado en las horas trabajadas y el coste por hora de cada empleado"""
+        from decimal import Decimal
+        total_cost = Decimal('0.00')
+        
+        for entry in self.time_entries.all():
+            hours_worked = entry.horas_trabajadas
+            if hours_worked and entry.user and hasattr(entry.user, 'profile'):
+                coste_hora = entry.user.profile.coste_hora
+                total_cost += Decimal(str(hours_worked)) * coste_hora
+        
+        return total_cost
+    
+    def get_total_revenue(self):
+        """Calcula el total de venta del proyecto basado en las horas trabajadas y el precio por hora de cada empleado"""
+        from decimal import Decimal
+        total_revenue = Decimal('0.00')
+        
+        for entry in self.time_entries.all():
+            hours_worked = entry.horas_trabajadas
+            if hours_worked and entry.user and hasattr(entry.user, 'profile'):
+                precio_hora = entry.user.profile.precio_hora
+                total_revenue += Decimal(str(hours_worked)) * precio_hora
+        
+        return total_revenue
+    
+    def get_profit(self):
+        """Calcula el beneficio del proyecto (venta - coste)"""
+        return self.get_total_revenue() - self.get_total_cost()
+    
+    def get_profit_margin(self):
+        """Calcula el margen de beneficio como porcentaje"""
+        revenue = self.get_total_revenue()
+        if revenue > 0:
+            return (self.get_profit() / revenue) * 100
+        return 0
 
 
 class Ticket(models.Model):
@@ -506,6 +543,23 @@ class UserProfile(models.Model):
         verbose_name='Empresa',
         help_text='Empresa a la que pertenece el usuario'
     )
+    
+    # Campos de facturación
+    precio_hora = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.00,
+        verbose_name='Precio por hora',
+        help_text='Precio de venta por hora de trabajo (€)'
+    )
+    coste_hora = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.00,
+        verbose_name='Coste por hora',
+        help_text='Coste interno por hora de trabajo (€)'
+    )
+    
     created_at = models.DateTimeField(
         default=timezone.now,
         verbose_name='Fecha de creación'

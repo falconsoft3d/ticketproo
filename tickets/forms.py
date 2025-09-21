@@ -367,9 +367,37 @@ class UserManagementForm(UserCreationForm):
         label='Empresa'
     )
     
+    precio_hora = forms.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        required=False,
+        initial=0.00,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'step': '0.01',
+            'min': '0'
+        }),
+        label='Precio por hora (€)',
+        help_text='Precio de venta por hora de trabajo'
+    )
+    
+    coste_hora = forms.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        required=False,
+        initial=0.00,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'step': '0.01',
+            'min': '0'
+        }),
+        label='Coste por hora (€)',
+        help_text='Coste interno por hora de trabajo'
+    )
+    
     class Meta:
         model = User
-        fields = ('username', 'first_name', 'last_name', 'email', 'password1', 'password2', 'role', 'company')
+        fields = ('username', 'first_name', 'last_name', 'email', 'password1', 'password2', 'role', 'company', 'precio_hora', 'coste_hora')
         widgets = {
             'username': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -392,9 +420,13 @@ class UserManagementForm(UserCreationForm):
             # Crear o actualizar el perfil del usuario
             profile, created = UserProfile.objects.get_or_create(user=user)
             company = self.cleaned_data.get('company')
-            if company:
-                profile.company = company
-                profile.save()
+            precio_hora = self.cleaned_data.get('precio_hora', 0.00)
+            coste_hora = self.cleaned_data.get('coste_hora', 0.00)
+            
+            profile.company = company
+            profile.precio_hora = precio_hora
+            profile.coste_hora = coste_hora
+            profile.save()
             
             # Asignar al grupo correspondiente
             role = self.cleaned_data['role']
@@ -432,9 +464,37 @@ class UserEditForm(forms.ModelForm):
         label='Empresa'
     )
     
+    precio_hora = forms.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        required=False,
+        initial=0.00,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'step': '0.01',
+            'min': '0'
+        }),
+        label='Precio por hora (€)',
+        help_text='Precio de venta por hora de trabajo'
+    )
+    
+    coste_hora = forms.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        required=False,
+        initial=0.00,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'step': '0.01',
+            'min': '0'
+        }),
+        label='Coste por hora (€)',
+        help_text='Coste interno por hora de trabajo'
+    )
+    
     class Meta:
         model = User
-        fields = ('username', 'first_name', 'last_name', 'email', 'is_active', 'role', 'company')
+        fields = ('username', 'first_name', 'last_name', 'email', 'is_active', 'role', 'company', 'precio_hora', 'coste_hora')
         widgets = {
             'username': forms.TextInput(attrs={
                 'class': 'form-control'
@@ -474,6 +534,9 @@ class UserEditForm(forms.ModelForm):
                 profile = self.instance.profile
                 if profile.company:
                     self.fields['company'].initial = profile.company
+                # Cargar valores de precio y coste por hora
+                self.fields['precio_hora'].initial = profile.precio_hora
+                self.fields['coste_hora'].initial = profile.coste_hora
             except UserProfile.DoesNotExist:
                 pass
     
@@ -484,7 +547,12 @@ class UserEditForm(forms.ModelForm):
             # Crear o actualizar el perfil del usuario
             profile, created = UserProfile.objects.get_or_create(user=user)
             company = self.cleaned_data.get('company')
+            precio_hora = self.cleaned_data.get('precio_hora', 0.00)
+            coste_hora = self.cleaned_data.get('coste_hora', 0.00)
+            
             profile.company = company
+            profile.precio_hora = precio_hora
+            profile.coste_hora = coste_hora
             profile.save()
             
             # Actualizar grupos del usuario
