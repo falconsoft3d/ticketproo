@@ -351,9 +351,161 @@ docker system prune
 - **Django**: `./logs/django.log`
 - **Nginx**: Dentro del contenedor en `/var/log/nginx/`
 
+## 🚨 Solución Rápida para Errores SSL
+
+### Si obtienes error: "Can't open privkey.pem"
+
+Este es un problema común cuando los certificados SSL no se han generado correctamente. Aquí tienes las soluciones paso a paso:
+
+#### Opción 1: Reinicializar SSL (Recomendado)
+```bash
+# 1. Parar todos los servicios
+docker-compose down
+
+# 2. Limpiar volúmenes de certificados
+docker volume rm ticketproo_certbot_certs ticketproo_certbot_www 2>/dev/null || true
+
+# 3. Editar nginx.conf temporalmente para solo HTTP
+cp nginx.conf nginx.conf.backup
+```
+
+Crear un nginx temporal sin SSL:
+```bash
+cat > nginx-temp.conf << 'EOF'
+user nginx;
+worker_processes auto;
+error_log /var/log/nginx/error.log warn;
+pid /var/run/nginx.pid;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+    
+    upstream django {
+        server web:8000;
+    }
+    
+    server {
+        listen 80;
+        server_name _;
+        
+        location /.well-known/acme-challenge/ {
+            root /var/www/certbot;
+        }
+        
+        location / {
+            proxy_pass http://django;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+    }
+}
+EOF
+
+# 4. Usar configuración temporal
+docker-compose run --rm --entrypoint "cp /nginx-temp.conf /etc/nginx/nginx.conf" nginx
+
+# 5. Iniciar servicios con HTTP solamente
+docker-compose up -d db web
+docker-compose run --rm --entrypoint "nginx -g 'daemon off;'" nginx &
+
+# 6. Generar certificados
+docker-compose run --rm --entrypoint "\
+  certbot certonly --webroot -w /var/www/certbot \
+    -d tu-dominio.com \
+    --email admin@tu-dominio.com \
+    --agree-tos \
+    --force-renewal" certbot
+
+# 7. Restaurar configuración original y reiniciar
+cp nginx.conf.backup nginx.conf
+docker-compose down
+docker-compose up -d
+```
+
+#### Opción 2: Modo de Desarrollo (Solo localhost)
+```bash
+# Para testing local, modificar nginx.conf temporalmente
+# Cambiar en la configuración:
+# server_name localhost;
+# ssl_certificate /etc/letsencrypt/live/localhost/fullchain.pem;
+# ssl_certificate_key /etc/letsencrypt/live/localhost/privkey.pem;
+
+# Luego ejecutar:
+./init-letsencrypt.sh
+```
+
+#### Opción 3: Solo HTTP (Sin SSL)
+```bash
+# Modificar docker-compose.yml para quitar referencias a SSL
+# Comentar servicio certbot y volúmenes SSL
+# Cambiar nginx.conf para solo puerto 80
+
+# Ejemplo de nginx.conf simplificado:
+cat > nginx-http-only.conf << 'EOF'
+# Configuración básica solo HTTP
+server {
+    listen 80;
+    server_name _;
+    
+    location / {
+        proxy_pass http://web:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+EOF
+
+# Usar esta configuración temporal
+docker-compose down
+cp nginx-http-only.conf nginx.conf
+docker-compose up -d db web nginx
+```
+
 ## 🚨 Solución de Problemas
 
 ### SSL/HTTPS Issues
+
+#### Error: "Can't open /etc/letsencrypt/live/domain/privkey.pem"
+```bash
+# Este error indica que los certificados SSL no existen o no tienen permisos correctos
+
+# SOLUCIÓN 1: Ejecutar el script de inicialización SSL
+./init-letsencrypt.sh
+
+# SOLUCIÓN 2: Si el script falla, crear certificados manualmente
+# Primero, parar nginx para liberar el puerto 80
+docker-compose stop nginx
+
+# Obtener certificados manualmente
+docker-compose run --rm --entrypoint "\
+  certbot certonly --standalone \
+    -d tu-dominio.com \
+    --email admin@tu-dominio.com \
+    --agree-tos \
+    --no-eff-email \
+    --force-renewal" certbot
+
+# Reiniciar nginx
+docker-compose start nginx
+
+# SOLUCIÓN 3: Para testing local, usar certificados auto-firmados
+docker-compose run --rm --entrypoint "\
+  openssl req -x509 -nodes -days 365 -newkey rsa:4096 \
+    -keyout '/etc/letsencrypt/live/tu-dominio.com/privkey.pem' \
+    -out '/etc/letsencrypt/live/tu-dominio.com/fullchain.pem' \
+    -subj '/C=ES/ST=Madrid/L=Madrid/O=TicketProo/CN=tu-dominio.com'" certbot
+
+# SOLUCIÓN 4: Verificar permisos y directorios
+docker-compose exec certbot ls -la /etc/letsencrypt/live/
+docker-compose exec certbot mkdir -p /etc/letsencrypt/live/tu-dominio.com/
+```
 
 #### Error: "SSL certificate problem"
 ```bash
