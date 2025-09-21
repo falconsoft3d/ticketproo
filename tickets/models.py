@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.db import transaction
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 import os
 import uuid
 
@@ -306,3 +308,72 @@ class TicketComment(models.Model):
         # Solo el autor del comentario o un agente puede eliminarlo
         from .utils import is_agent
         return self.user == user or is_agent(user)
+
+
+class UserProfile(models.Model):
+    """Modelo para extender la información del usuario"""
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='profile',
+        verbose_name='Usuario'
+    )
+    phone = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        verbose_name='Teléfono',
+        help_text='Número de teléfono de contacto'
+    )
+    bio = models.TextField(
+        max_length=500,
+        blank=True,
+        verbose_name='Biografía',
+        help_text='Descripción corta del usuario'
+    )
+    notification_preferences = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Preferencias de notificación',
+        help_text='Configuración de notificaciones del usuario'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        verbose_name = 'Perfil de Usuario'
+        verbose_name_plural = 'Perfiles de Usuario'
+    
+    def __str__(self):
+        return f"Perfil de {self.user.username}"
+    
+    def get_full_name(self):
+        """Retorna el nombre completo del usuario"""
+        if self.user.first_name and self.user.last_name:
+            return f"{self.user.first_name} {self.user.last_name}"
+        elif self.user.first_name:
+            return self.user.first_name
+        else:
+            return self.user.username
+
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    """Crea automáticamente un perfil cuando se crea un usuario"""
+    if created:
+        UserProfile.objects.create(user=instance)
+
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    """Guarda el perfil cuando se guarda el usuario"""
+    if hasattr(instance, 'profile'):
+        instance.profile.save()
+    else:
+        UserProfile.objects.create(user=instance)

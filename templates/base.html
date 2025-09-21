@@ -86,6 +86,10 @@
                             <i class="bi bi-person-circle"></i> {{ user.username }}
                         </a>
                         <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'user_profile' %}">
+                                <i class="bi bi-person-gear"></i> Mi Perfil
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{% url 'logout' %}">
                                 <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
                             </a></li>

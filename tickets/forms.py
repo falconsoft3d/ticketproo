@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User, Group
-from django.contrib.auth.forms import UserCreationForm
-from .models import Ticket, TicketAttachment, Category, TicketComment
+from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
+from .models import Ticket, TicketAttachment, Category, TicketComment, UserProfile
 
 class CategoryForm(forms.ModelForm):
     """Formulario para crear y editar categorías"""
@@ -445,3 +445,104 @@ class TicketCommentForm(forms.ModelForm):
             if len(content) > 1000:
                 raise forms.ValidationError('El comentario no puede exceder 1000 caracteres.')
         return content
+
+
+class UserProfileForm(forms.ModelForm):
+    """Formulario para actualizar información básica del usuario"""
+    
+    first_name = forms.CharField(
+        max_length=30,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Nombre'
+        }),
+        label='Nombre'
+    )
+    
+    last_name = forms.CharField(
+        max_length=30,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Apellido'
+        }),
+        label='Apellido'
+    )
+    
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'correo@ejemplo.com'
+        }),
+        label='Correo Electrónico'
+    )
+    
+    class Meta:
+        model = UserProfile
+        fields = ['phone', 'bio']
+        widgets = {
+            'phone': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '+34 612 345 678'
+            }),
+            'bio': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Cuéntanos algo sobre ti...'
+            }),
+        }
+        labels = {
+            'phone': 'Teléfono',
+            'bio': 'Biografía',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        if user:
+            self.fields['first_name'].initial = user.first_name
+            self.fields['last_name'].initial = user.last_name
+            self.fields['email'].initial = user.email
+    
+    def save(self, user=None, commit=True):
+        profile = super().save(commit=False)
+        
+        if user:
+            # Actualizar campos del User
+            user.first_name = self.cleaned_data['first_name']
+            user.last_name = self.cleaned_data['last_name']
+            user.email = self.cleaned_data['email']
+            
+            if commit:
+                user.save()
+                profile.save()
+        
+        return profile
+
+
+class CustomPasswordChangeForm(PasswordChangeForm):
+    """Formulario personalizado para cambio de contraseña"""
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Personalizar widgets
+        self.fields['old_password'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Contraseña actual'
+        })
+        self.fields['new_password1'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Nueva contraseña'
+        })
+        self.fields['new_password2'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Confirmar nueva contraseña'
+        })
+        
+        # Personalizar labels
+        self.fields['old_password'].label = 'Contraseña Actual'
+        self.fields['new_password1'].label = 'Nueva Contraseña'
+        self.fields['new_password2'].label = 'Confirmar Nueva Contraseña'

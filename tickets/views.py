@@ -9,22 +9,51 @@ from django.db.models import Q
 from django.http import HttpResponse, Http404
 from django.conf import settings
 import os
-from .models import Ticket, TicketAttachment, Category, TicketComment
+from .models import Ticket, TicketAttachment, Category, TicketComment, UserProfile
 from .forms import TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, TicketAttachmentForm, CategoryForm, UserTicketForm, UserTicketEditForm, TicketCommentForm
 from .utils import is_agent, is_regular_user, get_user_role, assign_user_to_group
 
 def home_view(request):
-    """Vista para la página de inicio pública de TicketProo"""
-    if request.user.is_authenticated:
-        return redirect('dashboard')
-    
+    """Vista para la página de inicio de TicketProo - accesible para todos"""
     # Estadísticas generales del sistema
     total_tickets = Ticket.objects.count()
     total_users = Ticket.objects.values('created_by').distinct().count()
     
+    # Estadísticas por estado si el usuario está autenticado
+    user_tickets_count = 0
+    user_role = None
+    tickets_by_status = {}
+    
+    if request.user.is_authenticated:
+        user_role = get_user_role(request.user)
+        
+        if is_agent(request.user):
+            # Para agentes: estadísticas de todos los tickets
+            tickets_by_status = {
+                'open': Ticket.objects.filter(status='open').count(),
+                'in_progress': Ticket.objects.filter(status='in_progress').count(),
+                'resolved': Ticket.objects.filter(status='resolved').count(),
+                'closed': Ticket.objects.filter(status='closed').count(),
+            }
+            user_tickets_count = Ticket.objects.count()
+        else:
+            # Para usuarios regulares: solo sus tickets
+            user_tickets = Ticket.objects.filter(created_by=request.user)
+            tickets_by_status = {
+                'open': user_tickets.filter(status='open').count(),
+                'in_progress': user_tickets.filter(status='in_progress').count(),
+                'resolved': user_tickets.filter(status='resolved').count(),
+                'closed': user_tickets.filter(status='closed').count(),
+            }
+            user_tickets_count = user_tickets.count()
+    
     context = {
         'total_tickets': total_tickets,
         'total_users': total_users,
+        'user_tickets_count': user_tickets_count,
+        'user_role': user_role,
+        'tickets_by_status': tickets_by_status,
+        'is_authenticated': request.user.is_authenticated,
     }
     return render(request, 'tickets/home.html', context)
 
@@ -608,3 +637,47 @@ def public_ticket_view(request, token):
         'page_title': f'Ticket Público: {ticket.ticket_number}',
     }
     return render(request, 'tickets/public_ticket.html', context)
+
+
+@login_required
+def user_profile_view(request):
+    """Vista para mostrar y actualizar el perfil del usuario"""
+    # Obtener o crear el perfil del usuario
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
+    
+    # Importar formularios aquí para evitar importación circular
+    from .forms import UserProfileForm, CustomPasswordChangeForm
+    
+    profile_form = UserProfileForm(instance=profile, user=request.user)
+    password_form = CustomPasswordChangeForm(request.user)
+    
+    if request.method == 'POST':
+        if 'update_profile' in request.POST:
+            # Actualizar perfil
+            profile_form = UserProfileForm(
+                request.POST, 
+                instance=profile, 
+                user=request.user
+            )
+            if profile_form.is_valid():
+                profile_form.save(user=request.user)
+                messages.success(request, 'Tu perfil ha sido actualizado exitosamente.')
+                return redirect('user_profile')
+        
+        elif 'change_password' in request.POST:
+            # Cambiar contraseña
+            password_form = CustomPasswordChangeForm(request.user, request.POST)
+            if password_form.is_valid():
+                user = password_form.save()
+                from django.contrib.auth import update_session_auth_hash
+                update_session_auth_hash(request, user)  # Mantener la sesión activa
+                messages.success(request, 'Tu contraseña ha sido cambiada exitosamente.')
+                return redirect('user_profile')
+    
+    context = {
+        'profile_form': profile_form,
+        'password_form': password_form,
+        'user_profile': profile,
+        'page_title': 'Mi Perfil'
+    }
+    return render(request, 'tickets/user_profile.html', context)

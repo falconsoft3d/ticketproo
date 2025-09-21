@@ -31,6 +31,9 @@ urlpatterns = [
     path('register/', views.register_view, name='register'),
     path('logout/', views.logout_view, name='logout'),
     
+    # URL para perfil de usuario
+    path('profile/', views.user_profile_view, name='user_profile'),
+    
     # URLs de gestión de usuarios (solo para agentes)
     path('users/', views.user_management_view, name='user_management'),
     path('users/create/', views.user_create_view, name='user_create'),
