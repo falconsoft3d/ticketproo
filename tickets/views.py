@@ -193,6 +193,26 @@ def ticket_detail_view(request, pk):
         messages.success(request, f'Te has asignado el ticket #{ticket.pk}.')
         return redirect('ticket_detail', pk=pk)
     
+    # Manejar activar compartir público (solo agentes)
+    if request.method == 'POST' and 'enable_public_share' in request.POST and is_agent(request.user):
+        ticket.is_public_shareable = True
+        ticket.save()
+        messages.success(request, 'Compartir público activado. Ahora puedes compartir este ticket mediante un enlace.')
+        return redirect('ticket_detail', pk=pk)
+    
+    # Manejar desactivar compartir público (solo agentes)
+    if request.method == 'POST' and 'disable_public_share' in request.POST and is_agent(request.user):
+        ticket.is_public_shareable = False
+        ticket.save()
+        messages.warning(request, 'Compartir público desactivado. El enlace ya no será accesible.')
+        return redirect('ticket_detail', pk=pk)
+    
+    # Manejar regenerar token (solo agentes)
+    if request.method == 'POST' and 'regenerate_token' in request.POST and is_agent(request.user):
+        ticket.regenerate_public_token()
+        messages.info(request, 'Enlace público regenerado. El enlace anterior ya no es válido.')
+        return redirect('ticket_detail', pk=pk)
+    
     # Formulario para agregar comentarios
     comment_form = TicketCommentForm()
     if request.method == 'POST' and 'add_comment' in request.POST:
@@ -561,3 +581,30 @@ def category_detail_view(request, pk):
         'page_title': f'Categoría: {category.name}'
     }
     return render(request, 'tickets/category_detail.html', context)
+
+
+def public_ticket_view(request, token):
+    """Vista pública para mostrar un ticket mediante su token único"""
+    try:
+        ticket = get_object_or_404(Ticket, public_share_token=token, is_public_shareable=True)
+    except:
+        # Si el ticket no existe o no está habilitado para compartir
+        context = {
+            'error_message': 'El enlace del ticket no es válido o ha expirado.',
+            'error_type': 'not_found'
+        }
+        return render(request, 'tickets/public_ticket.html', context, status=404)
+    
+    # Obtener comentarios del ticket
+    comments = ticket.comments.all().order_by('created_at')
+    
+    # Obtener adjuntos del ticket
+    attachments = ticket.attachments.all().order_by('-uploaded_at')
+    
+    context = {
+        'ticket': ticket,
+        'comments': comments,
+        'attachments': attachments,
+        'page_title': f'Ticket Público: {ticket.ticket_number}',
+    }
+    return render(request, 'tickets/public_ticket.html', context)

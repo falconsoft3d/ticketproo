@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from django.db import transaction
 import os
+import uuid
 
 
 class Category(models.Model):
@@ -92,6 +93,19 @@ class Ticket(models.Model):
         verbose_name='Horas estimadas/trabajadas',
         help_text='Cantidad de horas estimadas o trabajadas en el ticket'
     )
+    # Campo para enlace único público
+    public_share_token = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+        verbose_name='Token de compartir',
+        help_text='Token único para compartir el ticket públicamente'
+    )
+    is_public_shareable = models.BooleanField(
+        default=False,
+        verbose_name='Compartir públicamente',
+        help_text='Permite que este ticket sea visible mediante un enlace público'
+    )
     created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
     
@@ -170,6 +184,18 @@ class Ticket(models.Model):
             'closed': 'bg-secondary',
         }
         return status_classes.get(self.status, 'bg-secondary')
+    
+    def get_public_url(self):
+        """Retorna la URL pública del ticket si está habilitado para compartir"""
+        if self.is_public_shareable:
+            from django.urls import reverse
+            return reverse('tickets:public_ticket', kwargs={'token': self.public_share_token})
+        return None
+    
+    def regenerate_public_token(self):
+        """Regenera el token público del ticket"""
+        self.public_share_token = uuid.uuid4()
+        self.save(update_fields=['public_share_token'])
 
 
 def ticket_attachment_upload_path(instance, filename):

@@ -173,7 +173,7 @@ class AgentTicketForm(forms.ModelForm):
     
     class Meta:
         model = Ticket
-        fields = ['title', 'description', 'category', 'priority', 'status', 'assigned_to', 'hours']
+        fields = ['title', 'description', 'category', 'priority', 'status', 'assigned_to', 'hours', 'is_public_shareable']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -202,6 +202,9 @@ class AgentTicketForm(forms.ModelForm):
                 'step': '0.5',
                 'min': '0'
             }),
+            'is_public_shareable': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
         }
         labels = {
             'title': 'Título',
@@ -211,6 +214,7 @@ class AgentTicketForm(forms.ModelForm):
             'status': 'Estado',
             'assigned_to': 'Asignar a',
             'hours': 'Horas estimadas/trabajadas',
+            'is_public_shareable': 'Permitir compartir públicamente',
         }
 
 class UserManagementForm(UserCreationForm):

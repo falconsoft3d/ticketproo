@@ -13,6 +13,9 @@ urlpatterns = [
     path('tickets/<int:pk>/delete/', views.ticket_delete_view, name='ticket_delete'),
     path('tickets/<int:pk>/unassign/', views.unassign_ticket_view, name='unassign_ticket'),
     
+    # URL para vista pública de tickets (sin autenticación requerida)
+    path('public/<uuid:token>/', views.public_ticket_view, name='public_ticket'),
+    
     # URLs de categorías (solo para agentes)
     path('categories/', views.category_list_view, name='category_list'),
     path('categories/create/', views.category_create_view, name='category_create'),

@@ -136,50 +136,6 @@
 </div>
 {% endif %}
 
-<!-- Acciones rápidas -->
-<div class="row mb-4">
-    <div class="col-md-6 mb-3">
-        <div class="card">
-            <div class="card-body text-center">
-                <i class="bi bi-plus-circle display-4 text-primary mb-3"></i>
-                <h5 class="card-title">Crear Nuevo Ticket</h5>
-                <p class="card-text text-muted">
-                    {% if is_agent %}
-                        Crea un nuevo ticket y asígnalo a un agente.
-                    {% else %}
-                        ¿Tienes un problema o solicitud? Crea un nuevo ticket.
-                    {% endif %}
-                </p>
-                <a href="{% url 'ticket_create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus"></i> Nuevo Ticket
-                </a>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-6 mb-3">
-        <div class="card">
-            <div class="card-body text-center">
-                <i class="bi bi-list-ul display-4 text-info mb-3"></i>
-                <h5 class="card-title">
-                    {% if is_agent %}Ver Todos los Tickets{% else %}Ver Mis Tickets{% endif %}
-                </h5>
-                <p class="card-text text-muted">
-                    {% if is_agent %}
-                        Administra y supervisa todos los tickets del sistema.
-                    {% else %}
-                        Revisa el estado y progreso de todos tus tickets.
-                    {% endif %}
-                </p>
-                <a href="{% url 'ticket_list' %}" class="btn btn-info">
-                    <i class="bi bi-eye"></i> 
-                    {% if is_agent %}Ver Todos{% else %}Ver Tickets{% endif %}
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Tickets recientes -->
 {% if recent_tickets %}
 <div class="row">

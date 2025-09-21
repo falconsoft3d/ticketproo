@@ -253,6 +253,74 @@
                     </a>
                     {% endif %}
                     
+                    <!-- Compartir público (solo para agentes) -->
+                    {% if is_agent %}
+                    <div class="mt-2">
+                        <h6 class="text-muted mb-2">
+                            <i class="bi bi-share"></i> Compartir Públicamente
+                        </h6>
+                        
+                        <!-- Activar/desactivar compartir público -->
+                        <form method="post" class="mb-2">
+                            {% csrf_token %}
+                            {% if ticket.is_public_shareable %}
+                                <button type="submit" name="disable_public_share" class="btn btn-outline-danger btn-sm">
+                                    <i class="bi bi-eye-slash"></i> Desactivar compartir público
+                                </button>
+                            {% else %}
+                                <button type="submit" name="enable_public_share" class="btn btn-outline-success btn-sm">
+                                    <i class="bi bi-eye"></i> Activar compartir público
+                                </button>
+                            {% endif %}
+                        </form>
+                        
+                        {% if ticket.is_public_shareable %}
+                        <!-- Mostrar enlace público -->
+                        <div class="alert alert-info p-2 small">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-link-45deg me-2"></i>
+                                <span class="me-2">Enlace público:</span>
+                            </div>
+                            <div class="input-group input-group-sm mt-2">
+                                <input type="text" 
+                                       class="form-control" 
+                                       value="{{ request.scheme }}://{{ request.get_host }}{% url 'public_ticket' ticket.public_share_token %}"
+                                       id="publicUrl"
+                                       readonly>
+                                <button class="btn btn-outline-primary" 
+                                        type="button" 
+                                        onclick="copyPublicUrl()"
+                                        title="Copiar enlace">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                                <a href="{{ request.scheme }}://{{ request.get_host }}{% url 'public_ticket' ticket.public_share_token %}" 
+                                   class="btn btn-outline-secondary"
+                                   target="_blank"
+                                   title="Ver enlace público">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </div>
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle"></i>
+                                Este enlace permite ver el ticket sin necesidad de iniciar sesión.
+                            </small>
+                        </div>
+                        
+                        <!-- Regenerar token -->
+                        <form method="post" class="mb-2">
+                            {% csrf_token %}
+                            <button type="submit" 
+                                    name="regenerate_token" 
+                                    class="btn btn-outline-warning btn-sm"
+                                    onclick="return confirm('¿Estás seguro? Esto invalidará el enlace actual.')">
+                                <i class="bi bi-arrow-clockwise"></i> Regenerar enlace
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    <hr>
+                    {% endif %}
+                    
                     <a href="{% url 'ticket_edit' ticket.pk %}" class="btn btn-warning">
                         <i class="bi bi-pencil"></i> Editar Ticket
                     </a>
@@ -304,4 +372,59 @@
         </div>
     </div>
 </div>
+
+<script>
+function copyPublicUrl() {
+    const urlInput = document.getElementById('publicUrl');
+    urlInput.select();
+    urlInput.setSelectionRange(0, 99999); // Para móviles
+    
+    try {
+        document.execCommand('copy');
+        
+        // Cambiar temporalmente el icono para mostrar que se copió
+        const button = event.target.closest('button');
+        const icon = button.querySelector('i');
+        const originalClass = icon.className;
+        
+        icon.className = 'bi bi-check2';
+        button.classList.remove('btn-outline-primary');
+        button.classList.add('btn-success');
+        
+        setTimeout(() => {
+            icon.className = originalClass;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-primary');
+        }, 2000);
+        
+        // También mostrar un mensaje toast si está disponible
+        if (typeof bootstrap !== 'undefined' && bootstrap.Toast) {
+            const toastEl = document.createElement('div');
+            toastEl.className = 'toast position-fixed top-0 end-0 m-3';
+            toastEl.innerHTML = `
+                <div class="toast-header">
+                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                    <strong class="me-auto">¡Copiado!</strong>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">
+                    El enlace público se ha copiado al portapapeles.
+                </div>
+            `;
+            document.body.appendChild(toastEl);
+            
+            const toast = new bootstrap.Toast(toastEl);
+            toast.show();
+            
+            // Remover el elemento después de que se oculte
+            toastEl.addEventListener('hidden.bs.toast', () => {
+                toastEl.remove();
+            });
+        }
+    } catch (err) {
+        console.error('Error al copiar: ', err);
+        alert('No se pudo copiar el enlace. Por favor, selecciónalo manualmente.');
+    }
+}
+</script>
 {% endblock %}
