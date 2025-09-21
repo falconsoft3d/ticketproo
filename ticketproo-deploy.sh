@@ -127,12 +127,33 @@ log "PostgreSQL versión detectada: $PG_VERSION_FULL"
 log "=== CONFIGURANDO POSTGRESQL ==="
 
 # Iniciar PostgreSQL
-systemctl start postgresql
-systemctl enable postgresql
+log "Iniciando y habilitando PostgreSQL..."
+systemctl start postgresql 2>/dev/null || log "PostgreSQL ya está iniciado"
+systemctl enable postgresql 2>/dev/null || log "PostgreSQL ya está habilitado"
 
 # Crear usuario y base de datos
-sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';"
-sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;"
+log "Configurando usuario y base de datos PostgreSQL..."
+
+# Crear usuario si no existe
+sudo -u postgres psql -c "
+DO \$\$
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '$DB_USER') THEN
+        CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';
+        RAISE NOTICE 'Usuario $DB_USER creado';
+    ELSE
+        ALTER USER $DB_USER WITH PASSWORD '$DB_PASSWORD';
+        RAISE NOTICE 'Usuario $DB_USER ya existe - contraseña actualizada';
+    END IF;
+END
+\$\$;"
+
+# Crear base de datos si no existe
+sudo -u postgres psql -c "
+SELECT 'CREATE DATABASE $DB_NAME OWNER $DB_USER'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '$DB_NAME')\gexec"
+
+# Asignar permisos
 sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;"
 sudo -u postgres psql -c "ALTER USER $DB_USER CREATEDB;"
 
@@ -542,8 +563,16 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo
     
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        # Obtener certificado SSL
-        certbot --nginx -d "$DOMAIN" -d "www.$DOMAIN" --email "$EMAIL" --agree-tos --non-interactive
+        # Verificar si ya existe certificado
+        if [ -d "/etc/letsencrypt/live/$DOMAIN" ]; then
+            log "Certificado SSL ya existe para $DOMAIN"
+            log "Renovando certificado si es necesario..."
+            certbot renew --nginx --non-interactive
+        else
+            log "Obteniendo nuevo certificado SSL..."
+            # Obtener certificado SSL
+            certbot --nginx -d "$DOMAIN" -d "www.$DOMAIN" --email "$EMAIL" --agree-tos --non-interactive
+        fi
         
         # Configurar renovación automática
         systemctl enable certbot.timer
