@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fas fa-tag me-2"></i>{{ form_title }}
+                        </h4>
+                        <a href="{% url 'category_list' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i>Volver
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">
+                                {{ form.name.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.name.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">
+                                {{ form.description.label }}
+                            </label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.description.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Descripción opcional para esta categoría.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.color.id_for_label }}" class="form-label">
+                                {{ form.color.label }}
+                            </label>
+                            <div class="input-group">
+                                {{ form.color }}
+                                <span class="input-group-text">
+                                    <i class="fas fa-palette"></i>
+                                </span>
+                            </div>
+                            {% if form.color.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.color.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">{{ form.color.help_text }}</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check">
+                                {{ form.is_active }}
+                                <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                    {{ form.is_active.label }}
+                                </label>
+                            </div>
+                            {% if form.is_active.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.is_active.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Las categorías inactivas no aparecerán disponibles para nuevos tickets.</div>
+                        </div>
+
+                        <!-- Vista previa del color -->
+                        <div class="mb-4">
+                            <label class="form-label">Vista Previa</label>
+                            <div class="border rounded p-3">
+                                <span id="color-preview" class="badge" style="background-color: {{ form.color.value|default:'#007bff' }}; color: white; font-size: 0.9rem;">
+                                    <i class="fas fa-tag me-1"></i>
+                                    <span id="name-preview">{{ form.name.value|default:'Nombre de la categoría' }}</span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'category_list' %}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-times me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>
+                                {% if category %}Actualizar{% else %}Crear{% endif %} Categoría
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const nameInput = document.getElementById('{{ form.name.id_for_label }}');
+    const colorInput = document.getElementById('{{ form.color.id_for_label }}');
+    const namePreview = document.getElementById('name-preview');
+    const colorPreview = document.getElementById('color-preview');
+
+    function updatePreview() {
+        const name = nameInput.value || 'Nombre de la categoría';
+        const color = colorInput.value || '#007bff';
+        
+        namePreview.textContent = name;
+        colorPreview.style.backgroundColor = color;
+    }
+
+    nameInput.addEventListener('input', updatePreview);
+    colorInput.addEventListener('input', updatePreview);
+});
+</script>
+{% endblock %}

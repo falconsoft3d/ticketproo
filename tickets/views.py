@@ -9,8 +9,8 @@ from django.db.models import Q
 from django.http import HttpResponse, Http404
 from django.conf import settings
 import os
-from .models import Ticket, TicketAttachment
-from .forms import TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, TicketAttachmentForm
+from .models import Ticket, TicketAttachment, Category, TicketComment
+from .forms import TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, TicketAttachmentForm, CategoryForm, UserTicketForm, UserTicketEditForm, TicketCommentForm
 from .utils import is_agent, is_regular_user, get_user_role, assign_user_to_group
 
 def home_view(request):
@@ -152,13 +152,16 @@ def ticket_list_view(request):
 def ticket_create_view(request):
     """Vista para crear un nuevo ticket"""
     # Usar formulario apropiado según el rol
-    FormClass = AgentTicketForm if is_agent(request.user) else TicketForm
+    FormClass = AgentTicketForm if is_agent(request.user) else UserTicketForm
     
     if request.method == 'POST':
         form = FormClass(request.POST)
         if form.is_valid():
             ticket = form.save(commit=False)
             ticket.created_by = request.user
+            # Los usuarios regulares siempre crean tickets con estado "open"
+            if not is_agent(request.user):
+                ticket.status = 'open'
             ticket.save()
             messages.success(request, 'Ticket creado exitosamente.')
             return redirect('ticket_detail', pk=ticket.pk)
@@ -190,6 +193,18 @@ def ticket_detail_view(request, pk):
         messages.success(request, f'Te has asignado el ticket #{ticket.pk}.')
         return redirect('ticket_detail', pk=pk)
     
+    # Formulario para agregar comentarios
+    comment_form = TicketCommentForm()
+    if request.method == 'POST' and 'add_comment' in request.POST:
+        comment_form = TicketCommentForm(request.POST)
+        if comment_form.is_valid():
+            comment = comment_form.save(commit=False)
+            comment.ticket = ticket
+            comment.user = request.user
+            comment.save()
+            messages.success(request, 'Comentario agregado exitosamente.')
+            return redirect('ticket_detail', pk=pk)
+    
     # Formulario para subir adjuntos
     attachment_form = TicketAttachmentForm()
     if request.method == 'POST' and 'upload_attachment' in request.POST:
@@ -204,8 +219,13 @@ def ticket_detail_view(request, pk):
             messages.success(request, 'Adjunto subido exitosamente.')
             return redirect('ticket_detail', pk=pk)
     
+    # Obtener comentarios del ticket
+    comments = ticket.comments.all().order_by('created_at')
+    
     context = {
         'ticket': ticket,
+        'comments': comments,
+        'comment_form': comment_form,
         'attachment_form': attachment_form,
         'is_agent': is_agent(request.user),
         'user_role': get_user_role(request.user),
@@ -218,12 +238,11 @@ def ticket_edit_view(request, pk):
     if is_agent(request.user):
         # Los agentes pueden editar cualquier ticket
         ticket = get_object_or_404(Ticket, pk=pk)
+        FormClass = AgentTicketForm
     else:
         # Los usuarios solo pueden editar sus propios tickets
         ticket = get_object_or_404(Ticket, pk=pk, created_by=request.user)
-    
-    # Usar formulario apropiado según el rol
-    FormClass = AgentTicketForm if is_agent(request.user) else TicketForm
+        FormClass = UserTicketEditForm
     
     if request.method == 'POST':
         form = FormClass(request.POST, instance=ticket)
@@ -434,3 +453,111 @@ def unassign_ticket_view(request, pk):
     ticket.save()
     messages.success(request, f'Ticket #{ticket.pk} desasignado exitosamente.')
     return redirect('ticket_detail', pk=pk)
+
+
+# ================================
+# VISTAS PARA GESTIÓN DE CATEGORÍAS
+# ================================
+
+@login_required
+@user_passes_test(is_agent)
+def category_list_view(request):
+    """Vista para listar todas las categorías (solo agentes)"""
+    categories = Category.objects.all().order_by('name')
+    
+    # Agregar contador de tickets por categoría
+    for category in categories:
+        category.ticket_count = category.tickets.count()
+    
+    context = {
+        'categories': categories,
+        'page_title': 'Gestión de Categorías'
+    }
+    return render(request, 'tickets/category_list.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def category_create_view(request):
+    """Vista para crear una nueva categoría (solo agentes)"""
+    if request.method == 'POST':
+        form = CategoryForm(request.POST)
+        if form.is_valid():
+            category = form.save()
+            messages.success(request, f'Categoría "{category.name}" creada exitosamente.')
+            return redirect('category_list')
+    else:
+        form = CategoryForm()
+    
+    context = {
+        'form': form,
+        'page_title': 'Crear Categoría',
+        'form_title': 'Nueva Categoría'
+    }
+    return render(request, 'tickets/category_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def category_edit_view(request, pk):
+    """Vista para editar una categoría existente (solo agentes)"""
+    category = get_object_or_404(Category, pk=pk)
+    
+    if request.method == 'POST':
+        form = CategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            category = form.save()
+            messages.success(request, f'Categoría "{category.name}" actualizada exitosamente.')
+            return redirect('category_list')
+    else:
+        form = CategoryForm(instance=category)
+    
+    context = {
+        'form': form,
+        'category': category,
+        'page_title': 'Editar Categoría',
+        'form_title': f'Editar: {category.name}'
+    }
+    return render(request, 'tickets/category_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def category_delete_view(request, pk):
+    """Vista para eliminar una categoría (solo agentes)"""
+    category = get_object_or_404(Category, pk=pk)
+    ticket_count = category.tickets.count()
+    
+    if request.method == 'POST':
+        category_name = category.name
+        category.delete()
+        messages.success(request, f'Categoría "{category_name}" eliminada exitosamente.')
+        return redirect('category_list')
+    
+    context = {
+        'category': category,
+        'ticket_count': ticket_count,
+        'page_title': 'Eliminar Categoría'
+    }
+    return render(request, 'tickets/category_delete.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def category_detail_view(request, pk):
+    """Vista para ver detalles de una categoría y sus tickets (solo agentes)"""
+    category = get_object_or_404(Category, pk=pk)
+    tickets = category.tickets.all().order_by('-created_at')
+    
+    # Paginación de tickets
+    paginator = Paginator(tickets, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'category': category,
+        'tickets': page_obj,
+        'ticket_count': tickets.count(),
+        'page_title': f'Categoría: {category.name}'
+    }
+    return render(request, 'tickets/category_detail.html', context)

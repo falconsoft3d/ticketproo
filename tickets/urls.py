@@ -13,6 +13,13 @@ urlpatterns = [
     path('tickets/<int:pk>/delete/', views.ticket_delete_view, name='ticket_delete'),
     path('tickets/<int:pk>/unassign/', views.unassign_ticket_view, name='unassign_ticket'),
     
+    # URLs de categorías (solo para agentes)
+    path('categories/', views.category_list_view, name='category_list'),
+    path('categories/create/', views.category_create_view, name='category_create'),
+    path('categories/<int:pk>/', views.category_detail_view, name='category_detail'),
+    path('categories/<int:pk>/edit/', views.category_edit_view, name='category_edit'),
+    path('categories/<int:pk>/delete/', views.category_delete_view, name='category_delete'),
+    
     # URLs de adjuntos
     path('attachments/<int:attachment_id>/download/', views.download_attachment_view, name='download_attachment'),
     path('attachments/<int:attachment_id>/delete/', views.delete_attachment_view, name='delete_attachment'),

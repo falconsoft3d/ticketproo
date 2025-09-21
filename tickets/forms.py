@@ -1,12 +1,52 @@
 from django import forms
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.forms import UserCreationForm
-from .models import Ticket, TicketAttachment
+from .models import Ticket, TicketAttachment, Category, TicketComment
+
+class CategoryForm(forms.ModelForm):
+    """Formulario para crear y editar categorías"""
+    
+    class Meta:
+        model = Category
+        fields = ['name', 'description', 'color', 'is_active']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre de la categoría'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción de la categoría (opcional)'
+            }),
+            'color': forms.TextInput(attrs={
+                'class': 'form-control',
+                'type': 'color',
+                'value': '#007bff'
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'name': 'Nombre',
+            'description': 'Descripción',
+            'color': 'Color',
+            'is_active': 'Activa',
+        }
+
 
 class TicketForm(forms.ModelForm):
+    """Formulario básico para crear/editar tickets (usado por agentes)"""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Filtrar solo categorías activas
+        self.fields['category'].queryset = Category.objects.filter(is_active=True)
+        self.fields['category'].empty_label = "Seleccionar categoría"
+
     class Meta:
         model = Ticket
-        fields = ['title', 'description', 'priority', 'status']
+        fields = ['title', 'description', 'category', 'priority', 'status', 'hours']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -17,22 +57,105 @@ class TicketForm(forms.ModelForm):
                 'rows': 5,
                 'placeholder': 'Describe detalladamente el problema o solicitud'
             }),
+            'category': forms.Select(attrs={
+                'class': 'form-select'
+            }),
             'priority': forms.Select(attrs={
                 'class': 'form-select'
             }),
             'status': forms.Select(attrs={
                 'class': 'form-select'
             }),
+            'hours': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: 2.5',
+                'step': '0.5',
+                'min': '0'
+            }),
         }
         labels = {
             'title': 'Título',
             'description': 'Descripción',
+            'category': 'Categoría',
             'priority': 'Prioridad',
             'status': 'Estado',
+            'hours': 'Horas estimadas/trabajadas',
         }
 
+
+class UserTicketForm(forms.ModelForm):
+    """Formulario simplificado para usuarios regulares al crear tickets"""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Filtrar solo categorías activas
+        self.fields['category'].queryset = Category.objects.filter(is_active=True)
+        self.fields['category'].empty_label = "Seleccionar categoría"
+
+    class Meta:
+        model = Ticket
+        fields = ['title', 'description', 'category', 'priority']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ingresa el título del ticket'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 5,
+                'placeholder': 'Describe detalladamente el problema o solicitud'
+            }),
+            'category': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'priority': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+        }
+        labels = {
+            'title': 'Título',
+            'description': 'Descripción',
+            'category': 'Categoría',
+            'priority': 'Prioridad',
+        }
+
+class UserTicketEditForm(forms.ModelForm):
+    """Formulario para editar tickets por usuarios regulares"""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Filtrar solo categorías activas
+        self.fields['category'].queryset = Category.objects.filter(is_active=True)
+        self.fields['category'].empty_label = "Seleccionar categoría"
+
+    class Meta:
+        model = Ticket
+        fields = ['title', 'description', 'category', 'priority']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ingresa el título del ticket'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 5,
+                'placeholder': 'Describe detalladamente el problema o solicitud'
+            }),
+            'category': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'priority': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+        }
+        labels = {
+            'title': 'Título',
+            'description': 'Descripción',
+            'category': 'Categoría',
+            'priority': 'Prioridad',
+        }
+
+
 class AgentTicketForm(forms.ModelForm):
-    """Formulario extendido para agentes con campo de asignación"""
+    """Formulario extendido para agentes con campo de asignación y horas"""
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -43,10 +166,14 @@ class AgentTicketForm(forms.ModelForm):
             self.fields['assigned_to'].queryset = agentes
         except Group.DoesNotExist:
             self.fields['assigned_to'].queryset = User.objects.none()
+        
+        # Filtrar solo categorías activas
+        self.fields['category'].queryset = Category.objects.filter(is_active=True)
+        self.fields['category'].empty_label = "Seleccionar categoría"
     
     class Meta:
         model = Ticket
-        fields = ['title', 'description', 'priority', 'status', 'assigned_to']
+        fields = ['title', 'description', 'category', 'priority', 'status', 'assigned_to', 'hours']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -57,6 +184,9 @@ class AgentTicketForm(forms.ModelForm):
                 'rows': 5,
                 'placeholder': 'Describe detalladamente el problema o solicitud'
             }),
+            'category': forms.Select(attrs={
+                'class': 'form-select'
+            }),
             'priority': forms.Select(attrs={
                 'class': 'form-select'
             }),
@@ -66,13 +196,21 @@ class AgentTicketForm(forms.ModelForm):
             'assigned_to': forms.Select(attrs={
                 'class': 'form-select'
             }),
+            'hours': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: 2.5',
+                'step': '0.5',
+                'min': '0'
+            }),
         }
         labels = {
             'title': 'Título',
             'description': 'Descripción',
+            'category': 'Categoría',
             'priority': 'Prioridad',
             'status': 'Estado',
             'assigned_to': 'Asignar a',
+            'hours': 'Horas estimadas/trabajadas',
         }
 
 class UserManagementForm(UserCreationForm):
@@ -239,11 +377,17 @@ class TicketAttachmentForm(forms.ModelForm):
 
 
 class TicketWithAttachmentsForm(forms.ModelForm):
-    """Formulario combinado para crear tickets con adjuntos"""
+    """Formulario combinado para crear tickets con adjuntos (usuarios regulares)"""
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Filtrar solo categorías activas
+        self.fields['category'].queryset = Category.objects.filter(is_active=True)
+        self.fields['category'].empty_label = "Seleccionar categoría"
     
     class Meta:
         model = Ticket
-        fields = ['title', 'description', 'priority']
+        fields = ['title', 'description', 'category', 'priority']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -254,6 +398,9 @@ class TicketWithAttachmentsForm(forms.ModelForm):
                 'rows': 5,
                 'placeholder': 'Describe detalladamente el problema o solicitud'
             }),
+            'category': forms.Select(attrs={
+                'class': 'form-select'
+            }),
             'priority': forms.Select(attrs={
                 'class': 'form-select'
             }),
@@ -261,5 +408,36 @@ class TicketWithAttachmentsForm(forms.ModelForm):
         labels = {
             'title': 'Título',
             'description': 'Descripción',
+            'category': 'Categoría',
             'priority': 'Prioridad',
         }
+
+
+
+class TicketCommentForm(forms.ModelForm):
+    """Formulario para agregar comentarios a tickets"""
+    
+    class Meta:
+        model = TicketComment
+        fields = ['content']
+        widgets = {
+            'content': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Escribe tu comentario aquí...',
+                'maxlength': '1000'
+            }),
+        }
+        labels = {
+            'content': 'Nuevo comentario',
+        }
+    
+    def clean_content(self):
+        content = self.cleaned_data.get('content')
+        if content:
+            content = content.strip()
+            if len(content) < 10:
+                raise forms.ValidationError('El comentario debe tener al menos 10 caracteres.')
+            if len(content) > 1000:
+                raise forms.ValidationError('El comentario no puede exceder 1000 caracteres.')
+        return content

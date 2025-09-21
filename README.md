@@ -183,12 +183,17 @@ python manage.py assign_admin_agent
 
 ## 📈 Próximas Características
 
-- [ ] Notificaciones por email
-- [ ] API REST para integración
-- [ ] Sistema de comentarios en tickets
-- [ ] Reportes y analíticas avanzadas
-- [ ] Soporte para múltiples idiomas
-- [ ] Sistema de etiquetas/categorías
+- [x] Agregar Categorias de Tickets
+- [x] Crear Secuencia de Tickets
+- [x] Mensajes privados entre agentes y usuarios
+- [ ] Permitir compartir un ticket publico mediante un enlace unico.
+- [ ] Permitir entrar al home agentes y usuarios logeados.
+- [ ] Agregar paginacion a la lista de tickets
+- [ ] Permitir actualizar el perfil de usuario
+- [ ] Blog de noticias y actualizaciones
+- [ ] Permitir comentarios en tickets
+- [ ] Crear un api que permita gestionar los tickets
+- [ ] Que el agente pueda registrar la hora de inicio y fin de atencion del trabajo, como el parte de horas.
 
 ## 🤝 Contribución
 
@@ -205,8 +210,8 @@ Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más det
 ## 📞 Soporte
 
 Para soporte técnico o preguntas:
-- 📧 Email: soporte@ticketproo.com
-- 📱 Teléfono: +1-234-567-8900
+- 📧 Email: mfalconsoft@gmail.com
+- 📱 Teléfono: +34-662-47-0645
 - 🌐 Web: https://ticketproo.com
 
 ---

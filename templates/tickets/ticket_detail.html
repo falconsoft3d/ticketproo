@@ -7,10 +7,15 @@
     <div class="col-md-8">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h3 class="mb-0">
-                    <i class="bi bi-ticket-perforated"></i> Ticket #{{ ticket.id }}
-                </h3>
+                    <h1>
+        <i class="bi bi-card-text"></i> Ticket #{{ ticket.ticket_number }}
+    </h1>
                 <div>
+                    {% if ticket.category %}
+                        <span class="badge me-2" style="background-color: {{ ticket.category.color }}; color: white;">
+                            <i class="fas fa-tag me-1"></i>{{ ticket.category.name }}
+                        </span>
+                    {% endif %}
                     <span class="badge {{ ticket.get_priority_badge_class }} me-2">
                         {{ ticket.get_priority_display }}
                     </span>
@@ -38,6 +43,22 @@
                     </div>
                     
                     <div class="col-md-6 mb-3">
+                        <h6 class="text-muted mb-2">Categoría:</h6>
+                        <p class="mb-0">
+                            {% if ticket.category %}
+                                <span class="badge" style="background-color: {{ ticket.category.color }}; color: white;">
+                                    <i class="fas fa-tag me-1"></i>{{ ticket.category.name }}
+                                </span>
+                                {% if ticket.category.description %}
+                                    <br><small class="text-muted">{{ ticket.category.description }}</small>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">Sin categoría asignada</span>
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
                         <h6 class="text-muted mb-2">Fecha de creación:</h6>
                         <p class="mb-0">
                             <i class="bi bi-calendar"></i> {{ ticket.created_at|date:"d/m/Y H:i" }}
@@ -55,12 +76,93 @@
                         </p>
                     </div>
                     
+                    {% if ticket.hours %}
+                    <div class="col-md-6 mb-3">
+                        <h6 class="text-muted mb-2">Horas estimadas/trabajadas:</h6>
+                        <p class="mb-0">
+                            <i class="bi bi-clock-history"></i> {{ ticket.hours }} horas
+                        </p>
+                    </div>
+                    {% endif %}
+                    
                     <div class="col-md-6 mb-3">
                         <h6 class="text-muted mb-2">Última actualización:</h6>
                         <p class="mb-0">
                             <i class="bi bi-clock"></i> {{ ticket.updated_at|date:"d/m/Y H:i" }}
                         </p>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección de Comentarios -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-chat-dots"></i> Comentarios ({{ comments|length }})
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Comentarios existentes -->
+                {% if comments %}
+                    <div class="mb-4">
+                        {% for comment in comments %}
+                        <div class="border rounded p-3 mb-3 {% if comment.user == user %}bg-light{% endif %}">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <strong>
+                                        <i class="bi bi-person-fill"></i>
+                                        {{ comment.user.get_full_name|default:comment.user.username }}
+                                    </strong>
+                                    {% if comment.user.groups.all %}
+                                        {% for group in comment.user.groups.all %}
+                                            <span class="badge bg-secondary ms-1">{{ group.name }}</span>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                                <small class="text-muted">
+                                    <i class="bi bi-clock"></i>
+                                    {{ comment.created_at|date:"d/m/Y H:i" }}
+                                    {% if comment.updated_at != comment.created_at %}
+                                        (editado)
+                                    {% endif %}
+                                </small>
+                            </div>
+                            <div class="comment-content">
+                                {{ comment.content|linebreaks }}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-3">
+                        <i class="bi bi-chat display-4"></i>
+                        <p class="mt-2">No hay comentarios aún. ¡Sé el primero en comentar!</p>
+                    </div>
+                {% endif %}
+                
+                <!-- Formulario para nuevo comentario -->
+                <div class="border-top pt-3">
+                    <h6 class="mb-3">Agregar comentario</h6>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            {{ comment_form.content }}
+                            {% if comment_form.content.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in comment_form.content.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Mínimo 10 caracteres, máximo 1000 caracteres.</div>
+                        </div>
+                        <div class="text-end">
+                            <button type="submit" name="add_comment" class="btn btn-primary">
+                                <i class="bi bi-send"></i> Enviar Comentario
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
