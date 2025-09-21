@@ -11,13 +11,13 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h2 class="h3 mb-1">
-                        <i class="bi bi-journal-text text-primary"></i>
-                        Notas Internas
+                        <i class="bi bi-link-45deg text-primary"></i>
+                        Gestión de URLs
                     </h2>
-                    <p class="text-muted mb-0">Gestión de notas e interacciones con clientes</p>
+                    <p class="text-muted mb-0">Administración de URLs y credenciales de acceso</p>
                 </div>
-                <a href="{% url 'note_create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Nueva Nota
+                <a href="{% url 'url_manager_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Nueva URL
                 </a>
             </div>
 
@@ -28,25 +28,19 @@
                         <div class="col-md-4">
                             <label for="search" class="form-label">Buscar</label>
                             <input type="text" class="form-control" id="search" name="search" 
-                                   value="{{ search_query }}" placeholder="Título, descripción o usuario...">
+                                   value="{{ search_query }}" placeholder="Título, URL, usuario o descripción...">
                         </div>
                         <div class="col-md-3">
-                            <label for="user" class="form-label">Usuario</label>
-                            <select class="form-select" id="user" name="user">
-                                <option value="">Todos los usuarios</option>
-                                {% for user in users_with_notes %}
-                                    <option value="{{ user.id }}" {% if user.id|stringformat:"s" == user_filter %}selected{% endif %}>
-                                        {{ user.get_full_name|default:user.username }}
-                                    </option>
-                                {% endfor %}
-                            </select>
+                            <label for="category" class="form-label">Categoría</label>
+                            <input type="text" class="form-control" id="category" name="category" 
+                                   value="{{ category_filter }}" placeholder="Filtrar por categoría...">
                         </div>
                         <div class="col-md-3">
-                            <label for="privacy" class="form-label">Privacidad</label>
-                            <select class="form-select" id="privacy" name="privacy">
-                                <option value="">Todas las notas</option>
-                                <option value="private" {% if privacy_filter == 'private' %}selected{% endif %}>Solo privadas</option>
-                                <option value="public" {% if privacy_filter == 'public' %}selected{% endif %}>Solo públicas</option>
+                            <label for="is_active" class="form-label">Estado</label>
+                            <select class="form-select" id="is_active" name="is_active">
+                                <option value="">Todas</option>
+                                <option value="True" {% if status_filter == 'True' %}selected{% endif %}>Solo activas</option>
+                                <option value="False" {% if status_filter == 'False' %}selected{% endif %}>Solo inactivas</option>
                             </select>
                         </div>
                         <div class="col-md-2">
@@ -61,78 +55,102 @@
                 </div>
             </div>
 
-            <!-- Lista de notas -->
+            <!-- Lista de URLs -->
             <div class="card">
                 <div class="card-body p-0">
                     {% if page_obj %}
                         <div class="list-group list-group-flush">
-                            {% for note in page_obj %}
+                            {% for url in page_obj %}
                                 <div class="list-group-item list-group-item-action border-0 py-3">
                                     <div class="d-flex w-100 justify-content-between align-items-start">
                                         <div class="flex-grow-1">
                                             <div class="d-flex align-items-center mb-2">
                                                 <h6 class="mb-0 me-3">
-                                                    <a href="{% url 'note_detail' note.id %}" 
+                                                    <a href="{% url 'url_manager_detail' url.id %}" 
                                                        class="text-decoration-none text-dark fw-semibold">
-                                                        {{ note.title }}
+                                                        {{ url.title }}
                                                     </a>
                                                 </h6>
-                                                {% if note.is_private %}
-                                                    <span class="badge bg-warning text-dark me-2">
-                                                        <i class="bi bi-lock"></i> Privada
+                                                {% if url.is_active %}
+                                                    <span class="badge bg-success me-2">
+                                                        <i class="bi bi-check-circle"></i> Activo
                                                     </span>
                                                 {% else %}
-                                                    <span class="badge bg-info me-2">
-                                                        <i class="bi bi-unlock"></i> Pública
+                                                    <span class="badge bg-secondary me-2">
+                                                        <i class="bi bi-x-circle"></i> Inactivo
                                                     </span>
                                                 {% endif %}
-                                                <span class="badge bg-light text-dark border">
-                                                    <i class="bi bi-hash"></i>{{ note.id|stringformat:"01-003" }}
-                                                </span>
+                                                {% if url.category %}
+                                                    <span class="badge bg-info me-2">
+                                                        <i class="bi bi-tag"></i> {{ url.category }}
+                                                    </span>
+                                                {% endif %}
                                             </div>
                                             
-                                            <p class="mb-2 text-muted">
-                                                {{ note.description|truncatechars:120 }}
-                                            </p>
+                                            <div class="row g-0 mb-2">
+                                                <div class="col-12">
+                                                    <p class="mb-1 text-muted">
+                                                        <i class="bi bi-link-45deg text-primary me-1"></i>
+                                                        <a href="{{ url.url }}" target="_blank" class="text-decoration-none">
+                                                            {{ url.url|truncatechars:80 }}
+                                                        </a>
+                                                        <i class="bi bi-box-arrow-up-right ms-1 text-muted small"></i>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            
+                                            {% if url.description %}
+                                            <div class="row g-0 mb-2">
+                                                <div class="col-12">
+                                                    <p class="mb-0 text-muted small">
+                                                        {{ url.description|truncatechars:120 }}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            {% endif %}
                                             
                                             <div class="row g-0">
                                                 <div class="col-auto me-4">
                                                     <small class="text-muted">
-                                                        <i class="bi bi-person-circle text-primary me-1"></i>
-                                                        <strong>{{ note.user.get_full_name|default:note.user.username }}</strong>
+                                                        <i class="bi bi-person text-primary me-1"></i>
+                                                        <strong>{{ url.username }}</strong>
                                                     </small>
                                                 </div>
                                                 <div class="col-auto me-4">
                                                     <small class="text-muted">
                                                         <i class="bi bi-person-gear text-success me-1"></i>
-                                                        Por {{ note.created_by.get_full_name|default:note.created_by.username }}
+                                                        Por {{ url.created_by.get_full_name|default:url.created_by.username }}
                                                     </small>
                                                 </div>
-                                                {% if note.get_related_tickets_count > 0 %}
                                                 <div class="col-auto me-4">
                                                     <small class="text-muted">
-                                                        <i class="bi bi-ticket-perforated text-info me-1"></i>
-                                                        {{ note.get_tickets_summary }}
+                                                        <i class="bi bi-clock me-1"></i>
+                                                        {{ url.created_at|timesince }} atrás
+                                                    </small>
+                                                </div>
+                                                {% if url.last_accessed %}
+                                                <div class="col-auto">
+                                                    <small class="text-muted">
+                                                        <i class="bi bi-eye me-1"></i>
+                                                        Último acceso: {{ url.last_accessed|timesince }} atrás
                                                     </small>
                                                 </div>
                                                 {% endif %}
-                                                <div class="col-auto">
-                                                    <small class="text-muted">
-                                                        <i class="bi bi-clock me-1"></i>
-                                                        {{ note.created_at|timesince }} atrás
-                                                    </small>
-                                                </div>
                                             </div>
                                         </div>
                                         
                                         <div class="d-flex flex-column gap-2 ms-3">
-                                            <a href="{% url 'note_detail' note.id %}" 
+                                            <a href="{% url 'url_manager_detail' url.id %}" 
                                                class="btn btn-sm btn-outline-primary">
                                                 <i class="bi bi-eye"></i> Ver
                                             </a>
-                                            <a href="{% url 'note_edit' note.id %}" 
+                                            <a href="{% url 'url_manager_edit' url.id %}" 
                                                class="btn btn-sm btn-outline-secondary">
                                                 <i class="bi bi-pencil"></i> Editar
+                                            </a>
+                                            <a href="{% url 'url_manager_delete' url.id %}" 
+                                               class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-trash"></i> Eliminar
                                             </a>
                                         </div>
                                     </div>
@@ -143,16 +161,16 @@
                         <!-- Paginación -->
                         {% if page_obj.has_other_pages %}
                             <div class="card-footer bg-white border-0">
-                                <nav aria-label="Paginación de notas">
+                                <nav aria-label="Paginación de URLs">
                                     <ul class="pagination justify-content-center mb-0">
                                         {% if page_obj.has_previous %}
                                             <li class="page-item">
-                                                <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if privacy_filter %}&privacy={{ privacy_filter }}{% endif %}">
+                                                <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if status_filter %}&is_active={{ status_filter }}{% endif %}">
                                                     Primera
                                                 </a>
                                             </li>
                                             <li class="page-item">
-                                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if privacy_filter %}&privacy={{ privacy_filter }}{% endif %}">
+                                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if status_filter %}&is_active={{ status_filter }}{% endif %}">
                                                     Anterior
                                                 </a>
                                             </li>
@@ -166,12 +184,12 @@
                                         
                                         {% if page_obj.has_next %}
                                             <li class="page-item">
-                                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if privacy_filter %}&privacy={{ privacy_filter }}{% endif %}">
+                                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if status_filter %}&is_active={{ status_filter }}{% endif %}">
                                                     Siguiente
                                                 </a>
                                             </li>
                                             <li class="page-item">
-                                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if privacy_filter %}&privacy={{ privacy_filter }}{% endif %}">
+                                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if status_filter %}&is_active={{ status_filter }}{% endif %}">
                                                     Última
                                                 </a>
                                             </li>
@@ -182,17 +200,17 @@
                         {% endif %}
                     {% else %}
                         <div class="text-center py-5">
-                            <i class="bi bi-journal-x text-muted" style="font-size: 4rem;"></i>
-                            <h5 class="text-muted mt-3">No hay notas disponibles</h5>
+                            <i class="bi bi-link-45deg text-muted" style="font-size: 4rem;"></i>
+                            <h5 class="text-muted mt-3">No hay URLs disponibles</h5>
                             <p class="text-muted">
-                                {% if search_query or user_filter or privacy_filter %}
-                                    No se encontraron notas que coincidan con los filtros aplicados.
+                                {% if search_query or category_filter or status_filter %}
+                                    No se encontraron URLs que coincidan con los filtros aplicados.
                                 {% else %}
-                                    Aún no se han creado notas internas. 
+                                    Aún no se han registrado URLs. 
                                 {% endif %}
                             </p>
-                            <a href="{% url 'note_create' %}" class="btn btn-primary">
-                                <i class="bi bi-plus-circle"></i> Crear Primera Nota
+                            <a href="{% url 'url_manager_create' %}" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> Registrar Primera URL
                             </a>
                         </div>
                     {% endif %}

@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <h2 class="h3 mb-1">
+                    <i class="bi bi-exclamation-triangle text-danger"></i>
+                    {{ page_title }}
+                </h2>
+                <p class="text-muted mb-0">Esta acción no se puede deshacer</p>
+            </div>
+
+            <!-- Información de la URL a eliminar -->
+            <div class="card mb-4">
+                <div class="card-header bg-danger bg-opacity-10">
+                    <h5 class="mb-0 text-danger">
+                        <i class="bi bi-link-45deg"></i>
+                        URL a Eliminar
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Título:</label>
+                        <p class="mb-0">{{ url_manager.title }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">URL:</label>
+                        <p class="mb-0">{{ url_manager.url }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Usuario:</label>
+                        <p class="mb-0">{{ url_manager.username }}</p>
+                    </div>
+                    {% if url_manager.category %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Categoría:</label>
+                        <p class="mb-0">{{ url_manager.category }}</p>
+                    </div>
+                    {% endif %}
+                    {% if url_manager.description %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Descripción:</label>
+                        <p class="mb-0">{{ url_manager.description|truncatechars:100 }}</p>
+                    </div>
+                    {% endif %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Creado por:</label>
+                                <p class="mb-0">{{ url_manager.created_by.get_full_name|default:url_manager.created_by.username }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Fecha de creación:</label>
+                                <p class="mb-0">{{ url_manager.created_at|date:"d/m/Y H:i" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advertencia -->
+            <div class="alert alert-danger" role="alert">
+                <h6 class="alert-heading">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    ¡Advertencia!
+                </h6>
+                <p class="mb-0">
+                    Esta acción eliminará permanentemente la URL y todas sus credenciales asociadas. 
+                    <strong>Esta operación no se puede deshacer.</strong>
+                </p>
+            </div>
+
+            <!-- Formulario de confirmación -->
+            <div class="card">
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            <p class="text-center text-muted">
+                                ¿Está seguro de que desea eliminar esta URL?
+                            </p>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'url_manager_detail' url_manager.id %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Sí, Eliminar URL
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Enlaces adicionales -->
+            <div class="text-center mt-4">
+                <a href="{% url 'url_manager_list' %}" class="text-muted text-decoration-none">
+                    <i class="bi bi-arrow-left"></i> Volver a la Lista de URLs
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="h3 mb-1">
+                        <i class="bi bi-link-45deg text-primary"></i>
+                        {{ page_title }}
+                    </h2>
+                    <p class="text-muted mb-0">
+                        {% if url_manager %}
+                            Actualizar información de la URL y credenciales
+                        {% else %}
+                            Registrar nueva URL con credenciales seguras
+                        {% endif %}
+                    </p>
+                </div>
+                <a href="{% url 'url_manager_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver a Lista
+                </a>
+            </div>
+
+            <!-- Formulario -->
+            <div class="card">
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Información básica -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="border-bottom pb-2 mb-3">
+                                    <i class="bi bi-info-circle text-primary"></i>
+                                    Información Básica
+                                </h5>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.title.id_for_label }}" class="form-label">{{ form.title.label }}</label>
+                                    {{ form.title }}
+                                    {% if form.title.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.title.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">{{ form.title.help_text }}</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.category.id_for_label }}" class="form-label">{{ form.category.label }}</label>
+                                    {{ form.category }}
+                                    {% if form.category.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.category.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">{{ form.category.help_text }}</small>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label for="{{ form.url.id_for_label }}" class="form-label">{{ form.url.label }}</label>
+                                    {{ form.url }}
+                                    {% if form.url.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.url.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">{{ form.url.help_text }}</small>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
+                                    {{ form.description }}
+                                    {% if form.description.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.description.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">{{ form.description.help_text }}</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Credenciales de acceso -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="border-bottom pb-2 mb-3">
+                                    <i class="bi bi-shield-lock text-warning"></i>
+                                    Credenciales de Acceso
+                                </h5>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.username.id_for_label }}" class="form-label">{{ form.username.label }}</label>
+                                    {{ form.username }}
+                                    {% if form.username.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.username.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">{{ form.username.help_text }}</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.password.id_for_label }}" class="form-label">{{ form.password.label }}</label>
+                                    <div class="input-group">
+                                        {{ form.password }}
+                                        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                            <i class="bi bi-eye" id="passwordIcon"></i>
+                                        </button>
+                                    </div>
+                                    {% if form.password.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.password.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">{{ form.password.help_text }}</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Estado -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="border-bottom pb-2 mb-3">
+                                    <i class="bi bi-gear text-secondary"></i>
+                                    Configuración
+                                </h5>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        {{ form.is_active }}
+                                        <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                            {{ form.is_active.label }}
+                                        </label>
+                                    </div>
+                                    {% if form.is_active.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.is_active.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">{{ form.is_active.help_text }}</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'url_manager_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> {{ action }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información de seguridad -->
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-shield-check text-success"></i>
+                        Información de Seguridad
+                    </h6>
+                    <ul class="list-unstyled mb-0 small text-muted">
+                        <li><i class="bi bi-check-circle text-success me-2"></i>Las contraseñas se almacenan encriptadas en la base de datos</li>
+                        <li><i class="bi bi-check-circle text-success me-2"></i>Solo los agentes pueden acceder a esta información</li>
+                        <li><i class="bi bi-check-circle text-success me-2"></i>Se registra el último acceso a cada URL</li>
+                        <li><i class="bi bi-check-circle text-success me-2"></i>Todas las acciones quedan registradas en el sistema</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle password visibility
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordField = document.getElementById('{{ form.password.id_for_label }}');
+    const passwordIcon = document.getElementById('passwordIcon');
+    
+    if (togglePassword && passwordField && passwordIcon) {
+        togglePassword.addEventListener('click', function() {
+            const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordField.setAttribute('type', type);
+            
+            if (type === 'password') {
+                passwordIcon.className = 'bi bi-eye';
+            } else {
+                passwordIcon.className = 'bi bi-eye-slash';
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

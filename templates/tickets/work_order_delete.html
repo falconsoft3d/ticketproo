@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2>
+                <i class="bi bi-trash me-2 text-danger"></i>{{ page_title }}
+            </h2>
+        </div>
+        <div class="col-md-6 text-end">
+            <a href="{% url 'work_order_detail' work_order.pk %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Volver a la orden
+            </a>
+        </div>
+    </div>
+
+    <!-- Confirmación de eliminación -->
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-exclamation-triangle me-1"></i>Confirmar Eliminación
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Advertencia -->
+                    <div class="alert alert-warning" role="alert">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>¡Atención!</strong> Esta acción no se puede deshacer.
+                    </div>
+
+                    <!-- Información de la orden -->
+                    <h6>¿Estás seguro de que quieres eliminar esta orden de trabajo?</h6>
+                    
+                    <div class="card mt-3">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <h6 class="card-title">{{ work_order.order_number }}</h6>
+                                    <h5 class="text-primary">{{ work_order.title }}</h5>
+                                    
+                                    <div class="row mt-3">
+                                        <div class="col-md-6">
+                                            <small class="text-muted">Empresa:</small><br>
+                                            {% if work_order.company %}
+                                                <span class="badge rounded-pill" 
+                                                      style="background-color: {{ work_order.company.color }}; color: white;">
+                                                    {{ work_order.company.name }}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">Sin empresa</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <small class="text-muted">Estado:</small><br>
+                                            <span class="badge {{ work_order.get_status_badge_class }}">
+                                                {{ work_order.get_status_display }}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div class="row mt-2">
+                                        <div class="col-md-6">
+                                            <small class="text-muted">Prioridad:</small><br>
+                                            <span class="badge {{ work_order.get_priority_badge_class }}">
+                                                {{ work_order.get_priority_display }}
+                                            </span>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <small class="text-muted">Fecha de entrega:</small><br>
+                                            {{ work_order.due_date|date:"d/m/Y" }}
+                                        </div>
+                                    </div>
+
+                                    {% if work_order.assigned_to %}
+                                    <div class="row mt-2">
+                                        <div class="col-md-12">
+                                            <small class="text-muted">Asignado a:</small><br>
+                                            <i class="bi bi-person me-1"></i>
+                                            {{ work_order.assigned_to.get_full_name|default:work_order.assigned_to.username }}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    {% if work_order.description %}
+                                    <div class="row mt-2">
+                                        <div class="col-md-12">
+                                            <small class="text-muted">Descripción:</small><br>
+                                            <div class="bg-light p-2 rounded">
+                                                {{ work_order.description|truncatechars:200 }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Información adicional -->
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <strong>Creado:</strong> {{ work_order.created_at|date:"d/m/Y H:i" }} por 
+                            {{ work_order.created_by.get_full_name|default:work_order.created_by.username }}
+                        </small>
+                    </div>
+
+                    {% if work_order.is_public %}
+                    <div class="alert alert-info mt-3" role="alert">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Nota:</strong> Esta orden es pública y tiene un enlace compartido que dejará de funcionar.
+                    </div>
+                    {% endif %}
+
+                    <!-- Formulario de confirmación -->
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'work_order_detail' work_order.pk %}" class="btn btn-secondary me-md-2">
+                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash me-1"></i>Sí, eliminar orden
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Prevenir envío accidental del formulario
+document.querySelector('form').addEventListener('submit', function(e) {
+    if (!confirm('¿Estás absolutamente seguro de que quieres eliminar esta orden de trabajo? Esta acción no se puede deshacer.')) {
+        e.preventDefault();
+    }
+});
+</script>
+{% endblock %}

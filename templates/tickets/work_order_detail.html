@@ -1,0 +1,438 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2>
+                <i class="bi bi-clipboard-check me-2"></i>{{ work_order.order_number }}
+            </h2>
+            <p class="text-muted mb-0">{{ work_order.title }}</p>
+        </div>
+        <div class="col-md-6 text-end">
+            <div class="btn-group me-2" role="group">
+                <!-- Solo los agentes pueden editar/eliminar -->
+                {% for group in user.groups.all %}
+                    {% if group.name == 'Agentes' %}
+                        <a href="{% url 'work_order_edit' work_order.pk %}" class="btn btn-outline-primary">
+                            <i class="bi bi-pencil me-1"></i>Editar
+                        </a>
+                        {% if work_order.status == 'draft' %}
+                            <a href="{% url 'work_order_delete' work_order.pk %}" class="btn btn-outline-danger">
+                                <i class="bi bi-trash me-1"></i>Eliminar
+                            </a>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <a href="{% url 'work_order_list' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Volver a la lista
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información principal -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-info-circle me-1"></i>Información de la Orden
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Estado y acciones rápidas -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6>Estado actual</h6>
+                            <span class="badge {{ work_order.get_status_badge_class }} fs-6" id="current-status">
+                                {{ work_order.get_status_display }}
+                            </span>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Cambiar estado</h6>
+                            <div class="btn-group" role="group">
+                                {% if work_order.status != 'draft' %}
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" 
+                                            onclick="changeStatus('draft')">
+                                        Borrador
+                                    </button>
+                                {% endif %}
+                                {% if work_order.status != 'accepted' %}
+                                    <button type="button" class="btn btn-sm btn-outline-primary" 
+                                            onclick="changeStatus('accepted')">
+                                        Aceptar
+                                    </button>
+                                {% endif %}
+                                {% if work_order.status != 'finished' %}
+                                    <button type="button" class="btn btn-sm btn-outline-success" 
+                                            onclick="changeStatus('finished')">
+                                        Terminar
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Descripción -->
+                    <div class="mb-4">
+                        <h6>Descripción del trabajo</h6>
+                        <div class="bg-light p-3 rounded">
+                            {{ work_order.description|linebreaks }}
+                        </div>
+                    </div>
+
+                    <!-- Información de fechas -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Fecha de entrega</h6>
+                            <p class="mb-1">
+                                <i class="bi bi-calendar-event me-1"></i>
+                                {{ work_order.due_date|date:"d/m/Y" }}
+                                {% if work_order.is_overdue %}
+                                    <span class="badge bg-danger ms-2">Vencida</span>
+                                {% elif work_order.days_until_due <= 3 and work_order.status != 'finished' %}
+                                    <span class="badge bg-warning ms-2">Próxima a vencer</span>
+                                {% endif %}
+                            </p>
+                            {% if work_order.days_until_due %}
+                                <small class="text-muted">
+                                    {% if work_order.days_until_due > 0 %}
+                                        Faltan {{ work_order.days_until_due }} día{{ work_order.days_until_due|pluralize }}
+                                    {% elif work_order.days_until_due == 0 %}
+                                        Vence hoy
+                                    {% else %}
+                                        Vencida hace {{ work_order.days_until_due|add:"-1" }} día{{ work_order.days_until_due|add:"-1"|pluralize }}
+                                    {% endif %}
+                                </small>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {% if work_order.estimated_hours %}
+                                <h6>Horas estimadas</h6>
+                                <p class="mb-1">
+                                    <i class="bi bi-clock me-1"></i>
+                                    {{ work_order.estimated_hours }} hora{{ work_order.estimated_hours|pluralize }}
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if work_order.amount %}
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <h6>Importe</h6>
+                            <p class="mb-1">
+                                <i class="bi bi-currency-dollar me-1"></i>
+                                <strong class="text-success">{{ work_order.get_amount_display }}</strong>
+                            </p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Historial de cambios (futuro) -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-clock-history me-1"></i>Actividad
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Orden creada</h6>
+                                <p class="text-muted mb-0">
+                                    <small>
+                                        {{ work_order.created_at|date:"d/m/Y H:i" }} por 
+                                        {{ work_order.created_by.get_full_name|default:work_order.created_by.username }}
+                                    </small>
+                                </p>
+                            </div>
+                        </div>
+                        {% if work_order.status == 'finished' and work_order.completed_at %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-success"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Orden completada</h6>
+                                <p class="text-muted mb-0">
+                                    <small>{{ work_order.completed_at|date:"d/m/Y H:i" }}</small>
+                                </p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Adjuntos -->
+            {% if attachments %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-paperclip me-1"></i>Adjuntos ({{ attachments.count }})
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for attachment in attachments %}
+                        <div class="list-group-item border-0 px-0">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">
+                                        <i class="bi bi-file-earmark me-1"></i>
+                                        <a href="{{ attachment.file.url }}" target="_blank" class="text-decoration-none">
+                                            {{ attachment.original_filename }}
+                                        </a>
+                                    </h6>
+                                    <p class="mb-1 text-muted small">
+                                        Tamaño: {{ attachment.get_file_size_display }}
+                                    </p>
+                                    <small class="text-muted">
+                                        Subido por {{ attachment.uploaded_by.get_full_name|default:attachment.uploaded_by.username }}
+                                        el {{ attachment.uploaded_at|date:"d/m/Y H:i" }}
+                                    </small>
+                                </div>
+                                <a href="{{ attachment.file.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-download"></i>
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Panel lateral -->
+        <div class="col-lg-4">
+            <!-- Información de la empresa -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-building me-1"></i>Empresa
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if work_order.company %}
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="badge rounded-pill me-2" 
+                                  style="background-color: {{ work_order.company.color }}; color: white;">
+                                <i class="bi bi-building"></i>
+                            </span>
+                            <strong>{{ work_order.company.name }}</strong>
+                        </div>
+                        {% if work_order.company.description %}
+                            <p class="text-muted small mb-0">{{ work_order.company.description|truncatechars:100 }}</p>
+                        {% endif %}
+                        {% if work_order.company.email or work_order.company.phone %}
+                            <hr class="my-2">
+                            {% if work_order.company.email %}
+                                <p class="small mb-1">
+                                    <i class="bi bi-envelope me-1"></i>
+                                    <a href="mailto:{{ work_order.company.email }}">{{ work_order.company.email }}</a>
+                                </p>
+                            {% endif %}
+                            {% if work_order.company.phone %}
+                                <p class="small mb-0">
+                                    <i class="bi bi-telephone me-1"></i>
+                                    <a href="tel:{{ work_order.company.phone }}">{{ work_order.company.phone }}</a>
+                                </p>
+                            {% endif %}
+                        {% endif %}
+                    {% else %}
+                        <p class="text-muted mb-0">Sin empresa asignada</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Información de asignación -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-person me-1"></i>Asignación
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if work_order.assigned_to %}
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-person-circle me-2 text-primary"></i>
+                            <div>
+                                <strong>{{ work_order.assigned_to.get_full_name|default:work_order.assigned_to.username }}</strong>
+                                {% if work_order.assigned_to.profile.cargo %}
+                                    <br><small class="text-muted">{{ work_order.assigned_to.profile.cargo }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">Sin asignar</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Prioridad -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-exclamation-triangle me-1"></i>Prioridad
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <span class="badge {{ work_order.get_priority_badge_class }} fs-6">
+                        {{ work_order.get_priority_display }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Enlace público -->
+            {% if work_order.is_public %}
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-globe me-1"></i>Enlace Público
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="input-group mb-2">
+                        <input type="text" class="form-control form-control-sm" 
+                               value="{{ request.get_host }}{{ work_order.get_public_url }}" 
+                               readonly id="publicUrl">
+                        <button class="btn btn-outline-secondary btn-sm" type="button" 
+                                onclick="copyToClipboard()">
+                            <i class="bi bi-copy"></i>
+                        </button>
+                    </div>
+                    <small class="text-muted">Esta orden es visible públicamente</small>
+                    <br>
+                    <a href="{{ work_order.get_public_url }}" target="_blank" class="btn btn-sm btn-outline-primary mt-2">
+                        <i class="bi bi-box-arrow-up-right me-1"></i>Ver enlace público
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Función para cambiar estado
+function changeStatus(newStatus) {
+    if (confirm('¿Estás seguro de que quieres cambiar el estado de esta orden?')) {
+        fetch(`{% url 'work_order_change_status' work_order.pk %}`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'status=' + newStatus
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Actualizar badge de estado
+                const statusBadge = document.getElementById('current-status');
+                statusBadge.textContent = data.new_status_display;
+                statusBadge.className = 'badge fs-6 ' + getBadgeClass(data.new_status);
+                
+                // Mostrar mensaje de éxito
+                showAlert('success', data.message);
+                
+                // Recargar página después de un breve delay
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                showAlert('danger', data.error);
+            }
+        })
+        .catch(error => {
+            showAlert('danger', 'Error al cambiar el estado');
+        });
+    }
+}
+
+// Función para obtener clase de badge según estado
+function getBadgeClass(status) {
+    const classes = {
+        'draft': 'bg-secondary',
+        'accepted': 'bg-primary',
+        'finished': 'bg-success'
+    };
+    return classes[status] || 'bg-secondary';
+}
+
+// Función para mostrar alertas
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Insertar al inicio del contenido
+    const container = document.querySelector('.container-fluid');
+    container.insertBefore(alertDiv, container.firstChild);
+    
+    // Auto-remover después de 5 segundos
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 5000);
+}
+
+{% if work_order.is_public %}
+// Función para copiar enlace público
+function copyToClipboard() {
+    const urlInput = document.getElementById('publicUrl');
+    urlInput.select();
+    urlInput.setSelectionRange(0, 99999);
+    
+    navigator.clipboard.writeText(urlInput.value).then(function() {
+        showAlert('success', 'Enlace copiado al portapapeles');
+    });
+}
+{% endif %}
+</script>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -35px;
+    top: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: -30px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #dee2e6;
+}
+</style>
+{% endblock %}

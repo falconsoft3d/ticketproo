@@ -96,4 +96,23 @@ urlpatterns = [
     # URLs públicas para compartir documentos (sin autenticación)
     path('document/public/<uuid:token>/', views.document_public_view, name='document_public'),
     path('document/download/<uuid:token>/', views.document_download_view, name='document_download'),
+    
+    # URLs de gestión de URLs con credenciales (solo para agentes)
+    path('urls/', views.url_manager_list_view, name='url_manager_list'),
+    path('urls/create/', views.url_manager_create_view, name='url_manager_create'),
+    path('urls/<int:url_id>/', views.url_manager_detail_view, name='url_manager_detail'),
+    path('urls/<int:url_id>/edit/', views.url_manager_edit_view, name='url_manager_edit'),
+    path('urls/<int:url_id>/delete/', views.url_manager_delete_view, name='url_manager_delete'),
+    path('urls/<int:url_id>/password/', views.url_manager_password_view, name='url_manager_password'),
+    
+    # URLs de gestión de órdenes de trabajo (solo para agentes)
+    path('work-orders/', views.work_order_list_view, name='work_order_list'),
+    path('work-orders/create/', views.work_order_create_view, name='work_order_create'),
+    path('work-orders/<int:pk>/', views.work_order_detail_view, name='work_order_detail'),
+    path('work-orders/<int:pk>/edit/', views.work_order_edit_view, name='work_order_edit'),
+    path('work-orders/<int:pk>/delete/', views.work_order_delete_view, name='work_order_delete'),
+    path('work-orders/<int:pk>/change-status/', views.work_order_change_status_view, name='work_order_change_status'),
+    
+    # URL pública para órdenes de trabajo compartidas (sin autenticación)
+    path('work-order/public/<uuid:token>/', views.work_order_public_view, name='public_work_order'),
 ]

@@ -1,0 +1,286 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - Vista Pública{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header público -->
+    <div class="row mb-4">
+        <div class="col-md-12 text-center">
+            <div class="badge bg-success mb-2">Vista Pública</div>
+            <h2>
+                <i class="bi bi-clipboard-check me-2"></i>{{ work_order.order_number }}
+            </h2>
+            <p class="text-muted">{{ work_order.title }}</p>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Información principal -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-info-circle me-1"></i>Información de la Orden
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Estado actual -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6>Estado</h6>
+                            <span class="badge {{ work_order.get_status_badge_class }} fs-6">
+                                {{ work_order.get_status_display }}
+                            </span>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Prioridad</h6>
+                            <span class="badge {{ work_order.get_priority_badge_class }} fs-6">
+                                {{ work_order.get_priority_display }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Descripción -->
+                    <div class="mb-4">
+                        <h6>Descripción del trabajo</h6>
+                        <div class="bg-light p-3 rounded">
+                            {{ work_order.description|linebreaks }}
+                        </div>
+                    </div>
+
+                    <!-- Información de fechas -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Fecha de entrega</h6>
+                            <p class="mb-1">
+                                <i class="bi bi-calendar-event me-1"></i>
+                                {{ work_order.due_date|date:"d/m/Y" }}
+                                {% if work_order.is_overdue %}
+                                    <span class="badge bg-danger ms-2">Vencida</span>
+                                {% elif work_order.days_until_due <= 3 and work_order.status != 'finished' %}
+                                    <span class="badge bg-warning ms-2">Próxima a vencer</span>
+                                {% endif %}
+                            </p>
+                            {% if work_order.days_until_due and work_order.status != 'finished' %}
+                                <small class="text-muted">
+                                    {% if work_order.days_until_due > 0 %}
+                                        Faltan {{ work_order.days_until_due }} día{{ work_order.days_until_due|pluralize }}
+                                    {% elif work_order.days_until_due == 0 %}
+                                        Vence hoy
+                                    {% else %}
+                                        Vencida hace {{ work_order.days_until_due|add:"-1" }} día{{ work_order.days_until_due|add:"-1"|pluralize }}
+                                    {% endif %}
+                                </small>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {% if work_order.estimated_hours %}
+                                <h6>Horas estimadas</h6>
+                                <p class="mb-1">
+                                    <i class="bi bi-clock me-1"></i>
+                                    {{ work_order.estimated_hours }} hora{{ work_order.estimated_hours|pluralize }}
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Importe y creador -->
+                    <div class="row mb-3">
+                        {% if work_order.amount %}
+                        <div class="col-md-6">
+                            <h6>Importe</h6>
+                            <p class="mb-1">
+                                <i class="bi bi-currency-dollar me-1"></i>
+                                <strong class="text-success">{{ work_order.get_amount_display }}</strong>
+                            </p>
+                        </div>
+                        {% endif %}
+                        <div class="col-md-6">
+                            <h6>Creado por</h6>
+                            <p class="mb-1">
+                                <i class="bi bi-person me-1"></i>
+                                {{ work_order.created_by.get_full_name|default:work_order.created_by.username }}
+                            </p>
+                            <small class="text-muted">
+                                {{ work_order.created_at|date:"d/m/Y H:i" }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información de la empresa -->
+            {% if work_order.company %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-building me-1"></i>Empresa
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge rounded-pill me-2" 
+                              style="background-color: {{ work_order.company.color }}; color: white;">
+                            <i class="bi bi-building"></i>
+                        </span>
+                        <strong>{{ work_order.company.name }}</strong>
+                    </div>
+                    {% if work_order.company.description %}
+                        <p class="text-muted mb-0">{{ work_order.company.description }}</p>
+                    {% endif %}
+                    {% if work_order.company.website %}
+                        <p class="mb-0 mt-2">
+                            <i class="bi bi-globe me-1"></i>
+                            <a href="{{ work_order.company.website }}" target="_blank" rel="noopener">
+                                {{ work_order.company.website }}
+                            </a>
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Información de progreso/timeline -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-clock-history me-1"></i>Progreso de la Orden
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Orden creada</h6>
+                                <p class="text-muted mb-0">
+                                    <small>{{ work_order.created_at|date:"d/m/Y H:i" }}</small>
+                                </p>
+                            </div>
+                        </div>
+                        
+                        {% if work_order.status == 'accepted' or work_order.status == 'finished' %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Orden aceptada</h6>
+                                <p class="text-muted mb-0">
+                                    <small>Trabajo en progreso</small>
+                                </p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if work_order.status == 'finished' and work_order.completed_at %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-success"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Orden completada</h6>
+                                <p class="text-muted mb-0">
+                                    <small>{{ work_order.completed_at|date:"d/m/Y H:i" }}</small>
+                                </p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Adjuntos -->
+            {% if attachments %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-paperclip me-1"></i>Adjuntos ({{ attachments.count }})
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for attachment in attachments %}
+                        <div class="col-md-6 mb-3">
+                            <div class="border rounded p-3 h-100">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-file-earmark me-2 text-primary fs-4"></i>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">
+                                            <a href="{{ attachment.file.url }}" target="_blank" class="text-decoration-none">
+                                                {{ attachment.original_filename }}
+                                            </a>
+                                        </h6>
+                                        <p class="mb-1 text-muted small">
+                                            Tamaño: {{ attachment.get_file_size_display }}
+                                        </p>
+                                        <small class="text-muted">
+                                            {{ attachment.uploaded_at|date:"d/m/Y" }}
+                                        </small>
+                                    </div>
+                                    <a href="{{ attachment.file.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Información adicional -->
+            <div class="card">
+                <div class="card-body text-center">
+                    <small class="text-muted">
+                        Esta es una vista pública de la orden de trabajo.<br>
+                        Para más información o consultas, contacta directamente con la empresa.
+                    </small>
+                    <hr>
+                    <p class="text-muted mb-0">
+                        <i class="bi bi-calendar me-1"></i>
+                        Última actualización: {{ work_order.updated_at|date:"d/m/Y H:i" }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -35px;
+    top: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: -30px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #dee2e6;
+}
+
+.timeline-item:last-child .timeline::before {
+    display: none;
+}
+</style>
+{% endblock %}

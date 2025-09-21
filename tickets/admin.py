@@ -1,7 +1,8 @@
 from django.contrib import admin
 from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserNote, 
-    TimeEntry, Project, Company, SystemConfiguration, Document, UserProfile
+    TimeEntry, Project, Company, SystemConfiguration, Document, UserProfile,
+    WorkOrder, WorkOrderAttachment
 )
 
 # Configuración del sitio de administración
@@ -466,3 +467,68 @@ class UserProfileAdmin(admin.ModelAdmin):
     
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('user', 'company')
+
+
+class WorkOrderAttachmentInline(admin.TabularInline):
+    """Inline para adjuntos de órdenes de trabajo"""
+    model = WorkOrderAttachment
+    extra = 0
+    readonly_fields = ('uploaded_at', 'file_size', 'get_file_size_display')
+    fields = ('file', 'original_filename', 'uploaded_by', 'uploaded_at', 'get_file_size_display')
+    
+    def get_file_size_display(self, obj):
+        return obj.get_file_size_display()
+    get_file_size_display.short_description = 'Tamaño'
+
+
+@admin.register(WorkOrder)
+class WorkOrderAdmin(admin.ModelAdmin):
+    """Administrador para órdenes de trabajo"""
+    list_display = ('order_number', 'title', 'company', 'status', 'priority', 'amount', 'due_date', 'created_by', 'assigned_to', 'is_public', 'created_at')
+    list_filter = ('status', 'priority', 'is_public', 'created_at', 'due_date', 'company')
+    search_fields = ('title', 'description', 'company__name', 'created_by__username', 'assigned_to__username')
+    list_editable = ('status', 'priority', 'assigned_to')
+    ordering = ('-created_at',)
+    date_hierarchy = 'created_at'
+    filter_horizontal = ()
+    readonly_fields = ('order_number', 'public_share_token', 'created_at', 'updated_at')
+    inlines = [WorkOrderAttachmentInline]
+    
+    fieldsets = (
+        ('Información básica', {
+            'fields': ('order_number', 'title', 'description', 'company')
+        }),
+        ('Estado y progreso', {
+            'fields': ('status', 'priority', 'due_date', 'estimated_hours', 'amount')
+        }),
+        ('Asignación', {
+            'fields': ('created_by', 'assigned_to')
+        }),
+        ('Configuración pública', {
+            'fields': ('is_public', 'public_share_token'),
+            'classes': ('collapse',)
+        }),
+        ('Metadatos', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related(
+            'company', 'created_by', 'assigned_to'
+        ).prefetch_related('attachments')
+
+
+@admin.register(WorkOrderAttachment)
+class WorkOrderAttachmentAdmin(admin.ModelAdmin):
+    """Administrador para adjuntos de órdenes de trabajo"""
+    list_display = ('original_filename', 'work_order', 'uploaded_by', 'get_file_size_display', 'uploaded_at')
+    list_filter = ('uploaded_at', 'work_order__status')
+    search_fields = ('original_filename', 'work_order__title', 'uploaded_by__username')
+    readonly_fields = ('file_size', 'uploaded_at', 'get_file_size_display')
+    ordering = ('-uploaded_at',)
+    date_hierarchy = 'uploaded_at'
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('work_order', 'uploaded_by')

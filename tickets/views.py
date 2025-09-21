@@ -13,13 +13,14 @@ import os
 from datetime import timedelta
 from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
-    UserNote, TimeEntry, Project, Company, SystemConfiguration, Document
+    UserNote, TimeEntry, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder
 )
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
     TicketAttachmentForm, CategoryForm, UserTicketForm, UserTicketEditForm, 
     TicketCommentForm, UserNoteForm, TimeEntryStartForm, TimeEntryEndForm, 
-    TimeEntryEditForm, ProjectForm, CompanyForm, SystemConfigurationForm, DocumentForm
+    TimeEntryEditForm, ProjectForm, CompanyForm, SystemConfigurationForm, DocumentForm,
+    UrlManagerForm, UrlManagerFilterForm, WorkOrderForm, WorkOrderFilterForm
 )
 from .utils import is_agent, is_regular_user, get_user_role, assign_user_to_group
 
@@ -1858,3 +1859,385 @@ def document_download_private_view(request, document_id):
     response['Content-Disposition'] = f'attachment; filename="{document.file.name}"'
     
     return response
+
+
+# VIEWS PARA GESTIÓN DE URLs CON CREDENCIALES
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def url_manager_list_view(request):
+    """Lista todas las URLs gestionadas (solo para agentes)"""
+    from .models import UrlManager
+    from .forms import UrlManagerFilterForm
+    from django.db.models import Q
+    
+    # Obtener filtros
+    form = UrlManagerFilterForm(request.GET)
+    urls = UrlManager.objects.all()
+    
+    # Aplicar filtros
+    if form.is_valid():
+        search = form.cleaned_data.get('search')
+        category = form.cleaned_data.get('category')
+        is_active = form.cleaned_data.get('is_active')
+        
+        if search:
+            urls = urls.filter(
+                Q(title__icontains=search) |
+                Q(url__icontains=search) |
+                Q(description__icontains=search) |
+                Q(username__icontains=search)
+            )
+        
+        if category:
+            urls = urls.filter(category__icontains=category)
+        
+        if is_active:
+            urls = urls.filter(is_active=is_active == 'True')
+    
+    # Paginación
+    from django.core.paginator import Paginator
+    paginator = Paginator(urls, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Obtener categorías únicas para el filtro
+    categories = UrlManager.objects.values_list('category', flat=True).distinct().exclude(category__isnull=True).exclude(category='')
+    
+    context = {
+        'page_obj': page_obj,
+        'form': form,
+        'categories': categories,
+        'search_query': form.cleaned_data.get('search', '') if form.is_valid() else '',
+        'category_filter': form.cleaned_data.get('category', '') if form.is_valid() else '',
+        'status_filter': form.cleaned_data.get('is_active', '') if form.is_valid() else '',
+        'page_title': 'Gestión de URLs'
+    }
+    
+    return render(request, 'tickets/url_manager_list.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def url_manager_create_view(request):
+    """Crear nueva URL gestionada (solo para agentes)"""
+    from .models import UrlManager
+    from .forms import UrlManagerForm
+    
+    if request.method == 'POST':
+        form = UrlManagerForm(request.POST)
+        if form.is_valid():
+            url_manager = form.save(commit=False)
+            url_manager.created_by = request.user
+            url_manager.save()
+            
+            messages.success(request, f'URL "{url_manager.title}" creada exitosamente.')
+            return redirect('url_manager_list')
+    else:
+        form = UrlManagerForm()
+    
+    context = {
+        'form': form,
+        'page_title': 'Crear Nueva URL',
+        'action': 'Crear'
+    }
+    
+    return render(request, 'tickets/url_manager_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def url_manager_edit_view(request, url_id):
+    """Editar URL gestionada (solo para agentes)"""
+    from .models import UrlManager
+    from .forms import UrlManagerForm
+    
+    url_manager = get_object_or_404(UrlManager, id=url_id)
+    
+    if request.method == 'POST':
+        form = UrlManagerForm(request.POST, instance=url_manager)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'URL "{url_manager.title}" actualizada exitosamente.')
+            return redirect('url_manager_list')
+    else:
+        form = UrlManagerForm(instance=url_manager)
+    
+    context = {
+        'form': form,
+        'url_manager': url_manager,
+        'page_title': f'Editar URL: {url_manager.title}',
+        'action': 'Actualizar'
+    }
+    
+    return render(request, 'tickets/url_manager_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def url_manager_detail_view(request, url_id):
+    """Ver detalles de una URL gestionada (solo para agentes)"""
+    from .models import UrlManager
+    
+    url_manager = get_object_or_404(UrlManager, id=url_id)
+    
+    # Marcar como accedida
+    url_manager.mark_accessed()
+    
+    context = {
+        'url_manager': url_manager,
+        'page_title': f'Detalles: {url_manager.title}'
+    }
+    
+    return render(request, 'tickets/url_manager_detail.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def url_manager_delete_view(request, url_id):
+    """Eliminar URL gestionada (solo para agentes)"""
+    from .models import UrlManager
+    
+    url_manager = get_object_or_404(UrlManager, id=url_id)
+    
+    if request.method == 'POST':
+        title = url_manager.title
+        url_manager.delete()
+        messages.success(request, f'URL "{title}" eliminada exitosamente.')
+        return redirect('url_manager_list')
+    
+    context = {
+        'url_manager': url_manager,
+        'page_title': f'Eliminar URL: {url_manager.title}'
+    }
+    
+    return render(request, 'tickets/url_manager_delete.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def url_manager_password_view(request, url_id):
+    """AJAX endpoint para obtener la contraseña desencriptada"""
+    from .models import UrlManager
+    from django.http import JsonResponse
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    logger.info(f"Solicitando contraseña para URL ID: {url_id}")
+    
+    try:
+        url_manager = get_object_or_404(UrlManager, id=url_id)
+        logger.info(f"URL encontrada: {url_manager.title}")
+        
+        password = url_manager.get_password()
+        logger.info(f"Contraseña obtenida exitosamente")
+        
+        return JsonResponse({
+            'success': True,
+            'password': password
+        })
+    except Exception as e:
+        logger.error(f"Error al obtener contraseña: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
+
+
+# ===========================================
+# VISTAS PARA ÓRDENES DE TRABAJO
+# ===========================================
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def work_order_list_view(request):
+    """Vista para listar órdenes de trabajo"""
+    # Obtener todas las órdenes de trabajo
+    work_orders = WorkOrder.objects.all()
+    
+    # Aplicar filtros si existen
+    form = WorkOrderFilterForm(request.GET)
+    if form.is_valid():
+        search = form.cleaned_data.get('search')
+        company = form.cleaned_data.get('company')
+        status = form.cleaned_data.get('status')
+        priority = form.cleaned_data.get('priority')
+        assigned_to = form.cleaned_data.get('assigned_to')
+        
+        if search:
+            work_orders = work_orders.filter(
+                Q(title__icontains=search) |
+                Q(description__icontains=search)
+            )
+        
+        if company:
+            work_orders = work_orders.filter(company=company)
+        
+        if status:
+            work_orders = work_orders.filter(status=status)
+        
+        if priority:
+            work_orders = work_orders.filter(priority=priority)
+        
+        if assigned_to:
+            work_orders = work_orders.filter(assigned_to=assigned_to)
+    
+    # Agregar información de permisos a cada orden
+    for work_order in work_orders:
+        work_order.user_can_edit = work_order.can_edit(request.user)
+        work_order.user_can_delete = work_order.can_delete(request.user)
+    
+    # Paginación
+    paginator = Paginator(work_orders, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'filter_form': form,
+        'page_title': 'Órdenes de Trabajo'
+    }
+    
+    return render(request, 'tickets/work_order_list.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def work_order_create_view(request):
+    """Vista para crear nuevas órdenes de trabajo"""
+    if request.method == 'POST':
+        form = WorkOrderForm(request.POST, request.FILES)
+        if form.is_valid():
+            work_order = form.save(created_by=request.user)
+            messages.success(request, f'Orden de trabajo "{work_order.title}" creada exitosamente.')
+            return redirect('work_order_detail', pk=work_order.pk)
+    else:
+        form = WorkOrderForm()
+    
+    context = {
+        'form': form,
+        'page_title': 'Crear Orden de Trabajo'
+    }
+    
+    return render(request, 'tickets/work_order_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def work_order_detail_view(request, pk):
+    """Vista para ver detalles de una orden de trabajo"""
+    work_order = get_object_or_404(WorkOrder, pk=pk)
+    
+    context = {
+        'work_order': work_order,
+        'attachments': work_order.attachments.all(),
+        'page_title': f'Orden: {work_order.order_number}'
+    }
+    
+    return render(request, 'tickets/work_order_detail.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def work_order_edit_view(request, pk):
+    """Vista para editar órdenes de trabajo"""
+    work_order = get_object_or_404(WorkOrder, pk=pk)
+    
+    # Verificar permisos
+    if not work_order.can_edit(request.user):
+        messages.error(request, 'No tienes permisos para editar esta orden de trabajo.')
+        return redirect('work_order_detail', pk=work_order.pk)
+    
+    if request.method == 'POST':
+        form = WorkOrderForm(request.POST, request.FILES, instance=work_order)
+        if form.is_valid():
+            form.save(created_by=request.user)
+            messages.success(request, f'Orden de trabajo "{work_order.title}" actualizada exitosamente.')
+            return redirect('work_order_detail', pk=work_order.pk)
+    else:
+        form = WorkOrderForm(instance=work_order)
+    
+    context = {
+        'form': form,
+        'work_order': work_order,
+        'page_title': f'Editar: {work_order.order_number}'
+    }
+    
+    return render(request, 'tickets/work_order_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def work_order_delete_view(request, pk):
+    """Vista para eliminar órdenes de trabajo"""
+    work_order = get_object_or_404(WorkOrder, pk=pk)
+    
+    # Verificar permisos
+    if not work_order.can_delete(request.user):
+        messages.error(request, 'No puedes eliminar esta orden de trabajo. Solo se pueden eliminar órdenes en estado borrador.')
+        return redirect('work_order_detail', pk=work_order.pk)
+    
+    if request.method == 'POST':
+        title = work_order.title
+        work_order.delete()
+        messages.success(request, f'Orden de trabajo "{title}" eliminada exitosamente.')
+        return redirect('work_order_list')
+    
+    context = {
+        'work_order': work_order,
+        'page_title': f'Eliminar: {work_order.order_number}'
+    }
+    
+    return render(request, 'tickets/work_order_delete.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def work_order_change_status_view(request, pk):
+    """Vista AJAX para cambiar el estado de una orden de trabajo"""
+    if request.method == 'POST':
+        work_order = get_object_or_404(WorkOrder, pk=pk)
+        new_status = request.POST.get('status')
+        
+        if new_status in ['draft', 'accepted', 'finished']:
+            old_status = work_order.get_status_display()
+            work_order.status = new_status
+            
+            # Si se marca como terminada, establecer fecha de finalización
+            if new_status == 'finished':
+                work_order.completed_at = timezone.now()
+            else:
+                work_order.completed_at = None
+            
+            work_order.save()
+            
+            new_status_display = work_order.get_status_display()
+            messages.success(request, f'Estado de la orden cambiado de "{old_status}" a "{new_status_display}".')
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Estado actualizado a "{new_status_display}"',
+                'new_status': new_status,
+                'new_status_display': new_status_display
+            })
+        
+        return JsonResponse({
+            'success': False,
+            'error': 'Estado inválido'
+        })
+    
+    return JsonResponse({'success': False, 'error': 'Método no permitido'})
+
+
+def work_order_public_view(request, token):
+    """Vista pública para órdenes de trabajo compartidas"""
+    work_order = get_object_or_404(WorkOrder, public_share_token=token, is_public=True)
+    
+    context = {
+        'work_order': work_order,
+        'attachments': work_order.attachments.all(),
+        'page_title': f'Orden: {work_order.order_number}',
+        'is_public_view': True
+    }
+    
+    return render(request, 'tickets/work_order_public.html', context)

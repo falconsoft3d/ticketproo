@@ -1,0 +1,303 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2>
+                <i class="bi bi-clipboard-plus me-2"></i>{{ page_title }}
+            </h2>
+        </div>
+        <div class="col-md-6 text-end">
+            <a href="{% url 'work_order_list' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Volver a la lista
+            </a>
+        </div>
+    </div>
+
+    <!-- Formulario -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        {% if work_order %}
+                            <i class="bi bi-pencil me-1"></i>Editar Orden de Trabajo
+                        {% else %}
+                            <i class="bi bi-plus-circle me-1"></i>Nueva Orden de Trabajo
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Información básica -->
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label for="{{ form.title.id_for_label }}" class="form-label">
+                                    {{ form.title.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.title }}
+                                {% if form.title.help_text %}
+                                    <div class="form-text">{{ form.title.help_text }}</div>
+                                {% endif %}
+                                {% if form.title.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.title.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label for="{{ form.description.id_for_label }}" class="form-label">
+                                    {{ form.description.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.description }}
+                                {% if form.description.help_text %}
+                                    <div class="form-text">{{ form.description.help_text }}</div>
+                                {% endif %}
+                                {% if form.description.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.description.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Empresa y asignación -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.company.id_for_label }}" class="form-label">
+                                    {{ form.company.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.company }}
+                                {% if form.company.help_text %}
+                                    <div class="form-text">{{ form.company.help_text }}</div>
+                                {% endif %}
+                                {% if form.company.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.company.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.assigned_to.id_for_label }}" class="form-label">
+                                    {{ form.assigned_to.label }}
+                                </label>
+                                {{ form.assigned_to }}
+                                {% if form.assigned_to.help_text %}
+                                    <div class="form-text">{{ form.assigned_to.help_text }}</div>
+                                {% endif %}
+                                {% if form.assigned_to.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.assigned_to.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Fecha y horas estimadas -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.due_date.id_for_label }}" class="form-label">
+                                    {{ form.due_date.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.due_date }}
+                                {% if form.due_date.help_text %}
+                                    <div class="form-text">{{ form.due_date.help_text }}</div>
+                                {% endif %}
+                                {% if form.due_date.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.due_date.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.estimated_hours.id_for_label }}" class="form-label">
+                                    {{ form.estimated_hours.label }}
+                                </label>
+                                {{ form.estimated_hours }}
+                                {% if form.estimated_hours.help_text %}
+                                    <div class="form-text">{{ form.estimated_hours.help_text }}</div>
+                                {% endif %}
+                                {% if form.estimated_hours.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.estimated_hours.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Importe -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.amount.id_for_label }}" class="form-label">
+                                    {{ form.amount.label }}
+                                </label>
+                                {{ form.amount }}
+                                {% if form.amount.help_text %}
+                                    <div class="form-text">{{ form.amount.help_text }}</div>
+                                {% endif %}
+                                {% if form.amount.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.amount.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Prioridad -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.priority.id_for_label }}" class="form-label">
+                                    {{ form.priority.label }}
+                                </label>
+                                {{ form.priority }}
+                                {% if form.priority.help_text %}
+                                    <div class="form-text">{{ form.priority.help_text }}</div>
+                                {% endif %}
+                                {% if form.priority.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.priority.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check form-switch mt-4">
+                                    {{ form.is_public }}
+                                    <label class="form-check-label" for="{{ form.is_public.id_for_label }}">
+                                        {{ form.is_public.label }}
+                                    </label>
+                                    {% if form.is_public.help_text %}
+                                        <div class="form-text">{{ form.is_public.help_text }}</div>
+                                    {% endif %}
+                                    {% if form.is_public.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.is_public.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Adjuntos -->
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label for="{{ form.attachments.id_for_label }}" class="form-label">
+                                    {{ form.attachments.label }}
+                                </label>
+                                {{ form.attachments }}
+                                {% if form.attachments.help_text %}
+                                    <div class="form-text">{{ form.attachments.help_text }}</div>
+                                {% endif %}
+                                {% if form.attachments.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.attachments.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Adjuntos existentes (solo en edición) -->
+                        {% if work_order and attachments %}
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label class="form-label">Adjuntos actuales</label>
+                                <div class="list-group">
+                                    {% for attachment in attachments %}
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="bi bi-paperclip me-2"></i>
+                                            <a href="{{ attachment.file.url }}" target="_blank" class="text-decoration-none">
+                                                {{ attachment.original_filename }}
+                                            </a>
+                                            <small class="text-muted ms-2">({{ attachment.get_file_size_display }})</small>
+                                        </div>
+                                        <small class="text-muted">
+                                            Subido por {{ attachment.uploaded_by.get_full_name|default:attachment.uploaded_by.username }}
+                                            el {{ attachment.uploaded_at|date:"d/m/Y H:i" }}
+                                        </small>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Botones de acción -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary me-2">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    {% if work_order %}Actualizar{% else %}Crear{% endif %} Orden
+                                </button>
+                                <a href="{% url 'work_order_list' %}" class="btn btn-secondary">
+                                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Información adicional si estamos editando -->
+                        {% if work_order %}
+                        <hr class="my-4">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-muted">Información de la orden</h6>
+                                <ul class="list-unstyled">
+                                    <li><strong>Número:</strong> {{ work_order.order_number }}</li>
+                                    <li><strong>Estado actual:</strong> 
+                                        <span class="badge {{ work_order.get_status_badge_class }}">
+                                            {{ work_order.get_status_display }}
+                                        </span>
+                                    </li>
+                                    <li><strong>Creado:</strong> {{ work_order.created_at|date:"d/m/Y H:i" }}</li>
+                                    <li><strong>Creado por:</strong> {{ work_order.created_by.get_full_name|default:work_order.created_by.username }}</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                {% if work_order.is_public %}
+                                <h6 class="text-muted">Enlace público</h6>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" 
+                                           value="{{ request.get_host }}{{ work_order.get_public_url }}" 
+                                           readonly>
+                                    <button class="btn btn-outline-secondary" type="button" 
+                                            onclick="copyToClipboard('{{ request.get_host }}{{ work_order.get_public_url }}')">
+                                        <i class="bi bi-copy"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text">Esta orden es visible públicamente</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if work_order and work_order.is_public %}
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        // Opcional: mostrar mensaje de éxito
+        const button = event.target.closest('button');
+        const original = button.innerHTML;
+        button.innerHTML = '<i class="bi bi-check"></i>';
+        setTimeout(() => {
+            button.innerHTML = original;
+        }, 2000);
+    });
+}
+</script>
+{% endif %}
+{% endblock %}

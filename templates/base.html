@@ -111,6 +111,18 @@
                                     <i class="bi bi-file-earmark-text"></i> Documentos
                                 </a>
                             </li>
+                            <li>
+                                <a class="dropdown-item {% if 'url_manager' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'url_manager_list' %}">
+                                    <i class="bi bi-link-45deg"></i> Gestión de URLs
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'work_order' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'work_order_list' %}">
+                                    <i class="bi bi-clipboard-check"></i> Órdenes de Trabajo
+                                </a>
+                            </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <a class="dropdown-item {% if 'system_configuration' in request.resolver_match.url_name %}active{% endif %}" 

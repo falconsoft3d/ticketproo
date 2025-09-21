@@ -1082,3 +1082,378 @@ class Document(models.Model):
         if self.tags:
             return [tag.strip() for tag in self.tags.split(',') if tag.strip()]
         return []
+
+
+class UrlManager(models.Model):
+    """Modelo para gestionar URLs con credenciales encriptadas"""
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título',
+        help_text='Nombre descriptivo para la URL'
+    )
+    url = models.URLField(
+        max_length=500,
+        verbose_name='URL',
+        help_text='Dirección web completa (incluye http:// o https://)'
+    )
+    username = models.CharField(
+        max_length=100,
+        verbose_name='Usuario',
+        help_text='Nombre de usuario para acceder'
+    )
+    encrypted_password = models.TextField(
+        verbose_name='Contraseña encriptada',
+        help_text='Contraseña almacenada de forma segura'
+    )
+    description = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Descripción',
+        help_text='Información adicional sobre esta URL'
+    )
+    category = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='Categoría',
+        help_text='Ej: Servidor, Base de datos, Servicio web, etc.'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo',
+        help_text='Indica si la URL está activa o no'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='created_urls',
+        verbose_name='Creado por'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    last_accessed = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Último acceso'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Gestor de URL'
+        verbose_name_plural = 'Gestores de URLs'
+        indexes = [
+            models.Index(fields=['category', 'is_active']),
+            models.Index(fields=['created_by', 'is_active']),
+        ]
+    
+    def __str__(self):
+        return f"{self.title} - {self.url}"
+    
+    def set_password(self, raw_password):
+        """Encripta y guarda la contraseña"""
+        from cryptography.fernet import Fernet
+        from django.conf import settings
+        import base64
+        
+        # Generar una clave de encriptación basada en SECRET_KEY
+        key = base64.urlsafe_b64encode(settings.SECRET_KEY[:32].encode().ljust(32, b'0'))
+        fernet = Fernet(key)
+        
+        # Encriptar la contraseña
+        encrypted_password = fernet.encrypt(raw_password.encode())
+        self.encrypted_password = base64.urlsafe_b64encode(encrypted_password).decode()
+    
+    def get_password(self):
+        """Desencripta y retorna la contraseña"""
+        from cryptography.fernet import Fernet
+        from django.conf import settings
+        import base64
+        
+        try:
+            # Generar la misma clave de encriptación
+            key = base64.urlsafe_b64encode(settings.SECRET_KEY[:32].encode().ljust(32, b'0'))
+            fernet = Fernet(key)
+            
+            # Desencriptar la contraseña
+            encrypted_data = base64.urlsafe_b64decode(self.encrypted_password.encode())
+            decrypted_password = fernet.decrypt(encrypted_data)
+            return decrypted_password.decode()
+        except Exception as e:
+            return f"Error al desencriptar: {str(e)}"
+    
+    def can_view(self, user):
+        """Verifica si un usuario puede ver esta URL"""
+        from .utils import is_agent
+        # Solo los agentes pueden ver las URLs
+        return is_agent(user)
+    
+    def can_edit(self, user):
+        """Verifica si un usuario puede editar esta URL"""
+        from .utils import is_agent
+        # Solo los agentes pueden editar URLs
+        return is_agent(user)
+    
+    def mark_accessed(self):
+        """Marca la URL como accedida recientemente"""
+        self.last_accessed = timezone.now()
+        self.save(update_fields=['last_accessed'])
+    
+    @property
+    def domain(self):
+        """Extrae el dominio de la URL"""
+        from urllib.parse import urlparse
+        try:
+            return urlparse(self.url).netloc
+        except:
+            return 'URL inválida'
+    
+    @property
+    def status_display(self):
+        """Retorna el estado en formato display"""
+        return "Activo" if self.is_active else "Inactivo"
+
+
+class WorkOrder(models.Model):
+    """Modelo para gestionar órdenes de trabajo"""
+    
+    STATUS_CHOICES = [
+        ('draft', 'Borrador'),
+        ('accepted', 'Aceptado'),
+        ('finished', 'Terminado'),
+    ]
+    
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título',
+        help_text='Título descriptivo de la orden de trabajo'
+    )
+    description = models.TextField(
+        verbose_name='Descripción',
+        help_text='Descripción detallada del trabajo a realizar'
+    )
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.CASCADE,
+        related_name='work_orders',
+        verbose_name='Empresa',
+        help_text='Empresa a la que se dirige la orden de trabajo'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='draft',
+        verbose_name='Estado',
+        help_text='Estado actual de la orden de trabajo'
+    )
+    due_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de entrega',
+        help_text='Fecha límite para completar la orden (opcional)'
+    )
+    is_public = models.BooleanField(
+        default=False,
+        verbose_name='Publicar públicamente',
+        help_text='Permite que esta orden sea visible públicamente'
+    )
+    public_share_token = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+        verbose_name='Token de compartir público',
+        help_text='Token único para compartir la orden públicamente'
+    )
+    estimated_hours = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Horas estimadas',
+        help_text='Tiempo estimado para completar la orden'
+    )
+    amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Importe',
+        help_text='Precio o costo de la orden de trabajo'
+    )
+    priority = models.CharField(
+        max_length=10,
+        choices=[
+            ('low', 'Baja'),
+            ('medium', 'Media'),
+            ('high', 'Alta'),
+            ('urgent', 'Urgente'),
+        ],
+        default='medium',
+        verbose_name='Prioridad'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='created_work_orders',
+        verbose_name='Creado por'
+    )
+    assigned_to = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assigned_work_orders',
+        verbose_name='Asignado a',
+        help_text='Usuario responsable de la orden'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de finalización'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Orden de Trabajo'
+        verbose_name_plural = 'Órdenes de Trabajo'
+        indexes = [
+            models.Index(fields=['status', 'company']),
+            models.Index(fields=['due_date', 'status']),
+            models.Index(fields=['created_by', 'status']),
+        ]
+    
+    def __str__(self):
+        return f"OT-{self.id:04d} - {self.title}"
+    
+    def get_status_badge_class(self):
+        """Retorna la clase CSS para el badge de estado"""
+        status_classes = {
+            'draft': 'bg-secondary',
+            'accepted': 'bg-primary',
+            'finished': 'bg-success',
+        }
+        return status_classes.get(self.status, 'bg-secondary')
+    
+    def get_priority_badge_class(self):
+        """Retorna la clase CSS para el badge de prioridad"""
+        priority_classes = {
+            'low': 'bg-success',
+            'medium': 'bg-warning',
+            'high': 'bg-danger',
+            'urgent': 'bg-dark',
+        }
+        return priority_classes.get(self.priority, 'bg-secondary')
+    
+    def get_public_url(self):
+        """Retorna la URL pública de la orden si está habilitada para compartir"""
+        if self.is_public:
+            from django.urls import reverse
+            return reverse('public_work_order', kwargs={'token': self.public_share_token})
+        return None
+    
+    def can_edit(self, user):
+        """Verifica si un usuario puede editar esta orden"""
+        from .utils import is_agent
+        return is_agent(user) or user == self.created_by
+    
+    def can_delete(self, user):
+        """Verifica si un usuario puede eliminar esta orden"""
+        from .utils import is_agent
+        # Solo se puede eliminar si está en borrador
+        return (is_agent(user) or user == self.created_by) and self.status == 'draft'
+    
+    def mark_as_finished(self):
+        """Marca la orden como terminada"""
+        self.status = 'finished'
+        self.completed_at = timezone.now()
+        self.save(update_fields=['status', 'completed_at'])
+    
+    def is_overdue(self):
+        """Verifica si la orden está vencida"""
+        if self.status == 'finished' or not self.due_date:
+            return False
+        return timezone.now().date() > self.due_date
+    
+    def days_until_due(self):
+        """Retorna los días hasta la fecha de entrega"""
+        if self.status == 'finished' or not self.due_date:
+            return None
+        delta = self.due_date - timezone.now().date()
+        return delta.days
+    
+    def get_amount_display(self):
+        """Retorna el importe formateado"""
+        if self.amount:
+            return f"${self.amount:,.2f}"
+        return "No especificado"
+    
+    @property
+    def order_number(self):
+        """Retorna el número de orden formateado"""
+        return f"OT-{self.id:04d}"
+
+
+def work_order_attachment_upload_path(instance, filename):
+    """Función para determinar dónde subir los adjuntos de órdenes de trabajo"""
+    return f'work_order_attachments/work_order_{instance.work_order.id}/{filename}'
+
+
+class WorkOrderAttachment(models.Model):
+    """Modelo para adjuntos de órdenes de trabajo"""
+    work_order = models.ForeignKey(
+        WorkOrder, 
+        on_delete=models.CASCADE, 
+        related_name='attachments',
+        verbose_name='Orden de Trabajo'
+    )
+    file = models.FileField(
+        upload_to=work_order_attachment_upload_path,
+        verbose_name='Archivo'
+    )
+    original_filename = models.CharField(
+        max_length=255,
+        verbose_name='Nombre original'
+    )
+    uploaded_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Subido por'
+    )
+    uploaded_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de subida'
+    )
+    file_size = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Tamaño del archivo (bytes)'
+    )
+    
+    class Meta:
+        ordering = ['-uploaded_at']
+        verbose_name = 'Adjunto de Orden de Trabajo'
+        verbose_name_plural = 'Adjuntos de Órdenes de Trabajo'
+    
+    def __str__(self):
+        return f'Adjunto: {self.original_filename} - OT: {self.work_order.title}'
+    
+    def get_file_size_display(self):
+        """Retorna el tamaño del archivo en formato legible"""
+        size = self.file_size
+        for unit in ['B', 'KB', 'MB', 'GB']:
+            if size < 1024:
+                return f"{size:.1f} {unit}"
+            size /= 1024
+        return f"{size:.1f} TB"

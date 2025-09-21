@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header con título y botón crear -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2><i class="bi bi-clipboard-check me-2"></i>{{ page_title }}</h2>
+        </div>
+        <div class="col-md-6 text-end">
+            <a href="{% url 'work_order_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i>Crear Orden de Trabajo
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="bi bi-funnel me-1"></i>Filtros
+            </h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    {{ filter_form.search.label_tag }}
+                    {{ filter_form.search }}
+                </div>
+                <div class="col-md-2">
+                    {{ filter_form.company.label_tag }}
+                    {{ filter_form.company }}
+                </div>
+                <div class="col-md-2">
+                    {{ filter_form.status.label_tag }}
+                    {{ filter_form.status }}
+                </div>
+                <div class="col-md-2">
+                    {{ filter_form.priority.label_tag }}
+                    {{ filter_form.priority }}
+                </div>
+                <div class="col-md-2">
+                    {{ filter_form.assigned_to.label_tag }}
+                    {{ filter_form.assigned_to }}
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="submit" class="btn btn-secondary me-2">
+                        <i class="bi bi-search"></i>
+                    </button>
+                    <a href="{% url 'work_order_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de órdenes de trabajo -->
+    <div class="card">
+        <div class="card-body">
+            {% if page_obj %}
+                <!-- Tabla responsive -->
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Orden</th>
+                                <th>Título</th>
+                                <th>Empresa</th>
+                                <th>Estado</th>
+                                <th>Prioridad</th>
+                                <th>Asignado a</th>
+                                <th>Fecha de entrega</th>
+                                <th>Creado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for work_order in page_obj %}
+                            <tr>
+                                <td>
+                                    <strong>{{ work_order.order_number }}</strong>
+                                </td>
+                                <td>
+                                    <a href="{% url 'work_order_detail' work_order.pk %}" class="text-decoration-none">
+                                        {{ work_order.title|truncatechars:50 }}
+                                    </a>
+                                    {% if work_order.is_public %}
+                                        <i class="bi bi-globe text-success ms-1" title="Pública"></i>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if work_order.company %}
+                                        <span class="badge rounded-pill" style="background-color: {{ work_order.company.color }}; color: white;">
+                                            {{ work_order.company.name }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">Sin empresa</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge {{ work_order.get_status_badge_class }}">
+                                        {{ work_order.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge {{ work_order.get_priority_badge_class }}">
+                                        {{ work_order.get_priority_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if work_order.assigned_to %}
+                                        <span class="text-primary">
+                                            <i class="bi bi-person me-1"></i>{{ work_order.assigned_to.get_full_name|default:work_order.assigned_to.username }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">Sin asignar</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        {{ work_order.due_date|date:"d/m/Y" }}
+                                        {% if work_order.is_overdue %}
+                                            <span class="badge bg-danger ms-1">Vencida</span>
+                                        {% elif work_order.days_until_due <= 3 and work_order.status != 'finished' %}
+                                            <span class="badge bg-warning ms-1">Próxima</span>
+                                        {% endif %}
+                                    </small>
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        {{ work_order.created_at|date:"d/m/Y H:i" }}
+                                    </small>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'work_order_detail' work_order.pk %}" 
+                                           class="btn btn-sm btn-outline-primary" title="Ver detalles">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        {% if work_order.user_can_edit %}
+                                            <a href="{% url 'work_order_edit' work_order.pk %}" 
+                                               class="btn btn-sm btn-outline-secondary" title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        {% endif %}
+                                        {% if work_order.user_can_delete %}
+                                            <a href="{% url 'work_order_delete' work_order.pk %}" 
+                                               class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginación -->
+                {% if page_obj.has_other_pages %}
+                <nav aria-label="Paginación de órdenes de trabajo">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.company %}&company={{ request.GET.company }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.priority %}&priority={{ request.GET.priority }}{% endif %}{% if request.GET.assigned_to %}&assigned_to={{ request.GET.assigned_to }}{% endif %}">Primera</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.company %}&company={{ request.GET.company }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.priority %}&priority={{ request.GET.priority }}{% endif %}{% if request.GET.assigned_to %}&assigned_to={{ request.GET.assigned_to }}{% endif %}">Anterior</a>
+                            </li>
+                        {% endif %}
+
+                        <li class="page-item active">
+                            <span class="page-link">
+                                Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                            </span>
+                        </li>
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.company %}&company={{ request.GET.company }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.priority %}&priority={{ request.GET.priority }}{% endif %}{% if request.GET.assigned_to %}&assigned_to={{ request.GET.assigned_to }}{% endif %}">Siguiente</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.company %}&company={{ request.GET.company }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.priority %}&priority={{ request.GET.priority }}{% endif %}{% if request.GET.assigned_to %}&assigned_to={{ request.GET.assigned_to }}{% endif %}">Última</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+
+            {% else %}
+                <!-- Mensaje cuando no hay órdenes -->
+                <div class="text-center py-5">
+                    <i class="bi bi-clipboard-x display-1 text-muted"></i>
+                    <h3 class="mt-3 text-muted">No hay órdenes de trabajo</h3>
+                    <p class="text-muted">¿Por qué no crear la primera orden de trabajo?</p>
+                    <a href="{% url 'work_order_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i>Crear Primera Orden
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

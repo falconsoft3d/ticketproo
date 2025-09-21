@@ -3,7 +3,7 @@ from django.contrib.auth.models import User, Group
 from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
 from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
-    UserNote, TimeEntry, Project, Company, SystemConfiguration, Document
+    UserNote, TimeEntry, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder
 )
 
 class CategoryForm(forms.ModelForm):
@@ -1241,3 +1241,437 @@ class DocumentForm(forms.ModelForm):
             tags = ', '.join(tag_list)
         
         return tags
+
+
+class UrlManagerForm(forms.ModelForm):
+    """Formulario para crear y editar URLs con credenciales"""
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Ingrese la contraseña'
+        }),
+        label='Contraseña',
+        help_text='La contraseña se almacenará de forma segura y encriptada',
+        required=True
+    )
+    
+    class Meta:
+        model = UrlManager
+        fields = ['title', 'url', 'username', 'password', 'description', 'category', 'is_active']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Panel de administración del servidor'
+            }),
+            'url': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://ejemplo.com/admin'
+            }),
+            'username': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'nombre_usuario'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción opcional de esta URL y sus credenciales...'
+            }),
+            'category': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Servidor, Base de datos, API, etc.'
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'title': 'Título',
+            'url': 'URL',
+            'username': 'Usuario',
+            'description': 'Descripción',
+            'category': 'Categoría',
+            'is_active': 'Activo',
+        }
+        help_texts = {
+            'title': 'Nombre descriptivo para identificar esta URL',
+            'url': 'Dirección web completa (debe incluir http:// o https://)',
+            'username': 'Nombre de usuario para acceder a esta URL',
+            'description': 'Información adicional sobre el propósito de esta URL',
+            'category': 'Categoría para organizar las URLs',
+            'is_active': 'Desmarcar si la URL ya no está en uso',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        self.instance_pk = kwargs.get('instance', None)
+        super().__init__(*args, **kwargs)
+        
+        # Si estamos editando, cambiar el help text de la contraseña
+        if self.instance_pk and hasattr(self.instance_pk, 'pk'):
+            self.fields['password'].help_text = 'Dejar en blanco para mantener la contraseña actual'
+            self.fields['password'].required = False
+    
+    def clean_url(self):
+        """Validar la URL"""
+        url = self.cleaned_data.get('url', '').strip()
+        
+        if not url:
+            raise forms.ValidationError('La URL es requerida.')
+        
+        # Validar que tenga protocolo
+        if not url.startswith(('http://', 'https://')):
+            raise forms.ValidationError('La URL debe comenzar con http:// o https://')
+        
+        # Validar que no sea demasiado larga
+        if len(url) > 500:
+            raise forms.ValidationError('La URL es demasiado larga (máximo 500 caracteres).')
+        
+        return url
+    
+    def clean_title(self):
+        """Validar el título"""
+        title = self.cleaned_data.get('title', '').strip()
+        
+        if not title:
+            raise forms.ValidationError('El título es requerido.')
+        
+        if len(title) < 3:
+            raise forms.ValidationError('El título debe tener al menos 3 caracteres.')
+        
+        return title
+    
+    def clean_username(self):
+        """Validar el usuario"""
+        username = self.cleaned_data.get('username', '').strip()
+        
+        if not username:
+            raise forms.ValidationError('El nombre de usuario es requerido.')
+        
+        return username
+    
+    def clean_password(self):
+        """Validar la contraseña"""
+        password = self.cleaned_data.get('password', '')
+        
+        # Si estamos creando un nuevo registro, la contraseña es obligatoria
+        if not self.instance_pk or not hasattr(self.instance_pk, 'pk'):
+            if not password:
+                raise forms.ValidationError('La contraseña es requerida.')
+        
+        # Si hay contraseña, validar longitud mínima
+        if password and len(password) < 3:
+            raise forms.ValidationError('La contraseña debe tener al menos 3 caracteres.')
+        
+        return password
+    
+    def save(self, commit=True):
+        """Guardar URL con contraseña encriptada"""
+        instance = super().save(commit=False)
+        
+        # Solo encriptar la contraseña si se proporcionó una nueva
+        password = self.cleaned_data.get('password')
+        if password:
+            instance.set_password(password)
+        
+        if commit:
+            instance.save()
+        
+        return instance
+
+
+class UrlManagerFilterForm(forms.Form):
+    """Formulario para filtrar URLs"""
+    search = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Buscar por título, URL o descripción...'
+        }),
+        label='Buscar'
+    )
+    
+    category = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Filtrar por categoría...'
+        }),
+        label='Categoría'
+    )
+    
+    is_active = forms.ChoiceField(
+        required=False,
+        choices=[
+            ('', 'Todas'),
+            ('True', 'Solo activas'),
+            ('False', 'Solo inactivas'),
+        ],
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        }),
+        label='Estado'
+    )
+
+
+class MultipleFileInput(forms.ClearableFileInput):
+    """Widget personalizado para múltiples archivos"""
+    allow_multiple_selected = True
+
+class MultipleFileField(forms.FileField):
+    """Campo personalizado para múltiples archivos"""
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("widget", MultipleFileInput())
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        single_file_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            result = [single_file_clean(d, initial) for d in data]
+        else:
+            result = single_file_clean(data, initial)
+        return result
+
+
+class WorkOrderForm(forms.ModelForm):
+    """Formulario para crear y editar órdenes de trabajo"""
+    
+    attachments = MultipleFileField(
+        required=False,
+        label='Adjuntos',
+        help_text='Puede seleccionar múltiples archivos (PDF, DOC, TXT, imágenes, Excel, ZIP)',
+        widget=MultipleFileInput(attrs={
+            'class': 'form-control',
+            'accept': '.pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.xls,.xlsx,.zip,.rar'
+        })
+    )
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Filtrar solo empresas activas
+        self.fields['company'].queryset = Company.objects.filter(is_active=True).order_by('name')
+        self.fields['company'].empty_label = "Seleccionar empresa"
+        
+        # Configurar queryset para usuarios asignables (agentes)
+        try:
+            agentes_group = Group.objects.get(name='Agentes')
+            agentes = User.objects.filter(groups=agentes_group, is_active=True)
+            self.fields['assigned_to'].queryset = agentes
+        except Group.DoesNotExist:
+            self.fields['assigned_to'].queryset = User.objects.filter(is_active=True)
+        
+        self.fields['assigned_to'].empty_label = "Sin asignar"
+    
+    class Meta:
+        model = WorkOrder
+        fields = [
+            'title', 'description', 'company', 'due_date', 
+            'estimated_hours', 'amount', 'priority', 'assigned_to', 'is_public'
+        ]
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título descriptivo de la orden de trabajo'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 6,
+                'placeholder': 'Descripción detallada del trabajo a realizar...'
+            }),
+            'company': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'due_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'estimated_hours': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: 8.5',
+                'step': '0.5',
+                'min': '0'
+            }),
+            'amount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: 1500.00',
+                'step': '0.01',
+                'min': '0'
+            }),
+            'priority': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'assigned_to': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'is_public': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'title': 'Título',
+            'description': 'Descripción del trabajo',
+            'company': 'Empresa',
+            'due_date': 'Fecha de entrega',
+            'estimated_hours': 'Horas estimadas',
+            'amount': 'Importe',
+            'priority': 'Prioridad',
+            'assigned_to': 'Asignar a',
+            'is_public': 'Publicar públicamente',
+        }
+        help_texts = {
+            'title': 'Título descriptivo de la orden de trabajo',
+            'description': 'Descripción detallada de todo lo que se necesita realizar',
+            'company': 'Empresa a la que se dirige la orden de trabajo',
+            'due_date': 'Fecha límite para completar la orden (opcional)',
+            'estimated_hours': 'Tiempo estimado para completar el trabajo',
+            'amount': 'Precio o costo de la orden de trabajo (opcional)',
+            'priority': 'Nivel de urgencia de la orden',
+            'assigned_to': 'Usuario responsable de ejecutar la orden',
+            'is_public': 'Permite que esta orden sea visible públicamente',
+        }
+    
+    def clean_title(self):
+        """Validar el título"""
+        title = self.cleaned_data.get('title', '').strip()
+        
+        if not title:
+            raise forms.ValidationError('El título es requerido.')
+        
+        if len(title) < 5:
+            raise forms.ValidationError('El título debe tener al menos 5 caracteres.')
+        
+        if len(title) > 200:
+            raise forms.ValidationError('El título no puede exceder 200 caracteres.')
+        
+        return title
+    
+    def clean_description(self):
+        """Validar la descripción"""
+        description = self.cleaned_data.get('description', '').strip()
+        
+        if not description:
+            raise forms.ValidationError('La descripción es requerida.')
+        
+        if len(description) < 20:
+            raise forms.ValidationError('La descripción debe tener al menos 20 caracteres.')
+        
+        return description
+    
+    def clean_due_date(self):
+        """Validar la fecha de entrega"""
+        due_date = self.cleaned_data.get('due_date')
+        
+        if not due_date:
+            raise forms.ValidationError('La fecha de entrega es requerida.')
+        
+        # Verificar que la fecha no sea en el pasado
+        from django.utils import timezone
+        if due_date < timezone.now().date():
+            raise forms.ValidationError('La fecha de entrega no puede ser en el pasado.')
+        
+        return due_date
+    
+    def clean_estimated_hours(self):
+        """Validar las horas estimadas"""
+        hours = self.cleaned_data.get('estimated_hours')
+        
+        if hours is not None:
+            if hours < 0:
+                raise forms.ValidationError('Las horas estimadas no pueden ser negativas.')
+            
+            if hours > 1000:
+                raise forms.ValidationError('Las horas estimadas no pueden exceder 1000.')
+        
+        return hours
+    
+    def save(self, created_by=None, commit=True):
+        """Guardar orden de trabajo"""
+        work_order = super().save(commit=False)
+        
+        if created_by:
+            work_order.created_by = created_by
+        
+        if commit:
+            work_order.save()
+            
+            # Manejar adjuntos múltiples
+            files = self.files.getlist('attachments')
+            if files:
+                from .models import WorkOrderAttachment
+                import os
+                
+                for file in files:
+                    # Crear el adjunto
+                    attachment = WorkOrderAttachment(
+                        work_order=work_order,
+                        file=file,
+                        original_filename=file.name,
+                        uploaded_by=created_by if created_by else work_order.created_by,
+                        file_size=file.size
+                    )
+                    attachment.save()
+        
+        return work_order
+
+
+class WorkOrderFilterForm(forms.Form):
+    """Formulario para filtrar órdenes de trabajo"""
+    search = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Buscar por título o descripción...'
+        }),
+        label='Buscar'
+    )
+    
+    company = forms.ModelChoiceField(
+        queryset=Company.objects.filter(is_active=True),
+        required=False,
+        empty_label="Todas las empresas",
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        }),
+        label='Empresa'
+    )
+    
+    status = forms.ChoiceField(
+        required=False,
+        choices=[('', 'Todos los estados')] + WorkOrder.STATUS_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        }),
+        label='Estado'
+    )
+    
+    priority = forms.ChoiceField(
+        required=False,
+        choices=[('', 'Todas las prioridades')] + [
+            ('low', 'Baja'),
+            ('medium', 'Media'),
+            ('high', 'Alta'),
+            ('urgent', 'Urgente'),
+        ],
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        }),
+        label='Prioridad'
+    )
+    
+    assigned_to = forms.ModelChoiceField(
+        queryset=User.objects.filter(is_active=True),
+        required=False,
+        empty_label="Todos los asignados",
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        }),
+        label='Asignado a'
+    )
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Filtrar solo agentes para el campo assigned_to
+        try:
+            agentes_group = Group.objects.get(name='Agentes')
+            agentes = User.objects.filter(groups=agentes_group, is_active=True)
+            self.fields['assigned_to'].queryset = agentes
+        except Group.DoesNotExist:
+            pass
