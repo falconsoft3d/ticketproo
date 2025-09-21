@@ -149,9 +149,16 @@ END
 \$\$;"
 
 # Crear base de datos si no existe
-sudo -u postgres psql -c "
-SELECT 'CREATE DATABASE $DB_NAME OWNER $DB_USER'
-WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '$DB_NAME')\gexec"
+log "Creando base de datos $DB_NAME..."
+sudo -u postgres createdb -O $DB_USER $DB_NAME 2>/dev/null || {
+    log "Base de datos $DB_NAME ya existe o error al crear"
+    # Verificar si realmente existe
+    if sudo -u postgres psql -lqt | cut -d \| -f 1 | grep -qw $DB_NAME; then
+        log "Base de datos $DB_NAME confirmada como existente"
+    else
+        error "Error al crear la base de datos $DB_NAME"
+    fi
+}
 
 # Asignar permisos
 sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;"
