@@ -5,13 +5,6 @@
 
 set -e
 
-# Configuración
-domains=(localhost)  # Cambia por tu dominio real
-rsa_key_size=4096
-data_path="./certbot"
-email="admin@localhost"  # Cambia por tu email real
-staging=1  # Set to 1 if you're testing your setup to avoid hitting request limits
-
 # Colores para output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -19,7 +12,42 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Configuración por defecto
+rsa_key_size=4096
+data_path="./certbot"
+
 echo -e "${BLUE}=== TicketProo SSL Setup con Let's Encrypt ===${NC}"
+
+# Configuración dinámica de dominio
+echo ""
+echo -e "${YELLOW}¿Cuál es tu dominio? (ejemplo: ticketproo.com, o 'localhost' para testing)${NC}"
+read -p "Dominio: " user_domain
+
+if [ -z "$user_domain" ]; then
+    user_domain="localhost"
+fi
+
+# Configuración dinámica de email
+echo ""
+echo -e "${YELLOW}¿Cuál es tu email para Let's Encrypt? (ejemplo: admin@$user_domain)${NC}"
+read -p "Email: " user_email
+
+if [ -z "$user_email" ]; then
+    user_email="admin@$user_domain"
+fi
+
+# Actualizar configuración con valores del usuario
+domains=($user_domain)
+email=$user_email
+
+# Determinar si usar staging o producción
+if [[ "$user_domain" == "localhost" ]]; then
+    staging=1
+    warn "Usando localhost - se crearán certificados auto-firmados"
+else
+    staging=0
+    log "Usando dominio real - se obtendrán certificados de Let's Encrypt"
+fi
 
 # Función para logging
 log() {
@@ -46,21 +74,6 @@ if [ ! -f "docker-compose.yml" ]; then
     exit 1
 fi
 
-# Advertencia para dominios de prueba
-if [[ " ${domains[@]} " =~ " localhost " ]]; then
-    warn "Estás usando 'localhost' como dominio."
-    warn "Para producción, cambia 'localhost' por tu dominio real en:"
-    warn "1. Este script (variable 'domains')"
-    warn "2. nginx.conf (server_name)"
-    warn "3. .env (ALLOWED_HOSTS)"
-    echo ""
-    read -p "¿Continuar con localhost para testing? (y/N): " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        exit 1
-    fi
-fi
-
 log "Iniciando configuración SSL para dominios: ${domains[*]}"
 
 # Crear estructura de directorios
@@ -81,11 +94,14 @@ log "Creando certificados dummy para nginx..."
 path="/etc/letsencrypt/live/${domains[0]}"
 mkdir -p "$data_path/conf/live/${domains[0]}"
 
+# Crear el directorio dentro del contenedor antes de generar certificados
+docker-compose run --rm --entrypoint "mkdir -p $path" certbot
+
 docker-compose run --rm --entrypoint "\
   openssl req -x509 -nodes -newkey rsa:$rsa_key_size -days 1\
     -keyout '$path/privkey.pem' \
     -out '$path/fullchain.pem' \
-    -subj '/CN=localhost'" certbot
+    -subj '/CN=${domains[0]}'" certbot
 
 # Crear chain.pem (copia de fullchain.pem para OCSP stapling)
 docker-compose run --rm --entrypoint "\
@@ -130,16 +146,21 @@ if [[ " ${domains[@]} " =~ " localhost " ]] && [ $staging == "1" ]; then
     
     # Crear certificados auto-firmados para localhost
     path="/etc/letsencrypt/live/${domains[0]}"
-    mkdir -p "$data_path/conf/live/${domains[0]}"
+    
+    # Asegurar que el directorio existe
+    docker-compose run --rm --entrypoint "mkdir -p $path" certbot
     
     docker-compose run --rm --entrypoint "\
       openssl req -x509 -nodes -days 365 -newkey rsa:$rsa_key_size \
         -keyout '$path/privkey.pem' \
         -out '$path/fullchain.pem' \
-        -out '$path/chain.pem' \
-        -subj '/C=ES/ST=Madrid/L=Madrid/O=TicketProo/OU=IT/CN=localhost'" certbot
+        -subj '/C=ES/ST=Madrid/L=Madrid/O=TicketProo/OU=IT/CN=${domains[0]}'" certbot
     
-    log "Certificados auto-firmados creados para localhost"
+    # Crear chain.pem (copia de fullchain.pem para OCSP stapling)
+    docker-compose run --rm --entrypoint "\
+      cp '$path/fullchain.pem' '$path/chain.pem'" certbot
+    
+    log "Certificados auto-firmados creados para ${domains[0]}"
 else
     # Usar Let's Encrypt para dominios reales
     docker-compose run --rm --entrypoint "\
