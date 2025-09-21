@@ -1,0 +1,436 @@
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User, Group
+from django.contrib import messages
+from django.core.paginator import Paginator
+from django.db.models import Q
+from django.http import HttpResponse, Http404
+from django.conf import settings
+import os
+from .models import Ticket, TicketAttachment
+from .forms import TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, TicketAttachmentForm
+from .utils import is_agent, is_regular_user, get_user_role, assign_user_to_group
+
+def home_view(request):
+    """Vista para la página de inicio pública de TicketProo"""
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    
+    # Estadísticas generales del sistema
+    total_tickets = Ticket.objects.count()
+    total_users = Ticket.objects.values('created_by').distinct().count()
+    
+    context = {
+        'total_tickets': total_tickets,
+        'total_users': total_users,
+    }
+    return render(request, 'tickets/home.html', context)
+
+def register_view(request):
+    """Vista para registro de nuevos usuarios"""
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            username = form.cleaned_data.get('username')
+            
+            # Asignar automáticamente al grupo de Usuarios
+            assign_user_to_group(user, 'Usuarios')
+            
+            messages.success(request, f'Cuenta creada para {username}. Ya puedes iniciar sesión.')
+            return redirect('login')
+    else:
+        form = UserCreationForm()
+    return render(request, 'registration/register.html', {'form': form})
+
+@login_required
+def dashboard_view(request):
+    """Vista principal del dashboard de TicketProo"""
+    user_role = get_user_role(request.user)
+    
+    if is_agent(request.user):
+        # Estadísticas para agentes (todos los tickets)
+        all_tickets = Ticket.objects.all()
+        total_tickets = all_tickets.count()
+        open_tickets = all_tickets.filter(status='open').count()
+        in_progress_tickets = all_tickets.filter(status='in_progress').count()
+        resolved_tickets = all_tickets.filter(status='resolved').count()
+        recent_tickets = all_tickets[:5]
+        
+        # Estadísticas adicionales para agentes
+        unassigned_tickets = all_tickets.filter(assigned_to__isnull=True).count()
+        my_assigned_tickets = all_tickets.filter(assigned_to=request.user).count()
+        
+        context = {
+            'total_tickets': total_tickets,
+            'open_tickets': open_tickets,
+            'in_progress_tickets': in_progress_tickets,
+            'resolved_tickets': resolved_tickets,
+            'recent_tickets': recent_tickets,
+            'unassigned_tickets': unassigned_tickets,
+            'my_assigned_tickets': my_assigned_tickets,
+            'user_role': user_role,
+            'is_agent': True,
+        }
+    else:
+        # Estadísticas para usuarios regulares (solo sus tickets)
+        user_tickets = Ticket.objects.filter(created_by=request.user)
+        total_tickets = user_tickets.count()
+        open_tickets = user_tickets.filter(status='open').count()
+        in_progress_tickets = user_tickets.filter(status='in_progress').count()
+        resolved_tickets = user_tickets.filter(status='resolved').count()
+        recent_tickets = user_tickets[:5]
+        
+        context = {
+            'total_tickets': total_tickets,
+            'open_tickets': open_tickets,
+            'in_progress_tickets': in_progress_tickets,
+            'resolved_tickets': resolved_tickets,
+            'recent_tickets': recent_tickets,
+            'user_role': user_role,
+            'is_agent': False,
+        }
+    
+    return render(request, 'tickets/dashboard.html', context)
+
+@login_required
+def ticket_list_view(request):
+    """Vista para listar tickets según el rol del usuario"""
+    if is_agent(request.user):
+        # Los agentes ven todos los tickets
+        tickets = Ticket.objects.all()
+    else:
+        # Los usuarios regulares solo ven sus propios tickets
+        tickets = Ticket.objects.filter(created_by=request.user)
+    
+    # Filtros
+    status_filter = request.GET.get('status')
+    priority_filter = request.GET.get('priority')
+    search = request.GET.get('search')
+    assigned_filter = request.GET.get('assigned_to')  # Nuevo filtro para agentes
+    
+    if status_filter:
+        tickets = tickets.filter(status=status_filter)
+    
+    if priority_filter:
+        tickets = tickets.filter(priority=priority_filter)
+    
+    if search:
+        tickets = tickets.filter(
+            Q(title__icontains=search) | 
+            Q(description__icontains=search)
+        )
+    
+    # Filtro adicional para agentes
+    if is_agent(request.user) and assigned_filter:
+        if assigned_filter == 'unassigned':
+            tickets = tickets.filter(assigned_to__isnull=True)
+        elif assigned_filter == 'me':
+            tickets = tickets.filter(assigned_to=request.user)
+    
+    # Paginación
+    paginator = Paginator(tickets, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'status_filter': status_filter,
+        'priority_filter': priority_filter,
+        'search': search,
+        'assigned_filter': assigned_filter,
+        'status_choices': Ticket.STATUS_CHOICES,
+        'priority_choices': Ticket.PRIORITY_CHOICES,
+        'is_agent': is_agent(request.user),
+        'user_role': get_user_role(request.user),
+    }
+    return render(request, 'tickets/ticket_list.html', context)
+
+@login_required
+def ticket_create_view(request):
+    """Vista para crear un nuevo ticket"""
+    # Usar formulario apropiado según el rol
+    FormClass = AgentTicketForm if is_agent(request.user) else TicketForm
+    
+    if request.method == 'POST':
+        form = FormClass(request.POST)
+        if form.is_valid():
+            ticket = form.save(commit=False)
+            ticket.created_by = request.user
+            ticket.save()
+            messages.success(request, 'Ticket creado exitosamente.')
+            return redirect('ticket_detail', pk=ticket.pk)
+    else:
+        form = FormClass()
+    
+    context = {
+        'form': form,
+        'is_agent': is_agent(request.user),
+        'user_role': get_user_role(request.user),
+    }
+    
+    return render(request, 'tickets/ticket_create.html', context)
+
+@login_required
+def ticket_detail_view(request, pk):
+    """Vista para ver los detalles de un ticket"""
+    if is_agent(request.user):
+        # Los agentes pueden ver cualquier ticket
+        ticket = get_object_or_404(Ticket, pk=pk)
+    else:
+        # Los usuarios solo pueden ver sus propios tickets
+        ticket = get_object_or_404(Ticket, pk=pk, created_by=request.user)
+    
+    # Manejar autoasignación para agentes
+    if request.method == 'POST' and 'assign_to_me' in request.POST and is_agent(request.user):
+        ticket.assigned_to = request.user
+        ticket.save()
+        messages.success(request, f'Te has asignado el ticket #{ticket.pk}.')
+        return redirect('ticket_detail', pk=pk)
+    
+    # Formulario para subir adjuntos
+    attachment_form = TicketAttachmentForm()
+    if request.method == 'POST' and 'upload_attachment' in request.POST:
+        attachment_form = TicketAttachmentForm(request.POST, request.FILES)
+        if attachment_form.is_valid():
+            attachment = attachment_form.save(commit=False)
+            attachment.ticket = ticket
+            attachment.uploaded_by = request.user
+            attachment.original_filename = attachment.file.name
+            attachment.file_size = attachment.file.size
+            attachment.save()
+            messages.success(request, 'Adjunto subido exitosamente.')
+            return redirect('ticket_detail', pk=pk)
+    
+    context = {
+        'ticket': ticket,
+        'attachment_form': attachment_form,
+        'is_agent': is_agent(request.user),
+        'user_role': get_user_role(request.user),
+    }
+    return render(request, 'tickets/ticket_detail.html', context)
+
+@login_required
+def ticket_edit_view(request, pk):
+    """Vista para editar un ticket"""
+    if is_agent(request.user):
+        # Los agentes pueden editar cualquier ticket
+        ticket = get_object_or_404(Ticket, pk=pk)
+    else:
+        # Los usuarios solo pueden editar sus propios tickets
+        ticket = get_object_or_404(Ticket, pk=pk, created_by=request.user)
+    
+    # Usar formulario apropiado según el rol
+    FormClass = AgentTicketForm if is_agent(request.user) else TicketForm
+    
+    if request.method == 'POST':
+        form = FormClass(request.POST, instance=ticket)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Ticket actualizado exitosamente.')
+            return redirect('ticket_detail', pk=ticket.pk)
+    else:
+        form = FormClass(instance=ticket)
+    
+    context = {
+        'form': form, 
+        'ticket': ticket,
+        'is_agent': is_agent(request.user),
+        'user_role': get_user_role(request.user),
+    }
+    return render(request, 'tickets/ticket_edit.html', context)
+
+@login_required
+def ticket_delete_view(request, pk):
+    """Vista para eliminar un ticket"""
+    if is_agent(request.user):
+        # Los agentes pueden eliminar cualquier ticket
+        ticket = get_object_or_404(Ticket, pk=pk)
+    else:
+        # Los usuarios solo pueden eliminar sus propios tickets
+        ticket = get_object_or_404(Ticket, pk=pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        ticket.delete()
+        messages.success(request, 'Ticket eliminado exitosamente.')
+        return redirect('ticket_list')
+    
+    context = {
+        'ticket': ticket,
+        'is_agent': is_agent(request.user),
+        'user_role': get_user_role(request.user),
+    }
+    return render(request, 'tickets/ticket_delete.html', context)
+
+@login_required
+def logout_view(request):
+    """Vista personalizada para logout"""
+    logout(request)
+    messages.info(request, 'Has cerrado sesión exitosamente.')
+    return redirect('home')
+
+# ========== VISTAS DE GESTIÓN DE USUARIOS ==========
+
+def agent_required(user):
+    """Decorador para verificar si el usuario es agente"""
+    return is_agent(user)
+
+@login_required
+@user_passes_test(agent_required, login_url='dashboard')
+def user_management_view(request):
+    """Vista para listar todos los usuarios (solo para agentes)"""
+    users = User.objects.all().order_by('username')
+    
+    # Filtros
+    role_filter = request.GET.get('role')
+    status_filter = request.GET.get('status')
+    search = request.GET.get('search')
+    
+    if role_filter:
+        if role_filter == 'agents':
+            users = users.filter(groups__name='Agentes')
+        elif role_filter == 'users':
+            users = users.filter(groups__name='Usuarios')
+    
+    if status_filter:
+        if status_filter == 'active':
+            users = users.filter(is_active=True)
+        elif status_filter == 'inactive':
+            users = users.filter(is_active=False)
+    
+    if search:
+        users = users.filter(
+            Q(username__icontains=search) |
+            Q(first_name__icontains=search) |
+            Q(last_name__icontains=search) |
+            Q(email__icontains=search)
+        )
+    
+    # Paginación
+    paginator = Paginator(users, 15)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'role_filter': role_filter,
+        'status_filter': status_filter,
+        'search': search,
+    }
+    return render(request, 'tickets/user_management.html', context)
+
+@login_required
+@user_passes_test(agent_required, login_url='dashboard')
+def user_create_view(request):
+    """Vista para crear nuevos usuarios (solo para agentes)"""
+    if request.method == 'POST':
+        form = UserManagementForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            role = form.cleaned_data['role']
+            messages.success(request, f'Usuario "{user.username}" creado exitosamente como {role[:-1]}.')
+            return redirect('user_management')
+    else:
+        form = UserManagementForm()
+    
+    return render(request, 'tickets/user_create.html', {'form': form})
+
+@login_required
+@user_passes_test(agent_required, login_url='dashboard')
+def user_edit_view(request, user_id):
+    """Vista para editar usuarios existentes (solo para agentes)"""
+    user_to_edit = get_object_or_404(User, pk=user_id)
+    
+    if request.method == 'POST':
+        form = UserEditForm(request.POST, instance=user_to_edit)
+        if form.is_valid():
+            user = form.save()
+            
+            # Actualizar rol del usuario
+            new_role = form.cleaned_data['role']
+            user.groups.clear()  # Remover todos los grupos
+            try:
+                group = Group.objects.get(name=new_role)
+                user.groups.add(group)
+            except Group.DoesNotExist:
+                pass
+            
+            messages.success(request, f'Usuario "{user.username}" actualizado exitosamente.')
+            return redirect('user_management')
+    else:
+        form = UserEditForm(instance=user_to_edit)
+    
+    context = {
+        'form': form,
+        'user_to_edit': user_to_edit,
+    }
+    return render(request, 'tickets/user_edit.html', context)
+
+@login_required
+@user_passes_test(agent_required, login_url='dashboard')
+def user_toggle_status_view(request, user_id):
+    """Vista para activar/desactivar usuarios (solo para agentes)"""
+    user_to_toggle = get_object_or_404(User, pk=user_id)
+    
+    if user_to_toggle == request.user:
+        messages.error(request, 'No puedes desactivar tu propia cuenta.')
+    else:
+        user_to_toggle.is_active = not user_to_toggle.is_active
+        user_to_toggle.save()
+        
+        status = "activado" if user_to_toggle.is_active else "desactivado"
+        messages.success(request, f'Usuario "{user_to_toggle.username}" {status} exitosamente.')
+    
+    return redirect('user_management')
+
+
+@login_required
+def download_attachment_view(request, attachment_id):
+    """Vista para descargar adjuntos"""
+    attachment = get_object_or_404(TicketAttachment, pk=attachment_id)
+    
+    # Verificar permisos
+    if is_agent(request.user) or attachment.ticket.created_by == request.user:
+        if attachment.file:
+            try:
+                with open(attachment.file.path, 'rb') as f:
+                    response = HttpResponse(f.read(), content_type='application/octet-stream')
+                    response['Content-Disposition'] = f'attachment; filename="{attachment.original_filename}"'
+                    return response
+            except FileNotFoundError:
+                messages.error(request, 'El archivo no se encontró en el servidor.')
+        else:
+            messages.error(request, 'No hay archivo asociado.')
+    else:
+        messages.error(request, 'No tienes permisos para descargar este archivo.')
+    
+    return redirect('ticket_detail', pk=attachment.ticket.pk)
+
+
+@login_required
+def delete_attachment_view(request, attachment_id):
+    """Vista para eliminar adjuntos"""
+    attachment = get_object_or_404(TicketAttachment, pk=attachment_id)
+    ticket_pk = attachment.ticket.pk
+    
+    # Verificar permisos (solo el que subió el archivo o agentes pueden eliminarlo)
+    if is_agent(request.user) or attachment.uploaded_by == request.user:
+        attachment.delete()
+        messages.success(request, 'Adjunto eliminado exitosamente.')
+    else:
+        messages.error(request, 'No tienes permisos para eliminar este archivo.')
+    
+    return redirect('ticket_detail', pk=ticket_pk)
+
+
+@login_required
+@user_passes_test(agent_required, login_url='dashboard')
+def unassign_ticket_view(request, pk):
+    """Vista para que los agentes desasignen tickets"""
+    ticket = get_object_or_404(Ticket, pk=pk)
+    ticket.assigned_to = None
+    ticket.save()
+    messages.success(request, f'Ticket #{ticket.pk} desasignado exitosamente.')
+    return redirect('ticket_detail', pk=pk)

@@ -1,0 +1,124 @@
+/* Estilos personalizados para el Sistema de Tickets */
+
+/* Mejoras de espaciado y tipografía */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.navbar-brand {
+    font-weight: 600;
+}
+
+/* Estilos para las cards */
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: box-shadow 0.15s ease-in-out;
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* Mejoras para los badges */
+.badge {
+    font-size: 0.75em;
+    font-weight: 500;
+}
+
+/* Estilos para las tablas */
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+/* Estilos para el login */
+.login-card {
+    border: none;
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.1);
+}
+
+/* Animaciones sutiles */
+.btn {
+    transition: all 0.2s ease-in-out;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+/* Estilos para alertas */
+.alert {
+    border: none;
+    border-radius: 0.5rem;
+}
+
+/* Mejoras para formularios */
+.form-control:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Estilos responsivos */
+@media (max-width: 768px) {
+    .navbar-brand {
+        font-size: 1.1rem;
+    }
+    
+    .display-5 {
+        font-size: 2rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+}
+
+/* Estilos para el dashboard */
+.dashboard-stat-card {
+    border-left: 4px solid;
+    transition: transform 0.2s ease-in-out;
+}
+
+.dashboard-stat-card:hover {
+    transform: translateY(-2px);
+}
+
+.dashboard-stat-card.primary {
+    border-left-color: #0d6efd;
+}
+
+.dashboard-stat-card.warning {
+    border-left-color: #ffc107;
+}
+
+.dashboard-stat-card.info {
+    border-left-color: #0dcaf0;
+}
+
+.dashboard-stat-card.success {
+    border-left-color: #198754;
+}
+
+/* Estilos para paginación */
+.pagination .page-link {
+    border-radius: 0.375rem;
+    margin: 0 0.125rem;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+/* Estilos para el navbar activo */
+.navbar-nav .nav-link.active {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 0.375rem;
+}
+
+/* Mejoras para dropdown */
+.dropdown-menu {
+    border: none;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    border-radius: 0.5rem;
+}

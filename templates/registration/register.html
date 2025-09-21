@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}Registro - TicketPro{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <!-- Botón de volver al inicio -->
+        <div class="text-center mb-3">
+            <a href="{% url 'home' %}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left"></i> Volver al inicio
+            </a>
+        </div>
+        
+        <div class="card shadow">
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <i class="bi bi-person-plus display-4 text-primary"></i>
+                                <h2 class="text-center mb-4">
+                <i class="bi bi-person-plus text-primary"></i>
+                Registro en TicketPro
+            </h2>
+                    <p class="text-muted">Regístrate para acceder al sistema</p>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    {% bootstrap_form form %}
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-person-check"></i> Crear Cuenta
+                        </button>
+                    </div>
+                </form>
+
+                <div class="text-center mt-3">
+                    <p class="mb-0">¿Ya tienes cuenta? 
+                        <a href="{% url 'login' %}" class="text-decoration-none">Inicia sesión aquí</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

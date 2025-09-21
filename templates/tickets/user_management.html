@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestión de Usuarios - TicketProo{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>
+        <i class="bi bi-people"></i> Gestión de Usuarios
+    </h1>
+    <a href="{% url 'user_create' %}" class="btn btn-primary">
+        <i class="bi bi-person-plus"></i> Nuevo Usuario
+    </a>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label for="search" class="form-label">Buscar</label>
+                <input type="text" class="form-control" id="search" name="search" 
+                       value="{{ search|default:'' }}" placeholder="Usuario, nombre, email...">
+            </div>
+            
+            <div class="col-md-3">
+                <label for="role" class="form-label">Rol</label>
+                <select class="form-select" id="role" name="role">
+                    <option value="">Todos los roles</option>
+                    <option value="agents" {% if role_filter == 'agents' %}selected{% endif %}>Agentes</option>
+                    <option value="users" {% if role_filter == 'users' %}selected{% endif %}>Usuarios</option>
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <label for="status" class="form-label">Estado</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">Todos los estados</option>
+                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Activos</option>
+                    <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactivos</option>
+                </select>
+            </div>
+            
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-outline-primary me-2">
+                    <i class="bi bi-search"></i> Filtrar
+                </button>
+                <a href="{% url 'user_management' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x"></i> Limpiar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista de usuarios -->
+{% if page_obj %}
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Nombre</th>
+                        <th>Email</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th>Último acceso</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in page_obj %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if user.is_superuser %}
+                                    <i class="bi bi-star-fill text-warning me-2" title="Superusuario"></i>
+                                {% endif %}
+                                <strong>{{ user.username }}</strong>
+                            </div>
+                        </td>
+                        <td>{{ user.get_full_name|default:"-" }}</td>
+                        <td>{{ user.email|default:"-" }}</td>
+                        <td>
+                            {% if user.groups.all %}
+                                {% for group in user.groups.all %}
+                                    {% if group.name == 'Agentes' %}
+                                        <span class="badge bg-primary">Agente</span>
+                                    {% elif group.name == 'Usuarios' %}
+                                        <span class="badge bg-info">Usuario</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ group.name }}</span>
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <span class="badge bg-secondary">Sin asignar</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.is_active %}
+                                <span class="badge bg-success">Activo</span>
+                            {% else %}
+                                <span class="badge bg-danger">Inactivo</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted">
+                            {% if user.last_login %}
+                                {{ user.last_login|date:"d/m/Y H:i" }}
+                            {% else %}
+                                Nunca
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'user_edit' user.pk %}" 
+                                   class="btn btn-outline-warning" title="Editar usuario">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                {% if user != request.user %}
+                                    <a href="{% url 'user_toggle_status' user.pk %}" 
+                                       class="btn btn-outline-{% if user.is_active %}danger{% else %}success{% endif %}" 
+                                       title="{% if user.is_active %}Desactivar{% else %}Activar{% endif %} usuario"
+                                       onclick="return confirm('¿Estás seguro de {% if user.is_active %}desactivar{% else %}activar{% endif %} a {{ user.username }}?')">
+                                        <i class="bi bi-{% if user.is_active %}x-circle{% else %}check-circle{% endif %}"></i>
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Paginación -->
+    {% if page_obj.has_other_pages %}
+    <div class="card-footer">
+        <nav aria-label="Paginación de usuarios">
+            <ul class="pagination justify-content-center mb-0">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                            <i class="bi bi-chevron-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                {% endif %}
+                
+                <li class="page-item active">
+                    <span class="page-link">
+                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                    </span>
+                </li>
+                
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                            <i class="bi bi-chevron-double-right"></i>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="bi bi-people display-4 text-muted mb-3"></i>
+        <h5 class="text-muted">No se encontraron usuarios</h5>
+        {% if search or role_filter or status_filter %}
+            <p class="text-muted">No hay usuarios que coincidan con los filtros seleccionados.</p>
+            <a href="{% url 'user_management' %}" class="btn btn-outline-primary me-2">
+                <i class="bi bi-x"></i> Limpiar filtros
+            </a>
+        {% endif %}
+        <a href="{% url 'user_create' %}" class="btn btn-primary">
+            <i class="bi bi-person-plus"></i> Crear Primer Usuario
+        </a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

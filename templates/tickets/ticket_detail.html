@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+
+{% block title %}Ticket #{{ ticket.id }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="mb-0">
+                    <i class="bi bi-ticket-perforated"></i> Ticket #{{ ticket.id }}
+                </h3>
+                <div>
+                    <span class="badge {{ ticket.get_priority_badge_class }} me-2">
+                        {{ ticket.get_priority_display }}
+                    </span>
+                    <span class="badge {{ ticket.get_status_badge_class }}">
+                        {{ ticket.get_status_display }}
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                <h4 class="mb-3">{{ ticket.title }}</h4>
+                
+                <div class="mb-4">
+                    <h6 class="text-muted mb-2">Descripción:</h6>
+                    <div class="border rounded p-3 bg-light">
+                        {{ ticket.description|linebreaks }}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <h6 class="text-muted mb-2">Creado por:</h6>
+                        <p class="mb-0">
+                            <i class="bi bi-person"></i> {{ ticket.created_by.get_full_name|default:ticket.created_by.username }}
+                        </p>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <h6 class="text-muted mb-2">Fecha de creación:</h6>
+                        <p class="mb-0">
+                            <i class="bi bi-calendar"></i> {{ ticket.created_at|date:"d/m/Y H:i" }}
+                        </p>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <h6 class="text-muted mb-2">Asignado a:</h6>
+                        <p class="mb-0">
+                            {% if ticket.assigned_to %}
+                                <i class="bi bi-person-check"></i> {{ ticket.assigned_to.get_full_name|default:ticket.assigned_to.username }}
+                            {% else %}
+                                <i class="bi bi-person-x text-muted"></i> <span class="text-muted">Sin asignar</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <h6 class="text-muted mb-2">Última actualización:</h6>
+                        <p class="mb-0">
+                            <i class="bi bi-clock"></i> {{ ticket.updated_at|date:"d/m/Y H:i" }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección de Adjuntos -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-paperclip"></i> Adjuntos ({{ ticket.attachments.count }})
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if ticket.attachments.exists %}
+                    <div class="list-group list-group-flush">
+                        {% for attachment in ticket.attachments.all %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="bi bi-file-earmark"></i>
+                                <strong>{{ attachment.original_filename }}</strong>
+                                <br>
+                                <small class="text-muted">
+                                    Subido por {{ attachment.uploaded_by.username }} el {{ attachment.uploaded_at|date:"d/m/Y H:i" }}
+                                    | Tamaño: {{ attachment.get_file_size_display }}
+                                </small>
+                            </div>
+                            <div>
+                                <a href="{% url 'download_attachment' attachment.id %}" class="btn btn-sm btn-outline-primary me-1">
+                                    <i class="bi bi-download"></i> Descargar
+                                </a>
+                                {% if is_agent or attachment.uploaded_by == user %}
+                                <a href="{% url 'delete_attachment' attachment.id %}" 
+                                   class="btn btn-sm btn-outline-danger"
+                                   onclick="return confirm('¿Estás seguro de que quieres eliminar este adjunto?')">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center mb-0">No hay adjuntos</p>
+                {% endif %}
+
+                <!-- Formulario para subir adjuntos -->
+                <hr>
+                <h6 class="mb-3">Subir nuevo adjunto</h6>
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        {{ attachment_form.file }}
+                    </div>
+                    <small class="form-text text-muted mb-3">
+                        Tipos permitidos: PDF, DOC, DOCX, TXT, JPG, PNG, GIF, ZIP, RAR. Tamaño máximo: 10MB
+                    </small>
+                    <button type="submit" name="upload_attachment" class="btn btn-success btn-sm">
+                        <i class="bi bi-upload"></i> Subir Adjunto
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-gear"></i> Acciones
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <!-- Autoasignación para agentes -->
+                    {% if is_agent and not ticket.assigned_to %}
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" name="assign_to_me" class="btn btn-success w-100">
+                            <i class="bi bi-person-plus"></i> Asignarme este ticket
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    <!-- Desasignar para agentes -->
+                    {% if is_agent and ticket.assigned_to %}
+                    <a href="{% url 'unassign_ticket' ticket.pk %}" class="btn btn-outline-warning"
+                       onclick="return confirm('¿Estás seguro de que quieres desasignar este ticket?')">
+                        <i class="bi bi-person-dash"></i> Desasignar ticket
+                    </a>
+                    {% endif %}
+                    
+                    <a href="{% url 'ticket_edit' ticket.pk %}" class="btn btn-warning">
+                        <i class="bi bi-pencil"></i> Editar Ticket
+                    </a>
+                    
+                    <a href="{% url 'ticket_delete' ticket.pk %}" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Eliminar Ticket
+                    </a>
+                    
+                    <hr>
+                    
+                    <a href="{% url 'ticket_list' %}" class="btn btn-outline-primary">
+                        <i class="bi bi-list-ul"></i> 
+                        {% if is_agent %}Ver Todos los Tickets{% else %}Mis Tickets{% endif %}
+                    </a>
+                    
+                    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-house-door"></i> Ir al Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Información adicional -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-info-circle"></i> Información
+                </h6>
+            </div>
+            <div class="card-body">
+                <small class="text-muted">
+                    <div class="mb-2">
+                        <strong>Prioridades:</strong><br>
+                        <span class="badge bg-success">Baja</span>
+                        <span class="badge bg-warning">Media</span>
+                        <span class="badge bg-danger">Alta</span>
+                        <span class="badge bg-dark">Urgente</span>
+                    </div>
+                    
+                    <div>
+                        <strong>Estados:</strong><br>
+                        <span class="badge bg-primary">Abierto</span>
+                        <span class="badge bg-warning">En Progreso</span>
+                        <span class="badge bg-success">Resuelto</span>
+                        <span class="badge bg-secondary">Cerrado</span>
+                    </div>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
