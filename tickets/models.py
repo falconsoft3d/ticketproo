@@ -569,6 +569,70 @@ class UserProfile(models.Model):
         verbose_name='Última actualización'
     )
     
+    def get_total_hours(self):
+        """Retorna el total de horas trabajadas por el usuario"""
+        from datetime import timedelta
+        total_minutes = 0
+        for entry in self.user.time_entries.filter(fecha_salida__isnull=False):
+            total_minutes += entry.duracion_trabajada
+        return round(total_minutes / 60, 1)
+    
+    def get_monthly_hours(self):
+        """Retorna las horas trabajadas en el mes actual"""
+        from datetime import datetime, timedelta
+        now = timezone.now()
+        start_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        
+        total_minutes = 0
+        entries = self.user.time_entries.filter(
+            fecha_entrada__gte=start_month,
+            fecha_salida__isnull=False
+        )
+        for entry in entries:
+            total_minutes += entry.duracion_trabajada
+        return round(total_minutes / 60, 1)
+    
+    def get_weekly_hours(self):
+        """Retorna las horas trabajadas en esta semana"""
+        from datetime import datetime, timedelta
+        now = timezone.now()
+        # Calcular el inicio de la semana (lunes)
+        start_week = now - timedelta(days=now.weekday())
+        start_week = start_week.replace(hour=0, minute=0, second=0, microsecond=0)
+        
+        total_minutes = 0
+        entries = self.user.time_entries.filter(
+            fecha_entrada__gte=start_week,
+            fecha_salida__isnull=False
+        )
+        for entry in entries:
+            total_minutes += entry.duracion_trabajada
+        return round(total_minutes / 60, 1)
+    
+    def get_daily_hours(self):
+        """Retorna las horas trabajadas hoy"""
+        from datetime import datetime
+        today = timezone.now().date()
+        
+        total_minutes = 0
+        entries = self.user.time_entries.filter(
+            fecha_entrada__date=today,
+            fecha_salida__isnull=False
+        )
+        for entry in entries:
+            total_minutes += entry.duracion_trabajada
+            
+        # También incluir sesión activa si existe
+        active_entry = self.user.time_entries.filter(
+            fecha_entrada__date=today,
+            fecha_salida__isnull=True
+        ).first()
+        
+        if active_entry:
+            total_minutes += active_entry.duracion_trabajada
+            
+        return round(total_minutes / 60, 1)
+    
     class Meta:
         verbose_name = 'Perfil de Usuario'
         verbose_name_plural = 'Perfiles de Usuario'

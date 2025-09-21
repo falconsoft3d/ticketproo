@@ -96,16 +96,6 @@ def dashboard_view(request):
     """Vista principal del dashboard de TicketProo"""
     user_role = get_user_role(request.user)
     
-    # Información de control de horario para agentes
-    active_time_entry = None
-    can_start_work = False
-    can_end_work = False
-    
-    if is_agent(request.user):
-        active_time_entry = TimeEntry.get_active_entry(request.user)
-        can_start_work = not active_time_entry
-        can_end_work = bool(active_time_entry)
-    
     if is_agent(request.user):
         # Estadísticas para agentes (todos los tickets)
         all_tickets = Ticket.objects.all()
@@ -129,10 +119,6 @@ def dashboard_view(request):
             'my_assigned_tickets': my_assigned_tickets,
             'user_role': user_role,
             'is_agent': True,
-            # Control de horario
-            'active_time_entry': active_time_entry,
-            'can_start_work': can_start_work,
-            'can_end_work': can_end_work,
         }
     else:
         # Estadísticas para usuarios regulares (solo sus tickets)
@@ -380,7 +366,7 @@ def agent_required(user):
 @user_passes_test(agent_required, login_url='dashboard')
 def user_management_view(request):
     """Vista para listar todos los usuarios (solo para agentes)"""
-    users = User.objects.all().order_by('username')
+    users = User.objects.select_related('profile').prefetch_related('groups').all().order_by('username')
     
     # Filtros
     role_filter = request.GET.get('role')

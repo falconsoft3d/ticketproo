@@ -65,6 +65,10 @@
                         <th>Email</th>
                         <th>Rol</th>
                         <th>Estado</th>
+                        <th>Horas T</th>
+                        <th>Horas M</th>
+                        <th>Horas S</th>
+                        <th>Horas D</th>
                         <th>Último acceso</th>
                         <th>Acciones</th>
                     </tr>
@@ -103,6 +107,18 @@
                             {% else %}
                                 <span class="badge bg-danger">Inactivo</span>
                             {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <small class="text-muted">{{ user.profile.get_total_hours|floatformat:1 }}h</small>
+                        </td>
+                        <td class="text-center">
+                            <small class="text-muted">{{ user.profile.get_monthly_hours|floatformat:1 }}h</small>
+                        </td>
+                        <td class="text-center">
+                            <small class="text-muted">{{ user.profile.get_weekly_hours|floatformat:1 }}h</small>
+                        </td>
+                        <td class="text-center">
+                            <small class="text-muted">{{ user.profile.get_daily_hours|floatformat:1 }}h</small>
                         </td>
                         <td class="text-muted">
                             {% if user.last_login %}
