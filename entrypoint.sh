@@ -24,11 +24,8 @@ warn() {
     echo -e "${YELLOW}[$(date +'%Y-%m-%d %H:%M:%S')] WARNING: $1${NC}"
 }
 
-# Crear directorio de logs si no existe
-mkdir -p /app/logs
-
-# Crear directorios necesarios
-log "Creando directorios necesarios..."
+# Crear directorios necesarios (staticfiles y media)
+log "Verificando directorios necesarios..."
 mkdir -p /app/staticfiles /app/media
 
 # Configurar variables de entorno por defecto

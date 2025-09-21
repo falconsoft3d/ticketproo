@@ -2,8 +2,8 @@
 FROM python:3.12-slim
 
 # Establecer variables de entorno
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Instalar dependencias del sistema
@@ -29,18 +29,16 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiar código del proyecto
 COPY . /app/
 
-# Crear directorio para archivos estáticos y media
-RUN mkdir -p /app/staticfiles /app/media
+# Crear directorios necesarios
+RUN mkdir -p /app/staticfiles /app/media /app/logs
+
+# Copiar script de entrada
+COPY entrypoint.sh /app/
+RUN chmod +x /app/entrypoint.sh
 
 # Crear usuario no root
 RUN adduser --disabled-password --gecos '' appuser
 RUN chown -R appuser:appuser /app
-USER appuser
-
-# Copiar script de entrada
-COPY entrypoint.sh /app/
-USER root
-RUN chmod +x /app/entrypoint.sh
 USER appuser
 
 # Exponer puerto
