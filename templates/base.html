@@ -70,9 +70,47 @@
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
+                                <a class="dropdown-item {% if 'notes' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'notes_list' %}">
+                                    <i class="bi bi-journal-text"></i> Notas Internas
+                                </a>
+                            </li>
+                            <li>
                                 <a class="dropdown-item {% if 'category' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'category_list' %}">
-                                    <i class="fas fa-tags"></i> Categorías
+                                    <i class="bi bi-tags"></i> Categorías
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'project' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'project_list' %}">
+                                    <i class="bi bi-folder"></i> Proyectos
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'company' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'company_list' %}">
+                                    <i class="bi bi-building"></i> Empresas
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item {% if 'system_configuration' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'system_configuration' %}">
+                                    <i class="bi bi-gear-fill"></i> Configuración del Sistema
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item {% if 'time' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'time_clock' %}">
+                                    <i class="bi bi-clock"></i> Control de Horario
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'attendance' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'attendance_overview' %}">
+                                    <i class="bi bi-people-fill"></i> Asistencia General
                                 </a>
                             </li>
                         </ul>
@@ -88,6 +126,9 @@
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="{% url 'user_profile' %}">
                                 <i class="bi bi-person-gear"></i> Mi Perfil
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'my_notes' %}">
+                                <i class="bi bi-journal-text"></i> Mis Notas
                             </a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{% url 'logout' %}">

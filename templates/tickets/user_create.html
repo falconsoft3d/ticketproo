@@ -48,6 +48,26 @@
                                 {% endif %}
                             </div>
                         </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.company.id_for_label }}" class="form-label">
+                                    <i class="bi bi-building me-1"></i>
+                                    {{ form.company.label }}
+                                </label>
+                                {{ form.company }}
+                                {% if form.company.errors %}
+                                    <div class="text-danger mt-1">
+                                        {% for error in form.company.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <small class="form-text text-muted">
+                                    Empresa a la que pertenece el usuario (opcional)
+                                </small>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="row">

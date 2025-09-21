@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white text-center">
+                    <h4 class="mb-0">
+                        <i class="bi bi-play-fill"></i> {{ page_title }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <div class="display-4 text-success">
+                            <i class="bi bi-clock"></i>
+                        </div>
+                        <p class="text-muted">Hora actual: <strong id="current-time"></strong></p>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            {% bootstrap_field form.project %}
+                        </div>
+                        
+                        <div class="mb-4">
+                            {% bootstrap_field form.notas_entrada %}
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-play-fill"></i> Iniciar Jornada Laboral
+                            </button>
+                            <a href="{% url 'time_clock' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                    
+                    <div class="alert alert-info mt-3">
+                        <small>
+                            <i class="bi bi-info-circle"></i>
+                            Al hacer clic en "Iniciar Jornada" se registrará tu hora de entrada y el proyecto seleccionado.
+                            Asegúrate de finalizar tu jornada cuando termines de trabajar.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Mostrar hora actual en tiempo real
+function updateCurrentTime() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('es-ES', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+    document.getElementById('current-time').textContent = timeString;
+}
+
+// Actualizar cada segundo
+updateCurrentTime();
+setInterval(updateCurrentTime, 1000);
+</script>
+{% endblock %}

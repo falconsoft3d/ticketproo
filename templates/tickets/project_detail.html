@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Encabezado -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <span class="badge me-2" style="background-color: {{ project.color }};">&nbsp;</span>
+                        {{ project.name }}
+                    </h2>
+                    <span class="badge bg-{% if project.status == 'active' %}success{% elif project.status == 'completed' %}primary{% elif project.status == 'on_hold' %}warning{% elif project.status == 'cancelled' %}danger{% else %}secondary{% endif %} me-2">
+                        {{ project.get_status_display }}
+                    </span>
+                    {% if not project.is_active %}
+                        <span class="badge bg-secondary">Inactivo</span>
+                    {% endif %}
+                </div>
+                <div class="btn-group" role="group">
+                    <a href="{% url 'project_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver a Proyectos
+                    </a>
+                    {% if project.can_edit|default:True %}
+                        <a href="{% url 'project_edit' project.id %}" class="btn btn-primary">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información del Proyecto -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Información del Proyecto</h5>
+                </div>
+                <div class="card-body">
+                    {% if project.description %}
+                        <p class="card-text">{{ project.description|linebreaks }}</p>
+                    {% else %}
+                        <p class="text-muted"><em>Sin descripción</em></p>
+                    {% endif %}
+                    
+                    <div class="row mt-4">
+                        {% if project.start_date %}
+                        <div class="col-md-6">
+                            <strong>Fecha de Inicio:</strong><br>
+                            <span class="text-muted">{{ project.start_date|date:"d/m/Y" }}</span>
+                        </div>
+                        {% endif %}
+                        {% if project.end_date %}
+                        <div class="col-md-6">
+                            <strong>Fecha de Fin:</strong><br>
+                            <span class="text-muted">{{ project.end_date|date:"d/m/Y" }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <strong>Creado por:</strong><br>
+                            <span class="text-muted">{{ project.created_by.get_full_name|default:project.created_by.username }}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Fecha de Creación:</strong><br>
+                            <span class="text-muted">{{ project.created_at|date:"d/m/Y H:i" }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Estadísticas</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <h3 class="text-primary mb-0">{{ total_hours }}h</h3>
+                            <small class="text-muted">Total de Horas Trabajadas</small>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <h4 class="text-success mb-0">{{ active_workers_count }}</h4>
+                            <small class="text-muted">Trabajadores Activos Ahora</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trabajadores Activos -->
+    {% if active_workers %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-people-fill text-success"></i> 
+                        Trabajadores Activos ({{ active_workers_count }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for entry in active_workers %}
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card border-success">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        {{ entry.user.get_full_name|default:entry.user.username }}
+                                    </h6>
+                                    <p class="card-text">
+                                        <small class="text-muted">
+                                            <i class="bi bi-clock"></i> 
+                                            Desde las {{ entry.fecha_entrada|date:"H:i" }}
+                                        </small><br>
+                                        <span class="text-success fw-bold">{{ entry.duracion_formateada }}</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Registros Recientes -->
+    {% if time_entries %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> Registros Recientes (Últimos 10)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Empleado</th>
+                                    <th>Fecha</th>
+                                    <th>Entrada</th>
+                                    <th>Salida</th>
+                                    <th>Duración</th>
+                                    <th>Notas</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for entry in time_entries %}
+                                <tr>
+                                    <td>{{ entry.user.get_full_name|default:entry.user.username }}</td>
+                                    <td>{{ entry.fecha_entrada|date:"d/m/Y" }}</td>
+                                    <td>{{ entry.fecha_entrada|date:"H:i" }}</td>
+                                    <td>{{ entry.fecha_salida|date:"H:i" }}</td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ entry.duracion_formateada }}</span>
+                                    </td>
+                                    <td>
+                                        {% if entry.notas %}
+                                            <span class="text-truncate d-inline-block" 
+                                                  style="max-width: 200px;" 
+                                                  title="{{ entry.notas }}">
+                                                {{ entry.notas }}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <div class="text-muted">
+                        <i class="bi bi-clock fa-3x mb-3"></i>
+                        <h5>Sin registros de tiempo</h5>
+                        <p>Aún no hay registros de tiempo para este proyecto.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

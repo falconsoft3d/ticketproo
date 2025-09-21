@@ -1,7 +1,10 @@
 from django import forms
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
-from .models import Ticket, TicketAttachment, Category, TicketComment, UserProfile
+from .models import (
+    Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
+    UserNote, TimeEntry, Project, Company, SystemConfiguration
+)
 
 class CategoryForm(forms.ModelForm):
     """Formulario para crear y editar categorías"""
@@ -36,6 +39,82 @@ class CategoryForm(forms.ModelForm):
         }
 
 
+class ProjectForm(forms.ModelForm):
+    """Formulario para crear y editar proyectos"""
+    
+    class Meta:
+        model = Project
+        fields = ['name', 'description', 'color', 'status', 'start_date', 'end_date', 'is_active']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre del proyecto'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción del proyecto (opcional)'
+            }),
+            'color': forms.TextInput(attrs={
+                'class': 'form-control',
+                'type': 'color',
+                'value': '#28a745'
+            }),
+            'status': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'start_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'end_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'name': 'Nombre del Proyecto',
+            'description': 'Descripción',
+            'color': 'Color',
+            'status': 'Estado',
+            'start_date': 'Fecha de Inicio',
+            'end_date': 'Fecha de Fin',
+            'is_active': 'Activo',
+        }
+        help_texts = {
+            'name': 'Nombre único para identificar el proyecto',
+            'description': 'Descripción detallada del proyecto',
+            'color': 'Color que representará el proyecto en reportes',
+            'start_date': 'Fecha de inicio del proyecto (opcional)',
+            'end_date': 'Fecha estimada de finalización (opcional)',
+            'is_active': 'Si está marcado, el proyecto aparecerá en el registro de tiempo',
+        }
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+        
+        if start_date and end_date and start_date > end_date:
+            raise forms.ValidationError('La fecha de inicio no puede ser posterior a la fecha de fin.')
+        
+        return cleaned_data
+    
+    def save(self, created_by=None, commit=True):
+        project = super().save(commit=False)
+        
+        if created_by:
+            project.created_by = created_by
+        
+        if commit:
+            project.save()
+        
+        return project
+
+
 class TicketForm(forms.ModelForm):
     """Formulario básico para crear/editar tickets (usado por agentes)"""
     def __init__(self, *args, **kwargs):
@@ -43,10 +122,14 @@ class TicketForm(forms.ModelForm):
         # Filtrar solo categorías activas
         self.fields['category'].queryset = Category.objects.filter(is_active=True)
         self.fields['category'].empty_label = "Seleccionar categoría"
+        
+        # Configurar campo empresa
+        self.fields['company'].queryset = Company.objects.filter(is_active=True).order_by('name')
+        self.fields['company'].empty_label = "Seleccionar empresa (opcional)"
 
     class Meta:
         model = Ticket
-        fields = ['title', 'description', 'category', 'priority', 'status', 'hours']
+        fields = ['title', 'description', 'category', 'priority', 'status', 'company', 'hours']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -72,6 +155,9 @@ class TicketForm(forms.ModelForm):
                 'step': '0.5',
                 'min': '0'
             }),
+            'company': forms.Select(attrs={
+                'class': 'form-select'
+            }),
         }
         labels = {
             'title': 'Título',
@@ -79,6 +165,7 @@ class TicketForm(forms.ModelForm):
             'category': 'Categoría',
             'priority': 'Prioridad',
             'status': 'Estado',
+            'company': 'Empresa',
             'hours': 'Horas estimadas/trabajadas',
         }
 
@@ -170,10 +257,14 @@ class AgentTicketForm(forms.ModelForm):
         # Filtrar solo categorías activas
         self.fields['category'].queryset = Category.objects.filter(is_active=True)
         self.fields['category'].empty_label = "Seleccionar categoría"
+        
+        # Filtrar solo empresas activas
+        self.fields['company'].queryset = Company.objects.filter(is_active=True)
+        self.fields['company'].empty_label = "Seleccionar empresa (opcional)"
     
     class Meta:
         model = Ticket
-        fields = ['title', 'description', 'category', 'priority', 'status', 'assigned_to', 'hours', 'is_public_shareable']
+        fields = ['title', 'description', 'category', 'company', 'priority', 'status', 'assigned_to', 'hours', 'is_public_shareable']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -185,6 +276,9 @@ class AgentTicketForm(forms.ModelForm):
                 'placeholder': 'Describe detalladamente el problema o solicitud'
             }),
             'category': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'company': forms.Select(attrs={
                 'class': 'form-select'
             }),
             'priority': forms.Select(attrs={
@@ -263,9 +357,19 @@ class UserManagementForm(UserCreationForm):
         initial='Usuarios'
     )
     
+    company = forms.ModelChoiceField(
+        queryset=Company.objects.filter(is_active=True),
+        required=False,
+        empty_label="Sin empresa asignada",
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        }),
+        label='Empresa'
+    )
+    
     class Meta:
         model = User
-        fields = ('username', 'first_name', 'last_name', 'email', 'password1', 'password2', 'role')
+        fields = ('username', 'first_name', 'last_name', 'email', 'password1', 'password2', 'role', 'company')
         widgets = {
             'username': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -284,6 +388,14 @@ class UserManagementForm(UserCreationForm):
         
         if commit:
             user.save()
+            
+            # Crear o actualizar el perfil del usuario
+            profile, created = UserProfile.objects.get_or_create(user=user)
+            company = self.cleaned_data.get('company')
+            if company:
+                profile.company = company
+                profile.save()
+            
             # Asignar al grupo correspondiente
             role = self.cleaned_data['role']
             try:
@@ -310,9 +422,19 @@ class UserEditForm(forms.ModelForm):
         label='Rol del usuario'
     )
     
+    company = forms.ModelChoiceField(
+        queryset=Company.objects.filter(is_active=True),
+        required=False,
+        empty_label="Sin empresa asignada",
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        }),
+        label='Empresa'
+    )
+    
     class Meta:
         model = User
-        fields = ('username', 'first_name', 'last_name', 'email', 'is_active')
+        fields = ('username', 'first_name', 'last_name', 'email', 'is_active', 'role', 'company')
         widgets = {
             'username': forms.TextInput(attrs={
                 'class': 'form-control'
@@ -346,6 +468,35 @@ class UserEditForm(forms.ModelForm):
                 self.fields['role'].initial = 'Agentes'
             else:
                 self.fields['role'].initial = 'Usuarios'
+            
+            # Establecer la empresa actual del usuario
+            try:
+                profile = self.instance.profile
+                if profile.company:
+                    self.fields['company'].initial = profile.company
+            except UserProfile.DoesNotExist:
+                pass
+    
+    def save(self, commit=True):
+        user = super().save(commit=commit)
+        
+        if commit:
+            # Crear o actualizar el perfil del usuario
+            profile, created = UserProfile.objects.get_or_create(user=user)
+            company = self.cleaned_data.get('company')
+            profile.company = company
+            profile.save()
+            
+            # Actualizar grupos del usuario
+            role = self.cleaned_data['role']
+            user.groups.clear()
+            try:
+                group = Group.objects.get(name=role)
+                user.groups.add(group)
+            except Group.DoesNotExist:
+                pass
+        
+        return user
 
 
 class TicketAttachmentForm(forms.ModelForm):
@@ -480,7 +631,7 @@ class UserProfileForm(forms.ModelForm):
     
     class Meta:
         model = UserProfile
-        fields = ['phone', 'bio']
+        fields = ['phone', 'bio', 'company']
         widgets = {
             'phone': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -491,15 +642,23 @@ class UserProfileForm(forms.ModelForm):
                 'rows': 3,
                 'placeholder': 'Cuéntanos algo sobre ti...'
             }),
+            'company': forms.Select(attrs={
+                'class': 'form-select'
+            }),
         }
         labels = {
             'phone': 'Teléfono',
             'bio': 'Biografía',
+            'company': 'Empresa',
         }
     
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        
+        # Filtrar solo empresas activas
+        self.fields['company'].queryset = Company.objects.filter(is_active=True)
+        self.fields['company'].empty_label = "Sin empresa asignada"
         
         if user:
             self.fields['first_name'].initial = user.first_name
@@ -546,3 +705,324 @@ class CustomPasswordChangeForm(PasswordChangeForm):
         self.fields['old_password'].label = 'Contraseña Actual'
         self.fields['new_password1'].label = 'Nueva Contraseña'
         self.fields['new_password2'].label = 'Confirmar Nueva Contraseña'
+
+
+class UserNoteForm(forms.ModelForm):
+    """Formulario para crear y editar notas internas de usuarios"""
+    
+    def __init__(self, *args, **kwargs):
+        # Permitir pasar el usuario actual para filtrar tickets
+        current_user = kwargs.pop('current_user', None)
+        super().__init__(*args, **kwargs)
+        
+        # Solo mostrar tickets del usuario asociado a la nota
+        if self.instance.pk and self.instance.user:
+            # Si estamos editando, filtrar tickets del usuario de la nota
+            self.fields['tickets'].queryset = Ticket.objects.filter(
+                created_by=self.instance.user
+            ).order_by('-created_at')
+        elif current_user:
+            # Si estamos creando, inicialmente no mostrar tickets
+            # Se llenarán dinámicamente cuando se seleccione el usuario
+            self.fields['tickets'].queryset = Ticket.objects.none()
+        
+        # Configurar widget para selección múltiple de tickets
+        self.fields['tickets'].widget.attrs.update({
+            'class': 'form-select',
+            'size': '5'
+        })
+        
+        # Personalizar queryset de usuarios (solo mostrar usuarios que tienen tickets)
+        users_with_tickets = User.objects.filter(
+            created_tickets__isnull=False
+        ).distinct().order_by('username')
+        self.fields['user'].queryset = users_with_tickets
+    
+    class Meta:
+        model = UserNote
+        fields = ['title', 'description', 'user', 'tickets', 'is_private']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título descriptivo de la nota'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 6,
+                'placeholder': 'Descripción detallada de la interacción con el cliente...'
+            }),
+            'user': forms.Select(attrs={
+                'class': 'form-select',
+                'id': 'id_user_select'
+            }),
+            'is_private': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'title': 'Título de la Nota',
+            'description': 'Descripción',
+            'user': 'Usuario Asociado',
+            'tickets': 'Tickets Relacionados',
+            'is_private': 'Nota Privada (solo visible para agentes)',
+        }
+        help_texts = {
+            'title': 'Breve descripción del motivo de la nota',
+            'description': 'Detalle completo de la interacción, observaciones o comentarios internos',
+            'user': 'Usuario al que se asocia esta nota',
+            'tickets': 'Selecciona los tickets relacionados con esta nota (opcional)',
+            'is_private': 'Si está marcada, solo los agentes podrán ver esta nota',
+        }
+    
+    def clean_title(self):
+        title = self.cleaned_data.get('title')
+        if title:
+            title = title.strip()
+            if len(title) < 5:
+                raise forms.ValidationError('El título debe tener al menos 5 caracteres.')
+            if len(title) > 200:
+                raise forms.ValidationError('El título no puede exceder 200 caracteres.')
+        return title
+    
+    def clean_description(self):
+        description = self.cleaned_data.get('description')
+        if description:
+            description = description.strip()
+            if len(description) < 10:
+                raise forms.ValidationError('La descripción debe tener al menos 10 caracteres.')
+            if len(description) > 2000:
+                raise forms.ValidationError('La descripción no puede exceder 2000 caracteres.')
+        return description
+    
+    def save(self, created_by=None, commit=True):
+        note = super().save(commit=False)
+        
+        if created_by:
+            note.created_by = created_by
+        
+        if commit:
+            note.save()
+            # Guardar relaciones many-to-many
+            self.save_m2m()
+        
+        return note
+
+
+# ===========================================
+# FORMULARIOS PARA CONTROL DE HORARIO
+# ===========================================
+
+class TimeEntryStartForm(forms.Form):
+    """Formulario para iniciar jornada laboral"""
+    
+    project = forms.ModelChoiceField(
+        queryset=Project.objects.filter(is_active=True, status='active'),
+        empty_label="Seleccionar proyecto",
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'required': True
+        }),
+        label='Proyecto',
+        help_text='Selecciona el proyecto en el que vas a trabajar'
+    )
+    
+    notas_entrada = forms.CharField(
+        required=False,
+        max_length=500,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 3,
+            'placeholder': 'Comentarios opcionales sobre el inicio de jornada...',
+        }),
+        label='Notas de entrada (opcional)',
+        help_text='Puedes agregar comentarios sobre tareas a realizar, estado del proyecto, etc.'
+    )
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Asegurar que solo se muestren proyectos activos
+        self.fields['project'].queryset = Project.objects.filter(
+            is_active=True, 
+            status='active'
+        ).order_by('name')
+
+
+class TimeEntryEndForm(forms.Form):
+    """Formulario para finalizar jornada laboral"""
+    
+    notas_salida = forms.CharField(
+        required=False,
+        max_length=500,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 3,
+            'placeholder': 'Resumen de tareas realizadas, pendientes, etc...',
+        }),
+        label='Resumen de la jornada (opcional)',
+        help_text='Describe brevemente las actividades realizadas durante la jornada'
+    )
+    
+    def clean_notas_salida(self):
+        notas = self.cleaned_data.get('notas_salida')
+        if notas:
+            notas = notas.strip()
+            if len(notas) > 500:
+                raise forms.ValidationError('Las notas no pueden exceder 500 caracteres.')
+        return notas
+
+
+class TimeEntryEditForm(forms.ModelForm):
+    """Formulario para editar registros de horario (solo notas)"""
+    
+    class Meta:
+        model = TimeEntry
+        fields = ['notas']
+        widgets = {
+            'notas': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Comentarios sobre la jornada laboral...',
+            }),
+        }
+        labels = {
+            'notas': 'Notas de la jornada',
+        }
+        help_texts = {
+            'notas': 'Describe las actividades realizadas, observaciones o comentarios relevantes',
+        }
+    
+    def clean_notas(self):
+        notas = self.cleaned_data.get('notas')
+        if notas:
+            notas = notas.strip()
+            if len(notas) > 500:
+                raise forms.ValidationError('Las notas no pueden exceder 500 caracteres.')
+        return notas
+    
+    def clean_notas(self):
+        notas = self.cleaned_data.get('notas')
+        if notas:
+            notas = notas.strip()
+            if len(notas) > 500:
+                raise forms.ValidationError('Las notas no pueden exceder 500 caracteres.')
+        return notas
+
+
+
+class CompanyForm(forms.ModelForm):
+    """Formulario para crear y editar empresas"""
+    
+    class Meta:
+        model = Company
+        fields = ['name', 'description', 'address', 'phone', 'email', 'website', 'color', 'is_active']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre de la empresa'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción de la empresa (opcional)'
+            }),
+            'address': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Dirección completa'
+            }),
+            'phone': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '+34 123 456 789'
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'contacto@empresa.com'
+            }),
+            'website': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://www.empresa.com'
+            }),
+            'color': forms.TextInput(attrs={
+                'class': 'form-control',
+                'type': 'color',
+                'title': 'Selecciona un color identificativo'
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'name': 'Nombre de la Empresa',
+            'description': 'Descripción',
+            'address': 'Dirección',
+            'phone': 'Teléfono',
+            'email': 'Email de Contacto',
+            'website': 'Sitio Web',
+            'color': 'Color Identificativo',
+            'is_active': 'Empresa Activa',
+        }
+    
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+        if name:
+            name = name.strip()
+            if len(name) < 2:
+                raise forms.ValidationError('El nombre debe tener al menos 2 caracteres.')
+            
+            # Verificar unicidad
+            query = Company.objects.filter(name__iexact=name)
+            if self.instance and self.instance.pk:
+                query = query.exclude(pk=self.instance.pk)
+            
+            if query.exists():
+                raise forms.ValidationError('Ya existe una empresa con este nombre.')
+        
+        return name
+
+
+class SystemConfigurationForm(forms.ModelForm):
+    """Formulario para configurar el sistema"""
+    
+    class Meta:
+        model = SystemConfiguration
+        fields = [
+            'site_name',
+            'allow_user_registration',
+            'default_ticket_priority'
+        ]
+        widgets = {
+            'site_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre del sitio'
+            }),
+            'allow_user_registration': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'default_ticket_priority': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+        }
+        labels = {
+            'site_name': 'Nombre del sitio',
+            'allow_user_registration': 'Permitir registro de usuarios',
+            'default_ticket_priority': 'Prioridad por defecto de tickets',
+        }
+        help_texts = {
+            'site_name': 'Nombre que aparece en el encabezado del sistema',
+            'allow_user_registration': 'Permite que nuevos usuarios se registren en el sistema',
+            'default_ticket_priority': 'Prioridad asignada automáticamente a nuevos tickets',
+        }
+    
+    def clean_site_name(self):
+        """Validar el nombre del sitio"""
+        site_name = self.cleaned_data.get('site_name', '').strip()
+        
+        if not site_name:
+            raise forms.ValidationError('El nombre del sitio es requerido.')
+        
+        if len(site_name) < 3:
+            raise forms.ValidationError('El nombre del sitio debe tener al menos 3 caracteres.')
+        
+        if len(site_name) > 100:
+            raise forms.ValidationError('El nombre del sitio no puede exceder 100 caracteres.')
+        
+        return site_name

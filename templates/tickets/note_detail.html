@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <div class="d-flex align-items-center">
+                    <a href="{% url 'notes_list' %}" class="btn btn-outline-secondary me-3">
+                        <i class="bi bi-arrow-left"></i>
+                    </a>
+                    <div>
+                        <h2 class="h3 mb-1">
+                            <i class="bi bi-journal-text text-primary"></i>
+                            {{ note.title }}
+                        </h2>
+                        <div class="d-flex align-items-center gap-2">
+                            {% if note.is_private %}
+                                <span class="badge bg-warning text-dark">
+                                    <i class="bi bi-lock"></i> Nota Privada
+                                </span>
+                            {% else %}
+                                <span class="badge bg-info">
+                                    <i class="bi bi-unlock"></i> Nota Pública
+                                </span>
+                            {% endif %}
+                            <span class="text-muted small">
+                                Creada {{ note.created_at|timesince }} atrás
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Botones de acción -->
+                <div class="d-flex gap-2">
+                    <a href="{% url 'note_edit' note.id %}" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a>
+                    <a href="{% url 'note_delete' note.id %}" class="btn btn-outline-danger">
+                        <i class="bi bi-trash"></i> Eliminar
+                    </a>
+                </div>
+            </div>
+
+            <!-- Contenido de la nota -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Descripción</h5>
+                    <div class="note-content">
+                        {{ note.description|linebreaks }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tickets relacionados -->
+            {% if note.tickets.exists %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-ticket-perforated text-info"></i>
+                            Tickets Relacionados ({{ note.tickets.count }})
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            {% for ticket in note.tickets.all %}
+                                <div class="col-md-6 mb-3">
+                                    <div class="card border-start border-info border-3">
+                                        <div class="card-body py-3">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <h6 class="card-title mb-0">
+                                                    <a href="{% url 'ticket_detail' ticket.id %}" 
+                                                       class="text-decoration-none">
+                                                        #{{ ticket.ticket_number }}
+                                                    </a>
+                                                </h6>
+                                                <span class="badge {{ ticket.get_status_badge_class }}">
+                                                    {{ ticket.get_status_display }}
+                                                </span>
+                                            </div>
+                                            <p class="card-text text-muted small mb-2">
+                                                {{ ticket.title|truncatechars:60 }}
+                                            </p>
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <span class="badge {{ ticket.get_priority_badge_class }}">
+                                                    {{ ticket.get_priority_display }}
+                                                </span>
+                                                <span class="small text-muted">
+                                                    {{ ticket.created_at|date:"d/m/Y" }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar con información -->
+        <div class="col-lg-4">
+            <!-- Información del usuario -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-person-circle text-primary"></i>
+                        Usuario Asociado
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="avatar-placeholder bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" 
+                             style="width: 50px; height: 50px;">
+                            <i class="bi bi-person" style="font-size: 1.5rem;"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1">{{ note.user.get_full_name|default:note.user.username }}</h6>
+                            <p class="text-muted small mb-0">@{{ note.user.username }}</p>
+                            {% if note.user.email %}
+                                <p class="text-muted small mb-0">{{ note.user.email }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Estadísticas del usuario -->
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <div class="text-center p-2 bg-light rounded">
+                                <div class="fw-bold text-primary">{{ note.user.created_tickets.count }}</div>
+                                <div class="small text-muted">Tickets</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center p-2 bg-light rounded">
+                                <div class="fw-bold text-info">{{ note.user.notes.count }}</div>
+                                <div class="small text-muted">Notas</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Enlaces rápidos -->
+                    <div class="mt-3">
+                        <a href="{% url 'user_notes' note.user.id %}" class="btn btn-sm btn-outline-primary w-100 mb-2">
+                            <i class="bi bi-journal-text"></i> Ver todas sus notas
+                        </a>
+                        <a href="{% url 'note_create' %}?user={{ note.user.id }}" class="btn btn-sm btn-outline-success w-100">
+                            <i class="bi bi-plus-circle"></i> Nueva nota para este usuario
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información de la nota -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-info-circle text-info"></i>
+                        Detalles de la Nota
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="small text-muted">Creada por</label>
+                        <div class="fw-bold">{{ note.created_by.get_full_name|default:note.created_by.username }}</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="small text-muted">Fecha de creación</label>
+                        <div class="fw-bold">{{ note.created_at|date:"d/m/Y H:i" }}</div>
+                    </div>
+                    
+                    {% if note.updated_at != note.created_at %}
+                        <div class="mb-3">
+                            <label class="small text-muted">Última actualización</label>
+                            <div class="fw-bold">{{ note.updated_at|date:"d/m/Y H:i" }}</div>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <label class="small text-muted">Visibilidad</label>
+                        <div class="fw-bold">
+                            {% if note.is_private %}
+                                <i class="bi bi-lock text-warning"></i> Solo agentes
+                            {% else %}
+                                <i class="bi bi-unlock text-info"></i> Usuario y agentes
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-0">
+                        <label class="small text-muted">Tickets relacionados</label>
+                        <div class="fw-bold">{{ note.get_related_tickets_count }} ticket{{ note.get_related_tickets_count|pluralize:"s" }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones rápidas -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-lightning text-warning"></i>
+                        Acciones Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'notes_list' %}" class="btn btn-outline-primary">
+                            <i class="bi bi-list"></i> Ver todas las notas
+                        </a>
+                        <a href="{% url 'note_create' %}" class="btn btn-outline-success">
+                            <i class="bi bi-plus-circle"></i> Crear nueva nota
+                        </a>
+                        <a href="{% url 'ticket_list' %}" class="btn btn-outline-info">
+                            <i class="bi bi-ticket-perforated"></i> Ver tickets
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.avatar-placeholder {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+}
+
+.note-content {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: #333;
+}
+
+.note-content p {
+    margin-bottom: 1rem;
+}
+</style>
+{% endblock %}

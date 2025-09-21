@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white text-center">
+                    <h4 class="mb-0">
+                        <i class="bi bi-stop-fill"></i> {{ page_title }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Información de la jornada actual -->
+                    <div class="alert alert-info">
+                        <h6><i class="bi bi-info-circle"></i> Jornada Actual</h6>
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>Inicio:</strong><br>
+                                {{ active_entry.fecha_entrada|date:"H:i" }}
+                            </div>
+                            <div class="col-6">
+                                <strong>Tiempo Trabajado:</strong><br>
+                                <span id="tiempo-transcurrido">{{ active_entry.duracion_formateada }}</span>
+                            </div>
+                        </div>
+                        {% if active_entry.notas %}
+                            <div class="mt-2">
+                                <strong>Notas de entrada:</strong><br>
+                                <small>{{ active_entry.notas }}</small>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="text-center mb-4">
+                        <div class="display-4 text-danger">
+                            <i class="bi bi-stop-fill-circle"></i>
+                        </div>
+                        <p class="text-muted">Hora actual: <strong id="current-time"></strong></p>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            {% bootstrap_field form.notas_salida %}
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-danger btn-lg">
+                                <i class="bi bi-stop-fill"></i> Finalizar Jornada Laboral
+                            </button>
+                            <a href="{% url 'time_clock' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                    
+                    <div class="alert alert-warning mt-3">
+                        <small>
+                            <i class="bi bi-exclamation-triangle"></i>
+                            Al hacer clic en "Finalizar Jornada" se cerrará tu registro de tiempo.
+                            No podrás modificar la hora de salida después de confirmar.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Mostrar hora actual en tiempo real
+function updateCurrentTime() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('es-ES', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+    document.getElementById('current-time').textContent = timeString;
+}
+
+// Actualizar tiempo transcurrido
+function updateElapsedTime() {
+    fetch('{% url "ajax_time_status" %}')
+        .then(response => response.json())
+        .then(data => {
+            if (data.is_working) {
+                document.getElementById('tiempo-transcurrido').textContent = data.duration;
+            }
+        })
+        .catch(error => console.log('Error actualizando tiempo:', error));
+}
+
+// Actualizar cada segundo la hora actual y cada minuto el tiempo transcurrido
+updateCurrentTime();
+setInterval(updateCurrentTime, 1000);
+setInterval(updateElapsedTime, 60000);
+</script>
+{% endblock %}

@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header con título y botón crear -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="h3 mb-1">
+                        <i class="bi bi-journal-text text-primary"></i>
+                        Notas Internas
+                    </h2>
+                    <p class="text-muted mb-0">Gestión de notas e interacciones con clientes</p>
+                </div>
+                <a href="{% url 'note_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Nueva Nota
+                </a>
+            </div>
+
+            <!-- Filtros -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="search" class="form-label">Buscar</label>
+                            <input type="text" class="form-control" id="search" name="search" 
+                                   value="{{ search_query }}" placeholder="Título, descripción o usuario...">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="user" class="form-label">Usuario</label>
+                            <select class="form-select" id="user" name="user">
+                                <option value="">Todos los usuarios</option>
+                                {% for user in users_with_notes %}
+                                    <option value="{{ user.id }}" {% if user.id|stringformat:"s" == user_filter %}selected{% endif %}>
+                                        {{ user.get_full_name|default:user.username }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="privacy" class="form-label">Privacidad</label>
+                            <select class="form-select" id="privacy" name="privacy">
+                                <option value="">Todas las notas</option>
+                                <option value="private" {% if privacy_filter == 'private' %}selected{% endif %}>Solo privadas</option>
+                                <option value="public" {% if privacy_filter == 'public' %}selected{% endif %}>Solo públicas</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-outline-primary">
+                                    <i class="bi bi-search"></i> Filtrar
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Lista de notas -->
+            <div class="card">
+                <div class="card-body">
+                    {% if page_obj %}
+                        <div class="row">
+                            {% for note in page_obj %}
+                                <div class="col-md-6 col-lg-4 mb-4">
+                                    <div class="card h-100 border-start border-primary border-3">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <h6 class="card-title mb-0">
+                                                    <a href="{% url 'note_detail' note.id %}" 
+                                                       class="text-decoration-none">
+                                                        {{ note.title|truncatechars:50 }}
+                                                    </a>
+                                                </h6>
+                                                {% if note.is_private %}
+                                                    <span class="badge bg-warning text-dark">
+                                                        <i class="bi bi-lock"></i> Privada
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-info">
+                                                        <i class="bi bi-unlock"></i> Pública
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                            
+                                            <p class="card-text text-muted small mb-2">
+                                                {{ note.description|truncatechars:100 }}
+                                            </p>
+                                            
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="bi bi-person-circle text-primary me-1"></i>
+                                                <span class="small">
+                                                    <strong>{{ note.user.get_full_name|default:note.user.username }}</strong>
+                                                </span>
+                                            </div>
+                                            
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="bi bi-person-gear text-success me-1"></i>
+                                                <span class="small">
+                                                    Por {{ note.created_by.get_full_name|default:note.created_by.username }}
+                                                </span>
+                                            </div>
+                                            
+                                            {% if note.get_related_tickets_count > 0 %}
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <i class="bi bi-ticket-perforated text-info me-1"></i>
+                                                    <span class="small">{{ note.get_tickets_summary }}</span>
+                                                </div>
+                                            {% endif %}
+                                            
+                                            <div class="d-flex align-items-center text-muted">
+                                                <i class="bi bi-clock me-1"></i>
+                                                <span class="small">{{ note.created_at|timesince }} atrás</span>
+                                            </div>
+                                        </div>
+                                        <div class="card-footer bg-transparent">
+                                            <div class="d-flex gap-2">
+                                                <a href="{% url 'note_detail' note.id %}" 
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-eye"></i> Ver
+                                                </a>
+                                                <a href="{% url 'note_edit' note.id %}" 
+                                                   class="btn btn-sm btn-outline-secondary">
+                                                    <i class="bi bi-pencil"></i> Editar
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Paginación -->
+                        {% if page_obj.has_other_pages %}
+                            <nav aria-label="Paginación de notas" class="mt-4">
+                                <ul class="pagination justify-content-center">
+                                    {% if page_obj.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if privacy_filter %}&privacy={{ privacy_filter }}{% endif %}">
+                                                Primera
+                                            </a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if privacy_filter %}&privacy={{ privacy_filter }}{% endif %}">
+                                                Anterior
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                    
+                                    <li class="page-item active">
+                                        <span class="page-link">
+                                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                        </span>
+                                    </li>
+                                    
+                                    {% if page_obj.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if privacy_filter %}&privacy={{ privacy_filter }}{% endif %}">
+                                                Siguiente
+                                            </a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if privacy_filter %}&privacy={{ privacy_filter }}{% endif %}">
+                                                Última
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-journal-x text-muted" style="font-size: 4rem;"></i>
+                            <h5 class="text-muted mt-3">No hay notas disponibles</h5>
+                            <p class="text-muted">
+                                {% if search_query or user_filter or privacy_filter %}
+                                    No se encontraron notas que coincidan con los filtros aplicados.
+                                {% else %}
+                                    Aún no se han creado notas internas. 
+                                {% endif %}
+                            </p>
+                            <a href="{% url 'note_create' %}" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> Crear Primera Nota
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

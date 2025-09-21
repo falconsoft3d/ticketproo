@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2><i class="bi bi-list text-primary"></i> {{ page_title }}</h2>
+                <a href="{% url 'time_clock' %}" class="btn btn-primary">
+                    <i class="bi bi-clock"></i> Control de Horario
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen -->
+    {% if total_horas > 0 %}
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card border-primary">
+                <div class="card-body text-center">
+                    <h4 class="text-primary">{{ total_horas }}h</h4>
+                    <small class="text-muted">Total de Horas</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <h4 class="text-info">{{ total_dias }}</h4>
+                    <small class="text-muted">Días Trabajados</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Filtros -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-funnel"></i> Filtros</h6>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Fecha Desde:</label>
+                            <input type="date" 
+                                   name="fecha_desde" 
+                                   class="form-control" 
+                                   value="{{ fecha_desde }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Fecha Hasta:</label>
+                            <input type="date" 
+                                   name="fecha_hasta" 
+                                   class="form-control" 
+                                   value="{{ fecha_hasta }}">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="bi bi-search"></i> Filtrar
+                            </button>
+                            <a href="{% url 'time_entries_list' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x"></i> Limpiar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Registros -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-table"></i> Registros de Horario
+                        {% if page_obj.paginator.count %}
+                            <span class="badge bg-primary">{{ page_obj.paginator.count }}</span>
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if page_obj.object_list %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Proyecto</th>
+                                        <th>Hora Entrada</th>
+                                        <th>Hora Salida</th>
+                                        <th>Duración</th>
+                                        <th>Horas</th>
+                                        <th>Estado</th>
+                                        <th>Notas</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for entry in page_obj.object_list %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ entry.fecha_entrada|date:"d/m/Y" }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ entry.fecha_entrada|date:"l" }}</small>
+                                        </td>
+                                        <td>
+                                            {% if entry.project %}
+                                                <span class="badge" style="background-color: {{ entry.project.color }}; color: white;">
+                                                    <i class="bi bi-folder"></i> {{ entry.project.name }}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">Sin proyecto</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ entry.fecha_entrada|date:"H:i" }}</td>
+                                        <td>
+                                            {% if entry.fecha_salida %}
+                                                {{ entry.fecha_salida|date:"H:i" }}
+                                            {% else %}
+                                                <span class="badge bg-success">Activo</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if entry.fecha_salida %}
+                                                {{ entry.duracion_formateada }}
+                                            {% else %}
+                                                <span class="text-primary">{{ entry.duracion_formateada }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if entry.fecha_salida %}
+                                                {{ entry.horas_trabajadas }}h
+                                            {% else %}
+                                                <span class="text-primary">{{ entry.horas_trabajadas }}h</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if entry.fecha_salida %}
+                                                <span class="badge bg-secondary">Completado</span>
+                                            {% else %}
+                                                <span class="badge bg-success">En Progreso</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if entry.notas %}
+                                                <span class="text-truncate d-inline-block" 
+                                                      style="max-width: 150px;" 
+                                                      title="{{ entry.notas }}">
+                                                    {{ entry.notas }}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a href="{% url 'time_entry_detail' entry.id %}" 
+                                                   class="btn btn-outline-primary"
+                                                   title="Ver detalles">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <a href="{% url 'time_entry_edit' entry.id %}" 
+                                                   class="btn btn-outline-secondary"
+                                                   title="Editar notas">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Paginación -->
+                        {% if page_obj.has_other_pages %}
+                        <nav aria-label="Paginación">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if fecha_desde %}&fecha_desde={{ fecha_desde }}{% endif %}{% if fecha_hasta %}&fecha_hasta={{ fecha_hasta }}{% endif %}">
+                                            <i class="bi bi-chevron-left"></i> Anterior
+                                        </a>
+                                    </li>
+                                {% endif %}
+
+                                <li class="page-item active">
+                                    <span class="page-link">
+                                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                    </span>
+                                </li>
+
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if fecha_desde %}&fecha_desde={{ fecha_desde }}{% endif %}{% if fecha_hasta %}&fecha_hasta={{ fecha_hasta }}{% endif %}">
+                                            Siguiente <i class="bi bi-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <div class="text-muted">
+                                <i class="bi bi-clock fa-3x mb-3"></i>
+                                <h5>No hay registros de horario</h5>
+                                <p>Aún no tienes registros en el rango de fechas seleccionado.</p>
+                                <a href="{% url 'time_clock' %}" class="btn btn-primary">
+                                    <i class="bi bi-plus"></i> Iniciar Primera Jornada
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

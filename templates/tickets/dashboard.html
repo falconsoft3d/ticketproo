@@ -134,6 +134,119 @@
         </a>
     </div>
 </div>
+
+<!-- Control de Horario (solo para agentes) -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock"></i> Control de Horario
+                </h5>
+                <a href="{% url 'time_clock' %}" class="btn btn-sm btn-light">
+                    <i class="bi bi-gear"></i> Gestión Completa
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        {% if active_time_entry %}
+                            <div class="alert alert-success border-success">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">
+                                            <i class="bi bi-play-fill text-success"></i> Jornada Activa
+                                        </h6>
+                                        <p class="mb-0">
+                                            <strong>Inicio:</strong> {{ active_time_entry.fecha_entrada|date:"H:i" }}
+                                            <br>
+                                            <strong>Tiempo:</strong> <span id="tiempo-activo">{{ active_time_entry.duracion_formateada }}</span>
+                                            {% if active_time_entry.project %}
+                                            <br>
+                                            <strong>Proyecto:</strong> {{ active_time_entry.project.name }}
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-secondary">
+                                <h6 class="mb-1">
+                                    <i class="bi bi-pause-fill text-secondary"></i> Fuera de Horario
+                                </h6>
+                                <p class="mb-0 text-muted">No hay jornada activa</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6 text-center">
+                        {% if can_start_work %}
+                            <a href="{% url 'time_start_work' %}" class="btn btn-success btn-lg me-2">
+                                <i class="bi bi-play-fill"></i> Iniciar
+                            </a>
+                        {% endif %}
+                        
+                        {% if can_end_work %}
+                            <a href="{% url 'time_end_work' %}" class="btn btn-danger btn-lg">
+                                <i class="bi bi-stop-fill"></i> Finalizar
+                            </a>
+                        {% endif %}
+                        
+                        <div class="mt-2">
+                            <a href="{% url 'time_entries_list' %}" class="btn btn-sm btn-outline-primary me-2">
+                                <i class="bi bi-list"></i> Mis Registros
+                            </a>
+                            <a href="{% url 'attendance_overview' %}" class="btn btn-sm btn-outline-info">
+                                <i class="bi bi-people-fill"></i> Ver Todos
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gestión de Proyectos (solo para agentes) -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-folder"></i> Gestión de Proyectos
+                </h5>
+                <a href="{% url 'project_create' %}" class="btn btn-sm btn-light">
+                    <i class="bi bi-plus"></i> Nuevo Proyecto
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'project_list' %}" class="btn btn-outline-info">
+                                <i class="bi bi-list"></i> Ver Todos los Proyectos
+                            </a>
+                            <a href="{% url 'project_create' %}" class="btn btn-outline-success">
+                                <i class="bi bi-plus-circle"></i> Crear Nuevo Proyecto
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="border rounded p-3 bg-light">
+                            <h6 class="text-muted mb-2">
+                                <i class="bi bi-info-circle"></i> Información
+                            </h6>
+                            <p class="mb-0 small text-muted">
+                                Los proyectos te permiten organizar el tiempo de trabajo. 
+                                Cada vez que inicies una jornada laboral deberás seleccionar un proyecto.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endif %}
 
 <!-- Tickets recientes -->
@@ -220,4 +333,26 @@
     </div>
 </div>
 {% endif %}
+
+<script>
+// Actualizar tiempo activo en tiempo real si hay jornada activa
+{% if is_agent and active_time_entry %}
+function updateActiveTime() {
+    fetch('{% url "ajax_time_status" %}')
+        .then(response => response.json())
+        .then(data => {
+            if (data.is_working) {
+                const tiempoElement = document.getElementById('tiempo-activo');
+                if (tiempoElement) {
+                    tiempoElement.textContent = data.duration;
+                }
+            }
+        })
+        .catch(error => console.log('Error actualizando tiempo:', error));
+}
+
+// Actualizar cada minuto
+setInterval(updateActiveTime, 60000);
+{% endif %}
+</script>
 {% endblock %}

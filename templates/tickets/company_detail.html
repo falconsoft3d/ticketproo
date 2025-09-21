@@ -1,0 +1,330 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header de página -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="d-flex align-items-center">
+                    {% if company.color %}
+                    <div class="me-3">
+                        <div class="rounded-circle" 
+                             style="width: 24px; height: 24px; background-color: {{ company.color }};"></div>
+                    </div>
+                    {% endif %}
+                    <div>
+                        <h1 class="h3 text-dark mb-1">
+                            <i class="bi bi-building text-primary me-2"></i>
+                            {{ company.name }}
+                            {% if not company.is_active %}
+                                <span class="badge bg-secondary ms-2">Inactiva</span>
+                            {% endif %}
+                        </h1>
+                        <p class="text-muted mb-0">{{ company.description|default:"Sin descripción" }}</p>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <a href="{% url 'company_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>
+                        Volver a Lista
+                    </a>
+                    <a href="{% url 'company_edit' company.id %}" class="btn btn-primary">
+                        <i class="bi bi-pencil me-2"></i>
+                        Editar
+                    </a>
+                </div>
+            </div>
+
+            <!-- Información principal -->
+            <div class="row mb-4">
+                <!-- Información de contacto -->
+                <div class="col-lg-6">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-light">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-person-lines-fill me-2"></i>
+                                Información de Contacto
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% if company.email %}
+                                <div class="col-12 mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-envelope text-primary me-3"></i>
+                                        <div>
+                                            <div class="fw-bold">Email</div>
+                                            <a href="mailto:{{ company.email }}" class="text-decoration-none">
+                                                {{ company.email }}
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                {% if company.phone %}
+                                <div class="col-12 mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-telephone text-primary me-3"></i>
+                                        <div>
+                                            <div class="fw-bold">Teléfono</div>
+                                            <a href="tel:{{ company.phone }}" class="text-decoration-none">
+                                                {{ company.phone }}
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                {% if company.website %}
+                                <div class="col-12 mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-globe text-primary me-3"></i>
+                                        <div>
+                                            <div class="fw-bold">Sitio Web</div>
+                                            <a href="{{ company.website }}" target="_blank" class="text-decoration-none">
+                                                {{ company.website }}
+                                                <i class="bi bi-box-arrow-up-right ms-1"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                {% if company.address %}
+                                <div class="col-12 mb-3">
+                                    <div class="d-flex align-items-start">
+                                        <i class="bi bi-geo-alt text-primary me-3 mt-1"></i>
+                                        <div>
+                                            <div class="fw-bold">Dirección</div>
+                                            <div>{{ company.address }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                {% if not company.email and not company.phone and not company.website and not company.address %}
+                                <div class="col-12 text-center text-muted py-3">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    No hay información de contacto disponible
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estadísticas -->
+                <div class="col-lg-6">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-light">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-graph-up me-2"></i>
+                                Estadísticas
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-6 mb-3">
+                                    <div class="border rounded p-3">
+                                        <div class="fs-2 fw-bold text-primary">{{ total_tickets }}</div>
+                                        <div class="text-muted">Total de Tickets</div>
+                                    </div>
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <div class="border rounded p-3">
+                                        <div class="fs-2 fw-bold text-warning">{{ open_tickets }}</div>
+                                        <div class="text-muted">Tickets Abiertos</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="border rounded p-3">
+                                        <div class="fs-2 fw-bold text-info">{{ total_users }}</div>
+                                        <div class="text-muted">Total de Usuarios</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="border rounded p-3">
+                                        <div class="fs-2 fw-bold text-success">{{ active_users }}</div>
+                                        <div class="text-muted">Usuarios Activos</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Usuarios de la empresa -->
+            {% if company_users %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-people-fill me-2"></i>
+                        Usuarios de la Empresa ({{ company_users.count }})
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>Email</th>
+                                    <th>Rol</th>
+                                    <th>Estado</th>
+                                    <th>Último Acceso</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for profile in company_users %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" 
+                                                 style="width: 40px; height: 40px;">
+                                                {{ profile.user.first_name|first|default:profile.user.username|first|upper }}
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold">
+                                                    {{ profile.user.first_name }} {{ profile.user.last_name }}
+                                                </div>
+                                                <small class="text-muted">{{ profile.user.username }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ profile.user.email|default:"-" }}</td>
+                                    <td>
+                                        {% if profile.user.groups.all %}
+                                            {% for group in profile.user.groups.all %}
+                                                <span class="badge bg-secondary">{{ group.name }}</span>
+                                            {% endfor %}
+                                        {% else %}
+                                            <span class="text-muted">Sin grupo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if profile.user.is_active %}
+                                            <span class="badge bg-success">Activo</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Inactivo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if profile.user.last_login %}
+                                            {{ profile.user.last_login|date:"d/m/Y H:i" }}
+                                        {% else %}
+                                            <span class="text-muted">Nunca</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Tickets recientes -->
+            {% if recent_tickets %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-ticket-perforated me-2"></i>
+                        Tickets Recientes ({{ recent_tickets.count }})
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Título</th>
+                                    <th>Estado</th>
+                                    <th>Prioridad</th>
+                                    <th>Creado por</th>
+                                    <th>Fecha</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ticket in recent_tickets %}
+                                <tr>
+                                    <td><strong>#{{ ticket.id }}</strong></td>
+                                    <td>
+                                        <div class="fw-bold">{{ ticket.title|truncatechars:40 }}</div>
+                                        {% if ticket.category %}
+                                            <small class="text-muted">{{ ticket.category.name }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if ticket.status == 'open' %}
+                                            <span class="badge bg-danger">Abierto</span>
+                                        {% elif ticket.status == 'in_progress' %}
+                                            <span class="badge bg-warning">En Progreso</span>
+                                        {% elif ticket.status == 'resolved' %}
+                                            <span class="badge bg-info">Resuelto</span>
+                                        {% elif ticket.status == 'closed' %}
+                                            <span class="badge bg-success">Cerrado</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if ticket.priority == 'low' %}
+                                            <span class="badge bg-secondary">Baja</span>
+                                        {% elif ticket.priority == 'medium' %}
+                                            <span class="badge bg-primary">Media</span>
+                                        {% elif ticket.priority == 'high' %}
+                                            <span class="badge bg-warning">Alta</span>
+                                        {% elif ticket.priority == 'urgent' %}
+                                            <span class="badge bg-danger">Urgente</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ ticket.created_by.first_name }} {{ ticket.created_by.last_name }}</td>
+                                    <td>{{ ticket.created_at|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <a href="{% url 'ticket_detail' ticket.pk %}" 
+                                           class="btn btn-sm btn-outline-primary" 
+                                           title="Ver ticket">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Información del sistema -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-gear me-2"></i>
+                        Información del Sistema
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Fecha de Creación:</strong></p>
+                            <p class="text-muted">{{ company.created_at|date:"d/m/Y H:i" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Última Actualización:</strong></p>
+                            <p class="text-muted">{{ company.updated_at|date:"d/m/Y H:i" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

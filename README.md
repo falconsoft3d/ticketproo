@@ -189,13 +189,14 @@ python manage.py assign_admin_agent
 - [x] Permitir compartir un ticket publico mediante un enlace unico.
 - [x] Permitir entrar al home agentes y usuarios logeados.
 - [x] Permitir actualizar el perfil de usuario
+- [x] Permitir registrar notas internas asociada a usuarios y que sea visible solo para agentes y ese usuario. De esa forma dejamos por escrito nuestra interaccion con el cliente. ( Titulo y descripcion de la nota y Fecha de creacion) Los ticket pueden tener una nota como relacion, es decir una nota podria tener varios tickets asociados.
 - [ ] Permitir cargar tickets desde un formulario publico sin necesidad de logearse. Esta url unica se activa desde el usuario en el panel de usuarios.
 - [ ] Agregar paginacion a la lista de tickets
 - [ ] Blog de noticias y actualizaciones
+- [ ] Permitir crear proyectos y asociar las asistencias a proyectos
 - [ ] Crear un api que permita gestionar los tickets
-- [ ] Que el agente pueda registrar la hora de inicio y fin de atencion del trabajo, como el parte de horas.
-- [ ] Permitir registrar notas internas asociada a usuarios y que sea visible solo para agentes y ese usuario. De esa forma dejamos por escrito nuestra interaccion con el cliente. ( Titulo y descripcion de la nota y Fecha de creacion) Los ticket pueden tener una nota como relacion, es decir una nota podria tener varios tickets asociados.
-
+- [X] Que el agente pueda registrar la hora de inicio y fin de atencion del trabajo, como el parte de horas.
+- [X] Permitir registrar notas internas asociada a usuarios y que sea visible solo para agentes y ese usuario. De esa forma dejamos por escrito nuestra interaccion con el cliente. ( Titulo y descripcion de la nota y Fecha de creacion) Los ticket pueden tener una nota como relacion, es decir una nota podria tener varios tickets asociados.
 ## 🤝 Contribución
 
 1. Fork el proyecto

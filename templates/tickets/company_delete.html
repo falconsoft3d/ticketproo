@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <!-- Header de página -->
+            <div class="text-center mb-4">
+                <div class="mb-3">
+                    <i class="bi bi-exclamation-triangle text-danger" style="font-size: 4rem;"></i>
+                </div>
+                <h1 class="h3 text-dark mb-1">{{ page_title }}</h1>
+                <p class="text-muted">Esta acción no se puede deshacer</p>
+            </div>
+
+            <!-- Información de la empresa -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-building me-2"></i>
+                        Información de la Empresa
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        {% if company.color %}
+                        <div class="me-3">
+                            <div class="rounded-circle" 
+                                 style="width: 20px; height: 20px; background-color: {{ company.color }};"></div>
+                        </div>
+                        {% endif %}
+                        <div>
+                            <h6 class="mb-1">{{ company.name }}</h6>
+                            <small class="text-muted">{{ company.description|default:"Sin descripción" }}</small>
+                        </div>
+                    </div>
+
+                    {% if company.email or company.phone or company.website %}
+                    <hr>
+                    <div class="row">
+                        {% if company.email %}
+                        <div class="col-md-4 mb-2">
+                            <small class="text-muted d-block">Email</small>
+                            <span>{{ company.email }}</span>
+                        </div>
+                        {% endif %}
+                        {% if company.phone %}
+                        <div class="col-md-4 mb-2">
+                            <small class="text-muted d-block">Teléfono</small>
+                            <span>{{ company.phone }}</span>
+                        </div>
+                        {% endif %}
+                        {% if company.website %}
+                        <div class="col-md-4 mb-2">
+                            <small class="text-muted d-block">Sitio Web</small>
+                            <a href="{{ company.website }}" target="_blank" class="text-decoration-none">
+                                {{ company.website|truncatechars:30 }}
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Verificación de dependencias -->
+            {% if has_tickets or has_users %}
+            <div class="alert alert-danger" role="alert">
+                <h6 class="alert-heading">
+                    <i class="bi bi-shield-x me-2"></i>
+                    No se puede eliminar la empresa
+                </h6>
+                <p class="mb-0">
+                    Esta empresa no puede ser eliminada porque tiene datos asociados:
+                </p>
+                
+                <ul class="mb-3 mt-2">
+                    {% if has_tickets %}
+                    <li>
+                        <strong>Tickets asociados:</strong> 
+                        La empresa tiene tickets registrados en el sistema.
+                    </li>
+                    {% endif %}
+                    {% if has_users %}
+                    <li>
+                        <strong>Usuarios asociados:</strong> 
+                        Hay usuarios que pertenecen a esta empresa.
+                    </li>
+                    {% endif %}
+                </ul>
+                
+                <p class="mb-0">
+                    <strong>Alternativa:</strong> En su lugar, puedes desactivar la empresa desde la página de edición.
+                    Esto mantendrá todos los datos históricos pero ocultará la empresa de las listas activas.
+                </p>
+            </div>
+
+            <!-- Botones cuando no se puede eliminar -->
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'company_detail' company.id %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>
+                    Volver a Detalles
+                </a>
+                <a href="{% url 'company_edit' company.id %}" class="btn btn-warning">
+                    <i class="bi bi-pencil me-2"></i>
+                    Editar y Desactivar
+                </a>
+            </div>
+
+            {% else %}
+            <!-- Confirmación de eliminación cuando es posible -->
+            <div class="alert alert-warning" role="alert">
+                <h6 class="alert-heading">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Confirmación requerida
+                </h6>
+                <p class="mb-0">
+                    ¿Estás seguro de que deseas eliminar permanentemente la empresa <strong>"{{ company.name }}"</strong>?
+                    Esta acción eliminará todos los datos relacionados y no se puede deshacer.
+                </p>
+            </div>
+
+            <!-- Formulario de confirmación -->
+            <form method="post" class="text-center">
+                {% csrf_token %}
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'company_detail' company.id %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-lg me-2"></i>
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-2"></i>
+                        Eliminar Empresa
+                    </button>
+                </div>
+            </form>
+            {% endif %}
+
+            <!-- Información adicional -->
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-light">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-info-square me-2"></i>
+                        Información Adicional
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <div class="border rounded p-2">
+                                <div class="fw-bold text-primary">{{ company.get_active_tickets_count }}</div>
+                                <small class="text-muted">Tickets</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="border rounded p-2">
+                                <div class="fw-bold text-info">{{ company.get_users_count }}</div>
+                                <small class="text-muted">Usuarios</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="border rounded p-2">
+                                <div class="fw-bold {% if company.is_active %}text-success{% else %}text-secondary{% endif %}">
+                                    {% if company.is_active %}Activa{% else %}Inactiva{% endif %}
+                                </div>
+                                <small class="text-muted">Estado</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="row">
+                        <div class="col-6">
+                            <small class="text-muted d-block">Creada el</small>
+                            <span>{{ company.created_at|date:"d/m/Y H:i" }}</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Actualizada el</small>
+                            <span>{{ company.updated_at|date:"d/m/Y H:i" }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

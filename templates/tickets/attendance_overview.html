@@ -1,0 +1,286 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2><i class="bi bi-people-fill text-primary"></i> {{ page_title }}</h2>
+                <div class="btn-group" role="group">
+                    <a href="{% url 'time_clock' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-clock"></i> Mi Control
+                    </a>
+                    <a href="{% url 'dashboard' %}" class="btn btn-outline-primary">
+                        <i class="bi bi-house-door"></i> Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas Resumen -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-primary">
+                <div class="card-body text-center">
+                    <h4 class="text-primary">{{ total_entries }}</h4>
+                    <small class="text-muted">Total Registros</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <h4 class="text-success">{{ active_entries }}</h4>
+                    <small class="text-muted">Trabajando Ahora</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <h4 class="text-info">{{ total_hours }}h</h4>
+                    <small class="text-muted">Total Horas</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <h4 class="text-warning">
+                        {% if total_entries > 0 %}
+                            {{ total_hours|floatformat:1|add:"0"|floatformat:0 }}h
+                        {% else %}
+                            0h
+                        {% endif %}
+                    </h4>
+                    <small class="text-muted">Promedio por Jornada</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-funnel"></i> Filtros de Búsqueda</h6>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Fecha Desde:</label>
+                            <input type="date" 
+                                   name="fecha_desde" 
+                                   class="form-control" 
+                                   value="{{ fecha_desde }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Fecha Hasta:</label>
+                            <input type="date" 
+                                   name="fecha_hasta" 
+                                   class="form-control" 
+                                   value="{{ fecha_hasta }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Proyecto:</label>
+                            <select name="proyecto" class="form-control">
+                                <option value="">Todos los proyectos</option>
+                                {% for proyecto in proyectos %}
+                                    <option value="{{ proyecto.id }}" 
+                                            {% if proyecto.id|stringformat:"s" == proyecto_seleccionado %}selected{% endif %}>
+                                        {{ proyecto.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Empleado:</label>
+                            <select name="usuario" class="form-control">
+                                <option value="">Todos los empleados</option>
+                                {% for usuario in usuarios %}
+                                    <option value="{{ usuario.id }}" 
+                                            {% if usuario.id|stringformat:"s" == usuario_seleccionado %}selected{% endif %}>
+                                        {{ usuario.get_full_name|default:usuario.username }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="bi bi-search"></i> Filtrar
+                            </button>
+                            <a href="{% url 'attendance_overview' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x"></i> Limpiar Filtros
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Registros de Asistencia -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-table"></i> Registros de Asistencia
+                        {% if page_obj.paginator.count %}
+                            <span class="badge bg-primary">{{ page_obj.paginator.count }}</span>
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if page_obj.object_list %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Empleado</th>
+                                        <th>Fecha</th>
+                                        <th>Proyecto</th>
+                                        <th>Hora Entrada</th>
+                                        <th>Hora Salida</th>
+                                        <th>Duración</th>
+                                        <th>Estado</th>
+                                        <th>Notas</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for entry in page_obj.object_list %}
+                                    <tr {% if not entry.fecha_salida %}class="table-success"{% endif %}>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="me-2">
+                                                    {% if not entry.fecha_salida %}
+                                                        <i class="bi bi-circle-fill text-success" title="Trabajando ahora"></i>
+                                                    {% else %}
+                                                        <i class="bi bi-circle text-muted"></i>
+                                                    {% endif %}
+                                                </div>
+                                                <div>
+                                                    <strong>{{ entry.user.get_full_name|default:entry.user.username }}</strong>
+                                                    <br>
+                                                    <small class="text-muted">@{{ entry.user.username }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <strong>{{ entry.fecha_entrada|date:"d/m/Y" }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ entry.fecha_entrada|date:"l" }}</small>
+                                        </td>
+                                        <td>
+                                            {% if entry.project %}
+                                                <span class="badge" style="background-color: {{ entry.project.color }}; color: white;">
+                                                    <i class="bi bi-folder"></i> {{ entry.project.name }}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">Sin proyecto</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ entry.fecha_entrada|date:"H:i" }}</td>
+                                        <td>
+                                            {% if entry.fecha_salida %}
+                                                {{ entry.fecha_salida|date:"H:i" }}
+                                            {% else %}
+                                                <span class="badge bg-success">Trabajando</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <strong>
+                                                {% if entry.fecha_salida %}
+                                                    {{ entry.duracion_formateada }}
+                                                {% else %}
+                                                    <span class="text-success">{{ entry.duracion_formateada }}</span>
+                                                {% endif %}
+                                            </strong>
+                                        </td>
+                                        <td>
+                                            {% if entry.fecha_salida %}
+                                                <span class="badge bg-secondary">Completado</span>
+                                            {% else %}
+                                                <span class="badge bg-success">
+                                                    <i class="bi bi-clock"></i> En Progreso
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if entry.notas %}
+                                                <span class="text-truncate d-inline-block" 
+                                                      style="max-width: 150px;" 
+                                                      title="{{ entry.notas }}">
+                                                    {{ entry.notas }}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a href="{% url 'time_entry_detail' entry.id %}" 
+                                                   class="btn btn-outline-primary"
+                                                   title="Ver detalles">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Paginación -->
+                        {% if page_obj.has_other_pages %}
+                        <nav aria-label="Paginación">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if fecha_desde %}&fecha_desde={{ fecha_desde }}{% endif %}{% if fecha_hasta %}&fecha_hasta={{ fecha_hasta }}{% endif %}{% if proyecto_seleccionado %}&proyecto={{ proyecto_seleccionado }}{% endif %}{% if usuario_seleccionado %}&usuario={{ usuario_seleccionado }}{% endif %}">
+                                            <i class="bi bi-chevron-left"></i> Anterior
+                                        </a>
+                                    </li>
+                                {% endif %}
+
+                                <li class="page-item active">
+                                    <span class="page-link">
+                                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                    </span>
+                                </li>
+
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if fecha_desde %}&fecha_desde={{ fecha_desde }}{% endif %}{% if fecha_hasta %}&fecha_hasta={{ fecha_hasta }}{% endif %}{% if proyecto_seleccionado %}&proyecto={{ proyecto_seleccionado }}{% endif %}{% if usuario_seleccionado %}&usuario={{ usuario_seleccionado }}{% endif %}">
+                                            Siguiente <i class="bi bi-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <div class="text-muted">
+                                <i class="bi bi-people fa-3x mb-3"></i>
+                                <h5>No hay registros de asistencia</h5>
+                                <p>No se encontraron registros en el rango de fechas seleccionado.</p>
+                                <a href="{% url 'attendance_overview' %}" class="btn btn-primary">
+                                    <i class="bi bi-arrow-clockwise"></i> Recargar
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

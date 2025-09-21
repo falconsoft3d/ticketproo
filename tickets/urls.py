@@ -23,6 +23,13 @@ urlpatterns = [
     path('categories/<int:pk>/edit/', views.category_edit_view, name='category_edit'),
     path('categories/<int:pk>/delete/', views.category_delete_view, name='category_delete'),
     
+    # URLs de proyectos (solo para agentes)
+    path('projects/', views.project_list, name='project_list'),
+    path('projects/create/', views.project_create, name='project_create'),
+    path('projects/<int:project_id>/', views.project_detail, name='project_detail'),
+    path('projects/<int:project_id>/edit/', views.project_edit, name='project_edit'),
+    path('projects/<int:project_id>/delete/', views.project_delete, name='project_delete'),
+    
     # URLs de adjuntos
     path('attachments/<int:attachment_id>/download/', views.download_attachment_view, name='download_attachment'),
     path('attachments/<int:attachment_id>/delete/', views.delete_attachment_view, name='delete_attachment'),
@@ -34,9 +41,47 @@ urlpatterns = [
     # URL para perfil de usuario
     path('profile/', views.user_profile_view, name='user_profile'),
     
+    # URLs de notas internas (solo para agentes)
+    path('notes/', views.notes_list_view, name='notes_list'),
+    path('notes/create/', views.note_create_view, name='note_create'),
+    path('notes/<int:note_id>/', views.note_detail_view, name='note_detail'),
+    path('notes/<int:note_id>/edit/', views.note_edit_view, name='note_edit'),
+    path('notes/<int:note_id>/delete/', views.note_delete_view, name='note_delete'),
+    
+    # URL para ver notas de un usuario específico
+    path('users/<int:user_id>/notes/', views.user_notes_view, name='user_notes'),
+    path('my-notes/', views.user_notes_view, name='my_notes'),
+    
     # URLs de gestión de usuarios (solo para agentes)
     path('users/', views.user_management_view, name='user_management'),
     path('users/create/', views.user_create_view, name='user_create'),
     path('users/<int:user_id>/edit/', views.user_edit_view, name='user_edit'),
     path('users/<int:user_id>/toggle-status/', views.user_toggle_status_view, name='user_toggle_status'),
+    
+    # API para obtener tickets de usuario (AJAX)
+    path('api/user-tickets/<int:user_id>/', views.api_user_tickets, name='api_user_tickets'),
+    
+    # URLs para Control de Horario (solo para agentes)
+    path('time-clock/', views.time_clock_view, name='time_clock'),
+    path('time-clock/start/', views.time_start_work, name='time_start_work'),
+    path('time-clock/end/', views.time_end_work, name='time_end_work'),
+    path('time-entries/', views.time_entries_list, name='time_entries_list'),
+    path('time-entries/<int:entry_id>/', views.time_entry_detail, name='time_entry_detail'),
+    path('time-entries/<int:entry_id>/edit/', views.time_entry_edit, name='time_entry_edit'),
+    
+    # Control de asistencia general (para agentes)
+    path('attendance/', views.attendance_overview, name='attendance_overview'),
+    
+    # API AJAX para estado de tiempo actual
+    path('api/time-status/', views.ajax_current_time_status, name='ajax_time_status'),
+    
+    # URLs de gestión de empresas (solo para agentes)
+    path('companies/', views.company_list_view, name='company_list'),
+    path('companies/create/', views.company_create_view, name='company_create'),
+    path('companies/<int:company_id>/', views.company_detail_view, name='company_detail'),
+    path('companies/<int:company_id>/edit/', views.company_edit_view, name='company_edit'),
+    path('companies/<int:company_id>/delete/', views.company_delete_view, name='company_delete'),
+    
+    # URL de configuración del sistema (solo para agentes)
+    path('system/configuration/', views.system_configuration_view, name='system_configuration'),
 ]

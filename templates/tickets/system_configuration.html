@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .config-section {
+        background: #f8f9fa;
+        border-left: 4px solid #007bff;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border-radius: 0.375rem;
+    }
+    
+    .config-section h5 {
+        color: #007bff;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+    
+    .form-check {
+        margin-bottom: 1rem;
+    }
+    
+    .form-check-label {
+        font-weight: 500;
+    }
+    
+    .config-icon {
+        color: #007bff;
+        margin-right: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-gear-fill config-icon"></i>
+                        {{ page_title }}
+                    </h1>
+                    <p class="text-muted mb-0">
+                        Configura los parámetros generales del sistema
+                    </p>
+                </div>
+                <div>
+                    <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>
+                        Volver al Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <!-- Formulario de configuración -->
+            <div class="row">
+                <div class="col-lg-8 col-xl-6">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Configuración General -->
+                        <div class="config-section">
+                            <h5>
+                                <i class="bi bi-info-circle me-2"></i>
+                                Configuración General
+                            </h5>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.site_name.id_for_label }}" class="form-label">
+                                    <i class="bi bi-house-door me-1"></i>
+                                    {{ form.site_name.label }}
+                                </label>
+                                {{ form.site_name }}
+                                {% if form.site_name.help_text %}
+                                    <small class="form-text text-muted">{{ form.site_name.help_text }}</small>
+                                {% endif %}
+                                {% if form.site_name.errors %}
+                                    <div class="text-danger mt-1">
+                                        {% for error in form.site_name.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Configuración de Usuarios -->
+                        <div class="config-section">
+                            <h5>
+                                <i class="bi bi-people me-2"></i>
+                                Configuración de Usuarios
+                            </h5>
+                            
+                            <div class="form-check">
+                                {{ form.allow_user_registration }}
+                                <label class="form-check-label" for="{{ form.allow_user_registration.id_for_label }}">
+                                    <i class="bi bi-person-plus me-1"></i>
+                                    {{ form.allow_user_registration.label }}
+                                </label>
+                                {% if form.allow_user_registration.help_text %}
+                                    <div class="form-text">{{ form.allow_user_registration.help_text }}</div>
+                                {% endif %}
+                                {% if form.allow_user_registration.errors %}
+                                    <div class="text-danger mt-1">
+                                        {% for error in form.allow_user_registration.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Configuración de Tickets -->
+                        <div class="config-section">
+                            <h5>
+                                <i class="bi bi-ticket-perforated me-2"></i>
+                                Configuración de Tickets
+                            </h5>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.default_ticket_priority.id_for_label }}" class="form-label">
+                                    <i class="bi bi-flag me-1"></i>
+                                    {{ form.default_ticket_priority.label }}
+                                </label>
+                                {{ form.default_ticket_priority }}
+                                {% if form.default_ticket_priority.help_text %}
+                                    <small class="form-text text-muted">{{ form.default_ticket_priority.help_text }}</small>
+                                {% endif %}
+                                {% if form.default_ticket_priority.errors %}
+                                    <div class="text-danger mt-1">
+                                        {% for error in form.default_ticket_priority.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-1"></i>
+                                Guardar Configuración
+                            </button>
+                            <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-lg me-1"></i>
+                                Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Panel de información -->
+                <div class="col-lg-4 col-xl-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Información del Sistema
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <dl class="row mb-0">
+                                <dt class="col-6">Nombre actual:</dt>
+                                <dd class="col-6">{{ config.site_name }}</dd>
+                                
+                                <dt class="col-6">Registro de usuarios:</dt>
+                                <dd class="col-6">
+                                    {% if config.allow_user_registration %}
+                                        <span class="badge bg-success">Habilitado</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Deshabilitado</span>
+                                    {% endif %}
+                                </dd>
+                                
+                                <dt class="col-6">Prioridad por defecto:</dt>
+                                <dd class="col-6">
+                                    <span class="badge bg-info">{{ config.get_default_ticket_priority_display }}</span>
+                                </dd>
+                                
+                                <dt class="col-6">Última actualización:</dt>
+                                <dd class="col-6">{{ config.updated_at|date:"d/m/Y H:i" }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                    
+                    <!-- Ayuda -->
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-question-circle me-1"></i>
+                                Ayuda
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled mb-0">
+                                <li class="mb-2">
+                                    <strong>Permitir registro:</strong> Si está deshabilitado, solo los agentes pueden crear nuevos usuarios.
+                                </li>
+                                <li class="mb-0">
+                                    <strong>Prioridad por defecto:</strong> Prioridad asignada automáticamente a nuevos tickets.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Validación del formulario
+    (function() {
+        'use strict';
+        window.addEventListener('load', function() {
+            var forms = document.getElementsByClassName('needs-validation');
+            var validation = Array.prototype.filter.call(forms, function(form) {
+                form.addEventListener('submit', function(event) {
+                    if (form.checkValidity() === false) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        }, false);
+    })();
+</script>
+{% endblock %}

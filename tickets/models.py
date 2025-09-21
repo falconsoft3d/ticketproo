@@ -29,6 +29,157 @@ class Category(models.Model):
         return self.name
 
 
+class Company(models.Model):
+    """Modelo para gestionar empresas/clientes"""
+    
+    name = models.CharField(
+        max_length=200, 
+        unique=True, 
+        verbose_name='Nombre de la Empresa'
+    )
+    description = models.TextField(
+        blank=True, 
+        verbose_name='Descripción',
+        help_text='Descripción opcional de la empresa'
+    )
+    address = models.CharField(
+        max_length=300, 
+        blank=True, 
+        verbose_name='Dirección'
+    )
+    phone = models.CharField(
+        max_length=20, 
+        blank=True, 
+        verbose_name='Teléfono'
+    )
+    email = models.EmailField(
+        blank=True, 
+        verbose_name='Email de contacto'
+    )
+    website = models.URLField(
+        blank=True, 
+        verbose_name='Sitio web'
+    )
+    color = models.CharField(
+        max_length=7, 
+        default='#28a745',
+        help_text='Color en formato hexadecimal (ej: #28a745)',
+        verbose_name='Color identificativo'
+    )
+    is_active = models.BooleanField(
+        default=True, 
+        verbose_name='Empresa activa'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now, 
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True, 
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'Empresa'
+        verbose_name_plural = 'Empresas'
+    
+    def __str__(self):
+        return self.name
+    
+    def get_active_tickets_count(self):
+        """Obtiene el número de tickets activos de la empresa"""
+        return self.tickets.exclude(status='closed').count()
+    
+    def get_total_tickets_count(self):
+        """Obtiene el total de tickets de la empresa"""
+        return self.tickets.count()
+    
+    def get_users_count(self):
+        """Obtiene el número de usuarios asociados a la empresa"""
+        return self.users.count()
+
+
+class Project(models.Model):
+    """Modelo para gestionar proyectos de trabajo"""
+    
+    STATUS_CHOICES = [
+        ('planning', 'Planificación'),
+        ('active', 'Activo'),
+        ('on_hold', 'En Pausa'),
+        ('completed', 'Completado'),
+        ('cancelled', 'Cancelado'),
+    ]
+    
+    name = models.CharField(max_length=200, unique=True, verbose_name='Nombre del Proyecto')
+    description = models.TextField(blank=True, verbose_name='Descripción')
+    color = models.CharField(
+        max_length=7, 
+        default='#28a745',
+        help_text='Color en formato hexadecimal (ej: #28a745)',
+        verbose_name='Color'
+    )
+    status = models.CharField(
+        max_length=20, 
+        choices=STATUS_CHOICES, 
+        default='active', 
+        verbose_name='Estado'
+    )
+    start_date = models.DateField(null=True, blank=True, verbose_name='Fecha de Inicio')
+    end_date = models.DateField(null=True, blank=True, verbose_name='Fecha de Fin')
+    is_active = models.BooleanField(default=True, verbose_name='Activo')
+    created_by = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='created_projects',
+        verbose_name='Creado por'
+    )
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
+    
+    class Meta:
+        ordering = ['-created_at', 'name']
+        verbose_name = 'Proyecto'
+        verbose_name_plural = 'Proyectos'
+    
+    def __str__(self):
+        return self.name
+    
+    def get_total_hours(self):
+        """Obtiene el total de horas trabajadas en este proyecto"""
+        from django.db.models import F, Sum, Case, When, Value
+        from django.db.models.functions import Extract
+        
+        # Calcular la duración en segundos para cada entrada
+        total_seconds = 0
+        
+        for entry in self.time_entries.all():
+            if entry.fecha_salida:
+                # Entrada completada
+                duration = (entry.fecha_salida - entry.fecha_entrada).total_seconds()
+            else:
+                # Entrada activa
+                duration = (timezone.now() - entry.fecha_entrada).total_seconds()
+            total_seconds += duration
+        
+        # Convertir a horas y redondear
+        return round(total_seconds / 3600, 2)
+    
+    def get_active_workers_count(self):
+        """Obtiene el número de trabajadores actualmente trabajando en este proyecto"""
+        return self.time_entries.filter(fecha_salida__isnull=True).count()
+    
+    def can_edit(self, user):
+        """Verifica si el usuario puede editar este proyecto"""
+        from .utils import is_agent
+        return is_agent(user) or user == self.created_by
+    
+    def can_delete(self, user):
+        """Verifica si el usuario puede eliminar este proyecto"""
+        from .utils import is_agent
+        return is_agent(user) or user == self.created_by
+
+
 class Ticket(models.Model):
     PRIORITY_CHOICES = [
         ('low', 'Baja'),
@@ -60,6 +211,15 @@ class Ticket(models.Model):
         blank=True,
         related_name='tickets',
         verbose_name='Categoría'
+    )
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='tickets',
+        verbose_name='Empresa/Cliente',
+        help_text='Empresa o cliente asociado al ticket'
     )
     priority = models.CharField(
         max_length=10, 
@@ -337,6 +497,15 @@ class UserProfile(models.Model):
         verbose_name='Preferencias de notificación',
         help_text='Configuración de notificaciones del usuario'
     )
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='users',
+        verbose_name='Empresa',
+        help_text='Empresa a la que pertenece el usuario'
+    )
     created_at = models.DateTimeField(
         default=timezone.now,
         verbose_name='Fecha de creación'
@@ -377,3 +546,282 @@ def save_user_profile(sender, instance, **kwargs):
         instance.profile.save()
     else:
         UserProfile.objects.create(user=instance)
+
+
+class UserNote(models.Model):
+    """Modelo para notas internas asociadas a usuarios"""
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título',
+        help_text='Título descriptivo de la nota'
+    )
+    description = models.TextField(
+        verbose_name='Descripción',
+        help_text='Contenido detallado de la nota'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='notes',
+        verbose_name='Usuario asociado',
+        help_text='Usuario al que está asociada esta nota'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='created_notes',
+        verbose_name='Creado por',
+        help_text='Agente que creó la nota'
+    )
+    tickets = models.ManyToManyField(
+        Ticket,
+        blank=True,
+        related_name='notes',
+        verbose_name='Tickets relacionados',
+        help_text='Tickets asociados a esta nota'
+    )
+    is_private = models.BooleanField(
+        default=True,
+        verbose_name='Nota privada',
+        help_text='Si está marcada, solo será visible para agentes'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Nota de Usuario'
+        verbose_name_plural = 'Notas de Usuario'
+    
+    def __str__(self):
+        return f"{self.title} - {self.user.username}"
+    
+    def can_view(self, user):
+        """Verifica si un usuario puede ver esta nota"""
+        from .utils import is_agent
+        # Los agentes pueden ver todas las notas
+        if is_agent(user):
+            return True
+        # Si la nota no es privada, el usuario asociado puede verla
+        if not self.is_private and self.user == user:
+            return True
+        return False
+    
+    def can_edit(self, user):
+        """Verifica si un usuario puede editar esta nota"""
+        from .utils import is_agent
+        # Solo los agentes pueden crear/editar notas
+        return is_agent(user)
+    
+    def can_delete(self, user):
+        """Verifica si un usuario puede eliminar esta nota"""
+        from .utils import is_agent
+        # Solo los agentes pueden eliminar notas
+        return is_agent(user)
+    
+    def get_related_tickets_count(self):
+        """Retorna el número de tickets relacionados"""
+        return self.tickets.count()
+    
+    def get_tickets_summary(self):
+        """Retorna un resumen de los tickets relacionados"""
+        tickets = self.tickets.all()[:3]  # Mostrar máximo 3 tickets
+        if tickets:
+            summary = ', '.join([f"#{ticket.ticket_number}" for ticket in tickets])
+            remaining = self.tickets.count() - 3
+            if remaining > 0:
+                summary += f" y {remaining} más"
+            return summary
+        return "Sin tickets asociados"
+
+
+class TimeEntry(models.Model):
+    """Modelo para registrar entrada y salida de trabajo de empleados (agentes)"""
+    
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='time_entries',
+        verbose_name='Empleado'
+    )
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name='time_entries',
+        verbose_name='Proyecto',
+        null=True,
+        blank=True
+    )
+    fecha_entrada = models.DateTimeField(
+        verbose_name='Fecha y hora de entrada'
+    )
+    fecha_salida = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha y hora de salida'
+    )
+    notas = models.TextField(
+        blank=True,
+        max_length=500,
+        verbose_name='Notas',
+        help_text='Comentarios opcionales sobre la jornada'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Registrado el'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        ordering = ['-fecha_entrada']
+        verbose_name = 'Registro de Horario'
+        verbose_name_plural = 'Registros de Horario'
+        unique_together = ['user', 'fecha_entrada']
+    
+    def __str__(self):
+        fecha = self.fecha_entrada.strftime('%d/%m/%Y')
+        estado = "Activo" if not self.fecha_salida else "Completado"
+        return f"{self.user.username} - {fecha} ({estado})"
+    
+    @property
+    def is_active(self):
+        """Verifica si el registro está activo (sin fecha de salida)"""
+        return self.fecha_salida is None
+    
+    @property
+    def duracion_trabajada(self):
+        """Calcula la duración trabajada en minutos"""
+        if not self.fecha_salida:
+            # Si aún está trabajando, calcular desde entrada hasta ahora
+            return int((timezone.now() - self.fecha_entrada).total_seconds() / 60)
+        return int((self.fecha_salida - self.fecha_entrada).total_seconds() / 60)
+    
+    @property
+    def duracion_formateada(self):
+        """Retorna la duración en formato HH:MM"""
+        minutos = self.duracion_trabajada
+        horas = minutos // 60
+        mins = minutos % 60
+        return f"{horas:02d}:{mins:02d}"
+    
+    @property
+    def horas_trabajadas(self):
+        """Retorna las horas trabajadas como decimal"""
+        return round(self.duracion_trabajada / 60, 2)
+    
+    def can_view(self, user):
+        """Verifica si un usuario puede ver este registro"""
+        from .utils import is_agent
+        # Solo los agentes pueden ver registros de horario
+        if not is_agent(user):
+            return False
+        # Los agentes pueden ver solo sus propios registros
+        return self.user == user
+    
+    def can_edit(self, user):
+        """Verifica si un usuario puede editar este registro"""
+        from .utils import is_agent
+        # Solo el propietario del registro puede editarlo
+        return is_agent(user) and self.user == user
+    
+    def finalizar_jornada(self, notas_salida=None):
+        """Marca la salida de la jornada laboral"""
+        if self.fecha_salida:
+            raise ValueError("Esta jornada ya ha sido finalizada")
+        
+        self.fecha_salida = timezone.now()
+        if notas_salida:
+            self.notas = notas_salida
+        self.save()
+        return self
+    
+    @classmethod
+    def get_active_entry(cls, user):
+        """Obtiene el registro activo (sin salida) de un usuario"""
+        from .utils import is_agent
+        if not is_agent(user):
+            return None
+        return cls.objects.filter(user=user, fecha_salida__isnull=True).first()
+    
+    @classmethod
+    def create_entry(cls, user, project, notas_entrada=None):
+        """Crea un nuevo registro de entrada"""
+        from .utils import is_agent
+        if not is_agent(user):
+            raise ValueError("Solo los agentes pueden registrar horarios")
+        
+        # Verificar que no haya una entrada activa
+        active_entry = cls.get_active_entry(user)
+        if active_entry:
+            raise ValueError("Ya tienes una jornada activa. Finalízala antes de crear una nueva.")
+        
+        return cls.objects.create(
+            user=user,
+            project=project,
+            fecha_entrada=timezone.now(),
+            notas=notas_entrada or ''
+        )
+
+
+class SystemConfiguration(models.Model):
+    """Modelo para configuraciones generales del sistema"""
+    
+    # Configuración de registro de usuarios
+    allow_user_registration = models.BooleanField(
+        default=True,
+        verbose_name='Permitir registro de usuarios',
+        help_text='Permite que nuevos usuarios se registren en el sistema'
+    )
+    
+    # Configuraciones adicionales que se pueden agregar en el futuro
+    site_name = models.CharField(
+        max_length=100,
+        default='TicketPro',
+        verbose_name='Nombre del sitio',
+        help_text='Nombre que aparece en el encabezado del sistema'
+    )
+    
+    # Configuraciones de tickets
+    default_ticket_priority = models.CharField(
+        max_length=20,
+        choices=[
+            ('low', 'Baja'),
+            ('medium', 'Media'),
+            ('high', 'Alta'),
+            ('urgent', 'Urgente')
+        ],
+        default='medium',
+        verbose_name='Prioridad por defecto de tickets',
+        help_text='Prioridad asignada automáticamente a nuevos tickets'
+    )
+    
+    # Metadatos
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
+    
+    class Meta:
+        verbose_name = 'Configuración del Sistema'
+        verbose_name_plural = 'Configuración del Sistema'
+    
+    def __str__(self):
+        return f'Configuración del Sistema - {self.site_name}'
+    
+    @classmethod
+    def get_config(cls):
+        """Obtener la configuración del sistema (singleton)"""
+        config, created = cls.objects.get_or_create(pk=1)
+        return config
+    
+    def save(self, *args, **kwargs):
+        # Asegurar que solo exista una instancia de configuración
+        self.pk = 1
+        super().save(*args, **kwargs)

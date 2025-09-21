@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="d-flex align-items-center mb-4">
+                <a href="{% if note %}{% url 'note_detail' note.id %}{% else %}{% url 'notes_list' %}{% endif %}" 
+                   class="btn btn-outline-secondary me-3">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <div>
+                    <h2 class="h3 mb-1">
+                        <i class="bi bi-journal-{% if note %}text{% else %}plus{% endif %} text-primary"></i>
+                        {{ page_title }}
+                    </h2>
+                    <p class="text-muted mb-0">
+                        {% if note %}
+                            Actualizar información de la nota interna
+                        {% else %}
+                            Crear nueva nota de interacción con cliente
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Formulario -->
+            <div class="card">
+                <div class="card-body">
+                    <form method="post" id="noteForm">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <!-- Título -->
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    {% bootstrap_field form.title %}
+                                </div>
+                            </div>
+
+                            <!-- Usuario asociado -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {% bootstrap_field form.user %}
+                                </div>
+                            </div>
+
+                            <!-- Privacidad -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Configuración de Privacidad</label>
+                                    <div class="form-check form-switch">
+                                        {{ form.is_private }}
+                                        <label class="form-check-label" for="{{ form.is_private.id_for_label }}">
+                                            <strong>{{ form.is_private.label }}</strong>
+                                        </label>
+                                        <div class="form-text">{{ form.is_private.help_text }}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Descripción -->
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    {% bootstrap_field form.description %}
+                                </div>
+                            </div>
+
+                            <!-- Tickets relacionados -->
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label for="{{ form.tickets.id_for_label }}" class="form-label">
+                                        {{ form.tickets.label }}
+                                    </label>
+                                    <div id="tickets-container">
+                                        {{ form.tickets }}
+                                        <div class="form-text">{{ form.tickets.help_text }}</div>
+                                        <div id="no-tickets-message" class="text-muted small mt-2" style="display: none;">
+                                            Selecciona un usuario para ver sus tickets disponibles
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones de acción -->
+                        <div class="d-flex gap-2 pt-3 border-top">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-{% if note %}arrow-repeat{% else %}check-circle{% endif %}"></i>
+                                {% if note %}Actualizar Nota{% else %}Crear Nota{% endif %}
+                            </button>
+                            <a href="{% if note %}{% url 'note_detail' note.id %}{% else %}{% url 'notes_list' %}{% endif %}" 
+                               class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información adicional -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-info-circle text-info"></i>
+                        Información sobre las Notas Internas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Notas Privadas</h6>
+                            <ul class="list-unstyled text-muted small">
+                                <li><i class="bi bi-check text-success"></i> Solo visible para agentes</li>
+                                <li><i class="bi bi-check text-success"></i> Ideal para observaciones internas</li>
+                                <li><i class="bi bi-check text-success"></i> Registro de interacciones sensibles</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Notas Públicas</h6>
+                            <ul class="list-unstyled text-muted small">
+                                <li><i class="bi bi-check text-success"></i> Visible para agentes y el usuario</li>
+                                <li><i class="bi bi-check text-success"></i> Comunicación transparente</li>
+                                <li><i class="bi bi-check text-success"></i> Resumen de resoluciones</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const userSelect = document.getElementById('id_user_select');
+    const ticketsSelect = document.getElementById('id_tickets');
+    const noTicketsMessage = document.getElementById('no-tickets-message');
+    
+    if (userSelect && ticketsSelect) {
+        userSelect.addEventListener('change', function() {
+            const userId = this.value;
+            
+            if (!userId) {
+                ticketsSelect.innerHTML = '';
+                noTicketsMessage.style.display = 'block';
+                return;
+            }
+            
+            // Hacer petición AJAX para obtener tickets del usuario
+            fetch(`/api/user-tickets/${userId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    ticketsSelect.innerHTML = '';
+                    
+                    if (data.tickets && data.tickets.length > 0) {
+                        data.tickets.forEach(ticket => {
+                            const option = document.createElement('option');
+                            option.value = ticket.id;
+                            option.textContent = `#${ticket.ticket_number} - ${ticket.title}`;
+                            ticketsSelect.appendChild(option);
+                        });
+                        noTicketsMessage.style.display = 'none';
+                    } else {
+                        const option = document.createElement('option');
+                        option.textContent = 'No hay tickets disponibles para este usuario';
+                        option.disabled = true;
+                        ticketsSelect.appendChild(option);
+                        noTicketsMessage.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading tickets:', error);
+                    noTicketsMessage.style.display = 'block';
+                });
+        });
+        
+        // Si ya hay un usuario seleccionado al cargar, disparar el evento
+        if (userSelect.value) {
+            userSelect.dispatchEvent(new Event('change'));
+        }
+    }
+});
+</script>
+{% endblock %}
