@@ -113,6 +113,16 @@ apt-get install -qq -y \
 
 log "✓ Dependencias instaladas"
 
+# Verificar instalación de PostgreSQL
+if ! command -v psql &> /dev/null; then
+    error "PostgreSQL no se instaló correctamente"
+    exit 1
+fi
+
+# Verificar versión de PostgreSQL instalada
+PG_VERSION_FULL=$(sudo -u postgres psql --version | grep -oP '\d+\.\d+' | head -1)
+log "PostgreSQL versión detectada: $PG_VERSION_FULL"
+
 # === CONFIGURACIÓN DE POSTGRESQL ===
 log "=== CONFIGURANDO POSTGRESQL ==="
 
@@ -127,17 +137,34 @@ sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;
 sudo -u postgres psql -c "ALTER USER $DB_USER CREATEDB;"
 
 # Configurar PostgreSQL para conexiones locales
-PG_VERSION=$(sudo -u postgres psql -t -c "SELECT version();" | grep -oP '\d+\.\d+' | head -1)
-PG_CONFIG="/etc/postgresql/$PG_VERSION/main/postgresql.conf"
-PG_HBA="/etc/postgresql/$PG_VERSION/main/pg_hba.conf"
+PG_VERSION=$(sudo -u postgres psql -t -c "SHOW server_version;" | grep -oP '\d+' | head -1)
+PG_CONFIG_DIR="/etc/postgresql/$PG_VERSION/main"
 
-# Backup de configuración
-cp "$PG_CONFIG" "$PG_CONFIG.backup"
-cp "$PG_HBA" "$PG_HBA.backup"
+# Buscar directorio de configuración real si no existe
+if [ ! -d "$PG_CONFIG_DIR" ]; then
+    PG_CONFIG_DIR=$(find /etc/postgresql -name "postgresql.conf" -type f | head -1 | dirname)
+    log "Directorio PostgreSQL detectado: $PG_CONFIG_DIR"
+fi
 
-# Configurar conexiones
-sed -i "s/#listen_addresses = 'localhost'/listen_addresses = 'localhost'/g" "$PG_CONFIG"
-sed -i "s/#max_connections = 100/max_connections = 200/g" "$PG_CONFIG"
+PG_CONFIG="$PG_CONFIG_DIR/postgresql.conf"
+PG_HBA="$PG_CONFIG_DIR/pg_hba.conf"
+
+# Verificar que los archivos existen
+if [ ! -f "$PG_CONFIG" ]; then
+    error "No se encuentra postgresql.conf en $PG_CONFIG"
+    error "Configuración manual requerida"
+    log "PostgreSQL configurado básicamente (sin optimizaciones)"
+else
+    # Backup de configuración
+    cp "$PG_CONFIG" "$PG_CONFIG.backup"
+    cp "$PG_HBA" "$PG_HBA.backup"
+
+    # Configurar conexiones
+    sed -i "s/#listen_addresses = 'localhost'/listen_addresses = 'localhost'/g" "$PG_CONFIG"
+    sed -i "s/#max_connections = 100/max_connections = 200/g" "$PG_CONFIG"
+    
+    log "✓ Archivos de configuración actualizados"
+fi
 
 # Reiniciar PostgreSQL
 systemctl restart postgresql
