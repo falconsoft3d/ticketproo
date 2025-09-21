@@ -1,4 +1,197 @@
-# 🚀 TicketProo - Guía de Despliegue con Docker y HTTPS
+# 🚀 TicketProo - Guía de Deployment
+
+Sistema de gestión de tickets desarrollado en Django con deployment automatizado usando Docker.
+
+## 📋 Requisitos
+
+- Docker & Docker Compose
+- Dominio apuntando a tu servidor (para SSL)
+- Puerto 80 y 443 abiertos
+
+## ⚡ Deployment Rápido
+
+### 1. Configuración Inicial
+```bash
+# Clonar repositorio
+git clone https://github.com/falconsoft3d/ticketproo.git
+cd ticketproo
+
+# Configurar variables de entorno
+cp .env.example .env
+nano .env  # Editar con tu configuración
+```
+
+### 2. Variables de Entorno Importantes
+```bash
+# En .env - Configuración mínima requerida:
+DEBUG=False
+SECRET_KEY=tu-clave-secreta-unica
+ALLOWED_HOSTS=tu-dominio.com,www.tu-dominio.com,IP-SERVIDOR
+DATABASE_URL=postgresql://ticketproo_user:password@db:5432/ticketproo_db
+```
+
+### 3. Deployment Options
+
+#### Opción A: Script Automático (Recomendado)
+```bash
+chmod +x deploy.sh
+./deploy.sh
+# Seleccionar opción 2 para producción con SSL
+```
+
+#### Opción B: HTTP Primero (Para Debug)
+```bash
+chmod +x deploy-http.sh
+./deploy-http.sh
+# Probar en http://tu-dominio.com
+# Luego agregar SSL con ./init-letsencrypt.sh
+```
+
+#### Opción C: Manual
+```bash
+# Paso a paso
+docker-compose build
+docker-compose up -d db
+sleep 15
+docker-compose up -d web nginx
+./init-letsencrypt.sh  # Para SSL
+```
+
+## 🔧 Troubleshooting
+
+### Error 400 Bad Request
+```bash
+# Verificar ALLOWED_HOSTS
+docker-compose exec web python manage.py shell -c "
+from django.conf import settings
+print('ALLOWED_HOSTS:', settings.ALLOWED_HOSTS)
+"
+
+# Solución: Actualizar .env con tu dominio
+ALLOWED_HOSTS=tu-dominio.com,www.tu-dominio.com,IP-SERVIDOR
+docker-compose restart web
+```
+
+### Error de Permisos Entrypoint
+```bash
+# Limpiar y reconstruir
+docker-compose down -v
+docker system prune -a -f
+chmod +x entrypoint.sh
+docker-compose build --no-cache web
+```
+
+### Certificados SSL
+```bash
+# Verificar propagación DNS primero
+nslookup tu-dominio.com
+
+# Generar certificados
+./init-letsencrypt.sh
+
+# Logs SSL
+docker-compose logs certbot
+```
+
+## 📊 Verificación
+
+### Estado de Servicios
+```bash
+docker-compose ps
+docker-compose logs web
+```
+
+### Acceso Admin
+- URL: https://tu-dominio.com/admin/
+- Usuario: admin
+- Contraseña: (la que configuraste en deployment)
+
+### Base de Datos
+```bash
+# Acceso a PostgreSQL
+docker-compose exec db psql -U ticketproo_user -d ticketproo_db
+```
+
+## 🔒 Configuración DNS (Namecheap)
+
+1. **Panel de Control** → Domain List → Manage
+2. **Advanced DNS** → Agregar registros:
+
+```
+Tipo: A Record
+Host: @
+Value: IP-DE-TU-SERVIDOR
+TTL: Automatic
+
+Tipo: A Record  
+Host: www
+Value: IP-DE-TU-SERVIDOR
+TTL: Automatic
+```
+
+3. **Esperar propagación** (30min - 6hrs)
+4. **Ejecutar deployment** con SSL
+
+## 📝 Comandos Útiles
+
+```bash
+# Ver logs en tiempo real
+docker-compose logs -f
+
+# Reiniciar servicios
+docker-compose restart
+
+# Backup base de datos
+docker-compose exec db pg_dump -U ticketproo_user ticketproo_db > backup.sql
+
+# Ejecutar migraciones
+docker-compose exec web python manage.py migrate
+
+# Crear superusuario
+docker-compose exec web python manage.py createsuperuser
+
+# Recopilar archivos estáticos
+docker-compose exec web python manage.py collectstatic
+```
+
+## 🚨 Configuración de Producción
+
+### Variables de Entorno Críticas
+```bash
+DEBUG=False                    # NUNCA True en producción
+SECRET_KEY=clave-unica-larga  # Generar nueva para cada ambiente
+ALLOWED_HOSTS=dominios-reales # Incluir IP y dominios reales
+```
+
+### Configuraciones de Seguridad (automáticas cuando DEBUG=False)
+- XSS Protection habilitada
+- Content Type Sniffing deshabilitado
+- X-Frame-Options configurado
+- HTTPS Redirect (cuando SSL está activo)
+
+### Monitoreo
+```bash
+# Logs de aplicación
+tail -f logs/django.log
+
+# Recursos del sistema
+docker stats
+
+# Espacio en disco
+df -h
+```
+
+---
+
+## 🆘 Soporte
+
+Si encuentras problemas:
+1. Verificar logs: `docker-compose logs`
+2. Verificar DNS: `nslookup tu-dominio.com`
+3. Verificar puertos: `netstat -tlnp | grep :80`
+4. Contactar soporte con logs específicos
+
+**¡TicketProo listo para producción! 🎉**
 
 Esta guía te ayudará a desplegar TicketProo en producción usando Docker, PostgreSQL y certificados SSL automáticos con Let's Encrypt (Certbot).
 
