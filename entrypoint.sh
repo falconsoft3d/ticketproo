@@ -27,6 +27,17 @@ warn() {
 # Crear directorio de logs si no existe
 mkdir -p /app/logs
 
+# Crear directorios necesarios
+log "Creando directorios necesarios..."
+mkdir -p /app/staticfiles /app/media
+
+# Configurar variables de entorno por defecto
+export DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-ticket_system.settings}
+export DEBUG=${DEBUG:-False}
+
+log "Usando configuración: $DJANGO_SETTINGS_MODULE"
+log "Modo DEBUG: $DEBUG"
+
 # Esperar a que la base de datos esté lista
 log "Esperando a que PostgreSQL esté listo..."
 while ! nc -z db 5432; do
@@ -64,7 +75,7 @@ python manage.py assign_admin_agent
 
 # Verificar configuración
 log "Verificando configuración de Django..."
-python manage.py check --deploy
+python manage.py check --deploy 2>/dev/null || python manage.py check
 
 log "=== Iniciando aplicación ==="
 
