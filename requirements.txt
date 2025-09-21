@@ -1,4 +1,5 @@
 Django==4.2.20
+django-bootstrap5==23.3
 psycopg2-binary==2.9.9
 gunicorn==21.2.0
 whitenoise==6.7.0

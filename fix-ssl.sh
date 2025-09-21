@@ -109,8 +109,20 @@ EOF
 cp nginx.conf nginx.conf.backup 2>/dev/null || true
 cp nginx-temp.conf nginx.conf
 
-# Paso 4: Iniciar servicios base
-log "=== PASO 4: INICIAR SERVICIOS BASE ==="
+# Paso 4: Verificar y reparar dependencias
+log "=== PASO 4: VERIFICAR DEPENDENCIAS ==="
+
+echo "Verificando requirements.txt..."
+if ! grep -q "django-bootstrap5" requirements.txt; then
+    warn "Falta django-bootstrap5 en requirements.txt, agregándolo..."
+    sed -i '2i django-bootstrap5==23.3' requirements.txt
+fi
+
+echo "Reconstruyendo imagen con dependencias actualizadas..."
+docker-compose build --no-cache web
+
+# Paso 5: Iniciar servicios base
+log "=== PASO 5: INICIAR SERVICIOS BASE ==="
 
 echo "Iniciando base de datos..."
 docker-compose up -d db
@@ -131,8 +143,8 @@ docker-compose up -d nginx
 log "Verificando servicios..."
 docker-compose ps
 
-# Paso 5: Obtener dominio del usuario
-log "=== PASO 5: CONFIGURACIÓN DE DOMINIO ==="
+# Paso 6: Obtener dominio del usuario
+log "=== PASO 6: CONFIGURACIÓN DE DOMINIO ==="
 
 echo ""
 echo -e "${YELLOW}¿Cuál es tu dominio? (ejemplo: ticketproo.com)${NC}"
@@ -151,8 +163,8 @@ if [ -z "$email" ]; then
     email="admin@$domain"
 fi
 
-# Paso 6: Verificar que el dominio apunte al servidor
-log "=== PASO 6: VERIFICACIÓN DE DOMINIO ==="
+# Paso 7: Verificar que el dominio apunte al servidor
+log "=== PASO 7: VERIFICACIÓN DE DOMINIO ==="
 
 echo "Verificando que $domain apunte a este servidor..."
 server_ip=$(curl -s ifconfig.me)
@@ -172,8 +184,8 @@ if [ "$server_ip" != "$domain_ip" ]; then
     fi
 fi
 
-# Paso 7: Obtener certificados SSL
-log "=== PASO 7: OBTENER CERTIFICADOS SSL ==="
+# Paso 8: Obtener certificados SSL
+log "=== PASO 8: OBTENER CERTIFICADOS SSL ==="
 
 echo "Obteniendo certificado SSL para $domain..."
 
@@ -211,8 +223,8 @@ else
     warn "Se creó un certificado auto-firmado. Para usar Let's Encrypt real, verifica tu configuración DNS."
 fi
 
-# Paso 8: Configurar nginx con SSL
-log "=== PASO 8: CONFIGURAR NGINX CON SSL ==="
+# Paso 9: Configurar nginx con SSL
+log "=== PASO 9: CONFIGURAR NGINX CON SSL ==="
 
 echo "Creando configuración nginx con SSL..."
 cat > nginx-ssl.conf << EOF
@@ -307,8 +319,8 @@ EOF
 # Reemplazar configuración nginx
 cp nginx-ssl.conf nginx.conf
 
-# Paso 9: Reiniciar con SSL
-log "=== PASO 9: REINICIAR CON SSL ==="
+# Paso 10: Reiniciar con SSL
+log "=== PASO 10: REINICIAR CON SSL ==="
 
 echo "Reiniciando nginx con SSL..."
 docker-compose restart nginx
@@ -327,8 +339,8 @@ else
     exit 1
 fi
 
-# Paso 10: Verificación final
-log "=== PASO 10: VERIFICACIÓN FINAL ==="
+# Paso 11: Verificación final
+log "=== PASO 11: VERIFICACIÓN FINAL ==="
 
 echo "Estado de servicios:"
 docker-compose ps
