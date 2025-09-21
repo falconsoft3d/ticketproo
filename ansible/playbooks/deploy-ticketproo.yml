@@ -1,0 +1,180 @@
+---
+# Playbook principal para deployment de TicketProo
+- name: Deploy TicketProo with Docker Swarm + Traefik
+  hosts: ticketproo
+  become: yes
+  gather_facts: yes
+
+  vars:
+    docker_compose_version: "2.21.0"
+    project_dir: "/opt/ticketproo"
+    
+  pre_tasks:
+    - name: Update system packages
+      apt:
+        update_cache: yes
+        upgrade: dist
+        autoremove: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Install required packages
+      apt:
+        name:
+          - curl
+          - git
+          - unzip
+          - software-properties-common
+          - apt-transport-https
+          - ca-certificates
+          - gnupg
+          - lsb-release
+        state: present
+      when: ansible_os_family == "Debian"
+
+  tasks:
+    # Docker Installation
+    - name: Install Docker
+      block:
+        - name: Add Docker GPG key
+          apt_key:
+            url: https://download.docker.com/linux/ubuntu/gpg
+            state: present
+
+        - name: Add Docker repository
+          apt_repository:
+            repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+            state: present
+
+        - name: Install Docker CE
+          apt:
+            name:
+              - docker-ce
+              - docker-ce-cli
+              - containerd.io
+              - docker-buildx-plugin
+              - docker-compose-plugin
+            state: present
+
+        - name: Start and enable Docker
+          systemd:
+            name: docker
+            state: started
+            enabled: yes
+
+        - name: Add user to docker group
+          user:
+            name: "{{ ansible_user }}"
+            groups: docker
+            append: yes
+
+    # Docker Swarm Setup
+    - name: Initialize Docker Swarm
+      docker_swarm:
+        state: present
+        advertise_addr: "{{ ansible_default_ipv4.address }}"
+      register: swarm_result
+
+    - name: Create traefik-public network
+      docker_network:
+        name: traefik-public
+        driver: overlay
+        attachable: yes
+        scope: swarm
+
+    # Project Setup
+    - name: Create project directory
+      file:
+        path: "{{ project_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Clone TicketProo repository
+      git:
+        repo: "https://github.com/falconsoft3d/ticketproo.git"
+        dest: "{{ project_dir }}"
+        force: yes
+        version: main
+
+    # Secrets Management
+    - name: Generate PostgreSQL password
+      set_fact:
+        postgres_password: "{{ ansible_date_time.epoch | hash('sha256') }}"
+      when: postgres_password is not defined
+
+    - name: Generate Django secret key
+      set_fact:
+        django_secret: "{{ ansible_date_time.epoch | hash('sha256') }}"
+      when: django_secret is not defined
+
+    - name: Create Docker secrets
+      docker_secret:
+        name: "{{ item.name }}"
+        data: "{{ item.data }}"
+        state: present
+      loop:
+        - name: postgres_password
+          data: "{{ postgres_password }}"
+        - name: django_secret
+          data: "{{ django_secret }}"
+
+    # Build Application Image
+    - name: Build TicketProo Docker image
+      docker_image:
+        name: ticketproo:latest
+        build:
+          path: "{{ project_dir }}"
+          dockerfile: Dockerfile
+        source: build
+        force_source: yes
+
+    # Deploy Traefik
+    - name: Deploy Traefik stack
+      docker_stack:
+        name: traefik
+        compose:
+          - "{{ project_dir }}/traefik/docker-compose.traefik.yml"
+        state: present
+
+    - name: Wait for Traefik to be ready
+      wait_for:
+        port: 80
+        host: "{{ inventory_hostname }}"
+        delay: 10
+        timeout: 60
+
+    # Deploy TicketProo
+    - name: Deploy TicketProo stack
+      docker_stack:
+        name: ticketproo
+        compose:
+          - "{{ project_dir }}/swarm/docker-compose.swarm.yml"
+        state: present
+
+    - name: Wait for TicketProo to be ready
+      uri:
+        url: "http://{{ domain_name }}/health/"
+        method: GET
+        status_code: 200
+      register: result
+      until: result.status == 200
+      retries: 30
+      delay: 10
+      ignore_errors: yes
+
+  post_tasks:
+    - name: Display deployment information
+      debug:
+        msg:
+          - "TicketProo deployed successfully!"
+          - "Domain: https://{{ domain_name }}"
+          - "Traefik Dashboard: https://traefik.{{ domain_name }}"
+          - "PostgreSQL Password: {{ postgres_password }}"
+          - "Django Secret: {{ django_secret }}"
+
+    - name: Show Docker stack status
+      command: docker stack ls
+      register: stack_status
+
+    - name: Display stack status
+      debug:
+        var: stack_status.stdout_lines

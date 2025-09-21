@@ -1,0 +1,47 @@
+# Configuración de Traefik para TicketProo
+api:
+  dashboard: true
+  debug: true
+
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entrypoint:
+          to: websecure
+          scheme: https
+          permanent: true
+
+  websecure:
+    address: ":443"
+
+# Proveedores de certificados SSL
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      tlsChallenge: {}
+      email: admin@ticketproo.com
+      storage: /letsencrypt/acme.json
+      # Para testing usar:
+      # caServer: https://acme-staging-v02.api.letsencrypt.org/directory
+
+# Provider Docker Swarm
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    swarmMode: true
+    exposedByDefault: false
+    network: traefik-public
+
+# Logs
+log:
+  level: INFO
+
+accessLog: {}
+
+# Métricas (opcional)
+metrics:
+  prometheus:
+    addEntryPointsLabels: true
+    addServicesLabels: true
