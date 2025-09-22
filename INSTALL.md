@@ -145,7 +145,7 @@ sudo -u ticketproo nano /opt/ticketproo/.env
 DEBUG=False
 SECRET_KEY=PEGA_AQUI_LA_SECRET_KEY_GENERADA
 DATABASE_URL=postgresql://ticketproo_user:tu_password_seguro@localhost:5432/ticketproo_db
-ALLOWED_HOSTS=ticketproo.com,www.ticketproo.com,localhost,127.0.0.1
+ALLOWED_HOSTS=ticketproo.com,www.ticketproo.com,localhost,127.0.0.1,TU_IP_PUBLICA_DEL_SERVIDOR
 STATIC_ROOT=/opt/ticketproo/staticfiles
 MEDIA_ROOT=/opt/ticketproo/media
 
@@ -166,6 +166,25 @@ ticketproo_secret_key_2024_cambiar_en_produccion_muy_importante_seguridad
 # Establecer permisos seguros
 sudo chown ticketproo:ticketproo /opt/ticketproo/.env
 sudo chmod 600 /opt/ticketproo/.env
+
+# Agregar IP pública del servidor a ALLOWED_HOSTS automáticamente
+PUBLIC_IP_V4=$(curl -4 -s ifconfig.me 2>/dev/null || wget -qO- -4 ifconfig.me 2>/dev/null)
+PUBLIC_IP_V6=$(curl -6 -s ifconfig.me 2>/dev/null || wget -qO- -6 ifconfig.me 2>/dev/null)
+
+echo "IP IPv4 del servidor detectada: $PUBLIC_IP_V4"
+echo "IP IPv6 del servidor detectada: $PUBLIC_IP_V6"
+
+# Agregar IPv4 si existe
+if [ ! -z "$PUBLIC_IP_V4" ]; then
+    sudo -u ticketproo sed -i "s/TU_IP_PUBLICA_DEL_SERVIDOR/$PUBLIC_IP_V4/" /opt/ticketproo/.env
+    echo "IPv4 agregada a ALLOWED_HOSTS: $PUBLIC_IP_V4"
+fi
+
+# Agregar IPv6 si existe y es diferente
+if [ ! -z "$PUBLIC_IP_V6" ] && [ "$PUBLIC_IP_V6" != "$PUBLIC_IP_V4" ]; then
+    sudo -u ticketproo sed -i "s/ALLOWED_HOSTS=\(.*\)/ALLOWED_HOSTS=\1,$PUBLIC_IP_V6/" /opt/ticketproo/.env
+    echo "IPv6 agregada a ALLOWED_HOSTS: $PUBLIC_IP_V6"
+fi
 ```
 
 **⚠️ IMPORTANTE: Reemplaza `tu_password_seguro` con la contraseña real de PostgreSQL y `ticketproo.com` con tu dominio real.**
@@ -246,8 +265,13 @@ LOGGING = {
 
 **Guarda el archivo con:** `Ctrl+X`, luego `Y`, luego `Enter`
 
-# Crear directorios necesarios
+```bash
+# Crear directorios necesarios y establecer permisos
 sudo -u ticketproo mkdir -p /opt/ticketproo/staticfiles /opt/ticketproo/media /opt/ticketproo/logs
+
+# Establecer permisos correctos
+sudo chown -R ticketproo:ticketproo /opt/ticketproo/logs
+sudo chmod -R 755 /opt/ticketproo/logs
 
 # Configurar aplicación Django
 sudo -u ticketproo bash -c "
@@ -341,7 +365,20 @@ Group=ticketproo
 WorkingDirectory=/opt/ticketproo
 Environment="DJANGO_SETTINGS_MODULE=ticket_system.settings_production"
 Environment="PYTHONPATH=/opt/ticketproo"
-ExecStart=/opt/ticketproo/venv/bin/gunicorn --workers 3 --bind unix:/run/ticketproo.sock ticket_system.wsgi:application
+Environment="PATH=/opt/ticketproo/venv/bin:/usr/local/bin:/usr/bin:/bin"
+ExecStart=/opt/ticketproo/venv/bin/gunicorn \
+    --user ticketproo \
+    --group ticketproo \
+    --workers 3 \
+    --timeout 300 \
+    --max-requests 1000 \
+    --max-requests-jitter 100 \
+    --preload \
+    --bind unix:/run/ticketproo.sock \
+    --error-logfile /opt/ticketproo/logs/gunicorn_error.log \
+    --access-logfile /opt/ticketproo/logs/gunicorn_access.log \
+    --log-level info \
+    ticket_system.wsgi:application
 ExecReload=/bin/kill -s HUP $MAINPID
 Restart=always
 RestartSec=3
@@ -354,6 +391,22 @@ WantedBy=multi-user.target
 
 **Guarda con:** `Ctrl+X`, luego `Y`, luego `Enter`
 
+```bash
+# Verificar que Gunicorn funciona antes de crear el servicio
+sudo -u ticketproo bash -c "
+cd /opt/ticketproo
+source venv/bin/activate
+export DJANGO_SETTINGS_MODULE=ticket_system.settings_production
+
+# Probar que Django funciona
+python3 manage.py check --deploy
+
+# Probar Gunicorn manualmente (presiona Ctrl+C después de verificar que funciona)
+echo 'Probando Gunicorn... presiona Ctrl+C si no hay errores'
+gunicorn --bind 127.0.0.1:8000 ticket_system.wsgi:application --timeout 30
+"
+
+# Si el test anterior funciona, continúa con los servicios
 # Habilitar y iniciar servicios
 sudo systemctl daemon-reload
 sudo systemctl enable ticketproo.socket
@@ -636,6 +689,67 @@ free -h
 
 ## 🚨 Solución de Problemas
 
+### Si Gunicorn falla al iniciar (Worker failed to boot):
+```bash
+# 0. PRIMERO: Arreglar permisos de logs si hay error "Unable to configure handler 'file'"
+sudo -u ticketproo mkdir -p /opt/ticketproo/logs
+sudo chown -R ticketproo:ticketproo /opt/ticketproo/logs
+sudo chmod -R 755 /opt/ticketproo/logs
+
+# 1. Verificar logs detallados
+sudo journalctl -u ticketproo.service -f --no-pager
+
+# 2. Probar Gunicorn manualmente para ver el error exacto
+sudo -u ticketproo bash -c "
+cd /opt/ticketproo
+source venv/bin/activate
+export DJANGO_SETTINGS_MODULE=ticket_system.settings_production
+python3 manage.py check --deploy
+gunicorn --bind 127.0.0.1:8000 ticket_system.wsgi:application --log-level debug
+"
+
+# 3. Verificar dependencias Python
+sudo -u ticketproo bash -c "
+cd /opt/ticketproo
+source venv/bin/activate
+pip install --upgrade gunicorn psycopg2-binary python-decouple dj-database-url
+"
+
+# 4. Verificar archivo wsgi.py
+sudo -u ticketproo bash -c "
+cd /opt/ticketproo
+source venv/bin/activate
+python3 -c 'import ticket_system.wsgi'
+"
+
+# 5. Reiniciar servicios después de los fixes
+sudo systemctl daemon-reload
+sudo systemctl restart ticketproo.service
+```
+
+### Si aparece error "DisallowedHost: Invalid HTTP_HOST header":
+```bash
+# Obtener IP IPv4 del servidor específicamente
+PUBLIC_IP=$(curl -4 -s ifconfig.me)
+echo "Agregando IP IPv4 $PUBLIC_IP a ALLOWED_HOSTS"
+
+# Método 1: Editar manualmente
+sudo -u ticketproo nano /opt/ticketproo/.env
+# Agregar la IP a la línea ALLOWED_HOSTS separada por comas
+
+# Método 2: Automático - agregar IPv4 específicamente
+sudo -u ticketproo sed -i "s/127.0.0.1/127.0.0.1,$PUBLIC_IP/" /opt/ticketproo/.env
+
+# Verificar el cambio
+sudo -u ticketproo cat /opt/ticketproo/.env | grep ALLOWED_HOSTS
+
+# Reiniciar servicio
+sudo systemctl restart ticketproo.service
+
+# Probar conexión
+curl -I http://$PUBLIC_IP
+```
+
 ### Si la aplicación no carga:
 ```bash
 # Verificar logs
@@ -657,6 +771,35 @@ sudo chown -R ticketproo:ticketproo /opt/ticketproo
 sudo chmod -R 755 /opt/ticketproo
 sudo chmod 600 /opt/ticketproo/.env
 ```
+
+### Ver Logs:
+```bash
+# Corregir permisos
+sudo journalctl -u ticketproo.service -f
+sudo tail -f /opt/ticketproo/logs/django.log
+
+sudo tail -f /opt/ticketproo/logs/gunicorn_error.log
+sudo tail -f /opt/ticketproo/logs/gunicorn_access.log
+
+sudo tail -f /var/log/nginx/ticketproo_error.log
+sudo tail -f /var/log/nginx/ticketproo_access.log
+
+echo "=== Estado de PostgreSQL ==="
+sudo systemctl status postgresql --no-pager
+
+echo "=== Estado de TicketProo ==="
+sudo systemctl status ticketproo.service --no-pager
+
+echo "=== Estado de Nginx ==="
+sudo systemctl status nginx --no-pager
+
+sudo journalctl -u ticketproo.service --no-pager -n 50
+
+curl -I http://localhost:8000
+```
+
+
+
 
 ---
 
