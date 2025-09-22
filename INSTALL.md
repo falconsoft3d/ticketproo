@@ -122,16 +122,28 @@ exit
 ## ⚙️ Paso 6: Configurar Variables de Entorno
 
 ```bash
+# Generar SECRET_KEY usando el entorno virtual de la aplicación
+SECRET_KEY=$(sudo -u ticketproo bash -c "cd /opt/ticketproo && source venv/bin/activate && python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'")
+
+# Si el comando anterior falla, usar OpenSSL como alternativa
+if [ -z "$SECRET_KEY" ]; then
+    SECRET_KEY=$(openssl rand -base64 32 | tr -d '=' | tr '/+' 'Aa')
+    echo "Usando SECRET_KEY generada con OpenSSL"
+fi
+
+# Mostrar la clave generada para verificación
+echo "SECRET_KEY generada: $SECRET_KEY"
+
 # Crear archivo de configuración con nano
 sudo -u ticketproo nano /opt/ticketproo/.env
 ```
 
-**Copia y pega el siguiente contenido en el archivo:**
+**Copia y pega el siguiente contenido en el archivo (reemplaza SECRET_KEY con la generada arriba):**
 
 ```env
 # TicketProo Production Environment
 DEBUG=False
-SECRET_KEY=tu_clave_secreta_generada_aqui
+SECRET_KEY=PEGA_AQUI_LA_SECRET_KEY_GENERADA
 DATABASE_URL=postgresql://ticketproo_user:tu_password_seguro@localhost:5432/ticketproo_db
 ALLOWED_HOSTS=ticketproo.com,www.ticketproo.com,localhost,127.0.0.1
 STATIC_ROOT=/opt/ticketproo/staticfiles
@@ -143,9 +155,9 @@ SESSION_COOKIE_SECURE=False
 CSRF_COOKIE_SECURE=False
 ```
 
-**Para generar una SECRET_KEY segura, ejecuta:**
-```bash
-python3 -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'
+**Si la generación automática falla, usa esta clave temporal:**
+```
+ticketproo_secret_key_2024_cambiar_en_produccion_muy_importante_seguridad
 ```
 
 **Guarda el archivo con:** `Ctrl+X`, luego `Y`, luego `Enter`
