@@ -1,0 +1,127 @@
+version: '3.8'
+
+services:
+  # Base de datos PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: ticketproo_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ticketproo_db
+      POSTGRES_USER: ticketproo_user
+      POSTGRES_PASSWORD: ticketproo_pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - ticketproo_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ticketproo_user -d ticketproo_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis para cache y Celery
+  redis:
+    image: redis:7-alpine
+    container_name: ticketproo_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - ticketproo_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # Aplicación Django
+  web:
+    build: .
+    container_name: ticketproo_web
+    restart: unless-stopped
+    environment:
+      - DEBUG=False
+      - SECRET_KEY=${SECRET_KEY}
+      - DATABASE_URL=postgresql://ticketproo_user:ticketproo_pass@db:5432/ticketproo_db
+      - REDIS_URL=redis://redis:6379/0
+      - ALLOWED_HOSTS=localhost,127.0.0.1,web,nginx
+    volumes:
+      - ./staticfiles:/app/staticfiles
+      - ./media:/app/media
+      - ./logs:/app/logs
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ticketproo_network
+    command: >
+      sh -c "
+        python manage.py migrate &&
+        python manage.py setup_groups &&
+        python manage.py assign_admin_agent &&
+        python manage.py collectstatic --noinput &&
+        gunicorn --bind 0.0.0.0:8000 --workers 3 ticket_system.wsgi:application
+      "
+
+  # Celery Worker
+  celery:
+    build: .
+    container_name: ticketproo_celery
+    restart: unless-stopped
+    environment:
+      - DEBUG=False
+      - SECRET_KEY=${SECRET_KEY}
+      - DATABASE_URL=postgresql://ticketproo_user:ticketproo_pass@db:5432/ticketproo_db
+      - REDIS_URL=redis://redis:6379/0
+      - ALLOWED_HOSTS=localhost,127.0.0.1,web,nginx
+    volumes:
+      - ./media:/app/media
+      - ./logs:/app/logs
+    depends_on:
+      - web
+      - redis
+    networks:
+      - ticketproo_network
+    command: celery -A ticket_system worker --loglevel=info
+
+  # Nginx (Proxy reverso)
+  nginx:
+    image: nginx:alpine
+    container_name: ticketproo_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+      - ./staticfiles:/app/staticfiles
+      - ./media:/app/media
+      - ./docker/certbot/conf:/etc/letsencrypt
+      - ./docker/certbot/www:/var/www/certbot
+    depends_on:
+      - web
+    networks:
+      - ticketproo_network
+
+  # Certbot para SSL
+  certbot:
+    image: certbot/certbot
+    container_name: ticketproo_certbot
+    volumes:
+      - ./docker/certbot/conf:/etc/letsencrypt
+      - ./docker/certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  ticketproo_network:
+    driver: bridge
