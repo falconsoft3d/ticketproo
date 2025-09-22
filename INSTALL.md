@@ -123,7 +123,7 @@ exit
 
 ```bash
 # Generar SECRET_KEY usando el entorno virtual de la aplicación
-SECRET_KEY=$(sudo -u ticketproo bash -c "cd /opt/ticketproo && source venv/bin/activate && python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'")
+SECRET_KEY=$(sudo -u ticketproo bash -c "cd /opt/ticketproo && source venv/bin/activate && python3 -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'")
 
 # Si el comando anterior falla, usar OpenSSL como alternativa
 if [ -z "$SECRET_KEY" ]; then
@@ -256,13 +256,13 @@ source venv/bin/activate
 export DJANGO_SETTINGS_MODULE=ticket_system.settings_production
 
 # Ejecutar migraciones
-python manage.py migrate
+python3 manage.py migrate
 
 # Recopilar archivos estáticos
-python manage.py collectstatic --noinput
+python3 manage.py collectstatic --noinput
 
 # Configurar grupos de usuarios
-python manage.py setup_groups
+python3 manage.py setup_groups
 "
 ```
 
@@ -617,8 +617,8 @@ cd /opt/ticketproo
 git pull origin main
 source venv/bin/activate
 export DJANGO_SETTINGS_MODULE=ticket_system.settings_production
-python manage.py migrate
-python manage.py collectstatic --noinput
+python3 manage.py migrate
+python3 manage.py collectstatic --noinput
 "
 sudo systemctl restart ticketproo.service
 
