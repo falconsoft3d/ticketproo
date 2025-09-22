@@ -1,4 +1,4 @@
-/* Estilos personalizados para el Sistema de Tickets */
+/* Estilos personalizados para el Sistema de Tickets - v1.2 FIXED */
 
 /* Mejoras de espaciado y tipografía */
 body {
@@ -29,6 +29,42 @@ body {
 /* Estilos para las tablas */
 .table-hover tbody tr:hover {
     background-color: rgba(0, 123, 255, 0.05);
+}
+
+/* Estilos específicos para tabla de tickets */
+.ticket-table {
+    table-layout: fixed !important;
+    width: 100% !important;
+}
+
+.ticket-table th,
+.ticket-table td {
+    vertical-align: middle;
+    padding: 0.75rem 0.5rem;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+/* Forzar texto en una línea para el título */
+.ticket-table td:nth-child(2) a {
+    display: block !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    width: 100% !important;
+    max-width: 250px !important;
+}
+
+/* Asegurar que todos los elementos de texto estén en una línea */
+.ticket-table td * {
+    white-space: nowrap !important;
+}
+
+/* Excepción para badges que pueden ser múltiples */
+.ticket-table td .badge {
+    white-space: nowrap !important;
+    display: inline-block !important;
 }
 
 /* Estilos para el login */

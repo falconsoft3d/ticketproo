@@ -76,35 +76,38 @@
 <div class="card">
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover mb-0">
+            <table class="table table-hover ticket-table mb-0" style="table-layout: fixed; width: 100%;">
                 <thead class="table-light">
                     <tr>
-                        <th>Número</th>
-                        <th>Título</th>
-                        <th>Categoría</th>
-                        {% if is_agent %}<th>Creador</th>{% endif %}
-                        <th>Prioridad</th>
-                        <th>Estado</th>
-                        {% if is_agent %}<th>Asignado a</th>{% endif %}
-                        {% if is_agent %}<th>Horas</th>{% endif %}
-                        <th>Fecha Creación</th>
-                        <th>Acciones</th>
+                        <th style="width: 10%; min-width: 100px;">Número</th>
+                        <th style="width: 25%; min-width: 200px;">Título</th>
+                        <th style="width: 12%; min-width: 120px;">Categoría</th>
+                        {% if is_agent %}<th style="width: 10%; min-width: 100px;">Creador</th>{% endif %}
+                        <th style="width: 10%; min-width: 100px;">Prioridad</th>
+                        <th style="width: 10%; min-width: 100px;">Estado</th>
+                        {% if is_agent %}<th style="width: 10%; min-width: 100px;">Asignado a</th>{% endif %}
+                        {% if is_agent %}<th style="width: 8%; min-width: 80px;">Horas</th>{% endif %}
+                        <th style="width: 12%; min-width: 120px;">Fecha Creación</th>
+                        <th style="width: 13%; min-width: 130px;">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for ticket in page_obj %}
                     <tr>
-                        <td>
+                        <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                             <a href="{% url 'ticket_detail' ticket.pk %}" class="text-decoration-none fw-bold">
                                 #{{ ticket.ticket_number }}
                             </a>
                         </td>
-                        <td>
-                            <a href="{% url 'ticket_detail' ticket.pk %}" class="text-decoration-none">
-                                {{ ticket.title|truncatechars:60 }}
+                        <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px;">
+                            <a href="{% url 'ticket_detail' ticket.pk %}" 
+                               class="text-decoration-none" 
+                               title="{{ ticket.title }}"
+                               style="display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                {{ ticket.title }}
                             </a>
                         </td>
-                        <td>
+                        <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                             {% if ticket.category %}
                                 <span class="badge" style="background-color: {{ ticket.category.color }}; color: white;">
                                     <i class="fas fa-tag me-1"></i>{{ ticket.category.name }}
@@ -114,25 +117,25 @@
                             {% endif %}
                         </td>
                         {% if is_agent %}
-                        <td>
+                        <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                             <small class="text-muted">
                                 <i class="bi bi-person"></i> 
                                 {{ ticket.created_by.get_full_name|default:ticket.created_by.username }}
                             </small>
                         </td>
                         {% endif %}
-                        <td>
+                        <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                             <span class="badge {{ ticket.get_priority_badge_class }}">
                                 {{ ticket.get_priority_display }}
                             </span>
                         </td>
-                        <td>
+                        <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                             <span class="badge {{ ticket.get_status_badge_class }}">
                                 {{ ticket.get_status_display }}
                             </span>
                         </td>
                         {% if is_agent %}
-                        <td>
+                        <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                             {% if ticket.assigned_to %}
                                 <small class="text-success">
                                     <i class="bi bi-person-check"></i> 
@@ -146,7 +149,7 @@
                         </td>
                         {% endif %}
                         {% if is_agent %}
-                        <td>
+                        <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                             {% if ticket.hours %}
                                 <span class="badge bg-info">
                                     <i class="bi bi-clock-history"></i> {{ ticket.hours }}h
@@ -156,10 +159,10 @@
                             {% endif %}
                         </td>
                         {% endif %}
-                        <td class="text-muted">
+                        <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" class="text-muted">
                             {{ ticket.created_at|date:"d/m/Y H:i" }}
                         </td>
-                        <td>
+                        <td style="text-align: center;">
                             <div class="btn-group btn-group-sm">
                                 <a href="{% url 'ticket_detail' ticket.pk %}" 
                                    class="btn btn-outline-primary" title="Ver detalles">
