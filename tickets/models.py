@@ -1839,3 +1839,137 @@ class DailyTaskItem(models.Model):
         self.completed = False
         self.completed_at = None
         self.save()
+
+
+class ChatRoom(models.Model):
+    """Modelo para las salas de chat entre usuarios"""
+    name = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Nombre de la sala'
+    )
+    participants = models.ManyToManyField(
+        User,
+        related_name='chat_rooms',
+        verbose_name='Participantes'
+    )
+    is_group = models.BooleanField(
+        default=False,
+        verbose_name='Es grupo',
+        help_text='True para chats grupales, False para chats 1:1'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    last_activity = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Última actividad'
+    )
+    
+    class Meta:
+        ordering = ['-last_activity']
+        verbose_name = 'Sala de Chat'
+        verbose_name_plural = 'Salas de Chat'
+    
+    def __str__(self):
+        if self.is_group and self.name:
+            return self.name
+        elif not self.is_group:
+            participants = list(self.participants.all())
+            if len(participants) == 2:
+                return f"{participants[0].get_full_name() or participants[0].username} & {participants[1].get_full_name() or participants[1].username}"
+        return f"Chat {self.id}"
+    
+    def get_other_participant(self, user):
+        """Para chats 1:1, obtiene el otro participante"""
+        if not self.is_group:
+            return self.participants.exclude(id=user.id).first()
+        return None
+    
+    def get_last_message(self):
+        """Obtiene el último mensaje de la sala"""
+        return self.messages.order_by('-created_at').first()
+    
+    def mark_as_read_for_user(self, user):
+        """Marca todos los mensajes como leídos para un usuario"""
+        unread_messages = self.messages.filter(read_by__isnull=True).exclude(sender=user)
+        for message in unread_messages:
+            message.read_by.add(user)
+    
+    def get_unread_count_for_user(self, user):
+        """Obtiene el número de mensajes no leídos para un usuario"""
+        return self.messages.exclude(sender=user).exclude(read_by=user).count()
+
+
+class ChatMessage(models.Model):
+    """Modelo para los mensajes del chat"""
+    room = models.ForeignKey(
+        ChatRoom,
+        on_delete=models.CASCADE,
+        related_name='messages',
+        verbose_name='Sala de chat'
+    )
+    sender = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='chat_messages',
+        verbose_name='Remitente'
+    )
+    message = models.TextField(
+        blank=True,
+        verbose_name='Mensaje'
+    )
+    attachment = models.FileField(
+        upload_to='chat_attachments/%Y/%m/%d/',
+        blank=True,
+        null=True,
+        verbose_name='Archivo adjunto'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de envío'
+    )
+    read_by = models.ManyToManyField(
+        User,
+        blank=True,
+        related_name='read_messages',
+        verbose_name='Leído por'
+    )
+    
+    class Meta:
+        ordering = ['created_at']
+        verbose_name = 'Mensaje de Chat'
+        verbose_name_plural = 'Mensajes de Chat'
+    
+    def __str__(self):
+        if self.message:
+            preview = self.message[:50] + "..." if len(self.message) > 50 else self.message
+            return f"{self.sender.username}: {preview}"
+        elif self.attachment:
+            return f"{self.sender.username}: [Archivo adjunto]"
+        return f"Mensaje {self.id}"
+    
+    def is_read_by_user(self, user):
+        """Verifica si el mensaje ha sido leído por un usuario específico"""
+        return self.read_by.filter(id=user.id).exists()
+    
+    def get_attachment_name(self):
+        """Obtiene el nombre del archivo adjunto"""
+        if self.attachment:
+            return os.path.basename(self.attachment.name)
+        return None
+    
+    def get_attachment_size(self):
+        """Obtiene el tamaño del archivo adjunto en formato legible"""
+        if self.attachment:
+            try:
+                size = self.attachment.size
+                for unit in ['B', 'KB', 'MB', 'GB']:
+                    if size < 1024.0:
+                        return f"{size:.1f} {unit}"
+                    size /= 1024.0
+                return f"{size:.1f} TB"
+            except:
+                return "Tamaño desconocido"
+        return None

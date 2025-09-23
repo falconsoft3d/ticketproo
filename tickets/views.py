@@ -16,14 +16,15 @@ from datetime import timedelta
 from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
     UserNote, TimeEntry, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
-    DailyTaskSession, DailyTaskItem
+    DailyTaskSession, DailyTaskItem, ChatRoom, ChatMessage
 )
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
     TicketAttachmentForm, CategoryForm, UserTicketForm, UserTicketEditForm, 
     TicketCommentForm, UserNoteForm, TimeEntryStartForm, TimeEntryEndForm, 
     TimeEntryEditForm, ProjectForm, CompanyForm, SystemConfigurationForm, DocumentForm,
-    UrlManagerForm, UrlManagerFilterForm, WorkOrderForm, WorkOrderFilterForm, TaskForm
+    UrlManagerForm, UrlManagerFilterForm, WorkOrderForm, WorkOrderFilterForm, TaskForm,
+    ChatMessageForm, ChatRoomForm
 )
 from .utils import is_agent, is_regular_user, get_user_role, assign_user_to_group
 
@@ -3457,3 +3458,191 @@ def public_project_view(request, token):
     }
     
     return render(request, 'tickets/public_project.html', context)
+
+
+# ===== VISTAS DEL CHAT =====
+
+@login_required
+def chat_list_view(request):
+    """Vista para listar las salas de chat del usuario"""
+    user_rooms = request.user.chat_rooms.all().order_by('-last_activity')
+    
+    # Agregar conteo de mensajes no leídos a cada sala
+    for room in user_rooms:
+        room.unread_count = room.get_unread_count_for_user(request.user)
+    
+    context = {
+        'rooms': user_rooms,
+        'page_title': 'Chat - Mensajes',
+    }
+    
+    return render(request, 'tickets/chat_list.html', context)
+
+
+@login_required
+def chat_room_view(request, room_id):
+    """Vista para una sala de chat específica"""
+    room = get_object_or_404(ChatRoom, id=room_id, participants=request.user)
+    
+    # Marcar mensajes como leídos
+    room.mark_as_read_for_user(request.user)
+    
+    # Obtener mensajes de la sala
+    messages = room.messages.all().order_by('created_at')
+    
+    # Procesar envío de mensaje
+    if request.method == 'POST':
+        form = ChatMessageForm(request.POST, request.FILES)
+        if form.is_valid():
+            message = form.save(commit=False)
+            message.room = room
+            message.sender = request.user
+            message.save()
+            
+            # Actualizar última actividad de la sala
+            room.last_activity = timezone.now()
+            room.save()
+            
+            # Redirigir para evitar reenvío
+            return redirect('chat_room', room_id=room.id)
+    else:
+        form = ChatMessageForm()
+    
+    context = {
+        'room': room,
+        'messages': messages,
+        'form': form,
+        'page_title': f'Chat - {room}',
+    }
+    
+    return render(request, 'tickets/chat_room.html', context)
+
+
+@login_required
+def chat_start_conversation(request, user_id):
+    """Inicia una conversación 1:1 con otro usuario"""
+    other_user = get_object_or_404(User, id=user_id, is_active=True)
+    
+    # Verificar que no es el mismo usuario
+    if other_user == request.user:
+        messages.error(request, 'No puedes iniciar una conversación contigo mismo.')
+        return redirect('chat_list')
+    
+    # Buscar si ya existe una sala 1:1 entre estos usuarios
+    existing_room = ChatRoom.objects.filter(
+        is_group=False,
+        participants=request.user
+    ).filter(participants=other_user).first()
+    
+    if existing_room:
+        return redirect('chat_room', room_id=existing_room.id)
+    
+    # Crear nueva sala 1:1
+    room = ChatRoom.objects.create(is_group=False)
+    room.participants.add(request.user, other_user)
+    
+    return redirect('chat_room', room_id=room.id)
+
+
+@login_required
+def chat_create_group(request):
+    """Vista para crear un chat grupal"""
+    if request.method == 'POST':
+        form = ChatRoomForm(request.POST, user=request.user)
+        if form.is_valid():
+            room = form.save()
+            messages.success(request, f'Grupo "{room}" creado exitosamente.')
+            return redirect('chat_room', room_id=room.id)
+    else:
+        form = ChatRoomForm(user=request.user)
+    
+    context = {
+        'form': form,
+        'page_title': 'Crear Grupo de Chat',
+    }
+    
+    return render(request, 'tickets/chat_create_group.html', context)
+
+
+@login_required
+def chat_users_list(request):
+    """Vista para listar usuarios disponibles para chat"""
+    users = User.objects.filter(is_active=True).exclude(id=request.user.id).order_by(
+        'first_name', 'last_name', 'username'
+    )
+    
+    context = {
+        'users': users,
+        'page_title': 'Usuarios - Chat',
+    }
+    
+    return render(request, 'tickets/chat_users.html', context)
+
+
+@login_required
+def chat_ajax_load_messages(request, room_id):
+    """Vista AJAX para cargar mensajes de una sala"""
+    room = get_object_or_404(ChatRoom, id=room_id, participants=request.user)
+    
+    # Obtener mensajes después de cierto timestamp (para polling)
+    last_message_id = request.GET.get('last_message_id', 0)
+    messages = room.messages.filter(id__gt=last_message_id).order_by('created_at')
+    
+    messages_data = []
+    for message in messages:
+        messages_data.append({
+            'id': message.id,
+            'sender_name': message.sender.get_full_name() or message.sender.username,
+            'sender_id': message.sender.id,
+            'message': message.message,
+            'attachment_name': message.get_attachment_name(),
+            'attachment_url': message.attachment.url if message.attachment else None,
+            'attachment_size': message.get_attachment_size(),
+            'created_at': message.created_at.strftime('%H:%M'),
+            'is_own': message.sender == request.user,
+        })
+    
+    return JsonResponse({
+        'messages': messages_data,
+        'room_id': room.id,
+    })
+
+
+@login_required
+def chat_ajax_send_message(request, room_id):
+    """Vista AJAX para enviar mensajes"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    
+    room = get_object_or_404(ChatRoom, id=room_id, participants=request.user)
+    
+    form = ChatMessageForm(request.POST, request.FILES)
+    if form.is_valid():
+        message = form.save(commit=False)
+        message.room = room
+        message.sender = request.user
+        message.save()
+        
+        # Actualizar última actividad
+        room.last_activity = timezone.now()
+        room.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': {
+                'id': message.id,
+                'sender_name': message.sender.get_full_name() or message.sender.username,
+                'sender_id': message.sender.id,
+                'message': message.message,
+                'attachment_name': message.get_attachment_name(),
+                'attachment_url': message.attachment.url if message.attachment else None,
+                'attachment_size': message.get_attachment_size(),
+                'created_at': message.created_at.strftime('%H:%M'),
+                'is_own': True,
+            }
+        })
+    else:
+        return JsonResponse({
+            'error': 'Formulario inválido',
+            'errors': form.errors
+        }, status=400)

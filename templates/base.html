@@ -14,6 +14,7 @@
     
     {% bootstrap_css %}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body class="bg-light">
@@ -57,6 +58,12 @@
                         <a class="nav-link {% if request.resolver_match.url_name == 'ticket_create' %}active{% endif %}" 
                            href="{% url 'ticket_create' %}">
                             <i class="bi bi-plus-circle"></i> Nuevo Ticket
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'chat' in request.resolver_match.url_name %}active{% endif %}" 
+                           href="{% url 'chat_list' %}">
+                            <i class="bi bi-chat-dots"></i> Chat
                         </a>
                     </li>
                     
@@ -282,6 +289,453 @@
             updateFavicon(false);
         {% endif %}
     </script>
+    
+    <!-- Widget de Chat Flotante -->
+    {% if user.is_authenticated %}
+    <div id="chat-widget" class="chat-widget">
+        <div class="chat-widget-header" onclick="toggleChatWidget()">
+            <i class="fas fa-comments"></i>
+            <div class="chat-notifications" id="chat-notifications" style="display: none;">
+                <span id="notification-count">0</span>
+            </div>
+        </div>
+        
+        <div class="chat-widget-body" id="chat-widget-body" style="display: none;">
+            <div class="chat-widget-tabs">
+                <button class="chat-tab active" onclick="showChatTab('conversations')">
+                    Conversaciones
+                </button>
+                <button class="chat-tab" onclick="showChatTab('users')">
+                    Usuarios
+                </button>
+            </div>
+            
+            <div class="chat-tab-content" id="conversations-tab">
+                <div class="chat-conversations-list" id="chat-conversations">
+                    <div class="text-center p-3">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <small class="d-block mt-2">Cargando conversaciones...</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chat-tab-content" id="users-tab" style="display: none;">
+                <div class="chat-users-list" id="chat-users">
+                    <div class="text-center p-3">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <small class="d-block mt-2">Cargando usuarios...</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <style>
+    .chat-widget {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        width: 50px;
+        height: 50px;
+        z-index: 1050;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    .chat-widget-header {
+        background: #2196f3;
+        color: white;
+        padding: 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        user-select: none;
+        transition: all 0.3s ease;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        position: relative;
+    }
+    
+    .chat-widget-header:hover {
+        background: #1976d2;
+        transform: scale(1.1);
+        box-shadow: 0 4px 15px rgba(33, 150, 243, 0.4);
+    }
+    .chat-widget.expanded {
+        width: 320px;
+        height: auto;
+        max-height: 500px;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 8px 35px rgba(0,0,0,0.15);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        border: 1px solid #e3e6f0;
+    }
+
+    .chat-widget.expanded .chat-widget-header {
+        border-radius: 15px 15px 0 0;
+        width: 100%;
+        height: auto;
+        padding: 15px 20px;
+        justify-content: space-between;
+    }
+
+    .chat-widget.expanded .chat-widget-header i {
+        font-size: 1.1rem;
+    }
+
+    .chat-widget.expanded .chat-widget-header::after {
+        content: "Chat";
+        margin-left: 10px;
+        font-weight: 500;
+    }
+        font-weight: 600;
+        font-size: 1rem;
+    }
+    
+    .chat-notifications {
+        background: #ff5722;
+        color: white;
+        border-radius: 12px;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        font-weight: bold;
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        border: 2px solid white;
+        animation: pulse 2s infinite;
+    }
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+    
+    .chat-widget-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        max-height: 400px;
+        background: #f8f9fa;
+    }
+    
+    .chat-widget-tabs {
+        display: flex;
+        border-bottom: 1px solid #dee2e6;
+        background: white;
+    }
+    
+    .chat-tab {
+        flex: 1;
+        padding: 12px 16px;
+        border: none;
+        background: none;
+        color: #6c757d;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-weight: 500;
+        position: relative;
+    }
+    
+    .chat-tab.active {
+        color: #667eea;
+        background: #f8f9fa;
+    }
+    
+    .chat-tab.active::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .chat-tab:hover:not(.active) {
+        background: #f1f3f4;
+        color: #495057;
+    }
+    
+    .chat-tab-content {
+        flex: 1;
+        overflow-y: auto;
+    }
+    
+    .chat-conversation-item,
+    .chat-user-item {
+        padding: 12px 16px;
+        border-bottom: 1px solid #f1f3f4;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+        color: inherit;
+        background: white;
+    }
+    
+    .chat-conversation-item:hover,
+    .chat-user-item:hover {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        color: inherit;
+        text-decoration: none;
+        transform: translateX(2px);
+    }
+    
+    .chat-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: bold;
+        margin-right: 12px;
+        flex-shrink: 0;
+        border: 2px solid white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .chat-info {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .chat-name {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: #2c3e50;
+    }
+    
+    .chat-last-message {
+        font-size: 12px;
+        color: #6c757d;
+        margin: 2px 0 0 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .chat-time {
+        font-size: 10px;
+        color: #6c757d;
+        white-space: nowrap;
+    }
+    
+    .chat-unread {
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 2px 8px;
+        font-size: 10px;
+        font-weight: bold;
+        margin-left: 8px;
+        min-width: 18px;
+        text-align: center;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #6c757d;
+    }
+    
+    .empty-state i {
+        font-size: 2.5rem;
+        margin-bottom: 12px;
+        opacity: 0.4;
+        color: #667eea;
+    }
+    
+    .empty-state h6 {
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #495057;
+    }
+    
+    .empty-state p {
+        font-size: 12px;
+        margin: 0;
+    }
+    
+    .chat-toggle-icon {
+        transition: transform 0.3s ease;
+    }
+    
+    .chat-toggle-icon.rotated {
+        transform: rotate(180deg);
+    }
+    </style>
+    
+    <script>
+    let chatWidgetExpanded = false;
+    
+    function toggleChatWidget() {
+        const body = document.getElementById('chat-widget-body');
+        const widget = document.getElementById('chat-widget');
+        
+        if (chatWidgetExpanded) {
+            body.style.display = 'none';
+            widget.classList.remove('expanded');
+            chatWidgetExpanded = false;
+        } else {
+            body.style.display = 'flex';
+            widget.classList.add('expanded');
+            chatWidgetExpanded = true;
+            loadChatConversations();
+        }
+    }
+    
+    function showChatTab(tab) {
+        // Actualizar tabs
+        document.querySelectorAll('.chat-tab').forEach(t => t.classList.remove('active'));
+        
+        // Mostrar contenido
+        document.querySelectorAll('.chat-tab-content').forEach(content => {
+            content.style.display = 'none';
+        });
+        
+        if (tab === 'conversations') {
+            document.getElementById('conversations-tab').style.display = 'block';
+            document.querySelectorAll('.chat-tab')[0].classList.add('active');
+            loadChatConversations();
+        } else if (tab === 'users') {
+            document.getElementById('users-tab').style.display = 'block';
+            document.querySelectorAll('.chat-tab')[1].classList.add('active');
+            loadChatUsers();
+        }
+    }
+    
+    function loadChatConversations() {
+        const container = document.getElementById('chat-conversations');
+        container.innerHTML = '<div class="text-center p-3"><i class="fas fa-spinner fa-spin"></i><small class="d-block mt-2">Cargando...</small></div>';
+        
+        fetch('/chat/')
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const conversations = doc.querySelectorAll('.conversation-item');
+                
+                if (conversations.length > 0) {
+                    let conversationsHtml = '';
+                    conversations.forEach(conv => {
+                        const avatar = conv.querySelector('.conversation-avatar');
+                        const name = conv.querySelector('.conversation-name').textContent.trim();
+                        const preview = conv.querySelector('.conversation-preview');
+                        const badge = conv.querySelector('.unread-badge');
+                        const href = conv.getAttribute('href');
+                        
+                        conversationsHtml += `
+                            <a href="${href}" class="chat-conversation-item">
+                                <div class="chat-avatar">
+                                    ${avatar ? avatar.textContent.trim() : name.charAt(0).toUpperCase()}
+                                </div>
+                                <div class="chat-info">
+                                    <div class="chat-name">${name}</div>
+                                    ${preview ? `<div class="chat-last-message">${preview.textContent.trim()}</div>` : ''}
+                                </div>
+                                ${badge ? `<span class="chat-unread">${badge.textContent.trim()}</span>` : ''}
+                            </a>
+                        `;
+                    });
+                    container.innerHTML = conversationsHtml;
+                } else {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-comments"></i>
+                            <h6>Sin conversaciones</h6>
+                            <p>Inicia una nueva conversación</p>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading conversations:', error);
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h6>Error al cargar</h6>
+                        <p>Intenta de nuevo</p>
+                    </div>
+                `;
+            });
+    }
+    
+    function loadChatUsers() {
+        const container = document.getElementById('chat-users');
+        container.innerHTML = '<div class="text-center p-3"><i class="fas fa-spinner fa-spin"></i><small class="d-block mt-2">Cargando...</small></div>';
+        
+        fetch('/chat/users/')
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const users = doc.querySelectorAll('.user-item');
+                
+                if (users.length > 0) {
+                    let usersHtml = '';
+                    users.forEach(user => {
+                        const avatar = user.querySelector('.user-avatar');
+                        const name = user.querySelector('h6').textContent.trim();
+                        const username = user.querySelector('small').textContent.trim();
+                        const href = user.getAttribute('href');
+                        
+                        usersHtml += `
+                            <a href="${href}" class="chat-user-item">
+                                <div class="chat-avatar">
+                                    ${avatar ? avatar.textContent.trim() : name.charAt(0).toUpperCase()}
+                                </div>
+                                <div class="chat-info">
+                                    <div class="chat-name">${name}</div>
+                                    <div class="chat-last-message">${username}</div>
+                                </div>
+                            </a>
+                        `;
+                    });
+                    container.innerHTML = usersHtml;
+                } else {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-users"></i>
+                            <h6>Sin usuarios</h6>
+                            <p>No hay usuarios disponibles</p>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading users:', error);
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h6>Error al cargar</h6>
+                        <p>Intenta de nuevo</p>
+                    </div>
+                `;
+            });
+    }
+    </script>
+    {% endif %}
     
     {% block extra_js %}
     {% endblock %}

@@ -1,0 +1,642 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ room }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+.chat-page {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px 0;
+}
+
+.chat-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    overflow: hidden;
+    height: 85vh;
+}
+
+.chat-sidebar {
+    background: #f8f9fa;
+    border-right: 1px solid #e9ecef;
+    height: 100%;
+    padding: 20px;
+}
+
+.user-profile {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.user-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 2rem;
+    font-weight: bold;
+    margin: 0 auto 15px;
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+}
+
+.status-online {
+    color: #28a745;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.status-online i {
+    margin-right: 5px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.participants-section h6 {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.participant {
+    display: flex;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f1f1f1;
+}
+
+.participant:last-child {
+    border-bottom: none;
+}
+
+.participant-avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.participant-name {
+    flex: 1;
+    font-size: 0.9rem;
+    color: #495057;
+}
+
+.chat-main {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.chat-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px 25px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.chat-header h5 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.chat-info {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.chat-messages {
+    flex: 1;
+    padding: 20px 25px;
+    overflow-y: auto;
+    background: #ffffff;
+    background-image: 
+        radial-gradient(circle at 25px 25px, rgba(102, 126, 234, 0.05) 2px, transparent 2px),
+        radial-gradient(circle at 75px 75px, rgba(118, 75, 162, 0.05) 2px, transparent 2px);
+    background-size: 100px 100px;
+}
+
+.message {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: flex-end;
+}
+
+.message.own {
+    flex-direction: row-reverse;
+}
+
+.message-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.9rem;
+    font-weight: bold;
+    margin: 0 10px;
+    flex-shrink: 0;
+}
+
+.message.own .message-avatar {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.message-content {
+    max-width: 70%;
+    position: relative;
+}
+
+.message-bubble {
+    background: white;
+    padding: 12px 18px;
+    border-radius: 18px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border: 1px solid #f0f0f0;
+    position: relative;
+    word-wrap: break-word;
+}
+
+.message.own .message-bubble {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+}
+
+.message-bubble::before {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 20px;
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 10px solid white;
+}
+
+.message.own .message-bubble::before {
+    left: auto;
+    right: 20px;
+    border-top-color: #667eea;
+}
+
+.message-time {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-top: 5px;
+    text-align: left;
+}
+
+.message.own .message-time {
+    text-align: right;
+    color: rgba(255,255,255,0.8);
+}
+
+.message-attachment {
+    background: rgba(255,255,255,0.2);
+    border-radius: 10px;
+    padding: 10px;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+}
+
+.message-attachment i {
+    margin-right: 8px;
+    font-size: 1.1rem;
+}
+
+.message-attachment a {
+    color: inherit;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.chat-input {
+    background: white;
+    border-top: 1px solid #e9ecef;
+    padding: 20px 25px;
+}
+
+.input-group {
+    position: relative;
+}
+
+.form-control {
+    border-radius: 25px;
+    border: 2px solid #e9ecef;
+    padding: 12px 20px;
+    font-size: 0.95rem;
+    resize: none;
+    min-height: 50px;
+    max-height: 120px;
+}
+
+.form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.btn-chat {
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 10px;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-outline-primary {
+    border: 2px solid #667eea;
+    color: #667eea;
+}
+
+.btn-outline-primary:hover {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: transparent;
+    color: white;
+}
+
+.file-preview {
+    background: #e3f2fd;
+    border-radius: 10px;
+    padding: 15px;
+    margin-top: 10px;
+    display: none;
+    border-left: 4px solid #667eea;
+}
+
+.file-preview-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.file-info {
+    display: flex;
+    align-items: center;
+}
+
+.file-info i {
+    font-size: 1.5rem;
+    color: #667eea;
+    margin-right: 10px;
+}
+
+.file-details {
+    font-size: 0.9rem;
+    color: #495057;
+}
+
+.empty-chat {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+}
+
+.empty-chat i {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    color: #dee2e6;
+}
+
+#id_attachment {
+    display: none;
+}
+
+.back-button {
+    color: white;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+    margin-bottom: 20px;
+    transition: opacity 0.3s;
+}
+
+.back-button:hover {
+    color: white;
+    opacity: 0.8;
+}
+
+.back-button i {
+    margin-right: 8px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .chat-container {
+        height: 100vh;
+        border-radius: 0;
+        margin: 0;
+    }
+    
+    .chat-sidebar {
+        display: none;
+    }
+    
+    .message {
+        margin-bottom: 15px;
+    }
+    
+    .message-content {
+        max-width: 85%;
+    }
+    
+    .chat-messages {
+        padding: 15px;
+    }
+    
+    .chat-input {
+        padding: 15px;
+    }
+}
+</style>
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chat-page">
+    <div class="container-fluid">
+        <div class="row chat-container">
+            <!-- Sidebar -->
+            <div class="col-md-3 chat-sidebar d-none d-md-block">
+                <a href="{% url 'chat_list' %}" class="back-button">
+                    <i class="fas fa-arrow-left"></i>
+                    Volver al chat
+                </a>
+                
+                <div class="user-profile">
+                    <div class="user-avatar">
+                        {% if room.is_group %}
+                            <i class="fas fa-users"></i>
+                        {% else %}
+                            {% for participant in room.participants.all %}
+                                {% if participant != user %}
+                                    {{ participant.first_name|first|default:participant.username|first|upper }}
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    <h6 class="fw-bold mb-1">
+                        {% if room.is_group %}
+                            {{ room.name }}
+                        {% else %}
+                            {% for participant in room.participants.all %}
+                                {% if participant != user %}
+                                    {{ participant.get_full_name|default:participant.username }}
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </h6>
+                    <div class="status-online">
+                        <i class="fas fa-circle"></i>
+                        En línea
+                    </div>
+                </div>
+                
+                <div class="participants-section">
+                    <h6>
+                        <i class="fas fa-users me-2"></i>
+                        Participantes ({{ room.participants.count }})
+                    </h6>
+                    {% for participant in room.participants.all %}
+                        <div class="participant">
+                            <div class="participant-avatar">
+                                {{ participant.first_name|first|default:participant.username|first|upper }}
+                            </div>
+                            <div class="participant-name">
+                                {{ participant.get_full_name|default:participant.username }}
+                                {% if participant == user %}<small class="text-muted">(Tú)</small>{% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Chat Main -->
+            <div class="col-md-9 col-12 p-0">
+                <div class="chat-main">
+                    <!-- Header -->
+                    <div class="chat-header">
+                        <div>
+                            <h5>
+                                {% if room.is_group %}
+                                    <i class="fas fa-users me-2"></i>{{ room.name }}
+                                {% else %}
+                                    <i class="fas fa-user me-2"></i>
+                                    {% for participant in room.participants.all %}
+                                        {% if participant != user %}
+                                            {{ participant.get_full_name|default:participant.username }}
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            </h5>
+                        </div>
+                        <div class="chat-info">
+                            <i class="fas fa-users me-1"></i>
+                            {{ room.participants.count }} participante{{ room.participants.count|pluralize }}
+                        </div>
+                    </div>
+                    
+                    <!-- Messages -->
+                    <div class="chat-messages" id="chat-messages">
+                        {% for message in messages %}
+                            <div class="message {% if message.sender == user %}own{% endif %}">
+                                <div class="message-avatar">
+                                    {{ message.sender.first_name|first|default:message.sender.username|first|upper }}
+                                </div>
+                                
+                                <div class="message-content">
+                                    <div class="message-bubble">
+                                        {% if message.message %}
+                                            {{ message.message|linebreaks }}
+                                        {% endif %}
+                                        
+                                        {% if message.attachment %}
+                                            <div class="message-attachment">
+                                                <i class="fas fa-paperclip"></i>
+                                                <a href="{{ message.attachment.url }}" target="_blank">
+                                                    {{ message.get_attachment_name }}
+                                                </a>
+                                                <small class="ms-2">({{ message.get_attachment_size }})</small>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="message-time">
+                                        {% if message.sender != user %}
+                                            {{ message.sender.get_full_name|default:message.sender.username }} • 
+                                        {% endif %}
+                                        {{ message.created_at|date:"H:i" }}
+                                    </div>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="empty-chat">
+                                <i class="fas fa-comments"></i>
+                                <h5>¡Comienza la conversación!</h5>
+                                <p>No hay mensajes aún. Sé el primero en escribir algo.</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Input -->
+                    <div class="chat-input">
+                        <form method="post" enctype="multipart/form-data" id="chat-form">
+                            {% csrf_token %}
+                            <div class="input-group">
+                                {{ form.message }}
+                                
+                                <label for="{{ form.attachment.id_for_label }}" class="btn btn-outline-primary btn-chat" title="Adjuntar archivo">
+                                    <i class="fas fa-paperclip"></i>
+                                </label>
+                                {{ form.attachment }}
+                                
+                                <button type="submit" class="btn btn-primary btn-chat" title="Enviar mensaje">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="file-preview" id="file-preview">
+                                <div class="file-preview-content">
+                                    <div class="file-info">
+                                        <i class="fas fa-file"></i>
+                                        <div class="file-details">
+                                            <div class="fw-medium">Archivo seleccionado</div>
+                                            <small id="file-name" class="text-muted"></small>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearFile()">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const messagesContainer = document.getElementById('chat-messages');
+    const fileInput = document.getElementById('{{ form.attachment.id_for_label }}');
+    const filePreview = document.getElementById('file-preview');
+    const fileName = document.getElementById('file-name');
+    const messageInput = document.querySelector('textarea[name="message"]');
+    const form = document.getElementById('chat-form');
+    const submitButton = form.querySelector('button[type="submit"]');
+    
+    // Configurar placeholder del textarea
+    if (messageInput) {
+        messageInput.placeholder = 'Escribe tu mensaje aquí...';
+        messageInput.style.resize = 'none';
+        
+        // Auto-resize del textarea
+        function adjustHeight() {
+            messageInput.style.height = 'auto';
+            const newHeight = Math.min(messageInput.scrollHeight, 120);
+            messageInput.style.height = newHeight + 'px';
+        }
+        
+        messageInput.addEventListener('input', adjustHeight);
+        
+        // Enviar con Enter
+        messageInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (this.value.trim() || (fileInput && fileInput.files.length > 0)) {
+                    form.submit();
+                }
+            }
+        });
+        
+        // Focus automático
+        messageInput.focus();
+    }
+    
+    // Scroll al final
+    function scrollToBottom() {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    scrollToBottom();
+    
+    // Manejar archivos
+    if (fileInput) {
+        fileInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const file = this.files[0];
+                const size = (file.size / 1024 / 1024).toFixed(2);
+                fileName.textContent = `${file.name} (${size} MB)`;
+                filePreview.style.display = 'block';
+            } else {
+                clearFile();
+            }
+        });
+    }
+    
+    // Envío del formulario
+    if (form) {
+        form.addEventListener('submit', function() {
+            setTimeout(() => {
+                if (messageInput) {
+                    messageInput.value = '';
+                    messageInput.style.height = 'auto';
+                }
+                clearFile();
+                scrollToBottom();
+                if (messageInput) messageInput.focus();
+            }, 100);
+        });
+    }
+    
+    // Función para limpiar archivo
+    window.clearFile = function() {
+        if (fileInput) fileInput.value = '';
+        if (filePreview) filePreview.style.display = 'none';
+    };
+});
+</script>
+{% endblock %}

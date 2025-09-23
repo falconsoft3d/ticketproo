@@ -3,7 +3,8 @@ from django.contrib.auth.models import User, Group
 from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
 from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
-    UserNote, TimeEntry, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task
+    UserNote, TimeEntry, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
+    ChatRoom, ChatMessage
 )
 
 class CategoryForm(forms.ModelForm):
@@ -1913,3 +1914,91 @@ class TaskForm(forms.ModelForm):
         if not self.instance.pk:  # Nueva tarea
             self.fields['status'].initial = 'pending'
             self.fields['priority'].initial = 'medium'
+
+
+class ChatMessageForm(forms.ModelForm):
+    """Formulario para enviar mensajes de chat"""
+    
+    class Meta:
+        model = ChatMessage
+        fields = ['message', 'attachment']
+        widgets = {
+            'message': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Escribe un mensaje...',
+                'autocomplete': 'off',
+                'maxlength': '1000'
+            }),
+            'attachment': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*,application/pdf,.doc,.docx,.txt,.zip,.rar'
+            }),
+        }
+        labels = {
+            'message': 'Mensaje',
+            'attachment': 'Archivo adjunto',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['message'].required = False
+        self.fields['attachment'].required = False
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        message = cleaned_data.get('message')
+        attachment = cleaned_data.get('attachment')
+        
+        if not message and not attachment:
+            raise forms.ValidationError('Debes escribir un mensaje o adjuntar un archivo.')
+        
+        return cleaned_data
+
+
+class ChatRoomForm(forms.ModelForm):
+    """Formulario para crear salas de chat grupales"""
+    
+    participants = forms.ModelMultipleChoiceField(
+        queryset=User.objects.filter(is_active=True).order_by('first_name', 'last_name', 'username'),
+        widget=forms.CheckboxSelectMultiple(),
+        required=True,
+        label='Participantes'
+    )
+    
+    class Meta:
+        model = ChatRoom
+        fields = ['name', 'participants']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre del grupo (opcional)'
+            }),
+        }
+        labels = {
+            'name': 'Nombre del grupo',
+            'participants': 'Participantes',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        # Excluir al usuario actual de la lista de participantes
+        if self.user:
+            self.fields['participants'].queryset = User.objects.filter(
+                is_active=True
+            ).exclude(id=self.user.id).order_by('first_name', 'last_name', 'username')
+    
+    def save(self, commit=True):
+        room = super().save(commit=False)
+        room.is_group = True
+        
+        if commit:
+            room.save()
+            # Agregar participantes seleccionados
+            room.participants.set(self.cleaned_data['participants'])
+            # Agregar al usuario actual como participante
+            if self.user:
+                room.participants.add(self.user)
+        
+        return room

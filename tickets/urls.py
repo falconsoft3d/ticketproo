@@ -148,4 +148,15 @@ urlpatterns = [
     
     # URL pública para información del proyecto (sin autenticación)
     path('public/project/<str:token>/', views.public_project_view, name='public_project_view'),
+    
+    # URLs del sistema de chat
+    path('chat/', views.chat_list_view, name='chat_list'),
+    path('chat/room/<int:room_id>/', views.chat_room_view, name='chat_room'),
+    path('chat/start/<int:user_id>/', views.chat_start_conversation, name='chat_start'),
+    path('chat/create-group/', views.chat_create_group, name='chat_create_group'),
+    path('chat/users/', views.chat_users_list, name='chat_users'),
+    
+    # URLs AJAX para el chat
+    path('chat/ajax/messages/<int:room_id>/', views.chat_ajax_load_messages, name='chat_ajax_messages'),
+    path('chat/ajax/send/<int:room_id>/', views.chat_ajax_send_message, name='chat_ajax_send'),
 ]
