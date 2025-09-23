@@ -15,14 +15,14 @@ import os
 from datetime import timedelta
 from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
-    UserNote, TimeEntry, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder
+    UserNote, TimeEntry, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task
 )
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
     TicketAttachmentForm, CategoryForm, UserTicketForm, UserTicketEditForm, 
     TicketCommentForm, UserNoteForm, TimeEntryStartForm, TimeEntryEndForm, 
     TimeEntryEditForm, ProjectForm, CompanyForm, SystemConfigurationForm, DocumentForm,
-    UrlManagerForm, UrlManagerFilterForm, WorkOrderForm, WorkOrderFilterForm
+    UrlManagerForm, UrlManagerFilterForm, WorkOrderForm, WorkOrderFilterForm, TaskForm
 )
 from .utils import is_agent, is_regular_user, get_user_role, assign_user_to_group
 
@@ -2560,3 +2560,157 @@ def daily_report_pdf(request):
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     
     return response
+
+
+# ==================== VISTAS DE TAREAS ====================
+
+@login_required
+def task_list_view(request):
+    """Vista para listar tareas"""
+    tasks = Task.objects.all()
+    
+    # Filtros
+    search = request.GET.get('search', '')
+    status_filter = request.GET.get('status', '')
+    priority_filter = request.GET.get('priority', '')
+    assigned_to_me = request.GET.get('assigned_to_me', '')
+    
+    if search:
+        tasks = tasks.filter(
+            Q(title__icontains=search) | 
+            Q(description__icontains=search)
+        )
+    
+    if status_filter:
+        tasks = tasks.filter(status=status_filter)
+    
+    if priority_filter:
+        tasks = tasks.filter(priority=priority_filter)
+    
+    if assigned_to_me:
+        tasks = tasks.filter(assigned_users=request.user)
+    
+    # Paginación
+    paginator = Paginator(tasks, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'search': search,
+        'status_filter': status_filter,
+        'priority_filter': priority_filter,
+        'assigned_to_me': assigned_to_me,
+        'status_choices': Task.STATUS_CHOICES,
+        'priority_choices': Task.PRIORITY_CHOICES,
+    }
+    return render(request, 'tickets/task_list.html', context)
+
+
+@login_required
+def task_create_view(request):
+    """Vista para crear una nueva tarea"""
+    if request.method == 'POST':
+        form = TaskForm(request.POST)
+        if form.is_valid():
+            task = form.save(commit=False)
+            task.created_by = request.user
+            task.save()
+            form.save_m2m()  # Para guardar los ManyToMany
+            
+            messages.success(request, f'Tarea "{task.title}" creada exitosamente.')
+            return redirect('task_detail', pk=task.pk)
+    else:
+        form = TaskForm()
+    
+    context = {
+        'form': form,
+        'title': 'Crear Nueva Tarea'
+    }
+    return render(request, 'tickets/task_form.html', context)
+
+
+@login_required
+def task_detail_view(request, pk):
+    """Vista para ver detalles de una tarea"""
+    task = get_object_or_404(Task, pk=pk)
+    
+    context = {
+        'task': task,
+    }
+    return render(request, 'tickets/task_detail.html', context)
+
+
+@login_required
+def task_edit_view(request, pk):
+    """Vista para editar una tarea"""
+    task = get_object_or_404(Task, pk=pk)
+    
+    # Solo el creador o agentes pueden editar
+    if not is_agent(request.user) and task.created_by != request.user:
+        messages.error(request, 'No tienes permisos para editar esta tarea.')
+        return redirect('task_detail', pk=task.pk)
+    
+    if request.method == 'POST':
+        form = TaskForm(request.POST, instance=task)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Tarea "{task.title}" actualizada exitosamente.')
+            return redirect('task_detail', pk=task.pk)
+    else:
+        form = TaskForm(instance=task)
+    
+    context = {
+        'form': form,
+        'task': task,
+        'title': f'Editar Tarea: {task.title}'
+    }
+    return render(request, 'tickets/task_form.html', context)
+
+
+@login_required
+def task_delete_view(request, pk):
+    """Vista para eliminar una tarea"""
+    task = get_object_or_404(Task, pk=pk)
+    
+    # Solo el creador o agentes pueden eliminar
+    if not is_agent(request.user) and task.created_by != request.user:
+        messages.error(request, 'No tienes permisos para eliminar esta tarea.')
+        return redirect('task_detail', pk=task.pk)
+    
+    if request.method == 'POST':
+        task_title = task.title
+        task.delete()
+        messages.success(request, f'Tarea "{task_title}" eliminada exitosamente.')
+        return redirect('task_list')
+    
+    context = {
+        'task': task,
+    }
+    return render(request, 'tickets/task_delete.html', context)
+
+
+@login_required
+def task_toggle_status_view(request, pk):
+    """Vista para cambiar el estado de una tarea"""
+    task = get_object_or_404(Task, pk=pk)
+    
+    if request.method == 'POST':
+        new_status = request.POST.get('status')
+        if new_status in dict(Task.STATUS_CHOICES):
+            old_status = task.get_status_display()
+            task.status = new_status
+            
+            if new_status == 'completed':
+                task.completed_at = timezone.now()
+            elif task.status != 'completed' and task.completed_at:
+                task.completed_at = None
+            
+            task.save()
+            
+            messages.success(
+                request, 
+                f'Estado de la tarea "{task.title}" cambiado de {old_status} a {task.get_status_display()}.'
+            )
+    
+    return redirect('task_detail', pk=task.pk)

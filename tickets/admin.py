@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserNote, 
     TimeEntry, Project, Company, SystemConfiguration, Document, UserProfile,
-    WorkOrder, WorkOrderAttachment
+    WorkOrder, WorkOrderAttachment, Task
 )
 
 # Configuración del sitio de administración
@@ -532,3 +532,65 @@ class WorkOrderAttachmentAdmin(admin.ModelAdmin):
     
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('work_order', 'uploaded_by')
+
+
+@admin.register(Task)
+class TaskAdmin(admin.ModelAdmin):
+    """Administrador para tareas"""
+    list_display = ('title', 'status', 'priority', 'created_by', 'due_date', 'assigned_users_display', 'is_overdue_display', 'created_at')
+    list_filter = ('status', 'priority', 'created_at', 'due_date', 'created_by')
+    search_fields = ('title', 'description', 'created_by__username', 'assigned_users__username')
+    list_editable = ('status', 'priority')
+    ordering = ('-created_at',)
+    date_hierarchy = 'created_at'
+    readonly_fields = ('created_at', 'updated_at', 'completed_at')
+    filter_horizontal = ('assigned_users',)
+    
+    fieldsets = (
+        ('Información básica', {
+            'fields': ('title', 'description', 'created_by')
+        }),
+        ('Estado y prioridad', {
+            'fields': ('status', 'priority', 'due_date')
+        }),
+        ('Asignación', {
+            'fields': ('assigned_users',)
+        }),
+        ('Fechas del sistema', {
+            'fields': ('created_at', 'updated_at', 'completed_at'),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def assigned_users_display(self, obj):
+        """Muestra los usuarios asignados de forma resumida"""
+        users = obj.assigned_users.all()
+        if not users:
+            return 'Sin asignar'
+        elif len(users) <= 2:
+            return ', '.join([user.username for user in users])
+        else:
+            return f'{users[0].username}, {users[1].username} y {len(users)-2} más'
+    assigned_users_display.short_description = 'Usuarios Asignados'
+    
+    def is_overdue_display(self, obj):
+        """Muestra si la tarea está vencida"""
+        if obj.is_overdue():
+            return '⚠️ Vencida'
+        elif obj.due_date and obj.status not in ['completed', 'cancelled']:
+            from django.utils import timezone
+            days_left = (obj.due_date - timezone.now()).days
+            if days_left <= 1:
+                return '⏰ Próxima'
+        return '✅ A tiempo'
+    is_overdue_display.short_description = 'Estado de Vencimiento'
+    
+    def save_model(self, request, obj, form, change):
+        if not change:  # Si es un nuevo objeto
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related(
+            'created_by'
+        ).prefetch_related('assigned_users')

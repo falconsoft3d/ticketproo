@@ -1,103 +1,53 @@
 {% extends 'base.html' %}
-{% load static %}
 
-{% block title %}{{ page_title }}{% endblock %}
+{% block title %}Eliminar Tarea: {{ task.title }} - TicketProo{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row justify-content-center">
-        <div class="col-lg-6">
-            <!-- Header -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>
-                    <i class="bi bi-trash me-2"></i>{{ page_title }}
-                </h2>
-                <a href="{% url 'task_detail' task.pk %}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left me-1"></i>Volver
-                </a>
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0">
+                    <i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación
+                </h4>
             </div>
-
-            <!-- Confirmación de eliminación -->
-            <div class="card border-danger">
-                <div class="card-header bg-danger text-white">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-exclamation-triangle me-1"></i>Confirmar Eliminación
-                    </h5>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>¡Atención!</strong> Esta acción no se puede deshacer.
                 </div>
-                <div class="card-body">
-                    <div class="alert alert-warning">
-                        <i class="bi bi-info-circle me-1"></i>
-                        <strong>¡Atención!</strong> Esta acción no se puede deshacer.
-                    </div>
-                    
-                    <p class="mb-4">
-                        ¿Estás seguro de que quieres eliminar la tarea 
-                        <strong>"{{ task.name }}"</strong>?
-                    </p>
-
-                    <!-- Información de la tarea -->
-                    <div class="card bg-light mb-4">
-                        <div class="card-body">
-                            <h6 class="card-title">Detalles de la tarea a eliminar:</h6>
-                            <ul class="list-unstyled mb-0">
-                                <li><strong>Nombre:</strong> {{ task.name }}</li>
-                                <li><strong>Estado:</strong> 
-                                    <span class="badge {{ task.get_status_badge_class }}">
-                                        {{ task.get_status_display }}
-                                    </span>
-                                </li>
-                                <li><strong>Prioridad:</strong> 
-                                    <span class="badge {{ task.get_priority_badge_class }}">
-                                        {{ task.get_priority_display }}
-                                    </span>
-                                </li>
-                                <li><strong>Vencimiento:</strong> 
-                                    {% if task.due_date %}
-                                        {{ task.due_date|date:"d/m/Y H:i" }}
-                                    {% else %}
-                                        <span class="text-muted">Sin fecha límite</span>
-                                    {% endif %}
-                                </li>
-                                {% if task.project %}
-                                    <li><strong>Proyecto:</strong> {{ task.project.name }}</li>
-                                {% endif %}
-                                {% if task.assigned_to.all %}
-                                    <li><strong>Asignado a:</strong> 
-                                        {% for user in task.assigned_to.all %}
-                                            {{ user.get_full_name|default:user.username }}{% if not forloop.last %}, {% endif %}
-                                        {% endfor %}
-                                    </li>
-                                {% endif %}
-                                <li><strong>Creado por:</strong> {{ task.created_by.get_full_name|default:task.created_by.username }}</li>
-                                <li><strong>Fecha de creación:</strong> {{ task.created_at|date:"d/m/Y H:i" }}</li>
-                            </ul>
+                
+                <p>¿Estás seguro de que quieres eliminar la siguiente tarea?</p>
+                
+                <div class="card border-light">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ task.title }}</h5>
+                        <p class="card-text text-muted">{{ task.description|truncatechars:150 }}</p>
+                        <div class="d-flex gap-2">
+                            <span class="badge bg-{{ task.get_priority_color }}">
+                                {{ task.get_priority_display }}
+                            </span>
+                            <span class="badge bg-{{ task.get_status_color }}">
+                                {{ task.get_status_display }}
+                            </span>
                         </div>
+                        <small class="text-muted d-block mt-2">
+                            Creado por: {{ task.created_by.get_full_name|default:task.created_by.username }}
+                        </small>
                     </div>
-
-                    <!-- Formulario de confirmación -->
-                    <form method="post" class="d-flex justify-content-between">
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'task_detail' task.pk %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Cancelar
+                    </a>
+                    <form method="post" class="d-inline">
                         {% csrf_token %}
-                        <a href="{% url 'task_detail' task.pk %}" class="btn btn-secondary">
-                            <i class="bi bi-x-circle me-1"></i>Cancelar
-                        </a>
                         <button type="submit" class="btn btn-danger">
-                            <i class="bi bi-trash me-1"></i>Sí, Eliminar Tarea
+                            <i class="bi bi-trash"></i> Eliminar Tarea
                         </button>
                     </form>
                 </div>
-            </div>
-
-            <!-- Información adicional -->
-            <div class="alert alert-info mt-4">
-                <h6 class="alert-heading">
-                    <i class="bi bi-lightbulb me-1"></i>¿Qué sucede al eliminar una tarea?
-                </h6>
-                <ul class="mb-0">
-                    <li>La tarea se eliminará permanentemente del sistema</li>
-                    <li>Se perderá todo el historial y progreso registrado</li>
-                    <li>Los usuarios asignados ya no tendrán acceso a esta tarea</li>
-                    <li>Si está asociada a un proyecto, se desvinculará automáticamente</li>
-                </ul>
             </div>
         </div>
     </div>

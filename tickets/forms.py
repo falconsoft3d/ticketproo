@@ -3,7 +3,7 @@ from django.contrib.auth.models import User, Group
 from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
 from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
-    UserNote, TimeEntry, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder
+    UserNote, TimeEntry, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task
 )
 
 class CategoryForm(forms.ModelForm):
@@ -1757,3 +1757,60 @@ class WorkOrderFilterForm(forms.Form):
             self.fields['assigned_to'].queryset = agentes
         except Group.DoesNotExist:
             pass
+
+
+class TaskForm(forms.ModelForm):
+    """Formulario para crear y editar tareas"""
+    
+    class Meta:
+        model = Task
+        fields = ['title', 'description', 'status', 'priority', 'assigned_users', 'due_date']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título de la tarea'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Descripción detallada de la tarea'
+            }),
+            'status': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'priority': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'assigned_users': forms.CheckboxSelectMultiple(attrs={
+                'class': 'form-check-input'
+            }),
+            'due_date': forms.DateTimeInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local'
+            }),
+        }
+        labels = {
+            'title': 'Título',
+            'description': 'Descripción',
+            'status': 'Estado',
+            'priority': 'Prioridad',
+            'assigned_users': 'Usuarios Asignados',
+            'due_date': 'Fecha de Vencimiento',
+        }
+        help_texts = {
+            'assigned_users': 'Selecciona uno o más usuarios para asignar a esta tarea',
+            'due_date': 'Fecha y hora límite para completar la tarea (opcional)',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Filtrar usuarios activos
+        self.fields['assigned_users'].queryset = User.objects.filter(is_active=True).order_by('username')
+        
+        # Configurar widget más amigable para múltiples usuarios
+        self.fields['assigned_users'].widget = forms.CheckboxSelectMultiple()
+        
+        # Hacer algunos campos opcionales para nueva tarea
+        if not self.instance.pk:  # Nueva tarea
+            self.fields['status'].initial = 'pending'
+            self.fields['priority'].initial = 'medium'

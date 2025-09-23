@@ -119,4 +119,12 @@ urlpatterns = [
     # URLs de reportes (solo para agentes)
     path('reports/daily/', views.daily_report_view, name='daily_report'),
     path('reports/daily/pdf/', views.daily_report_pdf, name='daily_report_pdf'),
+    
+    # URLs de gestión de tareas
+    path('tasks/', views.task_list_view, name='task_list'),
+    path('tasks/create/', views.task_create_view, name='task_create'),
+    path('tasks/<int:pk>/', views.task_detail_view, name='task_detail'),
+    path('tasks/<int:pk>/edit/', views.task_edit_view, name='task_edit'),
+    path('tasks/<int:pk>/delete/', views.task_delete_view, name='task_delete'),
+    path('tasks/<int:pk>/toggle-status/', views.task_toggle_status_view, name='task_toggle_status'),
 ]

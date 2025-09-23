@@ -112,6 +112,12 @@
                                 </a>
                             </li>
                             <li>
+                                <a class="dropdown-item {% if 'task' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'task_list' %}">
+                                    <i class="bi bi-list-task"></i> Tareas
+                                </a>
+                            </li>
+                            <li>
                                 <a class="dropdown-item {% if 'url_manager' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'url_manager_list' %}">
                                     <i class="bi bi-link-45deg"></i> Gestión de URLs

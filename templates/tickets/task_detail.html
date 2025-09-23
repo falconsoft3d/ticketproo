@@ -1,414 +1,139 @@
 {% extends 'base.html' %}
-{% load static %}
 
-{% block title %}{{ page_title }}{% endblock %}
+{% block title %}{{ task.title }} - TicketProo{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-lg-8">
-            <!-- Header -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>
-                    <i class="bi bi-list-task me-2"></i>{{ task.title }}
-                </h2>
-                <div class="btn-group">
-                    <a href="{% url 'tickets:task_list' %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-left me-1"></i>Volver
-                    </a>
-                    {% if can_edit %}
-                    <a href="{% url 'tickets:task_edit' task.pk %}" class="btn btn-outline-warning">
-                        <i class="bi bi-pencil me-1"></i>Editar
-                    </a>
-                    {% endif %}
-                    {% if can_delete %}
-                    <a href="{% url 'tickets:task_delete' task.pk %}" class="btn btn-outline-danger">
-                        <i class="bi bi-trash me-1"></i>Eliminar
-                    </a>
-                    {% endif %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i class="bi bi-list-task"></i> {{ task.title }}
+                </h4>
+                <div>
+                    <span class="badge bg-{{ task.get_priority_color }} me-2">
+                        {{ task.get_priority_display }}
+                    </span>
+                    <span class="badge bg-{{ task.get_status_color }}">
+                        {{ task.get_status_display }}
+                    </span>
                 </div>
             </div>
-
-            <!-- Información principal -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <div class="row align-items-center">
-                        <div class="col-md-8">
-                            <h5 class="card-title mb-0">
-                                <i class="bi bi-info-circle me-1"></i>Detalles de la Tarea
-                            </h5>
-                        </div>
-                        <div class="col-md-4 text-end">
-                            <span class="badge {{ task.get_status_badge_class }} fs-6 me-2">
-                                {{ task.get_status_display }}
-                            </span>
-                            <span class="badge {{ task.get_priority_badge_class }} fs-6">
-                                {{ task.get_priority_display }}
-                            </span>
-                        </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <h6>Descripción:</h6>
+                        <p class="text-muted">{{ task.description|linebreaks }}</p>
                     </div>
                 </div>
-                <div class="card-body">
-                    <!-- Descripción -->
-                    <div class="mb-4">
-                        <h6>Descripción</h6>
-                        <div class="bg-light p-3 rounded">
-                            {{ task.description|linebreaks }}
-                        </div>
-                    </div>
-
-                    <!-- Información de fechas -->
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <h6>Fecha de vencimiento</h6>
-                            <p class="mb-1">
-                                {% if task.due_date %}
-                                    <i class="bi bi-calendar-event me-1"></i>
-                                    {{ task.due_date|date:"d/m/Y H:i" }}
-                                    {% if task.is_overdue %}
-                                        <span class="badge bg-danger ms-2">Vencida</span>
-                                    {% elif task.days_until_due <= 1 and task.status != 'completed' %}
-                                        <span class="badge bg-warning ms-2">Próxima a vencer</span>
-                                    {% endif %}
-                                {% else %}
-                                    <i class="bi bi-calendar-x me-1"></i>
-                                    <span class="text-muted">Sin fecha límite definida</span>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6>Información General:</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Creado por:</strong> {{ task.created_by.get_full_name|default:task.created_by.username }}</li>
+                            <li><strong>Fecha de creación:</strong> {{ task.created_at|date:"d/m/Y H:i" }}</li>
+                            <li><strong>Última actualización:</strong> {{ task.updated_at|date:"d/m/Y H:i" }}</li>
+                            {% if task.due_date %}
+                            <li><strong>Fecha de vencimiento:</strong> 
+                                {{ task.due_date|date:"d/m/Y H:i" }}
+                                {% if task.is_overdue %}
+                                    <span class="text-danger fw-bold">(Vencida)</span>
                                 {% endif %}
-                            </p>
-                            {% if task.due_date and task.days_until_due and task.status != 'completed' %}
-                                <small class="text-muted">
-                                    {% if task.days_until_due > 0 %}
-                                        Faltan {{ task.days_until_due }} día{{ task.days_until_due|pluralize }}
-                                    {% elif task.days_until_due == 0 %}
-                                        Vence hoy
-                                    {% else %}
-                                        Vencida hace {{ task.days_until_due|add:"-1" }} día{{ task.days_until_due|add:"-1"|pluralize }}
-                                    {% endif %}
-                                </small>
+                            </li>
                             {% endif %}
-                        </div>
-                        <div class="col-md-6">
-                            <h6>Progreso</h6>
-                            {% if task.status == 'completed' %}
-                                <div class="progress mb-2" style="height: 25px;">
-                                    <div class="progress-bar bg-success" style="width: 100%">
-                                        <strong>100% Completada</strong>
-                                    </div>
-                                </div>
-                            {% elif task.estimated_hours and task.actual_hours %}
-                                {% with progress=task.get_progress_percentage %}
-                                <div class="progress mb-2" style="height: 25px;">
-                                    <div class="progress-bar {% if progress >= 100 %}bg-success{% else %}bg-primary{% endif %}" 
-                                         style="width: {{ progress|floatformat:0 }}%">
-                                        <strong>{{ progress|floatformat:1 }}%</strong>
-                                    </div>
-                                </div>
-                                {% endwith %}
-                            {% else %}
-                                <p class="text-muted">Sin datos de progreso</p>
+                            {% if task.completed_at %}
+                            <li><strong>Fecha de finalización:</strong> {{ task.completed_at|date:"d/m/Y H:i" }}</li>
                             {% endif %}
-                        </div>
+                        </ul>
                     </div>
                     
-                    <!-- Tiempo estimado/real -->
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            {% if task.estimated_hours %}
-                                <h6>Horas estimadas</h6>
-                                <p class="mb-1">
-                                    <i class="bi bi-clock me-1"></i>
-                                    {{ task.estimated_hours }} hora{{ task.estimated_hours|pluralize }}
-                                </p>
-                            {% endif %}
-                        </div>
-                        <div class="col-md-6">
-                            {% if task.actual_hours %}
-                                <h6>Horas trabajadas</h6>
-                                <p class="mb-1">
-                                    <i class="bi bi-hourglass-split me-1"></i>
-                                    {{ task.actual_hours }} hora{{ task.actual_hours|pluralize }}
-                                </p>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <!-- Creador -->
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6>Creado por</h6>
-                            <p class="mb-1">
-                                <i class="bi bi-person me-1"></i>
-                                {{ task.created_by.get_full_name|default:task.created_by.username }}
-                            </p>
-                            <small class="text-muted">
-                                {{ task.created_at|date:"d/m/Y H:i" }}
-                            </small>
-                        </div>
-                        <div class="col-md-6">
-                            {% if task.completed_at %}
-                                <h6>Completada el</h6>
-                                <p class="mb-1">
-                                    <i class="bi bi-check-circle me-1"></i>
-                                    {{ task.completed_at|date:"d/m/Y H:i" }}
-                                </p>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Cambio rápido de estado -->
-            {% if can_edit %}
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h6 class="card-title mb-0">
-                        <i class="bi bi-arrow-repeat me-1"></i>Cambio Rápido de Estado
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <form id="statusForm" class="row g-3">
-                        {% csrf_token %}
-                        <div class="col-md-4">
-                            <label for="newStatus" class="form-label">Nuevo Estado</label>
-                            <select id="newStatus" name="status" class="form-select">
-                                <option value="pending" {% if task.status == 'pending' %}selected{% endif %}>Pendiente</option>
-                                <option value="in_progress" {% if task.status == 'in_progress' %}selected{% endif %}>En Progreso</option>
-                                <option value="completed" {% if task.status == 'completed' %}selected{% endif %}>Completada</option>
-                                <option value="cancelled" {% if task.status == 'cancelled' %}selected{% endif %}>Cancelada</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="actualHours" class="form-label">Horas Trabajadas</label>
-                            <input type="number" id="actualHours" name="actual_hours" class="form-control" 
-                                   step="0.25" min="0" value="{{ task.actual_hours|default:'' }}" 
-                                   placeholder="Ej: 8.5">
-                        </div>
-                        <div class="col-md-4">
-                            <label>&nbsp;</label>
-                            <button type="submit" class="btn btn-primary w-100">
-                                <i class="bi bi-check-circle me-1"></i>Actualizar
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-            {% endif %}
-        </div>
-
-        <div class="col-lg-4">
-            <!-- Información del proyecto -->
-            {% if task.project %}
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h6 class="card-title mb-0">
-                        <i class="bi bi-folder me-1"></i>Proyecto
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <div class="d-flex align-items-center mb-2">
-                        <span class="badge rounded-pill me-2" 
-                              style="background-color: {{ task.project.color }}; color: white;">
-                            <i class="bi bi-folder"></i>
-                        </span>
-                        <strong>{{ task.project.name }}</strong>
-                    </div>
-                    {% if task.project.description %}
-                        <p class="text-muted mb-0">{{ task.project.description }}</p>
-                    {% endif %}
-                    <div class="mt-2">
-                        <span class="badge bg-secondary">{{ task.project.get_status_display }}</span>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Usuarios asignados -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h6 class="card-title mb-0">
-                        <i class="bi bi-people me-1"></i>Asignado a ({{ task.assigned_to.count }})
-                    </h6>
-                </div>
-                <div class="card-body">
-                    {% if task.assigned_to.all %}
-                        {% for user in task.assigned_to.all %}
-                        <div class="d-flex align-items-center mb-2">
-                            <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-2" 
-                                 style="width: 32px; height: 32px;">
-                                <span class="text-white fw-bold">
-                                    {% if user.first_name %}{{ user.first_name.0 }}{% else %}{{ user.username.0|upper }}{% endif %}
-                                </span>
-                            </div>
-                            <div>
-                                <strong>{{ user.get_full_name|default:user.username }}</strong>
-                                {% if user.email %}
-                                    <br><small class="text-muted">{{ user.email }}</small>
-                                {% endif %}
-                            </div>
-                        </div>
-                        {% endfor %}
-                    {% else %}
-                        <p class="text-muted mb-0">Sin usuarios asignados</p>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Información adicional -->
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="card-title mb-0">
-                        <i class="bi bi-clock-history me-1"></i>Timeline
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <div class="timeline">
-                        <div class="timeline-item">
-                            <div class="timeline-marker bg-primary"></div>
-                            <div class="timeline-content">
-                                <h6 class="mb-1">Tarea creada</h6>
-                                <p class="text-muted mb-0">
-                                    <small>{{ task.created_at|date:"d/m/Y H:i" }}</small>
-                                </p>
-                            </div>
-                        </div>
-                        
-                        {% if task.status == 'in_progress' or task.status == 'completed' %}
-                        <div class="timeline-item">
-                            <div class="timeline-marker bg-warning"></div>
-                            <div class="timeline-content">
-                                <h6 class="mb-1">En progreso</h6>
-                                <p class="text-muted mb-0">
-                                    <small>Trabajo iniciado</small>
-                                </p>
-                            </div>
-                        </div>
-                        {% endif %}
-                        
-                        {% if task.status == 'completed' and task.completed_at %}
-                        <div class="timeline-item">
-                            <div class="timeline-marker bg-success"></div>
-                            <div class="timeline-content">
-                                <h6 class="mb-1">Tarea completada</h6>
-                                <p class="text-muted mb-0">
-                                    <small>{{ task.completed_at|date:"d/m/Y H:i" }}</small>
-                                </p>
-                            </div>
-                        </div>
+                    <div class="col-md-6">
+                        <h6>Usuarios Asignados:</h6>
+                        {% if task.assigned_users.all %}
+                        <ul class="list-unstyled">
+                            {% for user in task.assigned_users.all %}
+                            <li>
+                                <span class="badge bg-info me-1">{{ user.get_full_name|default:user.username }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p class="text-muted">Sin usuarios asignados</p>
                         {% endif %}
                     </div>
                 </div>
+                
+                <!-- Cambio de estado -->
+                {% if task.assigned_users.all and request.user in task.assigned_users.all or request.user == task.created_by or request.user.groups.all|length > 0 %}
+                <div class="row">
+                    <div class="col-md-12">
+                        <h6>Cambiar Estado:</h6>
+                        <form method="post" action="{% url 'task_toggle_status' task.pk %}" class="d-inline">
+                            {% csrf_token %}
+                            <div class="row align-items-end">
+                                <div class="col-md-6">
+                                    <select name="status" class="form-select">
+                                        {% for value, label in task.STATUS_CHOICES %}
+                                        <option value="{{ value }}" {% if task.status == value %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-check-circle"></i> Actualizar Estado
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-gear"></i> Acciones
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'task_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver a la lista
+                    </a>
+                    {% if task.created_by == request.user or request.user.groups.all|length > 0 %}
+                    <a href="{% url 'task_edit' task.pk %}" class="btn btn-warning">
+                        <i class="bi bi-pencil"></i> Editar Tarea
+                    </a>
+                    <a href="{% url 'task_delete' task.pk %}" class="btn btn-danger" 
+                       onclick="return confirm('¿Estás seguro de que quieres eliminar esta tarea?')">
+                        <i class="bi bi-trash"></i> Eliminar Tarea
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        {% if task.is_overdue %}
+        <div class="card mt-3 border-danger">
+            <div class="card-header bg-danger text-white">
+                <h6 class="mb-0">
+                    <i class="bi bi-exclamation-triangle"></i> Tarea Vencida
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="text-danger mb-0">
+                    Esta tarea venció el {{ task.due_date|date:"d/m/Y H:i" }}
+                </p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
 </div>
-
-<style>
-.timeline {
-    position: relative;
-    padding-left: 30px;
-}
-
-.timeline-item {
-    position: relative;
-    margin-bottom: 20px;
-}
-
-.timeline-marker {
-    position: absolute;
-    left: -35px;
-    top: 0;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    border: 2px solid white;
-}
-
-.timeline::before {
-    content: '';
-    position: absolute;
-    left: -30px;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background-color: #dee2e6;
-}
-
-.timeline-item:last-child .timeline::before {
-    display: none;
-}
-</style>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const statusForm = document.getElementById('statusForm');
-    
-    if (statusForm) {
-        statusForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            updateTaskStatus();
-        });
-    }
-    
-    function updateTaskStatus() {
-        const formData = new FormData(statusForm);
-        const statusUrl = '{% url "tickets:task_update_status" task.pk %}';
-        
-        fetch(statusUrl, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken')
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showAlert('success', data.message);
-                setTimeout(() => {
-                    location.reload();
-                }, 1500);
-            } else {
-                showAlert('danger', data.error || 'Error al actualizar el estado');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showAlert('danger', 'Error de conexión al actualizar el estado');
-        });
-    }
-    
-    function showAlert(type, message) {
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-        alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-        alertDiv.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-        
-        document.body.appendChild(alertDiv);
-        
-        setTimeout(() => {
-            if (alertDiv.parentNode) {
-                alertDiv.remove();
-            }
-        }, 5000);
-    }
-    
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-});
-</script>
 {% endblock %}
