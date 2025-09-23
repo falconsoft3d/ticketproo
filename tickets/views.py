@@ -179,8 +179,17 @@ def ticket_list_view(request):
         # Los agentes ven todos los tickets
         tickets = Ticket.objects.all()
     else:
-        # Los usuarios regulares solo ven sus propios tickets
-        tickets = Ticket.objects.filter(created_by=request.user)
+        # Los usuarios regulares ven sus propios tickets Y tickets de proyectos asignados
+        user_projects = request.user.assigned_projects.all()
+        
+        if user_projects.exists():
+            # El usuario tiene proyectos asignados: ve sus tickets + tickets de sus proyectos
+            tickets = Ticket.objects.filter(
+                Q(created_by=request.user) | Q(project__in=user_projects)
+            ).distinct()
+        else:
+            # El usuario no tiene proyectos: solo ve sus propios tickets
+            tickets = Ticket.objects.filter(created_by=request.user)
     
     # Filtros
     status_filter = request.GET.get('status')

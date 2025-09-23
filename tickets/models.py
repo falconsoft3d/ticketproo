@@ -134,6 +134,13 @@ class Project(models.Model):
         related_name='created_projects',
         verbose_name='Creado por'
     )
+    assigned_users = models.ManyToManyField(
+        User,
+        blank=True,
+        related_name='assigned_projects',
+        verbose_name='Usuarios Asignados',
+        help_text='Usuarios que tienen acceso a este proyecto'
+    )
     created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
     public_share_token = models.CharField(

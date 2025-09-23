@@ -56,6 +56,10 @@ class ProjectAdmin(admin.ModelAdmin):
         ('Información Básica', {
             'fields': ('name', 'description', 'created_by')
         }),
+        ('Asignaciones', {
+            'fields': ('assigned_users',),
+            'description': 'Usuarios que tendrán acceso a los tickets de este proyecto'
+        }),
         ('Configuración', {
             'fields': ('color', 'status', 'is_active')
         }),
@@ -71,6 +75,8 @@ class ProjectAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+    
+    filter_horizontal = ('assigned_users',)
     
     def colored_badge(self, obj):
         """Muestra el nombre del proyecto con su color"""

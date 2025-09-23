@@ -45,7 +45,7 @@ class ProjectForm(forms.ModelForm):
     
     class Meta:
         model = Project
-        fields = ['name', 'description', 'color', 'status', 'start_date', 'end_date', 'is_active']
+        fields = ['name', 'description', 'color', 'status', 'start_date', 'end_date', 'assigned_users', 'is_active']
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -72,6 +72,12 @@ class ProjectForm(forms.ModelForm):
                 'class': 'form-control',
                 'type': 'date'
             }),
+            'assigned_users': forms.SelectMultiple(attrs={
+                'class': 'form-select',
+                'multiple': True,
+                'size': 5,
+                'data-placeholder': 'Selecciona usuarios...'
+            }),
             'is_active': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
@@ -83,6 +89,7 @@ class ProjectForm(forms.ModelForm):
             'status': 'Estado',
             'start_date': 'Fecha de Inicio',
             'end_date': 'Fecha de Fin',
+            'assigned_users': 'Usuarios Asignados',
             'is_active': 'Activo',
         }
         help_texts = {
