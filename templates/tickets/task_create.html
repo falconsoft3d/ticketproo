@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="bi bi-plus-circle me-2"></i>{{ page_title }}
+                </h2>
+                <a href="{% url 'tickets:task_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>Volver
+                </a>
+            </div>
+
+            <!-- Formulario -->
+            <div class="card">
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <!-- Información básica -->
+                            <div class="col-md-12 mb-4">
+                                <h5 class="border-bottom pb-2 mb-3">
+                                    <i class="bi bi-info-circle me-1"></i>Información Básica
+                                </h5>
+                                
+                                <div class="mb-3">
+                                    <label for="title" class="form-label">Título de la Tarea *</label>
+                                    <input type="text" class="form-control" id="title" name="title" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="description" class="form-label">Descripción *</label>
+                                    <textarea class="form-control" id="description" name="description" rows="4" required></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Estado y prioridad -->
+                            <div class="col-md-6 mb-4">
+                                <h5 class="border-bottom pb-2 mb-3">
+                                    <i class="bi bi-flag me-1"></i>Estado y Prioridad
+                                </h5>
+                                
+                                <div class="mb-3">
+                                    <label for="status" class="form-label">Estado</label>
+                                    <select class="form-select" id="status" name="status">
+                                        {% for value, label in status_choices %}
+                                            <option value="{{ value }}" {% if value == 'pending' %}selected{% endif %}>
+                                                {{ label }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="priority" class="form-label">Prioridad</label>
+                                    <select class="form-select" id="priority" name="priority">
+                                        {% for value, label in priority_choices %}
+                                            <option value="{{ value }}" {% if value == 'medium' %}selected{% endif %}>
+                                                {{ label }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Fechas y tiempo -->
+                            <div class="col-md-6 mb-4">
+                                <h5 class="border-bottom pb-2 mb-3">
+                                    <i class="bi bi-calendar me-1"></i>Fechas y Tiempo
+                                </h5>
+                                
+                                <div class="mb-3">
+                                    <label for="due_date" class="form-label">Fecha de Vencimiento</label>
+                                    <input type="date" class="form-control" id="due_date" name="due_date">
+                                    <div class="form-text">Fecha límite para completar la tarea (opcional)</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="estimated_hours" class="form-label">Horas Estimadas</label>
+                                    <input type="number" class="form-control" id="estimated_hours" name="estimated_hours" 
+                                           step="0.5" min="0">
+                                    <div class="form-text">Tiempo estimado para completar la tarea</div>
+                                </div>
+                            </div>
+
+                            <!-- Asignación -->
+                            <div class="col-md-6 mb-4">
+                                <h5 class="border-bottom pb-2 mb-3">
+                                    <i class="bi bi-people me-1"></i>Asignación
+                                </h5>
+                                
+                                <div class="mb-3">
+                                    <label for="assigned_to" class="form-label">Asignado a</label>
+                                    <select class="form-select" id="assigned_to" name="assigned_to" multiple>
+                                        {% for user in users %}
+                                            <option value="{{ user.id }}">
+                                                {{ user.get_full_name|default:user.username }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-text">Mantén presionado Ctrl (Cmd en Mac) para seleccionar múltiples usuarios</div>
+                                </div>
+                            </div>
+
+                            <!-- Contenido relacionado -->
+                            <div class="col-md-6 mb-4">
+                                <h5 class="border-bottom pb-2 mb-3">
+                                    <i class="bi bi-link-45deg me-1"></i>Contenido Relacionado
+                                </h5>
+                                
+                                <div class="mb-3">
+                                    <label for="ticket" class="form-label">Ticket Relacionado</label>
+                                    <select class="form-select" id="ticket" name="ticket">
+                                        <option value="">Sin ticket asociado</option>
+                                        {% for ticket in tickets %}
+                                            <option value="{{ ticket.id }}">
+                                                {{ ticket.ticket_number }} - {{ ticket.title }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="project" class="form-label">Proyecto Relacionado</label>
+                                    <select class="form-select" id="project" name="project">
+                                        <option value="">Sin proyecto asociado</option>
+                                        {% for project in projects %}
+                                            <option value="{{ project.id }}">
+                                                {{ project.name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                            <a href="{% url 'tickets:task_list' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-plus-circle me-1"></i>Crear Tarea
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Configurar fecha mínima para due_date
+    const dueDateInput = document.querySelector('input[name="due_date"]');
+    if (dueDateInput) {
+        const today = new Date().toISOString().split('T')[0];
+        dueDateInput.min = today;
+    }
+});
+</script>
+{% endblock %}

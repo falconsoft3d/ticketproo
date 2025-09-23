@@ -230,9 +230,44 @@
             </div>
             {% endif %}
 
-            <!-- Información adicional -->
+            <!-- Información adicional y acciones -->
             <div class="card">
                 <div class="card-body text-center">
+                    <!-- Botón de aprobación si está en borrador -->
+                    {% if work_order.status == 'draft' %}
+                    <div class="mb-4">
+                        <h5 class="text-primary mb-3">¿Aprueba esta orden de trabajo?</h5>
+                        <form method="post" onsubmit="return confirm('¿Está seguro de que desea aprobar esta orden de trabajo?');">
+                            {% csrf_token %}
+                            <button type="submit" name="approve_work_order" value="approve" 
+                                    class="btn btn-success btn-lg">
+                                <i class="bi bi-check-circle me-2"></i>
+                                Aprobar Orden de Trabajo
+                            </button>
+                        </form>
+                        <small class="text-muted d-block mt-2">
+                            Al aprobar, la orden cambiará a estado "Aceptado" y comenzará el trabajo.
+                        </small>
+                    </div>
+                    <hr>
+                    {% elif work_order.status == 'accepted' %}
+                    <div class="mb-4">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Esta orden ha sido <strong>aprobada</strong> y se encuentra en progreso.
+                        </div>
+                    </div>
+                    <hr>
+                    {% elif work_order.status == 'finished' %}
+                    <div class="mb-4">
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle me-2"></i>
+                            Esta orden ha sido <strong>completada</strong>.
+                        </div>
+                    </div>
+                    <hr>
+                    {% endif %}
+                    
                     <small class="text-muted">
                         Esta es una vista pública de la orden de trabajo.<br>
                         Para más información o consultas, contacta directamente con la empresa.

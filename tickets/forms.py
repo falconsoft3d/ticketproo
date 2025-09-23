@@ -925,13 +925,38 @@ class TimeEntryStartForm(forms.Form):
     
     project = forms.ModelChoiceField(
         queryset=Project.objects.filter(is_active=True, status='active'),
-        empty_label="Seleccionar proyecto",
+        empty_label="Seleccionar proyecto (opcional)",
         widget=forms.Select(attrs={
             'class': 'form-select',
-            'required': True
+            'required': False
         }),
         label='Proyecto',
-        help_text='Selecciona el proyecto en el que vas a trabajar'
+        help_text='Selecciona el proyecto en el que vas a trabajar (opcional)',
+        required=False
+    )
+    
+    ticket = forms.ModelChoiceField(
+        queryset=None,  # Se configurará en __init__
+        empty_label="Seleccionar ticket (opcional)",
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'required': False
+        }),
+        label='Ticket',
+        help_text='Selecciona el ticket en el que vas a trabajar (opcional)',
+        required=False
+    )
+    
+    work_order = forms.ModelChoiceField(
+        queryset=None,  # Se configurará en __init__
+        empty_label="Seleccionar orden de trabajo (opcional)",
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'required': False
+        }),
+        label='Orden de Trabajo',
+        help_text='Selecciona la orden de trabajo en la que vas a trabajar (opcional)',
+        required=False
     )
     
     notas_entrada = forms.CharField(
@@ -947,12 +972,65 @@ class TimeEntryStartForm(forms.Form):
     )
     
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        # Asegurar que solo se muestren proyectos activos
+        
+        # Asegurar que solo se muestren proyectos válidos para trabajar
+        # Excluir proyectos completados y cancelados
         self.fields['project'].queryset = Project.objects.filter(
             is_active=True, 
-            status='active'
+            status__in=['planning', 'active', 'on_hold']  # Excluir 'completed' y 'cancelled'
         ).order_by('name')
+        
+        # Configurar queryset para tickets (solo los abiertos y en progreso)
+        # Excluir tickets cerrados
+        if user:
+            from .utils import is_agent
+            if is_agent(user):
+                # Agentes pueden ver todos los tickets no cerrados
+                self.fields['ticket'].queryset = Ticket.objects.filter(
+                    status__in=['open', 'in_progress']  # Excluir 'resolved' y 'closed'
+                ).order_by('-created_at')
+            else:
+                # Usuarios normales solo ven sus tickets no cerrados
+                self.fields['ticket'].queryset = Ticket.objects.filter(
+                    created_by=user,
+                    status__in=['open', 'in_progress']  # Excluir 'resolved' y 'closed'
+                ).order_by('-created_at')
+        else:
+            self.fields['ticket'].queryset = Ticket.objects.none()
+        
+        # Configurar queryset para órdenes de trabajo (solo las aceptadas)
+        # Excluir órdenes terminadas
+        self.fields['work_order'].queryset = WorkOrder.objects.filter(
+            status='accepted'  # Solo 'accepted', excluir 'draft' y 'finished'
+        ).order_by('-created_at')
+    
+    def clean_project(self):
+        """Validar que el proyecto esté en estado válido para trabajar"""
+        project = self.cleaned_data.get('project')
+        if project:
+            if not project.is_active:
+                raise forms.ValidationError('No puedes registrar asistencia en un proyecto inactivo.')
+            if project.status in ['completed', 'cancelled']:
+                raise forms.ValidationError(f'No puedes registrar asistencia en un proyecto {project.get_status_display().lower()}.')
+        return project
+    
+    def clean_ticket(self):
+        """Validar que el ticket esté en estado válido para trabajar"""
+        ticket = self.cleaned_data.get('ticket')
+        if ticket:
+            if ticket.status in ['resolved', 'closed']:
+                raise forms.ValidationError(f'No puedes registrar asistencia en un ticket {ticket.get_status_display().lower()}.')
+        return ticket
+    
+    def clean_work_order(self):
+        """Validar que la orden de trabajo esté en estado válido para trabajar"""
+        work_order = self.cleaned_data.get('work_order')
+        if work_order:
+            if work_order.status != 'accepted':
+                raise forms.ValidationError(f'No puedes registrar asistencia en una orden de trabajo {work_order.get_status_display().lower()}.')
+        return work_order
 
 
 class TimeEntryEndForm(forms.Form):
@@ -1463,7 +1541,7 @@ class WorkOrderForm(forms.ModelForm):
     class Meta:
         model = WorkOrder
         fields = [
-            'title', 'description', 'company', 'due_date', 
+            'title', 'description', 'company', 'status', 'due_date', 
             'estimated_hours', 'amount', 'priority', 'assigned_to', 'is_public'
         ]
         widgets = {
@@ -1477,6 +1555,9 @@ class WorkOrderForm(forms.ModelForm):
                 'placeholder': 'Descripción detallada del trabajo a realizar...'
             }),
             'company': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'status': forms.Select(attrs={
                 'class': 'form-select'
             }),
             'due_date': forms.DateInput(attrs={
@@ -1509,6 +1590,7 @@ class WorkOrderForm(forms.ModelForm):
             'title': 'Título',
             'description': 'Descripción del trabajo',
             'company': 'Empresa',
+            'status': 'Estado',
             'due_date': 'Fecha de entrega',
             'estimated_hours': 'Horas estimadas',
             'amount': 'Importe',

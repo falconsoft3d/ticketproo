@@ -84,6 +84,75 @@
                         </div>
                     </div>
 
+                    <hr>
+                    
+                    <!-- Información de trabajo realizado -->
+                    <div class="row">
+                        <div class="col-12">
+                            <dt>Trabajando en:</dt>
+                            <dd>
+                                <div class="d-flex flex-wrap gap-2">
+                                    {% if entry.project %}
+                                        <div class="card border-0 bg-light">
+                                            <div class="card-body p-2">
+                                                <span class="badge" style="background-color: {{ entry.project.color }}; color: white;">
+                                                    <i class="bi bi-folder"></i> Proyecto
+                                                </span>
+                                                <div class="mt-1">
+                                                    <strong>{{ entry.project.name }}</strong>
+                                                    {% if entry.project.description %}
+                                                        <br><small class="text-muted">{{ entry.project.description|truncatechars:60 }}</small>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    {% if entry.ticket %}
+                                        <div class="card border-0 bg-light">
+                                            <div class="card-body p-2">
+                                                <span class="badge bg-primary">
+                                                    <i class="bi bi-ticket-perforated"></i> Ticket
+                                                </span>
+                                                <div class="mt-1">
+                                                    <strong>{{ entry.ticket.ticket_number }}</strong>
+                                                    <br><small class="text-muted">{{ entry.ticket.title|truncatechars:50 }}</small>
+                                                    <br><span class="badge badge-sm {{ entry.ticket.get_status_badge_class }}">
+                                                        {{ entry.ticket.get_status_display }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    {% if entry.work_order %}
+                                        <div class="card border-0 bg-light">
+                                            <div class="card-body p-2">
+                                                <span class="badge bg-success">
+                                                    <i class="bi bi-clipboard-check"></i> Orden de Trabajo
+                                                </span>
+                                                <div class="mt-1">
+                                                    <strong>{{ entry.work_order.order_number }}</strong>
+                                                    <br><small class="text-muted">{{ entry.work_order.title|truncatechars:50 }}</small>
+                                                    <br><span class="badge badge-sm {{ entry.work_order.get_status_badge_class }}">
+                                                        {{ entry.work_order.get_status_display }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    {% if not entry.project and not entry.ticket and not entry.work_order %}
+                                        <div class="alert alert-light border">
+                                            <i class="bi bi-info-circle"></i> 
+                                            Sin asignación específica - Trabajo general
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </dd>
+                        </div>
+                    </div>
+
                     {% if entry.notas %}
                     <hr>
                     <div class="row">

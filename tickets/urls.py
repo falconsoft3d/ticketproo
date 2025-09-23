@@ -115,4 +115,8 @@ urlpatterns = [
     
     # URL pública para órdenes de trabajo compartidas (sin autenticación)
     path('work-order/public/<uuid:token>/', views.work_order_public_view, name='public_work_order'),
+    
+    # URLs de reportes (solo para agentes)
+    path('reports/daily/', views.daily_report_view, name='daily_report'),
+    path('reports/daily/pdf/', views.daily_report_pdf, name='daily_report_pdf'),
 ]

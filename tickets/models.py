@@ -790,6 +790,24 @@ class TimeEntry(models.Model):
         null=True,
         blank=True
     )
+    ticket = models.ForeignKey(
+        'Ticket',
+        on_delete=models.CASCADE,
+        related_name='time_entries',
+        verbose_name='Ticket',
+        null=True,
+        blank=True,
+        help_text='Ticket en el que se trabajará (opcional)'
+    )
+    work_order = models.ForeignKey(
+        'WorkOrder',
+        on_delete=models.CASCADE,
+        related_name='time_entries',
+        verbose_name='Orden de Trabajo',
+        null=True,
+        blank=True,
+        help_text='Orden de trabajo en la que se trabajará (opcional)'
+    )
     fecha_entrada = models.DateTimeField(
         verbose_name='Fecha y hora de entrada'
     )
@@ -885,7 +903,7 @@ class TimeEntry(models.Model):
         return cls.objects.filter(user=user, fecha_salida__isnull=True).first()
     
     @classmethod
-    def create_entry(cls, user, project, notas_entrada=None):
+    def create_entry(cls, user, project=None, ticket=None, work_order=None, notas_entrada=None):
         """Crea un nuevo registro de entrada"""
         from .utils import is_agent
         if not is_agent(user):
@@ -899,6 +917,8 @@ class TimeEntry(models.Model):
         return cls.objects.create(
             user=user,
             project=project,
+            ticket=ticket,
+            work_order=work_order,
             fecha_entrada=timezone.now(),
             notas=notas_entrada or ''
         )

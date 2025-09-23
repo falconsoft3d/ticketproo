@@ -5,10 +5,12 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User, Group
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, Sum, F
+from django.db import models
 from django.http import HttpResponse, Http404, JsonResponse
 from django.utils import timezone
 from django.conf import settings
+from datetime import datetime, date
 import os
 from datetime import timedelta
 from .models import (
@@ -120,6 +122,9 @@ def dashboard_view(request):
             profile, created = UserProfile.objects.get_or_create(user=request.user)
             daily_hours = profile.get_daily_hours()
         
+        # Órdenes de trabajo pendientes de aprobación (solo primeras 5)
+        pending_work_orders = WorkOrder.objects.filter(status='draft').order_by('-created_at')[:5]
+        
         context = {
             'total_tickets': total_tickets,
             'open_tickets': open_tickets,
@@ -128,6 +133,7 @@ def dashboard_view(request):
             'recent_tickets': recent_tickets,
             'unassigned_tickets': unassigned_tickets,
             'my_assigned_tickets': my_assigned_tickets,
+            'pending_work_orders': pending_work_orders,
             'user_role': user_role,
             'is_agent': True,
             'daily_hours': daily_hours,
@@ -415,6 +421,83 @@ def user_management_view(request):
             Q(last_name__icontains=search) |
             Q(email__icontains=search)
         )
+    
+    # Agregar información de actividad actual para cada usuario
+    for user in users:
+        # Buscar si tiene una jornada activa (sin fecha de salida)
+        current_entry = TimeEntry.objects.filter(
+            user=user,
+            fecha_salida__isnull=True
+        ).select_related('project', 'ticket', 'work_order').first()
+        
+        user.current_entry = current_entry
+        user.is_working = current_entry is not None
+        
+        # Calcular estadísticas de tiempo del usuario de manera simple
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        # Tiempo total trabajado
+        completed_entries = TimeEntry.objects.filter(
+            user=user,
+            fecha_salida__isnull=False
+        )
+        
+        total_seconds = 0
+        for entry in completed_entries:
+            duration = entry.fecha_salida - entry.fecha_entrada
+            total_seconds += duration.total_seconds()
+        
+        user.total_hours = round(total_seconds / 3600, 1)
+        
+        # Tiempo trabajado este mes
+        now = timezone.now()
+        start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        
+        month_entries = TimeEntry.objects.filter(
+            user=user,
+            fecha_entrada__gte=start_of_month,
+            fecha_salida__isnull=False
+        )
+        
+        month_seconds = 0
+        for entry in month_entries:
+            duration = entry.fecha_salida - entry.fecha_entrada
+            month_seconds += duration.total_seconds()
+        
+        user.month_hours = round(month_seconds / 3600, 1)
+        
+        # Tiempo trabajado esta semana
+        start_of_week = now - timedelta(days=now.weekday())
+        start_of_week = start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
+        
+        week_entries = TimeEntry.objects.filter(
+            user=user,
+            fecha_entrada__gte=start_of_week,
+            fecha_salida__isnull=False
+        )
+        
+        week_seconds = 0
+        for entry in week_entries:
+            duration = entry.fecha_salida - entry.fecha_entrada
+            week_seconds += duration.total_seconds()
+        
+        user.week_hours = round(week_seconds / 3600, 1)
+        
+        # Tiempo trabajado hoy
+        today = now.date()
+        today_entries = TimeEntry.objects.filter(
+            user=user,
+            fecha_entrada__date=today,
+            fecha_salida__isnull=False
+        )
+        
+        today_seconds = 0
+        for entry in today_entries:
+            duration = entry.fecha_salida - entry.fecha_entrada
+            today_seconds += duration.total_seconds()
+        
+        user.today_hours = round(today_seconds / 3600, 1)
     
     # Paginación
     paginator = Paginator(users, 15)
@@ -1028,19 +1111,40 @@ def time_start_work(request):
         return redirect('time_clock')
     
     if request.method == 'POST':
-        form = TimeEntryStartForm(request.POST)
+        form = TimeEntryStartForm(request.POST, user=request.user)
         if form.is_valid():
             try:
                 project = form.cleaned_data.get('project')
+                ticket = form.cleaned_data.get('ticket')
+                work_order = form.cleaned_data.get('work_order')
                 notas = form.cleaned_data.get('notas_entrada', '')
-                entry = TimeEntry.create_entry(request.user, project, notas)
-                messages.success(request, f'¡Jornada iniciada a las {entry.fecha_entrada.strftime("%H:%M")} en el proyecto "{project.name}"!')
+                
+                entry = TimeEntry.create_entry(
+                    user=request.user,
+                    project=project,
+                    ticket=ticket,
+                    work_order=work_order,
+                    notas_entrada=notas
+                )
+                
+                # Mensaje personalizado según los elementos seleccionados
+                message_parts = [f'¡Jornada iniciada a las {entry.fecha_entrada.strftime("%H:%M")}']
+                if project:
+                    message_parts.append(f'en el proyecto "{project.name}"')
+                if ticket:
+                    message_parts.append(f'trabajando en el ticket "{ticket.ticket_number}"')
+                if work_order:
+                    message_parts.append(f'en la orden "{work_order.order_number}"')
+                
+                message = ' '.join(message_parts) + '!'
+                messages.success(request, message)
+                    
                 return redirect('time_clock')
             except ValueError as e:
                 messages.error(request, str(e))
                 return redirect('time_clock')
     else:
-        form = TimeEntryStartForm()
+        form = TimeEntryStartForm(user=request.user)
     
     context = {
         'form': form,
@@ -2233,6 +2337,17 @@ def work_order_public_view(request, token):
     """Vista pública para órdenes de trabajo compartidas"""
     work_order = get_object_or_404(WorkOrder, public_share_token=token, is_public=True)
     
+    # Manejar aprobación por POST
+    if request.method == 'POST' and 'approve_work_order' in request.POST:
+        if work_order.status == 'draft':
+            work_order.status = 'accepted'
+            work_order.save()
+            messages.success(request, '¡Orden de trabajo aprobada exitosamente!')
+        else:
+            messages.info(request, 'Esta orden ya ha sido procesada.')
+        
+        return redirect('tickets:public_work_order', token=token)
+    
     context = {
         'work_order': work_order,
         'attachments': work_order.attachments.all(),
@@ -2241,3 +2356,207 @@ def work_order_public_view(request, token):
     }
     
     return render(request, 'tickets/work_order_public.html', context)
+
+
+# ===========================================
+# VISTAS PARA REPORTES
+# ===========================================
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def daily_report_view(request):
+    """Vista para generar reporte de parte diario"""
+    
+    # Obtener parámetros de fecha
+    fecha_desde = request.GET.get('fecha_desde', date.today().strftime('%Y-%m-%d'))
+    fecha_hasta = request.GET.get('fecha_hasta', date.today().strftime('%Y-%m-%d'))
+    usuario_id = request.GET.get('usuario')
+    
+    # Convertir fechas
+    try:
+        fecha_desde_obj = datetime.strptime(fecha_desde, '%Y-%m-%d').date()
+        fecha_hasta_obj = datetime.strptime(fecha_hasta, '%Y-%m-%d').date()
+    except ValueError:
+        fecha_desde_obj = date.today()
+        fecha_hasta_obj = date.today()
+        fecha_desde = fecha_desde_obj.strftime('%Y-%m-%d')
+        fecha_hasta = fecha_hasta_obj.strftime('%Y-%m-%d')
+    
+    # Obtener registros de tiempo
+    time_entries = TimeEntry.objects.filter(
+        fecha_entrada__date__gte=fecha_desde_obj,
+        fecha_entrada__date__lte=fecha_hasta_obj
+    )
+    
+    # Filtrar por usuario si se especifica
+    usuario_nombre = None
+    if usuario_id:
+        time_entries = time_entries.filter(user_id=usuario_id)
+        try:
+            usuario = User.objects.get(id=usuario_id)
+            usuario_nombre = usuario.get_full_name() or usuario.username
+        except User.DoesNotExist:
+            pass
+    
+    time_entries = time_entries.select_related('user', 'project', 'ticket', 'work_order').order_by('-fecha_entrada')
+    
+    # Calcular estadísticas
+    total_entries = time_entries.count()
+    entries_in_progress = time_entries.filter(fecha_salida__isnull=True).count()
+    
+    # Calcular total de horas completadas
+    total_hours = 0
+    for entry in time_entries:
+        if entry.fecha_salida:
+            # Calcular duración en horas
+            duration = entry.fecha_salida - entry.fecha_entrada
+            total_hours += duration.total_seconds() / 3600
+    
+    # Obtener usuarios únicos
+    unique_users = time_entries.values('user').distinct().count()
+    
+    # Obtener usuarios para el filtro
+    usuarios = User.objects.filter(is_active=True).order_by('first_name', 'last_name', 'username')
+    
+    context = {
+        'time_entries': time_entries,
+        'usuarios': usuarios,
+        'fecha_desde': fecha_desde,
+        'fecha_hasta': fecha_hasta,
+        'usuario_seleccionado': usuario_id,
+        'usuario_nombre': usuario_nombre,
+        'page_title': 'Reporte de Parte Diario',
+        'total_entries': total_entries,
+        'entries_in_progress': entries_in_progress,
+        'total_hours': round(total_hours, 1),
+        'unique_users': unique_users,
+    }
+    
+    return render(request, 'tickets/daily_report.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def daily_report_pdf(request):
+    """Vista para generar PDF del reporte diario"""
+    from django.http import HttpResponse
+    from reportlab.lib.pagesizes import letter, A4
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib import colors
+    from reportlab.lib.units import inch
+    import io
+    
+    # Obtener parámetros
+    fecha_desde = request.GET.get('fecha_desde', date.today().strftime('%Y-%m-%d'))
+    fecha_hasta = request.GET.get('fecha_hasta', date.today().strftime('%Y-%m-%d'))
+    usuario_id = request.GET.get('usuario')
+    
+    # Convertir fechas
+    try:
+        fecha_desde_obj = datetime.strptime(fecha_desde, '%Y-%m-%d').date()
+        fecha_hasta_obj = datetime.strptime(fecha_hasta, '%Y-%m-%d').date()
+    except ValueError:
+        fecha_desde_obj = date.today()
+        fecha_hasta_obj = date.today()
+    
+    # Obtener datos
+    time_entries = TimeEntry.objects.filter(
+        fecha_entrada__date__gte=fecha_desde_obj,
+        fecha_entrada__date__lte=fecha_hasta_obj
+    )
+    
+    if usuario_id:
+        time_entries = time_entries.filter(user_id=usuario_id)
+        usuario = User.objects.get(id=usuario_id)
+        titulo_usuario = f" - {usuario.get_full_name() or usuario.username}"
+    else:
+        titulo_usuario = " - Todos los usuarios"
+    
+    time_entries = time_entries.select_related('user', 'project', 'ticket', 'work_order').order_by('user__username', 'fecha_entrada')
+    
+    # Crear PDF
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=18)
+    
+    # Estilos
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=16,
+        spaceAfter=30,
+        alignment=1  # Centrado
+    )
+    
+    # Contenido del PDF
+    story = []
+    
+    # Título
+    title = f"Reporte de Parte Diario{titulo_usuario}"
+    story.append(Paragraph(title, title_style))
+    
+    # Rango de fechas
+    if fecha_desde_obj == fecha_hasta_obj:
+        periodo = f"Fecha: {fecha_desde_obj.strftime('%d/%m/%Y')}"
+    else:
+        periodo = f"Período: {fecha_desde_obj.strftime('%d/%m/%Y')} al {fecha_hasta_obj.strftime('%d/%m/%Y')}"
+    
+    story.append(Paragraph(periodo, styles['Normal']))
+    story.append(Spacer(1, 20))
+    
+    # Tabla de datos
+    data = [['Usuario', 'Fecha', 'Asignación', 'Entrada', 'Salida', 'Duración']]
+    
+    for entry in time_entries:
+        # Construir asignación
+        asignacion_parts = []
+        if entry.project:
+            asignacion_parts.append(f"Proyecto: {entry.project.name}")
+        if entry.ticket:
+            asignacion_parts.append(f"Ticket: #{entry.ticket.id}")
+        if entry.work_order:
+            asignacion_parts.append(f"Orden: #{entry.work_order.id}")
+        
+        asignacion = "\n".join(asignacion_parts) if asignacion_parts else "Sin asignación específica"
+        
+        # Formatear salida
+        salida = entry.fecha_salida.strftime('%H:%M') if entry.fecha_salida else "En progreso"
+        
+        data.append([
+            entry.user.get_full_name() or entry.user.username,
+            entry.fecha_entrada.strftime('%d/%m/%Y'),
+            asignacion,
+            entry.fecha_entrada.strftime('%H:%M'),
+            salida,
+            entry.duracion_formateada
+        ])
+    
+    # Crear tabla
+    table = Table(data, colWidths=[1.5*inch, 1*inch, 2*inch, 0.8*inch, 0.8*inch, 0.8*inch])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 8),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+    
+    story.append(table)
+    
+    # Construir PDF
+    doc.build(story)
+    
+    # Respuesta HTTP
+    buffer.seek(0)
+    response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+    filename = f"parte_diario_{fecha_desde}_{fecha_hasta}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    return response

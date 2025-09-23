@@ -31,6 +31,164 @@
     </div>
 </div>
 
+<!-- Gráfico de Actividad -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-calendar-check"></i> Actividad
+                    {% if is_agent %}
+                        <span id="activity-title">- General</span>
+                    {% else %}
+                        - Personal
+                    {% endif %}
+                </h5>
+                {% if is_agent %}
+                <div class="d-flex gap-2">
+                    <select id="user-selector" class="form-select form-select-sm" style="width: auto;">
+                        <option value="all">Todos los usuarios</option>
+                        <option value="{{ user.id }}" selected>Mi actividad</option>
+                        {% for agent in all_users %}
+                            {% if agent.id != user.id %}
+                                <option value="{{ agent.id }}">{{ agent.get_full_name|default:agent.username }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                    <select id="period-selector" class="form-select form-select-sm" style="width: auto;">
+                        <option value="365" selected>Último año</option>
+                        <option value="180">Últimos 6 meses</option>
+                        <option value="90">Últimos 3 meses</option>
+                        <option value="30">Último mes</option>
+                    </select>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="text-muted small">
+                        <span id="activity-stats">Cargando...</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 text-muted small">
+                        <span>Menos</span>
+                        <div class="d-flex gap-1">
+                            <div class="activity-square level-0"></div>
+                            <div class="activity-square level-1"></div>
+                            <div class="activity-square level-2"></div>
+                            <div class="activity-square level-3"></div>
+                            <div class="activity-square level-4"></div>
+                        </div>
+                        <span>Más</span>
+                    </div>
+                </div>
+                
+                <!-- Container del gráfico -->
+                <div id="activity-chart" class="activity-chart">
+                    <!-- Esta será nuestra matriz estática para empezar -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Script simple para mostrar la matriz de actividad
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Creando matriz de actividad...');
+    
+    const container = document.getElementById('activity-chart');
+    if (!container) {
+        console.error('No se encontró el contenedor');
+        return;
+    }
+    
+    // Crear matriz de 7 filas (días de semana) x 53 semanas
+    const matrix = document.createElement('div');
+    matrix.style.display = 'flex';
+    matrix.style.gap = '3px';
+    matrix.style.fontFamily = 'monospace';
+    matrix.style.fontSize = '10px';
+    
+    // Crear etiquetas de días de la semana
+    const daysLabels = document.createElement('div');
+    daysLabels.style.display = 'flex';
+    daysLabels.style.flexDirection = 'column';
+    daysLabels.style.gap = '2px';
+    daysLabels.style.marginRight = '4px';
+    
+    const dayNames = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+    dayNames.forEach((day, index) => {
+        const label = document.createElement('div');
+        label.textContent = index % 2 === 1 ? day : ''; // Solo mostrar algunos días
+        label.style.height = '11px';
+        label.style.width = '11px';
+        label.style.fontSize = '8px';
+        label.style.color = '#666';
+        label.style.textAlign = 'center';
+        label.style.lineHeight = '11px';
+        daysLabels.appendChild(label);
+    });
+    
+    // Crear contenedor de semanas
+    const weeksContainer = document.createElement('div');
+    weeksContainer.style.display = 'flex';
+    weeksContainer.style.gap = '2px';
+    weeksContainer.style.overflowX = 'auto';
+    
+    // Crear 53 semanas
+    for (let week = 0; week < 53; week++) {
+        const weekColumn = document.createElement('div');
+        weekColumn.style.display = 'flex';
+        weekColumn.style.flexDirection = 'column';
+        weekColumn.style.gap = '2px';
+        
+        // Crear 7 días por semana
+        for (let day = 0; day < 7; day++) {
+            const square = document.createElement('div');
+            square.style.width = '11px';
+            square.style.height = '11px';
+            square.style.backgroundColor = '#ebedf0'; // Color gris por defecto
+            square.style.border = '1px solid rgba(27, 31, 35, 0.06)';
+            square.style.borderRadius = '2px';
+            square.style.cursor = 'pointer';
+            square.title = `Semana ${week + 1}, Día ${day + 1}: 0 contribuciones`;
+            
+            // Efecto hover
+            square.addEventListener('mouseenter', function() {
+                this.style.borderColor = 'rgba(27, 31, 35, 0.15)';
+                this.style.transform = 'scale(1.1)';
+            });
+            
+            square.addEventListener('mouseleave', function() {
+                this.style.borderColor = 'rgba(27, 31, 35, 0.06)';
+                this.style.transform = 'scale(1)';
+            });
+            
+            weekColumn.appendChild(square);
+        }
+        
+        weeksContainer.appendChild(weekColumn);
+    }
+    
+    // Ensamblar todo
+    matrix.appendChild(daysLabels);
+    matrix.appendChild(weeksContainer);
+    container.appendChild(matrix);
+    
+    console.log('Matriz de actividad creada: 7 filas x 53 semanas');
+    
+    // Actualizar estadísticas para matriz vacía
+    const statsElement = document.getElementById('activity-stats');
+    if (statsElement) {
+        statsElement.textContent = '0 actividades en los últimos 365 días - 0 días activos - Máximo: 0';
+    }
+});
+</script>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Estadísticas -->
 <div class="row mb-4">
     <div class="col-md-3 mb-3">
@@ -148,102 +306,6 @@
     </div>
 </div>
 
-<!-- Órdenes de trabajo pendientes de aprobación (solo para agentes) -->
-{% if is_agent and pending_work_orders %}
-<div class="row mb-4">
-    <div class="col">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="bi bi-clipboard-check me-2"></i>
-                    Órdenes de Trabajo Pendientes de Aprobación
-                    <span class="badge bg-warning">{{ pending_work_orders.count }}</span>
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Orden</th>
-                                <th>Título</th>
-                                <th>Empresa</th>
-                                <th>Fecha de Entrega</th>
-                                <th>Prioridad</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for work_order in pending_work_orders %}
-                            <tr>
-                                <td>
-                                    <strong>{{ work_order.order_number }}</strong>
-                                </td>
-                                <td>
-                                    <a href="{% url 'work_order_detail' work_order.pk %}" class="text-decoration-none">
-                                        {{ work_order.title|truncatechars:50 }}
-                                    </a>
-                                </td>
-                                <td>
-                                    {% if work_order.company %}
-                                        <span class="badge rounded-pill" 
-                                              style="background-color: {{ work_order.company.color }}; color: white;">
-                                            {{ work_order.company.name }}
-                                        </span>
-                                    {% else %}
-                                        <span class="text-muted">Sin empresa</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if work_order.due_date %}
-                                        {{ work_order.due_date|date:"d/m/Y" }}
-                                        {% if work_order.is_overdue %}
-                                            <span class="badge bg-danger ms-1">Vencida</span>
-                                        {% elif work_order.days_until_due <= 3 %}
-                                            <span class="badge bg-warning ms-1">Próxima</span>
-                                        {% endif %}
-                                    {% else %}
-                                        <span class="text-muted">Sin fecha</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <span class="badge {{ work_order.get_priority_badge_class }}">
-                                        {{ work_order.get_priority_display }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <div class="btn-group btn-group-sm" role="group">
-                                        <a href="{% url 'work_order_detail' work_order.pk %}" 
-                                           class="btn btn-outline-primary" title="Ver detalles">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-                                        <form method="post" action="{% url 'work_order_change_status' work_order.pk %}" 
-                                              style="display: inline;" 
-                                              onsubmit="return confirm('¿Aprobar esta orden de trabajo?');">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="status" value="accepted">
-                                            <button type="submit" class="btn btn-success btn-sm" title="Aprobar">
-                                                <i class="bi bi-check-circle"></i>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                <div class="text-center mt-3">
-                    <a href="{% url 'work_order_list' %}?status=draft" class="btn btn-outline-primary">
-                        <i class="bi bi-list"></i> Ver todas las órdenes pendientes
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
-
 <!-- Control de Horario (solo para agentes) -->
 <div class="row mb-4">
     <div class="col-12">
@@ -284,28 +346,9 @@
                                             <strong>Inicio:</strong> {{ active_time_entry.fecha_entrada|date:"H:i" }}
                                             <br>
                                             <strong>Tiempo:</strong> <span id="tiempo-activo">{{ active_time_entry.duracion_formateada }}</span>
+                                            {% if active_time_entry.project %}
                                             <br>
-                                            <strong>Trabajando en:</strong>
-                                            {% if active_time_entry.project or active_time_entry.ticket or active_time_entry.work_order %}
-                                                <div class="mt-1">
-                                                    {% if active_time_entry.project %}
-                                                        <small class="badge me-1" style="background-color: {{ active_time_entry.project.color }}; color: white;">
-                                                            <i class="bi bi-folder"></i> {{ active_time_entry.project.name }}
-                                                        </small>
-                                                    {% endif %}
-                                                    {% if active_time_entry.ticket %}
-                                                        <small class="badge bg-primary me-1">
-                                                            <i class="bi bi-ticket-perforated"></i> {{ active_time_entry.ticket.ticket_number }}
-                                                        </small>
-                                                    {% endif %}
-                                                    {% if active_time_entry.work_order %}
-                                                        <small class="badge bg-success me-1">
-                                                            <i class="bi bi-clipboard-check"></i> {{ active_time_entry.work_order.order_number }}
-                                                        </small>
-                                                    {% endif %}
-                                                </div>
-                                            {% else %}
-                                                <span class="text-muted">Sin asignación específica</span>
+                                            <strong>Proyecto:</strong> {{ active_time_entry.project.name }}
                                             {% endif %}
                                         </p>
                                     </div>
@@ -503,5 +546,215 @@ function updateActiveTime() {
 // Actualizar cada minuto
 setInterval(updateActiveTime, 60000);
 {% endif %}
+
+</script>
+{% endblock %}
+
+// Función para renderizar el gráfico
+function renderActivityChart(activityData) {
+    console.log('Iniciando renderizado del gráfico con datos:', activityData);
+    const container = document.getElementById('activity-chart');
+    
+    if (!container) {
+        console.error('No se encontró el contenedor activity-chart');
+        return;
+    }
+    
+    if (!activityData || activityData.length === 0) {
+        console.log('No hay datos de actividad, mostrando mensaje');
+        container.innerHTML = '<div class="text-center py-4 text-muted">No hay datos de actividad disponibles</div>';
+        return;
+    }
+    
+    console.log(`Procesando ${activityData.length} días de datos`);
+    
+    // Limpiar contenedor
+    container.innerHTML = '';
+    
+    // Crear estructura principal
+    const mainGrid = document.createElement('div');
+    mainGrid.style.display = 'flex';
+    mainGrid.style.gap = '3px';
+    mainGrid.style.fontSize = '10px';
+    mainGrid.style.fontFamily = 'monospace';
+    
+    // Crear etiquetas de días de la semana (L, M, X, J, V, S, D)
+    const weekdaysContainer = document.createElement('div');
+    weekdaysContainer.style.display = 'flex';
+    weekdaysContainer.style.flexDirection = 'column';
+    weekdaysContainer.style.gap = '2px';
+    weekdaysContainer.style.marginRight = '3px';
+    weekdaysContainer.style.justifyContent = 'space-around';
+    weekdaysContainer.style.height = 'calc(7 * 10px + 6 * 2px)';
+    
+    const weekdayLabels = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+    weekdayLabels.forEach((label, index) => {
+        const dayLabel = document.createElement('div');
+        dayLabel.textContent = index % 2 === 1 ? label : ''; // Solo mostrar L, X, V, D
+        dayLabel.style.fontSize = '8px';
+        dayLabel.style.color = '#666';
+        dayLabel.style.textAlign = 'center';
+        dayLabel.style.width = '10px';
+        dayLabel.style.height = '10px';
+        dayLabel.style.lineHeight = '10px';
+        weekdaysContainer.appendChild(dayLabel);
+    });
+    
+    // Crear contenedor de semanas
+    const weeksContainer = document.createElement('div');
+    weeksContainer.style.display = 'flex';
+    weeksContainer.style.gap = '2px';
+    weeksContainer.style.overflowX = 'auto';
+    
+    // Organizar datos por semanas (7 filas x N columnas)
+    // Comenzar desde hace 365 días hasta hoy
+    const today = new Date();
+    const startDate = new Date(today);
+    startDate.setDate(startDate.getDate() - 364); // 365 días incluyendo hoy
+    
+    // Ajustar al lunes más cercano hacia atrás
+    const startDay = startDate.getDay();
+    const daysToSubtract = startDay === 0 ? 6 : startDay - 1; // 0=domingo, 1=lunes
+    startDate.setDate(startDate.getDate() - daysToSubtract);
+    
+    // Crear mapa de datos para acceso rápido
+    const dataMap = {};
+    activityData.forEach(day => {
+        dataMap[day.date] = day;
+    });
+    
+    // Calcular número de semanas necesarias (aproximadamente 53 semanas)
+    const totalDays = 371; // Un poco más para cubrir todo el año
+    const totalWeeks = Math.ceil(totalDays / 7);
+    
+    for (let week = 0; week < totalWeeks; week++) {
+        const weekElement = document.createElement('div');
+        weekElement.style.display = 'flex';
+        weekElement.style.flexDirection = 'column';
+        weekElement.style.gap = '2px';
+        
+        for (let day = 0; day < 7; day++) {
+            const currentDate = new Date(startDate);
+            currentDate.setDate(startDate.getDate() + (week * 7) + day);
+            
+            // No mostrar días futuros
+            if (currentDate > today) {
+                const emptySquare = document.createElement('div');
+                emptySquare.style.width = '10px';
+                emptySquare.style.height = '10px';
+                emptySquare.style.visibility = 'hidden';
+                weekElement.appendChild(emptySquare);
+                continue;
+            }
+            
+            const dateStr = currentDate.toISOString().split('T')[0];
+            const dayData = dataMap[dateStr];
+            
+            const square = document.createElement('div');
+            square.style.width = '10px';
+            square.style.height = '10px';
+            square.style.borderRadius = '2px';
+            square.style.border = '1px solid rgba(27, 31, 35, 0.06)';
+            square.style.cursor = 'pointer';
+            square.style.transition = 'all 0.2s ease';
+            
+            if (dayData && dayData.count > 0) {
+                const level = dayData.level || Math.min(4, Math.floor(dayData.count / 1) + 1);
+                square.className = `activity-square level-${level}`;
+                square.title = `${dateStr}: ${dayData.count} contribuciones`;
+                
+                // Colores según nivel
+                const colors = ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'];
+                square.style.backgroundColor = colors[level] || colors[0];
+            } else {
+                square.className = 'activity-square level-0';
+                square.title = `${dateStr}: 0 contribuciones`;
+                square.style.backgroundColor = '#ebedf0';
+            }
+            
+            // Hover effect
+            square.addEventListener('mouseenter', function() {
+                this.style.borderColor = 'rgba(27, 31, 35, 0.15)';
+                this.style.transform = 'scale(1.1)';
+                this.style.zIndex = '10';
+                this.style.position = 'relative';
+            });
+            
+            square.addEventListener('mouseleave', function() {
+                this.style.borderColor = 'rgba(27, 31, 35, 0.06)';
+                this.style.transform = 'scale(1)';
+                this.style.zIndex = 'auto';
+                this.style.position = 'static';
+            });
+            
+            weekElement.appendChild(square);
+        }
+        
+        weeksContainer.appendChild(weekElement);
+    }
+    
+    // Ensamblar todo
+    mainGrid.appendChild(weekdaysContainer);
+    mainGrid.appendChild(weeksContainer);
+    container.appendChild(mainGrid);
+    
+    console.log('Gráfico renderizado exitosamente');
+}
+                container.innerHTML = '';
+    container.appendChild(grid);
+}
+
+// Función para actualizar estadísticas de actividad
+function updateActivityStats(activityData) {
+    if (!activityData || activityData.length === 0) {
+        document.getElementById('activity-stats').textContent = 
+            '0 actividades en los últimos 365 días - 0 días activos - Máximo: 0';
+        return;
+    }
+    
+    const totalActivities = activityData.reduce((sum, day) => sum + (day.count || 0), 0);
+    const daysWithActivity = activityData.filter(day => (day.count || 0) > 0).length;
+    const maxActivity = Math.max(...activityData.map(day => day.count || 0));
+    
+    document.getElementById('activity-stats').textContent = 
+        `${totalActivities} actividades en los últimos ${activityData.length} días - ${daysWithActivity} días activos - Máximo: ${maxActivity}`;
+}
+
+// Event listeners
+{% if is_agent %}
+document.getElementById('user-selector').addEventListener('change', function() {
+    const userId = this.value;
+    const days = document.getElementById('period-selector').value;
+    const userName = this.options[this.selectedIndex].text;
+    
+    document.getElementById('activity-title').textContent = userId === 'all' ? '- General' : `- ${userName}`;
+    loadActivityData(userId, days);
+});
+
+document.getElementById('period-selector').addEventListener('change', function() {
+    const userId = document.getElementById('user-selector').value;
+    const days = this.value;
+    loadActivityData(userId, days);
+});
+{% endif %}
+
+// Cargar datos iniciales
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, iniciando carga de datos de actividad...');
+    
+    // Simplificar la carga - siempre cargar la actividad del usuario actual
+    const userId = '{{ user.id }}';
+    console.log('Cargando datos para usuario ID:', userId);
+    
+    // Verificar que el contenedor existe
+    const container = document.getElementById('activity-chart');
+    if (!container) {
+        console.error('No se encontró el contenedor activity-chart');
+        return;
+    }
+    
+    // Cargar datos
+    loadActivityData(userId, 365);
+});
 </script>
 {% endblock %}

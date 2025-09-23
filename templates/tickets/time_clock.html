@@ -31,23 +31,36 @@
                 <div class="card-body text-center">
                     {% if active_entry %}
                         <div class="row">
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <p class="mb-1"><strong>Inicio:</strong></p>
                                 <h4 class="text-success">{{ active_entry.fecha_entrada|date:"H:i" }}</h4>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <p class="mb-1"><strong>Tiempo Trabajado:</strong></p>
                                 <h4 class="text-primary" id="tiempo-actual">{{ active_entry.duracion_formateada }}</h4>
                             </div>
-                            <div class="col-md-4">
-                                <p class="mb-1"><strong>Proyecto:</strong></p>
-                                {% if active_entry.project %}
-                                    <span class="badge fs-6" style="background-color: {{ active_entry.project.color }}; color: white;">
-                                        <i class="bi bi-folder"></i> {{ active_entry.project.name }}
-                                    </span>
-                                {% else %}
-                                    <span class="text-muted">Sin proyecto</span>
-                                {% endif %}
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Trabajando en:</strong></p>
+                                <div class="d-flex flex-wrap gap-2">
+                                    {% if active_entry.project %}
+                                        <span class="badge fs-6" style="background-color: {{ active_entry.project.color }}; color: white;">
+                                            <i class="bi bi-folder"></i> {{ active_entry.project.name }}
+                                        </span>
+                                    {% endif %}
+                                    {% if active_entry.ticket %}
+                                        <span class="badge bg-primary fs-6">
+                                            <i class="bi bi-ticket-perforated"></i> {{ active_entry.ticket.ticket_number }}
+                                        </span>
+                                    {% endif %}
+                                    {% if active_entry.work_order %}
+                                        <span class="badge bg-success fs-6">
+                                            <i class="bi bi-clipboard-check"></i> {{ active_entry.work_order.order_number }}
+                                        </span>
+                                    {% endif %}
+                                    {% if not active_entry.project and not active_entry.ticket and not active_entry.work_order %}
+                                        <span class="text-muted">Sin asignación específica</span>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
                         {% if active_entry.notas %}

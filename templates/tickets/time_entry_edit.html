@@ -47,6 +47,31 @@
                                 {% endif %}
                             </div>
                         </div>
+                        <div class="row mt-2">
+                            <div class="col-12">
+                                <strong>Trabajando en:</strong><br>
+                                <div class="d-flex flex-wrap gap-1 mt-1">
+                                    {% if entry.project %}
+                                        <span class="badge" style="background-color: {{ entry.project.color }}; color: white;">
+                                            <i class="bi bi-folder"></i> {{ entry.project.name }}
+                                        </span>
+                                    {% endif %}
+                                    {% if entry.ticket %}
+                                        <span class="badge bg-primary">
+                                            <i class="bi bi-ticket-perforated"></i> {{ entry.ticket.ticket_number }}
+                                        </span>
+                                    {% endif %}
+                                    {% if entry.work_order %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-clipboard-check"></i> {{ entry.work_order.order_number }}
+                                        </span>
+                                    {% endif %}
+                                    {% if not entry.project and not entry.ticket and not entry.work_order %}
+                                        <span class="text-muted">Sin asignación específica</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <form method="post">

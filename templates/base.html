@@ -145,6 +145,21 @@
                             </li>
                         </ul>
                     </li>
+                    
+                    <!-- Menú Reportes (Solo para Agentes) -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="reportsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-graph-up"></i> Reportes
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="reportsDropdown">
+                            <li>
+                                <a class="dropdown-item {% if 'daily_report' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'daily_report' %}">
+                                    <i class="bi bi-calendar-day"></i> Parte Diario
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
                     {% endif %}
                 </ul>
                 
