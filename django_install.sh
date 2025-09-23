@@ -150,3 +150,4 @@ sudo chown django:django /home/django/* -R
 sudo chown django:django /home/django/.venv/* -R
 sudo chown django:django /home/django/.venv -R
 sudo supervisorctl restart django_app
+
