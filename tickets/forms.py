@@ -126,10 +126,14 @@ class TicketForm(forms.ModelForm):
         # Configurar campo empresa
         self.fields['company'].queryset = Company.objects.filter(is_active=True).order_by('name')
         self.fields['company'].empty_label = "Seleccionar empresa (opcional)"
+        
+        # Configurar campo proyecto
+        self.fields['project'].queryset = Project.objects.filter(is_active=True).order_by('name')
+        self.fields['project'].empty_label = "Seleccionar proyecto (opcional)"
 
     class Meta:
         model = Ticket
-        fields = ['title', 'description', 'category', 'priority', 'status', 'company', 'hours']
+        fields = ['title', 'description', 'category', 'priority', 'status', 'company', 'project', 'hours']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -158,6 +162,9 @@ class TicketForm(forms.ModelForm):
             'company': forms.Select(attrs={
                 'class': 'form-select'
             }),
+            'project': forms.Select(attrs={
+                'class': 'form-select'
+            }),
         }
         labels = {
             'title': 'Título',
@@ -166,6 +173,7 @@ class TicketForm(forms.ModelForm):
             'priority': 'Prioridad',
             'status': 'Estado',
             'company': 'Empresa',
+            'project': 'Proyecto',
             'hours': 'Horas estimadas/trabajadas',
         }
 
@@ -261,10 +269,14 @@ class AgentTicketForm(forms.ModelForm):
         # Filtrar solo empresas activas
         self.fields['company'].queryset = Company.objects.filter(is_active=True)
         self.fields['company'].empty_label = "Seleccionar empresa (opcional)"
+        
+        # Configurar campo proyecto
+        self.fields['project'].queryset = Project.objects.filter(is_active=True).order_by('name')
+        self.fields['project'].empty_label = "Seleccionar proyecto (opcional)"
     
     class Meta:
         model = Ticket
-        fields = ['title', 'description', 'category', 'company', 'priority', 'status', 'assigned_to', 'hours', 'is_public_shareable']
+        fields = ['title', 'description', 'category', 'company', 'project', 'priority', 'status', 'assigned_to', 'hours', 'is_public_shareable']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -279,6 +291,9 @@ class AgentTicketForm(forms.ModelForm):
                 'class': 'form-select'
             }),
             'company': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'project': forms.Select(attrs={
                 'class': 'form-select'
             }),
             'priority': forms.Select(attrs={
@@ -304,6 +319,8 @@ class AgentTicketForm(forms.ModelForm):
             'title': 'Título',
             'description': 'Descripción',
             'category': 'Categoría',
+            'company': 'Empresa',
+            'project': 'Proyecto',
             'priority': 'Prioridad',
             'status': 'Estado',
             'assigned_to': 'Asignar a',
@@ -959,6 +976,18 @@ class TimeEntryStartForm(forms.Form):
         required=False
     )
     
+    task = forms.ModelChoiceField(
+        queryset=None,  # Se configurará en __init__
+        empty_label="Seleccionar tarea (opcional)",
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'required': False
+        }),
+        label='Tarea',
+        help_text='Selecciona la tarea en la que vas a trabajar (opcional)',
+        required=False
+    )
+    
     notas_entrada = forms.CharField(
         required=False,
         max_length=500,
@@ -975,62 +1004,67 @@ class TimeEntryStartForm(forms.Form):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         
-        # Asegurar que solo se muestren proyectos válidos para trabajar
-        # Excluir proyectos completados y cancelados
+        # Asegurar que solo se muestren proyectos activos
         self.fields['project'].queryset = Project.objects.filter(
-            is_active=True, 
-            status__in=['planning', 'active', 'on_hold']  # Excluir 'completed' y 'cancelled'
+            is_active=True
         ).order_by('name')
         
-        # Configurar queryset para tickets (solo los abiertos y en progreso)
-        # Excluir tickets cerrados
+        # Configurar queryset para tickets
         if user:
             from .utils import is_agent
             if is_agent(user):
-                # Agentes pueden ver todos los tickets no cerrados
-                self.fields['ticket'].queryset = Ticket.objects.filter(
-                    status__in=['open', 'in_progress']  # Excluir 'resolved' y 'closed'
-                ).order_by('-created_at')
+                # Agentes pueden ver todos los tickets
+                self.fields['ticket'].queryset = Ticket.objects.all().order_by('-created_at')
             else:
-                # Usuarios normales solo ven sus tickets no cerrados
+                # Usuarios normales solo ven sus tickets
                 self.fields['ticket'].queryset = Ticket.objects.filter(
-                    created_by=user,
-                    status__in=['open', 'in_progress']  # Excluir 'resolved' y 'closed'
+                    created_by=user
                 ).order_by('-created_at')
         else:
             self.fields['ticket'].queryset = Ticket.objects.none()
         
-        # Configurar queryset para órdenes de trabajo (solo las aceptadas)
-        # Excluir órdenes terminadas
-        self.fields['work_order'].queryset = WorkOrder.objects.filter(
-            status='accepted'  # Solo 'accepted', excluir 'draft' y 'finished'
-        ).order_by('-created_at')
+        # Configurar queryset para órdenes de trabajo
+        self.fields['work_order'].queryset = WorkOrder.objects.all().order_by('-created_at')
+        
+        # Configurar queryset para tareas (todas las tareas disponibles)
+        if user:
+            from django.db.models import Q
+            from .utils import is_agent
+            
+            if is_agent(user):
+                # Agentes pueden ver todas las tareas
+                self.fields['task'].queryset = Task.objects.all().order_by('-created_at')
+            else:
+                # Usuarios normales ven sus tareas asignadas o creadas por ellos
+                self.fields['task'].queryset = Task.objects.filter(
+                    Q(assigned_users=user) | Q(created_by=user)
+                ).distinct().order_by('-created_at')
+        else:
+            self.fields['task'].queryset = Task.objects.none()
     
     def clean_project(self):
-        """Validar que el proyecto esté en estado válido para trabajar"""
+        """Validar proyecto (sin restricciones de estado)"""
         project = self.cleaned_data.get('project')
-        if project:
-            if not project.is_active:
-                raise forms.ValidationError('No puedes registrar asistencia en un proyecto inactivo.')
-            if project.status in ['completed', 'cancelled']:
-                raise forms.ValidationError(f'No puedes registrar asistencia en un proyecto {project.get_status_display().lower()}.')
+        # Permitir cualquier proyecto activo
         return project
     
     def clean_ticket(self):
-        """Validar que el ticket esté en estado válido para trabajar"""
+        """Validar ticket (sin restricciones de estado)"""
         ticket = self.cleaned_data.get('ticket')
-        if ticket:
-            if ticket.status in ['resolved', 'closed']:
-                raise forms.ValidationError(f'No puedes registrar asistencia en un ticket {ticket.get_status_display().lower()}.')
+        # Permitir cualquier ticket
         return ticket
     
     def clean_work_order(self):
-        """Validar que la orden de trabajo esté en estado válido para trabajar"""
+        """Validar orden de trabajo (sin restricciones de estado)"""
         work_order = self.cleaned_data.get('work_order')
-        if work_order:
-            if work_order.status != 'accepted':
-                raise forms.ValidationError(f'No puedes registrar asistencia en una orden de trabajo {work_order.get_status_display().lower()}.')
+        # Permitir cualquier orden de trabajo
         return work_order
+    
+    def clean_task(self):
+        """Validar tarea (sin restricciones de estado)"""
+        task = self.cleaned_data.get('task')
+        # Permitir cualquier tarea sin importar su estado
+        return task
 
 
 class TimeEntryEndForm(forms.Form):
@@ -1058,12 +1092,24 @@ class TimeEntryEndForm(forms.Form):
 
 
 class TimeEntryEditForm(forms.ModelForm):
-    """Formulario para editar registros de horario (solo notas)"""
+    """Formulario para editar registros de horario"""
     
     class Meta:
         model = TimeEntry
-        fields = ['notas']
+        fields = ['project', 'ticket', 'work_order', 'task', 'notas']
         widgets = {
+            'project': forms.Select(attrs={
+                'class': 'form-select',
+            }),
+            'ticket': forms.Select(attrs={
+                'class': 'form-select',
+            }),
+            'work_order': forms.Select(attrs={
+                'class': 'form-select',
+            }),
+            'task': forms.Select(attrs={
+                'class': 'form-select',
+            }),
             'notas': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
@@ -1071,11 +1117,55 @@ class TimeEntryEditForm(forms.ModelForm):
             }),
         }
         labels = {
+            'project': 'Proyecto',
+            'ticket': 'Ticket',
+            'work_order': 'Orden de Trabajo',
+            'task': 'Tarea',
             'notas': 'Notas de la jornada',
         }
         help_texts = {
+            'project': 'Proyecto en el que se trabajó',
+            'ticket': 'Ticket en el que se trabajó',
+            'work_order': 'Orden de trabajo en la que se trabajó',
+            'task': 'Tarea en la que se trabajó',
             'notas': 'Describe las actividades realizadas, observaciones o comentarios relevantes',
         }
+    
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        # Configurar querysets igual que en TimeEntryStartForm
+        self.fields['project'].queryset = Project.objects.filter(
+            is_active=True
+        ).order_by('name')
+        
+        if user:
+            from .utils import is_agent
+            from django.db.models import Q
+            
+            if is_agent(user):
+                self.fields['ticket'].queryset = Ticket.objects.all().order_by('-created_at')
+                
+                self.fields['task'].queryset = Task.objects.all().order_by('-created_at')
+            else:
+                self.fields['ticket'].queryset = Ticket.objects.filter(
+                    created_by=user
+                ).order_by('-created_at')
+                
+                self.fields['task'].queryset = Task.objects.filter(
+                    Q(assigned_users=user) | Q(created_by=user)
+                ).distinct().order_by('-created_at')
+        else:
+            self.fields['ticket'].queryset = Ticket.objects.none()
+            self.fields['task'].queryset = Task.objects.none()
+        
+        self.fields['work_order'].queryset = WorkOrder.objects.all().order_by('-created_at')
+        
+        # Hacer todos los campos opcionales
+        for field in ['project', 'ticket', 'work_order', 'task']:
+            self.fields[field].required = False
+            self.fields[field].empty_label = f"Seleccionar {self.fields[field].label.lower()} (opcional)"
     
     def clean_notas(self):
         notas = self.cleaned_data.get('notas')
@@ -1528,6 +1618,10 @@ class WorkOrderForm(forms.ModelForm):
         self.fields['company'].queryset = Company.objects.filter(is_active=True).order_by('name')
         self.fields['company'].empty_label = "Seleccionar empresa"
         
+        # Configurar campo proyecto
+        self.fields['project'].queryset = Project.objects.filter(is_active=True).order_by('name')
+        self.fields['project'].empty_label = "Seleccionar proyecto (opcional)"
+        
         # Configurar queryset para usuarios asignables (agentes)
         try:
             agentes_group = Group.objects.get(name='Agentes')
@@ -1541,7 +1635,7 @@ class WorkOrderForm(forms.ModelForm):
     class Meta:
         model = WorkOrder
         fields = [
-            'title', 'description', 'company', 'status', 'due_date', 
+            'title', 'description', 'company', 'project', 'status', 'due_date', 
             'estimated_hours', 'amount', 'priority', 'assigned_to', 'is_public'
         ]
         widgets = {
@@ -1555,6 +1649,9 @@ class WorkOrderForm(forms.ModelForm):
                 'placeholder': 'Descripción detallada del trabajo a realizar...'
             }),
             'company': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'project': forms.Select(attrs={
                 'class': 'form-select'
             }),
             'status': forms.Select(attrs={
@@ -1590,6 +1687,7 @@ class WorkOrderForm(forms.ModelForm):
             'title': 'Título',
             'description': 'Descripción del trabajo',
             'company': 'Empresa',
+            'project': 'Proyecto',
             'status': 'Estado',
             'due_date': 'Fecha de entrega',
             'estimated_hours': 'Horas estimadas',
@@ -1602,6 +1700,7 @@ class WorkOrderForm(forms.ModelForm):
             'title': 'Título descriptivo de la orden de trabajo',
             'description': 'Descripción detallada de todo lo que se necesita realizar',
             'company': 'Empresa a la que se dirige la orden de trabajo',
+            'project': 'Proyecto asociado a la orden de trabajo (opcional)',
             'due_date': 'Fecha límite para completar la orden (opcional)',
             'estimated_hours': 'Tiempo estimado para completar el trabajo',
             'amount': 'Precio o costo de la orden de trabajo (opcional)',

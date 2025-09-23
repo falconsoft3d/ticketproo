@@ -15,7 +15,8 @@ import os
 from datetime import timedelta
 from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
-    UserNote, TimeEntry, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task
+    UserNote, TimeEntry, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
+    DailyTaskSession, DailyTaskItem
 )
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
@@ -768,6 +769,12 @@ def user_profile_view(request):
     # Obtener o crear el perfil del usuario
     profile, created = UserProfile.objects.get_or_create(user=request.user)
     
+    # Asegurar que el perfil tenga un token público
+    if not profile.public_token:
+        import uuid
+        profile.public_token = uuid.uuid4()
+        profile.save()
+    
     # Importar formularios aquí para evitar importación circular
     from .forms import UserProfileForm, CustomPasswordChangeForm
     
@@ -796,11 +803,26 @@ def user_profile_view(request):
                 update_session_auth_hash(request, user)  # Mantener la sesión activa
                 messages.success(request, 'Tu contraseña ha sido cambiada exitosamente.')
                 return redirect('user_profile')
+        
+        elif 'regenerate_token' in request.POST:
+            # Regenerar token público
+            new_token = profile.regenerate_token()
+            messages.success(request, 'Tu token de acceso público ha sido regenerado.')
+            return redirect('user_profile')
+    
+    # Construir URL pública para tareas
+    if request.is_secure():
+        protocol = 'https'
+    else:
+        protocol = 'http'
+    
+    public_task_url = f"{protocol}://{request.get_host()}/public/tasks/{profile.public_token}/"
     
     context = {
         'profile_form': profile_form,
         'password_form': password_form,
         'user_profile': profile,
+        'public_task_url': public_task_url,
         'page_title': 'Mi Perfil'
     }
     return render(request, 'tickets/user_profile.html', context)
@@ -1117,6 +1139,7 @@ def time_start_work(request):
                 project = form.cleaned_data.get('project')
                 ticket = form.cleaned_data.get('ticket')
                 work_order = form.cleaned_data.get('work_order')
+                task = form.cleaned_data.get('task')
                 notas = form.cleaned_data.get('notas_entrada', '')
                 
                 entry = TimeEntry.create_entry(
@@ -1124,6 +1147,7 @@ def time_start_work(request):
                     project=project,
                     ticket=ticket,
                     work_order=work_order,
+                    task=task,
                     notas_entrada=notas
                 )
                 
@@ -1135,6 +1159,8 @@ def time_start_work(request):
                     message_parts.append(f'trabajando en el ticket "{ticket.ticket_number}"')
                 if work_order:
                     message_parts.append(f'en la orden "{work_order.order_number}"')
+                if task:
+                    message_parts.append(f'en la tarea "{task.title}"')
                 
                 message = ' '.join(message_parts) + '!'
                 messages.success(request, message)
@@ -1280,13 +1306,13 @@ def time_entry_edit(request, entry_id):
         return redirect('time_entry_detail', entry_id=entry.id)
     
     if request.method == 'POST':
-        form = TimeEntryEditForm(request.POST, instance=entry)
+        form = TimeEntryEditForm(request.POST, instance=entry, user=request.user)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Notas del registro actualizadas exitosamente.')
+            messages.success(request, 'Registro actualizado exitosamente.')
             return redirect('time_entry_detail', entry_id=entry.id)
     else:
-        form = TimeEntryEditForm(instance=entry)
+        form = TimeEntryEditForm(instance=entry, user=request.user)
     
     context = {
         'form': form,
@@ -1469,6 +1495,30 @@ def project_delete(request, project_id):
     }
     
     return render(request, 'tickets/project_delete.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='ticket_list')
+def project_generate_public_token(request, project_id):
+    """Vista para generar o regenerar el token público de un proyecto"""
+    project = get_object_or_404(Project, id=project_id)
+    
+    # Verificar permisos
+    if not project.can_edit(request.user):
+        messages.error(request, 'No tienes permisos para gestionar este proyecto.')
+        return redirect('project_detail', project_id=project.id)
+    
+    if request.method == 'POST':
+        # Generar nuevo token (esto también actualizará uno existente)
+        import secrets
+        project.public_share_token = secrets.token_urlsafe(32)
+        project.save()
+        
+        messages.success(request, 
+            'Enlace público generado exitosamente. '
+            'Ahora puedes compartir este proyecto con información básica sin necesidad de iniciar sesión.')
+    
+    return redirect('project_detail', project_id=project.id)
 
 
 @login_required
@@ -2398,9 +2448,24 @@ def daily_report_view(request):
         except User.DoesNotExist:
             pass
     
-    time_entries = time_entries.select_related('user', 'project', 'ticket', 'work_order').order_by('-fecha_entrada')
+    time_entries = time_entries.select_related('user', 'project', 'ticket', 'work_order', 'task').order_by('-fecha_entrada')
     
-    # Calcular estadísticas
+    # Agregar paginación
+    from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+    
+    paginator = Paginator(time_entries, 25)  # 25 registros por página
+    page = request.GET.get('page')
+    
+    try:
+        time_entries_page = paginator.page(page)
+    except PageNotAnInteger:
+        # Si page no es un entero, mostrar la primera página
+        time_entries_page = paginator.page(1)
+    except EmptyPage:
+        # Si page está fuera de rango, mostrar la última página
+        time_entries_page = paginator.page(paginator.num_pages)
+    
+    # Calcular estadísticas (usando el queryset original, no paginado)
     total_entries = time_entries.count()
     entries_in_progress = time_entries.filter(fecha_salida__isnull=True).count()
     
@@ -2473,7 +2538,7 @@ def daily_report_pdf(request):
     else:
         titulo_usuario = " - Todos los usuarios"
     
-    time_entries = time_entries.select_related('user', 'project', 'ticket', 'work_order').order_by('user__username', 'fecha_entrada')
+    time_entries = time_entries.select_related('user', 'project', 'ticket', 'work_order', 'task').order_by('user__username', 'fecha_entrada')
     
     # Crear PDF
     buffer = io.BytesIO()
@@ -2517,6 +2582,8 @@ def daily_report_pdf(request):
             asignacion_parts.append(f"Ticket: #{entry.ticket.id}")
         if entry.work_order:
             asignacion_parts.append(f"Orden: #{entry.work_order.id}")
+        if entry.task:
+            asignacion_parts.append(f"Tarea: {entry.task.title}")
         
         asignacion = "\n".join(asignacion_parts) if asignacion_parts else "Sin asignación específica"
         
@@ -2654,7 +2721,9 @@ def task_edit_view(request, pk):
     if request.method == 'POST':
         form = TaskForm(request.POST, instance=task)
         if form.is_valid():
-            form.save()
+            task = form.save(commit=False)
+            task.save()
+            form.save_m2m()  # Para guardar los ManyToMany
             messages.success(request, f'Tarea "{task.title}" actualizada exitosamente.')
             return redirect('task_detail', pk=task.pk)
     else:
@@ -2714,3 +2783,677 @@ def task_toggle_status_view(request, pk):
             )
     
     return redirect('task_detail', pk=task.pk)
+
+
+# ===========================================
+# VISTAS PARA GESTIÓN DIARIA DE TAREAS
+# ===========================================
+
+def auto_load_daily_tasks(session, user, date):
+    """
+    Carga automáticamente tareas relevantes para el día en una nueva sesión.
+    Prioriza:
+    1. Tareas con fecha límite de hoy
+    2. Tareas con alta prioridad sin fecha límite
+    3. Tareas en progreso del usuario
+    """
+    # Tareas con fecha límite de hoy (máxima prioridad)
+    tasks_due_today = Task.objects.filter(
+        assigned_users=user,
+        due_date=date,
+        status__in=['pending', 'in_progress']
+    ).exclude(
+        status__in=['completed', 'cancelled']
+    )
+    
+    # Tareas de alta prioridad sin fecha límite
+    high_priority_tasks = Task.objects.filter(
+        assigned_users=user,
+        priority='high',
+        due_date__isnull=True,
+        status__in=['pending', 'in_progress']
+    ).exclude(
+        status__in=['completed', 'cancelled']
+    )[:3]  # Máximo 3 tareas de alta prioridad
+    
+    # Tareas actualmente en progreso del usuario
+    in_progress_tasks = Task.objects.filter(
+        assigned_users=user,
+        status='in_progress'
+    ).exclude(
+        status__in=['completed', 'cancelled']
+    )
+    
+    # Combinar y eliminar duplicados
+    auto_tasks = list(tasks_due_today) + list(high_priority_tasks) + list(in_progress_tasks)
+    unique_tasks = []
+    seen_ids = set()
+    
+    for task in auto_tasks:
+        if task.id not in seen_ids:
+            unique_tasks.append(task)
+            seen_ids.add(task.id)
+    
+    # Crear items de la sesión diaria para estas tareas
+    for order, task in enumerate(unique_tasks[:8], 1):  # Máximo 8 tareas auto-cargadas
+        DailyTaskItem.objects.create(
+            session=session,
+            task=task,
+            order=order
+        )
+
+
+@login_required
+def daily_task_management(request):
+    """Vista principal - Lista de gestiones de tareas de todos los usuarios"""
+    # Obtener todas las gestiones de tareas ordenadas por fecha
+    # Si el usuario es superuser o staff, ve todas las gestiones
+    # Si no, solo ve las suyas
+    if request.user.is_superuser or request.user.is_staff:
+        task_sessions = DailyTaskSession.objects.all()
+    else:
+        task_sessions = DailyTaskSession.objects.filter(user=request.user)
+    
+    task_sessions = task_sessions.prefetch_related(
+        'daily_task_items__task', 'user'
+    ).order_by('-created_at')
+    
+    # Paginación
+    from django.core.paginator import Paginator
+    paginator = Paginator(task_sessions, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'task_sessions': page_obj,
+        'page_obj': page_obj,
+        'is_paginated': page_obj.has_other_pages(),
+    }
+    
+    return render(request, 'tickets/daily_task_management.html', context)
+
+
+@login_required
+def create_task_session(request):
+    """Crear nueva gestión de tareas"""
+    if request.method == 'POST':
+        # Obtener la fecha del formulario
+        session_date = request.POST.get('date')
+        notes = request.POST.get('notes', '')
+        
+        if session_date:
+            # Crear nueva sesión
+            session = DailyTaskSession.objects.create(
+                user=request.user,
+                date=session_date,
+                notes=notes
+            )
+            
+            # Cargar TODAS las tareas donde el usuario esté involucrado (sin filtros de fecha)
+            # Incluir: asignadas al usuario O creadas por el usuario
+            assigned_tasks = Task.objects.filter(
+                models.Q(assigned_users=request.user) | models.Q(created_by=request.user)
+            ).exclude(
+                status='cancelled'  # Solo excluir canceladas, no completadas
+            ).order_by('priority', '-created_at').distinct()
+            
+            print(f"DEBUG: Usuario {request.user.username}")
+            print(f"DEBUG: Tareas totales encontradas: {assigned_tasks.count()}")
+            
+            # Debug detallado
+            all_tasks = Task.objects.all()
+            print(f"DEBUG: Total de tareas en el sistema: {all_tasks.count()}")
+            
+            user_assigned = Task.objects.filter(assigned_users=request.user)
+            user_created = Task.objects.filter(created_by=request.user)
+            print(f"DEBUG: Tareas asignadas al usuario: {user_assigned.count()}")
+            print(f"DEBUG: Tareas creadas por el usuario: {user_created.count()}")
+            
+            for task in assigned_tasks[:5]:  # Mostrar primeras 5 para debug
+                assigned_users = [u.username for u in task.assigned_users.all()]
+                print(f"  - {task.title} | Estado: {task.status} | Asignada a: {assigned_users} | Creada por: {task.created_by.username if task.created_by else 'N/A'}")
+            
+            # Crear items para todas las tareas asignadas
+            for order, task in enumerate(assigned_tasks, 1):
+                DailyTaskItem.objects.create(
+                    session=session,
+                    task=task,
+                    order=order
+                )
+            
+            messages.success(
+                request, 
+                f'Nueva gestión de tareas creada con {assigned_tasks.count()} tareas cargadas.'
+            )
+            return redirect('view_task_session', session_id=session.id)
+        else:
+            messages.error(request, 'Debes seleccionar una fecha.')
+    
+    # Pasar la fecha de hoy al template
+    today = timezone.now().date()
+    return render(request, 'tickets/create_task_session.html', {'today': today})
+
+
+@login_required
+def view_task_session(request, session_id):
+    """Ver y gestionar una sesión específica de tareas (checklist)"""
+    try:
+        session = DailyTaskSession.objects.get(
+            id=session_id,
+            user=request.user
+        )
+    except DailyTaskSession.DoesNotExist:
+        messages.error(request, 'Gestión de tareas no encontrada.')
+        return redirect('daily_task_management')
+    
+    # Obtener items de la sesión
+    session_items = session.daily_task_items.select_related('task').order_by('order')
+    
+    context = {
+        'session': session,
+        'session_items': session_items,
+    }
+    
+    return render(request, 'tickets/view_task_session.html', context)
+
+
+@login_required
+def delete_task_session(request, session_id):
+    """Eliminar una gestión de tareas"""
+    try:
+        session = DailyTaskSession.objects.get(id=session_id)
+        
+        # Verificar permisos: solo el propietario o superuser puede eliminar
+        if session.user != request.user and not request.user.is_superuser:
+            messages.error(request, 'No tienes permisos para eliminar esta gestión.')
+            return redirect('daily_task_management')
+        
+        if request.method == 'POST':
+            session_date = session.date.strftime('%d/%m/%Y')
+            session_user = session.user.get_full_name() or session.user.username
+            session.delete()
+            messages.success(request, f'Gestión de tareas del {session_date} de {session_user} eliminada correctamente.')
+            return redirect('daily_task_management')
+        
+        context = {
+            'session': session,
+        }
+        
+        return render(request, 'tickets/delete_task_session.html', context)
+        
+    except DailyTaskSession.DoesNotExist:
+        messages.error(request, 'Gestión de tareas no encontrada.')
+        return redirect('daily_task_management')
+
+
+@login_required
+def add_task_to_daily_session(request):
+    """Agregar una tarea a la sesión diaria actual"""
+    if request.method == 'POST':
+        task_id = request.POST.get('task_id')
+        today = timezone.now().date()
+        
+        try:
+            task = Task.objects.get(id=task_id, assigned_users=request.user)
+            session, created = DailyTaskSession.objects.get_or_create(
+                user=request.user,
+                date=today
+            )
+            
+            # Verificar que la tarea no esté ya en la sesión
+            if not DailyTaskItem.objects.filter(session=session, task=task).exists():
+                # Obtener el siguiente orden
+                max_order = session.daily_task_items.aggregate(
+                    max_order=models.Max('order')
+                )['max_order'] or 0
+                
+                DailyTaskItem.objects.create(
+                    session=session,
+                    task=task,
+                    order=max_order + 1
+                )
+                
+                messages.success(request, f'Tarea "{task.title}" agregada a tu plan del día.')
+            else:
+                messages.warning(request, 'Esta tarea ya está en tu plan del día.')
+                
+        except Task.DoesNotExist:
+            messages.error(request, 'Tarea no encontrada o no tienes permisos.')
+    
+    return redirect('daily_task_management')
+
+
+@login_required
+def toggle_daily_task_completion(request, item_id):
+    """Marcar/desmarcar una tarea como completada en la sesión"""
+    try:
+        item = DailyTaskItem.objects.get(
+            id=item_id,
+            session__user=request.user
+        )
+        
+        if item.completed:
+            item.mark_pending()
+            messages.info(request, f'Tarea "{item.task.title}" marcada como pendiente.')
+        else:
+            item.mark_completed()
+            messages.success(request, f'¡Excelente! Tarea "{item.task.title}" completada.')
+        
+        # Redirigir a la vista de la sesión específica
+        return redirect('view_task_session', session_id=item.session.id)
+        
+    except DailyTaskItem.DoesNotExist:
+        messages.error(request, 'Item no encontrado.')
+        return redirect('daily_task_management')
+
+
+@login_required
+def remove_task_from_daily_session(request, item_id):
+    """Remover una tarea de la sesión diaria"""
+    try:
+        item = DailyTaskItem.objects.get(
+            id=item_id,
+            session__user=request.user
+        )
+        task_title = item.task.title
+        item.delete()
+        messages.info(request, f'Tarea "{task_title}" removida de tu plan del día.')
+        
+    except DailyTaskItem.DoesNotExist:
+        messages.error(request, 'Item no encontrado.')
+    
+    return redirect('daily_task_management')
+
+
+@login_required
+def update_daily_session_notes(request):
+    """Actualizar las notas de la sesión diaria"""
+    if request.method == 'POST':
+        today = timezone.now().date()
+        notes = request.POST.get('notes', '')
+        
+        session, created = DailyTaskSession.objects.get_or_create(
+            user=request.user,
+            date=today
+        )
+        
+        session.notes = notes
+        session.save()
+        
+        messages.success(request, 'Notas del día actualizadas.')
+    
+    return redirect('daily_task_management')
+
+
+@login_required
+def daily_task_history(request):
+    """Vista del historial de sesiones diarias"""
+    sessions = DailyTaskSession.objects.filter(
+        user=request.user
+    ).prefetch_related('daily_task_items__task').order_by('-date')
+    
+    # Aplicar filtros
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    min_completion = request.GET.get('min_completion')
+    
+    if date_from:
+        sessions = sessions.filter(date__gte=date_from)
+    if date_to:
+        sessions = sessions.filter(date__lte=date_to)
+    
+    # Calcular estadísticas de todas las sesiones (sin filtros)
+    all_sessions = DailyTaskSession.objects.filter(user=request.user)
+    total_sessions = all_sessions.count()
+    total_tasks = sum(session.get_total_tasks() for session in all_sessions)
+    total_completed_tasks = sum(session.get_completed_tasks() for session in all_sessions)
+    
+    if total_sessions > 0:
+        average_completion = sum(session.get_completion_percentage() for session in all_sessions) / total_sessions
+    else:
+        average_completion = 0
+    
+    # Filtrar por porcentaje mínimo de finalización
+    if min_completion:
+        filtered_sessions = []
+        for session in sessions:
+            if session.get_completion_percentage() >= int(min_completion):
+                filtered_sessions.append(session)
+        sessions = filtered_sessions
+    
+    # Paginación
+    from django.core.paginator import Paginator
+    paginator = Paginator(sessions, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'sessions': page_obj,
+        'page_obj': page_obj,
+        'is_paginated': page_obj.has_other_pages(),
+        'total_sessions': total_sessions,
+        'total_tasks': total_tasks,
+        'total_completed_tasks': total_completed_tasks,
+        'average_completion': round(average_completion, 1),
+    }
+    
+    return render(request, 'tickets/daily_task_history.html', context)
+
+
+@login_required
+def refresh_daily_tasks(request):
+    """Recargar tareas relevantes del día en la sesión actual"""
+    today = timezone.now().date()
+    
+    try:
+        session = DailyTaskSession.objects.get(
+            user=request.user,
+            date=today
+        )
+        
+        # Obtener tareas ya en la sesión para no duplicar
+        existing_task_ids = session.daily_task_items.values_list('task_id', flat=True)
+        
+        # Tareas con fecha límite de hoy que no están en la sesión
+        tasks_due_today = Task.objects.filter(
+            assigned_users=request.user,
+            due_date=today,
+            status__in=['pending', 'in_progress']
+        ).exclude(
+            id__in=existing_task_ids
+        ).exclude(
+            status__in=['completed', 'cancelled']
+        )
+        
+        # Tareas de alta prioridad sin fecha que no están en la sesión
+        high_priority_tasks = Task.objects.filter(
+            assigned_users=request.user,
+            priority='high',
+            due_date__isnull=True,
+            status__in=['pending', 'in_progress']
+        ).exclude(
+            id__in=existing_task_ids
+        ).exclude(
+            status__in=['completed', 'cancelled']
+        )[:2]  # Máximo 2 adicionales
+        
+        # Obtener el siguiente orden disponible
+        max_order = session.daily_task_items.aggregate(
+            max_order=models.Max('order')
+        )['max_order'] or 0
+        
+        # Agregar nuevas tareas
+        new_tasks = list(tasks_due_today) + list(high_priority_tasks)
+        tasks_added = 0
+        
+        for task in new_tasks:
+            max_order += 1
+            DailyTaskItem.objects.create(
+                session=session,
+                task=task,
+                order=max_order
+            )
+            tasks_added += 1
+        
+        if tasks_added > 0:
+            messages.success(
+                request, 
+                f'Se agregaron {tasks_added} tarea(s) relevante(s) a tu plan del día.'
+            )
+        else:
+            messages.info(
+                request, 
+                'No hay nuevas tareas relevantes para agregar hoy.'
+            )
+            
+    except DailyTaskSession.DoesNotExist:
+        messages.error(request, 'No tienes una sesión activa para hoy.')
+    
+    return redirect('daily_task_management')
+
+
+# ===========================================
+# VISTAS PARA CONTROL DIARIO DE TAREAS (MANTENEMOS LAS ANTERIORES)
+# ===========================================
+
+@login_required
+def task_control_dashboard(request):
+    """Dashboard diario de control de tareas para agentes"""
+    # Obtener solo las tareas asignadas al usuario actual
+    user_tasks = Task.objects.filter(
+        assigned_users=request.user
+    ).exclude(
+        status__in=['cancelled']
+    ).prefetch_related('assigned_users', 'created_by').order_by(
+        'status', 'priority', 'due_date'
+    )
+    
+    # Separar tareas por estado
+    pending_tasks = user_tasks.filter(status='pending')
+    in_progress_tasks = user_tasks.filter(status='in_progress')
+    completed_tasks = user_tasks.filter(status='completed')
+    
+    # Estadísticas del día
+    today = timezone.now().date()
+    today_completed = user_tasks.filter(
+        status='completed',
+        completed_at__date=today
+    ).count()
+    
+    overdue_tasks = [task for task in user_tasks if task.is_overdue()]
+    
+    context = {
+        'pending_tasks': pending_tasks,
+        'in_progress_tasks': in_progress_tasks,
+        'completed_tasks': completed_tasks,
+        'overdue_tasks': overdue_tasks,
+        'today_completed': today_completed,
+        'total_tasks': user_tasks.count(),
+        'total_pending': pending_tasks.count(),
+        'total_in_progress': in_progress_tasks.count(),
+        'total_completed': completed_tasks.count(),
+    }
+    
+    return render(request, 'tickets/task_control_dashboard.html', context)
+
+
+@login_required
+def task_control_complete(request, pk):
+    """Marcar una tarea como completada desde el dashboard de control"""
+    task = get_object_or_404(Task, pk=pk)
+    
+    # Verificar que el usuario esté asignado a la tarea
+    if request.user not in task.assigned_users.all():
+        messages.error(request, 'No tienes permisos para completar esta tarea.')
+        return redirect('task_control_dashboard')
+    
+    if request.method == 'POST':
+        old_status = task.get_status_display()
+        task.mark_as_completed()
+        
+        messages.success(
+            request,
+            f'¡Excelente! Has completado la tarea "{task.title}".'
+        )
+    
+    return redirect('task_control_dashboard')
+
+
+@login_required
+def task_control_start(request, pk):
+    """Marcar una tarea como en progreso desde el dashboard de control"""
+    task = get_object_or_404(Task, pk=pk)
+    
+    # Verificar que el usuario esté asignado a la tarea
+    if request.user not in task.assigned_users.all():
+        messages.error(request, 'No tienes permisos para modificar esta tarea.')
+        return redirect('task_control_dashboard')
+    
+    if request.method == 'POST':
+        if task.status == 'pending':
+            task.status = 'in_progress'
+            task.save()
+            
+            messages.success(
+                request,
+                f'Has comenzado a trabajar en la tarea "{task.title}".'
+            )
+        else:
+            messages.warning(request, 'Esta tarea ya está en progreso o completada.')
+    
+    return redirect('task_control_dashboard')
+
+
+@login_required
+def task_control_pause(request, pk):
+    """Pausar una tarea (marcar como pendiente) desde el dashboard de control"""
+    task = get_object_or_404(Task, pk=pk)
+    
+    # Verificar que el usuario esté asignado a la tarea
+    if request.user not in task.assigned_users.all():
+        messages.error(request, 'No tienes permisos para modificar esta tarea.')
+        return redirect('task_control_dashboard')
+    
+    if request.method == 'POST':
+        if task.status == 'in_progress':
+            task.status = 'pending'
+            task.save()
+            
+            messages.info(
+                request,
+                f'Has pausado la tarea "{task.title}". Puedes retomarla cuando quieras.'
+            )
+        else:
+            messages.warning(request, 'Solo puedes pausar tareas que estén en progreso.')
+    
+    return redirect('task_control_dashboard')
+
+
+def public_task_view(request, token):
+    """Vista pública simplificada para gestionar tareas sin autenticación"""
+    from django.db.models import Q
+    
+    try:
+        user_profile = UserProfile.objects.get(public_token=token)
+        user = user_profile.user
+    except UserProfile.DoesNotExist:
+        return render(request, 'tickets/public_tasks_error.html', {
+            'error': 'Token no válido'
+        })
+    
+    if request.method == 'POST':
+        # Obtener las tareas seleccionadas (completadas)
+        selected_task_ids = request.POST.getlist('selected_tasks')
+        selected_task_ids = [int(task_id) for task_id in selected_task_ids]
+        
+        # Obtener TODAS las tareas asignadas al usuario (para crear la gestión completa)
+        all_user_tasks = Task.objects.filter(
+            Q(assigned_users=user) | Q(created_by=user)
+        ).exclude(status__in=['cancelled']).distinct()
+        
+        if all_user_tasks.exists():
+            # Crear nueva sesión con fecha de hoy
+            from django.utils import timezone
+            session = DailyTaskSession.objects.create(
+                user=user,
+                date=timezone.now().date(),
+                notes='Gestión creada desde acceso público'
+            )
+            
+            # Crear un item para CADA tarea asignada
+            completed_count = 0
+            for i, task in enumerate(all_user_tasks):
+                is_completed = task.id in selected_task_ids
+                
+                DailyTaskItem.objects.create(
+                    session=session,
+                    task=task,
+                    order=i + 1,
+                    completed=is_completed,
+                    completed_at=timezone.now() if is_completed else None
+                )
+                
+                # Si la tarea fue marcada como completada, actualizar su estado
+                if is_completed and task.status != 'completed':
+                    task.status = 'completed'
+                    task.save()
+                    completed_count += 1
+            
+            return render(request, 'tickets/public_task_success.html', {
+                'session': session,
+                'user': user,
+                'token': token,
+                'task_count': all_user_tasks.count(),
+                'completed_count': completed_count
+            })
+        else:
+            error_message = 'No tienes tareas asignadas para crear una gestión'
+    else:
+        error_message = None
+    
+    # Obtener todas las tareas asignadas al usuario (incluyendo completadas)
+    tasks = Task.objects.filter(
+        Q(assigned_users=user) | Q(created_by=user)
+    ).exclude(status='cancelled').distinct().order_by('-created_at')
+    
+    context = {
+        'user': user,
+        'tasks': tasks,
+        'token': token,
+        'error_message': error_message,
+    }
+    
+    return render(request, 'tickets/public_tasks_simple.html', context)
+
+
+def public_create_task_session(request, token):
+    """Redirigir a la vista principal simplificada"""
+    return redirect('public_task_view', token=token)
+
+
+def public_project_view(request, token):
+    """Vista pública para mostrar información del proyecto sin autenticación"""
+    try:
+        project = get_object_or_404(Project, public_share_token=token)
+    except Project.DoesNotExist:
+        return render(request, 'tickets/public_project_error.html', {
+            'error': 'El enlace proporcionado no es válido o ha expirado.'
+        })
+    
+    # Calcular estadísticas del proyecto usando los métodos del modelo
+    total_hours = project.get_total_hours()
+    tickets_count = project.get_tickets_count()
+    resolved_tickets_count = project.get_resolved_tickets_count()
+    completed_work_orders_count = project.get_completed_work_orders_count()
+    
+    # Obtener trabajadores del proyecto con sus datos de contacto
+    workers = project.get_project_workers()
+    
+    # Crear lista de trabajadores con información de contacto
+    workers_info = []
+    for worker in workers:
+        worker_info = {
+            'name': f"{worker.first_name} {worker.last_name}".strip() or worker.username,
+            'email': worker.email,
+            'phone': getattr(worker.profile, 'phone', '') if hasattr(worker, 'profile') else '',
+        }
+        workers_info.append(worker_info)
+    
+    # Obtener tickets directamente asignados al proyecto para mostrar
+    project_tickets = project.tickets.all().order_by('-created_at')[:10]
+    
+    # Obtener órdenes de trabajo directamente asignadas al proyecto para mostrar
+    project_work_orders = project.work_orders.all().order_by('-created_at')[:10]
+    
+    context = {
+        'project': project,
+        'total_hours': total_hours,
+        'tickets_count': tickets_count,
+        'resolved_tickets_count': resolved_tickets_count,
+        'completed_work_orders_count': completed_work_orders_count,
+        'workers_info': workers_info,
+        'project_tickets': project_tickets,
+        'project_work_orders': project_work_orders,
+    }
+    
+    return render(request, 'tickets/public_project.html', context)

@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestiones de Tareas - TicketProo{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>
+                <i class="bi bi-list-check"></i> Gestiones de Tareas
+            </h2>
+            <a href="{% url 'create_task_session' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Nueva Gestión de Tareas
+            </a>
+        </div>
+    </div>
+</div>
+
+{% if task_sessions %}
+    <div class="row">
+        <div class="col-12">
+            {% for session in task_sessions %}
+            <div class="card mb-3">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-1">
+                                <i class="bi bi-calendar-event"></i> 
+                                {{ session.date|date:"l, d \d\e F \d\e Y" }}
+                                <small class="text-muted">- {{ session.created_at|date:"H:i" }}</small>
+                            </h5>
+                            <div class="mb-2">
+                                <span class="badge bg-primary">
+                                    <i class="bi bi-person-fill"></i> 
+                                    {{ session.user.get_full_name|default:session.user.username }}
+                                </span>
+                            </div>
+                            {% if session.notes %}
+                                <p class="mb-0 text-muted">{{ session.notes|truncatechars:100 }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="text-end">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge {% if session.get_completion_percentage == 100 %}bg-success{% elif session.get_completion_percentage >= 70 %}bg-warning{% else %}bg-secondary{% endif %} fs-6">
+                                    {{ session.get_completion_percentage }}%
+                                </span>
+                                <small class="text-muted">
+                                    {{ session.get_completed_tasks }}/{{ session.get_total_tasks }} tareas
+                                </small>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'view_task_session' session.id %}" class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-eye"></i> Ver Checklist
+                                    </a>
+                                    {% if session.user == request.user or request.user.is_superuser %}
+                                    <a href="{% url 'delete_task_session' session.id %}" class="btn btn-outline-danger btn-sm" 
+                                       title="Eliminar gestión">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Progreso visual -->
+                    {% if session.get_total_tasks > 0 %}
+                    <div class="progress mb-3" style="height: 8px;">
+                        <div class="progress-bar {% if session.get_completion_percentage == 100 %}bg-success{% elif session.get_completion_percentage >= 70 %}bg-warning{% else %}bg-info{% endif %}" 
+                             role="progressbar" 
+                             style="width: {{ session.get_completion_percentage }}%"
+                             aria-valuenow="{{ session.get_completion_percentage }}" 
+                             aria-valuemin="0" aria-valuemax="100">
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Resumen de tareas -->
+                    {% if session.daily_task_items.all %}
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h6 class="text-muted mb-2">Tareas incluidas:</h6>
+                            <div class="row g-2">
+                                {% for item in session.daily_task_items.all|slice:":6" %}
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center">
+                                        {% if item.completed %}
+                                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-circle text-muted me-2"></i>
+                                        {% endif %}
+                                        <small class="{% if item.completed %}text-decoration-line-through text-muted{% endif %}">
+                                            {{ item.task.title|truncatechars:30 }}
+                                        </small>
+                                        {% if item.completed_at %}
+                                            <small class="text-success ms-auto">
+                                                {{ item.completed_at|date:"H:i" }}
+                                            </small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                {% if session.daily_task_items.count > 6 %}
+                                <div class="col-12">
+                                    <small class="text-muted">
+                                        <i class="bi bi-three-dots"></i> 
+                                        Y {{ session.daily_task_items.count|add:"-6" }} tarea(s) más...
+                                    </small>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <p class="text-muted mb-1">
+                                <i class="bi bi-clock"></i> 
+                                Creada: {{ session.created_at|date:"d/m/Y H:i" }}
+                            </p>
+                            {% if session.updated_at != session.created_at %}
+                            <p class="text-muted mb-0">
+                                <i class="bi bi-pencil"></i> 
+                                Actualizada: {{ session.updated_at|date:"d/m/Y H:i" }}
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-3">
+                        <i class="bi bi-calendar-x"></i>
+                        <span class="ms-2">Esta gestión no tiene tareas</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+            
+            <!-- Paginación -->
+            {% if is_paginated %}
+            <nav aria-label="Navegación de páginas">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1">Primera</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                        </li>
+                    {% endif %}
+                    
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+{% else %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-list-check display-1 text-muted"></i>
+                    <h4 class="mt-3">No tienes gestiones de tareas</h4>
+                    <p class="text-muted">
+                        Crea tu primera gestión de tareas para organizar tu trabajo diario.
+                    </p>
+                    <a href="{% url 'create_task_session' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Crear mi primera gestión
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+{% endblock %}

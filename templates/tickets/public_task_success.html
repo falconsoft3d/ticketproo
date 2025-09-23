@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión Creada - TicketProo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-dark bg-success">
+        <div class="container">
+            <span class="navbar-brand mb-0 h1">
+                <i class="bi bi-check-circle"></i> 
+                Gestión Creada - {{ user.get_full_name|default:user.username }}
+            </span>
+        </div>
+    </nav>
+
+    <div class="container py-4">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card border-success">
+                    <div class="card-header bg-success text-white text-center">
+                        <h4 class="mb-0">
+                            <i class="bi bi-check-circle-fill"></i> 
+                            ¡Gestión Diaria Creada!
+                        </h4>
+                    </div>
+                    <div class="card-body text-center">
+                        <div class="alert alert-success">
+                            <h5><i class="bi bi-calendar-check"></i> Gestión para Hoy</h5>
+                            <p class="mb-0">
+                                Se ha creado tu gestión diaria con <strong>{{ task_count }}</strong> tarea{{ task_count|pluralize }} 
+                                para <strong>{{ session.date|date:"l, d \d\e F \d\e Y" }}</strong>.<br>
+                                <strong>{{ completed_count }}</strong> tarea{{ completed_count|pluralize }} marcada{{ completed_count|pluralize }} como completada{{ completed_count|pluralize }}.
+                            </p>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <i class="bi bi-calendar-check display-1 text-success"></i>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 offset-md-3">
+                                <div class="list-group">
+                                    <div class="list-group-item d-flex justify-content-between">
+                                        <span><i class="bi bi-calendar"></i> Fecha:</span>
+                                        <strong>{{ session.date|date:"d/m/Y" }}</strong>
+                                    </div>
+                                    <div class="list-group-item d-flex justify-content-between">
+                                        <span><i class="bi bi-list-task"></i> Total Tareas:</span>
+                                        <strong>{{ task_count }}</strong>
+                                    </div>
+                                    <div class="list-group-item d-flex justify-content-between">
+                                        <span><i class="bi bi-check-circle"></i> Completadas:</span>
+                                        <strong>{{ completed_count }}</strong>
+                                    </div>
+                                    <div class="list-group-item d-flex justify-content-between">
+                                        <span><i class="bi bi-clock"></i> Creada:</span>
+                                        <strong>{{ session.created_at|date:"H:i" }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <div class="alert alert-info">
+                                <h6><i class="bi bi-info-circle"></i> ¡Gestión Registrada!</h6>
+                                <p class="mb-0">
+                                    Se ha creado tu gestión diaria con todas tus tareas asignadas. 
+                                    Las tareas marcadas aparecen como completadas. 
+                                    Tu supervisor podrá revisar tu progreso en el sistema principal.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <a href="{% url 'public_task_view' token %}" class="btn btn-primary">
+                                <i class="bi bi-arrow-left"></i> Volver a Mis Tareas
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

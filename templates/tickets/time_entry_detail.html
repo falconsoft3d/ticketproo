@@ -142,7 +142,38 @@
                                         </div>
                                     {% endif %}
                                     
-                                    {% if not entry.project and not entry.ticket and not entry.work_order %}
+                                    {% if entry.task %}
+                                        <div class="card border-0 bg-light">
+                                            <div class="card-body p-2">
+                                                <span class="badge bg-info">
+                                                    <i class="bi bi-list-task"></i> Tarea
+                                                </span>
+                                                <div class="mt-1">
+                                                    <strong>{{ entry.task.title }}</strong>
+                                                    {% if entry.task.description %}
+                                                        <br><small class="text-muted">{{ entry.task.description|truncatechars:50 }}</small>
+                                                    {% endif %}
+                                                    <br><span class="badge badge-sm 
+                                                        {% if entry.task.status == 'pending' %}bg-secondary
+                                                        {% elif entry.task.status == 'in_progress' %}bg-warning
+                                                        {% elif entry.task.status == 'completed' %}bg-success
+                                                        {% elif entry.task.status == 'cancelled' %}bg-danger
+                                                        {% endif %}">
+                                                        {{ entry.task.get_status_display }}
+                                                    </span>
+                                                    <span class="badge badge-sm 
+                                                        {% if entry.task.priority == 'low' %}bg-secondary
+                                                        {% elif entry.task.priority == 'medium' %}bg-warning
+                                                        {% elif entry.task.priority == 'high' %}bg-danger
+                                                        {% endif %}">
+                                                        <i class="bi bi-flag-fill"></i> {{ entry.task.get_priority_display }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    {% if not entry.project and not entry.ticket and not entry.work_order and not entry.task %}
                                         <div class="alert alert-light border">
                                             <i class="bi bi-info-circle"></i> 
                                             Sin asignación específica - Trabajo general

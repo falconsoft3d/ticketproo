@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ project.name }} - Información del Proyecto</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            margin: 2rem auto;
+            padding: 2rem;
+            max-width: 1200px;
+        }
+        
+        .project-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            border-radius: 15px;
+        }
+        
+        .project-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .project-description {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .stats-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: none;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            height: 100%;
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+        
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 1.5rem;
+            color: white;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            color: #6b7280;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .workers-section {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-top: 2rem;
+        }
+        
+        .worker-card {
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 1.5rem;
+            border-left: 4px solid #4f46e5;
+            transition: transform 0.2s ease;
+        }
+        
+        .worker-card:hover {
+            transform: translateX(5px);
+            background: #f1f5f9;
+        }
+        
+        .worker-name {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+        
+        .contact-info {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title i {
+            margin-right: 0.5rem;
+            color: #4f46e5;
+        }
+        
+        .brand-footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e2e8f0;
+            color: #64748b;
+        }
+        
+        @media (max-width: 768px) {
+            .main-container {
+                margin: 1rem;
+                padding: 1rem;
+            }
+            
+            .project-title {
+                font-size: 2rem;
+            }
+            
+            .stats-card {
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="main-container">
+            <!-- Header del Proyecto -->
+            <div class="project-header">
+                <div class="project-title">
+                    <i class="bi bi-folder-check me-3"></i>{{ project.name }}
+                </div>
+                {% if project.description %}
+                    <div class="project-description">
+                        {{ project.description|linebreaksbr }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Estadísticas del Proyecto -->
+            <div class="row mb-4">
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="stats-card text-center">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                            <i class="bi bi-clock-history"></i>
+                        </div>
+                        <div class="stat-number text-success">{{ total_hours|floatformat:1 }}</div>
+                        <div class="stat-label">Horas Trabajadas</div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="stats-card text-center">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
+                            <i class="bi bi-ticket-perforated"></i>
+                        </div>
+                        <div class="stat-number text-primary">{{ tickets_count }}</div>
+                        <div class="stat-label">Tickets Levantados</div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="stats-card text-center">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
+                        <div class="stat-number text-purple">{{ resolved_tickets_count }}</div>
+                        <div class="stat-label">Tickets Resueltos</div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="stats-card text-center">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                            <i class="bi bi-clipboard-check"></i>
+                        </div>
+                        <div class="stat-number text-warning">{{ completed_work_orders_count }}</div>
+                        <div class="stat-label">Órdenes Completadas</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Información de Contacto del Equipo -->
+            {% if workers_info %}
+            <div class="workers-section">
+                <h3 class="section-title">
+                    <i class="bi bi-people"></i>
+                    Equipo de Trabajo
+                </h3>
+                
+                <div class="row">
+                    {% for worker in workers_info %}
+                    <div class="col-lg-6 col-md-12 mb-3">
+                        <div class="worker-card">
+                            <div class="worker-name">
+                                <i class="bi bi-person-circle me-2 text-primary"></i>
+                                {{ worker.name }}
+                            </div>
+                            
+                            {% if worker.email %}
+                            <div class="contact-info mb-1">
+                                <i class="bi bi-envelope me-2"></i>
+                                <a href="mailto:{{ worker.email }}" class="text-decoration-none">
+                                    {{ worker.email }}
+                                </a>
+                            </div>
+                            {% endif %}
+                            
+                            {% if worker.phone %}
+                            <div class="contact-info">
+                                <i class="bi bi-telephone me-2"></i>
+                                <a href="tel:{{ worker.phone }}" class="text-decoration-none">
+                                    {{ worker.phone }}
+                                </a>
+                            </div>
+                            {% endif %}
+                            
+                            {% if not worker.email and not worker.phone %}
+                            <div class="contact-info text-muted">
+                                <i class="bi bi-info-circle me-2"></i>
+                                Información de contacto no disponible
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="workers-section text-center">
+                <h3 class="section-title justify-content-center">
+                    <i class="bi bi-people"></i>
+                    Equipo de Trabajo
+                </h3>
+                <div class="text-muted">
+                    <i class="bi bi-info-circle fa-2x mb-3"></i>
+                    <p>No hay información de trabajadores disponible para este proyecto.</p>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Lista de Tickets del Proyecto -->
+            {% if project_tickets %}
+            <div class="workers-section">
+                <h3 class="section-title">
+                    <i class="bi bi-ticket-perforated"></i>
+                    Tickets del Proyecto
+                </h3>
+                
+                <div class="row">
+                    {% for ticket in project_tickets %}
+                    <div class="col-lg-12 col-md-12 mb-3">
+                        <div class="worker-card">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <div class="worker-name">
+                                        <i class="bi bi-ticket me-2 text-primary"></i>
+                                        {{ ticket.title }}
+                                    </div>
+                                    
+                                    <div class="contact-info mb-2">
+                                        <strong>ID:</strong> {{ ticket.ticket_number|default:ticket.id }}
+                                        {% if ticket.category %}
+                                            <span class="ms-3">
+                                                <strong>Categoría:</strong> {{ ticket.category.name }}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="contact-info mb-2">
+                                        <strong>Creado por:</strong> {{ ticket.created_by.get_full_name|default:ticket.created_by.username }}
+                                        <span class="ms-3">
+                                            <strong>Fecha:</strong> {{ ticket.created_at|date:"d/m/Y" }}
+                                        </span>
+                                    </div>
+                                    
+                                    {% if ticket.description %}
+                                    <div class="contact-info">
+                                        <strong>Descripción:</strong> 
+                                        <span class="text-muted">
+                                            {% if ticket.description|length > 100 %}
+                                                {{ ticket.description|truncatechars:100 }}
+                                            {% else %}
+                                                {{ ticket.description }}
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="ms-3">
+                                    {% if ticket.status == 'open' %}
+                                        <span class="badge bg-primary">Abierto</span>
+                                    {% elif ticket.status == 'in_progress' %}
+                                        <span class="badge bg-warning">En Progreso</span>
+                                    {% elif ticket.status == 'resolved' %}
+                                        <span class="badge bg-success">Resuelto</span>
+                                    {% elif ticket.status == 'closed' %}
+                                        <span class="badge bg-secondary">Cerrado</span>
+                                    {% endif %}
+                                    
+                                    {% if ticket.priority == 'urgent' %}
+                                        <span class="badge bg-danger ms-1">Urgente</span>
+                                    {% elif ticket.priority == 'high' %}
+                                        <span class="badge bg-warning ms-1">Alta</span>
+                                    {% elif ticket.priority == 'medium' %}
+                                        <span class="badge bg-info ms-1">Media</span>
+                                    {% elif ticket.priority == 'low' %}
+                                        <span class="badge bg-light text-dark ms-1">Baja</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                {% if project.tickets.count > 10 %}
+                <div class="text-center mt-3">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Mostrando los 10 tickets más recientes de {{ project.tickets.count }} total
+                    </small>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            <!-- Lista de Órdenes de Trabajo del Proyecto -->
+            {% if project_work_orders %}
+            <div class="workers-section">
+                <h3 class="section-title">
+                    <i class="bi bi-clipboard-check"></i>
+                    Órdenes de Trabajo del Proyecto
+                </h3>
+                
+                <div class="row">
+                    {% for work_order in project_work_orders %}
+                    <div class="col-lg-12 col-md-12 mb-3">
+                        <div class="worker-card">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <div class="worker-name">
+                                        <i class="bi bi-clipboard-data me-2 text-warning"></i>
+                                        {{ work_order.title }}
+                                    </div>
+                                    
+                                    <div class="contact-info mb-2">
+                                        <strong>ID:</strong> {{ work_order.id }}
+                                        {% if work_order.company %}
+                                            <span class="ms-3">
+                                                <strong>Empresa:</strong> {{ work_order.company.name }}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="contact-info mb-2">
+                                        {% if work_order.assigned_to %}
+                                            <strong>Asignado a:</strong> {{ work_order.assigned_to.get_full_name|default:work_order.assigned_to.username }}
+                                        {% else %}
+                                            <strong>Estado:</strong> Sin asignar
+                                        {% endif %}
+                                        <span class="ms-3">
+                                            <strong>Creado:</strong> {{ work_order.created_at|date:"d/m/Y" }}
+                                        </span>
+                                    </div>
+                                    
+                                    {% if work_order.estimated_hours %}
+                                    <div class="contact-info mb-2">
+                                        <strong>Horas estimadas:</strong> {{ work_order.estimated_hours }}h
+                                        {% if work_order.amount %}
+                                            <span class="ms-3">
+                                                <strong>Importe:</strong> ${{ work_order.amount }}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if work_order.description %}
+                                    <div class="contact-info">
+                                        <strong>Descripción:</strong> 
+                                        <span class="text-muted">
+                                            {% if work_order.description|length > 100 %}
+                                                {{ work_order.description|truncatechars:100 }}
+                                            {% else %}
+                                                {{ work_order.description }}
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="ms-3">
+                                    {% if work_order.status == 'draft' %}
+                                        <span class="badge bg-secondary">Borrador</span>
+                                    {% elif work_order.status == 'accepted' %}
+                                        <span class="badge bg-primary">Aceptado</span>
+                                    {% elif work_order.status == 'finished' %}
+                                        <span class="badge bg-success">Terminado</span>
+                                    {% endif %}
+                                    
+                                    {% if work_order.priority == 'urgent' %}
+                                        <span class="badge bg-danger ms-1">Urgente</span>
+                                    {% elif work_order.priority == 'high' %}
+                                        <span class="badge bg-warning ms-1">Alta</span>
+                                    {% elif work_order.priority == 'medium' %}
+                                        <span class="badge bg-info ms-1">Media</span>
+                                    {% elif work_order.priority == 'low' %}
+                                        <span class="badge bg-light text-dark ms-1">Baja</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                {% if project.work_orders.count > 10 %}
+                <div class="text-center mt-3">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Mostrando las 10 órdenes más recientes de {{ project.work_orders.count }} total
+                    </small>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            <!-- Footer -->
+            <div class="brand-footer">
+                <div class="mb-2">
+                    <i class="bi bi-shield-check text-primary me-2"></i>
+                    Generado por <strong>TicketProo</strong>
+                </div>
+                <small>
+                    Sistema de Gestión de Tickets y Proyectos
+                    <br>
+                    <i class="bi bi-calendar-date me-1"></i>
+                    Actualizado: {{ "now"|date:"d/m/Y H:i" }}
+                </small>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -197,7 +197,13 @@
                                                     </span>
                                                     <br>
                                                 {% endif %}
-                                                {% if not entry.project and not entry.ticket and not entry.work_order %}
+                                                {% if entry.task %}
+                                                    <span class="badge bg-info me-1">
+                                                        <i class="bi bi-list-task"></i> {{ entry.task.title }}
+                                                    </span>
+                                                    <br>
+                                                {% endif %}
+                                                {% if not entry.project and not entry.ticket and not entry.work_order and not entry.task %}
                                                     <span class="text-muted">Sin asignación específica</span>
                                                 {% endif %}
                                             </div>
@@ -243,6 +249,48 @@
                                     {% endfor %}
                                 </tbody>
                             </table>
+                            
+                            <!-- Controles de paginación -->
+                            {% if time_entries.has_other_pages %}
+                                <nav aria-label="Paginación del reporte diario" class="mt-4">
+                                    <ul class="pagination justify-content-center">
+                                        {% if time_entries.has_previous %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?{% if request.GET.user %}user={{ request.GET.user }}&{% endif %}{% if request.GET.fecha_inicio %}fecha_inicio={{ request.GET.fecha_inicio }}&{% endif %}{% if request.GET.fecha_fin %}fecha_fin={{ request.GET.fecha_fin }}&{% endif %}page={{ time_entries.previous_page_number }}" aria-label="Anterior">
+                                                    <span aria-hidden="true">&laquo;</span>
+                                                </a>
+                                            </li>
+                                        {% endif %}
+                                        
+                                        {% for num in time_entries.paginator.page_range %}
+                                            {% if time_entries.number == num %}
+                                                <li class="page-item active">
+                                                    <span class="page-link">{{ num }}</span>
+                                                </li>
+                                            {% elif num > time_entries.number|add:'-3' and num < time_entries.number|add:'3' %}
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?{% if request.GET.user %}user={{ request.GET.user }}&{% endif %}{% if request.GET.fecha_inicio %}fecha_inicio={{ request.GET.fecha_inicio }}&{% endif %}{% if request.GET.fecha_fin %}fecha_fin={{ request.GET.fecha_fin }}&{% endif %}page={{ num }}">{{ num }}</a>
+                                                </li>
+                                            {% endif %}
+                                        {% endfor %}
+                                        
+                                        {% if time_entries.has_next %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?{% if request.GET.user %}user={{ request.GET.user }}&{% endif %}{% if request.GET.fecha_inicio %}fecha_inicio={{ request.GET.fecha_inicio }}&{% endif %}{% if request.GET.fecha_fin %}fecha_fin={{ request.GET.fecha_fin }}&{% endif %}page={{ time_entries.next_page_number }}" aria-label="Siguiente">
+                                                    <span aria-hidden="true">&raquo;</span>
+                                                </a>
+                                            </li>
+                                        {% endif %}
+                                    </ul>
+                                </nav>
+                                
+                                <!-- Información de la paginación -->
+                                <div class="text-center text-muted mt-2">
+                                    <small>
+                                        Mostrando {{ time_entries.start_index }} - {{ time_entries.end_index }} de {{ time_entries.paginator.count }} registros
+                                    </small>
+                                </div>
+                            {% endif %}
                         </div>
                     {% else %}
                         <div class="text-center py-5">

@@ -136,6 +136,14 @@ class Project(models.Model):
     )
     created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
+    public_share_token = models.CharField(
+        max_length=64,
+        unique=True,
+        blank=True,
+        null=True,
+        verbose_name='Token de Compartir Público',
+        help_text='Token único para compartir información del proyecto públicamente'
+    )
     
     class Meta:
         ordering = ['-created_at', 'name']
@@ -178,6 +186,99 @@ class Project(models.Model):
         """Verifica si el usuario puede eliminar este proyecto"""
         from .utils import is_agent
         return is_agent(user) or user == self.created_by
+    
+    def generate_public_share_token(self):
+        """Genera un token único para compartir el proyecto públicamente"""
+        if not self.public_share_token:
+            import secrets
+            self.public_share_token = secrets.token_urlsafe(32)
+            self.save()
+        return self.public_share_token
+    
+    def get_public_share_url(self):
+        """Obtiene la URL pública para compartir el proyecto"""
+        if not self.public_share_token:
+            self.generate_public_share_token()
+        return f"/public/project/{self.public_share_token}/"
+    
+    def get_tickets_count(self):
+        """Obtiene el total de tickets relacionados con este proyecto"""
+        from django.db.models import Q
+        
+        # Usar Q objects para obtener tickets únicos (directamente asignados O en time_entries)
+        tickets_ids = set()
+        
+        # Tickets directamente asignados al proyecto
+        direct_tickets = self.tickets.values_list('id', flat=True)
+        tickets_ids.update(direct_tickets)
+        
+        # Tickets de time_entries
+        time_entry_tickets = self.time_entries.filter(
+            ticket__isnull=False
+        ).values_list('ticket_id', flat=True)
+        tickets_ids.update(time_entry_tickets)
+        
+        return len(tickets_ids)
+    
+    def get_resolved_tickets_count(self):
+        """Obtiene el total de tickets resueltos relacionados con este proyecto"""
+        from django.db.models import Q
+        
+        # Usar Q objects para obtener tickets únicos resueltos
+        resolved_tickets_ids = set()
+        
+        # Tickets directamente asignados y resueltos
+        direct_resolved = self.tickets.filter(
+            status__in=['resolved', 'closed']
+        ).values_list('id', flat=True)
+        resolved_tickets_ids.update(direct_resolved)
+        
+        # Tickets resueltos de time_entries
+        time_entry_resolved = self.time_entries.filter(
+            ticket__isnull=False,
+            ticket__status__in=['resolved', 'closed']
+        ).values_list('ticket_id', flat=True)
+        resolved_tickets_ids.update(time_entry_resolved)
+        
+        return len(resolved_tickets_ids)
+    
+    def get_completed_work_orders_count(self):
+        """Obtiene el total de órdenes de trabajo completadas relacionadas con este proyecto"""
+        # Contar órdenes directamente asignadas y completadas
+        direct_completed = self.work_orders.filter(status='finished').count()
+        
+        # Contar órdenes completadas de time_entries
+        time_entry_completed = self.time_entries.filter(
+            work_order__isnull=False,
+            work_order__status='finished'
+        ).values('work_order').distinct().count()
+        
+        # Usar set para eliminar duplicados
+        completed_orders_ids = set()
+        
+        # Órdenes directamente asignadas y completadas
+        direct_orders = self.work_orders.filter(
+            status='finished'
+        ).values_list('id', flat=True)
+        completed_orders_ids.update(direct_orders)
+        
+        # Órdenes completadas de time_entries
+        time_entry_orders = self.time_entries.filter(
+            work_order__isnull=False,
+            work_order__status='finished'
+        ).values_list('work_order_id', flat=True)
+        completed_orders_ids.update(time_entry_orders)
+        
+        return len(completed_orders_ids)
+    
+    def get_project_workers(self):
+        """Obtiene los usuarios que han trabajado en este proyecto con sus datos de contacto"""
+        from django.db.models import Q
+        workers = User.objects.filter(
+            time_entries__project=self
+        ).distinct().select_related('profile')
+        
+        return workers
     
     def get_total_cost(self):
         """Calcula el coste total del proyecto basado en las horas trabajadas y el coste por hora de cada empleado"""
@@ -257,6 +358,15 @@ class Ticket(models.Model):
         related_name='tickets',
         verbose_name='Empresa/Cliente',
         help_text='Empresa o cliente asociado al ticket'
+    )
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='tickets',
+        verbose_name='Proyecto',
+        help_text='Proyecto asociado al ticket (opcional)'
     )
     priority = models.CharField(
         max_length=10, 
@@ -574,6 +684,14 @@ class UserProfile(models.Model):
         help_text='Coste interno por hora de trabajo (€)'
     )
     
+    # Token para acceso público a tareas
+    public_token = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        verbose_name='Token público',
+        help_text='Token único para acceso público a tareas'
+    )
+    
     created_at = models.DateTimeField(
         default=timezone.now,
         verbose_name='Fecha de creación'
@@ -662,6 +780,12 @@ class UserProfile(models.Model):
             return self.user.first_name
         else:
             return self.user.username
+
+    def regenerate_token(self):
+        """Regenera el token público"""
+        self.public_token = uuid.uuid4()
+        self.save()
+        return self.public_token
 
 
 @receiver(post_save, sender=User)
@@ -808,6 +932,15 @@ class TimeEntry(models.Model):
         blank=True,
         help_text='Orden de trabajo en la que se trabajará (opcional)'
     )
+    task = models.ForeignKey(
+        'Task',
+        on_delete=models.CASCADE,
+        related_name='time_entries',
+        verbose_name='Tarea',
+        null=True,
+        blank=True,
+        help_text='Tarea en la que se trabajará (opcional)'
+    )
     fecha_entrada = models.DateTimeField(
         verbose_name='Fecha y hora de entrada'
     )
@@ -903,7 +1036,7 @@ class TimeEntry(models.Model):
         return cls.objects.filter(user=user, fecha_salida__isnull=True).first()
     
     @classmethod
-    def create_entry(cls, user, project=None, ticket=None, work_order=None, notas_entrada=None):
+    def create_entry(cls, user, project=None, ticket=None, work_order=None, task=None, notas_entrada=None):
         """Crea un nuevo registro de entrada"""
         from .utils import is_agent
         if not is_agent(user):
@@ -919,6 +1052,7 @@ class TimeEntry(models.Model):
             project=project,
             ticket=ticket,
             work_order=work_order,
+            task=task,
             fecha_entrada=timezone.now(),
             notas=notas_entrada or ''
         )
@@ -1264,6 +1398,15 @@ class WorkOrder(models.Model):
         verbose_name='Empresa',
         help_text='Empresa a la que se dirige la orden de trabajo'
     )
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='work_orders',
+        verbose_name='Proyecto',
+        help_text='Proyecto asociado a la orden de trabajo (opcional)'
+    )
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
@@ -1585,3 +1728,114 @@ class Task(models.Model):
         if self.due_date and self.status not in ['completed', 'cancelled']:
             return timezone.now() > self.due_date
         return False
+
+
+class DailyTaskSession(models.Model):
+    """Modelo para gestionar sesiones diarias de tareas por usuario"""
+    
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='daily_task_sessions',
+        verbose_name='Usuario'
+    )
+    date = models.DateField(
+        verbose_name='Fecha de la sesión'
+    )
+    notes = models.TextField(
+        blank=True,
+        verbose_name='Notas del día',
+        help_text='Notas generales sobre el plan del día'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Creado en'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Actualizado en'
+    )
+    
+    class Meta:
+        ordering = ['-created_at', '-date']
+        verbose_name = 'Gestión de Tareas'
+        verbose_name_plural = 'Gestiones de Tareas'
+    
+    def __str__(self):
+        return f'{self.user.username} - {self.date} ({self.created_at.strftime("%H:%M")})'
+    
+    def get_total_tasks(self):
+        """Retorna el total de tareas en esta sesión"""
+        return self.daily_task_items.count()
+    
+    def get_completed_tasks(self):
+        """Retorna las tareas completadas en esta sesión"""
+        return self.daily_task_items.filter(completed=True).count()
+    
+    def get_pending_tasks(self):
+        """Retorna las tareas pendientes en esta sesión"""
+        return self.daily_task_items.filter(completed=False).count()
+    
+    def get_completion_percentage(self):
+        """Retorna el porcentaje de completitud"""
+        total = self.get_total_tasks()
+        if total == 0:
+            return 0
+        return round((self.get_completed_tasks() / total) * 100, 1)
+
+
+class DailyTaskItem(models.Model):
+    """Modelo para items de tareas dentro de una sesión diaria"""
+    
+    session = models.ForeignKey(
+        DailyTaskSession,
+        on_delete=models.CASCADE,
+        related_name='daily_task_items',
+        verbose_name='Sesión diaria'
+    )
+    task = models.ForeignKey(
+        Task,
+        on_delete=models.CASCADE,
+        related_name='daily_items',
+        verbose_name='Tarea'
+    )
+    completed = models.BooleanField(
+        default=False,
+        verbose_name='Completada'
+    )
+    completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Completada en'
+    )
+    notes = models.TextField(
+        blank=True,
+        verbose_name='Notas específicas',
+        help_text='Notas específicas sobre el trabajo en esta tarea'
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Orden'
+    )
+    
+    class Meta:
+        ordering = ['order', 'task__priority']
+        unique_together = ['session', 'task']
+        verbose_name = 'Item de Tarea Diaria'
+        verbose_name_plural = 'Items de Tareas Diarias'
+    
+    def __str__(self):
+        status = "✓" if self.completed else "○"
+        return f'{status} {self.task.title} - {self.session.date}'
+    
+    def mark_completed(self):
+        """Marca el item como completado"""
+        self.completed = True
+        self.completed_at = timezone.now()
+        self.save()
+    
+    def mark_pending(self):
+        """Marca el item como pendiente"""
+        self.completed = False
+        self.completed_at = None
+        self.save()

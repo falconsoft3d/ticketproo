@@ -29,6 +29,7 @@ urlpatterns = [
     path('projects/<int:project_id>/', views.project_detail, name='project_detail'),
     path('projects/<int:project_id>/edit/', views.project_edit, name='project_edit'),
     path('projects/<int:project_id>/delete/', views.project_delete, name='project_delete'),
+    path('projects/<int:project_id>/generate-public-token/', views.project_generate_public_token, name='project_generate_public_token'),
     
     # URLs de adjuntos
     path('attachments/<int:attachment_id>/download/', views.download_attachment_view, name='download_attachment'),
@@ -127,4 +128,24 @@ urlpatterns = [
     path('tasks/<int:pk>/edit/', views.task_edit_view, name='task_edit'),
     path('tasks/<int:pk>/delete/', views.task_delete_view, name='task_delete'),
     path('tasks/<int:pk>/toggle-status/', views.task_toggle_status_view, name='task_toggle_status'),
+    
+    # URLs de control diario de tareas
+    path('task-control/', views.task_control_dashboard, name='task_control_dashboard'),
+    path('task-control/<int:pk>/complete/', views.task_control_complete, name='task_control_complete'),
+    path('task-control/<int:pk>/start/', views.task_control_start, name='task_control_start'),
+    path('task-control/<int:pk>/pause/', views.task_control_pause, name='task_control_pause'),
+    
+    # URLs de gestión diaria de tareas
+    path('daily-tasks/', views.daily_task_management, name='daily_task_management'),
+    path('daily-tasks/create/', views.create_task_session, name='create_task_session'),
+    path('daily-tasks/view/<int:session_id>/', views.view_task_session, name='view_task_session'),
+    path('daily-tasks/delete/<int:session_id>/', views.delete_task_session, name='delete_task_session'),
+    path('daily-tasks/toggle/<int:item_id>/', views.toggle_daily_task_completion, name='toggle_daily_task_completion'),
+    path('daily-tasks/history/', views.daily_task_history, name='daily_task_history'),
+    
+    # URLs públicas para gestión de tareas (sin autenticación)
+    path('public/tasks/<uuid:token>/', views.public_task_view, name='public_task_view'),
+    
+    # URL pública para información del proyecto (sin autenticación)
+    path('public/project/<str:token>/', views.public_project_view, name='public_project_view'),
 ]

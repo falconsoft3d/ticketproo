@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block title %}Eliminar Gestión de Tareas - TicketProo{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0">
+                    <i class="bi bi-exclamation-triangle"></i> 
+                    Confirmar Eliminación
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <strong>¡Atención!</strong> Esta acción no se puede deshacer.
+                </div>
+                
+                <p class="lead">¿Estás seguro de que deseas eliminar esta gestión de tareas?</p>
+                
+                <div class="card bg-light mb-4">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <i class="bi bi-calendar-event"></i> 
+                            {{ session.date|date:"l, d \d\e F \d\e Y" }}
+                            <small class="text-muted">- {{ session.created_at|date:"H:i" }}</small>
+                        </h6>
+                        
+                        <div class="mb-2">
+                            <span class="badge bg-primary">
+                                <i class="bi bi-person-fill"></i> 
+                                {{ session.user.get_full_name|default:session.user.username }}
+                            </span>
+                        </div>
+                        
+                        {% if session.notes %}
+                        <p class="text-muted mb-2">
+                            <strong>Notas:</strong> {{ session.notes }}
+                        </p>
+                        {% endif %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    <i class="bi bi-list-check"></i> 
+                                    {{ session.get_total_tasks }} tarea(s) total
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    <i class="bi bi-check-circle"></i> 
+                                    {{ session.get_completed_tasks }} completada(s)
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div class="progress mt-2" style="height: 8px;">
+                            <div class="progress-bar {% if session.get_completion_percentage == 100 %}bg-success{% elif session.get_completion_percentage >= 70 %}bg-warning{% else %}bg-info{% endif %}" 
+                                 role="progressbar" 
+                                 style="width: {{ session.get_completion_percentage }}%"
+                                 aria-valuenow="{{ session.get_completion_percentage }}" 
+                                 aria-valuemin="0" aria-valuemax="100">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if session.daily_task_items.exists %}
+                <div class="mb-4">
+                    <h6 class="text-muted">Tareas que se eliminarán:</h6>
+                    <div class="list-group">
+                        {% for item in session.daily_task_items.all|slice:":5" %}
+                        <div class="list-group-item">
+                            <div class="d-flex align-items-center">
+                                {% if item.completed %}
+                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                {% else %}
+                                    <i class="bi bi-circle text-muted me-2"></i>
+                                {% endif %}
+                                <span class="{% if item.completed %}text-decoration-line-through text-muted{% endif %}">
+                                    {{ item.task.title }}
+                                </span>
+                                {% if item.completed_at %}
+                                    <small class="text-success ms-auto">
+                                        {{ item.completed_at|date:"H:i" }}
+                                    </small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                        
+                        {% if session.daily_task_items.count > 5 %}
+                        <div class="list-group-item bg-light">
+                            <small class="text-muted">
+                                <i class="bi bi-three-dots"></i> 
+                                Y {{ session.daily_task_items.count|add:"-5" }} tarea(s) más...
+                            </small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <div class="d-flex gap-3 justify-content-end">
+                        <a href="{% url 'daily_task_management' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Sí, Eliminar Gestión
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

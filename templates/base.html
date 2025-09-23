@@ -111,12 +111,20 @@
                                     <i class="bi bi-file-earmark-text"></i> Documentos
                                 </a>
                             </li>
+                            <li><hr class="dropdown-divider"></li>
                             <li>
-                                <a class="dropdown-item {% if 'task' in request.resolver_match.url_name %}active{% endif %}" 
+                                <a class="dropdown-item {% if request.resolver_match.url_name in 'task_list,task_create,task_detail,task_edit,task_delete,task_toggle_status,task_control_dashboard,task_control_complete,task_control_start,task_control_pause' %}active{% endif %}" 
                                    href="{% url 'task_list' %}">
                                     <i class="bi bi-list-task"></i> Tareas
                                 </a>
                             </li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name in 'daily_task_management,create_task_session,view_task_session,delete_task_session,toggle_daily_task_completion,daily_task_history' %}active{% endif %}" 
+                                   href="{% url 'daily_task_management' %}">
+                                    <i class="bi bi-journal-check"></i> Gestiones de Tareas
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
                             <li>
                                 <a class="dropdown-item {% if 'url_manager' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'url_manager_list' %}">
@@ -274,5 +282,8 @@
             updateFavicon(false);
         {% endif %}
     </script>
+    
+    {% block extra_js %}
+    {% endblock %}
 </body>
 </html>

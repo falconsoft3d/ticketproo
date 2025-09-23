@@ -37,6 +37,10 @@
                         </div>
                         
                         <div class="mb-4">
+                            {% bootstrap_field form.task %}
+                        </div>
+                        
+                        <div class="mb-4">
                             {% bootstrap_field form.notas_entrada %}
                         </div>
                         
@@ -54,7 +58,7 @@
                         <small>
                             <i class="bi bi-info-circle"></i>
                             Al hacer clic en "Iniciar Jornada" se registrará tu hora de entrada. 
-                            Todos los campos son opcionales: proyecto, ticket, orden de trabajo.
+                            Todos los campos son opcionales: proyecto, ticket, orden de trabajo y tarea.
                             Puedes modificar estos valores posteriormente.
                             Asegúrate de finalizar tu jornada cuando termines de trabajar.
                         </small>

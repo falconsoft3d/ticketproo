@@ -287,6 +287,64 @@
             </div>
         </div>
 
+        <!-- Acceso Público a Tareas -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-globe"></i> Acceso Público a Tareas
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <h6><i class="bi bi-info-circle"></i> ¿Qué es esto?</h6>
+                    <p class="mb-0 small">
+                        Este enlace te permite acceder a tus tareas asignadas y crear gestiones de tareas 
+                        sin necesidad de iniciar sesión. Ideal para acceso rápido desde dispositivos móviles.
+                    </p>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">
+                        <i class="bi bi-link-45deg"></i> Tu enlace personal
+                    </label>
+                    <div class="input-group">
+                        <input type="url" 
+                               class="form-control form-control-sm" 
+                               value="{{ public_task_url }}" 
+                               readonly 
+                               id="publicTaskUrl">
+                        <button class="btn btn-outline-secondary btn-sm" 
+                                type="button" 
+                                onclick="copyToClipboard('publicTaskUrl')"
+                                title="Copiar enlace">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+                    <small class="text-muted">
+                        Comparte este enlace solo con personas de confianza
+                    </small>
+                </div>
+                
+                <div class="d-flex gap-2">
+                    <a href="{{ public_task_url }}" 
+                       target="_blank" 
+                       class="btn btn-success btn-sm">
+                        <i class="bi bi-box-arrow-up-right"></i> Probar Enlace
+                    </a>
+                    
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" 
+                                name="regenerate_token" 
+                                class="btn btn-warning btn-sm"
+                                onclick="return confirm('¿Estás seguro? El enlace anterior dejará de funcionar.')">
+                            <i class="bi bi-arrow-clockwise"></i> Regenerar Enlace
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <!-- Enlaces Rápidos -->
         <div class="card mt-3">
             <div class="card-header">
@@ -318,4 +376,32 @@
         </div>
     </div>
 </div>
+
+<script>
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    element.select();
+    element.setSelectionRange(0, 99999); // Para móviles
+    
+    try {
+        document.execCommand('copy');
+        
+        // Mostrar feedback visual
+        const button = element.nextElementSibling;
+        const originalIcon = button.innerHTML;
+        button.innerHTML = '<i class="bi bi-check"></i>';
+        button.classList.remove('btn-outline-secondary');
+        button.classList.add('btn-success');
+        
+        setTimeout(() => {
+            button.innerHTML = originalIcon;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-secondary');
+        }, 2000);
+        
+    } catch (err) {
+        alert('Error al copiar: ' + err);
+    }
+}
+</script>
 {% endblock %}

@@ -67,18 +67,51 @@
                     <div class="row">
                         <div class="col-md-12 mb-3">
                             <label class="form-label">{{ form.assigned_users.label }}</label>
-                            <div class="row">
-                                {% for user in form.assigned_users %}
-                                <div class="col-md-6 col-lg-4 mb-2">
-                                    <div class="form-check">
-                                        {{ user.tag }}
-                                        <label class="form-check-label" for="{{ user.id_for_label }}">
-                                            {{ user.choice_label }}
-                                        </label>
-                                    </div>
+                            
+                            <!-- Selector de usuarios -->
+                            <div class="mb-3">
+                                <div class="input-group">
+                                    <select class="form-select" id="user-selector">
+                                        <option value="">Seleccionar usuario para agregar...</option>
+                                        {% for user in form.assigned_users.field.queryset %}
+                                        <option value="{{ user.id }}" 
+                                                data-username="{{ user.username }}" 
+                                                data-fullname="{{ user.get_full_name }}"
+                                                data-email="{{ user.email }}">
+                                            {{ user.username }}
+                                            {% if user.get_full_name %}
+                                                - {{ user.get_full_name }}
+                                            {% endif %}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="button" class="btn btn-outline-primary" id="add-user-btn">
+                                        <i class="bi bi-plus-circle"></i> Agregar
+                                    </button>
                                 </div>
+                            </div>
+                            
+                            <!-- Área de usuarios asignados como etiquetas -->
+                            <div class="border p-3 rounded bg-light">
+                                <div id="assigned-users-tags" class="d-flex flex-wrap gap-2">
+                                    <!-- Las etiquetas se agregarán aquí dinámicamente -->
+                                </div>
+                                <div id="no-users-message" class="text-center text-muted">
+                                    <i class="bi bi-info-circle"></i> No hay usuarios asignados. Usa el selector arriba para agregar usuarios.
+                                </div>
+                            </div>
+                            
+                            <!-- Campos hidden para enviar al servidor -->
+                            <div style="display: none;">
+                                {% for user in form.assigned_users.field.queryset %}
+                                <input type="checkbox" 
+                                       name="assigned_users" 
+                                       value="{{ user.id }}" 
+                                       id="id_assigned_users_{{ user.id }}"
+                                       {% if user in task.assigned_users.all %}checked{% endif %}>
                                 {% endfor %}
                             </div>
+                            
                             {% if form.assigned_users.errors %}
                                 <div class="invalid-feedback d-block">{{ form.assigned_users.errors.0 }}</div>
                             {% endif %}
@@ -106,4 +139,207 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const userSelector = document.getElementById('user-selector');
+    const addUserBtn = document.getElementById('add-user-btn');
+    const assignedUsersContainer = document.getElementById('assigned-users-tags');
+    const noUsersMessage = document.getElementById('no-users-message');
+    
+    // Función para crear una etiqueta de usuario
+    function createUserTag(userId, username, fullname, email) {
+        const tag = document.createElement('span');
+        tag.className = 'badge bg-primary d-flex align-items-center gap-2 p-2';
+        tag.style.fontSize = '0.9em';
+        tag.dataset.userId = userId;
+        
+        const userInfo = document.createElement('span');
+        userInfo.innerHTML = `
+            <strong>${username}</strong>
+            ${fullname ? `<br><small>${fullname}</small>` : ''}
+            ${email ? `<br><small class="text-light">${email}</small>` : ''}
+        `;
+        
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'btn-close btn-close-white btn-sm';
+        removeBtn.setAttribute('aria-label', 'Remover usuario');
+        removeBtn.onclick = function() {
+            removeUser(userId);
+        };
+        
+        tag.appendChild(userInfo);
+        tag.appendChild(removeBtn);
+        
+        return tag;
+    }
+    
+    // Función para agregar usuario
+    function addUser() {
+        const selectedOption = userSelector.options[userSelector.selectedIndex];
+        if (!selectedOption.value) return;
+        
+        const userId = selectedOption.value;
+        const username = selectedOption.dataset.username;
+        const fullname = selectedOption.dataset.fullname;
+        const email = selectedOption.dataset.email;
+        
+        // Verificar si el usuario ya está asignado
+        if (document.querySelector(`[data-user-id="${userId}"]`)) {
+            alert('Este usuario ya está asignado a la tarea.');
+            return;
+        }
+        
+        // Crear y agregar la etiqueta
+        const userTag = createUserTag(userId, username, fullname, email);
+        assignedUsersContainer.appendChild(userTag);
+        
+        // Marcar el checkbox correspondiente
+        const checkbox = document.querySelector(`input[name="assigned_users"][value="${userId}"]`);
+        if (checkbox) {
+            checkbox.checked = true;
+            console.log(`Checkbox marcado para usuario ${userId}:`, checkbox.checked);
+        } else {
+            console.error(`No se encontró checkbox para usuario ${userId}`);
+        }
+        
+        // Remover la opción del selector
+        selectedOption.remove();
+        
+        // Resetear selector
+        userSelector.selectedIndex = 0;
+        
+        // Actualizar visibilidad del mensaje
+        updateNoUsersMessage();
+    }
+    
+    // Función para remover usuario
+    function removeUser(userId) {
+        // Remover etiqueta
+        const tag = document.querySelector(`[data-user-id="${userId}"]`);
+        if (tag) {
+            const username = tag.querySelector('strong').textContent;
+            
+            // Desmarcar checkbox
+            const checkbox = document.querySelector(`input[name="assigned_users"][value="${userId}"]`);
+            if (checkbox) {
+                checkbox.checked = false;
+                console.log(`Checkbox desmarcado para usuario ${userId}:`, checkbox.checked);
+            } else {
+                console.error(`No se encontró checkbox para desmarcar usuario ${userId}`);
+            }
+            
+            // Volver a agregar la opción al selector
+            const existingOption = userSelector.querySelector(`option[value="${userId}"]`);
+            if (!existingOption) {
+                // Buscar información del usuario en el queryset original
+                const userInfo = document.querySelector(`input[name="assigned_users"][value="${userId}"]`);
+                if (userInfo) {
+                    const option = document.createElement('option');
+                    option.value = userId;
+                    option.dataset.username = username;
+                    option.textContent = username;
+                    
+                    // Insertar la opción en orden alfabético
+                    let inserted = false;
+                    for (let i = 1; i < userSelector.options.length; i++) {
+                        if (userSelector.options[i].textContent > username) {
+                            userSelector.insertBefore(option, userSelector.options[i]);
+                            inserted = true;
+                            break;
+                        }
+                    }
+                    if (!inserted) {
+                        userSelector.appendChild(option);
+                    }
+                }
+            }
+            
+            // Remover etiqueta del DOM
+            tag.remove();
+        }
+        
+        // Actualizar visibilidad del mensaje
+        updateNoUsersMessage();
+    }
+    
+    // Función para actualizar el mensaje de "no hay usuarios"
+    function updateNoUsersMessage() {
+        const hasUsers = assignedUsersContainer.children.length > 0;
+        noUsersMessage.style.display = hasUsers ? 'none' : 'block';
+    }
+    
+    // Event listeners
+    addUserBtn.addEventListener('click', addUser);
+    
+    // Permitir agregar con Enter en el selector
+    userSelector.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addUser();
+        }
+    });
+    
+    // Inicializar usuarios ya asignados al cargar la página
+    function initializeAssignedUsers() {
+        console.log('Inicializando usuarios asignados...');
+        
+        // Debug: mostrar todos los checkboxes
+        const allCheckboxes = document.querySelectorAll('input[name="assigned_users"]');
+        console.log('Checkboxes encontrados:', allCheckboxes.length);
+        allCheckboxes.forEach(cb => {
+            console.log(`Checkbox value: ${cb.value}, checked: ${cb.checked}, type: ${cb.type}`);
+        });
+        
+        // Procesar usuarios ya marcados (asignados previamente)
+        const checkedCheckboxes = document.querySelectorAll('input[type="checkbox"][name="assigned_users"]:checked');
+        console.log('Checkboxes marcados encontrados:', checkedCheckboxes.length);
+        
+        checkedCheckboxes.forEach(checkbox => {
+            const userId = checkbox.value;
+            const option = userSelector.querySelector(`option[value="${userId}"]`);
+            if (option) {
+                const username = option.dataset.username || option.textContent.split(' - ')[0];
+                const fullname = option.dataset.fullname || '';
+                const email = option.dataset.email || '';
+                
+                console.log(`Inicializando usuario ya asignado: ${username} (ID: ${userId})`);
+                
+                // Crear etiqueta para usuario ya asignado
+                const userTag = createUserTag(userId, username, fullname, email);
+                assignedUsersContainer.appendChild(userTag);
+                
+                // Remover del selector para evitar duplicados
+                option.remove();
+            }
+        });
+        
+        updateNoUsersMessage();
+    }
+    
+    // Agregar debug al envío del formulario
+    document.querySelector('form').addEventListener('submit', function(e) {
+        console.log('=== ENVIANDO FORMULARIO ===');
+        const checkboxes = document.querySelectorAll('input[name="assigned_users"]');
+        const checkedCheckboxes = document.querySelectorAll('input[name="assigned_users"]:checked');
+        
+        console.log(`Total checkboxes: ${checkboxes.length}`);
+        console.log(`Checkboxes marcados: ${checkedCheckboxes.length}`);
+        
+        checkedCheckboxes.forEach(cb => {
+            console.log(`Usuario ${cb.value} marcado para envío`);
+        });
+        
+        if (checkedCheckboxes.length === 0) {
+            console.warn('¡ADVERTENCIA! No hay usuarios seleccionados para enviar');
+        }
+    });
+    
+    // Inicializar al cargar
+    initializeAssignedUsers();
+});
+</script>
 {% endblock %}

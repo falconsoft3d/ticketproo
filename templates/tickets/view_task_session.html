@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+
+{% block title %}Checklist - {{ session.date|date:"d/m/Y" }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>
+                <i class="bi bi-check-square"></i> Checklist de Tareas
+                <small class="text-muted">{{ session.date|date:"l, d \d\e F \d\e Y" }}</small>
+            </h2>
+            <div class="d-flex gap-2">
+                <a href="{% url 'daily_task_management' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver a la Lista
+                </a>
+                {% if session.user == request.user or request.user.is_superuser %}
+                <a href="{% url 'delete_task_session' session.id %}" class="btn btn-outline-danger">
+                    <i class="bi bi-trash"></i> Eliminar Gestión
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Información de la sesión -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1">Progreso de la Gestión</h5>
+                        <small class="text-muted">
+                            {{ session.get_completed_tasks }} de {{ session.get_total_tasks }} tareas completadas
+                        </small>
+                    </div>
+                    <div class="text-end">
+                        <div class="display-6 text-primary">{{ session.get_completion_percentage }}%</div>
+                    </div>
+                </div>
+                {% if session.get_total_tasks > 0 %}
+                <div class="progress mt-3" style="height: 10px;">
+                    <div class="progress-bar {% if session.get_completion_percentage == 100 %}bg-success{% elif session.get_completion_percentage >= 70 %}bg-warning{% else %}bg-info{% endif %}" 
+                         role="progressbar" 
+                         style="width: {{ session.get_completion_percentage }}%"
+                         aria-valuenow="{{ session.get_completion_percentage }}" 
+                         aria-valuemin="0" aria-valuemax="100">
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="bi bi-clock display-6 text-muted"></i>
+                <p class="mt-2 mb-1"><strong>Creada:</strong></p>
+                <p class="text-muted">{{ session.created_at|date:"d/m/Y H:i" }}</p>
+                {% if session.updated_at != session.created_at %}
+                <p class="mb-1"><strong>Última actualización:</strong></p>
+                <p class="text-muted">{{ session.updated_at|date:"d/m/Y H:i" }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notas de la gestión -->
+{% if session.notes %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-light">
+            <h6 class="alert-heading">
+                <i class="bi bi-journal-text"></i> Notas de esta gestión:
+            </h6>
+            <p class="mb-0">{{ session.notes }}</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Lista de tareas (Checklist) -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-list-check"></i> Lista de Tareas
+                    <span class="badge bg-primary ms-2">{{ session_items.count }} tareas</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if session_items %}
+                    <div class="list-group">
+                        {% for item in session_items %}
+                        <div class="list-group-item {% if item.completed %}list-group-item-success{% endif %}">
+                            <div class="d-flex align-items-start">
+                                <!-- Checkbox para marcar completada -->
+                                <form method="post" action="{% url 'toggle_daily_task_completion' item.id %}" class="me-3">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-link p-0 border-0" 
+                                            title="{% if item.completed %}Marcar como pendiente{% else %}Marcar como completada{% endif %}">
+                                        {% if item.completed %}
+                                            <i class="bi bi-check-square-fill text-success fs-3"></i>
+                                        {% else %}
+                                            <i class="bi bi-square text-muted fs-3"></i>
+                                        {% endif %}
+                                    </button>
+                                </form>
+                                
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-2 {% if item.completed %}text-decoration-line-through text-muted{% endif %}">
+                                        <a href="{% url 'task_detail' item.task.pk %}" 
+                                           class="text-decoration-none {% if item.completed %}text-muted{% endif %}"
+                                           target="_blank">
+                                            {{ item.task.title }}
+                                            <i class="bi bi-box-arrow-up-right small"></i>
+                                        </a>
+                                    </h6>
+                                    
+                                    {% if item.task.description %}
+                                    <p class="mb-2 {% if item.completed %}text-muted{% endif %}">
+                                        {{ item.task.description|truncatechars:200 }}
+                                    </p>
+                                    {% endif %}
+                                    
+                                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                                        <span class="badge bg-{{ item.task.get_priority_color }}">
+                                            <i class="bi bi-exclamation-triangle"></i> {{ item.task.get_priority_display }}
+                                        </span>
+                                        <span class="badge bg-{{ item.task.get_status_color }}">
+                                            <i class="bi bi-circle-fill"></i> {{ item.task.get_status_display }}
+                                        </span>
+                                        
+                                        {% if item.task.due_date %}
+                                            <small class="text-muted">
+                                                <i class="bi bi-calendar"></i> 
+                                                Vence: {{ item.task.due_date|date:"d/m/Y" }}
+                                            </small>
+                                        {% endif %}
+                                        
+                                        {% if item.task.assigned_users.count > 1 %}
+                                            <small class="text-muted">
+                                                <i class="bi bi-people"></i> 
+                                                {{ item.task.assigned_users.count }} asignados
+                                            </small>
+                                        {% endif %}
+                                        
+                                        {% if item.completed_at %}
+                                            <small class="text-success">
+                                                <i class="bi bi-check-circle-fill"></i> 
+                                                Completada: {{ item.completed_at|date:"d/m/Y H:i" }}
+                                            </small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-list-check display-1"></i>
+                        <h5 class="mt-3">Esta gestión no tiene tareas</h5>
+                        <p>No había tareas asignadas cuando se creó esta gestión.</p>
+                    </div>
+                {% endif %}
+            </div>
+            {% if session_items %}
+            <div class="card-footer text-muted text-center">
+                <small>
+                    <i class="bi bi-info-circle"></i> 
+                    Haz clic en los cuadrados para marcar las tareas como completadas
+                </small>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Resumen de estadísticas -->
+{% if session_items %}
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-check-circle display-6 text-success"></i>
+                <h5 class="mt-2">{{ session.get_completed_tasks }}</h5>
+                <small class="text-muted">Tareas Completadas</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-clock display-6 text-warning"></i>
+                <h5 class="mt-2">{{ session.get_pending_tasks }}</h5>
+                <small class="text-muted">Tareas Pendientes</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Actualizar la página cada 30 segundos para reflejar cambios
+setTimeout(() => {
+    window.location.reload();
+}, 30000);
+
+// Confirmar antes de marcar como completada
+document.querySelectorAll('form button[type="submit"]').forEach(button => {
+    button.addEventListener('click', function(e) {
+        const isCompleted = this.querySelector('.bi-check-square-fill');
+        if (!isCompleted) {
+            // Si va a marcar como completada, no pedir confirmación
+            return true;
+        } else {
+            // Si va a desmarcar, pedir confirmación
+            if (!confirm('¿Seguro que quieres desmarcar esta tarea como completada?')) {
+                e.preventDefault();
+                return false;
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
