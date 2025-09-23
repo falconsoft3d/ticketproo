@@ -1477,3 +1477,111 @@ class WorkOrderAttachment(models.Model):
                 return f"{size:.1f} {unit}"
             size /= 1024
         return f"{size:.1f} TB"
+
+
+class Task(models.Model):
+    """Modelo para gestionar tareas que pueden ser asignadas a múltiples usuarios"""
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pendiente'),
+        ('in_progress', 'En Progreso'),
+        ('completed', 'Completada'),
+        ('cancelled', 'Cancelada'),
+    ]
+    
+    PRIORITY_CHOICES = [
+        ('low', 'Baja'),
+        ('medium', 'Media'),
+        ('high', 'Alta'),
+        ('urgent', 'Urgente'),
+    ]
+    
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título'
+    )
+    description = models.TextField(
+        verbose_name='Descripción'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        verbose_name='Estado'
+    )
+    priority = models.CharField(
+        max_length=20,
+        choices=PRIORITY_CHOICES,
+        default='medium',
+        verbose_name='Prioridad'
+    )
+    assigned_users = models.ManyToManyField(
+        User,
+        related_name='assigned_tasks',
+        blank=True,
+        verbose_name='Usuarios Asignados'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='created_tasks',
+        verbose_name='Creado por'
+    )
+    due_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de vencimiento'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de finalización'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Tarea'
+        verbose_name_plural = 'Tareas'
+    
+    def __str__(self):
+        return f'{self.title} - {self.get_status_display()}'
+    
+    def get_priority_color(self):
+        """Retorna el color CSS según la prioridad"""
+        colors = {
+            'low': 'success',
+            'medium': 'warning',
+            'high': 'danger',
+            'urgent': 'dark'
+        }
+        return colors.get(self.priority, 'secondary')
+    
+    def get_status_color(self):
+        """Retorna el color CSS según el estado"""
+        colors = {
+            'pending': 'secondary',
+            'in_progress': 'primary',
+            'completed': 'success',
+            'cancelled': 'danger'
+        }
+        return colors.get(self.status, 'secondary')
+    
+    def mark_as_completed(self):
+        """Marca la tarea como completada"""
+        self.status = 'completed'
+        self.completed_at = timezone.now()
+        self.save()
+    
+    def is_overdue(self):
+        """Verifica si la tarea está vencida"""
+        if self.due_date and self.status not in ['completed', 'cancelled']:
+            return timezone.now() > self.due_date
+        return False

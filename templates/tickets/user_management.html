@@ -109,6 +109,38 @@
                                 <span class="badge bg-danger">Inactivo</span>
                             {% endif %}
                         </td>
+                        <td>
+                            {% if user.current_entry %}
+                                <div class="d-flex flex-column gap-1">
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-clock"></i> Trabajando
+                                    </span>
+                                    {% if user.current_entry.ticket %}
+                                        <span class="badge bg-danger">
+                                            <i class="bi bi-tag"></i> Ticket #{{ user.current_entry.ticket.id }}
+                                        </span>
+                                        <small class="text-muted">{{ user.current_entry.ticket.title|truncatechars:30 }}</small>
+                                    {% elif user.current_entry.work_order %}
+                                        <span class="badge bg-warning">
+                                            <i class="bi bi-wrench"></i> OT #{{ user.current_entry.work_order.id }}
+                                        </span>
+                                        <small class="text-muted">{{ user.current_entry.work_order.title|truncatechars:30 }}</small>
+                                    {% elif user.current_entry.project %}
+                                        <span class="badge bg-info">
+                                            <i class="bi bi-folder"></i> {{ user.current_entry.project.name|truncatechars:30 }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-clock"></i> Sin asignación
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            {% else %}
+                                <span class="badge bg-light text-dark">
+                                    <i class="bi bi-pause"></i> Sin actividad
+                                </span>
+                            {% endif %}
+                        </td>
                         <td class="text-center">
                             <small class="text-muted">{{ user.profile.get_total_hours|floatformat:1 }}h</small>
                         </td>
