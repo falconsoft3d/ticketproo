@@ -4,6 +4,29 @@
 
 TicketProo es una plataforma web moderna desarrollada en Django que permite gestionar tickets de soporte de manera eficiente, con control de tiempo de trabajo, gestión empresarial y análisis financiero de proyectos.
 
+
+
+
+## Forma de actualizar
+```
+source ~/bin/activate
+cd ticketproo
+
+python manage.py makemigrations
+python manage.py migrate
+python manage.py setup_groups
+
+cp ~/ticketproo/ticket_system/settings.py ~/old_settings.py
+cp ~/old_settings.py ~/ticketproo/ticket_system/settings.py
+sudo systemctl daemon-reload
+
+python manage.py runserver 0.0.0.0:8000
+```
+
+
+
+
+
 ## 🚀 Características Principales
 
 ### 👥 Sistema de Roles
