@@ -1,0 +1,705 @@
+{% extends "base.html" %}
+{% load django_bootstrap5 %}
+
+{% block title %}Calculadora - Herramientas{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-calculator text-primary"></i>
+                        Calculadora
+                    </h1>
+                    <p class="text-muted mb-0">Calculadora científica con historial de operaciones</p>
+                </div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                        <li class="breadcrumb-item">Herramientas</li>
+                        <li class="breadcrumb-item active">Calculadora</li>
+                    </ol>
+                </nav>
+            </div>
+
+            <!-- Calculadora y Historial -->
+            <div class="row">
+                <!-- Calculadora -->
+                <div class="col-lg-8">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-calculator"></i>
+                                Calculadora Científica
+                            </h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <!-- Pantalla -->
+                            <div class="mb-4">
+                                <div class="calculator-screen">
+                                    <div class="screen-history" id="screenHistory"></div>
+                                    <div class="screen-current" id="screenCurrent">0</div>
+                                </div>
+                            </div>
+
+                            <!-- Botones de la calculadora -->
+                            <div class="calculator-buttons">
+                                <!-- Fila 1: Funciones científicas -->
+                                <div class="row g-2 mb-2">
+                                    <div class="col-2">
+                                        <button class="btn btn-outline-info btn-calc w-100" onclick="clearAll()">C</button>
+                                    </div>
+                                    <div class="col-2">
+                                        <button class="btn btn-outline-warning btn-calc w-100" onclick="clearEntry()">CE</button>
+                                    </div>
+                                    <div class="col-2">
+                                        <button class="btn btn-outline-secondary btn-calc w-100" onclick="backspace()">⌫</button>
+                                    </div>
+                                    <div class="col-2">
+                                        <button class="btn btn-outline-primary btn-calc w-100" onclick="appendOperation('/')">÷</button>
+                                    </div>
+                                    <div class="col-2">
+                                        <button class="btn btn-outline-success btn-calc w-100" onclick="scientificFunction('sqrt')">√</button>
+                                    </div>
+                                    <div class="col-2">
+                                        <button class="btn btn-outline-success btn-calc w-100" onclick="scientificFunction('pow')">x²</button>
+                                    </div>
+                                </div>
+
+                                <!-- Fila 2: Números y operaciones -->
+                                <div class="row g-2 mb-2">
+                                    <div class="col-2">
+                                        <button class="btn btn-light btn-calc w-100" onclick="appendNumber('7')">7</button>
+                                    </div>
+                                    <div class="col-2">
+                                        <button class="btn btn-light btn-calc w-100" onclick="appendNumber('8')">8</button>
+                                    </div>
+                                    <div class="col-2">
+                                        <button class="btn btn-light btn-calc w-100" onclick="appendNumber('9')">9</button>
+                                    </div>
+                                    <div class="col-2">
+                                        <button class="btn btn-outline-primary btn-calc w-100" onclick="appendOperation('*')">×</button>
+                                    </div>
+                                    <div class="col-2">
+                                        <button class="btn btn-outline-success btn-calc w-100" onclick="scientificFunction('sin')">sin</button>
+                                    </div>
+                                    <div class="col-2">
+                                        <button class="btn btn-outline-success btn-calc w-100" onclick="scientificFunction('cos')">cos</button>
+                                    </div>
+                                </div>
+
+                                <!-- Fila 3 -->
+                                <div class="row g-2 mb-2">
+                                    <div class="col-2">
+                                        <button class="btn btn-light btn-calc w-100" onclick="appendNumber('4')">4</button>
+                                    </div>
+                                    <div class="col-2">
+                                        <button class="btn btn-light btn-calc w-100" onclick="appendNumber('5')">5</button>
+                                    </div>
+                                    <div class="col-2">
+                                        <button class="btn btn-light btn-calc w-100" onclick="appendNumber('6')">6</button>
+                                    </div>
+                                    <div class="col-2">
+                                        <button class="btn btn-outline-primary btn-calc w-100" onclick="appendOperation('-')">−</button>
+                                    </div>
+                                    <div class="col-2">
+                                        <button class="btn btn-outline-success btn-calc w-100" onclick="scientificFunction('tan')">tan</button>
+                                    </div>
+                                    <div class="col-2">
+                                        <button class="btn btn-outline-success btn-calc w-100" onclick="scientificFunction('log')">log</button>
+                                    </div>
+                                </div>
+
+                                <!-- Fila 4 -->
+                                <div class="row g-2 mb-2">
+                                    <div class="col-2">
+                                        <button class="btn btn-light btn-calc w-100" onclick="appendNumber('1')">1</button>
+                                    </div>
+                                    <div class="col-2">
+                                        <button class="btn btn-light btn-calc w-100" onclick="appendNumber('2')">2</button>
+                                    </div>
+                                    <div class="col-2">
+                                        <button class="btn btn-light btn-calc w-100" onclick="appendNumber('3')">3</button>
+                                    </div>
+                                    <div class="col-2">
+                                        <button class="btn btn-outline-primary btn-calc w-100" onclick="appendOperation('+')">+</button>
+                                    </div>
+                                    <div class="col-2">
+                                        <button class="btn btn-outline-success btn-calc w-100" onclick="scientificFunction('ln')">ln</button>
+                                    </div>
+                                    <div class="col-2">
+                                        <button class="btn btn-outline-success btn-calc w-100" onclick="insertConstant('pi')">π</button>
+                                    </div>
+                                </div>
+
+                                <!-- Fila 5 -->
+                                <div class="row g-2 mb-2">
+                                    <div class="col-4">
+                                        <button class="btn btn-light btn-calc w-100" onclick="appendNumber('0')">0</button>
+                                    </div>
+                                    <div class="col-2">
+                                        <button class="btn btn-light btn-calc w-100" onclick="appendNumber('.')">.</button>
+                                    </div>
+                                    <div class="col-2">
+                                        <button class="btn btn-success btn-calc w-100" onclick="calculate()">=</button>
+                                    </div>
+                                    <div class="col-2">
+                                        <button class="btn btn-outline-success btn-calc w-100" onclick="insertConstant('e')">e</button>
+                                    </div>
+                                    <div class="col-2">
+                                        <button class="btn btn-outline-secondary btn-calc w-100" onclick="toggleSign()">±</button>
+                                    </div>
+                                </div>
+
+                                <!-- Fila 6: Funciones adicionales -->
+                                <div class="row g-2">
+                                    <div class="col-2">
+                                        <button class="btn btn-outline-info btn-calc w-100" onclick="appendOperation('(')">(</button>
+                                    </div>
+                                    <div class="col-2">
+                                        <button class="btn btn-outline-info btn-calc w-100" onclick="appendOperation(')')">)</button>
+                                    </div>
+                                    <div class="col-2">
+                                        <button class="btn btn-outline-success btn-calc w-100" onclick="scientificFunction('factorial')">n!</button>
+                                    </div>
+                                    <div class="col-2">
+                                        <button class="btn btn-outline-success btn-calc w-100" onclick="scientificFunction('percent')">%</button>
+                                    </div>
+                                    <div class="col-2">
+                                        <button class="btn btn-outline-success btn-calc w-100" onclick="scientificFunction('inverse')">1/x</button>
+                                    </div>
+                                    <div class="col-2">
+                                        <button class="btn btn-outline-success btn-calc w-100" onclick="scientificFunction('abs')">|x|</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Historial -->
+                <div class="col-lg-4">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-clock-history"></i>
+                                Historial
+                            </h5>
+                            <button class="btn btn-sm btn-outline-light" onclick="clearHistory()">
+                                <i class="bi bi-trash"></i> Limpiar
+                            </button>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="history-container" id="historyContainer">
+                                <div class="text-center p-4 text-muted">
+                                    <i class="bi bi-calculator display-6"></i>
+                                    <p class="mt-2 mb-0">Sin cálculos aún</p>
+                                    <small>Los resultados aparecerán aquí</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Información útil -->
+                    <div class="card mt-3 border-info">
+                        <div class="card-header bg-info bg-opacity-10">
+                            <h6 class="mb-0">
+                                <i class="bi bi-info-circle text-info"></i>
+                                Funciones disponibles
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-6">
+                                    <ul class="list-unstyled small">
+                                        <li><strong>Básicas:</strong> +, −, ×, ÷</li>
+                                        <li><strong>Potencias:</strong> x²</li>
+                                        <li><strong>Raíz:</strong> √x</li>
+                                        <li><strong>Trigonométricas:</strong> sin, cos, tan</li>
+                                    </ul>
+                                </div>
+                                <div class="col-6">
+                                    <ul class="list-unstyled small">
+                                        <li><strong>Logaritmos:</strong> log, ln</li>
+                                        <li><strong>Constantes:</strong> π, e</li>
+                                        <li><strong>Factorial:</strong> n!</li>
+                                        <li><strong>Porcentaje:</strong> %</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-lightbulb"></i>
+                                    Haz clic en cualquier resultado del historial para reutilizarlo.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.calculator-screen {
+    background: #000;
+    color: #00ff00;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: right;
+    font-family: 'Courier New', monospace;
+    border: 2px solid #333;
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.screen-history {
+    font-size: 0.8rem;
+    color: #888;
+    min-height: 20px;
+    opacity: 0.7;
+}
+
+.screen-current {
+    font-size: 1.8rem;
+    font-weight: bold;
+    line-height: 1.2;
+    word-break: break-all;
+}
+
+.btn-calc {
+    height: 50px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn-calc:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.btn-calc:active {
+    transform: translateY(0);
+}
+
+.history-container {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.history-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.history-item:hover {
+    background-color: #f8f9fa;
+}
+
+.history-item:last-child {
+    border-bottom: none;
+}
+
+.history-operation {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.history-result {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #333;
+}
+
+.history-time {
+    font-size: 0.75rem;
+    color: #999;
+    margin-top: 4px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .btn-calc {
+        height: 45px;
+        font-size: 1rem;
+    }
+    
+    .screen-current {
+        font-size: 1.4rem;
+    }
+}
+
+/* Scrollbar personalizado */
+.history-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.history-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.history-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 10px;
+}
+
+.history-container::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+</style>
+
+<script>
+// Variables globales
+let currentInput = '0';
+let previousInput = '';
+let operator = '';
+let waitingForNewInput = false;
+let history = [];
+
+// Elementos DOM
+const screenCurrent = document.getElementById('screenCurrent');
+const screenHistory = document.getElementById('screenHistory');
+const historyContainer = document.getElementById('historyContainer');
+
+// Cargar historial del localStorage
+function loadHistory() {
+    const savedHistory = localStorage.getItem('calculatorHistory');
+    if (savedHistory) {
+        history = JSON.parse(savedHistory);
+        updateHistoryDisplay();
+    }
+}
+
+// Guardar historial en localStorage
+function saveHistory() {
+    localStorage.setItem('calculatorHistory', JSON.stringify(history));
+}
+
+// Actualizar pantalla
+function updateScreen() {
+    screenCurrent.textContent = currentInput;
+    
+    if (previousInput && operator) {
+        screenHistory.textContent = `${previousInput} ${operator}`;
+    } else {
+        screenHistory.textContent = '';
+    }
+}
+
+// Agregar número
+function appendNumber(num) {
+    if (waitingForNewInput) {
+        currentInput = num;
+        waitingForNewInput = false;
+    } else {
+        currentInput = currentInput === '0' ? num : currentInput + num;
+    }
+    updateScreen();
+}
+
+// Agregar operación
+function appendOperation(op) {
+    if (previousInput && operator && !waitingForNewInput) {
+        calculate();
+    }
+    
+    previousInput = currentInput;
+    operator = op;
+    waitingForNewInput = true;
+    updateScreen();
+}
+
+// Limpiar todo
+function clearAll() {
+    currentInput = '0';
+    previousInput = '';
+    operator = '';
+    waitingForNewInput = false;
+    updateScreen();
+}
+
+// Limpiar entrada actual
+function clearEntry() {
+    currentInput = '0';
+    updateScreen();
+}
+
+// Retroceso
+function backspace() {
+    if (currentInput.length > 1) {
+        currentInput = currentInput.slice(0, -1);
+    } else {
+        currentInput = '0';
+    }
+    updateScreen();
+}
+
+// Cambiar signo
+function toggleSign() {
+    if (currentInput !== '0') {
+        currentInput = currentInput.startsWith('-') 
+            ? currentInput.slice(1) 
+            : '-' + currentInput;
+    }
+    updateScreen();
+}
+
+// Insertar constantes
+function insertConstant(constant) {
+    switch (constant) {
+        case 'pi':
+            currentInput = Math.PI.toString();
+            break;
+        case 'e':
+            currentInput = Math.E.toString();
+            break;
+    }
+    waitingForNewInput = true;
+    updateScreen();
+}
+
+// Funciones científicas
+function scientificFunction(func) {
+    const num = parseFloat(currentInput);
+    let result;
+    
+    try {
+        switch (func) {
+            case 'sqrt':
+                result = Math.sqrt(num);
+                break;
+            case 'pow':
+                result = Math.pow(num, 2);
+                break;
+            case 'sin':
+                result = Math.sin(num * Math.PI / 180); // Grados a radianes
+                break;
+            case 'cos':
+                result = Math.cos(num * Math.PI / 180);
+                break;
+            case 'tan':
+                result = Math.tan(num * Math.PI / 180);
+                break;
+            case 'log':
+                result = Math.log10(num);
+                break;
+            case 'ln':
+                result = Math.log(num);
+                break;
+            case 'factorial':
+                result = factorial(num);
+                break;
+            case 'percent':
+                result = num / 100;
+                break;
+            case 'inverse':
+                result = 1 / num;
+                break;
+            case 'abs':
+                result = Math.abs(num);
+                break;
+            default:
+                return;
+        }
+        
+        if (isNaN(result) || !isFinite(result)) {
+            throw new Error('Resultado inválido');
+        }
+        
+        // Agregar al historial
+        addToHistory(`${func}(${num})`, result);
+        
+        currentInput = result.toString();
+        waitingForNewInput = true;
+        updateScreen();
+        
+    } catch (error) {
+        currentInput = 'Error';
+        waitingForNewInput = true;
+        updateScreen();
+    }
+}
+
+// Factorial
+function factorial(n) {
+    if (n < 0 || n % 1 !== 0) throw new Error('Factorial solo para enteros no negativos');
+    if (n > 170) throw new Error('Número demasiado grande');
+    if (n === 0 || n === 1) return 1;
+    let result = 1;
+    for (let i = 2; i <= n; i++) {
+        result *= i;
+    }
+    return result;
+}
+
+// Calcular
+function calculate() {
+    if (!operator || !previousInput || waitingForNewInput) return;
+    
+    const prev = parseFloat(previousInput);
+    const current = parseFloat(currentInput);
+    let result;
+    
+    try {
+        switch (operator) {
+            case '+':
+                result = prev + current;
+                break;
+            case '-':
+                result = prev - current;
+                break;
+            case '*':
+                result = prev * current;
+                break;
+            case '/':
+                if (current === 0) throw new Error('División por cero');
+                result = prev / current;
+                break;
+            default:
+                return;
+        }
+        
+        if (isNaN(result) || !isFinite(result)) {
+            throw new Error('Resultado inválido');
+        }
+        
+        // Agregar al historial
+        const operation = `${previousInput} ${operator} ${currentInput}`;
+        addToHistory(operation, result);
+        
+        currentInput = result.toString();
+        previousInput = '';
+        operator = '';
+        waitingForNewInput = true;
+        updateScreen();
+        
+    } catch (error) {
+        currentInput = 'Error';
+        previousInput = '';
+        operator = '';
+        waitingForNewInput = true;
+        updateScreen();
+    }
+}
+
+// Agregar al historial
+function addToHistory(operation, result) {
+    const historyItem = {
+        operation: operation,
+        result: result,
+        timestamp: new Date().toLocaleTimeString()
+    };
+    
+    history.unshift(historyItem); // Agregar al inicio
+    
+    // Limitar historial a 50 elementos
+    if (history.length > 50) {
+        history = history.slice(0, 50);
+    }
+    
+    saveHistory();
+    updateHistoryDisplay();
+}
+
+// Actualizar display del historial
+function updateHistoryDisplay() {
+    if (history.length === 0) {
+        historyContainer.innerHTML = `
+            <div class="text-center p-4 text-muted">
+                <i class="bi bi-calculator display-6"></i>
+                <p class="mt-2 mb-0">Sin cálculos aún</p>
+                <small>Los resultados aparecerán aquí</small>
+            </div>
+        `;
+        return;
+    }
+    
+    let historyHTML = '';
+    history.forEach((item, index) => {
+        historyHTML += `
+            <div class="history-item" onclick="useHistoryResult(${index})">
+                <div class="history-operation">${item.operation}</div>
+                <div class="history-result">= ${formatNumber(item.result)}</div>
+                <div class="history-time">${item.timestamp}</div>
+            </div>
+        `;
+    });
+    
+    historyContainer.innerHTML = historyHTML;
+}
+
+// Usar resultado del historial
+function useHistoryResult(index) {
+    const item = history[index];
+    currentInput = item.result.toString();
+    waitingForNewInput = true;
+    updateScreen();
+}
+
+// Formatear números
+function formatNumber(num) {
+    if (Math.abs(num) > 1e15 || (Math.abs(num) < 1e-10 && num !== 0)) {
+        return num.toExponential(6);
+    }
+    return parseFloat(num.toPrecision(12)).toString();
+}
+
+// Limpiar historial
+function clearHistory() {
+    if (confirm('¿Estás seguro de que quieres limpiar todo el historial?')) {
+        history = [];
+        saveHistory();
+        updateHistoryDisplay();
+    }
+}
+
+// Soporte para teclado
+document.addEventListener('keydown', function(event) {
+    const key = event.key;
+    
+    if (/[0-9]/.test(key)) {
+        appendNumber(key);
+    } else if (key === '.') {
+        appendNumber('.');
+    } else if (key === '+') {
+        appendOperation('+');
+    } else if (key === '-') {
+        appendOperation('-');
+    } else if (key === '*') {
+        appendOperation('*');
+    } else if (key === '/') {
+        event.preventDefault();
+        appendOperation('/');
+    } else if (key === 'Enter' || key === '=') {
+        event.preventDefault();
+        calculate();
+    } else if (key === 'Escape') {
+        clearAll();
+    } else if (key === 'Backspace') {
+        backspace();
+    } else if (key === '(') {
+        appendOperation('(');
+    } else if (key === ')') {
+        appendOperation(')');
+    }
+});
+
+// Inicializar al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    loadHistory();
+    updateScreen();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+{% load django_bootstrap5 %}
+
+{% block title %}GetPDFPage - Herramientas PDF{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-file-earmark-pdf text-primary"></i>
+                        GetPDFPage
+                    </h1>
+                    <p class="text-muted mb-0">Extrae páginas específicas de un archivo PDF</p>
+                </div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                        <li class="breadcrumb-item">Herramientas</li>
+                        <li class="breadcrumb-item active">GetPDFPage</li>
+                    </ol>
+                </nav>
+            </div>
+
+            <!-- Información y ayuda -->
+            <div class="row mb-4">
+                <div class="col-lg-8">
+                    <div class="card border-info">
+                        <div class="card-header bg-info bg-opacity-10">
+                            <h5 class="mb-0">
+                                <i class="bi bi-info-circle text-info"></i>
+                                Cómo usar esta herramienta
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6><i class="bi bi-1-circle"></i> Selecciona un archivo PDF</h6>
+                                    <p class="text-muted small mb-3">Sube el archivo PDF del cual quieres extraer páginas específicas.</p>
+                                    
+                                    <h6><i class="bi bi-2-circle"></i> Especifica las páginas</h6>
+                                    <p class="text-muted small mb-3">Indica qué páginas quieres extraer usando el formato descrito.</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><i class="bi bi-card-list"></i> Formatos de páginas válidos:</h6>
+                                    <ul class="list-unstyled text-muted small">
+                                        <li><code>1</code> - Solo la página 1</li>
+                                        <li><code>1,3,5</code> - Páginas 1, 3 y 5</li>
+                                        <li><code>1-5</code> - Páginas del 1 al 5</li>
+                                        <li><code>1,3-6,10</code> - Página 1, del 3 al 6, y página 10</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card border-success">
+                        <div class="card-header bg-success bg-opacity-10">
+                            <h6 class="mb-0">
+                                <i class="bi bi-check-circle text-success"></i>
+                                Características
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled mb-0">
+                                <li class="mb-2">
+                                    <i class="bi bi-lightning text-warning"></i>
+                                    <small>Procesamiento rápido</small>
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-shield-check text-success"></i>
+                                    <small>Seguro y privado</small>
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-download text-primary"></i>
+                                    <small>Descarga inmediata</small>
+                                </li>
+                                <li class="mb-0">
+                                    <i class="bi bi-file-earmark-pdf text-danger"></i>
+                                    <small>Mantiene calidad original</small>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulario principal -->
+            <div class="row">
+                <div class="col-lg-8 mx-auto">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-upload"></i>
+                                Subir PDF y extraer páginas
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" enctype="multipart/form-data" id="pdfForm">
+                                {% csrf_token %}
+                                
+                                <!-- Selección de archivo -->
+                                <div class="mb-4">
+                                    <label for="pdf_file" class="form-label fw-bold">
+                                        <i class="bi bi-file-earmark-arrow-up"></i>
+                                        Archivo PDF
+                                    </label>
+                                    <input type="file" 
+                                           class="form-control form-control-lg" 
+                                           id="pdf_file" 
+                                           name="pdf_file" 
+                                           accept=".pdf" 
+                                           required>
+                                    <div class="form-text">
+                                        <i class="bi bi-info-circle"></i>
+                                        Solo archivos PDF. Tamaño máximo recomendado: 50MB
+                                    </div>
+                                </div>
+
+                                <!-- Especificación de páginas -->
+                                <div class="mb-4">
+                                    <label for="pages" class="form-label fw-bold">
+                                        <i class="bi bi-card-list"></i>
+                                        Páginas a extraer
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control form-control-lg" 
+                                           id="pages" 
+                                           name="pages" 
+                                           placeholder="Ej: 1,3,5-7,10" 
+                                           required>
+                                    <div class="form-text">
+                                        <i class="bi bi-lightbulb"></i>
+                                        Ejemplos: <code>1</code>, <code>1,3,5</code>, <code>1-5</code>, <code>1,3-6,10</code>
+                                    </div>
+                                </div>
+
+                                <!-- Botones -->
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                                    <button type="submit" class="btn btn-primary btn-lg px-5" id="processBtn">
+                                        <i class="bi bi-gear-fill me-2"></i>
+                                        Procesar PDF
+                                    </button>
+                                    <button type="reset" class="btn btn-outline-secondary btn-lg px-4">
+                                        <i class="bi bi-arrow-clockwise me-2"></i>
+                                        Limpiar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección de ejemplo visual -->
+            <div class="row mt-5">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-example"></i>
+                                Ejemplo visual
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <i class="bi bi-file-earmark-pdf display-4 text-danger"></i>
+                                        <h6 class="mt-2">PDF Original</h6>
+                                        <p class="text-muted small">10 páginas</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 d-flex align-items-center justify-content-center">
+                                    <div class="text-center">
+                                        <i class="bi bi-arrow-right display-4 text-primary"></i>
+                                        <p class="mt-2 mb-0"><strong>Páginas: 1,3,5-7</strong></p>
+                                        <small class="text-muted">Se extraen páginas 1, 3, 5, 6, 7</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <i class="bi bi-file-earmark-pdf display-4 text-success"></i>
+                                        <h6 class="mt-2">PDF Resultante</h6>
+                                        <p class="text-muted small">5 páginas seleccionadas</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts adicionales -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('pdfForm');
+    const processBtn = document.getElementById('processBtn');
+    const fileInput = document.getElementById('pdf_file');
+    const pagesInput = document.getElementById('pages');
+    
+    // Validación en tiempo real
+    fileInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            if (!file.name.toLowerCase().endsWith('.pdf')) {
+                alert('Por favor, selecciona un archivo PDF válido.');
+                this.value = '';
+                return;
+            }
+            if (file.size > 50 * 1024 * 1024) { // 50MB
+                alert('El archivo es demasiado grande. Máximo 50MB.');
+                this.value = '';
+                return;
+            }
+        }
+    });
+    
+    // Validación de formato de páginas
+    pagesInput.addEventListener('input', function() {
+        const value = this.value.trim();
+        const pattern = /^[\d\s,\-]+$/;
+        
+        if (value && !pattern.test(value)) {
+            this.setCustomValidity('Solo se permiten números, comas y guiones');
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+    
+    // Efecto de carga al enviar
+    form.addEventListener('submit', function() {
+        processBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Procesando...';
+        processBtn.disabled = true;
+        
+        // Restaurar botón después de un tiempo (por si hay error)
+        setTimeout(function() {
+            processBtn.innerHTML = '<i class="bi bi-gear-fill me-2"></i>Procesar PDF';
+            processBtn.disabled = false;
+        }, 10000);
+    });
+    
+    // Limpiar formulario
+    form.addEventListener('reset', function() {
+        setTimeout(function() {
+            pagesInput.setCustomValidity('');
+        }, 10);
+    });
+});
+</script>
+
+<style>
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border-radius: 0.5rem;
+}
+
+.card-header {
+    border-radius: 0.5rem 0.5rem 0 0 !important;
+}
+
+.form-control-lg {
+    border-radius: 0.5rem;
+}
+
+.btn-lg {
+    border-radius: 0.5rem;
+}
+
+code {
+    background-color: #f8f9fa;
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.25rem;
+    font-size: 0.875em;
+}
+
+.bi {
+    font-size: 1.1em;
+}
+
+.display-4 {
+    font-size: 3rem;
+}
+
+@media (max-width: 768px) {
+    .display-4 {
+        font-size: 2rem;
+    }
+}
+</style>
+{% endblock %}

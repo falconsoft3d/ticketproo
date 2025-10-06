@@ -1,0 +1,384 @@
+{% extends "base.html" %}
+{% load django_bootstrap5 %}
+
+{% block title %}JointPDF - Herramientas PDF{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-files text-primary"></i>
+                        JointPDF
+                    </h1>
+                    <p class="text-muted mb-0">Une múltiples archivos PDF en un solo documento</p>
+                </div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                        <li class="breadcrumb-item">Herramientas</li>
+                        <li class="breadcrumb-item active">JointPDF</li>
+                    </ol>
+                </nav>
+            </div>
+
+            <!-- Información y ayuda -->
+            <div class="row mb-4">
+                <div class="col-lg-8">
+                    <div class="card border-info">
+                        <div class="card-header bg-info bg-opacity-10">
+                            <h5 class="mb-0">
+                                <i class="bi bi-info-circle text-info"></i>
+                                Cómo usar esta herramienta
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6><i class="bi bi-1-circle"></i> Selecciona múltiples PDFs</h6>
+                                    <p class="text-muted small mb-3">Sube 2 o más archivos PDF que quieres unir en un solo documento.</p>
+                                    
+                                    <h6><i class="bi bi-2-circle"></i> Orden de los archivos</h6>
+                                    <p class="text-muted small mb-3">Los PDFs se unirán en el orden que los selecciones.</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><i class="bi bi-3-circle"></i> Resultado</h6>
+                                    <p class="text-muted small mb-3">Obtendrás un solo PDF con todas las páginas de los archivos originales.</p>
+                                    
+                                    <h6><i class="bi bi-card-list"></i> Características:</h6>
+                                    <ul class="list-unstyled text-muted small">
+                                        <li><i class="bi bi-check-circle text-success"></i> Mantiene calidad original</li>
+                                        <li><i class="bi bi-check-circle text-success"></i> Respeta el orden de selección</li>
+                                        <li><i class="bi bi-check-circle text-success"></i> Procesamiento rápido</li>
+                                        <li><i class="bi bi-check-circle text-success"></i> Sin límite de archivos</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card border-warning">
+                        <div class="card-header bg-warning bg-opacity-10">
+                            <h6 class="mb-0">
+                                <i class="bi bi-exclamation-triangle text-warning"></i>
+                                Importante
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled mb-0">
+                                <li class="mb-2">
+                                    <i class="bi bi-files text-primary"></i>
+                                    <small>Mínimo 2 archivos PDF</small>
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-arrow-up-down text-info"></i>
+                                    <small>El orden importa</small>
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-hdd text-danger"></i>
+                                    <small>Tamaño máximo: 50MB por archivo</small>
+                                </li>
+                                <li class="mb-0">
+                                    <i class="bi bi-shield-check text-success"></i>
+                                    <small>Archivos procesados localmente</small>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulario principal -->
+            <div class="row">
+                <div class="col-lg-10 mx-auto">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-upload"></i>
+                                Seleccionar archivos PDF para unir
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" enctype="multipart/form-data" id="pdfJoinForm">
+                                {% csrf_token %}
+                                
+                                <!-- Selección de archivos -->
+                                <div class="mb-4">
+                                    <label for="pdf_files" class="form-label fw-bold">
+                                        <i class="bi bi-file-earmark-arrow-up"></i>
+                                        Archivos PDF (selecciona múltiples)
+                                    </label>
+                                    <input type="file" 
+                                           class="form-control form-control-lg" 
+                                           id="pdf_files" 
+                                           name="pdf_files" 
+                                           accept=".pdf" 
+                                           multiple 
+                                           required>
+                                    <div class="form-text">
+                                        <i class="bi bi-info-circle"></i>
+                                        Mantén presionado Ctrl/Cmd para seleccionar múltiples archivos. Solo archivos PDF.
+                                    </div>
+                                </div>
+
+                                <!-- Lista de archivos seleccionados -->
+                                <div class="mb-4" id="filesList" style="display: none;">
+                                    <label class="form-label fw-bold">
+                                        <i class="bi bi-list-ol"></i>
+                                        Archivos seleccionados (en orden de unión)
+                                    </label>
+                                    <div id="filesContainer" class="border rounded p-3 bg-light">
+                                        <!-- Los archivos se mostrarán aquí -->
+                                    </div>
+                                    <div class="form-text">
+                                        <i class="bi bi-lightbulb"></i>
+                                        Los archivos se unirán en el orden mostrado arriba.
+                                    </div>
+                                </div>
+
+                                <!-- Botones -->
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                                    <button type="submit" class="btn btn-success btn-lg px-5" id="joinBtn" disabled>
+                                        <i class="bi bi-layers-fill me-2"></i>
+                                        Unir PDFs
+                                    </button>
+                                    <button type="reset" class="btn btn-outline-secondary btn-lg px-4">
+                                        <i class="bi bi-arrow-clockwise me-2"></i>
+                                        Limpiar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección de ejemplo visual -->
+            <div class="row mt-5">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-diagram-3"></i>
+                                Proceso de unión
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center align-items-center">
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <i class="bi bi-file-earmark-pdf display-4 text-danger"></i>
+                                        <h6 class="mt-2">PDF 1</h6>
+                                        <p class="text-muted small">3 páginas</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-1 d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-plus display-6 text-primary"></i>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <i class="bi bi-file-earmark-pdf display-4 text-warning"></i>
+                                        <h6 class="mt-2">PDF 2</h6>
+                                        <p class="text-muted small">2 páginas</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-1 d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-arrow-right display-6 text-success"></i>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <i class="bi bi-file-earmark-pdf display-4 text-success"></i>
+                                        <h6 class="mt-2">PDF Unido</h6>
+                                        <p class="text-muted small">5 páginas totales</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-center mt-3">
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i>
+                                    El PDF resultante contendrá todas las páginas de los archivos originales en el orden seleccionado
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts adicionales -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('pdfJoinForm');
+    const joinBtn = document.getElementById('joinBtn');
+    const fileInput = document.getElementById('pdf_files');
+    const filesList = document.getElementById('filesList');
+    const filesContainer = document.getElementById('filesContainer');
+    
+    // Manejar selección de archivos
+    fileInput.addEventListener('change', function() {
+        const files = Array.from(this.files);
+        
+        if (files.length === 0) {
+            filesList.style.display = 'none';
+            joinBtn.disabled = true;
+            return;
+        }
+        
+        // Validar archivos
+        let validFiles = true;
+        let totalSize = 0;
+        
+        for (let file of files) {
+            if (!file.name.toLowerCase().endsWith('.pdf')) {
+                alert(`El archivo "${file.name}" no es un PDF válido.`);
+                this.value = '';
+                validFiles = false;
+                break;
+            }
+            
+            if (file.size > 50 * 1024 * 1024) { // 50MB
+                alert(`El archivo "${file.name}" es demasiado grande. Máximo 50MB por archivo.`);
+                this.value = '';
+                validFiles = false;
+                break;
+            }
+            
+            totalSize += file.size;
+        }
+        
+        if (!validFiles) {
+            filesList.style.display = 'none';
+            joinBtn.disabled = true;
+            return;
+        }
+        
+        if (files.length < 2) {
+            joinBtn.disabled = true;
+            filesList.style.display = 'none';
+            alert('Debe seleccionar al menos 2 archivos PDF.');
+            return;
+        }
+        
+        // Mostrar lista de archivos
+        filesContainer.innerHTML = '';
+        files.forEach((file, index) => {
+            const fileItem = document.createElement('div');
+            fileItem.className = 'd-flex align-items-center mb-2 p-2 border rounded bg-white';
+            fileItem.innerHTML = `
+                <div class="me-2">
+                    <i class="bi bi-file-earmark-pdf text-danger"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="fw-bold">${index + 1}. ${file.name}</div>
+                    <small class="text-muted">${formatFileSize(file.size)}</small>
+                </div>
+                <div class="text-end">
+                    <small class="text-muted">Orden: ${index + 1}</small>
+                </div>
+            `;
+            filesContainer.appendChild(fileItem);
+        });
+        
+        // Mostrar resumen
+        const summary = document.createElement('div');
+        summary.className = 'mt-3 p-2 bg-info bg-opacity-10 rounded';
+        summary.innerHTML = `
+            <div class="d-flex justify-content-between">
+                <span><strong>Total de archivos:</strong> ${files.length}</span>
+                <span><strong>Tamaño total:</strong> ${formatFileSize(totalSize)}</span>
+            </div>
+        `;
+        filesContainer.appendChild(summary);
+        
+        filesList.style.display = 'block';
+        joinBtn.disabled = false;
+    });
+    
+    // Función para formatear tamaño de archivo
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    // Efecto de carga al enviar
+    form.addEventListener('submit', function() {
+        joinBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Uniendo PDFs...';
+        joinBtn.disabled = true;
+        
+        // Restaurar botón después de un tiempo (por si hay error)
+        setTimeout(function() {
+            joinBtn.innerHTML = '<i class="bi bi-layers-fill me-2"></i>Unir PDFs';
+            joinBtn.disabled = false;
+        }, 15000);
+    });
+    
+    // Limpiar formulario
+    form.addEventListener('reset', function() {
+        setTimeout(function() {
+            filesList.style.display = 'none';
+            joinBtn.disabled = true;
+            filesContainer.innerHTML = '';
+        }, 10);
+    });
+});
+</script>
+
+<style>
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border-radius: 0.5rem;
+}
+
+.card-header {
+    border-radius: 0.5rem 0.5rem 0 0 !important;
+}
+
+.form-control-lg {
+    border-radius: 0.5rem;
+}
+
+.btn-lg {
+    border-radius: 0.5rem;
+}
+
+.bi {
+    font-size: 1.1em;
+}
+
+.display-4 {
+    font-size: 3rem;
+}
+
+.display-6 {
+    font-size: 2rem;
+}
+
+@media (max-width: 768px) {
+    .display-4 {
+        font-size: 2rem;
+    }
+    .display-6 {
+        font-size: 1.5rem;
+    }
+}
+
+#filesContainer .border {
+    transition: all 0.2s ease;
+}
+
+#filesContainer .border:hover {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transform: translateY(-1px);
+}
+</style>
+{% endblock %}

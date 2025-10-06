@@ -121,6 +121,14 @@ urlpatterns = [
     path('reports/daily/', views.daily_report_view, name='daily_report'),
     path('reports/daily/pdf/', views.daily_report_pdf, name='daily_report_pdf'),
     
+    # URLs de herramientas PDF (solo para agentes)
+    path('tools/pdf/get-pages/', views.pdf_get_pages_view, name='pdf_get_pages'),
+    path('tools/pdf/join/', views.pdf_join_view, name='pdf_join'),
+    path('tools/pdf/split/', views.pdf_split_view, name='pdf_split'),
+    
+    # URLs de herramientas calculadora (solo para agentes)
+    path('tools/calculator/', views.calculator_view, name='calculator'),
+    
     # URLs de gestión de tareas
     path('tasks/', views.task_list_view, name='task_list'),
     path('tasks/create/', views.task_create_view, name='task_create'),

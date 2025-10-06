@@ -3655,3 +3655,239 @@ def chat_ajax_send_message(request, room_id):
             'error': 'Formulario inválido',
             'errors': form.errors
         }, status=400)
+
+
+@login_required
+@user_passes_test(is_agent)
+def pdf_get_pages_view(request):
+    """Vista para extraer páginas específicas de un PDF"""
+    if request.method == 'POST':
+        if 'pdf_file' not in request.FILES:
+            messages.error(request, 'No se ha seleccionado ningún archivo PDF.')
+            return render(request, 'tickets/pdf_get_pages.html')
+        
+        pdf_file = request.FILES['pdf_file']
+        pages_input = request.POST.get('pages', '').strip()
+        
+        # Validar que el archivo sea PDF
+        if not pdf_file.name.lower().endswith('.pdf'):
+            messages.error(request, 'El archivo debe ser un PDF.')
+            return render(request, 'tickets/pdf_get_pages.html')
+        
+        # Validar entrada de páginas
+        if not pages_input:
+            messages.error(request, 'Debe especificar las páginas a extraer.')
+            return render(request, 'tickets/pdf_get_pages.html')
+        
+        try:
+            # Importar PyPDF2
+            from PyPDF2 import PdfReader, PdfWriter
+            import io
+            
+            # Leer el PDF
+            pdf_reader = PdfReader(pdf_file)
+            total_pages = len(pdf_reader.pages)
+            
+            # Procesar la entrada de páginas (ej: "1,3,5-7")
+            pages_to_extract = []
+            for part in pages_input.split(','):
+                part = part.strip()
+                if '-' in part:
+                    # Rango de páginas
+                    start, end = part.split('-')
+                    start = int(start.strip())
+                    end = int(end.strip())
+                    if start > end:
+                        raise ValueError("Rango inválido")
+                    pages_to_extract.extend(range(start, end + 1))
+                else:
+                    # Página individual
+                    pages_to_extract.append(int(part))
+            
+            # Validar que las páginas estén en el rango válido
+            for page_num in pages_to_extract:
+                if page_num < 1 or page_num > total_pages:
+                    messages.error(request, f'La página {page_num} no existe. El PDF tiene {total_pages} páginas.')
+                    return render(request, 'tickets/pdf_get_pages.html')
+            
+            # Crear nuevo PDF con las páginas seleccionadas
+            pdf_writer = PdfWriter()
+            for page_num in pages_to_extract:
+                page = pdf_reader.pages[page_num - 1]  # PyPDF2 usa índice base 0
+                pdf_writer.add_page(page)
+            
+            # Crear respuesta HTTP con el PDF
+            output = io.BytesIO()
+            pdf_writer.write(output)
+            output.seek(0)
+            
+            # Preparar nombre del archivo de salida
+            original_name = pdf_file.name.rsplit('.', 1)[0]
+            pages_str = pages_input.replace(',', '_').replace('-', '_')
+            output_filename = f"{original_name}_pages_{pages_str}.pdf"
+            
+            response = HttpResponse(output.read(), content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{output_filename}"'
+            
+            messages.success(request, f'PDF generado exitosamente con las páginas: {pages_input}')
+            return response
+            
+        except ValueError as e:
+            messages.error(request, f'Error en el formato de páginas: {str(e)}. Use formato como "1,3,5-7".')
+        except Exception as e:
+            messages.error(request, f'Error al procesar el PDF: {str(e)}')
+        
+        return render(request, 'tickets/pdf_get_pages.html')
+    
+    return render(request, 'tickets/pdf_get_pages.html')
+
+
+@login_required
+@user_passes_test(is_agent)
+def pdf_join_view(request):
+    """Vista para unir múltiples archivos PDF en uno solo"""
+    if request.method == 'POST':
+        pdf_files = request.FILES.getlist('pdf_files')
+        
+        if not pdf_files:
+            messages.error(request, 'No se han seleccionado archivos PDF.')
+            return render(request, 'tickets/pdf_join.html')
+        
+        if len(pdf_files) < 2:
+            messages.error(request, 'Debe seleccionar al menos 2 archivos PDF para unir.')
+            return render(request, 'tickets/pdf_join.html')
+        
+        # Validar que todos los archivos sean PDF
+        for pdf_file in pdf_files:
+            if not pdf_file.name.lower().endswith('.pdf'):
+                messages.error(request, f'El archivo "{pdf_file.name}" no es un PDF válido.')
+                return render(request, 'tickets/pdf_join.html')
+        
+        try:
+            # Importar PyPDF2
+            from PyPDF2 import PdfReader, PdfWriter
+            import io
+            
+            # Crear nuevo PDF writer
+            pdf_writer = PdfWriter()
+            
+            # Leer y agregar páginas de cada PDF
+            for pdf_file in pdf_files:
+                try:
+                    pdf_reader = PdfReader(pdf_file)
+                    
+                    # Agregar todas las páginas del PDF actual
+                    for page in pdf_reader.pages:
+                        pdf_writer.add_page(page)
+                        
+                except Exception as e:
+                    messages.error(request, f'Error al procesar el archivo "{pdf_file.name}": {str(e)}')
+                    return render(request, 'tickets/pdf_join.html')
+            
+            # Crear respuesta HTTP con el PDF unido
+            output = io.BytesIO()
+            pdf_writer.write(output)
+            output.seek(0)
+            
+            # Preparar nombre del archivo de salida
+            current_time = timezone.now().strftime('%Y%m%d_%H%M%S')
+            output_filename = f"PDF_unido_{current_time}.pdf"
+            
+            response = HttpResponse(output.read(), content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{output_filename}"'
+            
+            messages.success(request, f'PDF unido exitosamente. Se combinaron {len(pdf_files)} archivos.')
+            return response
+            
+        except Exception as e:
+            messages.error(request, f'Error al unir los PDFs: {str(e)}')
+        
+        return render(request, 'tickets/pdf_join.html')
+    
+    return render(request, 'tickets/pdf_join.html')
+
+
+@login_required
+@user_passes_test(is_agent)
+def pdf_split_view(request):
+    """Vista para dividir un PDF en archivos individuales por página"""
+    if request.method == 'POST':
+        if 'pdf_file' not in request.FILES:
+            messages.error(request, 'No se ha seleccionado ningún archivo PDF.')
+            return render(request, 'tickets/pdf_split.html')
+        
+        pdf_file = request.FILES['pdf_file']
+        
+        # Validar que el archivo sea PDF
+        if not pdf_file.name.lower().endswith('.pdf'):
+            messages.error(request, 'El archivo debe ser un PDF.')
+            return render(request, 'tickets/pdf_split.html')
+        
+        try:
+            # Importar PyPDF2 y zipfile
+            from PyPDF2 import PdfReader, PdfWriter
+            import io
+            import zipfile
+            from django.utils import timezone
+            
+            # Leer el PDF
+            pdf_reader = PdfReader(pdf_file)
+            total_pages = len(pdf_reader.pages)
+            
+            if total_pages == 0:
+                messages.error(request, 'El PDF no contiene páginas válidas.')
+                return render(request, 'tickets/pdf_split.html')
+            
+            if total_pages == 1:
+                messages.warning(request, 'El PDF solo tiene una página. No es necesario dividirlo.')
+                return render(request, 'tickets/pdf_split.html')
+            
+            # Crear un archivo ZIP en memoria
+            zip_buffer = io.BytesIO()
+            
+            with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+                # Crear un PDF para cada página
+                for page_num in range(total_pages):
+                    pdf_writer = PdfWriter()
+                    page = pdf_reader.pages[page_num]
+                    pdf_writer.add_page(page)
+                    
+                    # Crear PDF en memoria
+                    page_buffer = io.BytesIO()
+                    pdf_writer.write(page_buffer)
+                    page_buffer.seek(0)
+                    
+                    # Preparar nombre del archivo de página
+                    original_name = pdf_file.name.rsplit('.', 1)[0]
+                    page_filename = f"{original_name}_pagina_{page_num + 1:03d}.pdf"
+                    
+                    # Agregar al ZIP
+                    zip_file.writestr(page_filename, page_buffer.read())
+            
+            zip_buffer.seek(0)
+            
+            # Preparar nombre del archivo ZIP
+            current_time = timezone.now().strftime('%Y%m%d_%H%M%S')
+            original_name = pdf_file.name.rsplit('.', 1)[0]
+            zip_filename = f"{original_name}_dividido_{current_time}.zip"
+            
+            # Crear respuesta HTTP con el ZIP
+            response = HttpResponse(zip_buffer.read(), content_type='application/zip')
+            response['Content-Disposition'] = f'attachment; filename="{zip_filename}"'
+            
+            messages.success(request, f'PDF dividido exitosamente en {total_pages} archivos individuales.')
+            return response
+            
+        except Exception as e:
+            messages.error(request, f'Error al dividir el PDF: {str(e)}')
+        
+        return render(request, 'tickets/pdf_split.html')
+    
+    return render(request, 'tickets/pdf_split.html')
+
+
+@login_required
+@user_passes_test(is_agent)
+def calculator_view(request):
+    """Vista para la calculadora con historial"""
+    return render(request, 'tickets/calculator.html')

@@ -167,6 +167,42 @@
                         </ul>
                     </li>
                     
+                    <!-- Menú Herramientas (Solo para Agentes) -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="toolsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-tools"></i> Herramientas
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="toolsDropdown">
+                            <li class="dropdown-header">Herramientas de PDF</li>
+                            <li>
+                                <a class="dropdown-item {% if 'pdf_get_pages' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'pdf_get_pages' %}">
+                                    <i class="bi bi-file-earmark-pdf"></i> GetPDFPage
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'pdf_join' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'pdf_join' %}">
+                                    <i class="bi bi-files"></i> JointPDF
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'pdf_split' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'pdf_split' %}">
+                                    <i class="bi bi-file-earmark-break"></i> Pdf2Pdfs
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Calculadora</li>
+                            <li>
+                                <a class="dropdown-item {% if 'calculator' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'calculator' %}">
+                                    <i class="bi bi-calculator"></i> Calculadora
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    
                     <!-- Menú Reportes (Solo para Agentes) -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="reportsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
