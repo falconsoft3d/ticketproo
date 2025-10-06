@@ -1,0 +1,466 @@
+{% extends "base.html" %}
+
+{% block title %}{{ command.title }} - Biblioteca de Comandos{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        {% if command.is_favorite %}
+                        <i class="bi bi-star-fill text-warning"></i>
+                        {% endif %}
+                        {% if command.is_dangerous %}
+                        <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+                        {% endif %}
+                        {{ command.title }}
+                    </h1>
+                    <p class="text-muted mb-0">{{ command.description }}</p>
+                </div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'command_library' %}">Comandos</a></li>
+                        <li class="breadcrumb-item active">{{ command.title|truncatechars:30 }}</li>
+                    </ol>
+                </nav>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <!-- Comando principal -->
+                    <div class="card shadow-sm">
+                        <div class="card-header d-flex justify-content-between align-items-center bg-dark text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-terminal"></i>
+                                Comando
+                            </h5>
+                            <div>
+                                <button class="btn btn-outline-light btn-sm" onclick="copyCommand()" title="Copiar comando">
+                                    <i class="bi bi-clipboard" id="copyIcon"></i>
+                                </button>
+                                <button class="btn btn-outline-light btn-sm" onclick="toggleFavorite({{ command.pk }})" title="{% if command.is_favorite %}Quitar de favoritos{% else %}Agregar a favoritos{% endif %}">
+                                    <i class="bi bi-star{% if command.is_favorite %}-fill{% endif %}" id="favoriteIcon"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <pre class="command-display mb-0" id="commandText">{{ command.command }}</pre>
+                        </div>
+                    </div>
+
+                    <!-- Ejemplo de uso -->
+                    {% if command.example_usage %}
+                    <div class="card shadow-sm mt-4">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-code-square"></i>
+                                Ejemplo de uso
+                            </h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <pre class="example-display mb-0">{{ command.example_usage }}</pre>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Notas -->
+                    {% if command.notes %}
+                    <div class="card shadow-sm mt-4">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-sticky"></i>
+                                Notas adicionales
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="notes-content">{{ command.notes|linebreaks }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Alertas de seguridad -->
+                    {% if command.is_dangerous %}
+                    <div class="alert alert-danger mt-4" role="alert">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <div>
+                                <h6 class="alert-heading mb-1">⚠️ Comando peligroso</h6>
+                                <p class="mb-0">Este comando puede causar cambios irreversibles o daños al sistema. Úsalo con precaución y asegúrate de entender completamente lo que hace antes de ejecutarlo.</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-lg-4">
+                    <!-- Información del comando -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="bi bi-info-circle"></i>
+                                Información
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <td class="text-muted"><i class="bi bi-tags"></i> Categoría:</td>
+                                    <td>
+                                        <span class="badge bg-{{ command.category }}">
+                                            {{ command.get_category_display }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted"><i class="bi bi-person"></i> Creado por:</td>
+                                    <td>{{ command.created_by.username }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted"><i class="bi bi-calendar"></i> Fecha:</td>
+                                    <td title="{{ command.created_at }}">{{ command.created_at|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted"><i class="bi bi-pencil"></i> Modificado:</td>
+                                    <td title="{{ command.updated_at }}">{{ command.updated_at|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted"><i class="bi bi-eye"></i> Visualizaciones:</td>
+                                    <td>{{ command.view_count }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted"><i class="bi bi-clipboard"></i> Copias:</td>
+                                    <td>{{ command.usage_count }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Etiquetas -->
+                    {% if command.tags %}
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="bi bi-hash"></i>
+                                Etiquetas
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex flex-wrap gap-1">
+                                {% for tag in command.get_tags_list %}
+                                <a href="{% url 'command_library' %}?search={{ tag }}" class="badge bg-light text-dark text-decoration-none">
+                                    # {{ tag }}
+                                </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Acciones -->
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="bi bi-gear"></i>
+                                Acciones
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                {% if user == command.created_by or user.is_staff %}
+                                <a href="{% url 'command_edit' command.pk %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-pencil"></i>
+                                    Editar comando
+                                </a>
+                                <a href="{% url 'command_delete' command.pk %}" class="btn btn-outline-danger btn-sm">
+                                    <i class="bi bi-trash"></i>
+                                    Eliminar comando
+                                </a>
+                                <hr class="my-2">
+                                {% endif %}
+                                <button class="btn btn-outline-success btn-sm" onclick="shareCommand()">
+                                    <i class="bi bi-share"></i>
+                                    Compartir comando
+                                </button>
+                                <button class="btn btn-outline-info btn-sm" onclick="downloadCommand()">
+                                    <i class="bi bi-download"></i>
+                                    Descargar como .txt
+                                </button>
+                                <a href="{% url 'command_library' %}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-arrow-left"></i>
+                                    Volver a la biblioteca
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Comandos relacionados -->
+                    {% if related_commands %}
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="bi bi-link"></i>
+                                Comandos relacionados
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            {% for related in related_commands %}
+                            <div class="d-flex align-items-center mb-2 {% if not forloop.last %}border-bottom pb-2{% endif %}">
+                                <div class="flex-grow-1">
+                                    <a href="{% url 'command_detail' related.pk %}" class="text-decoration-none">
+                                        <div class="fw-bold small">{{ related.title|truncatechars:25 }}</div>
+                                        <div class="text-muted tiny">{{ related.description|truncatechars:40 }}</div>
+                                    </a>
+                                </div>
+                                <div class="ms-2">
+                                    <span class="badge bg-{{ related.category }} tiny">
+                                        {{ related.get_category_display }}
+                                    </span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para compartir -->
+<div class="modal fade" id="shareModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-share"></i>
+                    Compartir comando
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">URL del comando:</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="shareUrl" readonly value="{{ request.build_absolute_uri }}">
+                        <button class="btn btn-outline-secondary" onclick="copyShareUrl()">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="text-muted small">
+                    <i class="bi bi-info-circle"></i>
+                    Comparte esta URL para que otros puedan ver este comando.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.command-display, .example-display {
+    background: #2d3748;
+    color: #e2e8f0;
+    padding: 1.5rem;
+    font-family: 'Courier New', Consolas, monospace;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    border: none;
+    margin: 0;
+}
+
+.example-display {
+    background: #38a169;
+    color: #f7fafc;
+}
+
+.notes-content {
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.tiny {
+    font-size: 0.75rem;
+}
+
+.badge.bg-linux { background-color: #ff6600 !important; }
+.badge.bg-windows { background-color: #00a1f1 !important; }
+.badge.bg-docker { background-color: #2496ed !important; }
+.badge.bg-git { background-color: #f05032 !important; }
+.badge.bg-python { background-color: #3776ab !important; }
+.badge.bg-javascript { background-color: #f7df1e !important; color: #333 !important; }
+.badge.bg-database { background-color: #336791 !important; }
+.badge.bg-network { background-color: #0080ff !important; }
+.badge.bg-security { background-color: #dc3545 !important; }
+.badge.bg-devops { background-color: #28a745 !important; }
+.badge.bg-web { background-color: #007bff !important; }
+.badge.bg-mobile { background-color: #6f42c1 !important; }
+.badge.bg-other { background-color: #6c757d !important; }
+
+.card {
+    transition: box-shadow 0.15s ease-in-out;
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+</style>
+
+<script>
+// Incrementar contador de visualizaciones al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    fetch(`/tickets/commands/{{ command.pk }}/view/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+    });
+});
+
+// Copiar comando al portapapeles
+function copyCommand() {
+    const commandText = document.getElementById('commandText').textContent;
+    
+    navigator.clipboard.writeText(commandText).then(function() {
+        const icon = document.getElementById('copyIcon');
+        icon.className = 'bi bi-check';
+        
+        // Mostrar notificación
+        showNotification('Comando copiado al portapapeles', 'success');
+        
+        // Incrementar contador de uso
+        fetch(`/tickets/commands/{{ command.pk }}/copy/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json',
+            },
+        });
+        
+        // Restaurar icono después de 2 segundos
+        setTimeout(() => {
+            icon.className = 'bi bi-clipboard';
+        }, 2000);
+    }).catch(function(err) {
+        showNotification('Error al copiar comando', 'error');
+    });
+}
+
+// Toggle favorito
+function toggleFavorite(commandId) {
+    fetch(`/tickets/commands/${commandId}/favorite/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+    }).then(response => response.json())
+    .then(data => {
+        const icon = document.getElementById('favoriteIcon');
+        if (data.is_favorite) {
+            icon.className = 'bi bi-star-fill';
+            showNotification('Agregado a favoritos', 'success');
+        } else {
+            icon.className = 'bi bi-star';
+            showNotification('Removido de favoritos', 'info');
+        }
+    }).catch(error => {
+        showNotification('Error al actualizar favorito', 'error');
+    });
+}
+
+// Compartir comando
+function shareCommand() {
+    const modal = new bootstrap.Modal(document.getElementById('shareModal'));
+    modal.show();
+}
+
+// Copiar URL de compartir
+function copyShareUrl() {
+    const shareUrl = document.getElementById('shareUrl');
+    shareUrl.select();
+    shareUrl.setSelectionRange(0, 99999);
+    
+    navigator.clipboard.writeText(shareUrl.value).then(function() {
+        showNotification('URL copiada al portapapeles', 'success');
+    });
+}
+
+// Descargar comando como archivo de texto
+function downloadCommand() {
+    const content = `Comando: {{ command.title }}
+Descripción: {{ command.description }}
+Categoría: {{ command.get_category_display }}
+Creado por: {{ command.created_by.username }}
+Fecha: {{ command.created_at|date:"d/m/Y H:i" }}
+
+COMANDO:
+{{ command.command }}
+
+{% if command.example_usage %}EJEMPLO DE USO:
+{{ command.example_usage }}
+
+{% endif %}{% if command.notes %}NOTAS:
+{{ command.notes }}
+
+{% endif %}{% if command.tags %}ETIQUETAS:
+{{ command.tags }}{% endif %}`;
+
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '{{ command.title|slugify }}.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    
+    showNotification('Comando descargado', 'success');
+}
+
+// Mostrar notificaciones
+function showNotification(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-bg-${type} border-0`;
+    toast.setAttribute('role', 'alert');
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    
+    // Crear contenedor si no existe
+    let toastContainer = document.getElementById('toastContainer');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toastContainer';
+        toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        toastContainer.style.zIndex = '9999';
+        document.body.appendChild(toastContainer);
+    }
+    
+    toastContainer.appendChild(toast);
+    
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+    
+    // Remover el toast después de que se oculte
+    toast.addEventListener('hidden.bs.toast', () => {
+        toastContainer.removeChild(toast);
+    });
+}
+</script>
+{% endblock %}

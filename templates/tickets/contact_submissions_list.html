@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+
+{% block title %}Formularios de Contacto Recibidos - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-inbox text-primary"></i>
+                        Formularios de Contacto Recibidos
+                    </h1>
+                    <p class="text-muted mb-0">Gestiona las solicitudes de contacto recibidas a través de tu formulario público</p>
+                </div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'user_profile' %}">Perfil</a></li>
+                        <li class="breadcrumb-item active">Formularios de Contacto</li>
+                    </ol>
+                </nav>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-warning bg-opacity-10 border-warning">
+                        <div class="card-body text-center">
+                            <i class="bi bi-clock-history text-warning display-6"></i>
+                            <h4 class="fw-bold text-warning">{{ stats.pending }}</h4>
+                            <p class="mb-0 text-muted">Pendientes</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success bg-opacity-10 border-success">
+                        <div class="card-body text-center">
+                            <i class="bi bi-check-circle text-success display-6"></i>
+                            <h4 class="fw-bold text-success">{{ stats.approved }}</h4>
+                            <p class="mb-0 text-muted">Aprobados</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-danger bg-opacity-10 border-danger">
+                        <div class="card-body text-center">
+                            <i class="bi bi-x-circle text-danger display-6"></i>
+                            <h4 class="fw-bold text-danger">{{ stats.rejected }}</h4>
+                            <p class="mb-0 text-muted">Rechazados</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info bg-opacity-10 border-info">
+                        <div class="card-body text-center">
+                            <i class="bi bi-building text-info display-6"></i>
+                            <h4 class="fw-bold text-info">{{ stats.company_created }}</h4>
+                            <p class="mb-0 text-muted">Empresas Creadas</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtros -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-funnel"></i>
+                        Filtros
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="row align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label">Estado</label>
+                            <select name="status" class="form-select">
+                                <option value="">Todos los estados</option>
+                                {% for value, label in status_choices %}
+                                <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-search"></i>
+                                Filtrar
+                            </button>
+                            <a href="{% url 'contact_submissions_list' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i>
+                                Limpiar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Lista de formularios -->
+            {% if submissions %}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list"></i>
+                        Formularios ({{ stats.total }} total)
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Empresa</th>
+                                    <th>Contacto</th>
+                                    <th>Email</th>
+                                    <th>Estado</th>
+                                    <th>Fecha</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for submission in submissions %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">{{ submission.company_name }}</div>
+                                        {% if submission.website %}
+                                        <small class="text-muted">
+                                            <i class="bi bi-globe"></i>
+                                            <a href="{{ submission.website }}" target="_blank" class="text-decoration-none">
+                                                {{ submission.website|truncatechars:30 }}
+                                            </a>
+                                        </small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div>{{ submission.contact_name }}</div>
+                                        {% if submission.phone %}
+                                        <small class="text-muted">
+                                            <i class="bi bi-telephone"></i>
+                                            {{ submission.phone }}
+                                        </small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="mailto:{{ submission.email }}" class="text-decoration-none">
+                                            {{ submission.email }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="badge {{ submission.get_status_badge_class }}">
+                                            {{ submission.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div>{{ submission.submitted_at|date:"d/m/Y" }}</div>
+                                        <small class="text-muted">{{ submission.submitted_at|time:"H:i" }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'contact_submission_detail' submission.pk %}" 
+                                               class="btn btn-outline-info btn-sm" 
+                                               title="Ver detalles">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            
+                                            {% if submission.status == 'pending' %}
+                                            <a href="{% url 'contact_submission_approve' submission.pk %}" 
+                                               class="btn btn-outline-success btn-sm" 
+                                               title="Aprobar y crear empresa">
+                                                <i class="bi bi-check-circle"></i>
+                                            </a>
+                                            <a href="{% url 'contact_submission_reject' submission.pk %}" 
+                                               class="btn btn-outline-danger btn-sm" 
+                                               title="Rechazar">
+                                                <i class="bi bi-x-circle"></i>
+                                            </a>
+                                            {% endif %}
+                                            
+                                            {% if submission.created_company %}
+                                            <a href="{% url 'company_detail' submission.created_company.id %}" 
+                                               class="btn btn-outline-primary btn-sm" 
+                                               title="Ver empresa creada">
+                                                <i class="bi bi-building"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paginación -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Paginación" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if status_filter %}status={{ status_filter }}&{% endif %}page=1">
+                            <i class="bi bi-chevron-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if status_filter %}status={{ status_filter }}&{% endif %}page={{ page_obj.previous_page_number }}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if status_filter %}status={{ status_filter }}&{% endif %}page={{ num }}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if status_filter %}status={{ status_filter }}&{% endif %}page={{ page_obj.next_page_number }}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if status_filter %}status={{ status_filter }}&{% endif %}page={{ page_obj.paginator.num_pages }}">
+                            <i class="bi bi-chevron-double-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <!-- Estado vacío -->
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-inbox display-1 text-muted"></i>
+                    <h4 class="text-muted mt-3">No hay formularios de contacto</h4>
+                    <p class="text-muted">
+                        {% if status_filter %}
+                        No se encontraron formularios con el estado "{{ status_filter }}".
+                        <br>
+                        <a href="{% url 'contact_submissions_list' %}" class="btn btn-outline-primary mt-2">
+                            <i class="bi bi-arrow-left"></i>
+                            Ver todos los formularios
+                        </a>
+                        {% else %}
+                        Aún no has recibido ningún formulario de contacto a través de tu formulario público.
+                        <br>
+                        <a href="{% url 'user_profile' %}" class="btn btn-outline-primary mt-2">
+                            <i class="bi bi-gear"></i>
+                            Configurar formulario de contacto
+                        </a>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Información adicional -->
+            <div class="card mt-4 border-info">
+                <div class="card-header bg-info bg-opacity-10">
+                    <h6 class="mb-0">
+                        <i class="bi bi-info-circle text-info"></i>
+                        Información sobre el procesamiento
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Estados de los formularios:</h6>
+                            <ul class="list-unstyled">
+                                <li><span class="badge bg-warning me-2">Pendiente</span> Formulario recibido, pendiente de revisión</li>
+                                <li><span class="badge bg-success me-2">Aprobado</span> Formulario aprobado, listo para crear empresa</li>
+                                <li><span class="badge bg-danger me-2">Rechazado</span> Formulario rechazado por algún motivo</li>
+                                <li><span class="badge bg-primary me-2">Empresa Creada</span> Se ha creado la empresa exitosamente</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Acciones disponibles:</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="bi bi-eye text-info me-2"></i> Ver todos los detalles del formulario</li>
+                                <li><i class="bi bi-check-circle text-success me-2"></i> Aprobar y crear empresa automáticamente</li>
+                                <li><i class="bi bi-x-circle text-danger me-2"></i> Rechazar formulario con motivo</li>
+                                <li><i class="bi bi-building text-primary me-2"></i> Ver empresa creada (si aplica)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.badge.bg-warning { color: #000 !important; }
+.table-responsive {
+    border-radius: 0.375rem;
+}
+.btn-group .btn {
+    border-radius: 0.25rem !important;
+    margin-right: 2px;
+}
+.btn-group .btn:last-child {
+    margin-right: 0;
+}
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+.card-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+}
+.display-6 {
+    font-size: 2rem;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tooltip para botones
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Auto-actualizar cada 30 segundos si hay formularios pendientes
+    {% if stats.pending > 0 %}
+    setInterval(function() {
+        window.location.reload();
+    }, 30000);
+    {% endif %}
+});
+</script>
+{% endblock %}

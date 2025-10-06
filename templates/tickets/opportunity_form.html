@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if opportunity %}Editar{% else %}Nueva{% endif %} Oportunidad - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="bi bi-{% if opportunity %}pencil{% else %}plus-circle{% endif %} text-primary"></i>
+                        {% if opportunity %}Editar Oportunidad{% else %}Nueva Oportunidad{% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="name" class="form-label">
+                                    <i class="bi bi-card-text"></i> Nombre de la Oportunidad *
+                                </label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       value="{{ opportunity.name|default:'' }}" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="company" class="form-label">
+                                    <i class="bi bi-building"></i> Empresa *
+                                </label>
+                                <select class="form-select" id="company" name="company" required>
+                                    <option value="">Seleccionar empresa...</option>
+                                    {% for company in companies %}
+                                    <option value="{{ company.pk }}" 
+                                            {% if opportunity.company.pk == company.pk %}selected{% endif %}>
+                                        {{ company.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="status" class="form-label">
+                                    <i class="bi bi-kanban"></i> Estado *
+                                </label>
+                                <select class="form-select" id="status" name="status" required>
+                                    <option value="">Seleccionar estado...</option>
+                                    {% for status in statuses %}
+                                    <option value="{{ status.pk }}" 
+                                            {% if opportunity.status.pk == status.pk %}selected{% endif %}
+                                            data-color="{{ status.color }}">
+                                        {{ status.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="description" class="form-label">
+                                    <i class="bi bi-text-paragraph"></i> Descripción
+                                </label>
+                                <textarea class="form-control" id="description" name="description" 
+                                          rows="3">{{ opportunity.description|default:'' }}</textarea>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="contact_name" class="form-label">
+                                    <i class="bi bi-person"></i> Contacto Principal *
+                                </label>
+                                <input type="text" class="form-control" id="contact_name" name="contact_name" 
+                                       value="{{ opportunity.contact_name|default:'' }}" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="contact_email" class="form-label">
+                                    <i class="bi bi-envelope"></i> Email de Contacto
+                                </label>
+                                <input type="email" class="form-control" id="contact_email" name="contact_email" 
+                                       value="{{ opportunity.contact_email|default:'' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="contact_phone" class="form-label">
+                                    <i class="bi bi-telephone"></i> Teléfono de Contacto
+                                </label>
+                                <input type="tel" class="form-control" id="contact_phone" name="contact_phone" 
+                                       value="{{ opportunity.contact_phone|default:'' }}">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="value" class="form-label">
+                                    <i class="bi bi-currency-dollar"></i> Valor Estimado *
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="value" name="value" 
+                                           value="{{ opportunity.value|default:'' }}" 
+                                           step="0.01" min="0" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="probability" class="form-label">
+                                    <i class="bi bi-percent"></i> Probabilidad de Cierre
+                                </label>
+                                <select class="form-select" id="probability" name="probability">
+                                    {% for value, label in probability_choices %}
+                                    <option value="{{ value }}" 
+                                            {% if opportunity.probability == value or value == 20 and not opportunity %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="progress mt-2" style="height: 10px;">
+                                    <div id="probability-bar" class="progress-bar" role="progressbar" 
+                                         style="width: {% if opportunity %}{{ opportunity.probability }}{% else %}20{% endif %}%">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="expected_close_date" class="form-label">
+                                    <i class="bi bi-calendar-event"></i> Fecha Estimada de Cierre *
+                                </label>
+                                <input type="date" class="form-control" id="expected_close_date" name="expected_close_date" 
+                                       value="{{ opportunity.expected_close_date|date:'Y-m-d'|default:'' }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="assigned_to" class="form-label">
+                                    <i class="bi bi-person-check"></i> Asignado a
+                                </label>
+                                <select class="form-select" id="assigned_to" name="assigned_to">
+                                    <option value="">Sin asignar</option>
+                                    {% for user in users %}
+                                    <option value="{{ user.pk }}" 
+                                            {% if opportunity.assigned_to.pk == user.pk %}selected{% endif %}>
+                                        {{ user.get_full_name|default:user.username }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="source" class="form-label">
+                                    <i class="bi bi-arrow-down-circle"></i> Fuente/Origen
+                                </label>
+                                <input type="text" class="form-control" id="source" name="source" 
+                                       value="{{ opportunity.source|default:'' }}" 
+                                       placeholder="¿Cómo se originó esta oportunidad?">
+                            </div>
+                        </div>
+
+                        <!-- Solo mostrar comentario de cambio de estado si se está editando -->
+                        {% if opportunity %}
+                        <div class="row" id="status-comment-section" style="display: none;">
+                            <div class="col-md-12 mb-3">
+                                <label for="status_comment" class="form-label">
+                                    <i class="bi bi-chat-square-text"></i> Comentario del Cambio de Estado
+                                </label>
+                                <textarea class="form-control" id="status_comment" name="status_comment" 
+                                          rows="2" placeholder="Razón del cambio de estado (opcional)"></textarea>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% if opportunity %}{% url 'opportunity_detail' opportunity.pk %}{% else %}{% url 'opportunity_list' %}{% endif %}" 
+                               class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i>
+                                {% if opportunity %}Actualizar{% else %}Crear{% endif %} Oportunidad
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Actualizar barra de progreso al cambiar probabilidad
+document.getElementById('probability').addEventListener('change', function() {
+    const value = this.value;
+    const progressBar = document.getElementById('probability-bar');
+    progressBar.style.width = value + '%';
+});
+
+// Mostrar campo de comentario si se cambia el estado (solo en modo edición)
+{% if opportunity %}
+const originalStatus = '{{ opportunity.status.pk }}';
+document.getElementById('status').addEventListener('change', function() {
+    const commentSection = document.getElementById('status-comment-section');
+    if (this.value !== originalStatus) {
+        commentSection.style.display = 'block';
+    } else {
+        commentSection.style.display = 'none';
+    }
+});
+{% endif %}
+</script>
+{% endblock %}

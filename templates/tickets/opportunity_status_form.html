@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if status %}Editar{% else %}Nuevo{% endif %} Estado - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="bi bi-{% if status %}pencil{% else %}plus-circle{% endif %} text-primary"></i>
+                        {% if status %}Editar Estado{% else %}Nuevo Estado{% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="name" class="form-label">
+                                <i class="bi bi-tag"></i> Nombre del Estado *
+                            </label>
+                            <input type="text" class="form-control" id="name" name="name" 
+                                   value="{{ status.name|default:'' }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">
+                                <i class="bi bi-text-paragraph"></i> Descripción
+                            </label>
+                            <textarea class="form-control" id="description" name="description" 
+                                      rows="3">{{ status.description|default:'' }}</textarea>
+                            <div class="form-text">Descripción opcional del estado.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="color" class="form-label">
+                                <i class="bi bi-palette"></i> Color
+                            </label>
+                            <div class="input-group">
+                                <input type="color" class="form-control form-control-color" id="color" name="color" 
+                                       value="{{ status.color|default:'#007bff' }}">
+                                <input type="text" class="form-control" id="color-text" 
+                                       value="{{ status.color|default:'#007bff' }}" readonly>
+                            </div>
+                            <div class="form-text">Color que se mostrará en el pipeline.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="order" class="form-label">
+                                <i class="bi bi-arrow-up-down"></i> Orden
+                            </label>
+                            <input type="number" class="form-control" id="order" name="order" 
+                                   value="{{ status.order|default:0 }}" min="0">
+                            <div class="form-text">Orden de aparición en el pipeline (0 = primero).</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="is_final" name="is_final"
+                                       {% if status.is_final %}checked{% endif %}>
+                                <label class="form-check-label" for="is_final">
+                                    <i class="bi bi-flag"></i> Estado Final
+                                </label>
+                                <div class="form-text">Marca este estado como final (cierre de la oportunidad).</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="is_won" name="is_won"
+                                       {% if status.is_won %}checked{% endif %}>
+                                <label class="form-check-label" for="is_won">
+                                    <i class="bi bi-trophy"></i> Estado Ganado
+                                </label>
+                                <div class="form-text">Marca este estado como venta exitosa.</div>
+                            </div>
+                        </div>
+
+                        {% if status %}
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="is_active" name="is_active"
+                                       {% if status.is_active %}checked{% endif %}>
+                                <label class="form-check-label" for="is_active">
+                                    <i class="bi bi-check-circle"></i> Estado Activo
+                                </label>
+                                <div class="form-text">Desmarcar para ocultar este estado.</div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Vista previa del estado -->
+                        <div class="mb-3">
+                            <label class="form-label">Vista Previa</label>
+                            <div class="border p-3 rounded">
+                                <div class="d-flex align-items-center">
+                                    <div id="preview-color" class="me-2" 
+                                         style="width: 20px; height: 20px; background-color: {{ status.color|default:'#007bff' }}; border-radius: 50%;"></div>
+                                    <span id="preview-name" class="fw-bold">{{ status.name|default:'Nombre del Estado' }}</span>
+                                    <div class="ms-auto">
+                                        <span id="preview-badges">
+                                            {% if status.is_final %}
+                                                <span class="badge bg-danger ms-1">Final</span>
+                                            {% endif %}
+                                            {% if status.is_won %}
+                                                <span class="badge bg-success ms-1">Ganado</span>
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'opportunity_status_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i>
+                                {% if status %}Actualizar{% else %}Crear{% endif %} Estado
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Sincronizar color picker con input de texto
+document.getElementById('color').addEventListener('input', function() {
+    document.getElementById('color-text').value = this.value;
+    document.getElementById('preview-color').style.backgroundColor = this.value;
+});
+
+// Actualizar vista previa del nombre
+document.getElementById('name').addEventListener('input', function() {
+    const previewName = document.getElementById('preview-name');
+    previewName.textContent = this.value || 'Nombre del Estado';
+});
+
+// Actualizar badges de vista previa
+function updatePreviewBadges() {
+    const isFinal = document.getElementById('is_final').checked;
+    const isWon = document.getElementById('is_won').checked;
+    const previewBadges = document.getElementById('preview-badges');
+    
+    let badges = '';
+    if (isFinal) {
+        badges += '<span class="badge bg-danger ms-1">Final</span>';
+    }
+    if (isWon) {
+        badges += '<span class="badge bg-success ms-1">Ganado</span>';
+    }
+    
+    previewBadges.innerHTML = badges;
+}
+
+document.getElementById('is_final').addEventListener('change', updatePreviewBadges);
+document.getElementById('is_won').addEventListener('change', updatePreviewBadges);
+
+// Auto-marcar "Final" cuando se marca "Ganado"
+document.getElementById('is_won').addEventListener('change', function() {
+    if (this.checked) {
+        document.getElementById('is_final').checked = true;
+        updatePreviewBadges();
+    }
+});
+</script>
+{% endblock %}

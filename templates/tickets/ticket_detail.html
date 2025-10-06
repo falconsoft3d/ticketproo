@@ -57,6 +57,22 @@
                             {% endif %}
                         </p>
                     </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <h6 class="text-muted mb-2">Empresa:</h6>
+                        <p class="mb-0">
+                            {% if ticket.company %}
+                                <span class="badge" style="background-color: {{ ticket.company.color }}; color: white;">
+                                    <i class="bi bi-building me-1"></i>{{ ticket.company.name }}
+                                </span>
+                                {% if ticket.company.description %}
+                                    <br><small class="text-muted">{{ ticket.company.description }}</small>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">Sin empresa asignada</span>
+                            {% endif %}
+                        </p>
+                    </div>
 
                     <div class="col-md-6 mb-3">
                         <h6 class="text-muted mb-2">Fecha de creación:</h6>

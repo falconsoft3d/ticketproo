@@ -4,9 +4,24 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>
-        <i class="bi bi-list-ul"></i> Mis Tickets
-    </h1>
+    <div>
+        <h1>
+            <i class="bi bi-list-ul"></i> 
+            {% if user.groups.all and user.groups.first.name == 'Agentes' %}
+                Todos los Tickets
+            {% else %}
+                Mis Tickets{% if user.profile.company %} y de {{ user.profile.company.name }}{% endif %}
+            {% endif %}
+        </h1>
+        {% if not user.groups.all or user.groups.first.name != 'Agentes' %}
+            {% if user.profile.company %}
+                <p class="text-muted mb-0">
+                    <i class="bi bi-info-circle"></i> 
+                    Viendo tus tickets personales y los tickets de tu empresa
+                </p>
+            {% endif %}
+        {% endif %}
+    </div>
     <a href="{% url 'ticket_create' %}" class="btn btn-primary">
         <i class="bi bi-plus"></i> Nuevo Ticket
     </a>
@@ -34,30 +49,7 @@
                 </select>
             </div>
             
-            <div class="col-md-3">
-                <label for="priority" class="form-label">Prioridad</label>
-                <select class="form-select" id="priority" name="priority">
-                    <option value="">Todas las prioridades</option>
-                    {% for priority_value, priority_label in priority_choices %}
-                        <option value="{{ priority_value }}" {% if priority_filter == priority_value %}selected{% endif %}>
-                            {{ priority_label }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-            
-            {% if is_agent %}
-            <div class="col-md-2">
-                <label for="assigned_to" class="form-label">Asignación</label>
-                <select class="form-select" id="assigned_to" name="assigned_to">
-                    <option value="">Todos</option>
-                    <option value="unassigned" {% if assigned_filter == 'unassigned' %}selected{% endif %}>Sin asignar</option>
-                    <option value="me" {% if assigned_filter == 'me' %}selected{% endif %}>Asignados a mí</option>
-                </select>
-            </div>
-            {% endif %}
-            
-            <div class="col-md-{% if is_agent %}2{% else %}3{% endif %} d-flex align-items-end">
+            <div class="col-md-3 d-flex align-items-end">
                 <div class="filter-buttons">
                     <button type="submit" class="btn btn-outline-primary">
                         <i class="bi bi-search"></i> Filtrar
@@ -79,16 +71,14 @@
             <table class="table table-hover ticket-table mb-0" style="table-layout: fixed; width: 100%;">
                 <thead class="table-light">
                     <tr>
-                        <th style="width: 10%; min-width: 100px;">Número</th>
-                        <th style="width: 25%; min-width: 200px;">Título</th>
-                        <th style="width: 12%; min-width: 120px;">Categoría</th>
-                        {% if is_agent %}<th style="width: 10%; min-width: 100px;">Creador</th>{% endif %}
-                        <th style="width: 10%; min-width: 100px;">Prioridad</th>
-                        <th style="width: 10%; min-width: 100px;">Estado</th>
-                        {% if is_agent %}<th style="width: 10%; min-width: 100px;">Asignado a</th>{% endif %}
-                        {% if is_agent %}<th style="width: 8%; min-width: 80px;">Horas</th>{% endif %}
-                        <th style="width: 12%; min-width: 120px;">Fecha Creación</th>
-                        <th style="width: 13%; min-width: 130px;">Acciones</th>
+                        <th style="width: 8%; min-width: 80px;">Número</th>
+                        <th style="width: 20%; min-width: 160px;">Título</th>
+                        <th style="width: 10%; min-width: 100px;">Categoría</th>
+                        <th style="width: 12%; min-width: 100px;">Empresa</th>
+                        {% if is_agent %}<th style="width: 8%; min-width: 80px;">Creador</th>{% endif %}
+                        <th style="width: 8%; min-width: 80px;">Estado</th>
+                        <th style="width: 10%; min-width: 100px;">Fecha Creación</th>
+                        <th style="width: 12%; min-width: 120px;">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -104,6 +94,15 @@
                                class="text-decoration-none" 
                                title="{{ ticket.title }}"
                                style="display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                {% if not is_agent %}
+                                    {% if ticket.created_by == user %}
+                                        <i class="bi bi-person-circle text-primary me-1" title="Tu ticket"></i>
+                                    {% elif ticket.company == user.profile.company and user.profile.company %}
+                                        <i class="bi bi-building text-info me-1" title="Ticket de tu empresa"></i>
+                                    {% elif ticket.project in user.assigned_projects.all %}
+                                        <i class="bi bi-folder text-success me-1" title="Ticket de tu proyecto"></i>
+                                    {% endif %}
+                                {% endif %}
                                 {{ ticket.title }}
                             </a>
                         </td>
@@ -116,6 +115,15 @@
                                 <span class="text-muted">Sin categoría</span>
                             {% endif %}
                         </td>
+                        <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            {% if ticket.company %}
+                                <span class="badge" style="background-color: {{ ticket.company.color }}; color: white;">
+                                    <i class="bi bi-building me-1"></i>{{ ticket.company.name }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">Sin empresa</span>
+                            {% endif %}
+                        </td>
                         {% if is_agent %}
                         <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                             <small class="text-muted">
@@ -125,40 +133,10 @@
                         </td>
                         {% endif %}
                         <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            <span class="badge {{ ticket.get_priority_badge_class }}">
-                                {{ ticket.get_priority_display }}
-                            </span>
-                        </td>
-                        <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                             <span class="badge {{ ticket.get_status_badge_class }}">
                                 {{ ticket.get_status_display }}
                             </span>
                         </td>
-                        {% if is_agent %}
-                        <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            {% if ticket.assigned_to %}
-                                <small class="text-success">
-                                    <i class="bi bi-person-check"></i> 
-                                    {{ ticket.assigned_to.get_full_name|default:ticket.assigned_to.username }}
-                                </small>
-                            {% else %}
-                                <small class="text-warning">
-                                    <i class="bi bi-person-x"></i> Sin asignar
-                                </small>
-                            {% endif %}
-                        </td>
-                        {% endif %}
-                        {% if is_agent %}
-                        <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            {% if ticket.hours %}
-                                <span class="badge bg-info">
-                                    <i class="bi bi-clock-history"></i> {{ ticket.hours }}h
-                                </span>
-                            {% else %}
-                                <span class="text-muted">-</span>
-                            {% endif %}
-                        </td>
-                        {% endif %}
                         <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" class="text-muted">
                             {{ ticket.created_at|date:"d/m/Y H:i" }}
                         </td>

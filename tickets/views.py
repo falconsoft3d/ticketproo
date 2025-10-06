@@ -16,7 +16,8 @@ from datetime import timedelta
 from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
     UserNote, TimeEntry, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
-    DailyTaskSession, DailyTaskItem, ChatRoom, ChatMessage
+    DailyTaskSession, DailyTaskItem, ChatRoom, ChatMessage, ContactFormSubmission,
+    Opportunity, OpportunityStatus, OpportunityNote, OpportunityStatusHistory
 )
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
@@ -141,13 +142,39 @@ def dashboard_view(request):
             'daily_hours': daily_hours,
         }
     else:
-        # Estadísticas para usuarios regulares (solo sus tickets)
-        user_tickets = Ticket.objects.filter(created_by=request.user)
+        # Estadísticas para usuarios regulares (sus tickets + tickets de empresa + proyectos)
+        user_projects = request.user.assigned_projects.all()
+        user_company = None
+        
+        # Obtener empresa del usuario si tiene perfil
+        try:
+            user_company = request.user.profile.company
+        except:
+            pass
+        
+        # Construir query base
+        query_conditions = Q(created_by=request.user)  # Sus propios tickets
+        
+        # Agregar tickets de proyectos asignados
+        if user_projects.exists():
+            query_conditions |= Q(project__in=user_projects)
+        
+        # Agregar tickets de la empresa del usuario
+        if user_company:
+            query_conditions |= Q(company=user_company)
+        
+        user_tickets = Ticket.objects.filter(query_conditions).distinct()
         total_tickets = user_tickets.count()
         open_tickets = user_tickets.filter(status='open').count()
         in_progress_tickets = user_tickets.filter(status='in_progress').count()
         resolved_tickets = user_tickets.filter(status='resolved').count()
-        recent_tickets = user_tickets[:5]
+        recent_tickets = user_tickets.order_by('-created_at')[:5]
+        
+        # Estadísticas adicionales para mostrar el contexto
+        own_tickets = Ticket.objects.filter(created_by=request.user).count()
+        company_tickets = 0
+        if user_company:
+            company_tickets = Ticket.objects.filter(company=user_company).exclude(created_by=request.user).count()
         
         # Obtener horas diarias
         daily_hours = 0
@@ -165,6 +192,9 @@ def dashboard_view(request):
             'in_progress_tickets': in_progress_tickets,
             'resolved_tickets': resolved_tickets,
             'recent_tickets': recent_tickets,
+            'own_tickets': own_tickets,
+            'company_tickets': company_tickets,
+            'user_company': user_company,
             'user_role': user_role,
             'is_agent': False,
             'daily_hours': daily_hours,
@@ -179,17 +209,28 @@ def ticket_list_view(request):
         # Los agentes ven todos los tickets
         tickets = Ticket.objects.all()
     else:
-        # Los usuarios regulares ven sus propios tickets Y tickets de proyectos asignados
+        # Los usuarios regulares ven sus propios tickets Y tickets de proyectos asignados Y tickets de su empresa
         user_projects = request.user.assigned_projects.all()
+        user_company = None
         
+        # Obtener empresa del usuario si tiene perfil
+        try:
+            user_company = request.user.profile.company
+        except:
+            pass
+        
+        # Construir query base
+        query_conditions = Q(created_by=request.user)  # Sus propios tickets
+        
+        # Agregar tickets de proyectos asignados
         if user_projects.exists():
-            # El usuario tiene proyectos asignados: ve sus tickets + tickets de sus proyectos
-            tickets = Ticket.objects.filter(
-                Q(created_by=request.user) | Q(project__in=user_projects)
-            ).distinct()
-        else:
-            # El usuario no tiene proyectos: solo ve sus propios tickets
-            tickets = Ticket.objects.filter(created_by=request.user)
+            query_conditions |= Q(project__in=user_projects)
+        
+        # Agregar tickets de la empresa del usuario
+        if user_company:
+            query_conditions |= Q(company=user_company)
+        
+        tickets = Ticket.objects.filter(query_conditions).distinct()
     
     # Filtros
     status_filter = request.GET.get('status')
@@ -269,8 +310,33 @@ def ticket_detail_view(request, pk):
         # Los agentes pueden ver cualquier ticket
         ticket = get_object_or_404(Ticket, pk=pk)
     else:
-        # Los usuarios solo pueden ver sus propios tickets
-        ticket = get_object_or_404(Ticket, pk=pk, created_by=request.user)
+        # Los usuarios pueden ver sus propios tickets O tickets de su empresa O tickets de proyectos asignados
+        user_projects = request.user.assigned_projects.all()
+        user_company = None
+        
+        # Obtener empresa del usuario si tiene perfil
+        try:
+            user_company = request.user.profile.company
+        except:
+            pass
+        
+        # Construir query de acceso
+        query_conditions = Q(created_by=request.user)  # Sus propios tickets
+        
+        # Agregar tickets de proyectos asignados
+        if user_projects.exists():
+            query_conditions |= Q(project__in=user_projects)
+        
+        # Agregar tickets de la empresa del usuario
+        if user_company:
+            query_conditions |= Q(company=user_company)
+        
+        ticket = get_object_or_404(Ticket, pk=pk)
+        
+        # Verificar que el usuario tenga acceso al ticket
+        if not Ticket.objects.filter(pk=pk).filter(query_conditions).exists():
+            messages.error(request, 'No tienes permisos para ver este ticket.')
+            return redirect('ticket_list')
     
     # Manejar autoasignación para agentes
     if request.method == 'POST' and 'assign_to_me' in request.POST and is_agent(request.user):
@@ -346,8 +412,34 @@ def ticket_edit_view(request, pk):
         ticket = get_object_or_404(Ticket, pk=pk)
         FormClass = AgentTicketForm
     else:
-        # Los usuarios solo pueden editar sus propios tickets
-        ticket = get_object_or_404(Ticket, pk=pk, created_by=request.user)
+        # Los usuarios pueden editar sus propios tickets O tickets de su empresa O tickets de proyectos asignados
+        user_projects = request.user.assigned_projects.all()
+        user_company = None
+        
+        # Obtener empresa del usuario si tiene perfil
+        try:
+            user_company = request.user.profile.company
+        except:
+            pass
+        
+        # Construir query de acceso
+        query_conditions = Q(created_by=request.user)  # Sus propios tickets
+        
+        # Agregar tickets de proyectos asignados
+        if user_projects.exists():
+            query_conditions |= Q(project__in=user_projects)
+        
+        # Agregar tickets de la empresa del usuario
+        if user_company:
+            query_conditions |= Q(company=user_company)
+        
+        ticket = get_object_or_404(Ticket, pk=pk)
+        
+        # Verificar que el usuario tenga acceso al ticket
+        if not Ticket.objects.filter(pk=pk).filter(query_conditions).exists():
+            messages.error(request, 'No tienes permisos para editar este ticket.')
+            return redirect('ticket_list')
+        
         FormClass = UserTicketEditForm
     
     if request.method == 'POST':
@@ -776,6 +868,8 @@ def public_ticket_view(request, token):
 @login_required
 def user_profile_view(request):
     """Vista para mostrar y actualizar el perfil del usuario"""
+    from . import utils
+    
     # Obtener o crear el perfil del usuario
     profile, created = UserProfile.objects.get_or_create(user=request.user)
     
@@ -804,6 +898,13 @@ def user_profile_view(request):
                 messages.success(request, 'Tu perfil ha sido actualizado exitosamente.')
                 return redirect('user_profile')
         
+        elif 'update_contact_form_toggle' in request.POST:
+            # Actualizar solo el toggle del formulario de contacto
+            enable_form = request.POST.get('enable_public_contact_form') == 'true'
+            profile.enable_public_contact_form = enable_form
+            profile.save()
+            return JsonResponse({'success': True})
+        
         elif 'change_password' in request.POST:
             # Cambiar contraseña
             password_form = CustomPasswordChangeForm(request.user, request.POST)
@@ -828,11 +929,31 @@ def user_profile_view(request):
     
     public_task_url = f"{protocol}://{request.get_host()}/public/tasks/{profile.public_token}/"
     
+    # Construir URL pública para formulario de contacto
+    public_contact_form_url = None
+    contact_form_stats = None
+    if profile.enable_public_contact_form:
+        public_contact_form_url = f"{protocol}://{request.get_host()}/contact/{profile.public_token}/"
+        
+        # Calcular estadísticas de formularios de contacto
+        from .models import ContactFormSubmission
+        submissions = ContactFormSubmission.objects.filter(submitted_by_user=request.user)
+        contact_form_stats = {
+            'pending': submissions.filter(status='pending').count(),
+            'approved': submissions.filter(status='approved').count(),
+            'rejected': submissions.filter(status='rejected').count(),
+            'company_created': submissions.filter(status='company_created').count(),
+            'total': submissions.count(),
+        }
+    
     context = {
         'profile_form': profile_form,
         'password_form': password_form,
         'user_profile': profile,
         'public_task_url': public_task_url,
+        'public_contact_form_url': public_contact_form_url,
+        'contact_form_stats': contact_form_stats,
+        'is_agent': utils.is_agent(request.user),
         'page_title': 'Mi Perfil'
     }
     return render(request, 'tickets/user_profile.html', context)
@@ -1681,7 +1802,7 @@ def company_list_view(request):
 def company_create_view(request):
     """Vista para crear una nueva empresa"""
     if request.method == 'POST':
-        form = CompanyForm(request.POST)
+        form = CompanyForm(request.POST, request.FILES)
         if form.is_valid():
             company = form.save()
             messages.success(request, f'La empresa "{company.name}" ha sido creada exitosamente.')
@@ -1707,8 +1828,8 @@ def company_detail_view(request, company_id):
     # Estadísticas de la empresa
     total_tickets = company.tickets.count()
     open_tickets = company.tickets.filter(status='open').count()
-    total_users = company.userprofile_set.count()
-    active_users = company.userprofile_set.filter(user__is_active=True).count()
+    total_users = company.users.count()
+    active_users = company.users.filter(user__is_active=True).count()
     
     # Tickets recientes
     recent_tickets = company.tickets.select_related(
@@ -1716,7 +1837,7 @@ def company_detail_view(request, company_id):
     ).order_by('-created_at')[:10]
     
     # Usuarios de la empresa
-    company_users = company.userprofile_set.select_related('user').order_by('user__first_name', 'user__username')
+    company_users = company.users.select_related('user').order_by('user__first_name', 'user__username')
     
     context = {
         'page_title': f'Empresa: {company.name}',
@@ -1739,7 +1860,7 @@ def company_edit_view(request, company_id):
     company = get_object_or_404(Company, id=company_id)
     
     if request.method == 'POST':
-        form = CompanyForm(request.POST, instance=company)
+        form = CompanyForm(request.POST, request.FILES, instance=company)
         if form.is_valid():
             form.save()
             messages.success(request, f'La empresa "{company.name}" ha sido actualizada exitosamente.')
@@ -1765,7 +1886,7 @@ def company_delete_view(request, company_id):
     
     # Verificar si la empresa tiene tickets o usuarios asociados
     has_tickets = company.tickets.exists()
-    has_users = company.userprofile_set.exists()
+    has_users = company.users.exists()
     
     if request.method == 'POST':
         if has_tickets or has_users:
@@ -3891,3 +4012,912 @@ def pdf_split_view(request):
 def calculator_view(request):
     """Vista para la calculadora con historial"""
     return render(request, 'tickets/calculator.html')
+
+
+@login_required
+@user_passes_test(is_agent)
+def command_library_view(request):
+    """Vista principal de la biblioteca de comandos con búsqueda"""
+    from .forms import CommandSearchForm
+    from .models import Command
+    from django.db.models import Q
+    
+    form = CommandSearchForm(request.GET)
+    commands = Command.objects.all()
+    
+    if form.is_valid():
+        query = form.cleaned_data.get('query')
+        category = form.cleaned_data.get('category')
+        favorites_only = form.cleaned_data.get('favorites_only')
+        dangerous_only = form.cleaned_data.get('dangerous_only')
+        
+        # Búsqueda por texto
+        if query:
+            commands = commands.filter(
+                Q(title__icontains=query) |
+                Q(description__icontains=query) |
+                Q(command__icontains=query) |
+                Q(tags__icontains=query) |
+                Q(example_usage__icontains=query) |
+                Q(notes__icontains=query)
+            )
+        
+        # Filtrar por categoría
+        if category:
+            commands = commands.filter(category=category)
+        
+        # Filtrar solo favoritos
+        if favorites_only:
+            commands = commands.filter(is_favorite=True)
+        
+        # Filtrar solo comandos peligrosos
+        if dangerous_only:
+            commands = commands.filter(is_dangerous=True)
+    
+    # Estadísticas
+    total_commands = Command.objects.count()
+    favorites_count = Command.objects.filter(is_favorite=True).count()
+    dangerous_count = Command.objects.filter(is_dangerous=True).count()
+    
+    # Paginación
+    from django.core.paginator import Paginator
+    paginator = Paginator(commands, 12)  # 12 comandos por página
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'form': form,
+        'page_obj': page_obj,
+        'total_commands': total_commands,
+        'favorites_count': favorites_count,
+        'dangerous_count': dangerous_count,
+        'query': request.GET.get('query', ''),
+    }
+    
+    return render(request, 'tickets/command_library.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def command_create_view(request):
+    """Vista para crear un nuevo comando"""
+    from .forms import CommandForm
+    from .models import Command
+    
+    if request.method == 'POST':
+        form = CommandForm(request.POST)
+        if form.is_valid():
+            command = form.save(commit=False)
+            command.created_by = request.user
+            command.save()
+            messages.success(request, 'Comando creado exitosamente.')
+            return redirect('command_detail', pk=command.pk)
+    else:
+        form = CommandForm()
+    
+    return render(request, 'tickets/command_form.html', {
+        'form': form,
+        'title': 'Crear Comando',
+        'action': 'Crear'
+    })
+
+
+@login_required
+@user_passes_test(is_agent)
+def command_detail_view(request, pk):
+    """Vista de detalle de un comando"""
+    from .models import Command
+    
+    command = get_object_or_404(Command, pk=pk)
+    
+    context = {
+        'command': command,
+    }
+    
+    return render(request, 'tickets/command_detail.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def command_edit_view(request, pk):
+    """Vista para editar un comando"""
+    from .forms import CommandForm
+    from .models import Command
+    
+    command = get_object_or_404(Command, pk=pk)
+    
+    if request.method == 'POST':
+        form = CommandForm(request.POST, instance=command)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Comando actualizado exitosamente.')
+            return redirect('command_detail', pk=command.pk)
+    else:
+        form = CommandForm(instance=command)
+    
+    return render(request, 'tickets/command_form.html', {
+        'form': form,
+        'command': command,
+        'title': 'Editar Comando',
+        'action': 'Actualizar'
+    })
+
+
+@login_required
+@user_passes_test(is_agent)
+def command_delete_view(request, pk):
+    """Vista para eliminar un comando"""
+    from .models import Command
+    
+    command = get_object_or_404(Command, pk=pk)
+    
+    if request.method == 'POST':
+        command.delete()
+        messages.success(request, 'Comando eliminado exitosamente.')
+        return redirect('command_library')
+    
+    return render(request, 'tickets/command_delete.html', {
+        'command': command,
+    })
+
+
+@login_required
+@user_passes_test(is_agent)
+def command_copy_view(request, pk):
+    """Vista AJAX para copiar un comando e incrementar contador de uso"""
+    from .models import Command
+    
+    if request.method == 'POST':
+        command = get_object_or_404(Command, pk=pk)
+        command.increment_usage()
+        
+        return JsonResponse({
+            'success': True,
+            'command': command.command,
+            'usage_count': command.usage_count,
+            'message': 'Comando copiado al portapapeles'
+        })
+    
+    return JsonResponse({'success': False})
+
+
+@login_required
+@user_passes_test(is_agent)
+def command_toggle_favorite_view(request, pk):
+    """Vista AJAX para alternar favorito de un comando"""
+    from .models import Command
+    
+    if request.method == 'POST':
+        command = get_object_or_404(Command, pk=pk)
+        command.is_favorite = not command.is_favorite
+        command.save()
+        
+        return JsonResponse({
+            'success': True,
+            'is_favorite': command.is_favorite,
+            'message': 'Favorito actualizado'
+        })
+    
+    return JsonResponse({'success': False})
+
+
+# ===== VISTAS DE FORMULARIO DE CONTACTO PÚBLICO =====
+
+def public_contact_form_view(request, token):
+    """Vista pública para formulario de contacto"""
+    from .models import UserProfile, ContactFormSubmission
+    from .forms import PublicContactForm
+    
+    # Buscar el perfil del usuario con el token
+    try:
+        profile = UserProfile.objects.get(public_token=token, enable_public_contact_form=True)
+    except UserProfile.DoesNotExist:
+        return render(request, 'tickets/public_contact_error.html', {
+            'error_message': 'Formulario de contacto no encontrado o no disponible'
+        })
+    
+    if request.method == 'POST':
+        form = PublicContactForm(request.POST)
+        if form.is_valid():
+            # Crear la submission del formulario
+            submission = form.save(commit=False)
+            submission.submitted_by_user = profile.user
+            
+            # Obtener información adicional de la petición
+            submission.ip_address = get_client_ip(request)
+            submission.user_agent = request.META.get('HTTP_USER_AGENT', '')
+            
+            submission.save()
+            
+            # Redireccionar a página de éxito
+            return redirect('contact_form_success')
+    else:
+        form = PublicContactForm()
+    
+    context = {
+        'form': form,
+        'profile': profile,
+        'user_owner': profile.user,
+        'page_title': f'Formulario de Contacto - {profile.user.get_full_name() or profile.user.username}'
+    }
+    
+    return render(request, 'tickets/public_contact_form.html', context)
+
+
+def contact_form_success(request):
+    """Vista de éxito después de enviar formulario de contacto"""
+    return render(request, 'tickets/contact_form_success.html')
+
+
+@login_required
+def contact_submissions_list(request):
+    """Vista para listar formularios de contacto recibidos"""
+    from .models import ContactFormSubmission
+    from django.core.paginator import Paginator
+    
+    # Solo mostrar formularios enviados a este usuario
+    submissions = ContactFormSubmission.objects.filter(
+        submitted_by_user=request.user
+    ).order_by('-submitted_at')
+    
+    # Filtros
+    status_filter = request.GET.get('status')
+    if status_filter:
+        submissions = submissions.filter(status=status_filter)
+    
+    # Paginación
+    paginator = Paginator(submissions, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Estadísticas
+    stats = {
+        'total': submissions.count(),
+        'pending': submissions.filter(status='pending').count(),
+        'approved': submissions.filter(status='approved').count(),
+        'rejected': submissions.filter(status='rejected').count(),
+        'company_created': submissions.filter(status='company_created').count(),
+    }
+    
+    context = {
+        'page_obj': page_obj,
+        'submissions': page_obj,
+        'stats': stats,
+        'status_filter': status_filter,
+        'status_choices': ContactFormSubmission.STATUS_CHOICES,
+        'page_title': 'Formularios de Contacto Recibidos'
+    }
+    
+    return render(request, 'tickets/contact_submissions_list.html', context)
+
+
+@login_required
+def contact_submission_detail(request, pk):
+    """Vista detallada de un formulario de contacto"""
+    from .models import ContactFormSubmission
+    from .forms import ContactFormManagementForm
+    
+    submission = get_object_or_404(
+        ContactFormSubmission, 
+        pk=pk, 
+        submitted_by_user=request.user
+    )
+    
+    if request.method == 'POST':
+        if 'update_notes' in request.POST:
+            # Actualizar solo las notas administrativas
+            admin_notes = request.POST.get('admin_notes', '')
+            submission.admin_notes = admin_notes
+            submission.save()
+            messages.success(request, 'Notas administrativas actualizadas exitosamente.')
+            return redirect('contact_submission_detail', pk=pk)
+        else:
+            # Actualizar el formulario completo
+            form = ContactFormManagementForm(request.POST, instance=submission)
+            if form.is_valid():
+                updated_submission = form.save(commit=False)
+                if updated_submission.status != submission.status:
+                    updated_submission.processed_by = request.user
+                    updated_submission.processed_at = timezone.now()
+                updated_submission.save()
+                
+                messages.success(request, 'Formulario de contacto actualizado exitosamente.')
+                return redirect('contact_submission_detail', pk=pk)
+    else:
+        form = ContactFormManagementForm(instance=submission)
+    
+    context = {
+        'submission': submission,
+        'form': form,
+        'page_title': f'Formulario de Contacto - {submission.company_name}'
+    }
+    
+    return render(request, 'tickets/contact_submission_detail.html', context)
+
+
+@login_required
+def contact_submission_approve(request, pk):
+    """Aprobar un formulario de contacto y crear empresa"""
+    from .models import ContactFormSubmission, Company
+    from .forms import CompanyFromContactForm
+    
+    submission = get_object_or_404(
+        ContactFormSubmission, 
+        pk=pk, 
+        submitted_by_user=request.user
+    )
+    
+    if request.method == 'POST':
+        form = CompanyFromContactForm(request.POST, contact_form=submission)
+        
+        if form.is_valid():
+            # Crear la empresa
+            company = form.save()
+            
+            # Marcar el formulario como procesado
+            submission.mark_as_processed(
+                user=request.user,
+                status='company_created',
+                company=company
+            )
+            
+            messages.success(
+                request, 
+                f'Empresa "{company.name}" creada exitosamente desde el formulario de contacto.'
+            )
+            return redirect('company_detail', company_id=company.id)
+        else:
+            messages.error(request, f'Error al crear la empresa: {form.errors}')
+    else:
+        form = CompanyFromContactForm(contact_form=submission)
+    
+    context = {
+        'submission': submission,
+        'form': form,
+        'page_title': f'Crear Empresa - {submission.company_name}'
+    }
+    
+    return render(request, 'tickets/contact_submission_approve.html', context)
+
+
+@login_required
+def contact_submission_reject(request, pk):
+    """Rechazar un formulario de contacto"""
+    from .models import ContactFormSubmission
+    
+    submission = get_object_or_404(
+        ContactFormSubmission, 
+        pk=pk, 
+        submitted_by_user=request.user
+    )
+    
+    if request.method == 'POST':
+        reason = request.POST.get('reason', '')
+        
+        # Actualizar el formulario
+        submission.mark_as_processed(
+            user=request.user,
+            status='rejected'
+        )
+        
+        if reason:
+            submission.admin_notes = f"Rechazado: {reason}"
+            submission.save()
+        
+        messages.success(request, 'Formulario de contacto rechazado.')
+        return redirect('contact_submissions_list')
+    
+    context = {
+        'submission': submission,
+        'page_title': f'Rechazar Formulario - {submission.company_name}'
+    }
+    
+    return render(request, 'tickets/contact_submission_reject.html', context)
+
+
+def get_client_ip(request):
+    """Obtener la IP del cliente"""
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+
+
+@login_required
+def tetris_view(request):
+    """Vista para el juego Tetris - para todos los usuarios autenticados"""
+    context = {
+        'page_title': 'Tetris - Juegos',
+        'user_role': get_user_role(request.user)
+    }
+    return render(request, 'tickets/tetris.html', context)
+
+
+def public_company_stats(request, token):
+    """Vista pública para mostrar estadísticas de una empresa usando su token"""
+    try:
+        company = Company.objects.get(public_token=token, is_active=True)
+    except Company.DoesNotExist:
+        raise Http404("Empresa no encontrada o token inválido")
+    
+    # Obtener estadísticas públicas
+    stats = company.get_public_stats()
+    
+    # Obtener tickets abiertos de la empresa (limitados a los primeros 10)
+    open_tickets = company.tickets.filter(status='open').order_by('-created_at')[:10]
+    
+    context = {
+        'company': company,
+        'stats': stats,
+        'open_tickets': open_tickets,
+        'page_title': f'Estadísticas - {company.name}'
+    }
+    
+    return render(request, 'tickets/public_company_stats.html', context)
+
+
+# ============= VISTAS CRM =============
+
+@login_required
+def crm_dashboard(request):
+    """Dashboard principal del CRM"""
+    from . import utils
+    
+    # Obtener oportunidades del usuario
+    if utils.is_agent(request.user):
+        opportunities = Opportunity.objects.all()
+    else:
+        opportunities = Opportunity.objects.filter(
+            Q(created_by=request.user) | Q(assigned_to=request.user)
+        )
+    
+    # Estadísticas generales
+    total_opportunities = opportunities.count()
+    total_value = opportunities.aggregate(total=Sum('value'))['total'] or 0
+    total_expected_value = sum(opp.expected_value for opp in opportunities)
+    
+    # Oportunidades por estado
+    status_stats = {}
+    for status in OpportunityStatus.objects.filter(is_active=True):
+        count = opportunities.filter(status=status).count()
+        value = opportunities.filter(status=status).aggregate(total=Sum('value'))['total'] or 0
+        status_stats[status] = {'count': count, 'value': value}
+    
+    # Oportunidades próximas a vencer (próximos 7 días)
+    next_week = timezone.now().date() + timedelta(days=7)
+    upcoming_opportunities = opportunities.filter(
+        expected_close_date__lte=next_week,
+        expected_close_date__gte=timezone.now().date(),
+        status__is_final=False
+    ).order_by('expected_close_date')[:5]
+    
+    # Oportunidades vencidas
+    overdue_opportunities = opportunities.filter(
+        expected_close_date__lt=timezone.now().date(),
+        status__is_final=False
+    ).count()
+    
+    context = {
+        'total_opportunities': total_opportunities,
+        'total_value': total_value,
+        'total_expected_value': total_expected_value,
+        'status_stats': status_stats,
+        'upcoming_opportunities': upcoming_opportunities,
+        'overdue_opportunities': overdue_opportunities,
+        'page_title': 'CRM Dashboard'
+    }
+    
+    return render(request, 'tickets/crm_dashboard.html', context)
+
+
+@login_required
+def opportunity_list(request):
+    """Lista de oportunidades"""
+    from . import utils
+    
+    # Obtener oportunidades del usuario
+    if utils.is_agent(request.user):
+        opportunities = Opportunity.objects.all()
+    else:
+        opportunities = Opportunity.objects.filter(
+            Q(created_by=request.user) | Q(assigned_to=request.user)
+        )
+    
+    # Filtros
+    status_filter = request.GET.get('status')
+    company_filter = request.GET.get('company')
+    assigned_filter = request.GET.get('assigned')
+    search = request.GET.get('search')
+    
+    if status_filter:
+        opportunities = opportunities.filter(status_id=status_filter)
+    
+    if company_filter:
+        opportunities = opportunities.filter(company_id=company_filter)
+    
+    if assigned_filter:
+        opportunities = opportunities.filter(assigned_to_id=assigned_filter)
+    
+    if search:
+        opportunities = opportunities.filter(
+            Q(name__icontains=search) |
+            Q(description__icontains=search) |
+            Q(company__name__icontains=search) |
+            Q(contact_name__icontains=search)
+        )
+    
+    # Ordenamiento
+    order_by = request.GET.get('order_by', '-created_at')
+    opportunities = opportunities.order_by(order_by)
+    
+    # Paginación
+    paginator = Paginator(opportunities, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Agregar información de permisos a cada oportunidad
+    for opportunity in page_obj:
+        opportunity.user_can_edit = opportunity.can_be_edited_by(request.user)
+    
+    # Para los filtros
+    statuses = OpportunityStatus.objects.filter(is_active=True)
+    companies = Company.objects.all()
+    users = User.objects.filter(is_active=True)
+    
+    context = {
+        'page_obj': page_obj,
+        'statuses': statuses,
+        'companies': companies,
+        'users': users,
+        'current_filters': {
+            'status': status_filter,
+            'company': company_filter,
+            'assigned': assigned_filter,
+            'search': search,
+            'order_by': order_by,
+        },
+        'page_title': 'Oportunidades'
+    }
+    
+    return render(request, 'tickets/opportunity_list.html', context)
+
+
+@login_required
+def opportunity_detail(request, pk):
+    """Detalle de oportunidad"""
+    opportunity = get_object_or_404(Opportunity, pk=pk)
+    
+    # Verificar permisos
+    from . import utils
+    if not utils.is_agent(request.user):
+        if opportunity.created_by != request.user and opportunity.assigned_to != request.user:
+            messages.error(request, 'No tienes permisos para ver esta oportunidad.')
+            return redirect('opportunity_list')
+    
+    # Obtener notas y historial
+    notes = opportunity.notes.all()
+    history = opportunity.status_history.all()
+    
+    # Verificar si puede ser editada
+    can_be_edited = opportunity.can_be_edited_by(request.user)
+    
+    context = {
+        'opportunity': opportunity,
+        'notes': notes,
+        'history': history,
+        'can_be_edited': can_be_edited,
+        'page_title': f'Oportunidad: {opportunity.name}'
+    }
+    
+    return render(request, 'tickets/opportunity_detail.html', context)
+
+
+@login_required
+def opportunity_create(request):
+    """Crear nueva oportunidad"""
+    if request.method == 'POST':
+        # Procesar formulario
+        name = request.POST.get('name')
+        description = request.POST.get('description', '')
+        company_id = request.POST.get('company')
+        contact_name = request.POST.get('contact_name')
+        contact_email = request.POST.get('contact_email', '')
+        contact_phone = request.POST.get('contact_phone', '')
+        value = request.POST.get('value')
+        probability = request.POST.get('probability', 20)
+        status_id = request.POST.get('status')
+        expected_close_date = request.POST.get('expected_close_date')
+        assigned_to_id = request.POST.get('assigned_to')
+        source = request.POST.get('source', '')
+        
+        try:
+            company = Company.objects.get(pk=company_id)
+            status = OpportunityStatus.objects.get(pk=status_id)
+            assigned_to = User.objects.get(pk=assigned_to_id) if assigned_to_id else None
+            
+            opportunity = Opportunity.objects.create(
+                name=name,
+                description=description,
+                company=company,
+                contact_name=contact_name,
+                contact_email=contact_email,
+                contact_phone=contact_phone,
+                value=value,
+                probability=probability,
+                status=status,
+                expected_close_date=expected_close_date,
+                assigned_to=assigned_to,
+                created_by=request.user,
+                source=source
+            )
+            
+            # Crear historial inicial
+            OpportunityStatusHistory.objects.create(
+                opportunity=opportunity,
+                new_status=status,
+                changed_by=request.user,
+                comment="Oportunidad creada"
+            )
+            
+            messages.success(request, 'Oportunidad creada exitosamente.')
+            return redirect('opportunity_detail', pk=opportunity.pk)
+            
+        except Exception as e:
+            messages.error(request, f'Error al crear la oportunidad: {str(e)}')
+    
+    # Para GET request
+    companies = Company.objects.all()
+    statuses = OpportunityStatus.objects.filter(is_active=True)
+    users = User.objects.filter(is_active=True)
+    
+    # Opciones de probabilidad
+    probability_choices = [
+        (0, '0%'), (10, '10%'), (20, '20%'), (30, '30%'), (40, '40%'),
+        (50, '50%'), (60, '60%'), (70, '70%'), (80, '80%'), (90, '90%'), (100, '100%')
+    ]
+    
+    context = {
+        'companies': companies,
+        'statuses': statuses,
+        'users': users,
+        'probability_choices': probability_choices,
+        'page_title': 'Nueva Oportunidad'
+    }
+    
+    return render(request, 'tickets/opportunity_form.html', context)
+
+
+@login_required
+def opportunity_edit(request, pk):
+    """Editar oportunidad"""
+    opportunity = get_object_or_404(Opportunity, pk=pk)
+    
+    # Verificar permisos
+    if not opportunity.can_be_edited_by(request.user):
+        messages.error(request, 'No tienes permisos para editar esta oportunidad.')
+        return redirect('opportunity_detail', pk=pk)
+    
+    if request.method == 'POST':
+        # Procesar formulario
+        previous_status = opportunity.status
+        
+        opportunity.name = request.POST.get('name')
+        opportunity.description = request.POST.get('description', '')
+        opportunity.company_id = request.POST.get('company')
+        opportunity.contact_name = request.POST.get('contact_name')
+        opportunity.contact_email = request.POST.get('contact_email', '')
+        opportunity.contact_phone = request.POST.get('contact_phone', '')
+        opportunity.value = request.POST.get('value')
+        opportunity.probability = request.POST.get('probability', 20)
+        opportunity.status_id = request.POST.get('status')
+        opportunity.expected_close_date = request.POST.get('expected_close_date')
+        opportunity.assigned_to_id = request.POST.get('assigned_to') or None
+        opportunity.source = request.POST.get('source', '')
+        
+        # Si el estado cambió, crear historial
+        if previous_status.pk != int(request.POST.get('status')):
+            comment = request.POST.get('status_comment', '')
+            OpportunityStatusHistory.objects.create(
+                opportunity=opportunity,
+                previous_status=previous_status,
+                new_status=opportunity.status,
+                changed_by=request.user,
+                comment=comment
+            )
+        
+        opportunity.save()
+        messages.success(request, 'Oportunidad actualizada exitosamente.')
+        return redirect('opportunity_detail', pk=pk)
+    
+    # Para GET request
+    companies = Company.objects.all()
+    statuses = OpportunityStatus.objects.filter(is_active=True)
+    users = User.objects.filter(is_active=True)
+    
+    # Opciones de probabilidad
+    probability_choices = [
+        (0, '0%'), (10, '10%'), (20, '20%'), (30, '30%'), (40, '40%'),
+        (50, '50%'), (60, '60%'), (70, '70%'), (80, '80%'), (90, '90%'), (100, '100%')
+    ]
+    
+    context = {
+        'opportunity': opportunity,
+        'companies': companies,
+        'statuses': statuses,
+        'users': users,
+        'probability_choices': probability_choices,
+        'page_title': f'Editar: {opportunity.name}'
+    }
+    
+    return render(request, 'tickets/opportunity_form.html', context)
+
+
+@login_required
+def opportunity_delete(request, pk):
+    """Eliminar oportunidad"""
+    opportunity = get_object_or_404(Opportunity, pk=pk)
+    
+    # Verificar permisos
+    from . import utils
+    if not utils.is_agent(request.user) and opportunity.created_by != request.user:
+        messages.error(request, 'No tienes permisos para eliminar esta oportunidad.')
+        return redirect('opportunity_detail', pk=pk)
+    
+    if request.method == 'POST':
+        opportunity.delete()
+        messages.success(request, 'Oportunidad eliminada exitosamente.')
+        return redirect('opportunity_list')
+    
+    context = {
+        'opportunity': opportunity,
+        'page_title': f'Eliminar: {opportunity.name}'
+    }
+    
+    return render(request, 'tickets/opportunity_delete.html', context)
+
+
+@login_required
+def opportunity_status_list(request):
+    """Lista de estados de oportunidades"""
+    from . import utils
+    if not utils.is_agent(request.user):
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('crm_dashboard')
+    
+    statuses = OpportunityStatus.objects.all().order_by('order', 'name')
+    
+    context = {
+        'statuses': statuses,
+        'page_title': 'Estados de Oportunidades'
+    }
+    
+    return render(request, 'tickets/opportunity_status_list.html', context)
+
+
+@login_required
+def opportunity_status_create(request):
+    """Crear estado de oportunidad"""
+    from . import utils
+    if not utils.is_agent(request.user):
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('crm_dashboard')
+    
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        description = request.POST.get('description', '')
+        color = request.POST.get('color', '#007bff')
+        is_final = request.POST.get('is_final') == 'on'
+        is_won = request.POST.get('is_won') == 'on'
+        order = request.POST.get('order', 0)
+        
+        try:
+            status = OpportunityStatus.objects.create(
+                name=name,
+                description=description,
+                color=color,
+                is_final=is_final,
+                is_won=is_won,
+                order=order,
+                created_by=request.user
+            )
+            messages.success(request, 'Estado creado exitosamente.')
+            return redirect('opportunity_status_list')
+        except Exception as e:
+            messages.error(request, f'Error al crear el estado: {str(e)}')
+    
+    context = {
+        'page_title': 'Nuevo Estado'
+    }
+    
+    return render(request, 'tickets/opportunity_status_form.html', context)
+
+
+@login_required
+def opportunity_status_edit(request, pk):
+    """Editar estado de oportunidad"""
+    from . import utils
+    if not utils.is_agent(request.user):
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('crm_dashboard')
+    
+    status = get_object_or_404(OpportunityStatus, pk=pk)
+    
+    if request.method == 'POST':
+        status.name = request.POST.get('name')
+        status.description = request.POST.get('description', '')
+        status.color = request.POST.get('color', '#007bff')
+        status.is_final = request.POST.get('is_final') == 'on'
+        status.is_won = request.POST.get('is_won') == 'on'
+        status.order = request.POST.get('order', 0)
+        status.is_active = request.POST.get('is_active') == 'on'
+        
+        status.save()
+        messages.success(request, 'Estado actualizado exitosamente.')
+        return redirect('opportunity_status_list')
+    
+    context = {
+        'status': status,
+        'page_title': f'Editar: {status.name}'
+    }
+    
+    return render(request, 'tickets/opportunity_status_form.html', context)
+
+
+@login_required
+def opportunity_status_delete(request, pk):
+    """Eliminar estado de oportunidad"""
+    from . import utils
+    if not utils.is_agent(request.user):
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('crm_dashboard')
+    
+    status = get_object_or_404(OpportunityStatus, pk=pk)
+    
+    # Verificar si hay oportunidades usando este estado
+    if status.opportunities.exists():
+        messages.error(request, 'No se puede eliminar este estado porque hay oportunidades que lo utilizan.')
+        return redirect('opportunity_status_list')
+    
+    if request.method == 'POST':
+        status.delete()
+        messages.success(request, 'Estado eliminado exitosamente.')
+        return redirect('opportunity_status_list')
+    
+    context = {
+        'status': status,
+        'page_title': f'Eliminar: {status.name}'
+    }
+    
+    return render(request, 'tickets/opportunity_status_delete.html', context)
+
+
+@login_required
+def opportunity_add_note(request, pk):
+    """Agregar nota a oportunidad"""
+    opportunity = get_object_or_404(Opportunity, pk=pk)
+    
+    # Verificar permisos
+    from . import utils
+    if not utils.is_agent(request.user):
+        if opportunity.created_by != request.user and opportunity.assigned_to != request.user:
+            messages.error(request, 'No tienes permisos para agregar notas a esta oportunidad.')
+            return redirect('opportunity_detail', pk=pk)
+    
+    if request.method == 'POST':
+        content = request.POST.get('content')
+        is_important = request.POST.get('is_important') == 'on'
+        
+        if content:
+            OpportunityNote.objects.create(
+                opportunity=opportunity,
+                content=content,
+                is_important=is_important,
+                created_by=request.user
+            )
+            messages.success(request, 'Nota agregada exitosamente.')
+        else:
+            messages.error(request, 'El contenido de la nota es requerido.')
+    
+    return redirect('opportunity_detail', pk=pk)

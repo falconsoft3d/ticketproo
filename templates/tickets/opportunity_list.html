@@ -1,0 +1,263 @@
+{% extends 'base.html' %}
+
+{% block title %}Oportunidades - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="bi bi-bar-chart text-primary"></i>
+                    Oportunidades
+                </h2>
+                <a href="{% url 'opportunity_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Nueva Oportunidad
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label for="search" class="form-label">Buscar</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           value="{{ current_filters.search }}" 
+                           placeholder="Nombre, empresa, contacto...">
+                </div>
+                <div class="col-md-2">
+                    <label for="status" class="form-label">Estado</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">Todos</option>
+                        {% for status in statuses %}
+                        <option value="{{ status.pk }}" 
+                                {% if current_filters.status == status.pk|stringformat:"s" %}selected{% endif %}>
+                            {{ status.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="company" class="form-label">Empresa</label>
+                    <select class="form-select" id="company" name="company">
+                        <option value="">Todas</option>
+                        {% for company in companies %}
+                        <option value="{{ company.pk }}" 
+                                {% if current_filters.company == company.pk|stringformat:"s" %}selected{% endif %}>
+                            {{ company.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="assigned" class="form-label">Asignado</label>
+                    <select class="form-select" id="assigned" name="assigned">
+                        <option value="">Todos</option>
+                        {% for user in users %}
+                        <option value="{{ user.pk }}" 
+                                {% if current_filters.assigned == user.pk|stringformat:"s" %}selected{% endif %}>
+                            {{ user.get_full_name|default:user.username }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="order_by" class="form-label">Ordenar por</label>
+                    <select class="form-select" id="order_by" name="order_by">
+                        <option value="-created_at" {% if current_filters.order_by == "-created_at" %}selected{% endif %}>
+                            Más recientes
+                        </option>
+                        <option value="created_at" {% if current_filters.order_by == "created_at" %}selected{% endif %}>
+                            Más antiguos
+                        </option>
+                        <option value="-value" {% if current_filters.order_by == "-value" %}selected{% endif %}>
+                            Mayor valor
+                        </option>
+                        <option value="value" {% if current_filters.order_by == "value" %}selected{% endif %}>
+                            Menor valor
+                        </option>
+                        <option value="expected_close_date" {% if current_filters.order_by == "expected_close_date" %}selected{% endif %}>
+                            Próximas a vencer
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de oportunidades -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Oportunidades</h5>
+            <span class="badge bg-secondary">{{ page_obj.paginator.count }} total</span>
+        </div>
+        <div class="card-body">
+            {% if page_obj %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Oportunidad</th>
+                                <th>Empresa</th>
+                                <th>Estado</th>
+                                <th>Valor</th>
+                                <th>Probabilidad</th>
+                                <th>Fecha Cierre</th>
+                                <th>Asignado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for opportunity in page_obj %}
+                            <tr class="{% if opportunity.is_overdue %}table-warning{% endif %}">
+                                <td>
+                                    <div>
+                                        <strong>
+                                            <a href="{% url 'opportunity_detail' opportunity.pk %}" 
+                                               class="text-decoration-none">
+                                                {{ opportunity.name }}
+                                            </a>
+                                        </strong>
+                                        {% if opportunity.is_overdue %}
+                                            <i class="bi bi-exclamation-triangle text-warning" 
+                                               title="Oportunidad vencida"></i>
+                                        {% endif %}
+                                        <br>
+                                        <small class="text-muted">{{ opportunity.contact_name }}</small>
+                                    </div>
+                                </td>
+                                <td>{{ opportunity.company.name }}</td>
+                                <td>
+                                    <span class="badge" style="background-color: {{ opportunity.status.color }}">
+                                        {{ opportunity.status.name }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div>
+                                        <strong>${{ opportunity.value|floatformat:0 }}</strong>
+                                        <br>
+                                        <small class="text-muted">
+                                            Esperado: ${{ opportunity.expected_value|floatformat:0 }}
+                                        </small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar" role="progressbar" 
+                                             style="width: {{ opportunity.probability }}%" 
+                                             aria-valuenow="{{ opportunity.probability }}" 
+                                             aria-valuemin="0" aria-valuemax="100">
+                                            {{ opportunity.probability }}%
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>
+                                        {{ opportunity.expected_close_date }}
+                                        {% if opportunity.days_to_close is not None %}
+                                            <br>
+                                            <small class="{% if opportunity.is_overdue %}text-danger{% elif opportunity.days_to_close <= 7 %}text-warning{% else %}text-muted{% endif %}">
+                                                {% if opportunity.is_overdue %}
+                                                    {{ opportunity.days_overdue }} días vencida
+                                                {% elif opportunity.days_to_close == 0 %}
+                                                    Hoy
+                                                {% elif opportunity.days_to_close == 1 %}
+                                                    Mañana
+                                                {% else %}
+                                                    {{ opportunity.days_to_close }} días
+                                                {% endif %}
+                                            </small>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if opportunity.assigned_to %}
+                                        {{ opportunity.assigned_to.get_full_name|default:opportunity.assigned_to.username }}
+                                    {% else %}
+                                        <span class="text-muted">Sin asignar</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'opportunity_detail' opportunity.pk %}" 
+                                           class="btn btn-sm btn-outline-primary" title="Ver">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        {% if opportunity.user_can_edit %}
+                                        <a href="{% url 'opportunity_edit' opportunity.pk %}" 
+                                           class="btn btn-sm btn-outline-secondary" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginación -->
+                {% if page_obj.has_other_pages %}
+                <nav aria-label="Navegación de páginas">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" 
+                                   href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">
+                                    Anterior
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" 
+                                       href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}">
+                                        {{ num }}
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" 
+                                   href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">
+                                    Siguiente
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox text-muted" style="font-size: 4rem;"></i>
+                    <h4 class="text-muted mt-3">No hay oportunidades</h4>
+                    <p class="text-muted">Comienza creando tu primera oportunidad.</p>
+                    <a href="{% url 'opportunity_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Crear Oportunidad
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

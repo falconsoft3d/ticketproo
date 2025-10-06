@@ -1,0 +1,296 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ opportunity.name }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2>
+                        <i class="bi bi-bar-chart text-primary"></i>
+                        {{ opportunity.name }}
+                        {% if opportunity.is_overdue %}
+                            <i class="bi bi-exclamation-triangle text-warning" title="Oportunidad vencida"></i>
+                        {% endif %}
+                    </h2>
+                    <p class="text-muted mb-0">{{ opportunity.company.name }}</p>
+                </div>
+                <div class="d-flex gap-2">
+                    {% if can_be_edited %}
+                    <a href="{% url 'opportunity_edit' opportunity.pk %}" class="btn btn-primary">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'opportunity_list' %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información principal -->
+        <div class="col-md-8">
+            <!-- Estado y progreso -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle"></i> Estado y Progreso
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Estado Actual</h6>
+                            <span class="badge fs-6 p-2" style="background-color: {{ opportunity.status.color }}">
+                                {{ opportunity.status.name }}
+                            </span>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Probabilidad de Cierre</h6>
+                            <div class="progress" style="height: 25px;">
+                                <div class="progress-bar" role="progressbar" 
+                                     style="width: {{ opportunity.probability }}%" 
+                                     aria-valuenow="{{ opportunity.probability }}" 
+                                     aria-valuemin="0" aria-valuemax="100">
+                                    {{ opportunity.probability }}%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detalles de la oportunidad -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-card-text"></i> Detalles
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if opportunity.description %}
+                        <p>{{ opportunity.description|linebreaks }}</p>
+                    {% else %}
+                        <p class="text-muted">Sin descripción disponible.</p>
+                    {% endif %}
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-person"></i> Contacto Principal</h6>
+                            <p>{{ opportunity.contact_name }}</p>
+                            
+                            {% if opportunity.contact_email %}
+                            <h6><i class="bi bi-envelope"></i> Email</h6>
+                            <p><a href="mailto:{{ opportunity.contact_email }}">{{ opportunity.contact_email }}</a></p>
+                            {% endif %}
+                            
+                            {% if opportunity.contact_phone %}
+                            <h6><i class="bi bi-telephone"></i> Teléfono</h6>
+                            <p><a href="tel:{{ opportunity.contact_phone }}">{{ opportunity.contact_phone }}</a></p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {% if opportunity.source %}
+                            <h6><i class="bi bi-arrow-down-circle"></i> Fuente</h6>
+                            <p>{{ opportunity.source }}</p>
+                            {% endif %}
+                            
+                            <h6><i class="bi bi-person-check"></i> Asignado a</h6>
+                            <p>
+                                {% if opportunity.assigned_to %}
+                                    {{ opportunity.assigned_to.get_full_name|default:opportunity.assigned_to.username }}
+                                {% else %}
+                                    <span class="text-muted">Sin asignar</span>
+                                {% endif %}
+                            </p>
+                            
+                            <h6><i class="bi bi-person-plus"></i> Creado por</h6>
+                            <p>{{ opportunity.created_by.get_full_name|default:opportunity.created_by.username }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notas -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-chat-square-text"></i> Notas y Seguimiento
+                    </h5>
+                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addNoteModal">
+                        <i class="bi bi-plus-circle"></i> Agregar Nota
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if notes %}
+                        {% for note in notes %}
+                        <div class="border-start border-3 {% if note.is_important %}border-warning{% else %}border-primary{% endif %} ps-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <strong>{{ note.created_by.get_full_name|default:note.created_by.username }}</strong>
+                                    {% if note.is_important %}
+                                        <span class="badge bg-warning text-dark ms-2">
+                                            <i class="bi bi-star-fill"></i> Importante
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                <small class="text-muted">{{ note.created_at }}</small>
+                            </div>
+                            <p class="mb-0">{{ note.content|linebreaks }}</p>
+                        </div>
+                        {% if not forloop.last %}<hr>{% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted text-center py-3">No hay notas disponibles.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel lateral -->
+        <div class="col-md-4">
+            <!-- Información financiera -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-currency-dollar"></i> Información Financiera
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center">
+                        <h3 class="text-primary">${{ opportunity.value|floatformat:0 }}</h3>
+                        <p class="text-muted">Valor Total</p>
+                        
+                        <h4 class="text-success">${{ opportunity.expected_value|floatformat:0 }}</h4>
+                        <p class="text-muted">Valor Esperado</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fechas importantes -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-calendar"></i> Fechas Importantes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6>Fecha Estimada de Cierre</h6>
+                        <p class="{% if opportunity.is_overdue %}text-danger{% elif opportunity.days_to_close <= 7 %}text-warning{% endif %}">
+                            {{ opportunity.expected_close_date }}
+                            {% if opportunity.days_to_close is not None %}
+                                <br>
+                                <small>
+                                    {% if opportunity.is_overdue %}
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                        {{ opportunity.days_overdue }} días vencida
+                                    {% elif opportunity.days_to_close == 0 %}
+                                        <i class="bi bi-clock"></i> Hoy
+                                    {% elif opportunity.days_to_close == 1 %}
+                                        <i class="bi bi-clock"></i> Mañana
+                                    {% else %}
+                                        <i class="bi bi-clock"></i> {{ opportunity.days_to_close }} días
+                                    {% endif %}
+                                </small>
+                            {% endif %}
+                        </p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6>Creada</h6>
+                        <p>{{ opportunity.created_at }}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6>Última Actualización</h6>
+                        <p>{{ opportunity.updated_at }}</p>
+                    </div>
+                    
+                    {% if opportunity.last_contact_date %}
+                    <div class="mb-3">
+                        <h6>Último Contacto</h6>
+                        <p>{{ opportunity.last_contact_date }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if opportunity.next_follow_up %}
+                    <div class="mb-3">
+                        <h6>Próximo Seguimiento</h6>
+                        <p>{{ opportunity.next_follow_up }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Historial de estados -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-clock-history"></i> Historial de Estados
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if history %}
+                        {% for change in history %}
+                        <div class="d-flex mb-3">
+                            <div class="me-3">
+                                <div class="rounded-circle p-2" style="background-color: {{ change.new_status.color }}; width: 12px; height: 12px;"></div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between">
+                                    <strong>{{ change.new_status.name }}</strong>
+                                    <small class="text-muted">{{ change.changed_at|date:"d/m/Y H:i" }}</small>
+                                </div>
+                                <div class="text-muted">{{ change.changed_by.get_full_name|default:change.changed_by.username }}</div>
+                                {% if change.comment %}
+                                    <div class="small mt-1">{{ change.comment }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if not forloop.last %}<hr>{% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted text-center">Sin historial disponible.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para agregar nota -->
+<div class="modal fade" id="addNoteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{% url 'opportunity_add_note' opportunity.pk %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Agregar Nota</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="content" class="form-label">Contenido de la Nota</label>
+                        <textarea class="form-control" id="content" name="content" rows="4" required></textarea>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="is_important" name="is_important">
+                        <label class="form-check-label" for="is_important">
+                            <i class="bi bi-star"></i> Marcar como importante
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Agregar Nota</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

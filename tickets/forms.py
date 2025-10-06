@@ -4,7 +4,7 @@ from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
 from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
     UserNote, TimeEntry, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
-    ChatRoom, ChatMessage
+    ChatRoom, ChatMessage, Command, ContactFormSubmission
 )
 
 class CategoryForm(forms.ModelForm):
@@ -193,10 +193,14 @@ class UserTicketForm(forms.ModelForm):
         # Filtrar solo categorías activas
         self.fields['category'].queryset = Category.objects.filter(is_active=True)
         self.fields['category'].empty_label = "Seleccionar categoría"
+        
+        # Configurar campo empresa
+        self.fields['company'].queryset = Company.objects.filter(is_active=True).order_by('name')
+        self.fields['company'].empty_label = "Seleccionar empresa (opcional)"
 
     class Meta:
         model = Ticket
-        fields = ['title', 'description', 'category', 'priority']
+        fields = ['title', 'description', 'category', 'priority', 'company']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -213,12 +217,16 @@ class UserTicketForm(forms.ModelForm):
             'priority': forms.Select(attrs={
                 'class': 'form-select'
             }),
+            'company': forms.Select(attrs={
+                'class': 'form-select'
+            }),
         }
         labels = {
             'title': 'Título',
             'description': 'Descripción',
             'category': 'Categoría',
             'priority': 'Prioridad',
+            'company': 'Empresa',
         }
 
 class UserTicketEditForm(forms.ModelForm):
@@ -228,10 +236,14 @@ class UserTicketEditForm(forms.ModelForm):
         # Filtrar solo categorías activas
         self.fields['category'].queryset = Category.objects.filter(is_active=True)
         self.fields['category'].empty_label = "Seleccionar categoría"
+        
+        # Configurar campo empresa
+        self.fields['company'].queryset = Company.objects.filter(is_active=True).order_by('name')
+        self.fields['company'].empty_label = "Seleccionar empresa (opcional)"
 
     class Meta:
         model = Ticket
-        fields = ['title', 'description', 'category', 'priority']
+        fields = ['title', 'description', 'category', 'priority', 'company']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -248,12 +260,16 @@ class UserTicketEditForm(forms.ModelForm):
             'priority': forms.Select(attrs={
                 'class': 'form-select'
             }),
+            'company': forms.Select(attrs={
+                'class': 'form-select'
+            }),
         }
         labels = {
             'title': 'Título',
             'description': 'Descripción',
             'category': 'Categoría',
             'priority': 'Prioridad',
+            'company': 'Empresa',
         }
 
 
@@ -753,7 +769,7 @@ class UserProfileForm(forms.ModelForm):
     
     class Meta:
         model = UserProfile
-        fields = ['phone', 'bio', 'cargo', 'descripcion_cargo', 'company']
+        fields = ['phone', 'bio', 'cargo', 'descripcion_cargo', 'company', 'enable_public_contact_form']
         widgets = {
             'phone': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -776,6 +792,9 @@ class UserProfileForm(forms.ModelForm):
             'company': forms.Select(attrs={
                 'class': 'form-select'
             }),
+            'enable_public_contact_form': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
         }
         labels = {
             'phone': 'Teléfono',
@@ -783,6 +802,10 @@ class UserProfileForm(forms.ModelForm):
             'cargo': 'Cargo',
             'descripcion_cargo': 'Descripción del Cargo',
             'company': 'Empresa',
+            'enable_public_contact_form': 'Activar formulario de contacto público',
+        }
+        help_texts = {
+            'enable_public_contact_form': 'Permite que visitantes envíen formularios para crear empresas en tu cuenta',
         }
     
     def __init__(self, *args, **kwargs):
@@ -1198,7 +1221,7 @@ class CompanyForm(forms.ModelForm):
     
     class Meta:
         model = Company
-        fields = ['name', 'description', 'address', 'phone', 'email', 'website', 'color', 'is_active']
+        fields = ['name', 'description', 'address', 'phone', 'email', 'website', 'color', 'logo', 'is_active']
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -1229,6 +1252,10 @@ class CompanyForm(forms.ModelForm):
                 'class': 'form-control',
                 'type': 'color',
                 'title': 'Selecciona un color identificativo'
+            }),
+            'logo': forms.ClearableFileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*'
             }),
             'is_active': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
@@ -2009,3 +2036,259 @@ class ChatRoomForm(forms.ModelForm):
                 room.participants.add(self.user)
         
         return room
+
+
+class CommandForm(forms.ModelForm):
+    """Formulario para crear y editar comandos"""
+    
+    class Meta:
+        model = Command
+        fields = [
+            'title', 'command', 'description', 'category', 'tags',
+            'example_usage', 'notes', 'is_dangerous', 'is_favorite'
+        ]
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Buscar archivos por extensión'
+            }),
+            'command': forms.Textarea(attrs={
+                'class': 'form-control font-monospace',
+                'rows': 3,
+                'placeholder': 'find . -name "*.txt" -type f'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción detallada de lo que hace el comando'
+            }),
+            'category': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'tags': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'buscar, archivos, find, linux'
+            }),
+            'example_usage': forms.Textarea(attrs={
+                'class': 'form-control font-monospace',
+                'rows': 3,
+                'placeholder': 'Ejemplo práctico de uso (opcional)'
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'Notas adicionales, advertencias o tips (opcional)'
+            }),
+            'is_dangerous': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'is_favorite': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'title': 'Título',
+            'command': 'Comando',
+            'description': 'Descripción',
+            'category': 'Categoría',
+            'tags': 'Etiquetas',
+            'example_usage': 'Ejemplo de uso',
+            'notes': 'Notas adicionales',
+            'is_dangerous': 'Comando peligroso',
+            'is_favorite': 'Marcar como favorito',
+        }
+
+
+class CommandSearchForm(forms.Form):
+    """Formulario para buscar comandos"""
+    
+    query = forms.CharField(
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control form-control-lg',
+            'placeholder': 'Buscar comandos... (título, descripción, etiquetas)',
+            'autocomplete': 'off'
+        })
+    )
+    
+    category = forms.ChoiceField(
+        choices=[('', 'Todas las categorías')] + Command.CATEGORY_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        })
+    )
+    
+    favorites_only = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input'
+        }),
+        label='Solo favoritos'
+    )
+    
+    dangerous_only = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input'
+        }),
+        label='Solo comandos peligrosos'
+    )
+
+
+class PublicContactForm(forms.ModelForm):
+    """Formulario público para envío de datos de contacto"""
+    
+    class Meta:
+        model = ContactFormSubmission
+        fields = [
+            'company_name', 'contact_name', 'email', 'phone', 
+            'website', 'address', 'message'
+        ]
+        widgets = {
+            'company_name': forms.TextInput(attrs={
+                'class': 'form-control form-control-lg',
+                'placeholder': 'Nombre de su empresa',
+                'required': True
+            }),
+            'contact_name': forms.TextInput(attrs={
+                'class': 'form-control form-control-lg',
+                'placeholder': 'Su nombre completo',
+                'required': True
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control form-control-lg',
+                'placeholder': 'correo@empresa.com',
+                'required': True
+            }),
+            'phone': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '+34 600 000 000'
+            }),
+            'website': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://www.empresa.com'
+            }),
+            'address': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Dirección completa de la empresa'
+            }),
+            'message': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Cuéntenos sobre su empresa y los servicios que necesita...'
+            })
+        }
+        labels = {
+            'company_name': 'Nombre de la Empresa *',
+            'contact_name': 'Nombre del Contacto *',
+            'email': 'Correo Electrónico *',
+            'phone': 'Teléfono',
+            'website': 'Sitio Web',
+            'address': 'Dirección',
+            'message': 'Mensaje Adicional'
+        }
+        help_texts = {
+            'email': 'Utilizaremos este correo para contactarle',
+            'phone': 'Número de teléfono de contacto',
+            'website': 'URL completa de su sitio web',
+            'address': 'Dirección física de su empresa',
+            'message': 'Información adicional sobre su empresa o servicios que necesita'
+        }
+
+
+class ContactFormManagementForm(forms.ModelForm):
+    """Formulario para gestionar formularios de contacto desde el admin"""
+    
+    class Meta:
+        model = ContactFormSubmission
+        fields = ['status', 'admin_notes']
+        widgets = {
+            'status': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'admin_notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Notas internas sobre el procesamiento de esta solicitud...'
+            })
+        }
+
+
+class CompanyFromContactForm(forms.ModelForm):
+    """Formulario para crear empresa desde formulario de contacto"""
+    
+    class Meta:
+        model = Company
+        fields = ['name', 'description', 'address', 'phone', 'email', 'website', 'color']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción de la empresa...'
+            }),
+            'address': forms.TextInput(attrs={
+                'class': 'form-control'
+            }),
+            'phone': forms.TextInput(attrs={
+                'class': 'form-control'
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control'
+            }),
+            'website': forms.URLInput(attrs={
+                'class': 'form-control'
+            }),
+            'color': forms.TextInput(attrs={
+                'class': 'form-control',
+                'type': 'color',
+                'value': '#28a745'
+            })
+        }
+    
+    def __init__(self, *args, **kwargs):
+        contact_form = kwargs.pop('contact_form', None)
+        super().__init__(*args, **kwargs)
+        
+        # Siempre asegurar que el color tenga un valor por defecto
+        self.fields['color'].initial = '#28a745'
+        
+        if contact_form:
+            # Pre-llenar campos desde el formulario de contacto
+            self.fields['name'].initial = contact_form.company_name
+            if contact_form.address:
+                self.fields['address'].initial = contact_form.address
+            if contact_form.phone:
+                self.fields['phone'].initial = contact_form.phone
+            if contact_form.email:
+                self.fields['email'].initial = contact_form.email
+            if contact_form.website:
+                self.fields['website'].initial = contact_form.website
+            
+            description_parts = ["Empresa creada desde formulario de contacto."]
+            if contact_form.contact_name:
+                description_parts.append(f"Contacto: {contact_form.contact_name}")
+            if contact_form.message:
+                description_parts.append(f"Mensaje original: {contact_form.message}")
+            
+            self.fields['description'].initial = "\n\n".join(description_parts)
+
+    def save(self, commit=True):
+        """Guardar la empresa con validaciones adicionales"""
+        company = super().save(commit=False)
+        
+        # Asegurar que el nombre no esté vacío
+        if not company.name or company.name.strip() == '':
+            raise forms.ValidationError("El nombre de la empresa es requerido")
+        
+        # Asegurar que el color no esté vacío
+        if not company.color:
+            company.color = '#28a745'
+        
+        if commit:
+            company.save()
+        return company

@@ -112,6 +112,26 @@
                                     <i class="bi bi-building"></i> Empresas
                                 </a>
                             </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item {% if 'crm' in request.resolver_match.url_name or 'opportunity' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'crm_dashboard' %}">
+                                    <i class="bi bi-graph-up-arrow"></i> CRM
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'opportunity_status' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'opportunity_status_list' %}">
+                                    <i class="bi bi-kanban"></i> Estados CRM
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item {% if 'contact_submission' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'contact_submissions_list' %}">
+                                    <i class="bi bi-envelope-paper"></i> Formularios de Contacto
+                                </a>
+                            </li>
                             <li>
                                 <a class="dropdown-item {% if 'document' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'document_list' %}">
@@ -200,6 +220,22 @@
                                     <i class="bi bi-calculator"></i> Calculadora
                                 </a>
                             </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Comandos</li>
+                            <li>
+                                <a class="dropdown-item {% if 'command_library' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'command_library' %}">
+                                    <i class="bi bi-terminal"></i> Biblioteca de Comandos
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Juegos</li>
+                            <li>
+                                <a class="dropdown-item {% if 'tetris' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'tetris' %}">
+                                    <i class="bi bi-grid-3x3-gap"></i> Tetris
+                                </a>
+                            </li>
                         </ul>
                     </li>
                     
@@ -255,6 +291,15 @@
                             <li><a class="dropdown-item" href="{% url 'my_notes' %}">
                                 <i class="bi bi-journal-text"></i> Mis Notas
                             </a></li>
+                            
+                            <!-- Menú de Juegos (Para todos los usuarios autenticados) -->
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">🎮 Juegos</li>
+                            <li><a class="dropdown-item {% if 'tetris' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'tetris' %}">
+                                <i class="bi bi-grid-3x3-gap"></i> Tetris
+                            </a></li>
+                            
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{% url 'logout' %}">
                                 <i class="bi bi-box-arrow-right"></i> Cerrar Sesión

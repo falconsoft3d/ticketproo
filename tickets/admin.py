@@ -2,7 +2,8 @@ from django.contrib import admin
 from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserNote, 
     TimeEntry, Project, Company, SystemConfiguration, Document, UserProfile,
-    WorkOrder, WorkOrderAttachment, Task
+    WorkOrder, WorkOrderAttachment, Task, Opportunity, OpportunityStatus, 
+    OpportunityNote, OpportunityStatusHistory
 )
 
 # Configuración del sitio de administración
@@ -600,3 +601,104 @@ class TaskAdmin(admin.ModelAdmin):
         return super().get_queryset(request).select_related(
             'created_by'
         ).prefetch_related('assigned_users')
+
+
+# ============= ADMIN CRM =============
+
+@admin.register(OpportunityStatus)
+class OpportunityStatusAdmin(admin.ModelAdmin):
+    list_display = ('name', 'colored_badge', 'order', 'is_final', 'is_won', 'is_active', 'opportunity_count')
+    list_filter = ('is_final', 'is_won', 'is_active')
+    search_fields = ('name', 'description')
+    list_editable = ('order', 'is_active')
+    ordering = ('order', 'name')
+    
+    def colored_badge(self, obj):
+        return f'<span style="background-color: {obj.color}; color: white; padding: 2px 8px; border-radius: 3px;">{obj.name}</span>'
+    colored_badge.short_description = 'Estado'
+    colored_badge.allow_tags = True
+    
+    def opportunity_count(self, obj):
+        return obj.opportunities.count()
+    opportunity_count.short_description = 'Oportunidades'
+
+
+class OpportunityNoteInline(admin.TabularInline):
+    model = OpportunityNote
+    extra = 0
+    fields = ('content', 'is_important', 'created_by', 'created_at')
+    readonly_fields = ('created_by', 'created_at')
+
+
+class OpportunityStatusHistoryInline(admin.TabularInline):
+    model = OpportunityStatusHistory
+    extra = 0
+    fields = ('previous_status', 'new_status', 'changed_by', 'changed_at', 'comment')
+    readonly_fields = ('changed_by', 'changed_at')
+
+
+@admin.register(Opportunity)
+class OpportunityAdmin(admin.ModelAdmin):
+    list_display = ('name', 'company', 'status_badge', 'value', 'probability', 'expected_close_date', 'assigned_to', 'created_by')
+    list_filter = ('status', 'company', 'assigned_to', 'created_by', 'probability', 'created_at')
+    search_fields = ('name', 'description', 'company__name', 'contact_name', 'contact_email')
+    ordering = ('-created_at',)
+    date_hierarchy = 'created_at'
+    inlines = [OpportunityNoteInline, OpportunityStatusHistoryInline]
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('name', 'description', 'company', 'status')
+        }),
+        ('Contacto', {
+            'fields': ('contact_name', 'contact_email', 'contact_phone')
+        }),
+        ('Financiero', {
+            'fields': ('value', 'probability')
+        }),
+        ('Fechas', {
+            'fields': ('expected_close_date', 'actual_close_date', 'last_contact_date', 'next_follow_up')
+        }),
+        ('Asignación', {
+            'fields': ('assigned_to', 'created_by')
+        }),
+        ('Adicional', {
+            'fields': ('source',),
+            'classes': ('collapse',)
+        })
+    )
+    
+    readonly_fields = ('created_by', 'created_at', 'updated_at')
+    
+    def status_badge(self, obj):
+        return f'<span style="background-color: {obj.status.color}; color: white; padding: 2px 8px; border-radius: 3px;">{obj.status.name}</span>'
+    status_badge.short_description = 'Estado'
+    status_badge.allow_tags = True
+    
+    def save_model(self, request, obj, form, change):
+        if not change:  # Si es un nuevo objeto
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(OpportunityNote)
+class OpportunityNoteAdmin(admin.ModelAdmin):
+    list_display = ('opportunity', 'content_preview', 'is_important', 'created_by', 'created_at')
+    list_filter = ('is_important', 'created_by', 'created_at')
+    search_fields = ('content', 'opportunity__name')
+    ordering = ('-created_at',)
+    date_hierarchy = 'created_at'
+    
+    def content_preview(self, obj):
+        return obj.content[:100] + '...' if len(obj.content) > 100 else obj.content
+    content_preview.short_description = 'Contenido'
+
+
+@admin.register(OpportunityStatusHistory)
+class OpportunityStatusHistoryAdmin(admin.ModelAdmin):
+    list_display = ('opportunity', 'previous_status', 'new_status', 'changed_by', 'changed_at')
+    list_filter = ('previous_status', 'new_status', 'changed_by', 'changed_at')
+    search_fields = ('opportunity__name', 'comment')
+    ordering = ('-changed_at',)
+    date_hierarchy = 'changed_at'
+    readonly_fields = ('changed_at',)

@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+
+{% block title %}Rechazar Formulario de Contacto - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-x-circle text-danger"></i>
+                        Rechazar Formulario de Contacto
+                    </h1>
+                    <p class="text-muted mb-0">Marcar el formulario como rechazado con motivo</p>
+                </div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'contact_submissions_list' %}">Formularios de Contacto</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'contact_submission_detail' submission.pk %}">Detalles</a></li>
+                        <li class="breadcrumb-item active">Rechazar</li>
+                    </ol>
+                </nav>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <!-- Información del formulario -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-danger bg-opacity-10">
+                            <h5 class="mb-0">
+                                <i class="bi bi-file-text text-danger"></i>
+                                Formulario a Rechazar
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <td class="fw-bold">Empresa:</td>
+                                            <td>{{ submission.company_name }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Contacto:</td>
+                                            <td>{{ submission.contact_name }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Email:</td>
+                                            <td>{{ submission.email }}</td>
+                                        </tr>
+                                        {% if submission.phone %}
+                                        <tr>
+                                            <td class="fw-bold">Teléfono:</td>
+                                            <td>{{ submission.phone }}</td>
+                                        </tr>
+                                        {% endif %}
+                                    </table>
+                                </div>
+                                <div class="col-md-6">
+                                    <table class="table table-borderless">
+                                        {% if submission.website %}
+                                        <tr>
+                                            <td class="fw-bold">Sitio Web:</td>
+                                            <td>{{ submission.website }}</td>
+                                        </tr>
+                                        {% endif %}
+                                        {% if submission.address %}
+                                        <tr>
+                                            <td class="fw-bold">Dirección:</td>
+                                            <td>{{ submission.address }}</td>
+                                        </tr>
+                                        {% endif %}
+                                        <tr>
+                                            <td class="fw-bold">Recibido:</td>
+                                            <td>{{ submission.submitted_at|date:"d/m/Y H:i" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Estado:</td>
+                                            <td>
+                                                <span class="badge {{ submission.get_status_badge_class }}">
+                                                    {{ submission.get_status_display }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+
+                            {% if submission.message %}
+                            <div class="mt-3">
+                                <h6>Mensaje del solicitante:</h6>
+                                <div class="bg-light p-3 rounded">
+                                    {{ submission.message|linebreaks }}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Formulario de rechazo -->
+                    <div class="card">
+                        <div class="card-header bg-warning bg-opacity-10">
+                            <h5 class="mb-0">
+                                <i class="bi bi-exclamation-triangle text-warning"></i>
+                                Motivo del Rechazo
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <strong>Atención:</strong> Al rechazar este formulario, se marcará como rechazado de manera permanente. Esta acción no se puede deshacer fácilmente.
+                            </div>
+
+                            <form method="post">
+                                {% csrf_token %}
+                                
+                                <div class="mb-4">
+                                    <label for="reason" class="form-label">
+                                        <i class="bi bi-chat-square-text"></i>
+                                        Motivo del rechazo <span class="text-danger">*</span>
+                                    </label>
+                                    <textarea name="reason" id="reason" class="form-control" rows="4" 
+                                              placeholder="Explique el motivo por el cual se rechaza este formulario de contacto..."
+                                              required></textarea>
+                                    <div class="form-text">
+                                        Proporcione una explicación clara del motivo del rechazo. Esta información se guardará en las notas administrativas.
+                                    </div>
+                                </div>
+
+                                <!-- Motivos comunes -->
+                                <div class="mb-4">
+                                    <h6>Motivos comunes (opcional - click para usar):</h6>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <button type="button" class="btn btn-outline-secondary btn-sm reason-btn" 
+                                                data-reason="Información incompleta o insuficiente">
+                                            Información incompleta
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm reason-btn" 
+                                                data-reason="La empresa no cumple con nuestros criterios de servicio">
+                                            No cumple criterios
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm reason-btn" 
+                                                data-reason="Solicitud duplicada o ya procesada anteriormente">
+                                            Solicitud duplicada
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm reason-btn" 
+                                                data-reason="Empresa ya registrada en el sistema">
+                                            Ya registrada
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm reason-btn" 
+                                                data-reason="Datos sospechosos o fraudulentos">
+                                            Datos sospechosos
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm reason-btn" 
+                                                data-reason="No se pudo verificar la información proporcionada">
+                                            No verificable
+                                        </button>
+                                    </div>
+                                    <small class="text-muted">Haga clic en cualquier motivo para agregarlo al campo de texto</small>
+                                </div>
+
+                                <!-- Botones de acción -->
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <a href="{% url 'contact_submission_detail' submission.pk %}" 
+                                       class="btn btn-outline-secondary me-md-2">
+                                        <i class="bi bi-arrow-left"></i>
+                                        Cancelar
+                                    </a>
+                                    <button type="submit" class="btn btn-danger" id="reject-btn">
+                                        <i class="bi bi-x-circle"></i>
+                                        Rechazar Formulario
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Información sobre el rechazo -->
+                    <div class="card mt-4 border-info">
+                        <div class="card-header bg-info bg-opacity-10">
+                            <h6 class="mb-0">
+                                <i class="bi bi-info-circle text-info"></i>
+                                ¿Qué sucede al rechazar?
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Cambios en el sistema:</h6>
+                                    <ul class="list-unstyled">
+                                        <li><i class="bi bi-x text-danger me-2"></i> El formulario se marca como "Rechazado"</li>
+                                        <li><i class="bi bi-clock text-warning me-2"></i> Se registra la fecha y hora del rechazo</li>
+                                        <li><i class="bi bi-person text-secondary me-2"></i> Se registra quién rechazó el formulario</li>
+                                        <li><i class="bi bi-sticky text-info me-2"></i> El motivo se guarda en las notas administrativas</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Acciones posteriores:</h6>
+                                    <ul class="list-unstyled">
+                                        <li><i class="bi bi-envelope text-primary me-2"></i> Puede contactar al solicitante por email</li>
+                                        <li><i class="bi bi-arrow-clockwise text-success me-2"></i> El formulario puede ser revisado nuevamente si es necesario</li>
+                                        <li><i class="bi bi-file-text text-secondary me-2"></i> Queda registro permanente de la decisión</li>
+                                        <li><i class="bi bi-graph-up text-info me-2"></i> Se actualiza en las estadísticas</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.table-borderless td {
+    padding: 0.25rem 0.5rem;
+}
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+.reason-btn {
+    font-size: 0.8rem;
+    border-radius: 1rem;
+}
+.reason-btn:hover {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+.form-control:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const reasonTextarea = document.getElementById('reason');
+    const reasonButtons = document.querySelectorAll('.reason-btn');
+    const form = document.querySelector('form');
+    const rejectBtn = document.getElementById('reject-btn');
+    
+    // Agregar motivos predefinidos
+    reasonButtons.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const reason = this.getAttribute('data-reason');
+            const currentText = reasonTextarea.value.trim();
+            
+            if (currentText === '') {
+                reasonTextarea.value = reason;
+            } else {
+                reasonTextarea.value = currentText + '\n\n' + reason;
+            }
+            
+            // Enfocar el textarea
+            reasonTextarea.focus();
+            
+            // Highlight temporal del botón
+            this.classList.add('btn-secondary');
+            this.classList.remove('btn-outline-secondary');
+            setTimeout(() => {
+                this.classList.remove('btn-secondary');
+                this.classList.add('btn-outline-secondary');
+            }, 300);
+        });
+    });
+    
+    // Validación del formulario
+    form.addEventListener('submit', function(e) {
+        const reason = reasonTextarea.value.trim();
+        const companyName = '{{ submission.company_name|escapejs }}';
+        
+        if (reason.length < 10) {
+            e.preventDefault();
+            alert('Por favor, proporcione un motivo más detallado (mínimo 10 caracteres).');
+            reasonTextarea.focus();
+            return false;
+        }
+        
+        // Confirmación
+        if (!confirm(`¿Está seguro de que desea rechazar el formulario de "${companyName}"?\n\nMotivo: ${reason.substring(0, 100)}${reason.length > 100 ? '...' : ''}\n\nEsta acción no se puede deshacer fácilmente.`)) {
+            e.preventDefault();
+            return false;
+        }
+        
+        // Cambiar texto del botón
+        rejectBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Rechazando...';
+        rejectBtn.disabled = true;
+    });
+    
+    // Contador de caracteres
+    const charCounter = document.createElement('small');
+    charCounter.className = 'text-muted';
+    reasonTextarea.parentNode.appendChild(charCounter);
+    
+    function updateCharCounter() {
+        const length = reasonTextarea.value.length;
+        charCounter.textContent = `${length} caracteres`;
+        
+        if (length < 10) {
+            charCounter.className = 'text-danger';
+        } else if (length < 50) {
+            charCounter.className = 'text-warning';
+        } else {
+            charCounter.className = 'text-success';
+        }
+    }
+    
+    reasonTextarea.addEventListener('input', updateCharCounter);
+    updateCharCounter();
+});
+</script>
+{% endblock %}

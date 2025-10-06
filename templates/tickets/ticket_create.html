@@ -61,26 +61,26 @@
                         <div class="form-text">Selecciona la categoría que mejor describa tu ticket.</div>
                     </div>
                     
+                    <!-- Campo de Empresa (para todos los usuarios) -->
+                    {% if form.company %}
+                    <div class="mb-3">
+                        <label for="{{ form.company.id_for_label }}" class="form-label">
+                            {{ form.company.label }}
+                        </label>
+                        {{ form.company }}
+                        {% if form.company.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.company.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Empresa o cliente asociado al ticket (opcional).</div>
+                    </div>
+                    {% endif %}
+                    
                     <!-- Campos adicionales para agentes -->
                     {% if is_agent %}
-                        <!-- Campo de Empresa -->
-                        {% if form.company %}
-                        <div class="mb-3">
-                            <label for="{{ form.company.id_for_label }}" class="form-label">
-                                {{ form.company.label }}
-                            </label>
-                            {{ form.company }}
-                            {% if form.company.errors %}
-                                <div class="text-danger mt-1">
-                                    {% for error in form.company.errors %}
-                                        <small>{{ error }}</small>
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                            <div class="form-text">Empresa o cliente asociado al ticket (opcional).</div>
-                        </div>
-                        {% endif %}
-                        
                         <!-- Campo de Proyecto -->
                         {% if form.project %}
                         <div class="mb-3">

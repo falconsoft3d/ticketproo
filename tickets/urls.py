@@ -129,6 +129,15 @@ urlpatterns = [
     # URLs de herramientas calculadora (solo para agentes)
     path('tools/calculator/', views.calculator_view, name='calculator'),
     
+    # URLs de herramientas comandos (solo para agentes)
+    path('tools/commands/', views.command_library_view, name='command_library'),
+    path('tools/commands/create/', views.command_create_view, name='command_create'),
+    path('tools/commands/<int:pk>/', views.command_detail_view, name='command_detail'),
+    path('tools/commands/<int:pk>/edit/', views.command_edit_view, name='command_edit'),
+    path('tools/commands/<int:pk>/delete/', views.command_delete_view, name='command_delete'),
+    path('tools/commands/<int:pk>/copy/', views.command_copy_view, name='command_copy'),
+    path('tools/commands/<int:pk>/toggle-favorite/', views.command_toggle_favorite_view, name='command_toggle_favorite'),
+    
     # URLs de gestión de tareas
     path('tasks/', views.task_list_view, name='task_list'),
     path('tasks/create/', views.task_create_view, name='task_create'),
@@ -167,4 +176,35 @@ urlpatterns = [
     # URLs AJAX para el chat
     path('chat/ajax/messages/<int:room_id>/', views.chat_ajax_load_messages, name='chat_ajax_messages'),
     path('chat/ajax/send/<int:room_id>/', views.chat_ajax_send_message, name='chat_ajax_send'),
+    
+    # URLs de formulario de contacto público
+    path('contact/<uuid:token>/', views.public_contact_form_view, name='public_contact_form'),
+    path('contact/success/', views.contact_form_success, name='contact_form_success'),
+    
+    # URLs de gestión de formularios de contacto (para el propietario)
+    path('contact-submissions/', views.contact_submissions_list, name='contact_submissions_list'),
+    path('contact-submissions/<int:pk>/', views.contact_submission_detail, name='contact_submission_detail'),
+    path('contact-submissions/<int:pk>/approve/', views.contact_submission_approve, name='contact_submission_approve'),
+    path('contact-submissions/<int:pk>/reject/', views.contact_submission_reject, name='contact_submission_reject'),
+    
+    # URLs de juegos (solo para agentes)
+    path('games/tetris/', views.tetris_view, name='tetris'),
+    
+    # URL pública para estadísticas de empresa
+    path('company/stats/<uuid:token>/', views.public_company_stats, name='public_company_stats'),
+    
+    # ============= URLs CRM =============
+    path('crm/', views.crm_dashboard, name='crm_dashboard'),
+    path('crm/opportunities/', views.opportunity_list, name='opportunity_list'),
+    path('crm/opportunities/create/', views.opportunity_create, name='opportunity_create'),
+    path('crm/opportunities/<int:pk>/', views.opportunity_detail, name='opportunity_detail'),
+    path('crm/opportunities/<int:pk>/edit/', views.opportunity_edit, name='opportunity_edit'),
+    path('crm/opportunities/<int:pk>/delete/', views.opportunity_delete, name='opportunity_delete'),
+    path('crm/opportunities/<int:pk>/add-note/', views.opportunity_add_note, name='opportunity_add_note'),
+    
+    # URLs de gestión de estados CRM (solo para agentes)
+    path('crm/status/', views.opportunity_status_list, name='opportunity_status_list'),
+    path('crm/status/create/', views.opportunity_status_create, name='opportunity_status_create'),
+    path('crm/status/<int:pk>/edit/', views.opportunity_status_edit, name='opportunity_status_edit'),
+    path('crm/status/<int:pk>/delete/', views.opportunity_status_delete, name='opportunity_status_delete'),
 ]

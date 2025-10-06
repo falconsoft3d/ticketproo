@@ -66,6 +66,13 @@ class Company(models.Model):
         help_text='Color en formato hexadecimal (ej: #28a745)',
         verbose_name='Color identificativo'
     )
+    logo = models.ImageField(
+        upload_to='company_logos/',
+        blank=True,
+        null=True,
+        verbose_name='Logo de la empresa',
+        help_text='Logo de la empresa (opcional)'
+    )
     is_active = models.BooleanField(
         default=True, 
         verbose_name='Empresa activa'
@@ -77,6 +84,13 @@ class Company(models.Model):
     updated_at = models.DateTimeField(
         auto_now=True, 
         verbose_name='Última actualización'
+    )
+    public_token = models.UUIDField(
+        null=True,
+        blank=True,
+        editable=False,
+        verbose_name='Token público',
+        help_text='Token único para acceso público a estadísticas'
     )
     
     class Meta:
@@ -98,6 +112,30 @@ class Company(models.Model):
     def get_users_count(self):
         """Obtiene el número de usuarios asociados a la empresa"""
         return self.users.count()
+    
+    def get_public_stats(self):
+        """Obtiene estadísticas públicas de la empresa"""
+        from django.db.models import Count, Q
+        
+        tickets = self.tickets.all()
+        
+        return {
+            'total_tickets': tickets.count(),
+            'open_tickets': tickets.filter(status='open').count(),
+            'in_progress_tickets': tickets.filter(status='in_progress').count(),
+            'closed_tickets': tickets.filter(status='closed').count(),
+            'high_priority': tickets.filter(priority='high').count(),
+            'medium_priority': tickets.filter(priority='medium').count(),
+            'low_priority': tickets.filter(priority='low').count(),
+            'users_count': self.get_users_count(),
+            'last_ticket_date': tickets.order_by('-created_at').first().created_at if tickets.exists() else None,
+        }
+    
+    def regenerate_public_token(self):
+        """Regenera el token público para acceso a estadísticas"""
+        self.public_token = uuid.uuid4()
+        self.save()
+        return self.public_token
 
 
 class Project(models.Model):
@@ -697,6 +735,13 @@ class UserProfile(models.Model):
         unique=True,
         verbose_name='Token público',
         help_text='Token único para acceso público a tareas'
+    )
+    
+    # Formulario de contacto público
+    enable_public_contact_form = models.BooleanField(
+        default=False,
+        verbose_name='Activar formulario de contacto público',
+        help_text='Permite que visitantes envíen formularios de contacto para crear empresas'
     )
     
     created_at = models.DateTimeField(
@@ -1980,3 +2025,557 @@ class ChatMessage(models.Model):
             except:
                 return "Tamaño desconocido"
         return None
+
+
+class Command(models.Model):
+    """Modelo para gestionar biblioteca de comandos"""
+    
+    CATEGORY_CHOICES = [
+        ('linux', 'Linux/Unix'),
+        ('windows', 'Windows'),
+        ('docker', 'Docker'),
+        ('git', 'Git'),
+        ('python', 'Python'),
+        ('javascript', 'JavaScript'),
+        ('database', 'Base de Datos'),
+        ('network', 'Redes'),
+        ('security', 'Seguridad'),
+        ('devops', 'DevOps'),
+        ('web', 'Desarrollo Web'),
+        ('mobile', 'Desarrollo Móvil'),
+        ('other', 'Otros'),
+    ]
+    
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título',
+        help_text='Título descriptivo del comando'
+    )
+    command = models.TextField(
+        verbose_name='Comando',
+        help_text='El comando completo con sus parámetros'
+    )
+    description = models.TextField(
+        verbose_name='Descripción',
+        help_text='Descripción detallada de lo que hace el comando'
+    )
+    category = models.CharField(
+        max_length=20,
+        choices=CATEGORY_CHOICES,
+        default='other',
+        verbose_name='Categoría'
+    )
+    tags = models.CharField(
+        max_length=500,
+        blank=True,
+        verbose_name='Etiquetas',
+        help_text='Etiquetas separadas por comas para facilitar la búsqueda'
+    )
+    example_usage = models.TextField(
+        blank=True,
+        verbose_name='Ejemplo de uso',
+        help_text='Ejemplo práctico de cómo usar el comando'
+    )
+    notes = models.TextField(
+        blank=True,
+        verbose_name='Notas adicionales',
+        help_text='Notas importantes, advertencias o tips'
+    )
+    is_dangerous = models.BooleanField(
+        default=False,
+        verbose_name='Comando peligroso',
+        help_text='Marcar si el comando puede ser destructivo o peligroso'
+    )
+    is_favorite = models.BooleanField(
+        default=False,
+        verbose_name='Favorito',
+        help_text='Marcar como comando favorito'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Creado por'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    usage_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Veces usado',
+        help_text='Contador de cuántas veces se ha copiado/usado este comando'
+    )
+    
+    class Meta:
+        ordering = ['-is_favorite', '-usage_count', '-created_at']
+        verbose_name = 'Comando'
+        verbose_name_plural = 'Comandos'
+        indexes = [
+            models.Index(fields=['category']),
+            models.Index(fields=['is_favorite']),
+            models.Index(fields=['created_by']),
+            models.Index(fields=['title']),
+        ]
+    
+    def __str__(self):
+        return self.title
+    
+    def get_category_display_with_icon(self):
+        """Retorna la categoría con su icono correspondiente"""
+        icons = {
+            'linux': 'bi-terminal',
+            'windows': 'bi-windows',
+            'docker': 'bi-box',
+            'git': 'bi-git',
+            'python': 'bi-code-slash',
+            'javascript': 'bi-braces',
+            'database': 'bi-database',
+            'network': 'bi-wifi',
+            'security': 'bi-shield-check',
+            'devops': 'bi-gear',
+            'web': 'bi-globe',
+            'mobile': 'bi-phone',
+            'other': 'bi-three-dots',
+        }
+        return {
+            'name': self.get_category_display(),
+            'icon': icons.get(self.category, 'bi-three-dots')
+        }
+    
+    def get_tags_list(self):
+        """Retorna las etiquetas como lista"""
+        if self.tags:
+            return [tag.strip() for tag in self.tags.split(',') if tag.strip()]
+        return []
+    
+    def increment_usage(self):
+        """Incrementa el contador de uso"""
+        self.usage_count = models.F('usage_count') + 1
+        self.save(update_fields=['usage_count'])
+        self.refresh_from_db()
+    
+    def get_short_description(self, max_length=100):
+        """Retorna una versión corta de la descripción"""
+        if len(self.description) <= max_length:
+            return self.description
+        return self.description[:max_length] + '...'
+
+
+class ContactFormSubmission(models.Model):
+    """Modelo para gestionar formularios de contacto público"""
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pendiente'),
+        ('approved', 'Aprobada'),
+        ('rejected', 'Rechazada'),
+        ('company_created', 'Empresa Creada'),
+    ]
+    
+    # Información del formulario de contacto
+    company_name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre de la Empresa'
+    )
+    contact_name = models.CharField(
+        max_length=100,
+        verbose_name='Nombre del Contacto'
+    )
+    email = models.EmailField(
+        verbose_name='Correo Electrónico'
+    )
+    phone = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name='Teléfono'
+    )
+    website = models.URLField(
+        blank=True,
+        verbose_name='Sitio Web'
+    )
+    address = models.CharField(
+        max_length=300,
+        blank=True,
+        verbose_name='Dirección'
+    )
+    message = models.TextField(
+        blank=True,
+        verbose_name='Mensaje Adicional',
+        help_text='Información adicional sobre la empresa o servicios requeridos'
+    )
+    
+    # Metadatos del formulario
+    submitted_by_user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='contact_form_owner',
+        verbose_name='Propietario del formulario',
+        help_text='Usuario que tiene activado el formulario de contacto'
+    )
+    
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        verbose_name='Estado'
+    )
+    
+    # Información de seguimiento
+    ip_address = models.GenericIPAddressField(
+        blank=True,
+        null=True,
+        verbose_name='Dirección IP'
+    )
+    user_agent = models.TextField(
+        blank=True,
+        verbose_name='User Agent'
+    )
+    
+    # Empresa creada (si se aprueba)
+    created_company = models.ForeignKey(
+        'Company',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Empresa Creada'
+    )
+    
+    # Fechas
+    submitted_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de Envío'
+    )
+    processed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Procesamiento'
+    )
+    processed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='processed_contact_forms',
+        verbose_name='Procesado por'
+    )
+    
+    # Notas internas
+    admin_notes = models.TextField(
+        blank=True,
+        verbose_name='Notas del Administrador',
+        help_text='Notas internas para el seguimiento de la solicitud'
+    )
+    
+    class Meta:
+        ordering = ['-submitted_at']
+        verbose_name = 'Formulario de Contacto'
+        verbose_name_plural = 'Formularios de Contacto'
+        indexes = [
+            models.Index(fields=['status']),
+            models.Index(fields=['submitted_by_user']),
+            models.Index(fields=['submitted_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.company_name} - {self.contact_name} ({self.get_status_display()})"
+    
+    def mark_as_processed(self, user, status, company=None):
+        """Marca el formulario como procesado"""
+        self.status = status
+        self.processed_by = user
+        self.processed_at = timezone.now()
+        if company:
+            self.created_company = company
+        self.save()
+    
+    def get_status_badge_class(self):
+        """Retorna la clase CSS para el badge del estado"""
+        status_classes = {
+            'pending': 'bg-warning',
+            'approved': 'bg-success',
+            'rejected': 'bg-danger',
+            'company_created': 'bg-primary',
+        }
+        return status_classes.get(self.status, 'bg-secondary')
+
+
+# ============= MODELOS CRM =============
+
+class OpportunityStatus(models.Model):
+    """Estados configurables para las oportunidades CRM"""
+    
+    name = models.CharField(
+        max_length=100, 
+        unique=True, 
+        verbose_name='Nombre del Estado'
+    )
+    description = models.TextField(
+        blank=True, 
+        verbose_name='Descripción'
+    )
+    color = models.CharField(
+        max_length=7, 
+        default='#007bff',
+        help_text='Color en formato hexadecimal (ej: #007bff)',
+        verbose_name='Color'
+    )
+    is_final = models.BooleanField(
+        default=False,
+        verbose_name='Estado Final',
+        help_text='Indica si este estado representa el cierre de la oportunidad'
+    )
+    is_won = models.BooleanField(
+        default=False,
+        verbose_name='Estado Ganado',
+        help_text='Indica si este estado representa una venta exitosa'
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Orden',
+        help_text='Orden de aparición en el pipeline'
+    )
+    is_active = models.BooleanField(default=True, verbose_name='Activo')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
+    created_by = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        verbose_name='Creado por'
+    )
+    
+    class Meta:
+        ordering = ['order', 'name']
+        verbose_name = 'Estado de Oportunidad'
+        verbose_name_plural = 'Estados de Oportunidad'
+    
+    def __str__(self):
+        return self.name
+
+
+class Opportunity(models.Model):
+    """Modelo para gestionar oportunidades CRM"""
+    
+    PROBABILITY_CHOICES = [
+        (0, '0%'),
+        (10, '10%'),
+        (20, '20%'),
+        (30, '30%'),
+        (40, '40%'),
+        (50, '50%'),
+        (60, '60%'),
+        (70, '70%'),
+        (80, '80%'),
+        (90, '90%'),
+        (100, '100%'),
+    ]
+    
+    name = models.CharField(
+        max_length=200, 
+        verbose_name='Nombre de la Oportunidad'
+    )
+    description = models.TextField(
+        blank=True, 
+        verbose_name='Descripción'
+    )
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name='opportunities',
+        verbose_name='Empresa'
+    )
+    contact_name = models.CharField(
+        max_length=200,
+        verbose_name='Contacto Principal'
+    )
+    contact_email = models.EmailField(
+        blank=True,
+        verbose_name='Email de Contacto'
+    )
+    contact_phone = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name='Teléfono de Contacto'
+    )
+    value = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2,
+        verbose_name='Valor Estimado',
+        help_text='Valor estimado de la oportunidad'
+    )
+    probability = models.IntegerField(
+        choices=PROBABILITY_CHOICES,
+        default=20,
+        verbose_name='Probabilidad de Cierre (%)'
+    )
+    status = models.ForeignKey(
+        OpportunityStatus,
+        on_delete=models.PROTECT,
+        related_name='opportunities',
+        verbose_name='Estado'
+    )
+    expected_close_date = models.DateField(
+        verbose_name='Fecha Estimada de Cierre'
+    )
+    actual_close_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name='Fecha Real de Cierre'
+    )
+    assigned_to = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='assigned_opportunities',
+        verbose_name='Asignado a'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='created_opportunities',
+        verbose_name='Creado por'
+    )
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
+    
+    # Campos de seguimiento
+    last_contact_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name='Último Contacto'
+    )
+    next_follow_up = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name='Próximo Seguimiento'
+    )
+    source = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Fuente',
+        help_text='¿Cómo se originó esta oportunidad?'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Oportunidad'
+        verbose_name_plural = 'Oportunidades'
+        indexes = [
+            models.Index(fields=['status']),
+            models.Index(fields=['assigned_to']),
+            models.Index(fields=['company']),
+            models.Index(fields=['expected_close_date']),
+        ]
+    
+    def __str__(self):
+        return f"{self.name} - {self.company.name}"
+    
+    @property
+    def expected_value(self):
+        """Calcula el valor esperado basado en la probabilidad"""
+        return (self.value * self.probability) / 100
+    
+    @property
+    def is_overdue(self):
+        """Verifica si la oportunidad está vencida"""
+        if self.expected_close_date and not self.status.is_final:
+            return self.expected_close_date < timezone.now().date()
+        return False
+    
+    @property
+    def days_to_close(self):
+        """Calcula los días hasta el cierre esperado"""
+        if self.expected_close_date:
+            delta = self.expected_close_date - timezone.now().date()
+            return delta.days
+        return None
+    
+    @property
+    def days_overdue(self):
+        """Calcula los días vencidos (número positivo)"""
+        if self.is_overdue and self.expected_close_date:
+            delta = timezone.now().date() - self.expected_close_date
+            return delta.days
+        return 0
+    
+    def can_be_edited_by(self, user):
+        """Verifica si un usuario puede editar esta oportunidad"""
+        from .utils import is_agent
+        return is_agent(user) or user == self.created_by or user == self.assigned_to
+
+
+class OpportunityNote(models.Model):
+    """Notas y seguimiento de oportunidades"""
+    
+    opportunity = models.ForeignKey(
+        Opportunity,
+        on_delete=models.CASCADE,
+        related_name='notes',
+        verbose_name='Oportunidad'
+    )
+    content = models.TextField(verbose_name='Contenido')
+    is_important = models.BooleanField(
+        default=False,
+        verbose_name='Importante',
+        help_text='Marcar como nota importante'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Creado por'
+    )
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Nota de Oportunidad'
+        verbose_name_plural = 'Notas de Oportunidad'
+    
+    def __str__(self):
+        return f"Nota para {self.opportunity.name} - {self.created_at.strftime('%d/%m/%Y')}"
+
+
+class OpportunityStatusHistory(models.Model):
+    """Historial de cambios de estado de las oportunidades"""
+    
+    opportunity = models.ForeignKey(
+        Opportunity,
+        on_delete=models.CASCADE,
+        related_name='status_history',
+        verbose_name='Oportunidad'
+    )
+    previous_status = models.ForeignKey(
+        OpportunityStatus,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='previous_changes',
+        verbose_name='Estado Anterior'
+    )
+    new_status = models.ForeignKey(
+        OpportunityStatus,
+        on_delete=models.CASCADE,
+        related_name='new_changes',
+        verbose_name='Nuevo Estado'
+    )
+    changed_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Cambiado por'
+    )
+    changed_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha del cambio')
+    comment = models.TextField(
+        blank=True,
+        verbose_name='Comentario',
+        help_text='Razón del cambio de estado'
+    )
+    
+    class Meta:
+        ordering = ['-changed_at']
+        verbose_name = 'Historial de Estado'
+        verbose_name_plural = 'Historial de Estados'
+    
+    def __str__(self):
+        return f"{self.opportunity.name}: {self.previous_status} → {self.new_status}"

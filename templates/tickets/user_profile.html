@@ -114,6 +114,24 @@
                         </div>
                     </div>
                     
+                    <!-- Formulario de contacto público -->
+                    <div class="mb-3">
+                        <div class="form-check">
+                            {{ profile_form.enable_public_contact_form }}
+                            <label for="{{ profile_form.enable_public_contact_form.id_for_label }}" class="form-check-label">
+                                {{ profile_form.enable_public_contact_form.label }}
+                            </label>
+                        </div>
+                        {% if profile_form.enable_public_contact_form.errors %}
+                            <div class="text-danger small">
+                                {{ profile_form.enable_public_contact_form.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            {{ profile_form.enable_public_contact_form.help_text }}
+                        </div>
+                    </div>
+                    
                     <button type="submit" name="update_profile" class="btn btn-primary">
                         <i class="bi bi-check-circle"></i> Actualizar Perfil
                     </button>
@@ -287,6 +305,7 @@
             </div>
         </div>
 
+        {% if is_agent %}
         <!-- Acceso Público a Tareas -->
         <div class="card mt-3">
             <div class="card-header">
@@ -344,7 +363,138 @@
                 </div>
             </div>
         </div>
+        {% endif %}
 
+        {% if is_agent %}
+        <!-- Formulario de Contacto Público -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-envelope-heart text-primary"></i>
+                    Formulario de Contacto Público
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info" role="alert">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <div>
+                            <strong>¿Qué es esto?</strong><br>
+                            <small>
+                                Permite que visitantes envíen formularios de contacto para crear empresas en tu cuenta. 
+                                Ideal para freelancers y consultores que quieren automatizar la captura de leads.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Estado del formulario -->
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" 
+                               type="checkbox" 
+                               role="switch" 
+                               id="contactFormToggle"
+                               {% if user_profile.enable_public_contact_form %}checked{% endif %}
+                               onchange="toggleContactForm()">
+                        <label class="form-check-label fw-bold" for="contactFormToggle">
+                            {% if user_profile.enable_public_contact_form %}
+                                <span class="text-success">
+                                    <i class="bi bi-check-circle"></i>
+                                    Formulario de contacto activo
+                                </span>
+                            {% else %}
+                                <span class="text-muted">
+                                    <i class="bi bi-x-circle"></i>
+                                    Formulario de contacto desactivado
+                                </span>
+                            {% endif %}
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- URL del formulario (solo si está activo) -->
+                {% if user_profile.enable_public_contact_form and public_contact_form_url %}
+                <div class="mb-3" id="contactFormSection">
+                    <label class="form-label">
+                        <i class="bi bi-link-45deg"></i> 
+                        URL de tu formulario de contacto
+                    </label>
+                    <div class="input-group">
+                        <input type="url" 
+                               class="form-control form-control-sm" 
+                               value="{{ public_contact_form_url }}" 
+                               readonly 
+                               id="publicContactFormUrl">
+                        <button class="btn btn-outline-secondary btn-sm" 
+                                type="button" 
+                                onclick="copyToClipboard('publicContactFormUrl')"
+                                title="Copiar enlace">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+                    <small class="text-muted">
+                        Comparte este enlace en tu sitio web, redes sociales o tarjetas de visita
+                    </small>
+                </div>
+                
+                <div class="d-flex gap-2 mb-3">
+                    <a href="{{ public_contact_form_url }}" 
+                       target="_blank" 
+                       class="btn btn-primary btn-sm">
+                        <i class="bi bi-eye"></i> Ver Formulario
+                    </a>
+                    
+                    <a href="{% url 'contact_submissions_list' %}" 
+                       class="btn btn-info btn-sm">
+                        <i class="bi bi-inbox"></i> Ver Formularios Recibidos
+                    </a>
+                </div>
+                {% endif %}
+                
+                <!-- Estadísticas si hay formularios -->
+                {% if user_profile.enable_public_contact_form %}
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body py-2">
+                                <div class="text-primary">
+                                    <i class="bi bi-inbox-fill"></i>
+                                </div>
+                                <div class="fw-bold">{{ contact_form_stats.pending|default:0 }}</div>
+                                <small class="text-muted">Pendientes</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body py-2">
+                                <div class="text-success">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                </div>
+                                <div class="fw-bold">{{ contact_form_stats.approved|default:0 }}</div>
+                                <small class="text-muted">Aprobados</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body py-2">
+                                <div class="text-info">
+                                    <i class="bi bi-building-fill"></i>
+                                </div>
+                                <div class="fw-bold">{{ contact_form_stats.company_created|default:0 }}</div>
+                                <small class="text-muted">Empresas Creadas</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if is_agent %}
         <!-- Enlaces Rápidos -->
         <div class="card mt-3">
             <div class="card-header">
@@ -374,6 +524,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
     </div>
 </div>
 
@@ -402,6 +553,34 @@ function copyToClipboard(elementId) {
     } catch (err) {
         alert('Error al copiar: ' + err);
     }
+}
+
+function toggleContactForm() {
+    const toggle = document.getElementById('contactFormToggle');
+    const isEnabled = toggle.checked;
+    
+    // Enviar una petición AJAX para actualizar el estado
+    fetch('{% url "user_profile" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: `enable_public_contact_form=${isEnabled}&update_contact_form_toggle=1`
+    })
+    .then(response => {
+        if (response.ok) {
+            // Recargar la página para mostrar los cambios
+            window.location.reload();
+        } else {
+            alert('Error al actualizar la configuración');
+            toggle.checked = !isEnabled; // Revertir el toggle
+        }
+    })
+    .catch(error => {
+        alert('Error al actualizar la configuración');
+        toggle.checked = !isEnabled; // Revertir el toggle
+    });
 }
 </script>
 {% endblock %}

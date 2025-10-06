@@ -1,0 +1,489 @@
+{% extends "base.html" %}
+{% load django_bootstrap5 %}
+
+{% block title %}Biblioteca de Comandos - Herramientas{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-terminal text-primary"></i>
+                        Biblioteca de Comandos
+                    </h1>
+                    <p class="text-muted mb-0">Gestiona y busca comandos útiles para desarrollo y administración</p>
+                </div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                        <li class="breadcrumb-item">Herramientas</li>
+                        <li class="breadcrumb-item active">Comandos</li>
+                    </ol>
+                </nav>
+            </div>
+
+            <!-- Estadísticas y Acciones -->
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card border-primary">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-terminal display-6 text-primary"></i>
+                                    <h5 class="card-title mt-2">{{ total_commands }}</h5>
+                                    <p class="card-text text-muted">Total de Comandos</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-warning">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-star-fill display-6 text-warning"></i>
+                                    <h5 class="card-title mt-2">{{ favorites_count }}</h5>
+                                    <p class="card-text text-muted">Favoritos</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-danger">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-exclamation-triangle-fill display-6 text-danger"></i>
+                                    <h5 class="card-title mt-2">{{ dangerous_count }}</h5>
+                                    <p class="card-text text-muted">Peligrosos</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'command_create' %}" class="btn btn-primary btn-lg">
+                            <i class="bi bi-plus-circle"></i> Agregar Comando
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Búsqueda Avanzada -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-search"></i>
+                        Búsqueda Avanzada
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" action="" id="searchForm">
+                        <div class="row g-3">
+                            <!-- Búsqueda principal -->
+                            <div class="col-md-6">
+                                {{ form.query.label_tag }}
+                                {{ form.query }}
+                            </div>
+                            
+                            <!-- Categoría -->
+                            <div class="col-md-3">
+                                {{ form.category.label_tag }}
+                                {{ form.category }}
+                            </div>
+                            
+                            <!-- Filtros -->
+                            <div class="col-md-3">
+                                <label class="form-label">Filtros</label>
+                                <div class="form-check">
+                                    {{ form.favorites_only }}
+                                    {{ form.favorites_only.label_tag }}
+                                </div>
+                                <div class="form-check">
+                                    {{ form.dangerous_only }}
+                                    {{ form.dangerous_only.label_tag }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-search"></i> Buscar
+                                </button>
+                                <a href="{% url 'command_library' %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-clockwise"></i> Limpiar
+                                </a>
+                                {% if query %}
+                                <span class="ms-3 text-muted">
+                                    <i class="bi bi-info-circle"></i>
+                                    Mostrando resultados para: <strong>"{{ query }}"</strong>
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Resultados -->
+            {% if page_obj %}
+                <div class="row">
+                    {% for command in page_obj %}
+                    <div class="col-lg-6 col-xl-4 mb-4">
+                        <div class="card h-100 command-card" data-command-id="{{ command.id }}">
+                            <div class="card-header d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="card-title mb-1">
+                                        {% if command.is_favorite %}
+                                            <i class="bi bi-star-fill text-warning me-1"></i>
+                                        {% endif %}
+                                        {% if command.is_dangerous %}
+                                            <i class="bi bi-exclamation-triangle-fill text-danger me-1"></i>
+                                        {% endif %}
+                                        {{ command.title }}
+                                    </h6>
+                                    <span class="badge bg-{{ command.category|default:'secondary' }} me-1">
+                                        <i class="{{ command.get_category_display_with_icon.icon }}"></i>
+                                        {{ command.get_category_display_with_icon.name }}
+                                    </span>
+                                </div>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="bi bi-three-dots"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{% url 'command_detail' command.pk %}">
+                                            <i class="bi bi-eye"></i> Ver detalles
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{% url 'command_edit' command.pk %}">
+                                            <i class="bi bi-pencil"></i> Editar
+                                        </a></li>
+                                        <li><button class="dropdown-item copy-command" data-command-id="{{ command.id }}">
+                                            <i class="bi bi-clipboard"></i> Copiar comando
+                                        </button></li>
+                                        <li><button class="dropdown-item toggle-favorite" data-command-id="{{ command.id }}">
+                                            {% if command.is_favorite %}
+                                                <i class="bi bi-star"></i> Quitar de favoritos
+                                            {% else %}
+                                                <i class="bi bi-star-fill"></i> Agregar a favoritos
+                                            {% endif %}
+                                        </button></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item text-danger" href="{% url 'command_delete' command.pk %}">
+                                            <i class="bi bi-trash"></i> Eliminar
+                                        </a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <div class="card-body">
+                                <!-- Descripción -->
+                                <p class="card-text text-muted small">{{ command.get_short_description }}</p>
+                                
+                                <!-- Comando -->
+                                <div class="code-container mb-3">
+                                    <pre class="code-block"><code>{{ command.command }}</code></pre>
+                                    <button class="btn btn-sm btn-outline-primary copy-command" data-command-id="{{ command.id }}">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                                
+                                <!-- Etiquetas -->
+                                {% if command.get_tags_list %}
+                                <div class="mb-2">
+                                    {% for tag in command.get_tags_list %}
+                                    <span class="badge bg-light text-dark me-1"># {{ tag }}</span>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="card-footer text-muted d-flex justify-content-between align-items-center">
+                                <small>
+                                    <i class="bi bi-person"></i> {{ command.created_by.username }}
+                                    <span class="ms-2">
+                                        <i class="bi bi-clock"></i> {{ command.created_at|date:"d/m/Y" }}
+                                    </span>
+                                </small>
+                                <small>
+                                    <i class="bi bi-clipboard-check"></i> {{ command.usage_count }} uso{{ command.usage_count|pluralize }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12">
+                        <div class="text-center py-5">
+                            <i class="bi bi-search display-1 text-muted"></i>
+                            <h4 class="mt-3">No se encontraron comandos</h4>
+                            <p class="text-muted">
+                                {% if query %}
+                                    No hay comandos que coincidan con tu búsqueda.
+                                {% else %}
+                                    Aún no hay comandos registrados.
+                                {% endif %}
+                            </p>
+                            <a href="{% url 'command_create' %}" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> Agregar primer comando
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Paginación -->
+                {% if page_obj.has_other_pages %}
+                <nav aria-label="Paginación de comandos" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% if request.GET.query %}query={{ request.GET.query }}&{% endif %}{% if request.GET.category %}category={{ request.GET.category }}&{% endif %}{% if request.GET.favorites_only %}favorites_only=on&{% endif %}{% if request.GET.dangerous_only %}dangerous_only=on&{% endif %}page={{ page_obj.previous_page_number }}">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% if request.GET.query %}query={{ request.GET.query }}&{% endif %}{% if request.GET.category %}category={{ request.GET.category }}&{% endif %}{% if request.GET.favorites_only %}favorites_only=on&{% endif %}{% if request.GET.dangerous_only %}dangerous_only=on&{% endif %}page={{ num }}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% if request.GET.query %}query={{ request.GET.query }}&{% endif %}{% if request.GET.category %}category={{ request.GET.category }}&{% endif %}{% if request.GET.favorites_only %}favorites_only=on&{% endif %}{% if request.GET.dangerous_only %}dangerous_only=on&{% endif %}page={{ page_obj.next_page_number }}">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Toast de notificaciones -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="notificationToast" class="toast" role="alert">
+        <div class="toast-header">
+            <i class="bi bi-check-circle-fill text-success me-2"></i>
+            <strong class="me-auto">Éxito</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body" id="toastMessage">
+            Comando copiado al portapapeles
+        </div>
+    </div>
+</div>
+
+<style>
+.command-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.command-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.code-container {
+    position: relative;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+}
+
+.code-block {
+    background: none;
+    border: none;
+    margin: 0;
+    padding: 0;
+    font-family: 'Courier New', Consolas, monospace;
+    font-size: 0.875rem;
+    color: #333;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.code-container .btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    opacity: 0.7;
+}
+
+.code-container:hover .btn {
+    opacity: 1;
+}
+
+.badge.bg-linux { background-color: #ff6600 !important; }
+.badge.bg-windows { background-color: #00a1f1 !important; }
+.badge.bg-docker { background-color: #2496ed !important; }
+.badge.bg-git { background-color: #f05032 !important; }
+.badge.bg-python { background-color: #3776ab !important; }
+.badge.bg-javascript { background-color: #f7df1e !important; color: #333 !important; }
+.badge.bg-database { background-color: #336791 !important; }
+.badge.bg-network { background-color: #0080ff !important; }
+.badge.bg-security { background-color: #dc3545 !important; }
+.badge.bg-devops { background-color: #28a745 !important; }
+.badge.bg-web { background-color: #007bff !important; }
+.badge.bg-mobile { background-color: #6f42c1 !important; }
+.badge.bg-other { background-color: #6c757d !important; }
+
+/* Búsqueda en tiempo real */
+.form-control:focus {
+    border-color: #86b7fe;
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Animación para las cards */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.command-card {
+    animation: fadeInUp 0.3s ease;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Funciones de utilidad
+    function showToast(message, type = 'success') {
+        const toast = document.getElementById('notificationToast');
+        const toastMessage = document.getElementById('toastMessage');
+        const toastHeader = toast.querySelector('.toast-header i');
+        
+        toastMessage.textContent = message;
+        
+        // Cambiar icono según el tipo
+        if (type === 'success') {
+            toastHeader.className = 'bi bi-check-circle-fill text-success me-2';
+        } else if (type === 'error') {
+            toastHeader.className = 'bi bi-exclamation-circle-fill text-danger me-2';
+        }
+        
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+    }
+    
+    // Copiar comando al portapapeles
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.copy-command')) {
+            e.preventDefault();
+            const commandId = e.target.closest('.copy-command').dataset.commandId;
+            
+            fetch(`/tools/commands/${commandId}/copy/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Copiar al portapapeles
+                    navigator.clipboard.writeText(data.command).then(() => {
+                        showToast(`Comando copiado al portapapeles (${data.usage_count} usos)`);
+                        
+                        // Actualizar contador de usos en la UI
+                        const card = document.querySelector(`[data-command-id="${commandId}"]`);
+                        const usageElement = card.querySelector('.card-footer small:last-child');
+                        if (usageElement) {
+                            usageElement.innerHTML = `<i class="bi bi-clipboard-check"></i> ${data.usage_count} uso${data.usage_count > 1 ? 's' : ''}`;
+                        }
+                    });
+                } else {
+                    showToast('Error al copiar el comando', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Error al copiar el comando', 'error');
+            });
+        }
+    });
+    
+    // Toggle favorito
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.toggle-favorite')) {
+            e.preventDefault();
+            const commandId = e.target.closest('.toggle-favorite').dataset.commandId;
+            
+            fetch(`/tools/commands/${commandId}/toggle-favorite/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message);
+                    // Recargar página para actualizar la UI
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    showToast('Error al actualizar favorito', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Error al actualizar favorito', 'error');
+            });
+        }
+    });
+    
+    // Búsqueda en tiempo real (opcional)
+    const searchInput = document.querySelector('input[name="query"]');
+    let searchTimeout;
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                if (this.value.length >= 3 || this.value.length === 0) {
+                    document.getElementById('searchForm').submit();
+                }
+            }, 500);
+        });
+    }
+    
+    // Atajos de teclado
+    document.addEventListener('keydown', function(e) {
+        // Ctrl+F o Cmd+F para enfocar búsqueda
+        if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+            e.preventDefault();
+            searchInput.focus();
+        }
+        
+        // Escape para limpiar búsqueda
+        if (e.key === 'Escape' && searchInput === document.activeElement) {
+            searchInput.value = '';
+            document.getElementById('searchForm').submit();
+        }
+    });
+});
+</script>
+{% endblock %}

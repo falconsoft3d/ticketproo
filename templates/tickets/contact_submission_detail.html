@@ -1,0 +1,368 @@
+{% extends "base.html" %}
+
+{% block title %}Detalles del Formulario de Contacto - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-file-text text-primary"></i>
+                        Detalles del Formulario de Contacto
+                    </h1>
+                    <p class="text-muted mb-0">Información completa de la solicitud de contacto recibida</p>
+                </div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'contact_submissions_list' %}">Formularios de Contacto</a></li>
+                        <li class="breadcrumb-item active">Detalles</li>
+                    </ol>
+                </nav>
+            </div>
+
+            <!-- Estado y acciones principales -->
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-building"></i>
+                                    {{ submission.company_name }}
+                                </h5>
+                                <span class="badge {{ submission.get_status_badge_class }} fs-6">
+                                    {{ submission.get_status_display }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Información de la Empresa</h6>
+                                    <table class="table table-sm table-borderless">
+                                        <tr>
+                                            <td class="fw-bold">Nombre:</td>
+                                            <td>{{ submission.company_name }}</td>
+                                        </tr>
+                                        {% if submission.website %}
+                                        <tr>
+                                            <td class="fw-bold">Sitio Web:</td>
+                                            <td>
+                                                <a href="{{ submission.website }}" target="_blank" class="text-decoration-none">
+                                                    <i class="bi bi-globe"></i> {{ submission.website }}
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+                                        {% if submission.address %}
+                                        <tr>
+                                            <td class="fw-bold">Dirección:</td>
+                                            <td>{{ submission.address }}</td>
+                                        </tr>
+                                        {% endif %}
+                                    </table>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Información de Contacto</h6>
+                                    <table class="table table-sm table-borderless">
+                                        <tr>
+                                            <td class="fw-bold">Contacto:</td>
+                                            <td>{{ submission.contact_name }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Email:</td>
+                                            <td>
+                                                <a href="mailto:{{ submission.email }}" class="text-decoration-none">
+                                                    <i class="bi bi-envelope"></i> {{ submission.email }}
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% if submission.phone %}
+                                        <tr>
+                                            <td class="fw-bold">Teléfono:</td>
+                                            <td>
+                                                <a href="tel:{{ submission.phone }}" class="text-decoration-none">
+                                                    <i class="bi bi-telephone"></i> {{ submission.phone }}
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+                                    </table>
+                                </div>
+                            </div>
+
+                            {% if submission.message %}
+                            <div class="mt-3">
+                                <h6>Mensaje Adicional</h6>
+                                <div class="bg-light p-3 rounded">
+                                    {{ submission.message|linebreaks }}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <!-- Acciones -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="bi bi-gear"></i>
+                                Acciones
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            {% if submission.status == 'pending' %}
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'contact_submission_approve' submission.pk %}" 
+                                   class="btn btn-success">
+                                    <i class="bi bi-check-circle"></i>
+                                    Aprobar y Crear Empresa
+                                </a>
+                                <a href="{% url 'contact_submission_reject' submission.pk %}" 
+                                   class="btn btn-danger">
+                                    <i class="bi bi-x-circle"></i>
+                                    Rechazar
+                                </a>
+                            </div>
+                            {% elif submission.status == 'approved' %}
+                            <div class="alert alert-success">
+                                <i class="bi bi-check-circle"></i>
+                                Formulario aprobado. Puede crear la empresa cuando esté listo.
+                            </div>
+                            <div class="d-grid">
+                                <a href="{% url 'contact_submission_approve' submission.pk %}" 
+                                   class="btn btn-primary">
+                                    <i class="bi bi-building"></i>
+                                    Crear Empresa Ahora
+                                </a>
+                            </div>
+                            {% elif submission.status == 'company_created' %}
+                            <div class="alert alert-primary">
+                                <i class="bi bi-building"></i>
+                                Empresa creada exitosamente.
+                            </div>
+                            {% if submission.created_company %}
+                            <div class="d-grid">
+                                <a href="{% url 'company_detail' submission.created_company.id %}" 
+                                   class="btn btn-outline-primary">
+                                    <i class="bi bi-building"></i>
+                                    Ver Empresa Creada
+                                </a>
+                            </div>
+                            {% endif %}
+                            {% elif submission.status == 'rejected' %}
+                            <div class="alert alert-danger">
+                                <i class="bi bi-x-circle"></i>
+                                Formulario rechazado.
+                            </div>
+                            {% endif %}
+
+                            <hr>
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'contact_submissions_list' %}" 
+                                   class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left"></i>
+                                    Volver a la Lista
+                                </a>
+                                <a href="mailto:{{ submission.email }}?subject=Re: {{ submission.company_name }} - Formulario de Contacto" 
+                                   class="btn btn-outline-info">
+                                    <i class="bi bi-envelope"></i>
+                                    Enviar Email
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Información del sistema -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="bi bi-info-circle"></i>
+                                Información del Sistema
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <td class="fw-bold">Recibido:</td>
+                                    <td>
+                                        <div>{{ submission.submitted_at|date:"d/m/Y" }}</div>
+                                        <small class="text-muted">{{ submission.submitted_at|time:"H:i:s" }}</small>
+                                    </td>
+                                </tr>
+                                {% if submission.processed_at %}
+                                <tr>
+                                    <td class="fw-bold">Procesado:</td>
+                                    <td>
+                                        <div>{{ submission.processed_at|date:"d/m/Y" }}</div>
+                                        <small class="text-muted">{{ submission.processed_at|time:"H:i:s" }}</small>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% if submission.processed_by %}
+                                <tr>
+                                    <td class="fw-bold">Procesado por:</td>
+                                    <td>{{ submission.processed_by.get_full_name|default:submission.processed_by.username }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if submission.ip_address %}
+                                <tr>
+                                    <td class="fw-bold">IP:</td>
+                                    <td><code>{{ submission.ip_address }}</code></td>
+                                </tr>
+                                {% endif %}
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notas administrativas -->
+            {% if submission.admin_notes or submission.status == 'pending' %}
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="bi bi-sticky"></i>
+                                Notas Administrativas
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            {% if submission.admin_notes %}
+                            <div class="bg-light p-3 rounded mb-3">
+                                {{ submission.admin_notes|linebreaks }}
+                            </div>
+                            {% endif %}
+
+                            {% if submission.status == 'pending' %}
+                            <form method="post">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="admin_notes" class="form-label">Agregar nota interna:</label>
+                                    <textarea name="admin_notes" id="admin_notes" 
+                                              class="form-control" rows="3" 
+                                              placeholder="Escriba notas internas sobre esta solicitud...">{{ submission.admin_notes }}</textarea>
+                                </div>
+                                <button type="submit" name="update_notes" class="btn btn-outline-primary">
+                                    <i class="bi bi-save"></i>
+                                    Guardar Notas
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Historial de la empresa creada -->
+            {% if submission.created_company %}
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card border-primary">
+                        <div class="card-header bg-primary bg-opacity-10">
+                            <h6 class="mb-0">
+                                <i class="bi bi-building text-primary"></i>
+                                Empresa Creada
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <h5>{{ submission.created_company.name }}</h5>
+                                    {% if submission.created_company.description %}
+                                    <p class="text-muted">{{ submission.created_company.description }}</p>
+                                    {% endif %}
+                                    <table class="table table-sm table-borderless">
+                                        {% if submission.created_company.website %}
+                                        <tr>
+                                            <td class="fw-bold">Sitio Web:</td>
+                                            <td>
+                                                <a href="{{ submission.created_company.website }}" target="_blank">
+                                                    {{ submission.created_company.website }}
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+                                        {% if submission.created_company.email %}
+                                        <tr>
+                                            <td class="fw-bold">Email:</td>
+                                            <td>{{ submission.created_company.email }}</td>
+                                        </tr>
+                                        {% endif %}
+                                        {% if submission.created_company.phone %}
+                                        <tr>
+                                            <td class="fw-bold">Teléfono:</td>
+                                            <td>{{ submission.created_company.phone }}</td>
+                                        </tr>
+                                        {% endif %}
+                                    </table>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <a href="{% url 'company_detail' submission.created_company.id %}" 
+                                       class="btn btn-primary">
+                                        <i class="bi bi-building"></i>
+                                        Ver Empresa Completa
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.table-borderless td {
+    padding: 0.25rem 0.5rem;
+}
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+.badge.fs-6 {
+    font-size: 0.875rem !important;
+}
+.alert {
+    border: none;
+    border-radius: 0.5rem;
+}
+code {
+    background-color: #f8f9fa;
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.25rem;
+    font-size: 0.875em;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tooltips para botones
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Confirmación para acciones importantes
+    document.querySelectorAll('a[href*="approve"], a[href*="reject"]').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            var action = this.href.includes('approve') ? 'aprobar' : 'rechazar';
+            var company = '{{ submission.company_name|escapejs }}';
+            
+            if (!confirm(`¿Está seguro de que desea ${action} la solicitud de "${company}"?`)) {
+                e.preventDefault();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
