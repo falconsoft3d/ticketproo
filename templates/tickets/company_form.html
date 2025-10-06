@@ -194,6 +194,22 @@
                                     {% endif %}
                                 </div>
                             </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.public_token.id_for_label }}" class="form-label fw-bold">
+                                        <i class="bi bi-key me-1"></i>
+                                        {{ form.public_token.label }}
+                                    </label>
+                                    {{ form.public_token }}
+                                    {% if form.public_token.errors %}
+                                        {% for error in form.public_token.errors %}
+                                            <div class="text-danger small mt-1">{{ error }}</div>
+                                        {% endfor %}
+                                    {% endif %}
+                                    <small class="text-muted">Token único para acceso público a estadísticas</small>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Botones de acción -->

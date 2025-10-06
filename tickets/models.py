@@ -88,7 +88,7 @@ class Company(models.Model):
     public_token = models.UUIDField(
         null=True,
         blank=True,
-        editable=False,
+        editable=True,
         verbose_name='Token público',
         help_text='Token único para acceso público a estadísticas'
     )

@@ -3,6 +3,46 @@
 {% block title %}CRM Dashboard - TicketProo{% endblock %}
 
 {% block content %}
+<style>
+.clickable-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: none !important;
+}
+
+.clickable-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+}
+
+.clickable-card .card-body {
+    transition: all 0.3s ease;
+}
+
+.clickable-card:hover .card-body {
+    transform: scale(1.05);
+}
+
+.pipeline-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.pipeline-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.clickable-card a {
+    color: inherit !important;
+    text-decoration: none !important;
+}
+
+.clickable-card a:hover {
+    color: inherit !important;
+}
+</style>
+
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
@@ -27,28 +67,31 @@
                         <i class="bi bi-bar-chart fs-1"></i>
                         <h3 class="mt-2">{{ total_opportunities }}</h3>
                         <p class="mb-0">Total Oportunidades</p>
+                        <small class="opacity-75">Clic para ver todas</small>
                     </div>
                 </div>
             </a>
         </div>
         <div class="col-md-3">
-            <a href="{% url 'opportunity_list' %}" class="text-decoration-none">
+            <a href="{% url 'opportunity_list' %}?order_by=-value" class="text-decoration-none">
                 <div class="card bg-success text-white h-100 clickable-card">
                     <div class="card-body text-center">
                         <i class="bi bi-currency-dollar fs-1"></i>
                         <h3 class="mt-2">${{ total_value|floatformat:0 }}</h3>
                         <p class="mb-0">Valor Total</p>
+                        <small class="opacity-75">Ordenar por valor</small>
                     </div>
                 </div>
             </a>
         </div>
         <div class="col-md-3">
-            <a href="{% url 'opportunity_list' %}" class="text-decoration-none">
+            <a href="{% url 'opportunity_list' %}?order_by=-probability" class="text-decoration-none">
                 <div class="card bg-info text-white h-100 clickable-card">
                     <div class="card-body text-center">
                         <i class="bi bi-target fs-1"></i>
                         <h3 class="mt-2">${{ total_expected_value|floatformat:0 }}</h3>
                         <p class="mb-0">Valor Esperado</p>
+                        <small class="opacity-75">Por probabilidad</small>
                     </div>
                 </div>
             </a>
@@ -60,6 +103,7 @@
                         <i class="bi bi-exclamation-triangle fs-1"></i>
                         <h3 class="mt-2">{{ overdue_opportunities }}</h3>
                         <p class="mb-0">Vencidas</p>
+                        <small class="opacity-75">Requieren atención</small>
                     </div>
                 </div>
             </a>
@@ -80,26 +124,28 @@
                         <div class="row">
                             {% for status, stats in status_stats.items %}
                             <div class="col-md-4 mb-3">
-                                <div class="card border-start" style="border-left-color: {{ status.color }} !important; border-left-width: 4px !important;">
-                                    <div class="card-body">
-                                        <h6 class="card-title" style="color: {{ status.color }}">
-                                            <i class="bi bi-circle-fill" style="color: {{ status.color }}"></i>
-                                            {{ status.name }}
-                                        </h6>
-                                        <div class="row text-center">
-                                            <div class="col-6">
-                                                <div class="border-end">
-                                                    <h4 class="mb-0">{{ stats.count }}</h4>
-                                                    <small class="text-muted">Oportunidades</small>
+                                <a href="{% url 'opportunity_list' %}?status={{ status.pk }}" class="text-decoration-none">
+                                    <div class="card border-start pipeline-card" style="border-left-color: {{ status.color }} !important; border-left-width: 4px !important;">
+                                        <div class="card-body">
+                                            <h6 class="card-title" style="color: {{ status.color }}">
+                                                <i class="bi bi-circle-fill" style="color: {{ status.color }}"></i>
+                                                {{ status.name }}
+                                            </h6>
+                                            <div class="row text-center">
+                                                <div class="col-6">
+                                                    <div class="border-end">
+                                                        <h4 class="mb-0">{{ stats.count }}</h4>
+                                                        <small class="text-muted">Oportunidades</small>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div class="col-6">
-                                                <h4 class="mb-0">${{ stats.value|floatformat:0 }}</h4>
-                                                <small class="text-muted">Valor</small>
+                                                <div class="col-6">
+                                                    <h4 class="mb-0">${{ stats.value|floatformat:0 }}</h4>
+                                                    <small class="text-muted">Valor</small>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                </a>
                             </div>
                             {% endfor %}
                         </div>

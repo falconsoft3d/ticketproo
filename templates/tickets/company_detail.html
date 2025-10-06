@@ -352,7 +352,7 @@
                 <label for="publicUrl" class="form-label fw-bold">URL para compartir:</label>
                 <div class="input-group">
                     <input type="text" class="form-control" id="publicUrl" 
-                           value="{{ request.scheme }}://{{ request.get_host }}{% url 'public_company_stats' company.public_token %}" 
+                           value="{{ request.scheme }}://{{ request.get_host }}{% url 'public_company_stats' company.public_token|default:company.id %}" 
                            readonly>
                     <button class="btn btn-outline-primary" type="button" onclick="copyToClipboard()">
                         <i class="bi bi-copy"></i> Copiar

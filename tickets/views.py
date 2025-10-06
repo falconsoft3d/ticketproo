@@ -4436,11 +4436,16 @@ def tetris_view(request):
 
 
 def public_company_stats(request, token):
-    """Vista pública para mostrar estadísticas de una empresa usando su token"""
+    """Vista pública para mostrar estadísticas de una empresa usando su token o ID"""
     try:
+        # Intentar primero como UUID token
         company = Company.objects.get(public_token=token, is_active=True)
-    except Company.DoesNotExist:
-        raise Http404("Empresa no encontrada o token inválido")
+    except (Company.DoesNotExist, ValueError):
+        try:
+            # Si falla, intentar como ID numérico
+            company = Company.objects.get(id=int(token), is_active=True)
+        except (Company.DoesNotExist, ValueError):
+            raise Http404("Empresa no encontrada o token inválido")
     
     # Obtener estadísticas públicas
     stats = company.get_public_stats()
@@ -4530,6 +4535,7 @@ def opportunity_list(request):
     company_filter = request.GET.get('company')
     assigned_filter = request.GET.get('assigned')
     search = request.GET.get('search')
+    overdue_filter = request.GET.get('overdue')
     
     if status_filter:
         opportunities = opportunities.filter(status_id=status_filter)
@@ -4539,6 +4545,14 @@ def opportunity_list(request):
     
     if assigned_filter:
         opportunities = opportunities.filter(assigned_to_id=assigned_filter)
+    
+    if overdue_filter == 'true':
+        from django.utils import timezone
+        today = timezone.now().date()
+        opportunities = opportunities.filter(
+            expected_close_date__lt=today,
+            status__is_final=False
+        )
     
     if search:
         opportunities = opportunities.filter(

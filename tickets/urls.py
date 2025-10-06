@@ -191,7 +191,7 @@ urlpatterns = [
     path('games/tetris/', views.tetris_view, name='tetris'),
     
     # URL pública para estadísticas de empresa
-    path('company/stats/<uuid:token>/', views.public_company_stats, name='public_company_stats'),
+    path('company/stats/<str:token>/', views.public_company_stats, name='public_company_stats'),
     
     # ============= URLs CRM =============
     path('crm/', views.crm_dashboard, name='crm_dashboard'),

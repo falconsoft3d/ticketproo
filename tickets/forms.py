@@ -1221,7 +1221,7 @@ class CompanyForm(forms.ModelForm):
     
     class Meta:
         model = Company
-        fields = ['name', 'description', 'address', 'phone', 'email', 'website', 'color', 'logo', 'is_active']
+        fields = ['name', 'description', 'address', 'phone', 'email', 'website', 'color', 'logo', 'public_token', 'is_active']
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -1257,6 +1257,10 @@ class CompanyForm(forms.ModelForm):
                 'class': 'form-control',
                 'accept': 'image/*'
             }),
+            'public_token': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Token público para enlaces (se genera automáticamente)'
+            }),
             'is_active': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
@@ -1269,6 +1273,7 @@ class CompanyForm(forms.ModelForm):
             'email': 'Email de Contacto',
             'website': 'Sitio Web',
             'color': 'Color Identificativo',
+            'public_token': 'Token Público',
             'is_active': 'Empresa Activa',
         }
     
@@ -1288,6 +1293,19 @@ class CompanyForm(forms.ModelForm):
                 raise forms.ValidationError('Ya existe una empresa con este nombre.')
         
         return name
+    
+    def save(self, commit=True):
+        """Generar token público si no existe"""
+        instance = super().save(commit=False)
+        
+        if not instance.public_token:
+            import uuid
+            instance.public_token = uuid.uuid4()
+        
+        if commit:
+            instance.save()
+        
+        return instance
 
 
 class SystemConfigurationForm(forms.ModelForm):
