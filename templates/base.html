@@ -93,10 +93,12 @@
                         </ul>
                     </li>
                     
+
+                    
                     <!-- Menú de gestión para agentes -->
                     {% if user.groups.all and user.groups.first.name == 'Agentes' %}
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if 'user' in request.resolver_match.url_name or 'category' in request.resolver_match.url_name %}active{% endif %}" 
+                        <a class="nav-link dropdown-toggle {% if 'user' in request.resolver_match.url_name or 'category' in request.resolver_match.url_name or 'blog' in request.resolver_match.url_name %}active{% endif %}" 
                            href="#" id="navbarDropdownManagement" role="button" data-bs-toggle="dropdown">
                             <i class="bi bi-gear"></i> Gestión
                         </a>
@@ -167,6 +169,26 @@
                                 <a class="dropdown-item {% if 'document' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'document_list' %}">
                                     <i class="bi bi-file-earmark-text"></i> Documentos
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Blog</li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'blog_post_list_admin' %}active{% endif %}" 
+                                   href="{% url 'blog_post_list_admin' %}">
+                                    <i class="bi bi-newspaper"></i> Gestionar Blog
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'blog_post_create' %}active{% endif %}" 
+                                   href="{% url 'blog_post_create' %}">
+                                    <i class="bi bi-plus-circle"></i> Nuevo Artículo
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'blog_category_list' %}active{% endif %}" 
+                                   href="{% url 'blog_category_list' %}">
+                                    <i class="bi bi-tags"></i> Categorías
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>

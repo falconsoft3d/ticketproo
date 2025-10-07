@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-newspaper"></i> {{ post.title }}
+            </h1>
+            <div>
+                {% if post.status == 'published' %}
+                <a href="{% url 'blog_post_detail' post.slug %}" 
+                   class="btn btn-outline-info"
+                   target="_blank">
+                    <i class="fas fa-external-link-alt"></i> Ver público
+                </a>
+                {% endif %}
+                <a href="{% url 'blog_post_list_admin' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver a la lista
+                </a>
+            </div>
+        </div>
+        
+        <!-- Información del artículo -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle"></i> Información del Artículo</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Categoría:</strong> 
+                            <span class="badge bg-secondary">{{ post.category.name }}</span>
+                        </p>
+                        <p><strong>Estado:</strong> 
+                            {% if post.status == 'published' %}
+                            <span class="badge bg-success">Publicado</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">Borrador</span>
+                            {% endif %}
+                        </p>
+                        <p><strong>Autor:</strong> {{ post.created_by.get_full_name|default:post.created_by.username }}</p>
+                        <p><strong>Destacado:</strong> 
+                            {% if post.is_featured %}
+                            <span class="badge bg-warning text-dark">Sí</span>
+                            {% else %}
+                            <span class="badge bg-light text-dark">No</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Creado:</strong> {{ post.created_at|date:"d M Y, H:i" }}</p>
+                        <p><strong>Actualizado:</strong> {{ post.updated_at|date:"d M Y, H:i" }}</p>
+                        <p><strong>Vistas:</strong> {{ post.views }}</p>
+                        <p><strong>Comentarios:</strong> {{ post.comments.count }}</p>
+                    </div>
+                </div>
+                
+                {% if post.tags %}
+                <p><strong>Tags:</strong> 
+                    {% for tag in post.tags.split %}
+                    <span class="badge bg-light text-dark me-1">#{{ tag }}</span>
+                    {% endfor %}
+                </p>
+                {% endif %}
+                
+                {% if post.meta_description %}
+                <p><strong>Meta descripción (SEO):</strong><br>
+                    <small class="text-muted">{{ post.meta_description }}</small>
+                </p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Imagen destacada -->
+        {% if post.featured_image %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6><i class="fas fa-image"></i> Imagen Destacada</h6>
+            </div>
+            <div class="card-body text-center">
+                <img src="{{ post.featured_image.url }}" 
+                     class="img-fluid rounded" 
+                     alt="{{ post.title }}"
+                     style="max-height: 300px;">
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Extracto -->
+        {% if post.excerpt %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6><i class="fas fa-quote-left"></i> Extracto</h6>
+            </div>
+            <div class="card-body">
+                <p class="lead mb-0">{{ post.excerpt }}</p>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Contenido -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6><i class="fas fa-file-alt"></i> Contenido</h6>
+            </div>
+            <div class="card-body">
+                <div class="blog-content">
+                    {{ post.content|linebreaks }}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Acciones -->
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-cog"></i> Acciones</h6>
+            </div>
+            <div class="card-body">
+                <div class="btn-group" role="group">
+                    <a href="{% url 'blog_post_edit' post.pk %}" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> Editar Artículo
+                    </a>
+                    {% if post.status == 'draft' %}
+                    <a href="{% url 'blog_post_toggle_status' post.pk %}" 
+                       class="btn btn-success"
+                       onclick="return confirm('¿Publicar este artículo?')">
+                        <i class="fas fa-eye"></i> Publicar
+                    </a>
+                    {% else %}
+                    <a href="{% url 'blog_post_toggle_status' post.pk %}" 
+                       class="btn btn-warning"
+                       onclick="return confirm('¿Despublicar este artículo?')">
+                        <i class="fas fa-eye-slash"></i> Despublicar
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'blog_post_delete' post.pk %}" 
+                       class="btn btn-danger"
+                       onclick="return confirm('¿Estás seguro de que quieres eliminar este artículo?')">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-md-4">
+        <!-- Estadísticas -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6><i class="fas fa-chart-bar"></i> Estadísticas</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4 class="text-primary">{{ post.views }}</h4>
+                        <small class="text-muted">Visualizaciones</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-success">{{ post.comments.count }}</h4>
+                        <small class="text-muted">Comentarios</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Comentarios pendientes -->
+        {% if pending_comments %}
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="fas fa-clock"></i> Comentarios Pendientes</h6>
+                <span class="badge bg-warning">{{ pending_comments.count }}</span>
+            </div>
+            <div class="card-body">
+                {% for comment in pending_comments %}
+                <div class="border-bottom pb-2 mb-2 {% if forloop.last %}border-0 pb-0 mb-0{% endif %}">
+                    <small class="d-block">
+                        <strong>{{ comment.name }}</strong>
+                        <span class="text-muted">{{ comment.created_at|date:"d M, H:i" }}</span>
+                    </small>
+                    <p class="small mb-2">{{ comment.content|truncatewords:15 }}</p>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <a href="{% url 'blog_comment_approve' comment.pk %}" 
+                           class="btn btn-outline-success"
+                           onclick="return confirm('¿Aprobar este comentario?')">
+                            <i class="fas fa-check"></i>
+                        </a>
+                        <a href="{% url 'blog_comment_delete' comment.pk %}" 
+                           class="btn btn-outline-danger"
+                           onclick="return confirm('¿Eliminar este comentario?')">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Comentarios aprobados -->
+        {% if approved_comments %}
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6><i class="fas fa-comments"></i> Comentarios Recientes</h6>
+            </div>
+            <div class="card-body">
+                {% for comment in approved_comments|slice:":5" %}
+                <div class="border-bottom pb-2 mb-2 {% if forloop.last %}border-0 pb-0 mb-0{% endif %}">
+                    <small class="d-block">
+                        <strong>{{ comment.name }}</strong>
+                        <span class="text-muted">{{ comment.created_at|date:"d M, H:i" }}</span>
+                    </small>
+                    <p class="small mb-1">{{ comment.content|truncatewords:10 }}</p>
+                    <a href="{% url 'blog_comment_delete' comment.pk %}" 
+                       class="btn btn-outline-danger btn-sm"
+                       onclick="return confirm('¿Eliminar este comentario?')">
+                        <i class="fas fa-trash"></i>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Enlaces útiles -->
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-link"></i> Enlaces Útiles</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled small mb-0">
+                    <li class="mb-2">
+                        <a href="{% url 'blog_list' %}" class="text-decoration-none">
+                            <i class="fas fa-blog"></i> Ver blog público
+                        </a>
+                    </li>
+                    <li class="mb-2">
+                        <a href="{% url 'blog_post_create' %}" class="text-decoration-none">
+                            <i class="fas fa-plus"></i> Nuevo artículo
+                        </a>
+                    </li>
+                    <li class="mb-2">
+                        <a href="{% url 'blog_category_list' %}" class="text-decoration-none">
+                            <i class="fas fa-tags"></i> Gestionar categorías
+                        </a>
+                    </li>
+                    <li>
+                        <a href="?category={{ post.category.slug }}" class="text-decoration-none">
+                            <i class="fas fa-filter"></i> Más de {{ post.category.name }}
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -11,6 +11,7 @@ urlpatterns = [
     path('tickets/<int:pk>/', views.ticket_detail_view, name='ticket_detail'),
     path('tickets/<int:pk>/edit/', views.ticket_edit_view, name='ticket_edit'),
     path('tickets/<int:pk>/delete/', views.ticket_delete_view, name='ticket_delete'),
+    path('tickets/<int:pk>/approve/', views.ticket_approve_view, name='ticket_approve'),
     path('tickets/<int:pk>/unassign/', views.unassign_ticket_view, name='unassign_ticket'),
     
     # URLs públicas de cursos (sin autenticación) - DEBEN IR ANTES que la ruta genérica de tickets
@@ -267,4 +268,25 @@ urlpatterns = [
     
     # URL de debug para cursos
     path('debug/user-access/', views.debug_user_access, name='debug_user_access'),
+    
+    # URLs del Blog
+    # URLs públicas del blog (sin autenticación)
+    path('blog/', views.blog_list, name='blog_list'),
+    path('blog/<slug:slug>/', views.blog_post_detail, name='blog_post_detail'),
+    
+    # URLs de administración del blog (con autenticación)
+    path('blog-admin/', views.blog_post_list_admin, name='blog_post_list_admin'),
+    path('blog-admin/post/create/', views.blog_post_create, name='blog_post_create'),
+    path('blog-admin/post/<int:pk>/', views.blog_post_detail_admin, name='blog_post_detail_admin'),
+    path('blog-admin/post/<int:pk>/edit/', views.blog_post_edit, name='blog_post_edit'),
+    path('blog-admin/post/<int:pk>/toggle-status/', views.blog_post_toggle_status, name='blog_post_toggle_status'),
+    path('blog-admin/post/<int:pk>/delete/', views.blog_post_delete, name='blog_post_delete'),
+    
+    # URLs de categorías de blog (con autenticación)
+    path('blog-admin/categories/', views.blog_category_list, name='blog_category_list'),
+    path('blog-admin/categories/create/', views.blog_category_create, name='blog_category_create'),
+    
+    # URLs de comentarios de blog (con autenticación)
+    path('blog-admin/comments/<int:pk>/approve/', views.blog_comment_approve, name='blog_comment_approve'),
+    path('blog-admin/comments/<int:pk>/delete/', views.blog_comment_delete, name='blog_comment_delete'),
 ]

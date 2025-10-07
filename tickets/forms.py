@@ -5,7 +5,7 @@ from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
     UserNote, TimeEntry, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
     ChatRoom, ChatMessage, Command, ContactFormSubmission, Meeting, MeetingAttendee, MeetingQuestion, OpportunityActivity,
-    Course, CourseClass, Contact
+    Course, CourseClass, Contact, BlogCategory, BlogPost, BlogComment
 )
 
 class CategoryForm(forms.ModelForm):
@@ -142,7 +142,7 @@ class TicketForm(forms.ModelForm):
 
     class Meta:
         model = Ticket
-        fields = ['title', 'description', 'category', 'priority', 'status', 'company', 'project', 'hours']
+        fields = ['title', 'description', 'category', 'priority', 'status', 'ticket_type', 'company', 'project', 'hours']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -2775,3 +2775,145 @@ class ContactForm(forms.ModelForm):
         self.fields['source'].label = 'Fuente'
         self.fields['notes'].label = 'Notas'
         self.fields['contact_date'].label = 'Fecha y Hora de Contacto'
+
+
+class BlogCategoryForm(forms.ModelForm):
+    """Formulario para crear y editar categorías de blog"""
+    
+    class Meta:
+        model = BlogCategory
+        fields = ['name', 'description', 'color', 'is_active']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre de la categoría'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción de la categoría...'
+            }),
+            'color': forms.TextInput(attrs={
+                'class': 'form-control',
+                'type': 'color'
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['name'].label = 'Nombre'
+        self.fields['description'].label = 'Descripción'
+        self.fields['color'].label = 'Color'
+        self.fields['is_active'].label = 'Activa'
+        
+        # Establecer valor por defecto para el color si no existe
+        if not self.instance.pk and not self.fields['color'].initial:
+            self.fields['color'].initial = '#007bff'
+        
+        # Establecer valor por defecto para color si no está establecido
+        if not self.instance.pk and not self.data.get('color'):
+            self.fields['color'].initial = '#007bff'
+
+
+class BlogPostForm(forms.ModelForm):
+    """Formulario para crear y editar artículos de blog"""
+    
+    class Meta:
+        model = BlogPost
+        fields = [
+            'title', 'excerpt', 'content', 'featured_image', 'category', 
+            'status', 'tags', 'meta_description', 'is_featured'
+        ]
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título del artículo'
+            }),
+            'excerpt': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Breve resumen del artículo...',
+                'maxlength': '300'
+            }),
+            'content': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 15,
+                'placeholder': 'Contenido del artículo...'
+            }),
+            'featured_image': forms.ClearableFileInput(attrs={
+                'class': 'form-control'
+            }),
+            'category': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'status': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'tags': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Etiquetas separadas por comas'
+            }),
+            'meta_description': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Descripción para SEO...',
+                'maxlength': '160'
+            }),
+            'is_featured': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Filtrar solo categorías activas
+        self.fields['category'].queryset = BlogCategory.objects.filter(is_active=True)
+        
+        # Personalizar labels
+        self.fields['title'].label = 'Título'
+        self.fields['excerpt'].label = 'Resumen'
+        self.fields['content'].label = 'Contenido'
+        self.fields['featured_image'].label = 'Imagen Principal'
+        self.fields['category'].label = 'Categoría'
+        self.fields['status'].label = 'Estado'
+        self.fields['tags'].label = 'Etiquetas'
+        self.fields['meta_description'].label = 'Meta Descripción (SEO)'
+        self.fields['is_featured'].label = 'Artículo Destacado'
+
+
+class BlogCommentForm(forms.ModelForm):
+    """Formulario para comentarios públicos del blog"""
+    
+    class Meta:
+        model = BlogComment
+        fields = ['name', 'email', 'website', 'content']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Tu nombre'
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'tu@email.com'
+            }),
+            'website': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://tu-sitio-web.com (opcional)'
+            }),
+            'content': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Escribe tu comentario...'
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['name'].label = 'Nombre'
+        self.fields['email'].label = 'Email'
+        self.fields['website'].label = 'Sitio Web'
+        self.fields['content'].label = 'Comentario'
+        self.fields['website'].required = False

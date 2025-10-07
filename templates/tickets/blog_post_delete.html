@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-trash text-danger"></i> {{ page_title }}
+            </h1>
+            <a href="{% url 'blog_post_detail_admin' post.pk %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Volver al artículo
+            </a>
+        </div>
+        
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger">
+                    <strong>¡Atención!</strong> Esta acción no se puede deshacer.
+                </div>
+                
+                <p class="mb-3">
+                    ¿Estás seguro de que quieres eliminar el siguiente artículo?
+                </p>
+                
+                <!-- Información del artículo -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ post.title }}</h5>
+                        {% if post.excerpt %}
+                        <p class="card-text text-muted">{{ post.excerpt }}</p>
+                        {% endif %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    <strong>Categoría:</strong> {{ post.category.name }}<br>
+                                    <strong>Autor:</strong> {{ post.created_by.get_full_name|default:post.created_by.username }}<br>
+                                    <strong>Estado:</strong> 
+                                    {% if post.status == 'published' %}
+                                    <span class="badge bg-success">Publicado</span>
+                                    {% else %}
+                                    <span class="badge bg-warning text-dark">Borrador</span>
+                                    {% endif %}
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    <strong>Creado:</strong> {{ post.created_at|date:"d M Y, H:i" }}<br>
+                                    <strong>Vistas:</strong> {{ post.views_count }}<br>
+                                    <strong>Comentarios:</strong> {{ post.comments.count }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <h6><i class="fas fa-info-circle"></i> Consecuencias de la eliminación:</h6>
+                    <ul class="mb-0">
+                        <li>El artículo se eliminará permanentemente</li>
+                        {% if post.comments.count > 0 %}
+                        <li>Se eliminarán <strong>{{ post.comments.count }}</strong> comentario(s) asociado(s)</li>
+                        {% endif %}
+                        {% if post.featured_image %}
+                        <li>La imagen destacada permanecerá en el servidor</li>
+                        {% endif %}
+                        <li>Los enlaces externos al artículo dejarán de funcionar</li>
+                    </ul>
+                </div>
+                
+                <form method="POST" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger me-2">
+                        <i class="fas fa-trash"></i> Sí, eliminar artículo
+                    </button>
+                    <a href="{% url 'blog_post_detail_admin' post.pk %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Información adicional -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6><i class="fas fa-lightbulb"></i> Alternativas</h6>
+            </div>
+            <div class="card-body">
+                <p class="small mb-2">Si no quieres eliminar el artículo permanentemente, considera estas opciones:</p>
+                <ul class="small mb-0">
+                    <li><strong>Despublicar:</strong> Cambiar el estado a borrador para ocultarlo del público</li>
+                    <li><strong>Archivar:</strong> Cambiar el estado a archivado</li>
+                    <li><strong>Editar:</strong> Modificar el contenido para actualizarlo</li>
+                </ul>
+                <div class="mt-3">
+                    <a href="{% url 'blog_post_edit' post.pk %}" class="btn btn-outline-primary btn-sm me-2">
+                        <i class="fas fa-edit"></i> Editar en su lugar
+                    </a>
+                    {% if post.status == 'published' %}
+                    <a href="{% url 'blog_post_toggle_status' post.pk %}" 
+                       class="btn btn-outline-warning btn-sm"
+                       onclick="return confirm('¿Despublicar este artículo?')">
+                        <i class="fas fa-eye-slash"></i> Despublicar
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

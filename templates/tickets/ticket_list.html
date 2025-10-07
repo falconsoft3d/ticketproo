@@ -72,11 +72,12 @@
                 <thead class="table-light">
                     <tr>
                         <th style="width: 8%; min-width: 80px;">Número</th>
-                        <th style="width: 20%; min-width: 160px;">Título</th>
+                        <th style="width: 18%; min-width: 160px;">Título</th>
                         <th style="width: 10%; min-width: 100px;">Categoría</th>
-                        <th style="width: 12%; min-width: 100px;">Empresa</th>
+                        <th style="width: 10%; min-width: 100px;">Empresa</th>
                         {% if is_agent %}<th style="width: 8%; min-width: 80px;">Creador</th>{% endif %}
                         <th style="width: 8%; min-width: 80px;">Estado</th>
+                        <th style="width: 8%; min-width: 80px;">Aprobación</th>
                         <th style="width: 10%; min-width: 100px;">Fecha Creación</th>
                         <th style="width: 12%; min-width: 120px;">Acciones</th>
                     </tr>
@@ -136,6 +137,17 @@
                             <span class="badge {{ ticket.get_status_badge_class }}">
                                 {{ ticket.get_status_display }}
                             </span>
+                        </td>
+                        <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            {% if ticket.is_approved %}
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle me-1"></i>Aprobado
+                                </span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">
+                                    <i class="bi bi-clock me-1"></i>Pendiente
+                                </span>
+                            {% endif %}
                         </td>
                         <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" class="text-muted">
                             {{ ticket.created_at|date:"d/m/Y H:i" }}

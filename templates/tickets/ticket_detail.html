@@ -19,9 +19,18 @@
                     <span class="badge {{ ticket.get_priority_badge_class }} me-2">
                         {{ ticket.get_priority_display }}
                     </span>
-                    <span class="badge {{ ticket.get_status_badge_class }}">
+                    <span class="badge {{ ticket.get_status_badge_class }} me-2">
                         {{ ticket.get_status_display }}
                     </span>
+                    {% if ticket.is_approved %}
+                        <span class="badge bg-success">
+                            <i class="bi bi-check-circle me-1"></i>Aprobado
+                        </span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark">
+                            <i class="bi bi-clock me-1"></i>Pendiente
+                        </span>
+                    {% endif %}
                 </div>
             </div>
             <div class="card-body">
@@ -105,6 +114,29 @@
                         <h6 class="text-muted mb-2">Última actualización:</h6>
                         <p class="mb-0">
                             <i class="bi bi-clock"></i> {{ ticket.updated_at|date:"d/m/Y H:i" }}
+                        </p>
+                    </div>
+                    
+                    <div class="col-md-12 mb-3">
+                        <h6 class="text-muted mb-2">Estado de Aprobación:</h6>
+                        <p class="mb-0">
+                            {% if ticket.is_approved %}
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle me-1"></i>Aprobado
+                                </span>
+                                {% if ticket.approved_by %}
+                                    <small class="text-muted ms-2">
+                                        por {{ ticket.approved_by.get_full_name|default:ticket.approved_by.username }}
+                                        {% if ticket.approved_at %}
+                                            el {{ ticket.approved_at|date:"d/m/Y H:i" }}
+                                        {% endif %}
+                                    </small>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge bg-warning text-dark">
+                                    <i class="bi bi-clock me-1"></i>Pendiente de Aprobación
+                                </span>
+                            {% endif %}
                         </p>
                     </div>
                 </div>
@@ -344,6 +376,27 @@
                     <a href="{% url 'ticket_delete' ticket.pk %}" class="btn btn-danger">
                         <i class="bi bi-trash"></i> Eliminar Ticket
                     </a>
+                    
+                    <!-- Botones de Aprobación -->
+                    {% if ticket.is_approved %}
+                        <form method="POST" action="{% url 'ticket_approve' ticket.pk %}" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="unapprove">
+                            <button type="submit" class="btn btn-outline-warning" 
+                                    onclick="return confirm('¿Estás seguro de que quieres quitar la aprobación de este ticket?')">
+                                <i class="bi bi-x-circle"></i> Quitar Aprobación
+                            </button>
+                        </form>
+                    {% else %}
+                        <form method="POST" action="{% url 'ticket_approve' ticket.pk %}" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="approve">
+                            <button type="submit" class="btn btn-success" 
+                                    onclick="return confirm('¿Estás seguro de que quieres aprobar este ticket?')">
+                                <i class="bi bi-check-circle"></i> Aprobar Ticket
+                            </button>
+                        </form>
+                    {% endif %}
                     
                     <hr>
                     

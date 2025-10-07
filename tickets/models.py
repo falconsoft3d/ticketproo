@@ -378,6 +378,11 @@ class Ticket(models.Model):
         ('closed', 'Cerrado'),
     ]
     
+    TYPE_CHOICES = [
+        ('development', 'Desarrollo'),
+        ('bug', 'Error'),
+    ]
+    
     title = models.CharField(max_length=200, verbose_name='Título')
     ticket_number = models.CharField(
         max_length=10, 
@@ -425,6 +430,12 @@ class Ticket(models.Model):
         default='open',
         verbose_name='Estado'
     )
+    ticket_type = models.CharField(
+        max_length=15,
+        choices=TYPE_CHOICES,
+        default='development',
+        verbose_name='Tipo'
+    )
     created_by = models.ForeignKey(
         User, 
         on_delete=models.CASCADE, 
@@ -459,6 +470,26 @@ class Ticket(models.Model):
         default=False,
         verbose_name='Compartir públicamente',
         help_text='Permite que este ticket sea visible mediante un enlace público'
+    )
+    is_approved = models.BooleanField(
+        default=False,
+        verbose_name='Aprobado',
+        help_text='Indica si el ticket ha sido aprobado por el cliente'
+    )
+    approved_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='approved_tickets',
+        verbose_name='Aprobado por',
+        help_text='Usuario que aprobó el ticket'
+    )
+    approved_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de aprobación',
+        help_text='Fecha y hora en que fue aprobado el ticket'
     )
     created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
@@ -539,6 +570,14 @@ class Ticket(models.Model):
         }
         return status_classes.get(self.status, 'bg-secondary')
     
+    def get_type_badge_class(self):
+        """Retorna la clase CSS para el badge de tipo"""
+        type_classes = {
+            'development': 'bg-info',
+            'bug': 'bg-danger',
+        }
+        return type_classes.get(self.ticket_type, 'bg-secondary')
+    
     def get_public_url(self):
         """Retorna la URL pública del ticket si está habilitado para compartir"""
         if self.is_public_shareable:
@@ -550,6 +589,21 @@ class Ticket(models.Model):
         """Regenera el token público del ticket"""
         self.public_share_token = uuid.uuid4()
         self.save(update_fields=['public_share_token'])
+    
+    def approve_ticket(self, user):
+        """Aprobar el ticket por un usuario"""
+        from django.utils import timezone
+        self.is_approved = True
+        self.approved_by = user
+        self.approved_at = timezone.now()
+        self.save(update_fields=['is_approved', 'approved_by', 'approved_at'])
+    
+    def unapprove_ticket(self):
+        """Quitar la aprobación del ticket"""
+        self.is_approved = False
+        self.approved_by = None
+        self.approved_at = None
+        self.save(update_fields=['is_approved', 'approved_by', 'approved_at'])
 
 
 def ticket_attachment_upload_path(instance, filename):
@@ -3245,3 +3299,225 @@ class Contact(models.Model):
     def get_status_icon(self):
         """Retorna el icono del estado"""
         return 'bi-check-circle' if self.status == 'positive' else 'bi-x-circle'
+
+
+class BlogCategory(models.Model):
+    """Categorías para los artículos del blog"""
+    
+    name = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name='Nombre'
+    )
+    slug = models.SlugField(
+        max_length=100,
+        unique=True,
+        verbose_name='Slug URL'
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción'
+    )
+    color = models.CharField(
+        max_length=7,
+        default='#007bff',
+        verbose_name='Color',
+        help_text='Color en formato hexadecimal (ej: #007bff)'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activa'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name='Creado por'
+    )
+    
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'Categoría de Blog'
+        verbose_name_plural = 'Categorías de Blog'
+    
+    def __str__(self):
+        return self.name
+
+
+class BlogPost(models.Model):
+    """Artículos del blog"""
+    
+    STATUS_CHOICES = [
+        ('draft', 'Borrador'),
+        ('published', 'Publicado'),
+        ('archived', 'Archivado'),
+    ]
+    
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título'
+    )
+    slug = models.SlugField(
+        max_length=200,
+        unique=True,
+        verbose_name='Slug URL'
+    )
+    excerpt = models.TextField(
+        max_length=300,
+        verbose_name='Resumen',
+        help_text='Breve descripción del artículo (máx. 300 caracteres)'
+    )
+    content = models.TextField(
+        verbose_name='Contenido'
+    )
+    featured_image = models.ImageField(
+        upload_to='blog/images/',
+        blank=True,
+        null=True,
+        verbose_name='Imagen Principal'
+    )
+    category = models.ForeignKey(
+        BlogCategory,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='posts',
+        verbose_name='Categoría'
+    )
+    status = models.CharField(
+        max_length=10,
+        choices=STATUS_CHOICES,
+        default='draft',
+        verbose_name='Estado'
+    )
+    tags = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Etiquetas',
+        help_text='Etiquetas separadas por comas'
+    )
+    meta_description = models.CharField(
+        max_length=160,
+        blank=True,
+        verbose_name='Meta Descripción',
+        help_text='Descripción para SEO (máx. 160 caracteres)'
+    )
+    views_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Número de visualizaciones'
+    )
+    is_featured = models.BooleanField(
+        default=False,
+        verbose_name='Artículo Destacado'
+    )
+    published_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Fecha de publicación'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='blog_posts',
+        verbose_name='Creado por'
+    )
+    
+    class Meta:
+        ordering = ['-published_at', '-created_at']
+        verbose_name = 'Artículo de Blog'
+        verbose_name_plural = 'Artículos de Blog'
+    
+    def __str__(self):
+        return self.title
+    
+    def save(self, *args, **kwargs):
+        # Auto-generar slug si no existe
+        if not self.slug:
+            from django.utils.text import slugify
+            self.slug = slugify(self.title)
+        
+        # Establecer fecha de publicación cuando se publica
+        if self.status == 'published' and not self.published_at:
+            self.published_at = timezone.now()
+        
+        super().save(*args, **kwargs)
+    
+    def get_absolute_url(self):
+        from django.urls import reverse
+        return reverse('blog_post_detail', kwargs={'slug': self.slug})
+    
+    def get_tags_list(self):
+        """Retorna las etiquetas como lista"""
+        if self.tags:
+            return [tag.strip() for tag in self.tags.split(',')]
+        return []
+    
+    def increment_views(self):
+        """Incrementa el contador de visualizaciones"""
+        self.views_count += 1
+        self.save(update_fields=['views_count'])
+    
+    def get_pending_comments_count(self):
+        """Retorna el número de comentarios pendientes de aprobación"""
+        return self.comments.filter(is_approved=False).count()
+    
+    def get_approved_comments_count(self):
+        """Retorna el número de comentarios aprobados"""
+        return self.comments.filter(is_approved=True).count()
+
+
+class BlogComment(models.Model):
+    """Comentarios de los artículos del blog"""
+    
+    post = models.ForeignKey(
+        BlogPost,
+        on_delete=models.CASCADE,
+        related_name='comments',
+        verbose_name='Artículo'
+    )
+    name = models.CharField(
+        max_length=100,
+        verbose_name='Nombre'
+    )
+    email = models.EmailField(
+        verbose_name='Email'
+    )
+    website = models.URLField(
+        blank=True,
+        verbose_name='Sitio Web'
+    )
+    content = models.TextField(
+        verbose_name='Comentario'
+    )
+    is_approved = models.BooleanField(
+        default=False,
+        verbose_name='Aprobado'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name='Dirección IP'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Comentario de Blog'
+        verbose_name_plural = 'Comentarios de Blog'
+    
+    def __str__(self):
+        return f"{self.name} en {self.post.title}"

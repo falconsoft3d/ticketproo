@@ -18,7 +18,8 @@ from .models import (
     UserNote, TimeEntry, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
     DailyTaskSession, DailyTaskItem, ChatRoom, ChatMessage, ContactFormSubmission,
     Opportunity, OpportunityStatus, OpportunityNote, OpportunityStatusHistory,
-    Meeting, MeetingAttendee, MeetingQuestion, Contact
+    Meeting, MeetingAttendee, MeetingQuestion, Contact,
+    BlogCategory, BlogPost, BlogComment
 )
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
@@ -481,6 +482,56 @@ def ticket_delete_view(request, pk):
         'user_role': get_user_role(request.user),
     }
     return render(request, 'tickets/ticket_delete.html', context)
+
+
+@login_required
+def ticket_approve_view(request, pk):
+    """Vista para aprobar/desaprobar un ticket"""
+    # Verificar acceso al ticket
+    if is_agent(request.user):
+        # Los agentes pueden aprobar cualquier ticket
+        ticket = get_object_or_404(Ticket, pk=pk)
+    else:
+        # Los usuarios pueden aprobar tickets donde están involucrados
+        user_company = getattr(request.user.profile, 'company', None) if hasattr(request.user, 'profile') else None
+        user_projects = Project.objects.filter(assigned_users=request.user)
+        
+        query_conditions = Q(created_by=request.user)
+        
+        if user_projects.exists():
+            query_conditions |= Q(project__in=user_projects)
+        
+        if user_company:
+            query_conditions |= Q(company=user_company)
+        
+        ticket = get_object_or_404(Ticket, pk=pk)
+        
+        # Verificar que el usuario tenga acceso al ticket
+        if not Ticket.objects.filter(pk=pk).filter(query_conditions).exists():
+            messages.error(request, 'No tienes permisos para aprobar este ticket.')
+            return redirect('ticket_list')
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'approve':
+            if not ticket.is_approved:
+                ticket.approve_ticket(request.user)
+                messages.success(request, f'Ticket #{ticket.ticket_number} aprobado exitosamente.')
+            else:
+                messages.info(request, 'Este ticket ya estaba aprobado.')
+        
+        elif action == 'unapprove':
+            if ticket.is_approved:
+                ticket.unapprove_ticket()
+                messages.success(request, f'Aprobación del ticket #{ticket.ticket_number} removida.')
+            else:
+                messages.info(request, 'Este ticket no estaba aprobado.')
+        
+        return redirect('ticket_detail', pk=ticket.pk)
+    
+    # Si no es POST, redirigir al detalle del ticket
+    return redirect('ticket_detail', pk=ticket.pk)
 
 @login_required
 def logout_view(request):
@@ -3496,16 +3547,19 @@ def public_task_view(request, token):
             
             # Crear un item para CADA tarea asignada
             completed_count = 0
+            order_counter = 1  # Contador para el orden
             for task in all_user_tasks:
                 is_completed = task.id in selected_task_ids
                 
                 DailyTaskItem.objects.create(
                     session=session,
                     task=task,
-                    order=order,
+                    order=order_counter,
                     completed=is_completed,
                     completed_at=timezone.now() if is_completed else None
                 )
+                
+                order_counter += 1
                 
                 # Si la tarea fue marcada como completada, actualizar su estado
                 if is_completed and task.status != 'completed':
@@ -6339,3 +6393,342 @@ def contact_delete(request, pk):
     }
     
     return render(request, 'tickets/contact_delete.html', context)
+
+
+# ===== VISTAS DEL BLOG =====
+
+def blog_list(request):
+    """Lista pública de artículos del blog"""
+    posts = BlogPost.objects.filter(status='published').select_related('category', 'created_by')
+    
+    # Filtros
+    category_slug = request.GET.get('category')
+    if category_slug:
+        posts = posts.filter(category__slug=category_slug)
+    
+    search = request.GET.get('search')
+    if search:
+        posts = posts.filter(
+            Q(title__icontains=search) |
+            Q(excerpt__icontains=search) |
+            Q(content__icontains=search) |
+            Q(tags__icontains=search)
+        )
+    
+    # Paginación
+    from django.core.paginator import Paginator
+    paginator = Paginator(posts, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Categorías para el menú
+    categories = BlogCategory.objects.filter(is_active=True)
+    
+    # Artículos destacados
+    featured_posts = BlogPost.objects.filter(
+        status='published', 
+        is_featured=True
+    ).select_related('category')[:3]
+    
+    context = {
+        'page_obj': page_obj,
+        'posts': page_obj.object_list,
+        'categories': categories,
+        'featured_posts': featured_posts,
+        'current_category': category_slug,
+        'page_title': 'Blog',
+        'is_authenticated': request.user.is_authenticated,
+    }
+    
+    return render(request, 'tickets/blog_list.html', context)
+
+
+def blog_post_detail(request, slug):
+    """Vista detalle de un artículo del blog"""
+    post = get_object_or_404(BlogPost, slug=slug, status='published')
+    
+    # Incrementar contador de visualizaciones
+    post.increment_views()
+    
+    # Procesar comentarios
+    if request.method == 'POST':
+        from .forms import BlogCommentForm
+        comment_form = BlogCommentForm(request.POST)
+        if comment_form.is_valid():
+            comment = comment_form.save(commit=False)
+            comment.post = post
+            
+            # Obtener IP del usuario
+            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+            if x_forwarded_for:
+                comment.ip_address = x_forwarded_for.split(',')[0]
+            else:
+                comment.ip_address = request.META.get('REMOTE_ADDR')
+            
+            comment.save()
+            messages.success(request, 'Tu comentario ha sido enviado y está pendiente de aprobación.')
+            return redirect('blog_post_detail', slug=slug)
+    else:
+        from .forms import BlogCommentForm
+        comment_form = BlogCommentForm()
+    
+    # Comentarios aprobados
+    comments = post.comments.filter(is_approved=True).order_by('created_at')
+    
+    # Artículos relacionados
+    related_posts = BlogPost.objects.filter(
+        status='published',
+        category=post.category
+    ).exclude(pk=post.pk)[:3]
+    
+    context = {
+        'post': post,
+        'comments': comments,
+        'comment_form': comment_form,
+        'related_posts': related_posts,
+        'page_title': post.title,
+        'is_authenticated': request.user.is_authenticated,
+    }
+    
+    return render(request, 'tickets/blog_post_detail.html', context)
+
+
+@login_required
+def blog_category_list(request):
+    """Lista de categorías del blog (admin)"""
+    categories = BlogCategory.objects.all().order_by('name')
+    
+    context = {
+        'categories': categories,
+        'page_title': 'Categorías de Blog'
+    }
+    
+    return render(request, 'tickets/blog_category_list.html', context)
+
+
+@login_required
+def blog_category_create(request):
+    """Crear nueva categoría de blog"""
+    from .forms import BlogCategoryForm
+    
+    if request.method == 'POST':
+        print(f"POST data: {request.POST}")
+        form = BlogCategoryForm(request.POST)
+        print(f"Form is valid: {form.is_valid()}")
+        if not form.is_valid():
+            print(f"Form errors: {form.errors}")
+        
+        if form.is_valid():
+            try:
+                category = form.save(commit=False)
+                category.created_by = request.user
+                
+                # Auto-generar slug único
+                from django.utils.text import slugify
+                base_slug = slugify(category.name)
+                slug = base_slug
+                counter = 1
+                
+                # Verificar si el slug ya existe y crear uno único
+                while BlogCategory.objects.filter(slug=slug).exists():
+                    slug = f"{base_slug}-{counter}"
+                    counter += 1
+                
+                category.slug = slug
+                category.save()
+                print(f"Categoría creada: {category.name} - {category.slug}")
+                
+                messages.success(request, f'Categoría "{category.name}" creada exitosamente.')
+                return redirect('blog_category_list')
+                
+            except Exception as e:
+                print(f"Exception al crear categoría: {str(e)}")
+                messages.error(request, f'Error al crear la categoría: {str(e)}')
+        else:
+            messages.error(request, 'Por favor corrige los errores en el formulario.')
+    else:
+        form = BlogCategoryForm()
+    
+    context = {
+        'form': form,
+        'page_title': 'Nueva Categoría'
+    }
+    
+    return render(request, 'tickets/blog_category_form.html', context)
+
+
+@login_required
+def blog_post_list_admin(request):
+    """Lista de artículos del blog (admin)"""
+    posts = BlogPost.objects.all().select_related('category', 'created_by')
+    
+    # Filtros
+    status = request.GET.get('status')
+    if status:
+        posts = posts.filter(status=status)
+    
+    category_id = request.GET.get('category')
+    if category_id:
+        posts = posts.filter(category_id=category_id)
+    
+    search = request.GET.get('search')
+    if search:
+        posts = posts.filter(
+            Q(title__icontains=search) |
+            Q(excerpt__icontains=search)
+        )
+    
+    # Paginación
+    from django.core.paginator import Paginator
+    paginator = Paginator(posts, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    categories = BlogCategory.objects.filter(is_active=True)
+    
+    context = {
+        'page_obj': page_obj,
+        'posts': page_obj.object_list,
+        'categories': categories,
+        'page_title': 'Gestión de Blog'
+    }
+    
+    return render(request, 'tickets/blog_post_list_admin.html', context)
+
+
+@login_required
+def blog_post_create(request):
+    """Crear nuevo artículo de blog"""
+    from .forms import BlogPostForm
+    
+    if request.method == 'POST':
+        form = BlogPostForm(request.POST, request.FILES)
+        if form.is_valid():
+            post = form.save(commit=False)
+            post.created_by = request.user
+            post.save()
+            
+            messages.success(request, f'Artículo "{post.title}" creado exitosamente.')
+            return redirect('blog_post_detail_admin', pk=post.pk)
+    else:
+        form = BlogPostForm()
+    
+    context = {
+        'form': form,
+        'page_title': 'Nuevo Artículo'
+    }
+    
+    return render(request, 'tickets/blog_post_form.html', context)
+
+
+@login_required
+def blog_post_detail_admin(request, pk):
+    """Vista detalle de artículo (admin)"""
+    post = get_object_or_404(BlogPost, pk=pk)
+    
+    # Comentarios pendientes
+    pending_comments = post.comments.filter(is_approved=False).order_by('-created_at')
+    approved_comments = post.comments.filter(is_approved=True).order_by('-created_at')
+    
+    context = {
+        'post': post,
+        'pending_comments': pending_comments,
+        'approved_comments': approved_comments,
+        'page_title': f'Artículo: {post.title}'
+    }
+    
+    return render(request, 'tickets/blog_post_detail_admin.html', context)
+
+
+@login_required
+def blog_comment_approve(request, pk):
+    """Aprobar comentario"""
+    comment = get_object_or_404(BlogComment, pk=pk)
+    comment.is_approved = True
+    comment.save()
+    
+    messages.success(request, 'Comentario aprobado exitosamente.')
+    return redirect('blog_post_detail_admin', pk=comment.post.pk)
+
+
+@login_required
+def blog_comment_delete(request, pk):
+    """Eliminar comentario"""
+    comment = get_object_or_404(BlogComment, pk=pk)
+    post_pk = comment.post.pk
+    comment.delete()
+    
+    messages.success(request, 'Comentario eliminado exitosamente.')
+    return redirect('blog_post_detail_admin', pk=post_pk)
+
+
+@login_required
+def blog_post_edit(request, pk):
+    """Editar artículo de blog"""
+    from .forms import BlogPostForm
+    
+    post = get_object_or_404(BlogPost, pk=pk)
+    
+    if request.method == 'POST':
+        form = BlogPostForm(request.POST, request.FILES, instance=post)
+        if form.is_valid():
+            post = form.save(commit=False)
+            
+            # Si se está publicando por primera vez, establecer fecha de publicación
+            if post.status == 'published' and not post.published_at:
+                from django.utils import timezone
+                post.published_at = timezone.now()
+            
+            post.save()
+            messages.success(request, f'Artículo "{post.title}" actualizado exitosamente.')
+            return redirect('blog_post_detail_admin', pk=post.pk)
+    else:
+        form = BlogPostForm(instance=post)
+    
+    context = {
+        'form': form,
+        'post': post,
+        'page_title': f'Editar: {post.title}',
+        'action': 'Actualizar'
+    }
+    
+    return render(request, 'tickets/blog_post_form.html', context)
+
+
+@login_required
+def blog_post_toggle_status(request, pk):
+    """Cambiar estado de publicación del artículo"""
+    post = get_object_or_404(BlogPost, pk=pk)
+    
+    if post.status == 'published':
+        post.status = 'draft'
+        post.published_at = None
+        messages.success(request, f'Artículo "{post.title}" despublicado.')
+    else:
+        post.status = 'published'
+        if not post.published_at:
+            from django.utils import timezone
+            post.published_at = timezone.now()
+        messages.success(request, f'Artículo "{post.title}" publicado exitosamente.')
+    
+    post.save()
+    return redirect('blog_post_detail_admin', pk=post.pk)
+
+
+@login_required
+def blog_post_delete(request, pk):
+    """Eliminar artículo de blog"""
+    post = get_object_or_404(BlogPost, pk=pk)
+    
+    if request.method == 'POST':
+        title = post.title
+        post.delete()
+        messages.success(request, f'Artículo "{title}" eliminado exitosamente.')
+        return redirect('blog_post_list_admin')
+    
+    context = {
+        'post': post,
+        'page_title': f'Eliminar: {post.title}'
+    }
+    
+    return render(request, 'tickets/blog_post_delete.html', context)
