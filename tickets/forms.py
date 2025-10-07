@@ -4,7 +4,8 @@ from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
 from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
     UserNote, TimeEntry, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
-    ChatRoom, ChatMessage, Command, ContactFormSubmission, Meeting, MeetingAttendee, MeetingQuestion, OpportunityActivity
+    ChatRoom, ChatMessage, Command, ContactFormSubmission, Meeting, MeetingAttendee, MeetingQuestion, OpportunityActivity,
+    Course, CourseClass
 )
 
 class CategoryForm(forms.ModelForm):
@@ -2591,3 +2592,96 @@ class OpportunityActivityCompleteForm(forms.ModelForm):
         
         self.fields['result'].label = 'Resultado de la Actividad'
         self.fields['status'].label = 'Estado Final'
+
+
+class CourseForm(forms.ModelForm):
+    """Formulario para crear y editar cursos"""
+    
+    class Meta:
+        model = Course
+        fields = ['title', 'description', 'company', 'is_active']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título del curso',
+                'maxlength': 200
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Descripción del curso...'
+            }),
+            'company': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'title': 'Título del Curso',
+            'description': 'Descripción',
+            'company': 'Empresa (Opcional)',
+            'is_active': 'Activo',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from .models import Company
+        
+        # Hacer el campo company opcional
+        self.fields['company'].required = False
+        self.fields['company'].empty_label = "Todos los usuarios (público)"
+        
+        # Solo mostrar empresas activas
+        self.fields['company'].queryset = Company.objects.filter(is_active=True).order_by('name')
+
+
+class CourseClassForm(forms.ModelForm):
+    """Formulario para crear y editar clases de curso"""
+    
+    class Meta:
+        model = CourseClass
+        fields = ['title', 'description', 'video_url', 'order', 'duration_minutes', 'is_active']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título de la clase',
+                'maxlength': 200
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción de la clase...'
+            }),
+            'video_url': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://www.youtube.com/watch?v=...'
+            }),
+            'order': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 0
+            }),
+            'duration_minutes': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 1,
+                'placeholder': '60'
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'title': 'Título de la Clase',
+            'description': 'Descripción',
+            'video_url': 'URL del Video',
+            'order': 'Orden',
+            'duration_minutes': 'Duración (minutos)',
+            'is_active': 'Activa',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['description'].required = False
+        self.fields['video_url'].required = False
+        self.fields['duration_minutes'].required = False

@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'course_list' %}">Cursos</a></li>
+                        {% if course %}
+                        <li class="breadcrumb-item"><a href="{% url 'course_detail' course.pk %}">{{ course.title }}</a></li>
+                        <li class="breadcrumb-item active">Editar</li>
+                        {% else %}
+                        <li class="breadcrumb-item active">Nuevo Curso</li>
+                        {% endif %}
+                    </ol>
+                </nav>
+                <h1 class="h3 mb-0 text-primary">
+                    <i class="bi bi-plus-circle"></i> {{ page_title }}
+                </h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle"></i> 
+                    {% if course %}Actualizar Información{% else %}Información del Curso{% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.title.id_for_label }}" class="form-label">
+                            <i class="bi bi-fonts"></i> {{ form.title.label }} *
+                        </label>
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                            <div class="text-danger">{{ form.title.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">
+                            <i class="bi bi-text-paragraph"></i> {{ form.description.label }}
+                        </label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="text-danger">{{ form.description.errors }}</div>
+                        {% endif %}
+                        <div class="form-text">Proporciona una descripción detallada del curso y sus objetivos.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.company.id_for_label }}" class="form-label">
+                            <i class="bi bi-building"></i> {{ form.company.label }}
+                        </label>
+                        {{ form.company }}
+                        {% if form.company.errors %}
+                            <div class="text-danger">{{ form.company.errors }}</div>
+                        {% endif %}
+                        <div class="form-text">
+                            Si seleccionas una empresa, solo los usuarios de esa empresa podrán ver este curso. 
+                            Si no seleccionas ninguna, será visible para todos los usuarios.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            {{ form.is_active }}
+                            <label for="{{ form.is_active.id_for_label }}" class="form-check-label">
+                                {{ form.is_active.label }}
+                            </label>
+                        </div>
+                        {% if form.is_active.errors %}
+                            <div class="text-danger">{{ form.is_active.errors }}</div>
+                        {% endif %}
+                        <div class="form-text">Los cursos inactivos no son visibles para los usuarios.</div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% if course %}{% url 'course_detail' course.pk %}{% else %}{% url 'course_list' %}{% endif %}" 
+                           class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> 
+                            {% if course %}Actualizar Curso{% else %}Crear Curso{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Ayuda -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="bi bi-question-circle"></i> Ayuda
+                </h6>
+            </div>
+            <div class="card-body">
+                <h6>Consejos para crear un curso:</h6>
+                <ul class="small">
+                    <li><strong>Título:</strong> Usa un nombre claro y descriptivo</li>
+                    <li><strong>Descripción:</strong> Explica qué aprenderán los usuarios</li>
+                    <li><strong>Estado:</strong> Puedes crear el curso inactivo y activarlo cuando esté listo</li>
+                </ul>
+                
+                {% if course %}
+                <hr>
+                <h6>Información del curso:</h6>
+                <ul class="small">
+                    <li><strong>Creado:</strong> {{ course.created_at|date:"d/m/Y H:i" }}</li>
+                    <li><strong>Clases:</strong> {{ course.get_classes_count }}</li>
+                    <li><strong>Última actualización:</strong> {{ course.updated_at|date:"d/m/Y H:i" }}</li>
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if course %}
+        <!-- Acciones adicionales -->
+        <div class="card shadow-sm mt-4">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0">
+                    <i class="bi bi-tools"></i> Acciones
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'course_class_create' course.pk %}" class="btn btn-success btn-sm">
+                        <i class="bi bi-plus-circle"></i> Agregar Clase
+                    </a>
+                    <a href="{% url 'course_detail' course.pk %}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-eye"></i> Ver Curso
+                    </a>
+                    <a href="{% url 'course_delete' course.pk %}" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-trash"></i> Eliminar Curso
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

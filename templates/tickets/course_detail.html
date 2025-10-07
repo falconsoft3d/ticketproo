@@ -1,0 +1,465 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'course_list' %}">Cursos</a></li>
+                        <li class="breadcrumb-item active">{{ course.title }}</li>
+                    </ol>
+                </nav>
+                <h1 class="h3 mb-0 text-primary">
+                    <i class="bi bi-collection"></i> {{ course.title }}
+                </h1>
+                <p class="text-muted mb-0">Instructor: {{ course.created_by.get_full_name|default:course.created_by.username }}</p>
+                <div class="mt-2">
+                    {% if course.company %}
+                        <span class="badge bg-info">
+                            <i class="bi bi-building"></i> {{ course.company.name }}
+                        </span>
+                        {% if user.groups.all and user.groups.first.name == 'Agentes' %}
+                            <small class="text-muted ms-2">Curso empresarial - Acceso como agente</small>
+                        {% else %}
+                            <small class="text-muted ms-2">Curso empresarial</small>
+                        {% endif %}
+                    {% else %}
+                        <span class="badge bg-success">
+                            <i class="bi bi-globe"></i> Público
+                        </span>
+                        <small class="text-muted ms-2">Disponible para todos los usuarios</small>
+                    {% endif %}
+                </div>
+            </div>
+            {% if user.groups.all and user.groups.first.name == 'Agentes' %}
+                {% if course.created_by == user or user.is_superuser %}
+                <div class="btn-group">
+                    <a href="{% url 'course_class_create' course.pk %}" class="btn btn-success">
+                        <i class="bi bi-plus-circle"></i> Nueva Clase
+                    </a>
+                    <a href="{% url 'course_edit' course.pk %}" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil"></i> Editar Curso
+                    </a>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="bi bi-share"></i> Compartir
+                        </button>
+                        <ul class="dropdown-menu">
+                            {% if course.is_public_enabled and course.public_token %}
+                                <li><a class="dropdown-item" href="#" onclick="copyPublicLink()">
+                                    <i class="bi bi-copy"></i> Copiar enlace público
+                                </a></li>
+                                <li><a class="dropdown-item text-danger" href="{% url 'course_disable_public_access' course.pk %}" onclick="return confirm('¿Deshabilitar acceso público?')">
+                                    <i class="bi bi-lock"></i> Deshabilitar acceso público
+                                </a></li>
+                            {% else %}
+                                <li><a class="dropdown-item" href="{% url 'course_generate_public_token' course.pk %}" onclick="return confirm('¿Generar enlace público para este curso?')">
+                                    <i class="bi bi-unlock"></i> Generar enlace público
+                                </a></li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Descripción del Curso -->
+        {% if course.description %}
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle"></i> Descripción del Curso
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-0">{{ course.description|linebreaks }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Lista de Clases -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-play-circle"></i> Clases del Curso
+                    <span class="badge bg-light text-dark ms-2">{{ classes.count }}</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if classes %}
+                    <div class="list-group list-group-flush">
+                        {% for class_info in classes_with_views %}
+                        {% with class=class_info.class view_count=class_info.view_count user_has_viewed=class_info.user_has_viewed %}
+                        <div class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="me-auto">
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="badge bg-secondary me-2">{{ class.order }}</span>
+                                    <h6 class="mb-0">{{ class.title }}</h6>
+                                    {% if class.has_video %}
+                                        <i class="bi bi-camera-video text-success ms-2" title="Tiene video"></i>
+                                    {% endif %}
+                                    {% if class.duration_minutes %}
+                                        <small class="text-muted ms-2">
+                                            <i class="bi bi-clock"></i> {{ class.duration_minutes }} min
+                                        </small>
+                                    {% endif %}
+                                    {% if user_has_viewed %}
+                                        <span class="badge bg-success ms-2">
+                                            <i class="bi bi-check-circle"></i> Vista
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-warning ms-2">
+                                            <i class="bi bi-eye-slash"></i> Sin ver
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                {% if class.description %}
+                                <p class="text-muted mb-2">{{ class.description|truncatewords:15 }}</p>
+                                {% endif %}
+                                
+                                <!-- Mostrar información de visualizaciones -->
+                                <div class="mb-2">
+                                    <small class="text-info">
+                                        <i class="bi bi-people"></i> 
+                                        {{ view_count }} usuario{{ view_count|pluralize }} ha{{ view_count|pluralize:"n" }} visto esta clase
+                                    </small>
+                                </div>
+                                
+                                <!-- Mostrar URL del video según el estado del usuario -->
+                                {% if class.video_url %}
+                                <div class="mb-2">
+                                    {% if user_has_viewed %}
+                                        <!-- Usuario ya vio la clase, mostrar URL directamente -->
+                                        <div class="alert alert-success">
+                                            <strong>URL del Video:</strong><br>
+                                            <a href="{{ class.video_url }}" target="_blank" class="text-decoration-none">
+                                                {{ class.video_url }}
+                                                <i class="bi bi-box-arrow-up-right ms-1"></i>
+                                            </a>
+                                        </div>
+                                        <button class="btn btn-sm btn-success" onclick="window.open('{{ class.video_url }}', '_blank')">
+                                            <i class="bi bi-play-circle"></i> Ver Video
+                                        </button>
+                                    {% else %}
+                                        <!-- Usuario no ha visto la clase, ocultar URL hasta hacer clic -->
+                                        <button class="btn btn-sm btn-outline-success me-2" 
+                                                onclick="markAsViewedAndShowVideo('{{ class.pk }}', '{{ class.video_url }}', '{{ course.pk }}')">
+                                            <i class="bi bi-play-circle"></i> Ver Video (Primera vez)
+                                        </button>
+                                        <div id="video-{{ class.pk }}" style="display: none;" class="mt-2">
+                                            <div class="alert alert-info">
+                                                <strong>URL del Video:</strong><br>
+                                                <a href="{{ class.video_url }}" target="_blank" class="text-decoration-none">
+                                                    {{ class.video_url }}
+                                                    <i class="bi bi-box-arrow-up-right ms-1"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="d-flex flex-column align-items-end">
+                                <div class="btn-group mb-2">
+                                    <a href="{% url 'course_class_detail' course.pk class.pk %}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> Ver
+                                    </a>
+                                    {% if user.groups.all and user.groups.first.name == 'Agentes' %}
+                                        {% if class.created_by == user or user.is_superuser %}
+                                        <a href="{% url 'course_class_edit' course.pk class.pk %}" 
+                                           class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="{% url 'course_class_delete' course.pk class.pk %}" 
+                                           class="btn btn-sm btn-outline-danger">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                                <small class="text-muted">
+                                    Creado {{ class.created_at|date:"d/m/Y" }}
+                                </small>
+                            </div>
+                        </div>
+                        {% endwith %}
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-play-circle display-4 text-muted mb-3"></i>
+                        <h5 class="text-muted">No hay clases disponibles</h5>
+                        <p class="text-muted">Este curso aún no tiene clases.</p>
+                        {% if user.groups.all and user.groups.first.name == 'Agentes' %}
+                            {% if course.created_by == user or user.is_superuser %}
+                            <a href="{% url 'course_class_create' course.pk %}" class="btn btn-success">
+                                <i class="bi bi-plus-circle"></i> Agregar Primera Clase
+                            </a>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Información del Curso -->
+        <div class="card mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h6 class="mb-0">
+                    <i class="bi bi-info-circle"></i> Información del Curso
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center mb-3">
+                    <div class="col-6">
+                        <div class="border-end">
+                            <h4 class="text-primary mb-0">{{ classes.count }}</h4>
+                            <small class="text-muted">{% if classes.count == 1 %}Clase{% else %}Clases{% endif %}</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-success mb-0">{{ classes|length }}</h4>
+                        <small class="text-muted">Activas</small>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="text-muted">Instructor:</small>
+                    <span class="badge bg-primary">{{ course.created_by.get_full_name|default:course.created_by.username }}</span>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="text-muted">Creado:</small>
+                    <span>{{ course.created_at|date:"d/m/Y" }}</span>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="text-muted">Última actualización:</small>
+                    <span>{{ course.updated_at|date:"d/m/Y" }}</span>
+                </div>
+                
+                {% if user.groups.all and user.groups.first.name == 'Agentes' %}
+                    {% if course.created_by == user or user.is_superuser %}
+                        <hr>
+                        <h6 class="text-muted mb-3">
+                            <i class="bi bi-share"></i> Acceso Público
+                        </h6>
+                        
+                        {% if course.is_public_enabled and course.public_token %}
+                            <div class="alert alert-success p-2">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <small class="text-success fw-bold">
+                                        <i class="bi bi-unlock"></i> Enlace público activo
+                                    </small>
+                                    <span class="badge bg-success">Habilitado</span>
+                                </div>
+                                <div class="input-group input-group-sm mb-2">
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="publicLink" 
+                                           value="" 
+                                           readonly>
+                                    <button class="btn btn-outline-success" 
+                                            type="button" 
+                                            onclick="copyPublicLink()">
+                                        <i class="bi bi-copy"></i>
+                                    </button>
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <a href="#" 
+                                       id="publicLinkButton"
+                                       class="btn btn-sm btn-primary"
+                                       target="_blank">
+                                        <i class="bi bi-box-arrow-up-right"></i> Ir al Curso Público
+                                    </a>
+                                    <a href="{% url 'course_disable_public_access' course.pk %}" 
+                                       class="btn btn-sm btn-outline-danger"
+                                       onclick="return confirm('¿Deshabilitar acceso público?')">
+                                        <i class="bi bi-lock"></i> Deshabilitar
+                                    </a>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-warning p-2">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <small class="text-warning fw-bold">
+                                        <i class="bi bi-lock"></i> Acceso privado
+                                    </small>
+                                    <span class="badge bg-warning text-dark">Deshabilitado</span>
+                                </div>
+                                <p class="small mb-2">El curso solo es accesible para usuarios autenticados.</p>
+                                <a href="{% url 'course_generate_public_token' course.pk %}" 
+                                   class="btn btn-sm btn-warning"
+                                   onclick="return confirm('¿Generar enlace público para este curso?')">
+                                    <i class="bi bi-unlock"></i> Generar enlace público
+                                </a>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+                
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">Estado:</small>
+                    {% if course.is_active %}
+                        <span class="badge bg-success">Activo</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Inactivo</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Acciones -->
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0">
+                    <i class="bi bi-tools"></i> Acciones
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'course_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver a Cursos
+                    </a>
+                    {% if user.groups.all and user.groups.first.name == 'Agentes' %}
+                        {% if course.created_by == user or user.is_superuser %}
+                        <a href="{% url 'course_class_create' course.pk %}" class="btn btn-success">
+                            <i class="bi bi-plus-circle"></i> Agregar Clase
+                        </a>
+                        <a href="{% url 'course_edit' course.pk %}" class="btn btn-warning">
+                            <i class="bi bi-pencil"></i> Editar Curso
+                        </a>
+                        <a href="{% url 'course_delete' course.pk %}" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Eliminar Curso
+                        </a>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleVideo(elementId) {
+    const element = document.getElementById(elementId);
+    if (element.style.display === 'none') {
+        element.style.display = 'block';
+    } else {
+        element.style.display = 'none';
+    }
+}
+
+function markAsViewedAndShowVideo(classId, videoUrl, courseId) {
+    // Marcar como vista via AJAX
+    fetch(`/courses/${courseId}/classes/${classId}/mark-viewed/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Mostrar la URL del video
+            const videoContainer = document.getElementById(`video-${classId}`);
+            if (videoContainer) {
+                videoContainer.style.display = 'block';
+            }
+            
+            // Abrir el video en nueva pestaña
+            window.open(videoUrl, '_blank');
+            
+            // Recargar la página para actualizar los contadores
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            alert('Error al marcar la clase como vista: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error de conexión');
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function copyPublicLink() {
+    {% if course.is_public_enabled and course.public_token %}
+        const fullUrl = window.location.origin + "{% url 'course_public' course.public_token %}";
+        
+        // Copiar al portapapeles
+        navigator.clipboard.writeText(fullUrl).then(function() {
+            // Mostrar notificación de éxito
+            const button = event.target;
+            const originalHTML = button.innerHTML;
+            button.innerHTML = '<i class="bi bi-check"></i>';
+            button.classList.remove('btn-outline-success');
+            button.classList.add('btn-success');
+            
+            setTimeout(() => {
+                button.innerHTML = originalHTML;
+                button.classList.remove('btn-success');
+                button.classList.add('btn-outline-success');
+            }, 2000);
+        }).catch(function(err) {
+            // Fallback para navegadores que no soportan clipboard API
+            const publicLinkInput = document.getElementById('publicLink');
+            if (publicLinkInput) {
+                publicLinkInput.select();
+                document.execCommand('copy');
+            }
+            alert('Enlace copiado al portapapeles');
+        });
+    {% else %}
+        alert('El curso no tiene un enlace público activo');
+    {% endif %}
+}
+
+// Establecer las URLs completas cuando se carga la página
+document.addEventListener('DOMContentLoaded', function() {
+    const publicLinkInput = document.getElementById('publicLink');
+    const publicLinkButton = document.getElementById('publicLinkButton');
+    
+    if (publicLinkInput && publicLinkButton) {
+        {% if course.is_public_enabled and course.public_token %}
+            const fullUrl = window.location.origin + "{% url 'course_public' course.public_token %}";
+            publicLinkInput.value = fullUrl;
+            publicLinkButton.href = fullUrl;
+        {% endif %}
+    }
+});
+</script>
+{% endblock %}

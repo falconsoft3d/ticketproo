@@ -1,0 +1,366 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'course_list' %}">Cursos</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'course_detail' course.pk %}">{{ course.title }}</a></li>
+                        <li class="breadcrumb-item active">{{ course_class.title }}</li>
+                    </ol>
+                </nav>
+                <div class="d-flex align-items-center">
+                    <span class="badge bg-secondary me-3">{{ course_class.order }}</span>
+                    <div>
+                        <h1 class="h3 mb-0 text-primary">
+                            <i class="bi bi-play-circle"></i> {{ course_class.title }}
+                        </h1>
+                        <p class="text-muted mb-0">{{ course.title }}</p>
+                    </div>
+                </div>
+            </div>
+            {% if user.groups.all and user.groups.first.name == 'Agentes' %}
+                {% if course_class.created_by == user or user.is_superuser %}
+                <div class="btn-group">
+                    <a href="{% url 'course_class_edit' course.pk course_class.pk %}" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a>
+                    <a href="{% url 'course_class_delete' course.pk course_class.pk %}" class="btn btn-outline-danger">
+                        <i class="bi bi-trash"></i> Eliminar
+                    </a>
+                </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Descripción de la Clase -->
+        {% if course_class.description %}
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle"></i> Descripción
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-0">{{ course_class.description|linebreaks }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Video de la Clase -->
+        {% if course_class.video_url %}
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-camera-video"></i> Video de la Clase
+                </h5>
+                {% if user_has_viewed %}
+                    <span class="badge bg-light text-dark">
+                        <i class="bi bi-check-circle"></i> Ya visto
+                    </span>
+                {% else %}
+                    <span class="badge bg-warning text-dark">
+                        <i class="bi bi-eye-slash"></i> No visto
+                    </span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if user_has_viewed %}
+                    <!-- Usuario ya vio la clase, mostrar URL directamente -->
+                    <div class="alert alert-info">
+                        <h6><i class="bi bi-link-45deg"></i> URL del Video:</h6>
+                        <a href="{{ course_class.video_url }}" target="_blank" class="text-decoration-none">
+                            {{ course_class.video_url }}
+                            <i class="bi bi-box-arrow-up-right ms-1"></i>
+                        </a>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-success mb-3">
+                            <i class="bi bi-check-circle"></i> 
+                            Ya has visto esta clase anteriormente
+                        </p>
+                        <a href="{{ course_class.video_url }}" target="_blank" class="btn btn-success">
+                            <i class="bi bi-play-circle"></i> Ver Video Nuevamente
+                        </a>
+                    </div>
+                {% else %}
+                    <!-- Usuario no ha visto la clase -->
+                    <div id="videoUrlContainer" style="display: none;">
+                        <div class="alert alert-info">
+                            <h6><i class="bi bi-link-45deg"></i> URL del Video:</h6>
+                            <a href="{{ course_class.video_url }}" target="_blank" class="text-decoration-none">
+                                {{ course_class.video_url }}
+                                <i class="bi bi-box-arrow-up-right ms-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <p class="text-muted mb-3">
+                            <i class="bi bi-info-circle"></i> 
+                            Esta es la primera vez que ves esta clase
+                        </p>
+                        <button class="btn btn-success" onclick="markAsViewedAndShowVideo()">
+                            <i class="bi bi-play-circle"></i> Ver Video (Primera vez)
+                        </button>
+                        <br><br>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="toggleVideoUrl()">
+                            <i class="bi bi-eye"></i> <span id="toggleText">Solo mostrar URL</span>
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="card mb-4">
+            <div class="card-body text-center py-4">
+                <i class="bi bi-camera-video-off display-4 text-muted mb-3"></i>
+                <h5 class="text-muted">Sin Video</h5>
+                <p class="text-muted">Esta clase no tiene un video asociado.</p>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Navegación entre clases -->
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="bi bi-arrow-left-right"></i> Navegación del Curso
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        {% if prev_class %}
+                            <a href="{% url 'course_class_detail' course.pk prev_class.pk %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Clase Anterior
+                            </a>
+                        {% else %}
+                            <span class="btn btn-outline-secondary disabled">
+                                <i class="bi bi-arrow-left"></i> Primera Clase
+                            </span>
+                        {% endif %}
+                    </div>
+                    
+                    <a href="{% url 'course_detail' course.pk %}" class="btn btn-primary">
+                        <i class="bi bi-collection"></i> Ver Todas las Clases
+                    </a>
+                    
+                    <div>
+                        {% if next_class %}
+                            <a href="{% url 'course_class_detail' course.pk next_class.pk %}" class="btn btn-outline-secondary">
+                                Siguiente Clase <i class="bi bi-arrow-right"></i>
+                            </a>
+                        {% else %}
+                            <span class="btn btn-outline-secondary disabled">
+                                Última Clase <i class="bi bi-arrow-right"></i>
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Información de la Clase -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0">
+                    <i class="bi bi-info-circle"></i> Información de la Clase
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="text-muted">Visualizaciones:</small>
+                    <span class="badge bg-info">{{ course_class.get_view_count }} usuario{{ course_class.get_view_count|pluralize }}</span>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="text-muted">Tu estado:</small>
+                    {% if user_has_viewed %}
+                        <span class="badge bg-success">Vista</span>
+                    {% else %}
+                        <span class="badge bg-warning">Sin ver</span>
+                    {% endif %}
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="text-muted">Orden:</small>
+                    <span class="badge bg-secondary">{{ course_class.order }}</span>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="text-muted">Duración:</small>
+                    <span>
+                        {% if course_class.duration_minutes %}
+                            {{ course_class.duration_minutes }} minutos
+                        {% else %}
+                            No especificada
+                        {% endif %}
+                    </span>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="text-muted">Video:</small>
+                    {% if course_class.video_url %}
+                        <span class="badge bg-success">Disponible</span>
+                    {% else %}
+                        <span class="badge bg-secondary">No disponible</span>
+                    {% endif %}
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="text-muted">Estado:</small>
+                    {% if course_class.is_active %}
+                        <span class="badge bg-success">Activa</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Inactiva</span>
+                    {% endif %}
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">Creada:</small>
+                    <span>{{ course_class.created_at|date:"d/m/Y" }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información del Curso -->
+        <div class="card mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h6 class="mb-0">
+                    <i class="bi bi-collection"></i> Información del Curso
+                </h6>
+            </div>
+            <div class="card-body">
+                <h6 class="text-primary">{{ course.title }}</h6>
+                {% if course.description %}
+                <p class="text-muted small">{{ course.description|truncatewords:15 }}</p>
+                {% endif %}
+                
+                <hr>
+                
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="text-muted">Total clases:</small>
+                    <span class="badge bg-info">{{ course.get_classes_count }}</span>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">Instructor:</small>
+                    <span class="badge bg-primary">{{ course.created_by.get_full_name|default:course.created_by.username }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Acciones -->
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0">
+                    <i class="bi bi-tools"></i> Acciones
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'course_detail' course.pk %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver al Curso
+                    </a>
+                    
+                    {% if course_class.video_url %}
+                    <a href="{{ course_class.video_url }}" target="_blank" class="btn btn-success">
+                        <i class="bi bi-play-circle"></i> Ver Video
+                    </a>
+                    {% endif %}
+                    
+                    {% if user.groups.all and user.groups.first.name == 'Agentes' %}
+                        {% if course_class.created_by == user or user.is_superuser %}
+                        <a href="{% url 'course_class_edit' course.pk course_class.pk %}" class="btn btn-warning">
+                            <i class="bi bi-pencil"></i> Editar Clase
+                        </a>
+                        <a href="{% url 'course_class_delete' course.pk course_class.pk %}" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Eliminar Clase
+                        </a>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleVideoUrl() {
+    const container = document.getElementById('videoUrlContainer');
+    const toggleText = document.getElementById('toggleText');
+    
+    if (container.style.display === 'none') {
+        container.style.display = 'block';
+        toggleText.textContent = 'Ocultar URL';
+    } else {
+        container.style.display = 'none';
+        toggleText.textContent = 'Solo mostrar URL';
+    }
+}
+
+function markAsViewedAndShowVideo() {
+    // Marcar como vista via AJAX
+    fetch(`/courses/{{ course.pk }}/classes/{{ course_class.pk }}/mark-viewed/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Mostrar la URL del video
+            const videoContainer = document.getElementById('videoUrlContainer');
+            if (videoContainer) {
+                videoContainer.style.display = 'block';
+            }
+            
+            // Abrir el video en nueva pestaña
+            window.open('{{ course_class.video_url }}', '_blank');
+            
+            // Recargar la página para actualizar el estado
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            alert('Error al marcar la clase como vista: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error de conexión');
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

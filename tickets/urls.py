@@ -13,6 +13,10 @@ urlpatterns = [
     path('tickets/<int:pk>/delete/', views.ticket_delete_view, name='ticket_delete'),
     path('tickets/<int:pk>/unassign/', views.unassign_ticket_view, name='unassign_ticket'),
     
+    # URLs públicas de cursos (sin autenticación) - DEBEN IR ANTES que la ruta genérica de tickets
+    path('public/courses/<uuid:token>/', views.course_public, name='course_public'),
+    path('public/courses/<uuid:token>/classes/<int:class_id>/', views.course_class_public, name='course_class_public'),
+    
     # URL para vista pública de tickets (sin autenticación requerida)
     path('public/<uuid:token>/', views.public_ticket_view, name='public_ticket'),
     
@@ -235,4 +239,25 @@ urlpatterns = [
     
     # AJAX para reuniones
     path('meetings/<int:pk>/questions/<int:question_id>/answer/', views.meeting_answer_question_view, name='meeting_answer_question'),
+    
+    # URLs de Capacitación (Cursos y Clases)
+    path('courses/', views.course_list, name='course_list'),
+    path('courses/create/', views.course_create, name='course_create'),
+    path('courses/<int:pk>/', views.course_detail, name='course_detail'),
+    path('courses/<int:pk>/edit/', views.course_edit, name='course_edit'),
+    path('courses/<int:pk>/delete/', views.course_delete, name='course_delete'),
+    path('courses/<int:pk>/generate-public-token/', views.course_generate_public_token, name='course_generate_public_token'),
+    path('courses/<int:pk>/disable-public-access/', views.course_disable_public_access, name='course_disable_public_access'),
+    
+    # URLs de Clases de Curso
+    path('courses/<int:course_id>/classes/create/', views.course_class_create, name='course_class_create'),
+    path('courses/<int:course_id>/classes/<int:pk>/', views.course_class_detail, name='course_class_detail'),
+    path('courses/<int:course_id>/classes/<int:pk>/edit/', views.course_class_edit, name='course_class_edit'),
+    path('courses/<int:course_id>/classes/<int:pk>/delete/', views.course_class_delete, name='course_class_delete'),
+    
+    # AJAX para marcar clases como vistas
+    path('courses/<int:course_id>/classes/<int:class_id>/mark-viewed/', views.mark_class_as_viewed, name='mark_class_as_viewed'),
+    
+    # URL de debug para cursos
+    path('debug/user-access/', views.debug_user_access, name='debug_user_access'),
 ]

@@ -67,6 +67,32 @@
                         </a>
                     </li>
                     
+                    <!-- Menú de Capacitación -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if 'course' in request.resolver_match.url_name %}active{% endif %}" 
+                           href="#" id="navbarDropdownTraining" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-book"></i> Capacitación
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'course_list' %}active{% endif %}" 
+                                   href="{% url 'course_list' %}">
+                                    <i class="bi bi-collection"></i> Cursos
+                                </a>
+                            </li>
+                            {% if user.groups.all and user.groups.first.name == 'Agentes' %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Gestión (Solo Agentes)</li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'course_create' %}active{% endif %}" 
+                                   href="{% url 'course_create' %}">
+                                    <i class="bi bi-plus-circle"></i> Crear Curso
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </li>
+                    
                     <!-- Menú de gestión para agentes -->
                     {% if user.groups.all and user.groups.first.name == 'Agentes' %}
                     <li class="nav-item dropdown">

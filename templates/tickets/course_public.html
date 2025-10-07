@@ -1,0 +1,303 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <div class="alert alert-info mb-3">
+                    <i class="bi bi-info-circle"></i> <strong>Vista Pública</strong> - Este curso está disponible sin necesidad de autenticación
+                </div>
+                
+                <h1 class="h3 mb-0 text-primary">
+                    <i class="bi bi-collection"></i> {{ course.title }}
+                </h1>
+                <p class="text-muted mb-0">Instructor: {{ course.created_by.get_full_name|default:course.created_by.username }}</p>
+                <div class="mt-2">
+                    {% if course.company %}
+                        <span class="badge bg-info">
+                            <i class="bi bi-building"></i> {{ course.company.name }}
+                        </span>
+                        <small class="text-muted ms-2">Curso empresarial</small>
+                    {% else %}
+                        <span class="badge bg-success">
+                            <i class="bi bi-globe"></i> Público
+                        </span>
+                        <small class="text-muted ms-2">Disponible para todos los usuarios</small>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if not user.is_authenticated %}
+                <div class="btn-group">
+                    <a href="{% url 'login' %}" class="btn btn-outline-primary">
+                        <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
+                    </a>
+                    <a href="{% url 'register' %}" class="btn btn-primary">
+                        <i class="bi bi-person-plus"></i> Registrarse
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Descripción del Curso -->
+        {% if course.description %}
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle"></i> Descripción del Curso
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-0">{{ course.description|linebreaks }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Lista de Clases -->
+        <div class="card">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-play-circle"></i> Clases del Curso ({{ classes_with_views|length }})
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                {% if classes_with_views %}
+                    <div class="list-group list-group-flush">
+                        {% for item in classes_with_views %}
+                        {% with class=item.class %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1 me-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <h6 class="mb-0 me-2">{{ class.title }}</h6>
+                                        {% if item.user_has_viewed %}
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle"></i> Vista
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">
+                                                <i class="bi bi-circle"></i> Sin ver
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    {% if class.description %}
+                                        <p class="text-muted mb-2 small">{{ class.description|truncatewords:20 }}</p>
+                                    {% endif %}
+                                    
+                                    <div class="d-flex align-items-center text-muted small">
+                                        
+                                        <span class="me-3">
+                                            <i class="bi bi-calendar"></i> {{ class.created_at|date:"d/m/Y" }}
+                                        </span>
+                                        {% if class.order %}
+                                            <span class="badge bg-light text-dark">
+                                                Orden: {{ class.order }}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Mostrar video solo si ya fue visto o si no requiere autenticación -->
+                                    {% if class.video_url %}
+                                        {% if item.user_has_viewed or not user.is_authenticated %}
+                                            <div class="mt-2">
+                                                <div class="alert alert-success p-2">
+                                                    <strong>Video disponible:</strong><br>
+                                                    <a href="{{ class.video_url }}" target="_blank" class="text-decoration-none">
+                                                        {{ class.video_url }}
+                                                        <i class="bi bi-box-arrow-up-right ms-1"></i>
+                                                    </a>
+                                                </div>
+                                                <button class="btn btn-sm btn-success" onclick="window.open('{{ class.video_url }}', '_blank')">
+                                                    <i class="bi bi-play-circle"></i> Ver Video
+                                                </button>
+                                            </div>
+                                        {% else %}
+                                            <!-- Usuario autenticado no ha visto la clase -->
+                                            <button class="btn btn-sm btn-outline-success me-2" 
+                                                    onclick="markAsViewedAndShowVideo('{{ class.pk }}', '{{ class.video_url }}', '{{ course.pk }}')">
+                                                <i class="bi bi-play-circle"></i> Ver Video (Primera vez)
+                                            </button>
+                                            <div id="video-{{ class.pk }}" style="display: none;" class="mt-2">
+                                                <div class="alert alert-info">
+                                                    <strong>URL del Video:</strong><br>
+                                                    <a href="{{ class.video_url }}" target="_blank" class="text-decoration-none">
+                                                        {{ class.video_url }}
+                                                        <i class="bi bi-box-arrow-up-right ms-1"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                                <div class="d-flex flex-column align-items-end">
+                                
+                                    <small class="text-muted">
+                                        Creado {{ class.created_at|date:"d/m/Y" }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endwith %}
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-play-circle display-4 text-muted mb-3"></i>
+                        <h5 class="text-muted">No hay clases disponibles</h5>
+                        <p class="text-muted">Este curso aún no tiene clases.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Información del Curso -->
+        <div class="card mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h6 class="mb-0">
+                    <i class="bi bi-info-circle"></i> Información del Curso
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center mb-3">
+                    <div class="col-6">
+                        <div class="border-end">
+                            <h4 class="text-primary mb-0">{{ classes_with_views|length }}</h4>
+                            <small class="text-muted">{% if classes_with_views|length == 1 %}Clase{% else %}Clases{% endif %}</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-success mb-0">{{ classes_with_views|length }}</h4>
+                        <small class="text-muted">Activas</small>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="text-muted">Instructor:</small>
+                    <span class="badge bg-primary">{{ course.created_by.get_full_name|default:course.created_by.username }}</span>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="text-muted">Creado:</small>
+                    <span>{{ course.created_at|date:"d/m/Y" }}</span>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="text-muted">Última actualización:</small>
+                    <span>{{ course.updated_at|date:"d/m/Y" }}</span>
+                </div>
+                
+                <hr>
+                
+                <div class="alert alert-warning p-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-warning fw-bold">
+                            <i class="bi bi-share"></i> Vista Pública
+                        </small>
+                        <span class="badge bg-warning text-dark">Activa</span>
+                    </div>
+                    <p class="small mb-0 mt-1">Este curso es accesible públicamente mediante este enlace.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Acciones -->
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0">
+                    <i class="bi bi-tools"></i> Acciones
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'course_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver a Cursos
+                        </a>
+                        <a href="{% url 'course_detail' course.pk %}" class="btn btn-primary">
+                            <i class="bi bi-lock"></i> Ver Versión Privada
+                        </a>
+                    {% else %}
+                        <a href="{% url 'register' %}" class="btn btn-primary">
+                            <i class="bi bi-person-plus"></i> Registrarse
+                        </a>
+                        <a href="{% url 'login' %}" class="btn btn-outline-primary">
+                            <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function markAsViewedAndShowVideo(classId, videoUrl, courseId) {
+    // Verificar si el usuario está autenticado
+    {% if not user.is_authenticated %}
+        alert('Debes iniciar sesión para marcar las clases como vistas.');
+        return;
+    {% endif %}
+    
+    // Marcar como vista via AJAX
+    fetch(`/courses/${courseId}/classes/${classId}/mark-viewed/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Mostrar la URL del video
+            const videoContainer = document.getElementById(`video-${classId}`);
+            if (videoContainer) {
+                videoContainer.style.display = 'block';
+            }
+            
+            // Abrir el video en nueva pestaña
+            window.open(videoUrl, '_blank');
+            
+            // Recargar la página para actualizar los contadores
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            alert('Error al marcar la clase como vista: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error de conexión');
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

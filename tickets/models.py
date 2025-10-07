@@ -2920,3 +2920,189 @@ class MeetingQuestion(models.Model):
         if self.attendee:
             return self.attendee.name
         return self.asker_name or "Anónimo"
+
+
+class Course(models.Model):
+    """Modelo para gestionar cursos de capacitación"""
+    
+    title = models.CharField(max_length=200, verbose_name='Título del Curso')
+    description = models.TextField(blank=True, verbose_name='Descripción')
+    created_by = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        verbose_name='Creado por'
+    )
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name='Empresa',
+        help_text='Si se selecciona una empresa, solo los usuarios de esa empresa podrán ver este curso'
+    )
+    public_token = models.UUIDField(
+        null=True,
+        blank=True,
+        verbose_name='Token público',
+        help_text='Token para acceso público al curso sin autenticación'
+    )
+    is_public_enabled = models.BooleanField(
+        default=False,
+        verbose_name='Acceso público habilitado',
+        help_text='Permite que el curso sea accesible públicamente mediante un enlace'
+    )
+    is_active = models.BooleanField(default=True, verbose_name='Activo')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Curso'
+        verbose_name_plural = 'Cursos'
+    
+    def __str__(self):
+        return self.title
+    
+    def get_classes_count(self):
+        """Retorna el número de clases en el curso"""
+        return self.classes.count()
+    
+    def generate_public_token(self):
+        """Genera un nuevo token público para el curso"""
+        import uuid
+        self.public_token = uuid.uuid4()
+        self.is_public_enabled = True
+        self.save()
+        return self.public_token
+    
+    def disable_public_access(self):
+        """Deshabilita el acceso público al curso"""
+        self.is_public_enabled = False
+        self.save()
+    
+    def get_public_url(self, request=None):
+        """Retorna la URL pública del curso si está habilitada"""
+        if self.is_public_enabled and self.public_token:
+            from django.urls import reverse
+            if request:
+                return request.build_absolute_uri(
+                    reverse('course_public', kwargs={'token': self.public_token})
+                )
+            return reverse('course_public', kwargs={'token': self.public_token})
+        return None
+    
+    def can_user_access(self, user):
+        """Verifica si un usuario puede acceder a este curso"""
+        if not user.is_authenticated:
+            return False
+            
+        # Si el curso no tiene empresa asignada, todos pueden verlo
+        if not self.company:
+            return True
+            
+        # Si el curso tiene empresa, verificar que el usuario pertenezca a esa empresa
+        try:
+            # Intentar obtener o crear el UserProfile si no existe
+            user_profile, created = UserProfile.objects.get_or_create(user=user)
+            return user_profile.company == self.company
+        except Exception as e:
+            return False
+    
+    def is_public(self):
+        """Retorna True si el curso es público (sin empresa asignada)"""
+        return self.company is None
+
+
+class CourseClass(models.Model):
+    """Modelo para gestionar clases dentro de un curso"""
+    
+    course = models.ForeignKey(
+        Course, 
+        on_delete=models.CASCADE, 
+        related_name='classes',
+        verbose_name='Curso'
+    )
+    title = models.CharField(max_length=200, verbose_name='Título de la Clase')
+    description = models.TextField(blank=True, verbose_name='Descripción')
+    video_url = models.URLField(
+        blank=True, 
+        null=True,
+        verbose_name='URL del Video',
+        help_text='URL del video de la clase (YouTube, Vimeo, etc.)'
+    )
+    order = models.PositiveIntegerField(
+        default=0, 
+        verbose_name='Orden',
+        help_text='Orden de la clase dentro del curso'
+    )
+    duration_minutes = models.PositiveIntegerField(
+        blank=True, 
+        null=True,
+        verbose_name='Duración (minutos)',
+        help_text='Duración estimada de la clase en minutos'
+    )
+    is_active = models.BooleanField(default=True, verbose_name='Activa')
+    created_by = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        verbose_name='Creado por'
+    )
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
+    
+    class Meta:
+        ordering = ['course', 'order', 'title']
+        verbose_name = 'Clase'
+        verbose_name_plural = 'Clases'
+        unique_together = ['course', 'order']
+    
+    def __str__(self):
+        return f"{self.course.title} - {self.title}"
+    
+    def has_video(self):
+        """Verifica si la clase tiene video"""
+        return bool(self.video_url)
+    
+    def get_view_count(self):
+        """Retorna el número de usuarios que han visto esta clase"""
+        return self.views.count()
+    
+    def is_viewed_by_user(self, user):
+        """Verifica si un usuario específico ha visto esta clase"""
+        if not user.is_authenticated:
+            return False
+        return self.views.filter(user=user).exists()
+
+
+class CourseClassView(models.Model):
+    """Modelo para rastrear qué usuarios han visto qué clases"""
+    
+    course_class = models.ForeignKey(
+        CourseClass,
+        on_delete=models.CASCADE,
+        related_name='views',
+        verbose_name='Clase'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Usuario'
+    )
+    viewed_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Visto el'
+    )
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name='Dirección IP'
+    )
+    
+    class Meta:
+        unique_together = ['course_class', 'user']
+        ordering = ['-viewed_at']
+        verbose_name = 'Visualización de Clase'
+        verbose_name_plural = 'Visualizaciones de Clases'
+    
+    def __str__(self):
+        return f"{self.user.username} vio {self.course_class.title}"

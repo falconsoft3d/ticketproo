@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'course_list' %}">Cursos</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'course_detail' course.pk %}">{{ course.title }}</a></li>
+                        <li class="breadcrumb-item active">{% if course_class %}Editar Clase{% else %}Nueva Clase{% endif %}</li>
+                    </ol>
+                </nav>
+                <h1 class="h3 mb-0 text-primary">
+                    <i class="bi bi-play-circle"></i> {{ page_title }}
+                </h1>
+                <p class="text-muted mb-0">Curso: {{ course.title }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle"></i> 
+                    {% if course_class %}Actualizar Información{% else %}Información de la Clase{% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="{{ form.title.id_for_label }}" class="form-label">
+                                    <i class="bi bi-fonts"></i> {{ form.title.label }} *
+                                </label>
+                                {{ form.title }}
+                                {% if form.title.errors %}
+                                    <div class="text-danger">{{ form.title.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="{{ form.order.id_for_label }}" class="form-label">
+                                    <i class="bi bi-list-ol"></i> {{ form.order.label }} *
+                                </label>
+                                {{ form.order }}
+                                {% if form.order.errors %}
+                                    <div class="text-danger">{{ form.order.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">
+                            <i class="bi bi-text-paragraph"></i> {{ form.description.label }}
+                        </label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="text-danger">{{ form.description.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="{{ form.video_url.id_for_label }}" class="form-label">
+                                    <i class="bi bi-camera-video"></i> {{ form.video_url.label }}
+                                </label>
+                                {{ form.video_url }}
+                                {% if form.video_url.errors %}
+                                    <div class="text-danger">{{ form.video_url.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">
+                                    URL del video (YouTube, Vimeo, etc.). La URL se mostrará oculta hasta que el usuario haga clic para verla.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="{{ form.duration_minutes.id_for_label }}" class="form-label">
+                                    <i class="bi bi-clock"></i> {{ form.duration_minutes.label }}
+                                </label>
+                                {{ form.duration_minutes }}
+                                {% if form.duration_minutes.errors %}
+                                    <div class="text-danger">{{ form.duration_minutes.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            {{ form.is_active }}
+                            <label for="{{ form.is_active.id_for_label }}" class="form-check-label">
+                                {{ form.is_active.label }}
+                            </label>
+                        </div>
+                        {% if form.is_active.errors %}
+                            <div class="text-danger">{{ form.is_active.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'course_detail' course.pk %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver al Curso
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> 
+                            {% if course_class %}Actualizar Clase{% else %}Crear Clase{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Información del Curso -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0">
+                    <i class="bi bi-collection"></i> Información del Curso
+                </h6>
+            </div>
+            <div class="card-body">
+                <h6 class="text-primary">{{ course.title }}</h6>
+                {% if course.description %}
+                <p class="text-muted small">{{ course.description|truncatewords:20 }}</p>
+                {% endif %}
+                
+                <hr>
+                
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="text-muted">Total de clases:</small>
+                    <span class="badge bg-info">{{ course.get_classes_count }}</span>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">Instructor:</small>
+                    <span class="badge bg-primary">{{ course.created_by.get_full_name|default:course.created_by.username }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ayuda -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="bi bi-question-circle"></i> Ayuda
+                </h6>
+            </div>
+            <div class="card-body">
+                <h6>Consejos para crear una clase:</h6>
+                <ul class="small">
+                    <li><strong>Título:</strong> Nombre descriptivo de la clase</li>
+                    <li><strong>Orden:</strong> Secuencia de la clase en el curso</li>
+                    <li><strong>Video URL:</strong> Link directo al video (opcional)</li>
+                    <li><strong>Duración:</strong> Tiempo estimado en minutos</li>
+                    <li><strong>Estado:</strong> Controla si la clase es visible</li>
+                </ul>
+                
+                <hr>
+                
+                <h6>Formatos de video compatibles:</h6>
+                <ul class="small">
+                    <li>YouTube: https://www.youtube.com/watch?v=...</li>
+                    <li>Vimeo: https://vimeo.com/...</li>
+                    <li>Cualquier URL directa de video</li>
+                </ul>
+                
+                {% if course_class %}
+                <hr>
+                <h6>Información de la clase:</h6>
+                <ul class="small">
+                    <li><strong>Creada:</strong> {{ course_class.created_at|date:"d/m/Y H:i" }}</li>
+                    <li><strong>Última actualización:</strong> {{ course_class.updated_at|date:"d/m/Y H:i" }}</li>
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

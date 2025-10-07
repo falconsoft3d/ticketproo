@@ -5618,3 +5618,556 @@ def meeting_answer_question_view(request, pk, question_id):
             })
     
     return JsonResponse({'success': False, 'error': 'Método no permitido.'})
+
+
+# ========================
+# SISTEMA DE CAPACITACIÓN
+# ========================
+
+@login_required
+def debug_user_access(request):
+    """Vista de debug para verificar acceso de usuarios a cursos"""
+    from .models import Course, Company
+    from django.http import HttpResponse
+    
+    debug_info = []
+    debug_info.append(f"Usuario actual: {request.user.username}")
+    debug_info.append(f"Es agente: {request.user.groups.filter(name='Agentes').exists()}")
+    
+    try:
+        profile = request.user.userprofile
+        debug_info.append(f"UserProfile existe: Sí")
+        debug_info.append(f"Empresa del usuario: {profile.company}")
+        debug_info.append(f"ID de empresa del usuario: {profile.company.id if profile.company else 'None'}")
+    except Exception as e:
+        debug_info.append(f"Error con UserProfile: {e}")
+    
+    debug_info.append("\n--- CURSOS ---")
+    courses = Course.objects.filter(is_active=True)
+    for course in courses:
+        debug_info.append(f"\nCurso: {course.title}")
+        debug_info.append(f"Empresa del curso: {course.company}")
+        debug_info.append(f"ID empresa del curso: {course.company.id if course.company else 'None'}")
+        debug_info.append(f"Puede acceder: {course.can_user_access(request.user)}")
+    
+    debug_info.append("\n--- EMPRESAS ---")
+    companies = Company.objects.all()
+    for company in companies:
+        debug_info.append(f"Empresa: {company.name} (ID: {company.id})")
+    
+    return HttpResponse("<pre>" + "\n".join(debug_info) + "</pre>")
+
+@login_required
+def course_generate_public_token(request, pk):
+    """Generar token público para un curso"""
+    from .models import Course
+    from django.contrib import messages
+    from django.http import JsonResponse
+    
+    course = get_object_or_404(Course, pk=pk, is_active=True)
+    
+    # Verificar permisos - solo el creador o superusuario
+    if course.created_by != request.user and not request.user.is_superuser:
+        # Verificar si es una petición AJAX usando headers
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': 'No tienes permisos para esta acción'})
+        messages.error(request, 'No tienes permisos para generar enlaces públicos.')
+        return redirect('course_detail', pk=pk)
+    
+    # Generar token
+    token = course.generate_public_token()
+    public_url = course.get_public_url(request)
+    
+    # Verificar si es una petición AJAX usando headers
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'success': True, 
+            'token': str(token),
+            'public_url': public_url,
+            'message': 'Enlace público generado exitosamente'
+        })
+    
+    messages.success(request, f'Enlace público generado: {public_url}')
+    return redirect('course_detail', pk=pk)
+
+@login_required
+def course_disable_public_access(request, pk):
+    """Deshabilitar acceso público a un curso"""
+    from .models import Course
+    from django.contrib import messages
+    from django.http import JsonResponse
+    
+    course = get_object_or_404(Course, pk=pk, is_active=True)
+    
+    # Verificar permisos
+    if course.created_by != request.user and not request.user.is_superuser:
+        # Verificar si es una petición AJAX usando headers
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': 'No tienes permisos para esta acción'})
+        messages.error(request, 'No tienes permisos para deshabilitar el acceso público.')
+        return redirect('course_detail', pk=pk)
+    
+    course.disable_public_access()
+    
+    # Verificar si es una petición AJAX usando headers
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': True, 'message': 'Acceso público deshabilitado'})
+    
+    messages.success(request, 'Acceso público deshabilitado correctamente.')
+    return redirect('course_detail', pk=pk)
+
+def course_public(request, token):
+    """Vista pública del curso (sin autenticación requerida)"""
+    from .models import Course, CourseClassView
+    from django.shortcuts import get_object_or_404
+    
+    course = get_object_or_404(
+        Course, 
+        public_token=token, 
+        is_public_enabled=True, 
+        is_active=True
+    )
+    
+    classes = course.classes.filter(is_active=True).order_by('order', 'title')
+    
+    # Agregar información de visualizaciones para cada clase
+    classes_with_views = []
+    for course_class in classes:
+        view_count = course_class.get_view_count()
+        user_has_viewed = False
+        
+        # Si hay usuario autenticado, verificar si ha visto la clase
+        if request.user.is_authenticated:
+            user_has_viewed = course_class.is_viewed_by_user(request.user)
+        
+        classes_with_views.append({
+            'class': course_class,
+            'view_count': view_count,
+            'user_has_viewed': user_has_viewed,
+            'status': 'vista' if user_has_viewed else 'sin ver'
+        })
+    
+    context = {
+        'course': course,
+        'classes_with_views': classes_with_views,
+        'page_title': f'Curso: {course.title}',
+        'is_public_view': True
+    }
+    
+    return render(request, 'tickets/course_public.html', context)
+
+def course_class_public(request, token, class_id):
+    """Vista pública de una clase específica"""
+    from .models import Course, CourseClass, CourseClassView
+    
+    course = get_object_or_404(
+        Course, 
+        public_token=token, 
+        is_public_enabled=True, 
+        is_active=True
+    )
+    course_class = get_object_or_404(CourseClass, pk=class_id, course=course, is_active=True)
+    
+    # Verificar si el usuario autenticado ha visto la clase
+    user_has_viewed = False
+    if request.user.is_authenticated:
+        user_has_viewed = course_class.is_viewed_by_user(request.user)
+    
+    # Registrar la visualización solo si hay usuario autenticado
+    if request.user.is_authenticated:
+        view_obj, created = CourseClassView.objects.get_or_create(
+            course_class=course_class,
+            user=request.user,
+            defaults={
+                'ip_address': get_client_ip(request)
+            }
+        )
+        
+        if created:
+            # Incrementar contador de vistas solo si es una nueva visualización
+            course_class.save()
+    
+    # Obtener clases siguientes y anteriores
+    all_classes = course.classes.filter(is_active=True).order_by('order', 'title')
+    class_list = list(all_classes)
+    
+    try:
+        current_index = class_list.index(course_class)
+        previous_class = class_list[current_index - 1] if current_index > 0 else None
+        next_class = class_list[current_index + 1] if current_index < len(class_list) - 1 else None
+    except ValueError:
+        previous_class = None
+        next_class = None
+    
+    context = {
+        'course': course,
+        'course_class': course_class,
+        'previous_class': previous_class,
+        'next_class': next_class,
+        'page_title': f'{course_class.title} - {course.title}',
+        'is_public_view': True,
+        'user_has_viewed': user_has_viewed
+    }
+    
+    return render(request, 'tickets/course_class_public.html', context)
+
+@login_required
+def course_list(request):
+    """Lista todos los cursos disponibles"""
+    from .models import Course
+    
+    # Verificar si el usuario es agente
+    is_agent = request.user.groups.filter(name='Agentes').exists()
+    
+    # Filtrar cursos según la empresa del usuario
+    courses = Course.objects.filter(is_active=True)
+    
+    if is_agent:
+        # Los agentes siempre ven todos los cursos (públicos y empresariales)
+        user_accessible_courses = list(courses)
+    else:
+        # Filtrar según empresa del usuario para usuarios no agentes
+        user_accessible_courses = []
+        for course in courses:
+            if course.can_user_access(request.user):
+                user_accessible_courses.append(course)
+    
+    context = {
+        'courses': user_accessible_courses,
+        'page_title': 'Cursos de Capacitación'
+    }
+    
+    return render(request, 'tickets/course_list.html', context)
+
+
+@login_required
+def course_detail(request, pk):
+    """Detalle de un curso con sus clases"""
+    from .models import Course
+    
+    course = get_object_or_404(Course, pk=pk, is_active=True)
+    
+    # Verificar si el usuario es agente
+    is_agent = request.user.groups.filter(name='Agentes').exists()
+    
+    # Verificar si el usuario puede acceder a este curso
+    if not is_agent and not course.can_user_access(request.user):
+        messages.error(request, 'No tienes permisos para acceder a este curso.')
+        return redirect('course_list')
+    
+    classes = course.classes.filter(is_active=True).order_by('order', 'title')
+    
+    # Agregar información de visualizaciones para cada clase
+    classes_with_views = []
+    for course_class in classes:
+        view_count = course_class.get_view_count()
+        user_has_viewed = course_class.is_viewed_by_user(request.user)
+        
+        classes_with_views.append({
+            'class': course_class,
+            'view_count': view_count,
+            'user_has_viewed': user_has_viewed,
+        })
+    
+    context = {
+        'course': course,
+        'classes': classes,
+        'classes_with_views': classes_with_views,
+        'page_title': f'Curso: {course.title}'
+    }
+    
+    return render(request, 'tickets/course_detail.html', context)
+
+
+@login_required
+def course_create(request):
+    """Crear nuevo curso (solo agentes)"""
+    from .models import Course
+    from .forms import CourseForm
+    from . import utils
+    
+    if not utils.is_agent(request.user):
+        messages.error(request, 'Solo los agentes pueden crear cursos.')
+        return redirect('course_list')
+    
+    if request.method == 'POST':
+        form = CourseForm(request.POST)
+        if form.is_valid():
+            course = form.save(commit=False)
+            course.created_by = request.user
+            course.save()
+            messages.success(request, f'Curso "{course.title}" creado exitosamente.')
+            return redirect('course_detail', pk=course.pk)
+    else:
+        form = CourseForm()
+    
+    context = {
+        'form': form,
+        'page_title': 'Crear Nuevo Curso'
+    }
+    
+    return render(request, 'tickets/course_form.html', context)
+
+
+@login_required
+def course_edit(request, pk):
+    """Editar curso (solo agentes)"""
+    from .models import Course
+    from .forms import CourseForm
+    from . import utils
+    
+    course = get_object_or_404(Course, pk=pk)
+    
+    if not utils.is_agent(request.user):
+        if course.created_by != request.user:
+            messages.error(request, 'No tienes permisos para editar este curso.')
+            return redirect('course_detail', pk=pk)
+    
+    if request.method == 'POST':
+        form = CourseForm(request.POST, instance=course)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Curso "{course.title}" actualizado exitosamente.')
+            return redirect('course_detail', pk=pk)
+    else:
+        form = CourseForm(instance=course)
+    
+    context = {
+        'form': form,
+        'course': course,
+        'page_title': f'Editar: {course.title}'
+    }
+    
+    return render(request, 'tickets/course_form.html', context)
+
+
+@login_required
+def course_delete(request, pk):
+    """Eliminar curso (solo agentes)"""
+    from .models import Course
+    from . import utils
+    
+    course = get_object_or_404(Course, pk=pk)
+    
+    if not utils.is_agent(request.user):
+        if course.created_by != request.user:
+            messages.error(request, 'No tienes permisos para eliminar este curso.')
+            return redirect('course_detail', pk=pk)
+    
+    if request.method == 'POST':
+        course_title = course.title
+        course.delete()
+        messages.success(request, f'Curso "{course_title}" eliminado exitosamente.')
+        return redirect('course_list')
+    
+    context = {
+        'course': course,
+        'page_title': f'Eliminar: {course.title}'
+    }
+    
+    return render(request, 'tickets/course_delete.html', context)
+
+
+@login_required
+def course_class_create(request, course_id):
+    """Crear nueva clase para un curso (solo agentes)"""
+    from .models import Course, CourseClass
+    from .forms import CourseClassForm
+    from . import utils
+    
+    course = get_object_or_404(Course, pk=course_id)
+    
+    if not utils.is_agent(request.user):
+        if course.created_by != request.user:
+            messages.error(request, 'No tienes permisos para agregar clases a este curso.')
+            return redirect('course_detail', pk=course_id)
+    
+    if request.method == 'POST':
+        form = CourseClassForm(request.POST)
+        if form.is_valid():
+            course_class = form.save(commit=False)
+            course_class.course = course
+            course_class.created_by = request.user
+            course_class.save()
+            messages.success(request, f'Clase "{course_class.title}" agregada exitosamente.')
+            return redirect('course_detail', pk=course_id)
+    else:
+        # Sugerir el siguiente número de orden
+        next_order = course.classes.count() + 1
+        form = CourseClassForm(initial={'order': next_order})
+    
+    context = {
+        'form': form,
+        'course': course,
+        'page_title': f'Nueva Clase - {course.title}'
+    }
+    
+    return render(request, 'tickets/course_class_form.html', context)
+
+
+@login_required
+def course_class_edit(request, course_id, pk):
+    """Editar clase (solo agentes)"""
+    from .models import Course, CourseClass
+    from .forms import CourseClassForm
+    from . import utils
+    
+    course = get_object_or_404(Course, pk=course_id)
+    course_class = get_object_or_404(CourseClass, pk=pk, course=course)
+    
+    if not utils.is_agent(request.user):
+        if course_class.created_by != request.user:
+            messages.error(request, 'No tienes permisos para editar esta clase.')
+            return redirect('course_detail', pk=course_id)
+    
+    if request.method == 'POST':
+        form = CourseClassForm(request.POST, instance=course_class)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Clase "{course_class.title}" actualizada exitosamente.')
+            return redirect('course_detail', pk=course_id)
+    else:
+        form = CourseClassForm(instance=course_class)
+    
+    context = {
+        'form': form,
+        'course': course,
+        'course_class': course_class,
+        'page_title': f'Editar: {course_class.title}'
+    }
+    
+    return render(request, 'tickets/course_class_form.html', context)
+
+
+@login_required
+def course_class_delete(request, course_id, pk):
+    """Eliminar clase (solo agentes)"""
+    from .models import Course, CourseClass
+    from . import utils
+    
+    course = get_object_or_404(Course, pk=course_id)
+    course_class = get_object_or_404(CourseClass, pk=pk, course=course)
+    
+    if not utils.is_agent(request.user):
+        if course_class.created_by != request.user:
+            messages.error(request, 'No tienes permisos para eliminar esta clase.')
+            return redirect('course_detail', pk=course_id)
+    
+    if request.method == 'POST':
+        class_title = course_class.title
+        course_class.delete()
+        messages.success(request, f'Clase "{class_title}" eliminada exitosamente.')
+        return redirect('course_detail', pk=course_id)
+    
+    context = {
+        'course': course,
+        'course_class': course_class,
+        'page_title': f'Eliminar: {course_class.title}'
+    }
+    
+    return render(request, 'tickets/course_class_delete.html', context)
+
+
+@login_required
+def course_class_detail(request, course_id, pk):
+    """Ver detalle de una clase específica"""
+    from .models import Course, CourseClass, CourseClassView
+    
+    course = get_object_or_404(Course, pk=course_id, is_active=True)
+    course_class = get_object_or_404(CourseClass, pk=pk, course=course, is_active=True)
+    
+    # Verificar si el usuario es agente
+    is_agent = request.user.groups.filter(name='Agentes').exists()
+    
+    # Verificar si el usuario puede acceder a este curso
+    if not is_agent and not course.can_user_access(request.user):
+        messages.error(request, 'No tienes permisos para acceder a este curso.')
+        return redirect('course_list')
+    
+    # Registrar la visualización si no existe
+    view_obj, created = CourseClassView.objects.get_or_create(
+        course_class=course_class,
+        user=request.user,
+        defaults={
+            'ip_address': get_client_ip(request)
+        }
+    )
+    
+    # Obtener clases anterior y siguiente para navegación
+    all_classes = course.classes.filter(is_active=True).order_by('order', 'title')
+    current_index = None
+    
+    for i, class_item in enumerate(all_classes):
+        if class_item.pk == course_class.pk:
+            current_index = i
+            break
+    
+    prev_class = None
+    next_class = None
+    
+    if current_index is not None:
+        if current_index > 0:
+            prev_class = all_classes[current_index - 1]
+        if current_index < len(all_classes) - 1:
+            next_class = all_classes[current_index + 1]
+    
+    context = {
+        'course': course,
+        'course_class': course_class,
+        'page_title': f'{course.title} - {course_class.title}',
+        'user_has_viewed': True,  # Siempre True ya que acabamos de registrar la vista
+        'prev_class': prev_class,
+        'next_class': next_class,
+    }
+    
+    return render(request, 'tickets/course_class_detail.html', context)
+
+
+def get_client_ip(request):
+    """Obtiene la IP del cliente"""
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+
+
+@login_required
+def mark_class_as_viewed(request, course_id, class_id):
+    """Marcar una clase como vista via AJAX"""
+    from .models import Course, CourseClass, CourseClassView
+    from django.http import JsonResponse
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'})
+    
+    try:
+        course = get_object_or_404(Course, pk=course_id, is_active=True)
+        course_class = get_object_or_404(CourseClass, pk=class_id, course=course, is_active=True)
+        
+        # Verificar si el usuario es agente
+        is_agent = request.user.groups.filter(name='Agentes').exists()
+        
+        # Verificar si el usuario puede acceder a este curso
+        if not is_agent and not course.can_user_access(request.user):
+            return JsonResponse({'success': False, 'error': 'No tienes permisos para acceder a este curso'})
+        
+        # Crear o actualizar la visualización
+        view_obj, created = CourseClassView.objects.get_or_create(
+            course_class=course_class,
+            user=request.user,
+            defaults={
+                'ip_address': get_client_ip(request)
+            }
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'created': created,
+            'view_count': course_class.get_view_count(),
+            'message': 'Clase marcada como vista' if created else 'Ya habías visto esta clase'
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
