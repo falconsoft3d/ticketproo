@@ -379,8 +379,8 @@ class Ticket(models.Model):
     ]
     
     TYPE_CHOICES = [
-        ('development', 'Desarrollo'),
-        ('bug', 'Error'),
+        ('desarrollo', 'Desarrollo'),
+        ('error', 'Error'),
     ]
     
     title = models.CharField(max_length=200, verbose_name='Título')
@@ -433,7 +433,7 @@ class Ticket(models.Model):
     ticket_type = models.CharField(
         max_length=15,
         choices=TYPE_CHOICES,
-        default='development',
+        default='desarrollo',
         verbose_name='Tipo'
     )
     created_by = models.ForeignKey(
@@ -573,8 +573,8 @@ class Ticket(models.Model):
     def get_type_badge_class(self):
         """Retorna la clase CSS para el badge de tipo"""
         type_classes = {
-            'development': 'bg-info',
-            'bug': 'bg-danger',
+            'desarrollo': 'bg-info',
+            'error': 'bg-danger',
         }
         return type_classes.get(self.ticket_type, 'bg-secondary')
     
@@ -1214,6 +1214,27 @@ class SystemConfiguration(models.Model):
         default='EUR',
         verbose_name='Moneda por defecto',
         help_text='Moneda utilizada para mostrar valores en el sistema'
+    )
+    
+    # Configuración de Chat IA
+    openai_api_key = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='API Key de OpenAI',
+        help_text='Clave de API para conectar con ChatGPT'
+    )
+    
+    openai_model = models.CharField(
+        max_length=50,
+        default='gpt-4o',
+        verbose_name='Modelo de OpenAI',
+        help_text='Modelo de IA a utilizar por defecto (ej: gpt-4o, gpt-3.5-turbo)'
+    )
+    
+    ai_chat_enabled = models.BooleanField(
+        default=False,
+        verbose_name='Chat IA habilitado',
+        help_text='Habilita o deshabilita la funcionalidad de chat con IA'
     )
     
     # Metadatos
@@ -3521,3 +3542,156 @@ class BlogComment(models.Model):
     
     def __str__(self):
         return f"{self.name} en {self.post.title}"
+
+
+class AIChatSession(models.Model):
+    """Modelo para sesiones de chat con IA"""
+    
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='ai_chat_sessions',
+        verbose_name='Usuario'
+    )
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título de la conversación',
+        help_text='Título descriptivo de la conversación'
+    )
+    ai_model = models.CharField(
+        max_length=50,
+        default='gpt-4o',
+        verbose_name='Modelo de IA',
+        help_text='Modelo utilizado para esta conversación'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Sesión activa'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        ordering = ['-updated_at']
+        verbose_name = 'Sesión de Chat IA'
+        verbose_name_plural = 'Sesiones de Chat IA'
+    
+    def __str__(self):
+        return f"{self.title} - {self.user.username}"
+    
+    def get_message_count(self):
+        """Retorna el número de mensajes en esta sesión"""
+        return self.messages.count()
+    
+    def get_last_message(self):
+        """Retorna el último mensaje de la sesión"""
+        return self.messages.order_by('-created_at').first()
+
+
+class AIChatMessage(models.Model):
+    """Modelo para mensajes individuales del chat con IA"""
+    
+    ROLE_CHOICES = [
+        ('user', 'Usuario'),
+        ('assistant', 'IA'),
+        ('system', 'Sistema'),
+    ]
+    
+    session = models.ForeignKey(
+        AIChatSession,
+        on_delete=models.CASCADE,
+        related_name='messages',
+        verbose_name='Sesión'
+    )
+    role = models.CharField(
+        max_length=10,
+        choices=ROLE_CHOICES,
+        verbose_name='Rol'
+    )
+    content = models.TextField(
+        verbose_name='Contenido del mensaje'
+    )
+    tokens_used = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Tokens utilizados',
+        help_text='Número de tokens consumidos para este mensaje'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    
+    class Meta:
+        ordering = ['created_at']
+        verbose_name = 'Mensaje de Chat IA'
+        verbose_name_plural = 'Mensajes de Chat IA'
+    
+    def __str__(self):
+        return f"{self.get_role_display()}: {self.content[:50]}..."
+    
+    def is_from_user(self):
+        """Verifica si el mensaje es del usuario"""
+        return self.role == 'user'
+    
+    def is_from_ai(self):
+        """Verifica si el mensaje es de la IA"""
+        return self.role == 'assistant'
+
+
+class Concept(models.Model):
+    """Modelo para gestionar conceptos y definiciones que se muestran en el home"""
+    
+    term = models.CharField(
+        max_length=200,
+        unique=True,
+        verbose_name='Término',
+        help_text='El concepto o término a definir'
+    )
+    definition = models.TextField(
+        verbose_name='Definición',
+        help_text='Explicación del concepto'
+    )
+    category = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Categoría',
+        help_text='Categoría del concepto (opcional)'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo',
+        help_text='Si el concepto debe mostrarse en el home'
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Orden',
+        help_text='Orden de aparición (menor número aparece primero)'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='concepts_created',
+        verbose_name='Creado por'
+    )
+    
+    class Meta:
+        ordering = ['order', 'term']
+        verbose_name = 'Concepto'
+        verbose_name_plural = 'Conceptos'
+    
+    def __str__(self):
+        return f"{self.term}: {self.definition[:50]}..."

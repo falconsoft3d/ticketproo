@@ -167,6 +167,76 @@
                             </div>
                         </div>
 
+                        <!-- Configuración de Inteligencia Artificial -->
+                        <div class="config-section">
+                            <h5>
+                                <i class="bi bi-robot me-2"></i>
+                                Configuración de IA
+                            </h5>
+                            
+                            <div class="form-check mb-3">
+                                {{ form.ai_chat_enabled }}
+                                <label class="form-check-label" for="{{ form.ai_chat_enabled.id_for_label }}">
+                                    <i class="bi bi-chat-dots me-1"></i>
+                                    {{ form.ai_chat_enabled.label }}
+                                </label>
+                                {% if form.ai_chat_enabled.help_text %}
+                                    <div class="form-text">{{ form.ai_chat_enabled.help_text }}</div>
+                                {% endif %}
+                                {% if form.ai_chat_enabled.errors %}
+                                    <div class="text-danger mt-1">
+                                        {% for error in form.ai_chat_enabled.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div id="ai-config-fields" style="{% if not config.ai_chat_enabled %}display: none;{% endif %}">
+                                <div class="mb-3">
+                                    <label for="{{ form.openai_api_key.id_for_label }}" class="form-label">
+                                        <i class="bi bi-key me-1"></i>
+                                        {{ form.openai_api_key.label }}
+                                    </label>
+                                    {{ form.openai_api_key }}
+                                    {% if form.openai_api_key.help_text %}
+                                        <small class="form-text text-muted">{{ form.openai_api_key.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.openai_api_key.errors %}
+                                        <div class="text-danger mt-1">
+                                            {% for error in form.openai_api_key.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.openai_model.id_for_label }}" class="form-label">
+                                        <i class="bi bi-cpu me-1"></i>
+                                        {{ form.openai_model.label }}
+                                    </label>
+                                    {{ form.openai_model }}
+                                    {% if form.openai_model.help_text %}
+                                        <small class="form-text text-muted">{{ form.openai_model.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.openai_model.errors %}
+                                        <div class="text-danger mt-1">
+                                            {% for error in form.openai_model.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>Información:</strong> Para habilitar el chat con IA, necesitas configurar una API key válida de OpenAI. 
+                                Puedes obtenerla en <a href="https://platform.openai.com/api-keys" target="_blank" class="alert-link">platform.openai.com</a>.
+                            </div>
+                        </div>
+
                         <!-- Botones -->
                         <div class="d-flex gap-2 mt-4">
                             <button type="submit" class="btn btn-primary">
@@ -213,6 +283,26 @@
                                 <dd class="col-6">
                                     <span class="badge bg-success">{{ config.get_default_currency_display }}</span>
                                 </dd>
+
+                                <dt class="col-6">Chat IA:</dt>
+                                <dd class="col-6">
+                                    {% if config.ai_chat_enabled %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle me-1"></i>Habilitado
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-x-circle me-1"></i>Deshabilitado
+                                        </span>
+                                    {% endif %}
+                                </dd>
+
+                                {% if config.ai_chat_enabled and config.openai_model %}
+                                <dt class="col-6">Modelo IA:</dt>
+                                <dd class="col-6">
+                                    <span class="badge bg-primary">{{ config.openai_model }}</span>
+                                </dd>
+                                {% endif %}
                                 
                                 <dt class="col-6">Última actualización:</dt>
                                 <dd class="col-6">{{ config.updated_at|date:"d/m/Y H:i" }}</dd>
@@ -233,8 +323,14 @@
                                 <li class="mb-2">
                                     <strong>Permitir registro:</strong> Si está deshabilitado, solo los agentes pueden crear nuevos usuarios.
                                 </li>
-                                <li class="mb-0">
+                                <li class="mb-2">
                                     <strong>Prioridad por defecto:</strong> Prioridad asignada automáticamente a nuevos tickets.
+                                </li>
+                                <li class="mb-2">
+                                    <strong>Chat IA:</strong> Habilita la funcionalidad de chat con inteligencia artificial usando OpenAI.
+                                </li>
+                                <li class="mb-0">
+                                    <strong>API Key:</strong> Clave de acceso a la API de OpenAI necesaria para el funcionamiento del chat.
                                 </li>
                             </ul>
                         </div>
@@ -264,5 +360,24 @@
             });
         }, false);
     })();
+
+    // Mostrar/ocultar campos de IA según el checkbox
+    document.addEventListener('DOMContentLoaded', function() {
+        const aiEnabledCheckbox = document.querySelector('#id_ai_chat_enabled');
+        const aiConfigFields = document.querySelector('#ai-config-fields');
+        
+        if (aiEnabledCheckbox && aiConfigFields) {
+            function toggleAIFields() {
+                if (aiEnabledCheckbox.checked) {
+                    aiConfigFields.style.display = 'block';
+                } else {
+                    aiConfigFields.style.display = 'none';
+                }
+            }
+            
+            aiEnabledCheckbox.addEventListener('change', toggleAIFields);
+            toggleAIFields(); // Ejecutar al cargar la página
+        }
+    });
 </script>
 {% endblock %}

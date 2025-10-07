@@ -22,6 +22,13 @@
                     <span class="badge {{ ticket.get_status_badge_class }} me-2">
                         {{ ticket.get_status_display }}
                     </span>
+                    <span class="badge {{ ticket.get_type_badge_class }} me-2">
+                        {% if ticket.ticket_type == 'error' %}
+                            <i class="bi bi-bug me-1"></i>Error
+                        {% else %}
+                            <i class="bi bi-code-square me-1"></i>Desarrollo
+                        {% endif %}
+                    </span>
                     {% if ticket.is_approved %}
                         <span class="badge bg-success">
                             <i class="bi bi-check-circle me-1"></i>Aprobado
@@ -109,6 +116,19 @@
                         </p>
                     </div>
                     {% endif %}
+                    
+                    <div class="col-md-6 mb-3">
+                        <h6 class="text-muted mb-2">Tipo de Ticket:</h6>
+                        <p class="mb-0">
+                            <span class="badge {{ ticket.get_type_badge_class }}">
+                                {% if ticket.ticket_type == 'error' %}
+                                    <i class="bi bi-bug me-1"></i>Error
+                                {% else %}
+                                    <i class="bi bi-code-square me-1"></i>Desarrollo
+                                {% endif %}
+                            </span>
+                        </p>
+                    </div>
                     
                     <div class="col-md-6 mb-3">
                         <h6 class="text-muted mb-2">Última actualización:</h6>

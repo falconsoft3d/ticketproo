@@ -289,4 +289,29 @@ urlpatterns = [
     # URLs de comentarios de blog (con autenticación)
     path('blog-admin/comments/<int:pk>/approve/', views.blog_comment_approve, name='blog_comment_approve'),
     path('blog-admin/comments/<int:pk>/delete/', views.blog_comment_delete, name='blog_comment_delete'),
+    
+    # URLs de Chat con IA
+    path('ai-chat/', views.ai_chat_list_view, name='ai_chat_list'),
+    path('ai-chat/<int:session_id>/', views.ai_chat_session_view, name='ai_chat_session'),
+    path('ai-chat/<int:session_id>/delete/', views.ai_chat_delete_session_view, name='ai_chat_delete_session'),
+    path('ai-chat-debug/<int:session_id>/', views.ai_chat_debug_view, name='ai_chat_debug'),
+    path('ai-chat-simple/<int:session_id>/', views.ai_chat_simple_view, name='ai_chat_simple'),
+    path('ai-chat-live/<int:session_id>/', views.ai_chat_live_view, name='ai_chat_live'),
+    path('ai-chat-modern/<int:session_id>/', views.ai_chat_modern_view, name='ai_chat_modern'),
+    
+    # AJAX para Chat IA
+    path('ai-chat/<int:session_id>/send/', views.ai_chat_ajax_send_message, name='ai_chat_ajax_send'),
+    
+    # AJAX para mejorar tickets con IA
+    path('tickets/<int:ticket_id>/improve-ai/', views.improve_ticket_with_ai, name='improve_ticket_with_ai'),
+    
+    # AJAX para buscar información de empresa con IA
+    path('companies/<int:company_id>/search-ai/', views.search_company_info_with_ai, name='search_company_info_with_ai'),
+    
+    # AJAX para buscar información de empresa con IA (sin requerir ID)
+    path('companies/search-ai/', views.search_company_info_general, name='search_company_info_general'),
+    
+    # AJAX para mejorar contactos con IA
+    path('contacts/<int:contact_id>/enhance-ai/', views.enhance_contact_with_ai, name='enhance_contact_with_ai'),
+    
 ]

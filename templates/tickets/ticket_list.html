@@ -74,6 +74,7 @@
                         <th style="width: 8%; min-width: 80px;">Número</th>
                         <th style="width: 18%; min-width: 160px;">Título</th>
                         <th style="width: 10%; min-width: 100px;">Categoría</th>
+                        <th style="width: 8%; min-width: 80px;">Tipo</th>
                         <th style="width: 10%; min-width: 100px;">Empresa</th>
                         {% if is_agent %}<th style="width: 8%; min-width: 80px;">Creador</th>{% endif %}
                         <th style="width: 8%; min-width: 80px;">Estado</th>
@@ -115,6 +116,15 @@
                             {% else %}
                                 <span class="text-muted">Sin categoría</span>
                             {% endif %}
+                        </td>
+                        <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            <span class="badge {{ ticket.get_type_badge_class }}">
+                                {% if ticket.ticket_type == 'desarrollo' %}
+                                    <i class="bi bi-code-slash me-1"></i>{{ ticket.get_ticket_type_display }}
+                                {% else %}
+                                    <i class="bi bi-bug me-1"></i>{{ ticket.get_ticket_type_display }}
+                                {% endif %}
+                            </span>
                         </td>
                         <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                             {% if ticket.company %}

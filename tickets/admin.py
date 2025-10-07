@@ -3,7 +3,7 @@ from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserNote, 
     TimeEntry, Project, Company, SystemConfiguration, Document, UserProfile,
     WorkOrder, WorkOrderAttachment, Task, Opportunity, OpportunityStatus, 
-    OpportunityNote, OpportunityStatusHistory
+    OpportunityNote, OpportunityStatusHistory, Concept
 )
 
 # Configuración del sitio de administración
@@ -98,10 +98,10 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(Ticket)
 class TicketAdmin(admin.ModelAdmin):
-    list_display = ('ticket_number', 'title', 'category', 'created_by', 'priority', 'status', 'hours', 'created_at')
-    list_filter = ('category', 'priority', 'status', 'created_at')
+    list_display = ('ticket_number', 'title', 'category', 'ticket_type', 'created_by', 'priority', 'status', 'hours', 'created_at')
+    list_filter = ('category', 'ticket_type', 'priority', 'status', 'created_at')
     search_fields = ('ticket_number', 'title', 'description', 'created_by__username', 'category__name')
-    list_editable = ('category', 'priority', 'status', 'hours')
+    list_editable = ('category', 'ticket_type', 'priority', 'status', 'hours')
     ordering = ('-created_at',)
     date_hierarchy = 'created_at'
     readonly_fields = ('ticket_number', 'created_at', 'updated_at')
@@ -111,7 +111,7 @@ class TicketAdmin(admin.ModelAdmin):
             'fields': ('ticket_number', 'title', 'description')
         }),
         ('Clasificación', {
-            'fields': ('category', 'priority', 'status')
+            'fields': ('category', 'ticket_type', 'priority', 'status')
         }),
         ('Asignación y Tiempo', {
             'fields': ('created_by', 'assigned_to', 'hours')
@@ -702,3 +702,41 @@ class OpportunityStatusHistoryAdmin(admin.ModelAdmin):
     ordering = ('-changed_at',)
     date_hierarchy = 'changed_at'
     readonly_fields = ('changed_at',)
+
+
+@admin.register(Concept)
+class ConceptAdmin(admin.ModelAdmin):
+    list_display = ('term', 'definition_preview', 'category', 'is_active', 'order', 'created_by', 'created_at')
+    list_filter = ('is_active', 'category', 'created_by', 'created_at')
+    search_fields = ('term', 'definition', 'category')
+    list_editable = ('is_active', 'order')
+    ordering = ('order', 'term')
+    date_hierarchy = 'created_at'
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('term', 'definition', 'category')
+        }),
+        ('Configuración', {
+            'fields': ('is_active', 'order')
+        }),
+        ('Información del Sistema', {
+            'fields': ('created_by',),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def definition_preview(self, obj):
+        return obj.definition[:100] + '...' if len(obj.definition) > 100 else obj.definition
+    definition_preview.short_description = 'Definición'
+    
+    def save_model(self, request, obj, form, change):
+        if not change:  # Si es un nuevo objeto
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+    
+    def get_readonly_fields(self, request, obj=None):
+        if obj:  # Si estamos editando
+            return self.readonly_fields + ('created_by',)
+        return self.readonly_fields
+

@@ -1,5 +1,6 @@
 from django import template
 from decimal import Decimal
+import re
 
 register = template.Library()
 
@@ -26,3 +27,12 @@ def sum_profit(projects):
     for project in projects:
         total += project.get_profit()
     return total
+
+@register.filter
+def clean_phone_for_whatsapp(phone):
+    """Limpia el número de teléfono para WhatsApp eliminando espacios, guiones y paréntesis"""
+    if not phone:
+        return ""
+    # Eliminar todos los caracteres que no sean números o el símbolo +
+    cleaned = re.sub(r'[^\d+]', '', str(phone))
+    return cleaned

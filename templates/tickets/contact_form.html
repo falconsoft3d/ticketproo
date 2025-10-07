@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load project_extras %}
 
 {% block title %}{% if contact %}Editar{% else %}Nuevo{% endif %} Contacto - TicketProo{% endblock %}
 
@@ -7,11 +8,16 @@
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h4 class="mb-0">
                         <i class="bi bi-{% if contact %}pencil{% else %}plus-circle{% endif %} text-primary"></i>
                         {% if contact %}Editar Contacto{% else %}Nuevo Contacto{% endif %}
                     </h4>
+                    {% if contact %}
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="enhanceContactWithAI()">
+                        <i class="bi bi-robot"></i> Mejorar con IA
+                    </button>
+                    {% endif %}
                 </div>
                 <div class="card-body">
                     <form method="POST">
@@ -130,7 +136,265 @@
     </div>
 </div>
 
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="mt-3 mb-0">Mejorando contacto con IA...</p>
+                <small class="text-muted">Buscando información adicional basada en los datos existentes</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Results Modal -->
+<div class="modal fade" id="resultsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-robot text-primary me-2"></i>
+                    Información Adicional Encontrada
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modalResults">
+                <!-- Results will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="applyContactInfo()">
+                    <i class="bi bi-check-lg me-2"></i>
+                    Aplicar Mejoras
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+let currentContactData = null;
+
+function showLoading() {
+    const modal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    modal.show();
+}
+
+function hideLoading() {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('loadingModal'));
+    if (modal) modal.hide();
+}
+
+function showResults(data) {
+    currentContactData = data;
+    
+    let html = '<div class="alert alert-info">';
+    html += '<i class="bi bi-info-circle me-2"></i>';
+    html += 'La IA ha analizado los datos existentes y encontró la siguiente información adicional:';
+    html += '</div>';
+    
+    html += '<div class="row">';
+    
+    // Información de contacto
+    html += `
+        <div class="col-md-6">
+            <h6 class="text-primary"><i class="bi bi-person me-2"></i>Información Personal</h6>
+            <table class="table table-sm">
+                <tr><td><strong>Nombre Completo:</strong></td><td>${data.full_name || 'No disponible'}</td></tr>
+                <tr><td><strong>Posición Sugerida:</strong></td><td>${data.position || 'No disponible'}</td></tr>
+                <tr><td><strong>Título Profesional:</strong></td><td>${data.professional_title || 'No disponible'}</td></tr>
+            </table>
+        </div>
+        
+        <div class="col-md-6">
+            <h6 class="text-primary"><i class="bi bi-envelope me-2"></i>Contacto</h6>
+            <table class="table table-sm">
+                <tr><td><strong>Email Profesional:</strong></td><td>${data.email || 'No disponible'}</td></tr>
+                <tr><td><strong>Teléfono:</strong></td><td>${data.phone || 'No disponible'}</td></tr>
+                <tr><td><strong>LinkedIn:</strong></td><td>${data.linkedin || 'No disponible'}</td></tr>
+            </table>
+        </div>
+    `;
+    
+    // Información de la empresa
+    if (data.company_info) {
+        html += `
+            <div class="col-12">
+                <h6 class="text-primary"><i class="bi bi-building me-2"></i>Información de la Empresa</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>Empresa:</strong></td><td>${data.company_info.name || 'No disponible'}</td></tr>
+                    <tr><td><strong>Industria:</strong></td><td>${data.company_info.industry || 'No disponible'}</td></tr>
+                    <tr><td><strong>Tamaño:</strong></td><td>${data.company_info.size || 'No disponible'}</td></tr>
+                    <tr><td><strong>Ubicación:</strong></td><td>${data.company_info.location || 'No disponible'}</td></tr>
+                </table>
+            </div>
+        `;
+    }
+    
+    // Información adicional
+    if (data.additional_info && data.additional_info !== 'No disponible') {
+        html += `
+            <div class="col-12">
+                <h6 class="text-primary"><i class="bi bi-star me-2"></i>Información Adicional</h6>
+                <div class="bg-light p-3 rounded">
+                    ${data.additional_info}
+                </div>
+            </div>
+        `;
+    }
+    
+    // Sugerencias de notas
+    if (data.suggested_notes && data.suggested_notes !== 'No disponible') {
+        html += `
+            <div class="col-12">
+                <h6 class="text-primary"><i class="bi bi-lightbulb me-2"></i>Notas Sugeridas</h6>
+                <div class="bg-warning bg-opacity-10 p-3 rounded border border-warning">
+                    ${data.suggested_notes}
+                </div>
+            </div>
+        `;
+    }
+    
+    html += '</div>';
+    
+    document.getElementById('modalResults').innerHTML = html;
+    
+    const modal = new bootstrap.Modal(document.getElementById('resultsModal'));
+    modal.show();
+}
+
+function enhanceContactWithAI() {
+    // Recopilar los datos actuales del formulario
+    const currentData = {
+        name: document.getElementById('{{ form.name.id_for_label }}').value.trim(),
+        email: document.getElementById('{{ form.email.id_for_label }}').value.trim(),
+        phone: document.getElementById('{{ form.phone.id_for_label }}').value.trim(),
+        position: document.getElementById('{{ form.position.id_for_label }}').value.trim(),
+        company: document.getElementById('{{ form.company.id_for_label }}').value.trim(),
+        notes: document.getElementById('{{ form.notes.id_for_label }}').value.trim()
+    };
+    
+    // Verificar que tengamos al menos algo de información
+    if (!currentData.name && !currentData.email && !currentData.company) {
+        alert('Por favor completa al menos el nombre, email o empresa antes de usar la mejora con IA.');
+        return;
+    }
+    
+    if (!confirm('¿Deseas que la IA busque información adicional basada en los datos actuales del contacto?')) {
+        return;
+    }
+    
+    {% if not contact %}
+    alert('La mejora con IA solo está disponible para contactos existentes. Primero guarda el contacto y luego podrás usar esta función.');
+    return;
+    {% endif %}
+    
+    showLoading();
+    
+    {% if contact and contact.id %}
+    const enhanceUrl = `{% url 'enhance_contact_with_ai' contact.id %}`;
+    
+    fetch(enhanceUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify(currentData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoading();
+        if (data.success) {
+            showResults(data.data);
+        } else {
+            alert('Error al mejorar contacto: ' + (data.error || 'Error desconocido'));
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        alert('Error de conexión: ' + error.message);
+    });
+    {% else %}
+    // Esta línea nunca debería ejecutarse debido a la validación anterior
+    alert('Error: No se puede mejorar un contacto sin ID');
+    hideLoading();
+    {% endif %}
+}
+
+function applyContactInfo() {
+    if (!currentContactData) return;
+    
+    // Aplicar información a los campos del formulario solo si están vacíos o la nueva info es mejor
+    if (currentContactData.position && currentContactData.position !== 'No disponible') {
+        const currentPosition = document.getElementById('{{ form.position.id_for_label }}').value.trim();
+        if (!currentPosition || currentContactData.position.length > currentPosition.length) {
+            document.getElementById('{{ form.position.id_for_label }}').value = currentContactData.position;
+        }
+    }
+    
+    if (currentContactData.email && currentContactData.email !== 'No disponible') {
+        const currentEmail = document.getElementById('{{ form.email.id_for_label }}').value.trim();
+        if (!currentEmail) {
+            document.getElementById('{{ form.email.id_for_label }}').value = currentContactData.email;
+        }
+    }
+    
+    if (currentContactData.phone && currentContactData.phone !== 'No disponible') {
+        const currentPhone = document.getElementById('{{ form.phone.id_for_label }}').value.trim();
+        if (!currentPhone) {
+            document.getElementById('{{ form.phone.id_for_label }}').value = currentContactData.phone;
+        }
+    }
+    
+    if (currentContactData.company_info && currentContactData.company_info.name && currentContactData.company_info.name !== 'No disponible') {
+        const currentCompany = document.getElementById('{{ form.company.id_for_label }}').value.trim();
+        if (!currentCompany) {
+            document.getElementById('{{ form.company.id_for_label }}').value = currentContactData.company_info.name;
+        }
+    }
+    
+    // Mejorar las notas agregando información adicional
+    if (currentContactData.suggested_notes && currentContactData.suggested_notes !== 'No disponible') {
+        const currentNotes = document.getElementById('{{ form.notes.id_for_label }}').value.trim();
+        const additionalInfo = currentContactData.additional_info !== 'No disponible' ? currentContactData.additional_info : '';
+        
+        let newNotes = currentNotes;
+        if (additionalInfo) {
+            newNotes += (newNotes ? '\n\n' : '') + '--- Información encontrada por IA ---\n' + additionalInfo;
+        }
+        if (currentContactData.suggested_notes) {
+            newNotes += (newNotes ? '\n\n' : '') + '--- Notas sugeridas por IA ---\n' + currentContactData.suggested_notes;
+        }
+        
+        if (newNotes !== currentNotes) {
+            document.getElementById('{{ form.notes.id_for_label }}').value = newNotes;
+        }
+    }
+    
+    // Cerrar modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('resultsModal'));
+    if (modal) modal.hide();
+    
+    // Mostrar notificación de éxito
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-success alert-dismissible fade show mt-3';
+    alert.innerHTML = `
+        <i class="bi bi-check-circle"></i> Información del contacto mejorada exitosamente con IA
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.querySelector('.card-body').insertBefore(alert, document.querySelector('form'));
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        if (alert.parentNode) alert.remove();
+    }, 5000);
+}
+
 // Actualizar el indicador visual del estado
 document.getElementById('{{ form.status.id_for_label }}').addEventListener('change', function() {
     const select = this;

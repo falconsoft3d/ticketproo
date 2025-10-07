@@ -13,13 +13,22 @@ from django.conf import settings
 from datetime import datetime, date
 import os
 from datetime import timedelta
+
+# Imports para OpenAI
+try:
+    from openai import OpenAI
+    OPENAI_AVAILABLE = True
+except ImportError:
+    OPENAI_AVAILABLE = False
+    print("OpenAI library not available")
+
 from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
     UserNote, TimeEntry, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
     DailyTaskSession, DailyTaskItem, ChatRoom, ChatMessage, ContactFormSubmission,
     Opportunity, OpportunityStatus, OpportunityNote, OpportunityStatusHistory,
     Meeting, MeetingAttendee, MeetingQuestion, Contact,
-    BlogCategory, BlogPost, BlogComment
+    BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, Concept
 )
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
@@ -27,7 +36,7 @@ from .forms import (
     TicketCommentForm, UserNoteForm, TimeEntryStartForm, TimeEntryEndForm, 
     TimeEntryEditForm, ProjectForm, CompanyForm, SystemConfigurationForm, DocumentForm,
     UrlManagerForm, UrlManagerFilterForm, WorkOrderForm, WorkOrderFilterForm, TaskForm,
-    ChatMessageForm, ChatRoomForm
+    ChatMessageForm, ChatRoomForm, AIChatSessionForm, AIChatMessageForm
 )
 from .utils import is_agent, is_regular_user, get_user_role, assign_user_to_group
 
@@ -65,6 +74,9 @@ def home_view(request):
             }
             user_tickets_count = user_tickets.count()
     
+    # Obtener conceptos activos para mostrar en el home
+    concepts = Concept.objects.filter(is_active=True)[:10]  # Máximo 10 conceptos
+    
     context = {
         'total_tickets': total_tickets,
         'total_users': total_users,
@@ -72,6 +84,7 @@ def home_view(request):
         'user_role': user_role,
         'tickets_by_status': tickets_by_status,
         'is_authenticated': request.user.is_authenticated,
+        'concepts': concepts,
     }
     return render(request, 'tickets/home.html', context)
 
@@ -143,6 +156,10 @@ def dashboard_view(request):
             'is_agent': True,
             'daily_hours': daily_hours,
         }
+        
+        # Agregar conceptos activos
+        concepts = Concept.objects.filter(is_active=True)[:10]
+        context['concepts'] = concepts
     else:
         # Estadísticas para usuarios regulares (sus tickets + tickets de empresa + proyectos)
         user_projects = request.user.assigned_projects.all()
@@ -201,6 +218,10 @@ def dashboard_view(request):
             'is_agent': False,
             'daily_hours': daily_hours,
         }
+    
+    # Obtener conceptos activos para mostrar en el dashboard
+    concepts = Concept.objects.filter(is_active=True)[:10]  # Máximo 10 conceptos
+    context['concepts'] = concepts
     
     return render(request, 'tickets/dashboard.html', context)
 
@@ -6732,3 +6753,881 @@ def blog_post_delete(request, pk):
     }
     
     return render(request, 'tickets/blog_post_delete.html', context)
+
+
+# ===========================================
+# VISTAS PARA CHAT CON IA
+# ===========================================
+
+@login_required
+def ai_chat_list_view(request):
+    """Vista principal del chat con IA - lista de sesiones"""
+    config = SystemConfiguration.get_config()
+    
+    # Verificar si el chat IA está habilitado
+    if not config.ai_chat_enabled:
+        messages.warning(request, 'El chat con IA no está habilitado en el sistema.')
+        return redirect('dashboard')
+    
+    # Verificar si hay API key configurada
+    if not config.openai_api_key:
+        messages.warning(request, 'El chat con IA no está configurado. Contacta al administrador.')
+        return redirect('dashboard')
+    
+    # Obtener sesiones del usuario
+    sessions = AIChatSession.objects.filter(user=request.user, is_active=True)
+    
+    # Formulario para nueva sesión
+    if request.method == 'POST':
+        form = AIChatSessionForm(request.POST)
+        if form.is_valid():
+            session = form.save(commit=False)
+            session.user = request.user
+            session.save()
+            messages.success(request, f'Nueva conversación creada: {session.title}')
+            return redirect('ai_chat_live', session_id=session.id)
+    else:
+        form = AIChatSessionForm(initial={'ai_model': config.openai_model})
+    
+    context = {
+        'sessions': sessions,
+        'form': form,
+        'config': config,
+    }
+    
+    return render(request, 'tickets/ai_chat_list.html', context)
+
+
+@login_required
+def ai_chat_session_view(request, session_id):
+    """Vista para una sesión específica de chat con IA"""
+    config = SystemConfiguration.get_config()
+    
+    # Verificar si el chat IA está habilitado
+    if not config.ai_chat_enabled or not config.openai_api_key:
+        messages.warning(request, 'El chat con IA no está disponible.')
+        return redirect('dashboard')
+    
+    # Obtener la sesión
+    session = get_object_or_404(AIChatSession, id=session_id, user=request.user, is_active=True)
+    
+    # Obtener mensajes de la sesión
+    messages_list = session.messages.all()
+    
+    # Formulario para nuevo mensaje
+    if request.method == 'POST':
+        print(f"DEBUG: POST recibido para sesión {session_id}")
+        print(f"DEBUG: request.POST completo: {dict(request.POST)}")
+        print(f"DEBUG: request.POST.get('message'): '{request.POST.get('message', 'NO_ENCONTRADO')}'")
+        print(f"DEBUG: Content-Type: {request.content_type}")
+        print(f"DEBUG: POST keys: {list(request.POST.keys())}")
+        
+        form = AIChatMessageForm(request.POST)
+        print(f"DEBUG: Formulario creado con datos: {form.data}")
+        print(f"DEBUG: Formulario es válido: {form.is_valid()}")
+        
+        if form.is_valid():
+            user_message = form.cleaned_data['message']
+            print(f"DEBUG: Mensaje del usuario: {user_message}")
+            
+            # Guardar mensaje del usuario
+            user_msg = AIChatMessage.objects.create(
+                session=session,
+                role='user',
+                content=user_message
+            )
+            print(f"DEBUG: Mensaje del usuario guardado con ID: {user_msg.id}")
+            
+            # Llamar a la API de OpenAI
+            try:
+                print("DEBUG: Llamando a OpenAI API...")
+                ai_response = call_openai_api(session, user_message)
+                print(f"DEBUG: Respuesta de OpenAI recibida: {ai_response['content'][:50]}...")
+                
+                # Guardar respuesta de la IA
+                ai_msg = AIChatMessage.objects.create(
+                    session=session,
+                    role='assistant',
+                    content=ai_response['content'],
+                    tokens_used=ai_response.get('tokens_used', 0)
+                )
+                print(f"DEBUG: Respuesta de IA guardada con ID: {ai_msg.id}")
+                
+                messages.success(request, 'Mensaje enviado correctamente.')
+                
+            except Exception as e:
+                print(f"DEBUG: Error en OpenAI API: {str(e)}")
+                messages.error(request, f'Error al comunicarse con la IA: {str(e)}')
+            
+            return redirect('ai_chat_session', session_id=session.id)
+        else:
+            print(f"DEBUG: Formulario no válido. Errores: {form.errors}")
+            print(f"DEBUG: Errores por campo: {dict(form.errors)}")
+            for field, errors in form.errors.items():
+                print(f"DEBUG: Campo '{field}': {errors}")
+    else:
+        form = AIChatMessageForm()
+    
+    context = {
+        'session': session,
+        'messages_list': messages_list,
+        'form': form,
+        'config': config,
+    }
+    
+    return render(request, 'tickets/ai_chat_session.html', context)
+
+
+@login_required
+def ai_chat_delete_session_view(request, session_id):
+    """Vista para eliminar una sesión de chat"""
+    session = get_object_or_404(AIChatSession, id=session_id, user=request.user)
+    
+    if request.method == 'POST':
+        session.is_active = False
+        session.save()
+        messages.success(request, f'Conversación "{session.title}" eliminada.')
+        return redirect('ai_chat_list')
+    
+    context = {
+        'session': session,
+    }
+    
+    return render(request, 'tickets/ai_chat_delete_session.html', context)
+
+
+@login_required
+def ai_chat_debug_view(request, session_id):
+    """Vista de debug para chat IA"""
+    config = SystemConfiguration.get_config()
+    
+    # Obtener la sesión
+    session = get_object_or_404(AIChatSession, id=session_id, user=request.user, is_active=True)
+    
+    # Obtener mensajes de la sesión
+    messages_list = session.messages.all()
+    
+    # Formulario para nuevo mensaje
+    if request.method == 'POST':
+        print(f"DEBUG: POST recibido para sesión {session_id}")
+        print(f"DEBUG: Datos POST: {request.POST}")
+        
+        form = AIChatMessageForm(request.POST)
+        if form.is_valid():
+            user_message = form.cleaned_data['message']
+            print(f"DEBUG: Mensaje del usuario: {user_message}")
+            
+            # Guardar mensaje del usuario
+            user_msg = AIChatMessage.objects.create(
+                session=session,
+                role='user',
+                content=user_message
+            )
+            print(f"DEBUG: Mensaje del usuario guardado con ID: {user_msg.id}")
+            
+            # Llamar a la API de OpenAI
+            try:
+                print("DEBUG: Llamando a OpenAI API...")
+                ai_response = call_openai_api(session, user_message)
+                print(f"DEBUG: Respuesta de OpenAI recibida: {ai_response['content'][:50]}...")
+                
+                # Guardar respuesta de la IA
+                ai_msg = AIChatMessage.objects.create(
+                    session=session,
+                    role='assistant',
+                    content=ai_response['content'],
+                    tokens_used=ai_response.get('tokens_used', 0)
+                )
+                print(f"DEBUG: Respuesta de IA guardada con ID: {ai_msg.id}")
+                
+                messages.success(request, 'Mensaje enviado correctamente.')
+                
+            except Exception as e:
+                print(f"DEBUG: Error en OpenAI API: {str(e)}")
+                messages.error(request, f'Error al comunicarse con la IA: {str(e)}')
+            
+            return redirect('ai_chat_debug', session_id=session.id)
+        else:
+            print(f"DEBUG: Formulario no válido: {form.errors}")
+    else:
+        form = AIChatMessageForm()
+    
+    context = {
+        'session': session,
+        'messages_list': messages_list,
+        'form': form,
+        'page_title': f'Debug Chat IA - {session.title}',
+    }
+    
+    return render(request, 'tickets/ai_chat_debug.html', context)
+
+
+@login_required
+def ai_chat_simple_view(request, session_id):
+    """Vista simple del chat IA para debugging"""
+    config = SystemConfiguration.get_config()
+    
+    # Verificar configuración
+    if not config.ai_chat_enabled or not config.openai_api_key:
+        messages.warning(request, 'El chat con IA no está disponible.')
+        return redirect('dashboard')
+    
+    # Obtener sesión
+    session = get_object_or_404(AIChatSession, id=session_id, user=request.user, is_active=True)
+    messages_list = session.messages.all()
+    
+    # Procesar formulario
+    if request.method == 'POST':
+        print(f"=== POST SIMPLE RECIBIDO ===")
+        print(f"request.POST: {dict(request.POST)}")
+        print(f"message value: '{request.POST.get('message', 'NO_ENCONTRADO')}'")
+        
+        message_content = request.POST.get('message', '').strip()
+        
+        if len(message_content) >= 5:
+            try:
+                # Guardar mensaje del usuario
+                user_msg = AIChatMessage.objects.create(
+                    session=session,
+                    role='user',
+                    content=message_content
+                )
+                print(f"Usuario mensaje guardado: {user_msg.id}")
+                
+                # Llamar a OpenAI
+                ai_response = call_openai_api(session, message_content)
+                
+                # Guardar respuesta IA
+                ai_msg = AIChatMessage.objects.create(
+                    session=session,
+                    role='assistant',
+                    content=ai_response['content'],
+                    tokens_used=ai_response.get('tokens_used', 0)
+                )
+                print(f"IA mensaje guardado: {ai_msg.id}")
+                
+                messages.success(request, 'Mensaje enviado correctamente.')
+                return redirect('ai_chat_simple', session_id=session.id)
+                
+            except Exception as e:
+                print(f"Error: {e}")
+                messages.error(request, f'Error: {str(e)}')
+        else:
+            messages.error(request, 'El mensaje debe tener al menos 5 caracteres.')
+    
+    # Crear formulario vacío para los errores
+    form = AIChatMessageForm()
+    
+    context = {
+        'session': session,
+        'messages_list': messages_list,
+        'form': form,
+        'page_title': f'Chat Simple - {session.title}',
+    }
+    
+    return render(request, 'tickets/ai_chat_simple.html', context)
+
+
+@login_required
+def ai_chat_ajax_send_message(request, session_id):
+    """Vista AJAX para enviar mensajes al chat IA"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    
+    try:
+        config = SystemConfiguration.get_config()
+        
+        # Verificar configuración
+        if not config.ai_chat_enabled or not config.openai_api_key:
+            return JsonResponse({'error': 'Chat IA no disponible'}, status=400)
+        
+        # Obtener sesión
+        try:
+            session = AIChatSession.objects.get(id=session_id, user=request.user, is_active=True)
+        except AIChatSession.DoesNotExist:
+            return JsonResponse({'error': 'Sesión no encontrada'}, status=404)
+        
+        # Obtener mensaje
+        message_content = request.POST.get('message', '').strip()
+        
+        if len(message_content) < 5:
+            return JsonResponse({'error': 'El mensaje debe tener al menos 5 caracteres'}, status=400)
+        
+        # Guardar mensaje del usuario
+        user_msg = AIChatMessage.objects.create(
+            session=session,
+            role='user',
+            content=message_content
+        )
+        
+        # Llamar a OpenAI
+        ai_response = call_openai_api(session, message_content)
+        
+        # Guardar respuesta IA
+        ai_msg = AIChatMessage.objects.create(
+            session=session,
+            role='assistant',
+            content=ai_response['content'],
+            tokens_used=ai_response.get('tokens_used', 0)
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'user_message': {
+                'id': user_msg.id,
+                'content': user_msg.content,
+                'created_at': user_msg.created_at.strftime('%H:%M')
+            },
+            'ai_message': {
+                'id': ai_msg.id,
+                'content': ai_msg.content,
+                'created_at': ai_msg.created_at.strftime('%H:%M'),
+                'tokens_used': ai_msg.tokens_used
+            }
+        })
+        
+    except Exception as e:
+        import traceback
+        print(f"Error completo: {traceback.format_exc()}")
+        return JsonResponse({'error': f'Error al procesar mensaje: {str(e)}'}, status=500)
+
+
+@login_required
+def ai_chat_live_view(request, session_id):
+    """Vista mejorada del chat IA con AJAX y UX mejorada"""
+    config = SystemConfiguration.get_config()
+    
+    # Verificar configuración
+    if not config.ai_chat_enabled:
+        messages.warning(request, 'El chat con IA no está habilitado en el sistema.')
+        return redirect('dashboard')
+    
+    if not config.openai_api_key:
+        messages.warning(request, 'El chat con IA no está configurado. Contacta al administrador.')
+        return redirect('dashboard')
+    
+    # Obtener sesión
+    session = get_object_or_404(AIChatSession, id=session_id, user=request.user, is_active=True)
+    
+    # Obtener mensajes
+    messages_list = session.messages.all()
+    
+    context = {
+        'session': session,
+        'messages_list': messages_list,
+        'page_title': f'{session.title} - Chat IA',
+    }
+    
+    return render(request, 'tickets/ai_chat_live.html', context)
+
+
+@login_required
+def ai_chat_modern_view(request, session_id):
+    """Vista del chat IA con diseño moderno (Telegram/Discord style)"""
+    config = SystemConfiguration.get_config()
+    
+    # Verificar configuración
+    if not config.ai_chat_enabled:
+        messages.warning(request, 'El chat con IA no está habilitado en el sistema.')
+        return redirect('dashboard')
+    
+    if not config.openai_api_key:
+        messages.warning(request, 'El chat con IA no está configurado. Contacta al administrador.')
+        return redirect('dashboard')
+    
+    # Obtener sesión
+    session = get_object_or_404(AIChatSession, id=session_id, user=request.user, is_active=True)
+    
+    # Obtener mensajes
+    messages_list = session.messages.all()
+    
+    context = {
+        'session': session,
+        'messages': messages_list,  # Cambio de nombre para el template moderno
+        'page_title': f'{session.title} - Chat IA',
+    }
+    
+    return render(request, 'tickets/ai_chat_modern.html', context)
+
+
+# Helper function for AI analysis
+def call_openai_api(session, message_content):
+    """
+    Función auxiliar para llamar a la API de OpenAI
+    """
+    config = SystemConfiguration.get_config()
+    
+    if not config.openai_api_key:
+        raise Exception('API key de OpenAI no configurada')
+    
+    from openai import OpenAI
+    client = OpenAI(api_key=config.openai_api_key)
+    
+    # Obtener historial de mensajes para contexto
+    previous_messages = session.messages.order_by('created_at')[:10]  # Últimos 10 mensajes
+    messages = [{"role": "system", "content": "Eres un asistente IA útil y conversacional."}]
+    
+    # Agregar mensajes previos para contexto
+    for msg in previous_messages:
+        messages.append({
+            "role": msg.role,
+            "content": msg.content
+        })
+    
+    # Agregar mensaje actual
+    messages.append({
+        "role": "user",
+        "content": message_content
+    })
+    
+    response = client.chat.completions.create(
+        model=config.openai_model or 'gpt-4o-mini',
+        messages=messages,
+        max_tokens=2000,
+        temperature=0.7
+    )
+    
+    return {
+        'content': response.choices[0].message.content,
+        'tokens_used': response.usage.total_tokens
+    }
+
+
+@login_required
+def improve_ticket_with_ai(request, ticket_id):
+    """Vista AJAX para mejorar el título y descripción de un ticket usando IA"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    
+    try:
+        # Verificar permisos del ticket
+        if is_agent(request.user):
+            ticket = get_object_or_404(Ticket, pk=ticket_id)
+        else:
+            # Los usuarios pueden solo editar sus propios tickets o tickets de su empresa/proyectos
+            user_projects = request.user.assigned_projects.all()
+            user_company = None
+            
+            try:
+                user_company = request.user.profile.company
+            except:
+                pass
+            
+            query_conditions = Q(created_by=request.user)
+            if user_projects.exists():
+                query_conditions |= Q(project__in=user_projects)
+            if user_company:
+                query_conditions |= Q(company=user_company)
+            
+            ticket = get_object_or_404(Ticket, pk=ticket_id)
+            if not Ticket.objects.filter(pk=ticket_id).filter(query_conditions).exists():
+                return JsonResponse({'error': 'No tienes permisos para mejorar este ticket'}, status=403)
+        
+        # Verificar configuración de OpenAI
+        config = SystemConfiguration.get_config()
+        if not config.openai_api_key:
+            return JsonResponse({'error': 'API key de OpenAI no configurada'}, status=500)
+        
+        # Obtener tipo de mejora solicitada
+        improvement_type = request.POST.get('type', 'both')  # 'title', 'description', 'both'
+        
+        # Preparar el prompt según el tipo de mejora
+        if improvement_type == 'title':
+            prompt = f"""
+            Mejora el siguiente título de ticket de soporte técnico para que sea más claro, específico y profesional:
+
+            Título actual: "{ticket.title}"
+            Descripción del problema: "{ticket.description}"
+            
+            Proporciona ÚNICAMENTE un título mejorado, sin explicaciones adicionales.
+            El título debe ser:
+            - Claro y específico
+            - Profesional pero comprensible
+            - Máximo 100 caracteres
+            - Debe reflejar exactamente el problema descrito
+            """
+        elif improvement_type == 'description':
+            prompt = f"""
+            Mejora la siguiente descripción de ticket de soporte técnico para que sea más clara, detallada y estructurada:
+
+            Título: "{ticket.title}"
+            Descripción actual: "{ticket.description}"
+            
+            Proporciona ÚNICAMENTE una descripción mejorada, sin explicaciones adicionales.
+            La descripción debe ser:
+            - Clara y bien estructurada
+            - Incluir pasos para reproducir si es relevante
+            - Mencionar el impacto del problema
+            - Ser específica y detallada
+            - Mantener el contenido original pero mejor organizado
+            """
+        else:  # both
+            prompt = f"""
+            Mejora el siguiente ticket de soporte técnico para que el título y descripción sean más claros, específicos y profesionales:
+
+            Título actual: "{ticket.title}"
+            Descripción actual: "{ticket.description}"
+            
+            Responde ÚNICAMENTE con el siguiente formato JSON sin texto adicional:
+            {{
+                "title": "título mejorado aquí",
+                "description": "descripción mejorada aquí"
+            }}
+            
+            Criterios:
+            - Título: Claro, específico, profesional, máximo 100 caracteres
+            - Descripción: Clara, estructurada, detallada, bien organizada
+            - Mantener el contenido original pero mejorado
+            """
+        
+        # Llamar a OpenAI
+        from openai import OpenAI
+        client = OpenAI(api_key=config.openai_api_key)
+        
+        response = client.chat.completions.create(
+            model=config.openai_model or 'gpt-4o-mini',
+            messages=[
+                {"role": "system", "content": "Eres un experto en soporte técnico que mejora la comunicación de tickets para hacerlos más claros y profesionales."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=1000,
+            temperature=0.3
+        )
+        
+        ai_response = response.choices[0].message.content.strip()
+        
+        # Procesar respuesta según el tipo
+        if improvement_type == 'both':
+            try:
+                import json
+                # Limpiar respuesta si tiene marcadores de código
+                if ai_response.startswith('```json'):
+                    ai_response = ai_response.replace('```json', '').replace('```', '').strip()
+                elif ai_response.startswith('```'):
+                    ai_response = ai_response.replace('```', '').strip()
+                
+                result = json.loads(ai_response)
+                return JsonResponse({
+                    'success': True,
+                    'title': result.get('title', ''),
+                    'description': result.get('description', ''),
+                    'tokens_used': response.usage.total_tokens
+                })
+            except json.JSONDecodeError:
+                return JsonResponse({'error': 'Error al procesar la respuesta de IA'}, status=500)
+        else:
+            return JsonResponse({
+                'success': True,
+                improvement_type: ai_response,
+                'tokens_used': response.usage.total_tokens
+            })
+            
+    except Exception as e:
+        return JsonResponse({'error': f'Error al mejorar ticket: {str(e)}'}, status=500)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def search_company_info_with_ai(request, company_id):
+    """Vista AJAX para buscar información de una empresa en la web usando IA"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    
+    try:
+        company = get_object_or_404(Company, pk=company_id)
+        
+        # Verificar configuración de OpenAI
+        config = SystemConfiguration.get_config()
+        if not config.openai_api_key:
+            return JsonResponse({'error': 'API key de OpenAI no configurada'}, status=500)
+        
+        # Obtener nombre de la empresa del request o usar el actual
+        company_name = request.POST.get('company_name', company.name).strip()
+        
+        if not company_name:
+            return JsonResponse({'error': 'Nombre de empresa requerido'}, status=400)
+        
+        # Prompt para buscar información de la empresa
+        prompt = f"""
+        Busca información detallada sobre la empresa "{company_name}". 
+        
+        Proporciona la información en el siguiente formato JSON exacto (sin texto adicional):
+        {{
+            "name": "nombre oficial completo de la empresa",
+            "website": "sitio web principal (con https://)",
+            "email": "email principal de contacto",
+            "phone": "teléfono principal",
+            "address": "dirección completa de la sede principal",
+            "description": "descripción detallada de la empresa, sus servicios y actividades",
+            "industry": "sector o industria principal",
+            "founded": "año de fundación si está disponible",
+            "employees": "número aproximado de empleados si está disponible",
+            "social_media": {{
+                "linkedin": "URL de LinkedIn",
+                "twitter": "URL de Twitter",
+                "facebook": "URL de Facebook"
+            }},
+            "additional_info": "información adicional relevante como premios, certificaciones, etc."
+        }}
+        
+        IMPORTANTE:
+        - Si no encuentras información específica, usa "No disponible" para ese campo
+        - Asegúrate de que el website tenga formato completo (https://)
+        - La descripción debe ser informativa y profesional
+        - Incluye solo información verificable y actualizada
+        """
+        
+        # Llamar a OpenAI
+        from openai import OpenAI
+        client = OpenAI(api_key=config.openai_api_key)
+        
+        response = client.chat.completions.create(
+            model=config.openai_model or 'gpt-4o-mini',
+            messages=[
+                {"role": "system", "content": "Eres un experto investigador de empresas que busca información precisa y actualizada sobre compañías usando fuentes públicas disponibles. Respondes únicamente con JSON válido."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=1500,
+            temperature=0.3
+        )
+        
+        ai_response = response.choices[0].message.content.strip()
+        
+        # Limpiar respuesta si tiene marcadores de código
+        if ai_response.startswith('```json'):
+            ai_response = ai_response.replace('```json', '').replace('```', '').strip()
+        elif ai_response.startswith('```'):
+            ai_response = ai_response.replace('```', '').strip()
+        
+        try:
+            import json
+            result = json.loads(ai_response)
+            
+            # Validar que los campos requeridos estén presentes
+            required_fields = ['name', 'website', 'email', 'phone', 'address', 'description']
+            for field in required_fields:
+                if field not in result:
+                    result[field] = 'No disponible'
+            
+            return JsonResponse({
+                'success': True,
+                'data': result,
+                'tokens_used': response.usage.total_tokens
+            })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Error al procesar la respuesta de IA'}, status=500)
+            
+    except Exception as e:
+        return JsonResponse({'error': f'Error al buscar información: {str(e)}'}, status=500)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def search_company_info_general(request):
+    """Vista AJAX para buscar información de una empresa sin requerir ID específico"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    
+    try:
+        # Verificar configuración de OpenAI
+        config = SystemConfiguration.get_config()
+        if not config.openai_api_key:
+            return JsonResponse({'error': 'API key de OpenAI no configurada'}, status=500)
+        
+        # Obtener nombre de la empresa del request
+        company_name = request.POST.get('company_name', '').strip()
+        
+        if not company_name:
+            return JsonResponse({'error': 'Nombre de empresa requerido'}, status=400)
+        
+        # Prompt para buscar información de la empresa
+        prompt = f"""
+        Busca información detallada sobre la empresa "{company_name}". 
+        
+        Proporciona la información en el siguiente formato JSON exacto (sin texto adicional):
+        {{
+            "name": "nombre oficial completo de la empresa",
+            "website": "sitio web principal (con https://)",
+            "email": "email principal de contacto",
+            "phone": "teléfono principal",
+            "address": "dirección completa de la sede principal",
+            "description": "descripción detallada de la empresa, sus servicios y actividades",
+            "industry": "sector o industria principal",
+            "founded": "año de fundación si está disponible",
+            "employees": "número aproximado de empleados si está disponible",
+            "social_media": {{
+                "linkedin": "URL de LinkedIn",
+                "twitter": "URL de Twitter",
+                "facebook": "URL de Facebook"
+            }},
+            "additional_info": "información adicional relevante como premios, certificaciones, etc."
+        }}
+        
+        IMPORTANTE:
+        - Si no encuentras información específica, usa "No disponible" para ese campo
+        - Asegúrate de que el website tenga formato completo (https://)
+        - La descripción debe ser informativa y profesional
+        - Incluye solo información verificable y actualizada
+        """
+        
+        # Llamar a OpenAI
+        from openai import OpenAI
+        client = OpenAI(api_key=config.openai_api_key)
+        
+        response = client.chat.completions.create(
+            model=config.openai_model or 'gpt-4o-mini',
+            messages=[
+                {"role": "system", "content": "Eres un experto investigador de empresas que busca información precisa y actualizada sobre compañías usando fuentes públicas disponibles. Respondes únicamente con JSON válido."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=1500,
+            temperature=0.3
+        )
+        
+        ai_response = response.choices[0].message.content.strip()
+        
+        # Limpiar respuesta si tiene marcadores de código
+        if ai_response.startswith('```json'):
+            ai_response = ai_response.replace('```json', '').replace('```', '').strip()
+        elif ai_response.startswith('```'):
+            ai_response = ai_response.replace('```', '').strip()
+        
+        try:
+            import json
+            result = json.loads(ai_response)
+            
+            # Validar que los campos requeridos estén presentes
+            required_fields = ['name', 'website', 'email', 'phone', 'address', 'description']
+            for field in required_fields:
+                if field not in result:
+                    result[field] = 'No disponible'
+            
+            return JsonResponse({
+                'success': True,
+                'data': result,
+                'tokens_used': response.usage.total_tokens
+            })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Error al procesar la respuesta de IA'}, status=500)
+            
+    except Exception as e:
+        return JsonResponse({'error': f'Error al buscar información: {str(e)}'}, status=500)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def enhance_contact_with_ai(request, contact_id):
+    """Vista AJAX para mejorar información de un contacto usando IA"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    
+    try:
+        contact = get_object_or_404(Contact, pk=contact_id)
+        
+        # Verificar configuración de OpenAI
+        config = SystemConfiguration.get_config()
+        if not config.openai_api_key:
+            return JsonResponse({'error': 'API key de OpenAI no configurada'}, status=500)
+        
+        # Obtener datos actuales del contacto del request
+        import json
+        contact_data = json.loads(request.body)
+        
+        # Construir información existente
+        existing_info = []
+        if contact_data.get('name'):
+            existing_info.append(f"Nombre: {contact_data['name']}")
+        if contact_data.get('email'):
+            existing_info.append(f"Email: {contact_data['email']}")
+        if contact_data.get('phone'):
+            existing_info.append(f"Teléfono: {contact_data['phone']}")
+        if contact_data.get('position'):
+            existing_info.append(f"Posición: {contact_data['position']}")
+        if contact_data.get('company'):
+            existing_info.append(f"Empresa: {contact_data['company']}")
+        if contact_data.get('notes'):
+            existing_info.append(f"Notas actuales: {contact_data['notes']}")
+        
+        if not existing_info:
+            return JsonResponse({'error': 'No hay información suficiente para mejorar'}, status=400)
+        
+        existing_info_text = "\n".join(existing_info)
+        
+        # Prompt para mejorar información del contacto
+        prompt = f"""
+        Tienes la siguiente información parcial de un contacto profesional:
+        
+        {existing_info_text}
+        
+        Basándote en esta información, busca y proporciona datos adicionales que podrían ser útiles para completar el perfil del contacto. 
+        
+        Proporciona la respuesta en el siguiente formato JSON exacto (sin texto adicional):
+        {{
+            "full_name": "nombre completo si es diferente o más completo que el actual",
+            "position": "título o posición profesional más específica o completa",
+            "professional_title": "título profesional o especialización",
+            "email": "email profesional si no está disponible",
+            "phone": "teléfono profesional si no está disponible",
+            "linkedin": "URL del perfil de LinkedIn si está disponible",
+            "company_info": {{
+                "name": "nombre completo y correcto de la empresa",
+                "industry": "industria o sector de la empresa", 
+                "size": "tamaño aproximado de la empresa",
+                "location": "ubicación principal de la empresa"
+            }},
+            "additional_info": "información adicional relevante sobre el contacto, su rol, experiencia, etc.",
+            "suggested_notes": "sugerencias de notas profesionales para agregar al contacto basadas en la información encontrada"
+        }}
+        
+        IMPORTANTE:
+        - Si no encuentras información específica o no puedes mejorar un campo, usa "No disponible"
+        - Proporciona solo información que sea profesionalmente relevante
+        - Las sugerencias de notas deben ser útiles para seguimiento comercial o profesional
+        - Usa fuentes públicas y profesionales para la información
+        - Sé preciso y evita especulaciones
+        """
+        
+        # Llamar a OpenAI
+        from openai import OpenAI
+        client = OpenAI(api_key=config.openai_api_key)
+        
+        response = client.chat.completions.create(
+            model=config.openai_model or 'gpt-4o-mini',
+            messages=[
+                {"role": "system", "content": "Eres un experto asistente de CRM que ayuda a completar información de contactos profesionales usando fuentes públicas y conocimiento general del mundo empresarial. Respondes únicamente con JSON válido."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=1200,
+            temperature=0.3
+        )
+        
+        ai_response = response.choices[0].message.content.strip()
+        
+        # Limpiar respuesta si tiene marcadores de código
+        if ai_response.startswith('```json'):
+            ai_response = ai_response.replace('```json', '').replace('```', '').strip()
+        elif ai_response.startswith('```'):
+            ai_response = ai_response.replace('```', '').strip()
+        
+        try:
+            result = json.loads(ai_response)
+            
+            # Validar que los campos requeridos estén presentes
+            required_fields = ['full_name', 'position', 'email', 'phone', 'additional_info', 'suggested_notes']
+            for field in required_fields:
+                if field not in result:
+                    result[field] = 'No disponible'
+            
+            return JsonResponse({
+                'success': True,
+                'data': result,
+                'tokens_used': response.usage.total_tokens
+            })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Error al procesar la respuesta de IA'}, status=500)
+            
+    except Exception as e:
+        return JsonResponse({'error': f'Error al mejorar contacto: {str(e)}'}, status=500)

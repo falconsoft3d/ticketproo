@@ -60,11 +60,27 @@
                             <i class="bi bi-plus-circle"></i>
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if 'chat' in request.resolver_match.url_name %}active{% endif %}" 
-                           href="{% url 'chat_list' %}">
+                    
+                    <!-- Menú de Chat -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if 'chat' in request.resolver_match.url_name or 'ai_chat' in request.resolver_match.url_name %}active{% endif %}" 
+                           href="#" id="navbarDropdownChat" role="button" data-bs-toggle="dropdown">
                             <i class="bi bi-chat-dots"></i> Chat
                         </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item {% if 'chat' in request.resolver_match.url_name and 'ai_chat' not in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'chat_list' %}">
+                                    <i class="bi bi-people"></i> Chat de Usuarios
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'ai_chat' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'ai_chat_list' %}">
+                                    <i class="bi bi-robot"></i> Chat con IA
+                                </a>
+                            </li>
+                        </ul>
                     </li>
                     
                     <!-- Menú de Capacitación -->

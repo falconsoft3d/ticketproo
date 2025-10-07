@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Debug Chat IA{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Debug Chat IA - Sesión {{ session.title }}</h5>
+                    <small>Usuario: {{ session.user.username }} | Modelo: {{ session.ai_model }}</small>
+                </div>
+                <div class="card-body">
+                    <!-- Mensajes -->
+                    {% for message in messages_list %}
+                    <div class="mb-3 p-3 border rounded {% if message.role == 'user' %}bg-light{% else %}bg-primary text-white{% endif %}">
+                        <strong>{{ message.role|title }}:</strong>
+                        <p class="mb-0">{{ message.content }}</p>
+                        <small class="text-muted">{{ message.created_at }}</small>
+                    </div>
+                    {% empty %}
+                    <p class="text-center text-muted">No hay mensajes aún</p>
+                    {% endfor %}
+                    
+                    <!-- Formulario simple -->
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="message">Mensaje:</label>
+                            <textarea name="message" id="message" class="form-control" rows="3" required>{{ request.POST.message }}</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Enviar Mensaje</button>
+                    </form>
+                    
+                    <!-- Debug info -->
+                    <div class="mt-4 p-3 bg-light border rounded">
+                        <h6>Debug Info:</h6>
+                        <p><strong>Método:</strong> {{ request.method }}</p>
+                        <p><strong>Usuario autenticado:</strong> {{ user.is_authenticated }}</p>
+                        <p><strong>Usuario:</strong> {{ user.username }}</p>
+                        {% if request.method == 'POST' %}
+                        <p><strong>Datos POST:</strong> {{ request.POST }}</p>
+                        <p><strong>Formulario válido:</strong> {{ form.is_valid }}</p>
+                        {% if not form.is_valid %}
+                        <p><strong>Errores:</strong> {{ form.errors }}</p>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

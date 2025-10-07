@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Eliminar Conversación - TicketProo{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">
+                    <i class="bi bi-trash"></i> Eliminar Conversación
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>¿Estás seguro?</strong>
+                    <p class="mb-0">Esta acción eliminará permanentemente la conversación "<strong>{{ session.title }}</strong>" y todos sus mensajes. Esta acción no se puede deshacer.</p>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Detalles de la conversación:</strong>
+                    <ul class="mt-2">
+                        <li><strong>Título:</strong> {{ session.title }}</li>
+                        <li><strong>Modelo:</strong> {{ session.ai_model }}</li>
+                        <li><strong>Mensajes:</strong> {{ session.get_message_count }}</li>
+                        <li><strong>Creada:</strong> {{ session.created_at|date:"d/m/Y H:i" }}</li>
+                        <li><strong>Última actualización:</strong> {{ session.updated_at|date:"d/m/Y H:i" }}</li>
+                    </ul>
+                </div>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'ai_chat_list' %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Cancelar
+                    </a>
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Sí, Eliminar
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ session.title }} - Chat con IA{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="bi bi-chat-dots"></i> {{ session.title }}
+                </h2>
+                <div>
+                    <span class="badge bg-info me-2">{{ session.ai_model }}</span>
+                    <a href="{% url 'ai_chat_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <!-- Área de chat -->
+            <div class="card" style="height: 600px;">
+                <div class="card-body p-0 d-flex flex-column">
+                    <!-- Área de mensajes -->
+                    <div class="flex-grow-1 overflow-auto p-3" id="chat-messages" style="max-height: 500px;">
+                        {% if messages_list %}
+                            {% for message in messages_list %}
+                            <div class="mb-3 {% if message.is_from_user %}text-end{% endif %}">
+                                <div class="d-inline-block {% if message.is_from_user %}bg-primary text-white{% else %}bg-light{% endif %} rounded p-3" 
+                                     style="max-width: 80%;">
+                                    {% if message.is_from_ai %}
+                                        <div class="d-flex align-items-center mb-2">
+                                            <i class="bi bi-robot me-2"></i>
+                                            <strong>IA</strong>
+                                        </div>
+                                    {% else %}
+                                        <div class="d-flex align-items-center mb-2 justify-content-end">
+                                            <strong>Tú</strong>
+                                            <i class="bi bi-person-fill ms-2"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div>{{ message.content|linebreaks }}</div>
+                                    <small class="{% if message.is_from_user %}text-white-50{% else %}text-muted{% endif %} d-block mt-2">
+                                        {{ message.created_at|date:"H:i" }}
+                                        {% if message.tokens_used > 0 %}
+                                            • {{ message.tokens_used }} tokens
+                                        {% endif %}
+                                    </small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                        <div class="text-center text-muted mt-5">
+                            <i class="bi bi-chat-dots" style="font-size: 3rem;"></i>
+                            <h5 class="mt-3">Comienza una nueva conversación</h5>
+                            <p>Envía tu primer mensaje para empezar a chatear con la IA</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Formulario de mensaje -->
+                    <div class="border-top p-3">
+                        <form method="post" id="chat-form">
+                            {% csrf_token %}
+                            <div class="row g-2">
+                                <div class="col">
+                                    <textarea 
+                                        name="message" 
+                                        id="id_message"
+                                        class="form-control" 
+                                        rows="3" 
+                                        placeholder="Escribe tu mensaje aquí..." 
+                                        maxlength="4000"
+                                        required></textarea>
+                                    {% if form.message.errors %}
+                                        <div class="text-danger mt-1">
+                                            {% for error in form.message.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-auto">
+                                    <button type="submit" class="btn btn-primary" id="send-button">
+                                        <i class="bi bi-send"></i> Enviar
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatMessages = document.getElementById('chat-messages');
+    const chatForm = document.getElementById('chat-form');
+    const sendButton = document.getElementById('send-button');
+    const messageInput = document.querySelector('#id_message');
+
+    // Scroll al final de los mensajes
+    function scrollToBottom() {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    scrollToBottom();
+
+    // Envío del formulario
+    chatForm.addEventListener('submit', function(e) {
+        console.log('=== DEBUG FORMULARIO ===');
+        console.log('Evento de envío capturado');
+        
+        const messageText = messageInput.value;
+        const trimmedText = messageText.trim();
+        
+        console.log('Valor original del textarea:', `"${messageText}"`);
+        console.log('Valor después de trim:', `"${trimmedText}"`);
+        console.log('Longitud del mensaje:', trimmedText.length);
+        
+        // Verificar FormData
+        const formData = new FormData(chatForm);
+        console.log('FormData entries:');
+        for (let [key, value] of formData.entries()) {
+            console.log(`  ${key}: "${value}"`);
+        }
+        
+        if (trimmedText.length === 0) {
+            e.preventDefault();
+            alert('Por favor, escribe un mensaje antes de enviar.');
+            console.log('Envío cancelado: mensaje vacío');
+            return false;
+        }
+        
+        if (trimmedText.length < 5) {
+            e.preventDefault();
+            alert('El mensaje debe tener al menos 5 caracteres.');
+            console.log('Envío cancelado: mensaje muy corto');
+            return false;
+        }
+        
+        console.log('Enviando formulario...');
+        sendButton.disabled = true;
+        sendButton.innerHTML = '<i class="bi bi-hourglass-split"></i> Enviando...';
+        messageInput.disabled = true;
+    });
+
+    // Atajo de teclado Ctrl+Enter para enviar
+    messageInput.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 'Enter') {
+            chatForm.submit();
+        }
+    });
+
+    // Auto-resize del textarea
+    messageInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + 'px';
+    });
+});
+</script>
+
+{% endblock %}

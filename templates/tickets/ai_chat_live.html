@@ -1,0 +1,654 @@
+{% extends 'base.html' %}
+{% load static %}
+
+<!-- NUEVO DISEÑO WHATSAPP ACTUALIZADO 2025-10-07 23:22 -->
+{% block title %}{{ session.title }} - Chat IA{% endblock %}
+
+{% block extra_css %}
+<!-- CACHE BUSTER v3.0 - WhatsApp Style Fixed Template - 2025-10-07 23:36 -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<style>
+/* Resetear body para fullscreen */
+body, html {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 100vh !important;
+    overflow: hidden !important;
+}
+
+/* ===== DISEÑO WHATSAPP 2025 ===== */
+
+/* Overrides importantes para forzar el estilo WhatsApp */
+.card {
+    border: none !important;
+    border-radius: 0 !important;
+}
+
+.card-header {
+    background: #25d366 !important; /* Verde WhatsApp más brillante */
+    border-bottom: 1px solid #20c157 !important;
+    border-radius: 0 !important;
+    color: white !important;
+    font-weight: 500 !important;
+}
+
+.chat-container {
+    height: 100vh;
+    max-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #efeae2 !important; /* Fondo similar a WhatsApp */
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 2rem; /* Más padding interior */
+    padding-bottom: 120px; /* Espacio para el input fijo */
+    background: #efeae2 !important; /* Fondo beige como WhatsApp */
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="20" cy="20" r="1" fill="%23ffffff" opacity="0.05"/><circle cx="80" cy="40" r="0.5" fill="%23ffffff" opacity="0.03"/><circle cx="40" cy="80" r="1.5" fill="%23ffffff" opacity="0.02"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>') !important;
+    /* Scroll estilo WhatsApp */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0,0,0,0.2) transparent;
+}
+
+.chat-messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.2);
+    border-radius: 10px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+    background: rgba(0,0,0,0.3);
+}
+
+.message {
+    margin-bottom: 0.5rem;
+    animation: messageSlide 0.3s ease-out;
+    display: flex;
+    align-items: flex-end; /* Alinea las burbujas hacia abajo */
+    min-height: 45px; /* Altura mínima para las burbujas */
+}
+
+@keyframes messageSlide {
+    from { 
+        opacity: 0; 
+        transform: translateY(20px) scale(0.95); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0) scale(1); 
+    }
+}
+
+.user-message {
+    justify-content: flex-end;
+    margin-left: 20%;
+}
+
+.ai-message {
+    justify-content: flex-start;
+    margin-right: 20%;
+}
+
+.message-bubble {
+    max-width: 100%;
+    padding: 12px 16px; /* Más padding interno */
+    border-radius: 20px; /* Bordes más redondeados */
+    word-wrap: break-word;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15); /* Sombra más pronunciada */
+    position: relative;
+    font-size: 14px;
+    line-height: 1.4;
+    min-height: 40px; /* Altura mínima mayor */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Distribuye contenido y tiempo */
+}
+
+.user-message .message-bubble {
+    background: #dcf8c6 !important; /* Verde claro de WhatsApp */
+    color: #303030 !important;
+    border-bottom-right-radius: 6px !important; /* Cola de burbuja más pronunciada */
+}
+
+.ai-message .message-bubble {
+    background: #ffffff !important; /* Blanco para mensajes AI */
+    color: #303030 !important;
+    border-bottom-left-radius: 6px !important; /* Cola de burbuja más pronunciada */
+}
+
+.thinking-indicator {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-start;
+    margin-bottom: 0.5rem;
+    margin-right: 20%;
+}
+
+.thinking-bubble {
+    background: #ffffff;
+    padding: 8px 12px;
+    border-radius: 18px;
+    border-bottom-left-radius: 4px;
+    color: #667781;
+    font-size: 14px;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.thinking-dots {
+    display: inline-flex;
+    gap: 2px;
+}
+
+.thinking-dots div {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #667781;
+    animation: thinking 1.4s ease-in-out infinite;
+}
+
+.thinking-dots div:nth-child(1) { animation-delay: 0s; }
+.thinking-dots div:nth-child(2) { animation-delay: 0.2s; }
+.thinking-dots div:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes thinking {
+    0%, 60%, 100% { 
+        transform: scale(1);
+        opacity: 0.5;
+    }
+    30% { 
+        transform: scale(1.2);
+        opacity: 1;
+    }
+}
+    color: #666;
+}
+
+.thinking-dots {
+    display: inline-block;
+    position: relative;
+    width: 40px;
+    height: 20px;
+}
+
+.thinking-dots div {
+    position: absolute;
+    top: 8px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #666;
+    animation: thinking 1.2s linear infinite;
+}
+
+.thinking-dots div:nth-child(1) { left: 8px; animation-delay: 0s; }
+.thinking-dots div:nth-child(2) { left: 18px; animation-delay: -0.4s; }
+.thinking-dots div:nth-child(3) { left: 28px; animation-delay: -0.8s; }
+
+@keyframes thinking {
+    0%, 80%, 100% { transform: scale(0); }
+    40% { transform: scale(1); }
+}
+
+.chat-input-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #25d366; /* Verde WhatsApp consistente */
+    padding: 1.5rem; /* Más padding */
+    border-top: 1px solid #20c157;
+    z-index: 1000;
+}
+
+.message-time {
+    font-size: 11px;
+    color: #667781;
+    text-align: right;
+    margin-top: 2px;
+    opacity: 0.8;
+    align-self: flex-end; /* Asegura que el tiempo esté abajo */
+    flex-shrink: 0; /* No permite que se encoja */
+}
+
+.ai-message .message-time {
+    color: #667781;
+}
+
+.message-content {
+    margin-bottom: 2px;
+    word-wrap: break-word;
+    width: 100%;
+}
+
+.message-author {
+    font-weight: 500;
+    font-size: 13px;
+    margin-bottom: 2px;
+    display: none; /* Lo ocultamos para hacer más limpio como WhatsApp */
+}
+
+#message-input {
+    min-height: 40px;
+    max-height: 60px;
+    resize: none;
+    border-radius: 20px;
+    padding: 10px 15px;
+    border: none;
+    background: #ffffff;
+    transition: all 0.3s ease;
+    overflow-y: auto;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+#message-input:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+#message-input:disabled {
+    background-color: #f8f8f8;
+    color: #999;
+    opacity: 0.8;
+}
+
+#send-button {
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    margin-left: 8px;
+    background: #25d366; /* Verde de WhatsApp */
+    border: none;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+#send-button:hover {
+    background: #20bd5a;
+    transform: scale(1.05);
+}
+
+#send-button:disabled {
+    background: #ccc;
+    transform: none;
+}
+
+.input-group {
+    align-items: flex-end;
+    gap: 0;
+}
+    overflow-y: auto;
+}
+
+#message-input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+#message-input:disabled {
+    background-color: #f8f9fa;
+    border-color: #e9ecef;
+    color: #6c757d;
+    opacity: 0.8;
+}
+
+#send-button {
+    border-radius: 25px;
+    padding: 15px 25px;
+    margin-left: 10px;
+}
+
+.input-group {
+    align-items: flex-end;
+}
+
+.chat-stats {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-top: 0.5rem;
+}
+
+.scroll-indicator {
+    position: absolute;
+    right: 20px;
+    bottom: 100px; /* Ajustado para el nuevo layout */
+    background: rgba(0, 123, 255, 0.8);
+    color: white;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10;
+    opacity: 0;
+    transform: translateY(10px);
+    pointer-events: none;
+}
+
+.scroll-indicator.show {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: all;
+}
+
+.scroll-indicator:hover {
+    background: rgba(0, 123, 255, 1);
+    transform: scale(1.1);
+}
+
+.chat-container {
+    position: relative;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10 col-xl-8">
+            <div class="card shadow chat-card">
+                <div class="card-header text-white chat-header">
+                    <div class="d-flex justify-content-between align-items-center h-100">
+                        <div class="d-flex align-items-center">
+                            <a href="{% url 'ai_chat_list' %}" class="btn btn-link text-white p-0 me-3">
+                                <i class="bi bi-arrow-left" style="font-size: 1.2rem;"></i>
+                            </a>
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-circle bg-success d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                    <i class="bi bi-robot text-white"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">{{ session.title }}</h6>
+                                    <small class="text-light opacity-75">Asistente IA • {{ session.ai_model }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <button class="btn btn-link text-white p-1">
+                                <i class="bi bi-three-dots-vertical"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chat-container">
+                    <!-- Mensajes -->
+                    <div class="chat-messages" id="chat-messages">
+                        {% for message in messages_list %}
+                        <div class="message {% if message.role == 'user' %}user-message{% else %}ai-message{% endif %}">
+                            <div class="message-bubble">
+                                <div class="message-content">{{ message.content|linebreaksbr }}</div>
+                                <div class="message-time">{{ message.created_at|date:"H:i" }}</div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center text-muted py-5" id="empty-state" style="color: #667781 !important;">
+                            <i class="bi bi-chat-text" style="font-size: 4rem; color: #ccc;"></i>
+                            <h5 class="mt-3" style="color: #667781;">¡Hola! 👋</h5>
+                            <p style="color: #999;">Soy tu asistente de IA. ¿En qué puedo ayudarte hoy?</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Indicador de scroll -->
+                    <div class="scroll-indicator" id="scroll-indicator" title="Ir al final">
+                        <i class="bi bi-chevron-down"></i>
+                    </div>
+
+                    <!-- Formulario -->
+                    <div class="chat-input">
+                        <form id="chat-form">
+                            {% csrf_token %}
+                            <div class="input-group">
+                                <textarea 
+                                    id="message-input"
+                                    name="message" 
+                                    class="form-control" 
+                                    rows="1" 
+                                    placeholder="Escribe un mensaje..."
+                                    required
+                                    maxlength="4000"></textarea>
+                                <button type="submit" class="btn btn-primary" id="send-button">
+                                    <i class="bi bi-send-fill"></i>
+                                </button>
+                            </div>
+                            <div class="d-flex justify-content-between chat-stats">
+                                <small class="text-muted">Ctrl+Enter para enviar</small>
+                                <small class="text-muted">{{ messages_list|length }} mensajes</small>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatForm = document.getElementById('chat-form');
+    const messageInput = document.getElementById('message-input');
+    const sendButton = document.getElementById('send-button');
+    const chatMessages = document.getElementById('chat-messages');
+    const emptyState = document.getElementById('empty-state');
+    const scrollIndicator = document.getElementById('scroll-indicator');
+    const sessionId = {{ session.id }};
+
+    // Scroll al final
+    function scrollToBottom(smooth = false) {
+        chatMessages.scrollTo({
+            top: chatMessages.scrollHeight,
+            behavior: smooth ? 'smooth' : 'auto'
+        });
+    }
+    
+    // Verificar si necesita mostrar indicador de scroll
+    function checkScrollIndicator() {
+        const isScrolledToBottom = chatMessages.scrollTop + chatMessages.clientHeight >= chatMessages.scrollHeight - 5;
+        const hasOverflow = chatMessages.scrollHeight > chatMessages.clientHeight;
+        
+        if (hasOverflow && !isScrolledToBottom) {
+            scrollIndicator.classList.add('show');
+        } else {
+            scrollIndicator.classList.remove('show');
+        }
+    }
+
+    // Event listener para el scroll
+    chatMessages.addEventListener('scroll', checkScrollIndicator);
+    
+    // Click en el indicador de scroll
+    scrollIndicator.addEventListener('click', function() {
+        scrollToBottom(true);
+    });
+
+    // Verificar scroll inicial
+    setTimeout(() => {
+        scrollToBottom();
+        checkScrollIndicator();
+    }, 100);
+
+    // Función para agregar mensaje del usuario
+    function addUserMessage(content) {
+        if (emptyState) {
+            emptyState.remove();
+        }
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message user-message';
+        messageDiv.innerHTML = `
+            <div class="message-bubble">
+                <div class="message-content">${content.replace(/\n/g, '<br>')}</div>
+                <div class="message-time">${new Date().toLocaleTimeString('es-ES', {hour: '2-digit', minute: '2-digit'})}</div>
+            </div>
+        `;
+        chatMessages.appendChild(messageDiv);
+        scrollToBottom(true);
+        setTimeout(checkScrollIndicator, 100);
+    }
+
+    // Función para mostrar indicador de "pensando"
+    function showThinkingIndicator() {
+        const thinkingDiv = document.createElement('div');
+        thinkingDiv.className = 'thinking-indicator';
+        thinkingDiv.id = 'thinking-indicator';
+        thinkingDiv.innerHTML = `
+            <div class="thinking-bubble">
+                IA está escribiendo
+                <div class="thinking-dots">
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                </div>
+            </div>
+        `;
+        chatMessages.appendChild(thinkingDiv);
+        scrollToBottom(true);
+        setTimeout(checkScrollIndicator, 100);
+    }
+
+    // Función para quitar indicador de "pensando"
+    function hideThinkingIndicator() {
+        const thinkingIndicator = document.getElementById('thinking-indicator');
+        if (thinkingIndicator) {
+            thinkingIndicator.remove();
+        }
+    }
+
+    // Función para agregar respuesta de IA
+    function addAIMessage(content, time) {
+        hideThinkingIndicator();
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message ai-message';
+        messageDiv.innerHTML = `
+            <div class="message-bubble">
+                <div class="message-content">${content.replace(/\n/g, '<br>')}</div>
+                <div class="message-time">${time || new Date().toLocaleTimeString('es-ES', {hour: '2-digit', minute: '2-digit'})}</div>
+            </div>
+        `;
+        chatMessages.appendChild(messageDiv);
+        scrollToBottom(true);
+        setTimeout(checkScrollIndicator, 100);
+    }
+
+    // Función para mostrar error
+    function showError(message) {
+        hideThinkingIndicator();
+        
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'alert alert-danger alert-dismissible fade show';
+        errorDiv.innerHTML = `
+            <strong>Error:</strong> ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        chatMessages.appendChild(errorDiv);
+        scrollToBottom(true);
+        setTimeout(checkScrollIndicator, 100);
+    }
+
+    // Envío del formulario
+    chatForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const message = messageInput.value.trim();
+        
+        if (message.length < 5) {
+            alert('El mensaje debe tener al menos 5 caracteres');
+            return;
+        }
+        
+        // Deshabilitar formulario pero mantener el texto visible
+        sendButton.disabled = true;
+        sendButton.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+        messageInput.disabled = true;
+        
+        // Cambiar placeholder para indicar que se está enviando
+        const originalPlaceholder = messageInput.placeholder;
+        messageInput.placeholder = 'Enviando...';
+        
+        // Agregar mensaje del usuario inmediatamente
+        addUserMessage(message);
+        
+        // Mostrar indicador de "pensando"
+        showThinkingIndicator();
+        
+        // Enviar AJAX
+        const formData = new FormData();
+        formData.append('message', message);
+        formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+        
+        fetch(`/ai-chat/${sessionId}/send/`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Agregar respuesta de IA
+                addAIMessage(data.ai_message.content, data.ai_message.created_at);
+                // Limpiar input solo después del éxito
+                messageInput.value = '';
+            } else {
+                showError(data.error || 'Error desconocido');
+                // En caso de error, mantener el texto para que el usuario pueda reintentarlo
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showError('Error de conexión. Inténtalo de nuevo.');
+            // En caso de error, mantener el texto para que el usuario pueda reintentarlo
+        })
+        .finally(() => {
+            // Rehabilitar formulario
+            sendButton.disabled = false;
+            sendButton.innerHTML = '<i class="bi bi-send-fill"></i>';
+            messageInput.disabled = false;
+            messageInput.placeholder = originalPlaceholder;
+            messageInput.focus();
+        });
+    });
+
+    // Ctrl+Enter para enviar
+    messageInput.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 'Enter') {
+            e.preventDefault();
+            chatForm.dispatchEvent(new Event('submit'));
+        }
+    });
+
+    // Auto-resize del textarea
+    messageInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + 'px';
+    });
+
+    // Focus inicial
+    messageInput.focus();
+});
+</script>
+
+{% endblock %}

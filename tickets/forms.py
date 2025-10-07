@@ -5,7 +5,7 @@ from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
     UserNote, TimeEntry, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
     ChatRoom, ChatMessage, Command, ContactFormSubmission, Meeting, MeetingAttendee, MeetingQuestion, OpportunityActivity,
-    Course, CourseClass, Contact, BlogCategory, BlogPost, BlogComment
+    Course, CourseClass, Contact, BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage
 )
 
 class CategoryForm(forms.ModelForm):
@@ -162,6 +162,9 @@ class TicketForm(forms.ModelForm):
             'status': forms.Select(attrs={
                 'class': 'form-select'
             }),
+                'ticket_type': forms.Select(attrs={
+                    'class': 'form-select'
+                }),
             'hours': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Ej: 2.5',
@@ -181,6 +184,7 @@ class TicketForm(forms.ModelForm):
             'category': 'Categoría',
             'priority': 'Prioridad',
             'status': 'Estado',
+                'ticket_type': 'Tipo de ticket',
             'company': 'Empresa',
             'project': 'Proyecto',
             'hours': 'Horas estimadas/trabajadas',
@@ -201,7 +205,7 @@ class UserTicketForm(forms.ModelForm):
 
     class Meta:
         model = Ticket
-        fields = ['title', 'description', 'category', 'priority', 'company']
+        fields = ['title', 'description', 'category', 'priority', 'ticket_type', 'company']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -218,6 +222,9 @@ class UserTicketForm(forms.ModelForm):
             'priority': forms.Select(attrs={
                 'class': 'form-select'
             }),
+            'ticket_type': forms.Select(attrs={
+                'class': 'form-select'
+            }),
             'company': forms.Select(attrs={
                 'class': 'form-select'
             }),
@@ -227,6 +234,7 @@ class UserTicketForm(forms.ModelForm):
             'description': 'Descripción',
             'category': 'Categoría',
             'priority': 'Prioridad',
+            'ticket_type': 'Tipo de ticket',
             'company': 'Empresa',
         }
 
@@ -244,7 +252,7 @@ class UserTicketEditForm(forms.ModelForm):
 
     class Meta:
         model = Ticket
-        fields = ['title', 'description', 'category', 'priority', 'company']
+        fields = ['title', 'description', 'category', 'priority', 'ticket_type', 'company']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -261,6 +269,9 @@ class UserTicketEditForm(forms.ModelForm):
             'priority': forms.Select(attrs={
                 'class': 'form-select'
             }),
+            'ticket_type': forms.Select(attrs={
+                'class': 'form-select'
+            }),
             'company': forms.Select(attrs={
                 'class': 'form-select'
             }),
@@ -270,6 +281,7 @@ class UserTicketEditForm(forms.ModelForm):
             'description': 'Descripción',
             'category': 'Categoría',
             'priority': 'Prioridad',
+            'ticket_type': 'Tipo de ticket',
             'company': 'Empresa',
         }
 
@@ -301,7 +313,7 @@ class AgentTicketForm(forms.ModelForm):
     
     class Meta:
         model = Ticket
-        fields = ['title', 'description', 'category', 'company', 'project', 'priority', 'status', 'assigned_to', 'hours', 'is_public_shareable']
+        fields = ['title', 'description', 'category', 'company', 'project', 'priority', 'status', 'ticket_type', 'assigned_to', 'hours', 'is_public_shareable']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -327,6 +339,9 @@ class AgentTicketForm(forms.ModelForm):
             'status': forms.Select(attrs={
                 'class': 'form-select'
             }),
+            'ticket_type': forms.Select(attrs={
+                'class': 'form-select'
+            }),
             'assigned_to': forms.Select(attrs={
                 'class': 'form-select'
             }),
@@ -348,6 +363,7 @@ class AgentTicketForm(forms.ModelForm):
             'project': 'Proyecto',
             'priority': 'Prioridad',
             'status': 'Estado',
+            'ticket_type': 'Tipo de ticket',
             'assigned_to': 'Asignar a',
             'hours': 'Horas estimadas/trabajadas',
             'is_public_shareable': 'Permitir compartir públicamente',
@@ -1318,7 +1334,10 @@ class SystemConfigurationForm(forms.ModelForm):
             'site_name',
             'allow_user_registration',
             'default_ticket_priority',
-            'default_currency'
+            'default_currency',
+            'ai_chat_enabled',
+            'openai_api_key',
+            'openai_model'
         ]
         widgets = {
             'site_name': forms.TextInput(attrs={
@@ -1334,18 +1353,36 @@ class SystemConfigurationForm(forms.ModelForm):
             'default_currency': forms.Select(attrs={
                 'class': 'form-select'
             }),
+            'ai_chat_enabled': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'openai_api_key': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'sk-...',
+                'type': 'password'
+            }),
+            'openai_model': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'gpt-4o'
+            }),
         }
         labels = {
             'site_name': 'Nombre del sitio',
             'allow_user_registration': 'Permitir registro de usuarios',
             'default_ticket_priority': 'Prioridad por defecto de tickets',
             'default_currency': 'Moneda por defecto',
+            'ai_chat_enabled': 'Habilitar Chat IA',
+            'openai_api_key': 'API Key de OpenAI',
+            'openai_model': 'Modelo de IA',
         }
         help_texts = {
             'site_name': 'Nombre que aparece en el encabezado del sistema',
             'allow_user_registration': 'Permite que nuevos usuarios se registren en el sistema',
             'default_ticket_priority': 'Prioridad asignada automáticamente a nuevos tickets',
             'default_currency': 'Moneda utilizada para mostrar valores en el sistema',
+            'ai_chat_enabled': 'Habilita la funcionalidad de chat con IA',
+            'openai_api_key': 'Clave de API de OpenAI para acceder a ChatGPT',
+            'openai_model': 'Modelo de IA a utilizar (ej: gpt-4o, gpt-3.5-turbo)',
         }
     
     def clean_site_name(self):
@@ -2917,3 +2954,80 @@ class BlogCommentForm(forms.ModelForm):
         self.fields['website'].label = 'Sitio Web'
         self.fields['content'].label = 'Comentario'
         self.fields['website'].required = False
+
+
+# ===========================================
+# FORMULARIOS PARA CHAT CON IA
+# ===========================================
+
+class AIChatSessionForm(forms.ModelForm):
+    """Formulario para crear una nueva sesión de chat con IA"""
+    
+    # Definir las opciones de modelos disponibles
+    MODEL_CHOICES = [
+        ('gpt-4o', 'GPT-4o (Recomendado)'),
+        ('gpt-4o-mini', 'GPT-4o Mini (Rápido)'),
+        ('gpt-3.5-turbo', 'GPT-3.5 Turbo (Económico)'),
+        ('gpt-4', 'GPT-4 (Avanzado)'),
+    ]
+    
+    ai_model = forms.ChoiceField(
+        choices=MODEL_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        }),
+        label='Modelo de IA',
+        help_text='Selecciona el modelo de IA que deseas utilizar',
+        initial='gpt-4o'
+    )
+    
+    class Meta:
+        model = AIChatSession
+        fields = ['title', 'ai_model']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título de la conversación',
+                'maxlength': '200'
+            }),
+        }
+        labels = {
+            'title': 'Título de la conversación',
+        }
+        help_texts = {
+            'title': 'Dale un nombre descriptivo a tu conversación',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Ya no necesitamos configurar choices aquí porque está definido arriba
+
+
+class AIChatMessageForm(forms.Form):
+    """Formulario para enviar mensajes en el chat con IA"""
+    
+    message = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 3,
+            'placeholder': 'Escribe tu mensaje aquí...',
+            'maxlength': '4000',
+            'name': 'message',
+            'id': 'id_message'
+        }),
+        label='Mensaje',
+        max_length=4000,
+        help_text='Máximo 4000 caracteres',
+        required=True
+    )
+    
+    def clean_message(self):
+        message = self.cleaned_data.get('message', '').strip()
+        
+        if not message:
+            raise forms.ValidationError('El mensaje no puede estar vacío.')
+        
+        if len(message) < 5:
+            raise forms.ValidationError('El mensaje debe tener al menos 5 caracteres.')
+        
+        return message
