@@ -17,7 +17,8 @@ from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
     UserNote, TimeEntry, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
     DailyTaskSession, DailyTaskItem, ChatRoom, ChatMessage, ContactFormSubmission,
-    Opportunity, OpportunityStatus, OpportunityNote, OpportunityStatusHistory
+    Opportunity, OpportunityStatus, OpportunityNote, OpportunityStatusHistory,
+    Meeting, MeetingAttendee, MeetingQuestion
 )
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
@@ -4935,3 +4936,685 @@ def opportunity_add_note(request, pk):
             messages.error(request, 'El contenido de la nota es requerido.')
     
     return redirect('opportunity_detail', pk=pk)
+
+
+# ============================
+# VISTAS DE ACTIVIDADES DE OPORTUNIDADES
+# ============================
+
+@login_required
+def opportunity_activity_create(request, opportunity_id):
+    """Crear nueva actividad para oportunidad"""
+    from .models import Opportunity, OpportunityActivity
+    from .forms import OpportunityActivityForm
+    
+    opportunity = get_object_or_404(Opportunity, pk=opportunity_id)
+    
+    # Verificar permisos
+    from . import utils
+    if not utils.is_agent(request.user):
+        if opportunity.created_by != request.user and opportunity.assigned_to != request.user:
+            messages.error(request, 'No tienes permisos para crear actividades en esta oportunidad.')
+            return redirect('opportunity_detail', pk=opportunity_id)
+    
+    if request.method == 'POST':
+        form = OpportunityActivityForm(request.POST, opportunity=opportunity)
+        if form.is_valid():
+            activity = form.save(commit=False)
+            activity.opportunity = opportunity
+            activity.created_by = request.user
+            activity.save()
+            
+            messages.success(request, f'Actividad "{activity.title}" creada exitosamente.')
+            return redirect('opportunity_detail', pk=opportunity_id)
+    else:
+        form = OpportunityActivityForm(opportunity=opportunity)
+    
+    context = {
+        'form': form,
+        'opportunity': opportunity,
+        'page_title': f'Nueva Actividad - {opportunity.name}'
+    }
+    
+    return render(request, 'tickets/opportunity_activity_form.html', context)
+
+
+@login_required
+def opportunity_activity_list(request, opportunity_id):
+    """Listar actividades de una oportunidad"""
+    from .models import Opportunity
+    
+    opportunity = get_object_or_404(Opportunity, pk=opportunity_id)
+    
+    # Verificar permisos
+    from . import utils
+    if not utils.is_agent(request.user):
+        if opportunity.created_by != request.user and opportunity.assigned_to != request.user:
+            messages.error(request, 'No tienes permisos para ver las actividades de esta oportunidad.')
+            return redirect('opportunity_detail', pk=opportunity_id)
+    
+    activities = opportunity.activities.all()
+    
+    # Filtros
+    status = request.GET.get('status')
+    if status:
+        activities = activities.filter(status=status)
+    
+    activity_type = request.GET.get('type')
+    if activity_type:
+        activities = activities.filter(activity_type=activity_type)
+    
+    context = {
+        'opportunity': opportunity,
+        'activities': activities,
+        'page_title': f'Actividades - {opportunity.name}'
+    }
+    
+    return render(request, 'tickets/opportunity_activity_list.html', context)
+
+
+@login_required
+def opportunity_activity_detail(request, pk):
+    """Detalle de actividad"""
+    from .models import OpportunityActivity
+    
+    activity = get_object_or_404(OpportunityActivity, pk=pk)
+    
+    # Verificar permisos
+    from . import utils
+    if not utils.is_agent(request.user):
+        if (activity.created_by != request.user and 
+            activity.assigned_to != request.user and
+            activity.opportunity.created_by != request.user and
+            activity.opportunity.assigned_to != request.user):
+            messages.error(request, 'No tienes permisos para ver esta actividad.')
+            return redirect('opportunity_detail', pk=activity.opportunity.pk)
+    
+    context = {
+        'activity': activity,
+        'page_title': f'Actividad: {activity.title}'
+    }
+    
+    return render(request, 'tickets/opportunity_activity_detail.html', context)
+
+
+@login_required
+def opportunity_activity_edit(request, pk):
+    """Editar actividad"""
+    from .models import OpportunityActivity
+    from .forms import OpportunityActivityForm
+    
+    activity = get_object_or_404(OpportunityActivity, pk=pk)
+    
+    # Verificar permisos
+    from . import utils
+    if not utils.is_agent(request.user):
+        if (activity.created_by != request.user and 
+            activity.assigned_to != request.user):
+            messages.error(request, 'No tienes permisos para editar esta actividad.')
+            return redirect('opportunity_activity_detail', pk=pk)
+    
+    if request.method == 'POST':
+        form = OpportunityActivityForm(request.POST, instance=activity, opportunity=activity.opportunity)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Actividad actualizada exitosamente.')
+            return redirect('opportunity_activity_detail', pk=pk)
+    else:
+        form = OpportunityActivityForm(instance=activity, opportunity=activity.opportunity)
+    
+    context = {
+        'form': form,
+        'activity': activity,
+        'opportunity': activity.opportunity,
+        'page_title': f'Editar: {activity.title}'
+    }
+    
+    return render(request, 'tickets/opportunity_activity_form.html', context)
+
+
+@login_required
+def opportunity_activity_complete(request, pk):
+    """Completar actividad"""
+    from .models import OpportunityActivity
+    from .forms import OpportunityActivityCompleteForm
+    
+    activity = get_object_or_404(OpportunityActivity, pk=pk)
+    
+    # Verificar permisos
+    if activity.assigned_to != request.user:
+        messages.error(request, 'Solo el asignado puede completar esta actividad.')
+        return redirect('opportunity_activity_detail', pk=pk)
+    
+    if request.method == 'POST':
+        form = OpportunityActivityCompleteForm(request.POST, instance=activity)
+        if form.is_valid():
+            activity = form.save(commit=False)
+            if activity.status == 'completed':
+                activity.completed_date = timezone.now()
+            activity.save()
+            
+            messages.success(request, 'Actividad completada exitosamente.')
+            return redirect('opportunity_activity_detail', pk=pk)
+    else:
+        form = OpportunityActivityCompleteForm(instance=activity)
+    
+    context = {
+        'form': form,
+        'activity': activity,
+        'page_title': f'Completar: {activity.title}'
+    }
+    
+    return render(request, 'tickets/opportunity_activity_complete.html', context)
+
+
+@login_required
+def opportunity_activity_delete(request, pk):
+    """Eliminar actividad"""
+    from .models import OpportunityActivity
+    
+    activity = get_object_or_404(OpportunityActivity, pk=pk)
+    opportunity_id = activity.opportunity.pk
+    
+    # Verificar permisos
+    from . import utils
+    if not utils.is_agent(request.user):
+        if activity.created_by != request.user:
+            messages.error(request, 'No tienes permisos para eliminar esta actividad.')
+            return redirect('opportunity_activity_detail', pk=pk)
+    
+    if request.method == 'POST':
+        activity_title = activity.title
+        activity.delete()
+        messages.success(request, f'Actividad "{activity_title}" eliminada exitosamente.')
+        return redirect('opportunity_detail', pk=opportunity_id)
+    
+    context = {
+        'activity': activity,
+        'page_title': f'Eliminar: {activity.title}'
+    }
+    
+    return render(request, 'tickets/opportunity_activity_delete.html', context)
+
+
+@login_required
+def my_activities_dashboard(request):
+    """Panel de actividades del usuario"""
+    from .models import OpportunityActivity
+    from django.db.models import Q
+    
+    # Actividades asignadas al usuario
+    activities = OpportunityActivity.objects.filter(assigned_to=request.user)
+    
+    # Filtros
+    status = request.GET.get('status')
+    if status:
+        activities = activities.filter(status=status)
+    
+    # Separar por estado y fecha
+    today = timezone.now().date()
+    
+    overdue_activities = activities.filter(
+        status__in=['pending', 'in_progress'],
+        scheduled_date__date__lt=today
+    )
+    
+    today_activities = activities.filter(
+        scheduled_date__date=today
+    )
+    
+    upcoming_activities = activities.filter(
+        status__in=['pending', 'in_progress'],
+        scheduled_date__date__gt=today
+    ).order_by('scheduled_date')[:10]
+    
+    completed_recent = activities.filter(
+        status='completed',
+        completed_date__gte=today - timezone.timedelta(days=7)
+    ).order_by('-completed_date')[:5]
+    
+    # Estadísticas
+    stats = {
+        'total_pending': activities.filter(status='pending').count(),
+        'total_in_progress': activities.filter(status='in_progress').count(),
+        'total_overdue': overdue_activities.count(),
+        'total_today': today_activities.count(),
+        'total_completed_week': completed_recent.count(),
+    }
+    
+    context = {
+        'overdue_activities': overdue_activities,
+        'today_activities': today_activities,
+        'upcoming_activities': upcoming_activities,
+        'completed_recent': completed_recent,
+        'stats': stats,
+        'page_title': 'Mis Actividades'
+    }
+    
+    return render(request, 'tickets/my_activities_dashboard.html', context)
+
+
+# ============================
+# VISTAS DE REUNIONES
+# ============================
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def meeting_list_view(request):
+    """Vista para listar reuniones"""
+    from .models import Meeting
+    
+    meetings = Meeting.objects.filter(organizer=request.user)
+    
+    # Filtros
+    status = request.GET.get('status')
+    if status:
+        meetings = meetings.filter(status=status)
+    
+    search = request.GET.get('search')
+    if search:
+        meetings = meetings.filter(
+            models.Q(title__icontains=search) | 
+            models.Q(description__icontains=search)
+        )
+    
+    meetings = meetings.order_by('-date')
+    
+    # Estadísticas
+    stats = {
+        'total': Meeting.objects.filter(organizer=request.user).count(),
+        'scheduled': Meeting.objects.filter(organizer=request.user, status='scheduled').count(),
+        'in_progress': Meeting.objects.filter(organizer=request.user, status='in_progress').count(),
+        'finished': Meeting.objects.filter(organizer=request.user, status='finished').count(),
+    }
+    
+    context = {
+        'page_title': 'Reuniones',
+        'meetings': meetings,
+        'stats': stats,
+        'current_status': status,
+        'search_query': search,
+    }
+    return render(request, 'tickets/meeting_list.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def meeting_create_view(request):
+    """Vista para crear reuniones"""
+    from .forms import MeetingForm
+    
+    if request.method == 'POST':
+        form = MeetingForm(request.POST, user=request.user)
+        if form.is_valid():
+            meeting = form.save(commit=False)
+            meeting.organizer = request.user
+            meeting.save()
+            messages.success(request, f'Reunión "{meeting.title}" creada exitosamente.')
+            return redirect('meeting_detail', pk=meeting.pk)
+    else:
+        form = MeetingForm(user=request.user)
+    
+    context = {
+        'page_title': 'Nueva Reunión',
+        'form': form,
+    }
+    return render(request, 'tickets/meeting_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def meeting_detail_view(request, pk):
+    """Vista detallada de una reunión"""
+    from .models import Meeting
+    
+    meeting = get_object_or_404(Meeting, pk=pk, organizer=request.user)
+    
+    # Obtener asistentes y preguntas
+    attendees = meeting.meetingattendee_set.all().order_by('registered_at')
+    questions = meeting.meetingquestion_set.all().order_by('-asked_at')
+    
+    # Estadísticas
+    stats = {
+        'total_attendees': attendees.count(),
+        'total_questions': questions.count(),
+        'pending_questions': questions.filter(status='pending').count(),
+        'answered_questions': questions.filter(status='answered').count(),
+    }
+    
+    context = {
+        'page_title': f'Reunión: {meeting.title}',
+        'meeting': meeting,
+        'attendees': attendees,
+        'questions': questions,
+        'stats': stats,
+    }
+    return render(request, 'tickets/meeting_detail.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def meeting_print_view(request, pk):
+    """Vista para imprimir reunión"""
+    from .models import Meeting
+    
+    meeting = get_object_or_404(Meeting, pk=pk, organizer=request.user)
+    
+    # Obtener asistentes y preguntas
+    attendees = meeting.meetingattendee_set.all().order_by('registered_at')
+    questions = meeting.meetingquestion_set.all().order_by('-asked_at')
+    
+    # Estadísticas
+    stats = {
+        'total_attendees': attendees.count(),
+        'total_questions': questions.count(),
+        'pending_questions': questions.filter(status='pending').count(),
+        'answered_questions': questions.filter(status='answered').count(),
+    }
+    
+    context = {
+        'page_title': f'Informe: {meeting.title}',
+        'meeting': meeting,
+        'attendees': attendees,
+        'questions': questions,
+        'stats': stats,
+    }
+    return render(request, 'tickets/meeting_print.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def meeting_edit_view(request, pk):
+    """Vista para editar reuniones"""
+    from .forms import MeetingForm
+    from .models import Meeting
+    
+    meeting = get_object_or_404(Meeting, pk=pk, organizer=request.user)
+    
+    if request.method == 'POST':
+        form = MeetingForm(request.POST, instance=meeting, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Reunión "{meeting.title}" actualizada exitosamente.')
+            return redirect('meeting_detail', pk=meeting.pk)
+    else:
+        form = MeetingForm(instance=meeting, user=request.user)
+    
+    context = {
+        'page_title': f'Editar: {meeting.title}',
+        'form': form,
+        'meeting': meeting,
+    }
+    return render(request, 'tickets/meeting_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def meeting_delete_view(request, pk):
+    """Vista para eliminar reuniones"""
+    from .models import Meeting
+    
+    meeting = get_object_or_404(Meeting, pk=pk, organizer=request.user)
+    
+    if request.method == 'POST':
+        meeting_title = meeting.title
+        meeting.delete()
+        messages.success(request, f'Reunión "{meeting_title}" eliminada exitosamente.')
+        return redirect('meeting_list')
+    
+    context = {
+        'page_title': f'Eliminar: {meeting.title}',
+        'meeting': meeting,
+    }
+    return render(request, 'tickets/meeting_delete.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def meeting_questions_view(request, pk):
+    """Vista para gestionar preguntas de una reunión"""
+    from .models import Meeting
+    
+    meeting = get_object_or_404(Meeting, pk=pk, organizer=request.user)
+    questions = meeting.meetingquestion_set.all().order_by('-asked_at')
+    
+    # Filtros
+    status = request.GET.get('status')
+    if status:
+        questions = questions.filter(status=status)
+    
+    context = {
+        'page_title': f'Preguntas: {meeting.title}',
+        'meeting': meeting,
+        'questions': questions,
+        'current_status': status,
+    }
+    return render(request, 'tickets/meeting_questions.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def meeting_attendees_view(request, pk):
+    """Vista para gestionar asistentes de una reunión"""
+    from .models import Meeting
+    
+    meeting = get_object_or_404(Meeting, pk=pk, organizer=request.user)
+    attendees = meeting.meetingattendee_set.all().order_by('registered_at')
+    
+    context = {
+        'page_title': f'Asistentes: {meeting.title}',
+        'meeting': meeting,
+        'attendees': attendees,
+    }
+    return render(request, 'tickets/meeting_attendees.html', context)
+
+
+# ============================
+# VISTAS PÚBLICAS DE REUNIONES
+# ============================
+
+def meeting_public_view(request, token):
+    """Vista pública de una reunión"""
+    from .models import Meeting, MeetingAttendee, MeetingQuestion
+    from .forms import MeetingAttendeeForm, MeetingQuestionForm
+    
+    meeting = get_object_or_404(Meeting, public_token=token, is_active=True)
+    
+    # Verificar si hay un usuario registrado en la sesión para esta reunión
+    session_key = f'meeting_{meeting.id}_attendee_id'
+    user_attendee = None
+    user_registered = False
+    user_questions = []
+    
+    if session_key in request.session:
+        try:
+            attendee_id = request.session[session_key]
+            user_attendee = MeetingAttendee.objects.get(id=attendee_id, meeting=meeting)
+            user_registered = True
+            user_questions = MeetingQuestion.objects.filter(
+                meeting=meeting, 
+                attendee=user_attendee
+            ).order_by('-asked_at')
+        except MeetingAttendee.DoesNotExist:
+            # Limpiar la sesión si el asistente no existe
+            del request.session[session_key]
+    
+    # Solo mostrar el formulario de registro si no hay nadie registrado en la sesión
+    register_form = None
+    if not user_registered:
+        register_form = MeetingAttendeeForm(meeting=meeting)
+    
+    question_form = MeetingQuestionForm() if meeting.allow_questions and user_registered else None
+    
+    context = {
+        'page_title': f'Reunión: {meeting.title}',
+        'meeting': meeting,
+        'user_registered': user_registered,
+        'user_attendee': user_attendee,
+        'user_questions': user_questions,
+        'register_form': register_form,
+        'question_form': question_form,
+    }
+    return render(request, 'tickets/meeting_public.html', context)
+
+
+def meeting_register_view(request, token):
+    """Vista pública para registrarse en una reunión"""
+    from .models import Meeting
+    from .forms import MeetingAttendeeForm
+    
+    meeting = get_object_or_404(Meeting, public_token=token, is_active=True)
+    
+    # Verificar si ya hay un usuario registrado en esta sesión
+    session_key = f'meeting_{meeting.id}_attendee_id'
+    if session_key in request.session:
+        messages.warning(request, 'Ya hay una persona registrada en esta sesión. Solo se permite un registro por sesión.')
+        return redirect('meeting_public', token=token)
+    
+    if request.method == 'POST':
+        form = MeetingAttendeeForm(request.POST, meeting=meeting)
+        if form.is_valid():
+            attendee = form.save(commit=False)
+            attendee.meeting = meeting
+            attendee.ip_address = request.META.get('REMOTE_ADDR')
+            attendee.save()
+            
+            # Guardar el ID del asistente en la sesión
+            request.session[session_key] = attendee.id
+            
+            messages.success(request, '¡Te has registrado exitosamente en la reunión!')
+            return redirect('meeting_public', token=token)
+    else:
+        form = MeetingAttendeeForm(meeting=meeting)
+    
+    context = {
+        'page_title': f'Registrarse: {meeting.title}',
+        'meeting': meeting,
+        'form': form,
+    }
+    return render(request, 'tickets/meeting_register.html', context)
+
+
+def meeting_questions_public_view(request, token):
+    """Vista pública para ver preguntas de una reunión"""
+    from .models import Meeting
+    
+    meeting = get_object_or_404(Meeting, public_token=token, is_active=True)
+    
+    if not meeting.allow_questions:
+        messages.error(request, 'Esta reunión no permite preguntas.')
+        return redirect('meeting_public', token=token)
+    
+    questions = meeting.meetingquestion_set.filter(status__in=['pending', 'answered']).order_by('-asked_at')
+    
+    context = {
+        'page_title': f'Preguntas: {meeting.title}',
+        'meeting': meeting,
+        'questions': questions,
+    }
+    return render(request, 'tickets/meeting_questions_public.html', context)
+
+
+def meeting_ask_question_view(request, token):
+    """Vista pública para hacer una pregunta"""
+    from .models import Meeting, MeetingAttendee
+    from .forms import MeetingQuestionForm
+    
+    meeting = get_object_or_404(Meeting, public_token=token, is_active=True)
+    
+    if not meeting.allow_questions:
+        messages.error(request, 'Esta reunión no permite preguntas.')
+        return redirect('meeting_public', token=token)
+    
+    # Verificar si hay un asistente registrado en la sesión
+    session_key = f'meeting_{meeting.id}_attendee_id'
+    user_attendee = None
+    
+    if session_key in request.session:
+        try:
+            attendee_id = request.session[session_key]
+            user_attendee = MeetingAttendee.objects.get(id=attendee_id, meeting=meeting)
+        except MeetingAttendee.DoesNotExist:
+            pass
+    
+    if request.method == 'POST':
+        form = MeetingQuestionForm(request.POST)
+        if form.is_valid():
+            question = form.save(commit=False)
+            question.meeting = meeting
+            question.attendee = user_attendee  # Asociar con el asistente de la sesión
+            question.ip_address = request.META.get('REMOTE_ADDR')
+            
+            # Si no hay asistente en sesión, usar los datos del formulario
+            if not user_attendee:
+                question.asker_name = question.asker_name or 'Anónimo'
+                question.asker_email = question.asker_email or ''
+            else:
+                question.asker_name = user_attendee.name
+                question.asker_email = user_attendee.email
+            
+            question.save()
+            messages.success(request, '¡Tu pregunta ha sido enviada!')
+            return redirect('meeting_public', token=token)
+    else:
+        form = MeetingQuestionForm()
+    
+    context = {
+        'page_title': f'Hacer Pregunta: {meeting.title}',
+        'meeting': meeting,
+        'form': form,
+    }
+    return render(request, 'tickets/meeting_ask_question.html', context)
+    
+    context = {
+        'page_title': f'Hacer Pregunta: {meeting.title}',
+        'meeting': meeting,
+        'form': form,
+    }
+    return render(request, 'tickets/meeting_ask_question.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def meeting_answer_question_view(request, pk, question_id):
+    """Vista AJAX para responder preguntas"""
+    from .models import Meeting, MeetingQuestion
+    import json
+    
+    meeting = get_object_or_404(Meeting, pk=pk, organizer=request.user)
+    question = get_object_or_404(MeetingQuestion, pk=question_id, meeting=meeting)
+    
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            answer = data.get('answer', '').strip()
+            
+            if not answer:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'La respuesta no puede estar vacía.'
+                })
+            
+            question.answer = answer
+            question.answered_by = request.user
+            question.answered_at = timezone.now()
+            question.status = 'answered'
+            question.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Pregunta respondida exitosamente.'
+            })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'error': 'Datos JSON inválidos.'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': f'Error al procesar la respuesta: {str(e)}'
+            })
+    
+    return JsonResponse({'success': False, 'error': 'Método no permitido.'})

@@ -202,9 +202,37 @@ urlpatterns = [
     path('crm/opportunities/<int:pk>/delete/', views.opportunity_delete, name='opportunity_delete'),
     path('crm/opportunities/<int:pk>/add-note/', views.opportunity_add_note, name='opportunity_add_note'),
     
+    # URLs de actividades de oportunidades
+    path('crm/opportunities/<int:opportunity_id>/activities/create/', views.opportunity_activity_create, name='opportunity_activity_create'),
+    path('crm/opportunities/<int:opportunity_id>/activities/', views.opportunity_activity_list, name='opportunity_activity_list'),
+    path('crm/activities/<int:pk>/', views.opportunity_activity_detail, name='opportunity_activity_detail'),
+    path('crm/activities/<int:pk>/edit/', views.opportunity_activity_edit, name='opportunity_activity_edit'),
+    path('crm/activities/<int:pk>/complete/', views.opportunity_activity_complete, name='opportunity_activity_complete'),
+    path('crm/activities/<int:pk>/delete/', views.opportunity_activity_delete, name='opportunity_activity_delete'),
+    path('crm/my-activities/', views.my_activities_dashboard, name='my_activities_dashboard'),
+    
     # URLs de gestión de estados CRM (solo para agentes)
     path('crm/status/', views.opportunity_status_list, name='opportunity_status_list'),
     path('crm/status/create/', views.opportunity_status_create, name='opportunity_status_create'),
     path('crm/status/<int:pk>/edit/', views.opportunity_status_edit, name='opportunity_status_edit'),
     path('crm/status/<int:pk>/delete/', views.opportunity_status_delete, name='opportunity_status_delete'),
+    
+    # URLs de Reuniones
+    path('meetings/', views.meeting_list_view, name='meeting_list'),
+    path('meetings/create/', views.meeting_create_view, name='meeting_create'),
+    path('meetings/<int:pk>/', views.meeting_detail_view, name='meeting_detail'),
+    path('meetings/<int:pk>/edit/', views.meeting_edit_view, name='meeting_edit'),
+    path('meetings/<int:pk>/delete/', views.meeting_delete_view, name='meeting_delete'),
+    path('meetings/<int:pk>/print/', views.meeting_print_view, name='meeting_print'),
+    path('meetings/<int:pk>/questions/', views.meeting_questions_view, name='meeting_questions'),
+    path('meetings/<int:pk>/attendees/', views.meeting_attendees_view, name='meeting_attendees'),
+    
+    # URLs públicas de reuniones (sin autenticación)
+    path('meetings/public/<str:token>/', views.meeting_public_view, name='meeting_public'),
+    path('meetings/public/<str:token>/register/', views.meeting_register_view, name='meeting_register'),
+    path('meetings/public/<str:token>/questions/', views.meeting_questions_public_view, name='meeting_questions_public'),
+    path('meetings/public/<str:token>/ask/', views.meeting_ask_question_view, name='meeting_ask_question'),
+    
+    # AJAX para reuniones
+    path('meetings/<int:pk>/questions/<int:question_id>/answer/', views.meeting_answer_question_view, name='meeting_answer_question'),
 ]

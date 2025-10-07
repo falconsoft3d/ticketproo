@@ -40,7 +40,7 @@
                     <li class="nav-item">
                         <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" 
                            href="{% url 'dashboard' %}">
-                            <i class="bi bi-house-door"></i> Dashboard
+                            <i class="bi bi-house-door"></i>
                         </a>
                     </li>
                     <li class="nav-item">
@@ -57,7 +57,7 @@
                     <li class="nav-item">
                         <a class="nav-link {% if request.resolver_match.url_name == 'ticket_create' %}active{% endif %}" 
                            href="{% url 'ticket_create' %}">
-                            <i class="bi bi-plus-circle"></i> Nuevo Ticket
+                            <i class="bi bi-plus-circle"></i>
                         </a>
                     </li>
                     <li class="nav-item">
@@ -75,19 +75,6 @@
                             <i class="bi bi-gear"></i> Gestión
                         </a>
                         <ul class="dropdown-menu">
-                            <li>
-                                <a class="dropdown-item {% if request.resolver_match.url_name == 'user_management' %}active{% endif %}" 
-                                   href="{% url 'user_management' %}">
-                                    <i class="bi bi-people"></i> Usuarios
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item {% if request.resolver_match.url_name == 'user_create' %}active{% endif %}" 
-                                   href="{% url 'user_create' %}">
-                                    <i class="bi bi-person-plus"></i> Crear Usuario
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
                             <li>
                                 <a class="dropdown-item {% if 'notes' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'notes_list' %}">
@@ -120,9 +107,21 @@
                                 </a>
                             </li>
                             <li>
+                                <a class="dropdown-item {% if 'my_activities' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'my_activities_dashboard' %}">
+                                    <i class="fas fa-tasks"></i> Mis Actividades
+                                </a>
+                            </li>
+                            <li>
                                 <a class="dropdown-item {% if 'opportunity_status' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'opportunity_status_list' %}">
                                     <i class="bi bi-kanban"></i> Estados CRM
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'meeting' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'meeting_list' %}">
+                                    <i class="bi bi-calendar-event"></i> Reuniones
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
@@ -226,6 +225,20 @@
                                 <a class="dropdown-item {% if 'command_library' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'command_library' %}">
                                     <i class="bi bi-terminal"></i> Biblioteca de Comandos
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Gestión de Usuarios</li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'user_management' %}active{% endif %}" 
+                                   href="{% url 'user_management' %}">
+                                    <i class="bi bi-people"></i> Usuarios
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'user_create' %}active{% endif %}" 
+                                   href="{% url 'user_create' %}">
+                                    <i class="bi bi-person-plus"></i> Crear Usuario
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>

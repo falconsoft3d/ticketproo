@@ -1,0 +1,294 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h3 mb-0 text-primary">
+                    <i class="fas fa-tasks"></i> Mis Actividades
+                </h1>
+                <p class="text-muted mb-0">Panel de seguimiento de actividades asignadas</p>
+            </div>
+            <div class="text-end">
+                <span class="badge bg-info fs-6">CRM</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estadísticas -->
+<div class="row mb-4">
+    <div class="col-md-2">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h4 class="mb-1">{{ stats.total_pending }}</h4>
+                <small>Pendientes</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h4 class="mb-1">{{ stats.total_in_progress }}</h4>
+                <small>En Progreso</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-danger text-white">
+            <div class="card-body text-center">
+                <h4 class="mb-1">{{ stats.total_overdue }}</h4>
+                <small>Vencidas</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h4 class="mb-1">{{ stats.total_today }}</h4>
+                <small>Para Hoy</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h4 class="mb-1">{{ stats.total_completed_week }}</h4>
+                <small>Completadas (7 días)</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Actividades Vencidas -->
+    {% if overdue_activities %}
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow-sm border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    Actividades Vencidas ({{ overdue_activities.count }})
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                {% for activity in overdue_activities %}
+                <div class="border-bottom p-3 {% if not forloop.last %}border-bottom{% endif %}">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">
+                                <a href="{% url 'opportunity_activity_detail' activity.pk %}" class="text-decoration-none">
+                                    {{ activity.title }}
+                                </a>
+                            </h6>
+                            <p class="text-muted mb-1 small">{{ activity.opportunity.name }}</p>
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-{{ activity.get_priority_color }} me-2">{{ activity.get_priority_display }}</span>
+                                <span class="badge bg-outline-secondary me-2">{{ activity.get_activity_type_display }}</span>
+                                <small class="text-danger">
+                                    <i class="fas fa-clock"></i> 
+                                    Vencida: {{ activity.scheduled_date|date:"d/m/Y H:i" }}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{% url 'opportunity_activity_complete' activity.pk %}">
+                                    <i class="fas fa-check"></i> Completar
+                                </a></li>
+                                <li><a class="dropdown-item" href="{% url 'opportunity_activity_edit' activity.pk %}">
+                                    <i class="fas fa-edit"></i> Editar
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% url 'opportunity_detail' activity.opportunity.pk %}">
+                                    <i class="fas fa-bullseye"></i> Ver Oportunidad
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Actividades de Hoy -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow-sm border-primary">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar-day"></i> 
+                    Actividades de Hoy ({{ today_activities.count }})
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                {% if today_activities %}
+                    {% for activity in today_activities %}
+                    <div class="border-bottom p-3 {% if not forloop.last %}border-bottom{% endif %}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">
+                                    <a href="{% url 'opportunity_activity_detail' activity.pk %}" class="text-decoration-none">
+                                        {{ activity.title }}
+                                    </a>
+                                </h6>
+                                <p class="text-muted mb-1 small">{{ activity.opportunity.name }}</p>
+                                <div class="d-flex align-items-center">
+                                    <span class="badge bg-{{ activity.get_priority_color }} me-2">{{ activity.get_priority_display }}</span>
+                                    <span class="badge bg-{{ activity.get_status_color }} me-2">{{ activity.get_status_display }}</span>
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock"></i> 
+                                        {{ activity.scheduled_date|time:"H:i" }}
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    {% if activity.status != 'completed' %}
+                                    <li><a class="dropdown-item" href="{% url 'opportunity_activity_complete' activity.pk %}">
+                                        <i class="fas fa-check"></i> Completar
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{% url 'opportunity_activity_edit' activity.pk %}">
+                                        <i class="fas fa-edit"></i> Editar
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    {% endif %}
+                                    <li><a class="dropdown-item" href="{% url 'opportunity_detail' activity.opportunity.pk %}">
+                                        <i class="fas fa-bullseye"></i> Ver Oportunidad
+                                    </a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="p-4 text-center text-muted">
+                        <i class="fas fa-calendar-check fa-3x mb-3"></i>
+                        <p>No tienes actividades programadas para hoy</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Próximas Actividades -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar-alt"></i> 
+                    Próximas Actividades
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                {% if upcoming_activities %}
+                    {% for activity in upcoming_activities %}
+                    <div class="border-bottom p-3 {% if not forloop.last %}border-bottom{% endif %}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">
+                                    <a href="{% url 'opportunity_activity_detail' activity.pk %}" class="text-decoration-none">
+                                        {{ activity.title }}
+                                    </a>
+                                </h6>
+                                <p class="text-muted mb-1 small">{{ activity.opportunity.name }}</p>
+                                <div class="d-flex align-items-center">
+                                    <span class="badge bg-{{ activity.get_priority_color }} me-2">{{ activity.get_priority_display }}</span>
+                                    <span class="badge bg-outline-secondary me-2">{{ activity.get_activity_type_display }}</span>
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar"></i> 
+                                        {{ activity.scheduled_date|date:"d/m/Y H:i" }}
+                                        {% if activity.is_due_soon %}
+                                            <span class="text-warning">
+                                                <i class="fas fa-exclamation-circle"></i> Próxima
+                                            </span>
+                                        {% endif %}
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="{% url 'opportunity_activity_detail' activity.pk %}">
+                                        <i class="fas fa-eye"></i> Ver Detalles
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{% url 'opportunity_activity_edit' activity.pk %}">
+                                        <i class="fas fa-edit"></i> Editar
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{% url 'opportunity_detail' activity.opportunity.pk %}">
+                                        <i class="fas fa-bullseye"></i> Ver Oportunidad
+                                    </a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="p-4 text-center text-muted">
+                        <i class="fas fa-calendar-times fa-3x mb-3"></i>
+                        <p>No tienes actividades próximas programadas</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Actividades Completadas Recientes -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-check-circle"></i> 
+                    Completadas Recientemente
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                {% if completed_recent %}
+                    {% for activity in completed_recent %}
+                    <div class="border-bottom p-3 {% if not forloop.last %}border-bottom{% endif %}">
+                        <h6 class="mb-1">
+                            <a href="{% url 'opportunity_activity_detail' activity.pk %}" class="text-decoration-none">
+                                {{ activity.title }}
+                            </a>
+                        </h6>
+                        <p class="text-muted mb-1 small">{{ activity.opportunity.name }}</p>
+                        <small class="text-success">
+                            <i class="fas fa-check"></i> 
+                            {{ activity.completed_date|date:"d/m/Y H:i" }}
+                        </small>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="p-4 text-center text-muted">
+                        <i class="fas fa-tasks fa-2x mb-3"></i>
+                        <p class="small">No hay actividades completadas esta semana</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Botón de acción flotante -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <a href="{% url 'opportunity_list' %}" class="btn btn-primary btn-lg rounded-circle shadow">
+        <i class="fas fa-plus"></i>
+    </a>
+</div>
+{% endblock %}

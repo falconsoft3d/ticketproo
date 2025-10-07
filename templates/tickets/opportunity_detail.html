@@ -115,6 +115,107 @@
                 </div>
             </div>
 
+            <!-- Actividades -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-tasks"></i> Actividades de Seguimiento
+                    </h5>
+                    {% if can_be_edited %}
+                    <a href="{% url 'opportunity_activity_create' opportunity.pk %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus-circle"></i> Nueva Actividad
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if opportunity.activities.all %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Actividad</th>
+                                        <th>Tipo</th>
+                                        <th>Prioridad</th>
+                                        <th>Asignado a</th>
+                                        <th>Fecha</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for activity in opportunity.activities.all %}
+                                    <tr {% if activity.is_overdue %}class="table-danger"{% elif activity.is_due_today %}class="table-warning"{% endif %}>
+                                        <td>
+                                            <a href="{% url 'opportunity_activity_detail' activity.pk %}" class="text-decoration-none fw-bold">
+                                                {{ activity.title }}
+                                            </a>
+                                            {% if activity.description %}
+                                                <br><small class="text-muted">{{ activity.description|truncatechars:50 }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ activity.get_activity_type_display }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ activity.get_priority_color }}">{{ activity.get_priority_display }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">{{ activity.assigned_to.get_full_name|default:activity.assigned_to.username }}</span>
+                                        </td>
+                                        <td>
+                                            <small>
+                                                {{ activity.scheduled_date|date:"d/m/Y" }}<br>
+                                                {{ activity.scheduled_date|time:"H:i" }}
+                                                {% if activity.is_overdue %}
+                                                    <br><span class="text-danger">
+                                                        <i class="fas fa-exclamation-triangle"></i> Vencida
+                                                    </span>
+                                                {% elif activity.is_due_today %}
+                                                    <br><span class="text-warning">
+                                                        <i class="fas fa-clock"></i> Hoy
+                                                    </span>
+                                                {% endif %}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ activity.get_status_color }}">{{ activity.get_status_display }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{% url 'opportunity_activity_detail' activity.pk %}" class="btn btn-outline-primary btn-sm" title="Ver detalles">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                {% if activity.assigned_to == request.user and activity.status in 'pending,in_progress' %}
+                                                <a href="{% url 'opportunity_activity_complete' activity.pk %}" class="btn btn-outline-success btn-sm" title="Completar">
+                                                    <i class="fas fa-check"></i>
+                                                </a>
+                                                {% endif %}
+                                                {% if can_be_edited %}
+                                                <a href="{% url 'opportunity_activity_edit' activity.pk %}" class="btn btn-outline-warning btn-sm" title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No hay actividades registradas para esta oportunidad.</p>
+                            {% if can_be_edited %}
+                            <a href="{% url 'opportunity_activity_create' opportunity.pk %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Crear Primera Actividad
+                            </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
             <!-- Notas -->
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">

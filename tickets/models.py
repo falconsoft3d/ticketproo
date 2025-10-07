@@ -2579,3 +2579,344 @@ class OpportunityStatusHistory(models.Model):
     
     def __str__(self):
         return f"{self.opportunity.name}: {self.previous_status} → {self.new_status}"
+
+
+class OpportunityActivity(models.Model):
+    """Modelo para actividades de seguimiento de oportunidades"""
+    
+    ACTIVITY_TYPE_CHOICES = [
+        ('call', 'Llamada'),
+        ('meeting', 'Reunión'),
+        ('email', 'Correo Electrónico'),
+        ('task', 'Tarea'),
+        ('demo', 'Demostración'),
+        ('proposal', 'Propuesta'),
+        ('follow_up', 'Seguimiento'),
+        ('other', 'Otro'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pendiente'),
+        ('in_progress', 'En Progreso'),
+        ('completed', 'Completada'),
+        ('cancelled', 'Cancelada'),
+        ('overdue', 'Vencida'),
+    ]
+    
+    PRIORITY_CHOICES = [
+        ('low', 'Baja'),
+        ('medium', 'Media'),
+        ('high', 'Alta'),
+        ('urgent', 'Urgente'),
+    ]
+    
+    opportunity = models.ForeignKey(
+        Opportunity,
+        on_delete=models.CASCADE,
+        related_name='activities',
+        verbose_name='Oportunidad'
+    )
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título de la Actividad'
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción'
+    )
+    activity_type = models.CharField(
+        max_length=20,
+        choices=ACTIVITY_TYPE_CHOICES,
+        default='task',
+        verbose_name='Tipo de Actividad'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        verbose_name='Estado'
+    )
+    priority = models.CharField(
+        max_length=10,
+        choices=PRIORITY_CHOICES,
+        default='medium',
+        verbose_name='Prioridad'
+    )
+    scheduled_date = models.DateTimeField(
+        verbose_name='Fecha Programada',
+        help_text='Fecha y hora cuando debe realizarse la actividad'
+    )
+    completed_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Completado'
+    )
+    assigned_to = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='assigned_activities',
+        verbose_name='Asignado a'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='created_activities',
+        verbose_name='Creado por'
+    )
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
+    
+    # Campos adicionales
+    result = models.TextField(
+        blank=True,
+        verbose_name='Resultado',
+        help_text='Resultado o notas de la actividad completada'
+    )
+    duration_minutes = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name='Duración (minutos)',
+        help_text='Duración estimada o real de la actividad'
+    )
+    location = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Ubicación',
+        help_text='Lugar donde se realizará la actividad'
+    )
+    
+    class Meta:
+        ordering = ['scheduled_date', '-priority']
+        verbose_name = 'Actividad de Oportunidad'
+        verbose_name_plural = 'Actividades de Oportunidades'
+        indexes = [
+            models.Index(fields=['status']),
+            models.Index(fields=['assigned_to']),
+            models.Index(fields=['scheduled_date']),
+            models.Index(fields=['activity_type']),
+            models.Index(fields=['priority']),
+        ]
+    
+    def __str__(self):
+        return f"{self.title} - {self.opportunity.name}"
+    
+    @property
+    def is_overdue(self):
+        """Verifica si la actividad está vencida"""
+        if self.status in ['pending', 'in_progress'] and self.scheduled_date:
+            return self.scheduled_date < timezone.now()
+        return False
+    
+    @property
+    def days_until_due(self):
+        """Calcula los días hasta el vencimiento"""
+        if self.scheduled_date:
+            delta = self.scheduled_date.date() - timezone.now().date()
+            return delta.days
+        return None
+    
+    @property
+    def is_due_today(self):
+        """Verifica si la actividad vence hoy"""
+        if self.scheduled_date:
+            return self.scheduled_date.date() == timezone.now().date()
+        return False
+    
+    @property
+    def is_due_soon(self):
+        """Verifica si la actividad vence en los próximos 3 días"""
+        days_until = self.days_until_due
+        return days_until is not None and 0 <= days_until <= 3
+    
+    def mark_completed(self, result=None, user=None):
+        """Marca la actividad como completada"""
+        self.status = 'completed'
+        self.completed_date = timezone.now()
+        if result:
+            self.result = result
+        self.save()
+    
+    def get_priority_color(self):
+        """Retorna el color para la prioridad"""
+        colors = {
+            'low': 'success',
+            'medium': 'warning', 
+            'high': 'danger',
+            'urgent': 'dark'
+        }
+        return colors.get(self.priority, 'secondary')
+    
+    def get_status_color(self):
+        """Retorna el color para el estado"""
+        colors = {
+            'pending': 'warning',
+            'in_progress': 'info',
+            'completed': 'success',
+            'cancelled': 'secondary',
+            'overdue': 'danger'
+        }
+        return colors.get(self.status, 'secondary')
+
+
+class Meeting(models.Model):
+    """Modelo para gestionar reuniones"""
+    
+    STATUS_CHOICES = [
+        ('scheduled', 'Programada'),
+        ('in_progress', 'En progreso'),
+        ('finished', 'Finalizada'),
+        ('cancelled', 'Cancelada'),
+    ]
+    
+    title = models.CharField(max_length=200, verbose_name='Título de la reunión')
+    description = models.TextField(blank=True, verbose_name='Descripción')
+    date = models.DateTimeField(verbose_name='Fecha y hora')
+    duration = models.IntegerField(default=60, verbose_name='Duración (minutos)')
+    location = models.CharField(max_length=200, blank=True, verbose_name='Ubicación')
+    status = models.CharField(
+        max_length=20, 
+        choices=STATUS_CHOICES, 
+        default='scheduled',
+        verbose_name='Estado'
+    )
+    
+    # Organizador
+    organizer = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='organized_meetings',
+        verbose_name='Organizador'
+    )
+    
+    # Empresa (opcional para uso interno)
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Empresa',
+        help_text='Empresa relacionada con la reunión (opcional)'
+    )
+    
+    # Link público único
+    public_token = models.CharField(
+        max_length=100, 
+        unique=True, 
+        verbose_name='Token público'
+    )
+    
+    # Configuración
+    allow_questions = models.BooleanField(default=True, verbose_name='Permitir preguntas')
+    require_email = models.BooleanField(default=False, verbose_name='Requerir email')
+    is_active = models.BooleanField(default=True, verbose_name='Activa')
+    
+    # Metadata
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Creada el')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Actualizada el')
+    
+    class Meta:
+        ordering = ['-date']
+        verbose_name = 'Reunión'
+        verbose_name_plural = 'Reuniones'
+    
+    def __str__(self):
+        return f"{self.title} - {self.date.strftime('%d/%m/%Y %H:%M')}"
+    
+    def save(self, *args, **kwargs):
+        if not self.public_token:
+            import uuid
+            self.public_token = str(uuid.uuid4())
+        super().save(*args, **kwargs)
+    
+    def get_public_url(self):
+        """Retorna la URL pública para registro de asistentes"""
+        return f"/meetings/public/{self.public_token}/"
+    
+    def get_questions_url(self):
+        """Retorna la URL pública para hacer preguntas"""
+        return f"/meetings/public/{self.public_token}/questions/"
+    
+    def get_attendees_count(self):
+        """Retorna el total de asistentes registrados"""
+        return self.meetingattendee_set.count()
+    
+    def get_questions_count(self):
+        """Retorna el total de preguntas"""
+        return self.meetingquestion_set.count()
+
+
+class MeetingAttendee(models.Model):
+    """Modelo para asistentes a reuniones"""
+    
+    meeting = models.ForeignKey(Meeting, on_delete=models.CASCADE, verbose_name='Reunión')
+    name = models.CharField(max_length=100, verbose_name='Nombre')
+    email = models.EmailField(blank=True, verbose_name='Email')
+    company = models.CharField(max_length=100, blank=True, verbose_name='Empresa')
+    registered_at = models.DateTimeField(default=timezone.now, verbose_name='Registrado el')
+    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name='IP')
+    
+    class Meta:
+        ordering = ['registered_at']
+        verbose_name = 'Asistente'
+        verbose_name_plural = 'Asistentes'
+        # Removido unique_together para permitir múltiples registros
+    
+    def __str__(self):
+        return f"{self.name} - {self.meeting.title}"
+
+
+class MeetingQuestion(models.Model):
+    """Modelo para preguntas en reuniones"""
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pendiente'),
+        ('answered', 'Respondida'),
+        ('ignored', 'Ignorada'),
+    ]
+    
+    meeting = models.ForeignKey(Meeting, on_delete=models.CASCADE, verbose_name='Reunión')
+    attendee = models.ForeignKey(
+        MeetingAttendee, 
+        on_delete=models.CASCADE, 
+        null=True, 
+        blank=True,
+        verbose_name='Asistente'
+    )
+    question = models.TextField(verbose_name='Pregunta')
+    answer = models.TextField(blank=True, verbose_name='Respuesta')
+    status = models.CharField(
+        max_length=20, 
+        choices=STATUS_CHOICES, 
+        default='pending',
+        verbose_name='Estado'
+    )
+    
+    # Datos del preguntante (por si no está registrado como asistente)
+    asker_name = models.CharField(max_length=100, blank=True, verbose_name='Nombre del preguntante')
+    asker_email = models.EmailField(blank=True, verbose_name='Email del preguntante')
+    
+    # Metadata
+    asked_at = models.DateTimeField(default=timezone.now, verbose_name='Preguntado el')
+    answered_at = models.DateTimeField(null=True, blank=True, verbose_name='Respondido el')
+    answered_by = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        verbose_name='Respondido por'
+    )
+    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name='IP')
+    
+    class Meta:
+        ordering = ['asked_at']
+        verbose_name = 'Pregunta de reunión'
+        verbose_name_plural = 'Preguntas de reuniones'
+    
+    def __str__(self):
+        return f"Pregunta en {self.meeting.title}: {self.question[:50]}..."
+    
+    def get_asker_display_name(self):
+        """Retorna el nombre del preguntante"""
+        if self.attendee:
+            return self.attendee.name
+        return self.asker_name or "Anónimo"

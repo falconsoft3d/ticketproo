@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ meeting.title }} - Reunión</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .meeting-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .meeting-header {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            padding: 2rem;
+            text-align: center;
+        }
+        .status-badge {
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+        }
+        .info-card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+        }
+        .btn-custom {
+            border-radius: 25px;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .meeting-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="meeting-container">
+                    <div class="meeting-header">
+                        <i class="fas fa-video fa-3x mb-3"></i>
+                        <h1 class="mb-3">{{ meeting.title }}</h1>
+                        <p class="lead mb-0">{{ meeting.description|default:"Bienvenido a esta reunión" }}</p>
+                    </div>
+                    
+                    <div class="p-4">
+                        <!-- Información de la reunión -->
+                        <div class="meeting-info mb-4">
+                            <div class="row text-center">
+                                <div class="col-md-3">
+                                    <i class="fas fa-calendar-alt fa-2x text-primary mb-2"></i>
+                                    <h6>Fecha</h6>
+                                    <p class="mb-0">{{ meeting.date|date:"d/m/Y" }}</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <i class="fas fa-clock fa-2x text-primary mb-2"></i>
+                                    <h6>Hora</h6>
+                                    <p class="mb-0">{{ meeting.date|time:"H:i" }}</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <i class="fas fa-hourglass-half fa-2x text-primary mb-2"></i>
+                                    <h6>Duración</h6>
+                                    <p class="mb-0">{{ meeting.duration }} min</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <i class="fas fa-flag fa-2x text-primary mb-2"></i>
+                                    <h6>Estado</h6>
+                                    <p class="mb-0">
+                                        {% if meeting.status == 'scheduled' %}
+                                            <span class="badge bg-info status-badge">Programada</span>
+                                        {% elif meeting.status == 'in_progress' %}
+                                            <span class="badge bg-warning status-badge">En Progreso</span>
+                                        {% elif meeting.status == 'finished' %}
+                                            <span class="badge bg-success status-badge">Finalizada</span>
+                                        {% elif meeting.status == 'cancelled' %}
+                                            <span class="badge bg-danger status-badge">Cancelada</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Registro de asistentes -->
+                        <div class="card info-card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-user-plus"></i> 
+                                    {% if user_registered %}
+                                        Tu Registro
+                                    {% else %}
+                                        Registrarse para la Reunión
+                                    {% endif %}
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                {% if user_registered %}
+                                    <div class="alert alert-success mb-3">
+                                        <i class="fas fa-check-circle"></i> 
+                                        ¡Bienvenido/a <strong>{{ user_attendee.name }}</strong>! Ya estás registrado/a para esta reunión.
+                                    </div>
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle"></i>
+                                        <strong>Solo un registro por sesión:</strong> Para registrar a otra persona, deben usar una nueva sesión de navegador (modo incógnito o nuevo dispositivo).
+                                    </div>
+                                {% else %}
+                                    {% if register_form %}
+                                    <form method="post" action="{% url 'meeting_register' meeting.public_token %}">
+                                        {% csrf_token %}
+                                        
+                                        {% if register_form.non_field_errors %}
+                                            <div class="alert alert-danger">
+                                                {{ register_form.non_field_errors }}
+                                            </div>
+                                        {% endif %}
+                                        
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="{{ register_form.name.id_for_label }}" class="form-label">
+                                                        <i class="fas fa-user"></i> Nombre Completo *
+                                                    </label>
+                                                    {{ register_form.name }}
+                                                    {% if register_form.name.errors %}
+                                                        <div class="text-danger">{{ register_form.name.errors }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="{{ register_form.email.id_for_label }}" class="form-label">
+                                                        <i class="fas fa-envelope"></i> Email (opcional)
+                                                    </label>
+                                                    {{ register_form.email }}
+                                                    {% if register_form.email.errors %}
+                                                        <div class="text-danger">{{ register_form.email.errors }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="text-center">
+                                            <button type="submit" class="btn btn-primary btn-custom">
+                                                <i class="fas fa-check"></i> Registrarme
+                                            </button>
+                                        </div>
+                                    </form>
+                                    {% else %}
+                                        <div class="alert alert-warning">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            El formulario de registro no está disponible en este momento.
+                                        </div>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Preguntas -->
+                        {% if meeting.allow_questions %}
+                        <div class="card info-card mb-4">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0"><i class="fas fa-question-circle"></i> Hacer una Pregunta</h5>
+                            </div>
+                            <div class="card-body">
+                                {% if user_registered and question_form %}
+                                <form method="post" action="{% url 'meeting_ask_question' meeting.public_token %}">
+                                    {% csrf_token %}
+                                    
+                                    {% if question_form.non_field_errors %}
+                                        <div class="alert alert-danger">
+                                            {{ question_form.non_field_errors }}
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <div class="mb-3">
+                                        <label for="{{ question_form.question.id_for_label }}" class="form-label">
+                                            Tu Pregunta
+                                        </label>
+                                        {{ question_form.question }}
+                                        {% if question_form.question.errors %}
+                                            <div class="text-danger">{{ question_form.question.errors }}</div>
+                                        {% endif %}
+                                        <div class="form-text">
+                                            Escribe tu pregunta y será enviada al organizador de la reunión
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="text-center">
+                                        <button type="submit" class="btn btn-info btn-custom">
+                                            <i class="fas fa-paper-plane"></i> Enviar Pregunta
+                                        </button>
+                                    </div>
+                                </form>
+                                {% else %}
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        <strong>Debes registrarte primero</strong> para poder hacer preguntas en esta reunión.
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Preguntas y respuestas -->
+                        {% if user_questions %}
+                        <div class="card info-card">
+                            <div class="card-header bg-secondary text-white">
+                                <h5 class="mb-0"><i class="fas fa-comments"></i> Mis Preguntas</h5>
+                            </div>
+                            <div class="card-body">
+                                {% for question in user_questions %}
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="flex-grow-1">
+                                                <p class="card-text">{{ question.question }}</p>
+                                                <small class="text-muted">
+                                                    Enviada el {{ question.asked_at|date:"d/m/Y H:i" }}
+                                                </small>
+                                            </div>
+                                            <div class="ms-3">
+                                                {% if question.answer %}
+                                                    <span class="badge bg-success">Respondida</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning">Pendiente</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        {% if question.answer %}
+                                        <div class="alert alert-success mt-3 mb-0">
+                                            <strong><i class="fas fa-reply"></i> Respuesta:</strong>
+                                            <p class="mb-0 mt-2">{{ question.answer }}</p>
+                                            <small class="text-muted">
+                                                Respondida por <strong>
+                                                {% if question.answered_by.first_name or question.answered_by.last_name %}
+                                                    {{ question.answered_by.first_name }} {{ question.answered_by.last_name }}
+                                                {% else %}
+                                                    {{ question.answered_by.username }}
+                                                {% endif %}
+                                                </strong> 
+                                                el {{ question.answered_at|date:"d/m/Y H:i" }}
+                                            </small>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Estadísticas públicas -->
+                        <div class="row mt-4 text-center">
+                            <div class="col-md-6">
+                                <div class="card info-card">
+                                    <div class="card-body">
+                                        <i class="fas fa-users fa-2x text-primary mb-2"></i>
+                                        <h3 class="text-primary">{{ meeting.get_attendees_count }}</h3>
+                                        <p class="text-muted mb-0">Asistentes Registrados</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card info-card">
+                                    <div class="card-body">
+                                        <i class="fas fa-question-circle fa-2x text-info mb-2"></i>
+                                        <h3 class="text-info">{{ meeting.get_questions_count }}</h3>
+                                        <p class="text-muted mb-0">Preguntas Enviadas</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    {% if messages %}
+    <script>
+        {% for message in messages %}
+            {% if message.tags == 'success' %}
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            {% endif %}
+        {% endfor %}
+    </script>
+    {% endif %}
+</body>
+</html>

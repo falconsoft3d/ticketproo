@@ -4,7 +4,7 @@ from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
 from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
     UserNote, TimeEntry, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
-    ChatRoom, ChatMessage, Command, ContactFormSubmission
+    ChatRoom, ChatMessage, Command, ContactFormSubmission, Meeting, MeetingAttendee, MeetingQuestion, OpportunityActivity
 )
 
 class CategoryForm(forms.ModelForm):
@@ -2310,3 +2310,284 @@ class CompanyFromContactForm(forms.ModelForm):
         if commit:
             company.save()
         return company
+
+
+class MeetingForm(forms.ModelForm):
+    """Formulario para crear y editar reuniones"""
+    
+    meeting_date = forms.DateField(
+        widget=forms.DateInput(attrs={
+            'class': 'form-control',
+            'type': 'date'
+        }),
+        label='Fecha de la reunión'
+    )
+    
+    meeting_time = forms.TimeField(
+        widget=forms.TimeInput(attrs={
+            'class': 'form-control',
+            'type': 'time'
+        }),
+        label='Hora de la reunión'
+    )
+    
+    class Meta:
+        model = Meeting
+        fields = ['title', 'description', 'company', 'duration', 'location', 'status', 'allow_questions', 'require_email']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título de la reunión'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Descripción de la reunión'
+            }),
+            'company': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'duration': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '15',
+                'max': '480',
+                'step': '15',
+                'placeholder': '60'
+            }),
+            'location': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ubicación o enlace de la reunión'
+            }),
+            'status': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'allow_questions': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'require_email': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        self.fields['title'].required = True
+        self.fields['duration'].help_text = 'Duración en minutos'
+        self.fields['allow_questions'].help_text = 'Permitir que los asistentes hagan preguntas'
+        self.fields['require_email'].help_text = 'Requerir email para registrarse'
+        
+        # Configurar choices de empresa
+        from .models import Company
+        companies = Company.objects.all().order_by('name')
+        company_choices = [('', '---------')] + [(c.id, c.name) for c in companies]
+        self.fields['company'].choices = company_choices
+        self.fields['company'].required = False
+        
+        # Si estamos editando, llenar los campos de fecha y hora
+        if self.instance and self.instance.pk and self.instance.date:
+            self.fields['meeting_date'].initial = self.instance.date.date()
+            self.fields['meeting_time'].initial = self.instance.date.time()
+    
+    def save(self, commit=True):
+        meeting = super().save(commit=False)
+        
+        # Combinar fecha y hora
+        meeting_date = self.cleaned_data['meeting_date']
+        meeting_time = self.cleaned_data['meeting_time']
+        
+        from datetime import datetime
+        meeting.date = datetime.combine(meeting_date, meeting_time)
+        
+        if commit:
+            meeting.save()
+        return meeting
+
+
+class MeetingAttendeeForm(forms.ModelForm):
+    """Formulario público para registro de asistentes"""
+    
+    class Meta:
+        model = MeetingAttendee
+        fields = ['name', 'email', 'company']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Tu nombre completo',
+                'required': True
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'tu@email.com'
+            }),
+            'company': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Tu empresa (opcional)'
+            }),
+        }
+    
+    def __init__(self, *args, meeting=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.meeting = meeting
+        
+        # Si la reunión requiere email, hacerlo obligatorio
+        if meeting and meeting.require_email:
+            self.fields['email'].required = True
+            self.fields['email'].widget.attrs['required'] = True
+        
+        self.fields['name'].required = True
+    
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        # Permitir múltiples registros con el mismo email
+        return email
+
+
+class MeetingQuestionForm(forms.ModelForm):
+    """Formulario público para hacer preguntas"""
+    
+    class Meta:
+        model = MeetingQuestion
+        fields = ['question', 'asker_name', 'asker_email']
+        widgets = {
+            'question': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': '¿Cuál es tu pregunta?',
+                'required': True
+            }),
+            'asker_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Tu nombre (opcional)'
+            }),
+            'asker_email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'tu@email.com (opcional)'
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['question'].required = True
+
+
+class MeetingAnswerForm(forms.ModelForm):
+    """Formulario para responder preguntas (solo organizadores)"""
+    
+    class Meta:
+        model = MeetingQuestion
+        fields = ['answer', 'status']
+        widgets = {
+            'answer': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Respuesta a la pregunta'
+            }),
+            'status': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+        }
+
+
+class OpportunityActivityForm(forms.ModelForm):
+    """Formulario para crear y editar actividades de oportunidades"""
+    
+    class Meta:
+        model = OpportunityActivity
+        fields = [
+            'title', 'description', 'activity_type', 'priority', 
+            'scheduled_date', 'assigned_to', 'duration_minutes', 'location'
+        ]
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título de la actividad'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción detallada de la actividad'
+            }),
+            'activity_type': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'priority': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'scheduled_date': forms.DateTimeInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local'
+            }),
+            'assigned_to': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'duration_minutes': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Duración en minutos',
+                'min': '1'
+            }),
+            'location': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ubicación (opcional)'
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        opportunity = kwargs.pop('opportunity', None)
+        super().__init__(*args, **kwargs)
+        
+        # Filtrar usuarios a solo agentes activos
+        if hasattr(User, 'groups'):
+            try:
+                agent_group = Group.objects.get(name='Agentes')
+                agent_users = User.objects.filter(
+                    groups=agent_group,
+                    is_active=True
+                ).order_by('first_name', 'last_name')
+            except Group.DoesNotExist:
+                agent_users = User.objects.filter(is_active=True).order_by('first_name', 'last_name')
+        else:
+            agent_users = User.objects.filter(is_active=True).order_by('first_name', 'last_name')
+        
+        self.fields['assigned_to'].queryset = agent_users
+        self.fields['assigned_to'].empty_label = "Seleccionar agente"
+        
+        # Personalizar labels
+        self.fields['title'].label = 'Título de la Actividad'
+        self.fields['description'].label = 'Descripción'
+        self.fields['activity_type'].label = 'Tipo de Actividad'
+        self.fields['priority'].label = 'Prioridad'
+        self.fields['scheduled_date'].label = 'Fecha y Hora Programada'
+        self.fields['assigned_to'].label = 'Asignado a'
+        self.fields['duration_minutes'].label = 'Duración (minutos)'
+        self.fields['location'].label = 'Ubicación'
+
+
+class OpportunityActivityCompleteForm(forms.ModelForm):
+    """Formulario para completar actividades"""
+    
+    class Meta:
+        model = OpportunityActivity
+        fields = ['result', 'status']
+        widgets = {
+            'result': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Describe el resultado de la actividad...'
+            }),
+            'status': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Solo permitir estados de finalización
+        self.fields['status'].choices = [
+            ('completed', 'Completada'),
+            ('cancelled', 'Cancelada'),
+        ]
+        
+        self.fields['result'].label = 'Resultado de la Actividad'
+        self.fields['status'].label = 'Estado Final'

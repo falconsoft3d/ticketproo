@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Eliminar Reunión - {{ meeting.title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-warning"></i>
+                        <strong>¡Atención!</strong> Esta acción no se puede deshacer.
+                    </div>
+                    
+                    <p>¿Estás seguro de que deseas eliminar la siguiente reunión?</p>
+                    
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ meeting.title }}</h5>
+                            {% if meeting.description %}
+                                <p class="card-text">{{ meeting.description }}</p>
+                            {% endif %}
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Fecha:</strong> {{ meeting.date|date:"d/m/Y" }}</p>
+                                    <p><strong>Hora:</strong> {{ meeting.date|time:"H:i" }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Asistentes:</strong> {{ meeting.get_attendees_count }}</p>
+                                    <p><strong>Preguntas:</strong> {{ meeting.get_questions_count }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <p class="text-muted">
+                            <i class="fas fa-info-circle"></i>
+                            Al eliminar esta reunión también se eliminarán:
+                        </p>
+                        <ul class="text-muted">
+                            <li>Todos los asistentes registrados ({{ meeting.get_attendees_count }})</li>
+                            <li>Todas las preguntas y respuestas ({{ meeting.get_questions_count }})</li>
+                            <li>El link público de acceso</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Sí, Eliminar Reunión
+                        </button>
+                    </form>
+                    <a href="{% url 'meeting_detail' meeting.id %}" class="btn btn-secondary ml-2">
+                        <i class="fas fa-arrow-left"></i> Cancelar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

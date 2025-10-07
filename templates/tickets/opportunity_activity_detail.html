@@ -1,0 +1,251 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'crm_dashboard' %}">CRM</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'opportunity_list' %}">Oportunidades</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'opportunity_detail' activity.opportunity.pk %}">{{ activity.opportunity.name }}</a></li>
+                        <li class="breadcrumb-item active">{{ activity.title }}</li>
+                    </ol>
+                </nav>
+                <h1 class="h3 mb-0 text-primary">
+                    <i class="fas fa-tasks"></i> {{ activity.title }}
+                </h1>
+                <p class="text-muted mb-0">
+                    <i class="fas fa-building"></i> {{ activity.opportunity.company.name }} - {{ activity.opportunity.name }}
+                </p>
+            </div>
+            <div class="text-end">
+                <span class="badge bg-{{ activity.get_status_color }} fs-6">{{ activity.get_status_display }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Información Principal -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle"></i> Detalles de la Actividad
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Tipo de Actividad</h6>
+                        <span class="badge bg-secondary fs-6 mb-3">{{ activity.get_activity_type_display }}</span>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Prioridad</h6>
+                        <span class="badge bg-{{ activity.get_priority_color }} fs-6 mb-3">{{ activity.get_priority_display }}</span>
+                    </div>
+                </div>
+
+                {% if activity.description %}
+                <div class="mb-3">
+                    <h6>Descripción</h6>
+                    <p class="text-muted">{{ activity.description|linebreaks }}</p>
+                </div>
+                {% endif %}
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Fecha y Hora Programada</h6>
+                        <p class="mb-2">
+                            <i class="fas fa-calendar"></i> {{ activity.scheduled_date|date:"d/m/Y" }}
+                            <br>
+                            <i class="fas fa-clock"></i> {{ activity.scheduled_date|time:"H:i" }}
+                        </p>
+                        {% if activity.is_overdue and activity.status in 'pending,in_progress' %}
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle"></i> 
+                                Esta actividad está vencida desde hace {{ activity.days_until_due|add:"-1" }} días.
+                            </div>
+                        {% elif activity.is_due_today %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-clock"></i> 
+                                Esta actividad vence hoy.
+                            </div>
+                        {% elif activity.is_due_soon %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> 
+                                Esta actividad vence en {{ activity.days_until_due }} días.
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Asignado a</h6>
+                        <p class="mb-2">
+                            <span class="badge bg-primary">
+                                {{ activity.assigned_to.get_full_name|default:activity.assigned_to.username }}
+                            </span>
+                        </p>
+                        
+                        {% if activity.duration_minutes %}
+                        <h6>Duración Estimada</h6>
+                        <p class="mb-2">
+                            <i class="fas fa-stopwatch"></i> {{ activity.duration_minutes }} minutos
+                        </p>
+                        {% endif %}
+                        
+                        {% if activity.location %}
+                        <h6>Ubicación</h6>
+                        <p class="mb-2">
+                            <i class="fas fa-map-marker-alt"></i> {{ activity.location }}
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resultado (si está completada) -->
+        {% if activity.status == 'completed' and activity.result %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-check-circle"></i> Resultado de la Actividad
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>{{ activity.result|linebreaks }}</p>
+                <div class="text-muted">
+                    <small>
+                        <i class="fas fa-calendar"></i> Completada el {{ activity.completed_date|date:"d/m/Y H:i" }}
+                    </small>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Acciones -->
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-cogs"></i> Acciones
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex gap-2 flex-wrap">
+                    {% if activity.assigned_to == request.user and activity.status in 'pending,in_progress' %}
+                    <a href="{% url 'opportunity_activity_complete' activity.pk %}" class="btn btn-success">
+                        <i class="fas fa-check"></i> Completar Actividad
+                    </a>
+                    {% endif %}
+                    
+                    {% if activity.created_by == request.user or activity.assigned_to == request.user %}
+                    <a href="{% url 'opportunity_activity_edit' activity.pk %}" class="btn btn-warning">
+                        <i class="fas fa-edit"></i> Editar
+                    </a>
+                    {% endif %}
+                    
+                    <a href="{% url 'opportunity_detail' activity.opportunity.pk %}" class="btn btn-primary">
+                        <i class="fas fa-bullseye"></i> Ver Oportunidad
+                    </a>
+                    
+                    <a href="{% url 'my_activities_dashboard' %}" class="btn btn-secondary">
+                        <i class="fas fa-tasks"></i> Mis Actividades
+                    </a>
+                    
+                    {% if activity.created_by == request.user %}
+                    <a href="{% url 'opportunity_activity_delete' activity.pk %}" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Información de la Oportunidad -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-bullseye"></i> Oportunidad Relacionada
+                </h6>
+            </div>
+            <div class="card-body">
+                <h6 class="text-primary">{{ activity.opportunity.name }}</h6>
+                <p class="text-muted mb-3">{{ activity.opportunity.company.name }}</p>
+                
+                <div class="row text-center mb-3">
+                    <div class="col-6">
+                        <div class="border-end">
+                            <h6 class="text-success mb-0">${{ activity.opportunity.value|floatformat:0 }}</h6>
+                            <small class="text-muted">Valor</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <h6 class="text-warning mb-0">{{ activity.opportunity.probability }}%</h6>
+                        <small class="text-muted">Probabilidad</small>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <small class="text-muted d-block">Estado:</small>
+                    <span class="badge fs-6" style="background-color: {{ activity.opportunity.status.color }}">
+                        {{ activity.opportunity.status.name }}
+                    </span>
+                </div>
+
+                <div class="mb-3">
+                    <small class="text-muted d-block">Asignado a:</small>
+                    <span class="badge bg-primary">
+                        {{ activity.opportunity.assigned_to.get_full_name|default:activity.opportunity.assigned_to.username }}
+                    </span>
+                </div>
+
+                <div class="mb-3">
+                    <small class="text-muted d-block">Cierre estimado:</small>
+                    <strong>{{ activity.opportunity.expected_close_date|date:"d/m/Y" }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-secondary text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-chart-bar"></i> Información Adicional
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <small class="text-muted d-block">Creado por:</small>
+                    <strong>{{ activity.created_by.get_full_name|default:activity.created_by.username }}</strong>
+                </div>
+
+                <div class="mb-3">
+                    <small class="text-muted d-block">Fecha de creación:</small>
+                    <strong>{{ activity.created_at|date:"d/m/Y H:i" }}</strong>
+                </div>
+
+                {% if activity.updated_at != activity.created_at %}
+                <div class="mb-3">
+                    <small class="text-muted d-block">Última actualización:</small>
+                    <strong>{{ activity.updated_at|date:"d/m/Y H:i" }}</strong>
+                </div>
+                {% endif %}
+
+                {% if activity.status == 'completed' and activity.completed_date %}
+                <div class="mb-3">
+                    <small class="text-muted d-block">Completada:</small>
+                    <strong class="text-success">{{ activity.completed_date|date:"d/m/Y H:i" }}</strong>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

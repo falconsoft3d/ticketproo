@@ -1,0 +1,1199 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dominó - {{ game.name }} - TicketProo{% endblock %}
+
+{% block extra_css %}
+<style>
+    .domino-game {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        min-height: 100vh;
+        padding: 1rem 0;
+        color: white;
+    }
+
+    .game-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    .game-header {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        padding: 1rem;
+        margin-bottom: 2rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .game-board {
+        background: #27ae60;
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        min-height: 400px;
+        position: relative;
+        overflow: auto;
+        border: 5px solid #2ecc71;
+        box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .board-center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 5px;
+        max-width: 90%;
+    }
+
+    .domino-tile {
+        background: white;
+        border: 3px solid #34495e;
+        border-radius: 10px;
+        padding: 8px 12px;
+        margin: 2px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+        font-size: 14px;
+        color: #2c3e50;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        min-width: 50px;
+        height: 40px;
+        user-select: none;
+    }
+
+    .domino-tile:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .domino-tile.horizontal {
+        flex-direction: row;
+    }
+
+    .domino-tile.vertical {
+        flex-direction: column;
+        writing-mode: vertical-lr;
+        min-width: 40px;
+        height: 50px;
+    }
+
+    .domino-tile.double {
+        background: #f39c12;
+        border-color: #e67e22;
+        color: white;
+    }
+
+    .domino-tile.playable {
+        border-color: #e74c3c;
+        box-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
+        animation: pulse 2s infinite;
+    }
+
+    .domino-tile.played {
+        opacity: 0.9;
+        cursor: default;
+    }
+
+    @keyframes pulse {
+        0% { box-shadow: 0 0 10px rgba(231, 76, 60, 0.5); }
+        50% { box-shadow: 0 0 20px rgba(231, 76, 60, 0.8); }
+        100% { box-shadow: 0 0 10px rgba(231, 76, 60, 0.5); }
+    }
+
+    .player-hand {
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .hand-tiles {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 1rem;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+    }
+
+    .hand-tiles .domino-tile {
+        background: #ecf0f1;
+        border-color: #bdc3c7;
+        display: inline-block !important;
+        min-width: 60px;
+        height: 40px;
+        line-height: 40px;
+        text-align: center;
+        font-weight: bold;
+        font-size: 14px;
+        border-radius: 8px;
+        border: 2px solid #bdc3c7;
+        color: #2c3e50;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        user-select: none;
+    }
+
+    .hand-tiles .domino-tile .tile-display {
+        display: block;
+        width: 100%;
+        height: 100%;
+        line-height: inherit;
+    }
+
+    .hand-tiles .domino-tile:hover {
+        background: #3498db;
+        color: white;
+        border-color: #2980b9;
+    }
+
+    .players-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .player-card {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 1rem;
+        border: 2px solid transparent;
+        transition: all 0.3s ease;
+    }
+
+    .player-card.current-turn {
+        border-color: #f39c12;
+        background: rgba(243, 156, 18, 0.2);
+        box-shadow: 0 0 20px rgba(243, 156, 18, 0.3);
+    }
+
+    .player-card.current-user {
+        border-color: #3498db;
+        background: rgba(52, 152, 219, 0.2);
+    }
+
+    .player-name {
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .player-stats {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+
+    .game-controls {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 15px;
+        padding: 1rem;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .btn-domino {
+        background: linear-gradient(45deg, #e74c3c, #c0392b);
+        border: none;
+        color: white;
+        padding: 0.75rem 2rem;
+        border-radius: 25px;
+        font-weight: bold;
+        margin: 0.5rem;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+    }
+
+    .btn-domino:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        color: white;
+    }
+
+    .btn-domino:disabled {
+        background: #7f8c8d;
+        transform: none;
+        box-shadow: none;
+        cursor: not-allowed;
+    }
+
+    .btn-pass {
+        background: linear-gradient(45deg, #95a5a6, #7f8c8d);
+    }
+
+    .btn-pass:hover {
+        box-shadow: 0 5px 15px rgba(149, 165, 166, 0.4);
+    }
+
+    .game-messages {
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    .message {
+        margin-bottom: 0.5rem;
+        padding: 0.5rem;
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .message.system {
+        background: rgba(52, 152, 219, 0.2);
+        border-left: 3px solid #3498db;
+    }
+
+    .message.player {
+        background: rgba(46, 204, 113, 0.2);
+        border-left: 3px solid #2ecc71;
+    }
+
+    .turn-indicator {
+        text-align: center;
+        font-size: 1.2rem;
+        font-weight: bold;
+        padding: 1rem;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+    }
+
+    .turn-indicator.my-turn {
+        background: rgba(46, 204, 113, 0.3);
+        color: #2ecc71;
+        animation: glow 2s ease-in-out infinite alternate;
+    }
+
+    .turn-indicator.other-turn {
+        background: rgba(149, 165, 166, 0.3);
+        color: #95a5a6;
+    }
+
+    @keyframes glow {
+        from { box-shadow: 0 0 20px rgba(46, 204, 113, 0.3); }
+        to { box-shadow: 0 0 30px rgba(46, 204, 113, 0.6); }
+    }
+
+    .back-button {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background: rgba(255, 255, 255, 0.2);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 25px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+    }
+
+    .back-button:hover {
+        background: rgba(255, 255, 255, 0.3);
+        color: white;
+        text-decoration: none;
+        transform: translateY(-2px);
+    }
+
+    .game-ended {
+        background: rgba(231, 76, 60, 0.9);
+        color: white;
+        text-align: center;
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+    }
+
+    .winner-announcement {
+        background: rgba(46, 204, 113, 0.9);
+        color: white;
+        text-align: center;
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+        animation: celebration 3s ease-in-out;
+    }
+
+    @keyframes celebration {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+
+    .loading {
+        text-align: center;
+        padding: 2rem;
+        opacity: 0.7;
+    }
+
+    .spinner {
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top: 4px solid #3498db;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 768px) {
+        .game-container {
+            padding: 0 10px;
+        }
+        
+        .game-board {
+            padding: 1rem;
+            min-height: 300px;
+        }
+        
+        .domino-tile {
+            font-size: 12px;
+            min-width: 40px;
+            height: 35px;
+            padding: 6px 8px;
+        }
+        
+        .players-info {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    /* ESTILOS PARA DISEÑO DE DOS COLUMNAS */
+    .row {
+        --bs-gutter-x: 1rem;
+    }
+    
+    /* Cartas de información */
+    .game-card {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        border: 1px solid #e0e0e0;
+        overflow: hidden;
+        margin-bottom: 20px;
+    }
+    
+    .game-card-header {
+        background: linear-gradient(45deg, #28a745, #20c997);
+        color: white;
+        padding: 12px 16px;
+        font-weight: bold;
+        font-size: 14px;
+    }
+    
+    .game-card-body {
+        padding: 16px;
+    }
+    
+    /* Información de jugadores mejorada */
+    .player-card {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 12px;
+        border-left: 4px solid #6c757d;
+        transition: all 0.3s ease;
+    }
+    
+    .player-card.current-turn {
+        border-left-color: #ffc107;
+        background: #fff3cd;
+        box-shadow: 0 2px 4px rgba(255,193,7,0.3);
+    }
+    
+    .player-card.current-user {
+        border-left-color: #007bff;
+        background: #e3f2fd;
+    }
+    
+    .player-card.current-turn.current-user {
+        border-left-color: #28a745;
+        background: #d4edda;
+    }
+    
+    .player-name {
+        font-weight: bold;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .player-stats {
+        font-size: 12px;
+        color: #6c757d;
+        line-height: 1.4;
+    }
+    
+    /* Historial de mensajes */
+    .game-messages {
+        max-height: 300px;
+        overflow-y: auto;
+        padding: 0;
+    }
+    
+    .message {
+        padding: 8px 12px;
+        margin-bottom: 8px;
+        border-radius: 6px;
+        font-size: 13px;
+        line-height: 1.4;
+    }
+    
+    .message.player {
+        background: #e3f2fd;
+        border-left: 3px solid #2196f3;
+    }
+    
+    .message.system {
+        background: #f5f5f5;
+        border-left: 3px solid #9e9e9e;
+        font-style: italic;
+    }
+    
+    /* Responsive para dispositivos móviles */
+    @media (max-width: 992px) {
+        .col-lg-8, .col-lg-4 {
+            margin-bottom: 20px;
+        }
+        
+        .game-card {
+            margin-bottom: 15px;
+        }
+        
+        .player-hand {
+            margin-top: 20px;
+        }
+    }
+    
+    /* Ajustes para tablero en columna izquierda */
+    .game-board {
+        min-height: 200px;
+        max-height: 400px;
+        overflow: auto;
+        margin-bottom: 20px;
+    }
+    
+    /* Espaciado mejorado */
+    .turn-indicator {
+        margin-bottom: 20px;
+    }
+    
+    .game-controls {
+        margin: 20px 0;
+    }
+    
+    /* FINAL ESTILOS DOS COLUMNAS */
+    
+    /* ESTILOS PARA PANTALLA DE RESULTADOS */
+    .game-finished {
+        text-align: center;
+        padding: 40px 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 20px;
+        color: white;
+        margin-bottom: 30px;
+    }
+    
+    .results-header {
+        margin-bottom: 40px;
+    }
+    
+    .trophy-icon {
+        font-size: 4rem;
+        color: #ffd700;
+        margin-bottom: 20px;
+        animation: bounce 2s infinite;
+    }
+    
+    @keyframes bounce {
+        0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+        40% { transform: translateY(-20px); }
+        60% { transform: translateY(-10px); }
+    }
+    
+    .results-table {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin: 30px 0;
+        color: #333;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .results-table h4 {
+        color: #28a745;
+        margin-bottom: 20px;
+    }
+    
+    .table-warning {
+        background-color: #fff3cd !important;
+        font-weight: bold;
+    }
+    
+    .score-points {
+        font-size: 18px;
+        font-weight: bold;
+        color: #dc3545;
+    }
+    
+    .stat-card {
+        background: rgba(255,255,255,0.2);
+        border-radius: 15px;
+        padding: 20px;
+        margin: 10px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.3);
+    }
+    
+    .stat-card i {
+        font-size: 2rem;
+        margin-bottom: 10px;
+        color: #ffd700;
+    }
+    
+    .stat-card h5 {
+        margin: 10px 0 5px 0;
+        font-weight: bold;
+    }
+    
+    .final-board {
+        background: rgba(255,255,255,0.1);
+        border-radius: 15px;
+        padding: 25px;
+        margin: 20px 0;
+    }
+    
+    .final-board h4 {
+        color: #ffd700;
+        margin-bottom: 20px;
+    }
+    
+    .domino-tile.final {
+        background: linear-gradient(45deg, #28a745, #20c997);
+        color: white;
+        border: 2px solid #ffd700;
+        animation: glow 2s ease-in-out infinite alternate;
+    }
+    
+    @keyframes glow {
+        from { box-shadow: 0 0 10px rgba(255,215,0,0.5); }
+        to { box-shadow: 0 0 20px rgba(255,215,0,0.8); }
+    }
+    
+    .post-game-actions {
+        padding-top: 30px;
+        border-top: 2px solid rgba(255,255,255,0.3);
+    }
+    
+    .btn-success, .btn-info {
+        background: linear-gradient(45deg, #28a745, #20c997);
+        border: none;
+        color: white;
+        padding: 12px 25px;
+        border-radius: 25px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-success:hover, .btn-info:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(40,167,69,0.4);
+    }
+    
+    .btn-info {
+        background: linear-gradient(45deg, #17a2b8, #138496);
+    }
+    
+    .btn-info:hover {
+        box-shadow: 0 8px 25px rgba(23,162,184,0.4);
+    }
+    
+    /* FINAL ESTILOS RESULTADOS */
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="domino-game">
+    <a href="{% url 'domino_lobby' %}" class="back-button">
+        <i class="bi bi-arrow-left"></i> Volver al Lobby
+    </a>
+
+    <div class="game-container">
+        <!-- Header del Juego -->
+        <div class="game-header">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h2><i class="bi bi-dice-6"></i> {{ game.name }}</h2>
+                    <p class="mb-0">
+                        <i class="bi bi-person"></i> Creado por: {{ game.created_by.username }} | 
+                        <i class="bi bi-clock"></i> {{ game.created_at|timesince }} ago
+                    </p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <span class="badge bg-primary fs-6 me-2">
+                        <i class="bi bi-people"></i> {{ players|length }}/{{ game.max_players }} jugadores
+                    </span>
+                    <span class="badge bg-info fs-6">
+                        {{ game.get_status_display }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        {% if game.status == 'waiting' %}
+            <!-- Esperando jugadores -->
+            <div class="waiting-state">
+                <div class="waiting-content">
+                    <i class="bi bi-hourglass-split waiting-icon"></i>
+                    <h3>Esperando más jugadores...</h3>
+                    <p>Se necesitan al menos 2 jugadores para iniciar</p>
+                    
+                    {% if game.created_by == user %}
+                        {% if game.can_start %}
+                            <a href="{% url 'domino_start_game' game.id %}" class="btn btn-domino btn-lg">
+                                <i class="bi bi-play"></i> Iniciar Partida
+                            </a>
+                        {% else %}
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i>
+                                Esperando más jugadores para poder iniciar
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            
+        {% elif game.status == 'finished' %}
+            <!-- Juego Terminado - Mostrar Resultados -->
+            <div class="game-finished">
+                <div class="results-header">
+                    <i class="bi bi-trophy-fill trophy-icon"></i>
+                    <h2>¡Partida Terminada!</h2>
+                    {% if winner %}
+                        <h3>🎉 ¡Ganador: <strong>{{ winner.user.username }}</strong>! 🎉</h3>
+                    {% else %}
+                        <h3>🤝 ¡Empate! 🤝</h3>
+                    {% endif %}
+                </div>
+                
+                <!-- Tabla de Resultados Finales -->
+                {% if final_results %}
+                    <div class="results-table">
+                        <h4><i class="bi bi-list-ol"></i> Clasificación Final</h4>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped">
+                                <thead class="table-success">
+                                    <tr>
+                                        <th>Posición</th>
+                                        <th>Jugador</th>
+                                        <th>Puntuación Final</th>
+                                        <th>Fichas Restantes</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for result in final_results %}
+                                        <tr class="{% if result.is_winner %}table-warning{% endif %}">
+                                            <td>
+                                                {% if result.position == 1 %}
+                                                    <i class="bi bi-trophy-fill text-warning"></i> {{ result.position }}°
+                                                {% elif result.position == 2 %}
+                                                    <i class="bi bi-award-fill text-secondary"></i> {{ result.position }}°
+                                                {% elif result.position == 3 %}
+                                                    <i class="bi bi-award-fill text-warning"></i> {{ result.position }}°
+                                                {% else %}
+                                                    {{ result.position }}°
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <strong>{{ result.username }}</strong>
+                                                {% if result.player.user == user %}
+                                                    <span class="badge bg-primary">TÚ</span>
+                                                {% endif %}
+                                                {% if result.is_winner %}
+                                                    <span class="badge bg-success">GANADOR</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span class="score-points">{{ result.final_score }} puntos</span>
+                                            </td>
+                                            <td>{{ result.remaining_tiles }}</td>
+                                            <td>
+                                                {% if result.final_score == 0 %}
+                                                    <span class="badge bg-success">Sin fichas</span>
+                                                {% else %}
+                                                    <span class="badge bg-info">{{ result.final_score }} pts</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- Estadísticas del Juego -->
+                <div class="game-stats mt-4">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="stat-card">
+                                <i class="bi bi-calendar3"></i>
+                                <h5>Duración</h5>
+                                <p>{{ game.started_at|timesince:game.finished_at }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-card">
+                                <i class="bi bi-people"></i>
+                                <h5>Jugadores</h5>
+                                <p>{{ players.count }} participantes</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-card">
+                                <i class="bi bi-joystick"></i>
+                                <h5>Jugadas</h5>
+                                <p>{{ recent_moves.count }} movimientos</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Estado Final del Tablero -->
+                {% if board_tiles %}
+                    <div class="final-board mt-4">
+                        <h4><i class="bi bi-grid-3x3"></i> Tablero Final</h4>
+                        <div class="game-board">
+                            <div class="board-center">
+                                {% for tile in board_tiles %}
+                                    <div class="domino-tile played {% if tile.is_double %}double{% endif %} final">
+                                        {{ tile.left }}|{{ tile.right }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- Acciones Post-Juego -->
+                <div class="post-game-actions mt-4">
+                    <div class="d-flex gap-3 justify-content-center">
+                        <a href="{% url 'domino_lobby' %}" class="btn btn-domino btn-lg">
+                            <i class="bi bi-arrow-left"></i> Volver al Lobby
+                        </a>
+                        {% if game.created_by == user %}
+                            <button onclick="createNewGame()" class="btn btn-success btn-lg">
+                                <i class="bi bi-plus-circle"></i> Nueva Partida
+                            </button>
+                        {% endif %}
+                        <button onclick="shareResults()" class="btn btn-info btn-lg">
+                            <i class="bi bi-share"></i> Compartir Resultados
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+        {% else %}
+            <!-- Juego en Progreso - DISEÑO DE DOS COLUMNAS -->
+            
+            <div class="row">
+                <!-- COLUMNA IZQUIERDA - Tablero y Controles -->
+                <div class="col-lg-8">
+                    <!-- Indicador de Turno -->
+                    {% if current_player %}
+                        <div class="turn-indicator {% if current_player.user == user %}my-turn{% else %}other-turn{% endif %}">
+                            {% if current_player.user == user %}
+                                <i class="bi bi-arrow-right-circle"></i> ¡Es tu turno!
+                            {% else %}
+                                <i class="bi bi-hourglass"></i> Turno de {{ current_player.user.username }}
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    <!-- Tablero de Juego -->
+                    <div class="game-board">
+                        <div class="board-center" id="game-board">
+                            {% if board_tiles %}
+                                {% for tile in board_tiles %}
+                                    <div class="domino-tile played {% if tile.is_double %}double{% endif %} {% if tile.orientation == 'vertical' %}vertical{% else %}horizontal{% endif %}"
+                                         data-tile-id="{{ tile.id }}">
+                                        {% if tile.orientation == 'vertical' %}
+                                            {{ tile.top }}<br>|<br>{{ tile.bottom }}
+                                        {% else %}
+                                            {{ tile.left }}|{{ tile.right }}
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center">
+                                    <h4><i class="bi bi-circle"></i> Mesa Vacía</h4>
+                                    <p>El primer jugador puede colocar cualquier ficha</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Controles del Juego -->
+                    {% if current_player.user == user %}
+                        <div class="game-controls">
+                            <button id="pass-turn" class="btn btn-domino btn-pass" 
+                                    {% if can_play %}disabled{% endif %}>
+                                <i class="bi bi-skip-forward"></i> Pasar Turno
+                            </button>
+                            <button onclick="location.reload()" class="btn btn-domino" style="background: linear-gradient(45deg, #17a2b8, #138496);">
+                                <i class="bi bi-arrow-clockwise"></i> Refrescar
+                            </button>
+                            <small class="text-muted d-block mt-2">
+                                {% if can_play %}
+                                    Selecciona una ficha de tu mano para jugar
+                                {% else %}
+                                    No puedes jugar ninguna ficha, debes pasar tu turno
+                                {% endif %}
+                            </small>
+                        </div>
+                    {% else %}
+                        <div class="game-controls">
+                            <button onclick="location.reload()" class="btn btn-domino" style="background: linear-gradient(45deg, #17a2b8, #138496);">
+                                <i class="bi bi-arrow-clockwise"></i> Refrescar Juego
+                            </button>
+                            {% if current_player %}
+                                <small class="text-muted d-block mt-2">
+                                    Esperando turno de {{ current_player.user.username }}
+                                </small>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    <!-- Tu Mano -->
+                    {% if user_player %}
+                        <div class="player-hand">
+                            <h5><i class="bi bi-hand-thumbs-up"></i> Tu Mano ({{ user_tiles.count }} fichas)</h5>
+                            <!-- Debug info -->
+                            {% if user_tiles.count == 0 %}
+                                <p class="text-warning">DEBUG: No se encontraron fichas para {{ user.username }}</p>
+                            {% endif %}
+                            
+                            <div class="hand-tiles" id="player-hand">
+                                {% for tile in user_tiles %}
+                                    <div class="domino-tile {% if tile.is_double %}double{% endif %} 
+                                                {% if tile.id in playable_tiles %}playable{% endif %}"
+                                         data-tile-id="{{ tile.id }}"
+                                         data-left="{{ tile.left }}" 
+                                         data-right="{{ tile.right }}"
+                                         title="Ficha {{ tile.left }}|{{ tile.right }}">
+                                        <span class="tile-display">{{ tile.left }}|{{ tile.right }}</span>
+                                    </div>
+                                {% empty %}
+                                    <p class="text-muted">
+                                        <i class="bi bi-exclamation-triangle"></i> 
+                                        No se encontraron fichas. Estado del juego: {{ game.status }}
+                                    </p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            No estás registrado como jugador en esta partida.
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- COLUMNA DERECHA - Información de Jugadores y Historial -->
+                <div class="col-lg-4">
+                    <!-- Información de Jugadores -->
+                    <div class="game-card">
+                        <div class="game-card-header">
+                            <i class="bi bi-people"></i> Jugadores ({{ players|length }}/{{ game.max_players }})
+                        </div>
+                        <div class="game-card-body p-2">
+                            {% for player in players %}
+                                <div class="player-card mb-2 {% if player == current_player %}current-turn{% endif %} 
+                                                            {% if player.user == user %}current-user{% endif %}">
+                                    <div class="player-name">
+                                        <i class="bi bi-person-circle"></i>
+                                        {{ player.user.username }}
+                                        {% if player.user == user %}<span class="badge bg-primary">TÚ</span>{% endif %}
+                                        {% if player == current_player %}<span class="badge bg-warning">TURNO</span>{% endif %}
+                                    </div>
+                                    <div class="player-stats">
+                                        <i class="bi bi-collection"></i> Fichas: {{ player.tiles_count }}<br>
+                                        <i class="bi bi-star"></i> Puntos: {{ player.score }}<br>
+                                        <i class="bi bi-clock-history"></i> 
+                                        {% if player.user == user %}
+                                            Última conexión: Ahora
+                                        {% else %}
+                                            Última conexión: {{ player.last_seen|timesince }} ago
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Mensajes del Juego -->
+                    <div class="game-card mt-3">
+                        <div class="game-card-header">
+                            <i class="bi bi-chat-dots"></i> Historial de Jugadas
+                        </div>
+                        <div class="game-card-body">
+                            <div class="game-messages">
+                                <div id="game-messages">
+                                    {% for move in recent_moves %}
+                                        <div class="message {% if move.player.user == user %}player{% else %}system{% endif %}">
+                                            <strong>{{ move.player.user.username }}</strong>: 
+                                            {% if move.tile %}
+                                                Jugó [{{ move.tile.left }}|{{ move.tile.right }}]
+                                            {% else %}
+                                                Pasó su turno
+                                            {% endif %}
+                                            <small class="text-muted d-block">({{ move.created_at|timesince }} ago)</small>
+                                        </div>
+                                    {% empty %}
+                                        <div class="message system">
+                                            <em>No hay jugadas registradas aún</em>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+let gameId = {{ game.id }};
+let currentUser = '{{ user.username }}';
+let isUserTurn = {% if current_player.user == user %}true{% else %}false{% endif %};
+
+// Función para jugar una ficha
+function playTile(tileId, position) {
+    if (!isUserTurn) {
+        alert('No es tu turno');
+        return;
+    }
+
+    fetch(`{% url 'domino_play_tile' game.id %}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            tile_id: tileId,
+            position: position
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            if (data.game_ended) {
+                // El juego terminó, mostrar mensaje y refrescar
+                alert('¡El juego ha terminado! Cargando resultados...');
+                location.reload();
+            } else {
+                // Continuar jugando
+                location.reload();
+            }
+        } else {
+            alert(data.error || 'Error al jugar la ficha');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error de conexión al servidor');
+    });
+}
+
+// Función para pasar turno
+function passTurn() {
+    if (!isUserTurn) {
+        alert('No es tu turno');
+        return;
+    }
+
+    fetch(`{% url 'domino_pass_turn' game.id %}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            if (data.game_ended) {
+                // El juego terminó, mostrar mensaje y refrescar
+                alert('¡El juego ha terminado! Todos los jugadores pasaron. Cargando resultados...');
+                location.reload();
+            } else {
+                // Continuar jugando
+                location.reload();
+            }
+        } else {
+            alert(data.error || 'Error al pasar turno');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error de conexión al servidor');
+    });
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Click en fichas de la mano
+    document.querySelectorAll('#player-hand .domino-tile').forEach(tile => {
+        tile.addEventListener('click', function() {
+            if (!this.classList.contains('playable')) {
+                alert('Esta ficha no se puede jugar en este momento');
+                return;
+            }
+            
+            const tileId = this.dataset.tileId;
+            
+            // Si es la primera ficha, se puede jugar directamente
+            {% if not board_tiles %}
+                playTile(tileId, 'start');
+            {% else %}
+                // Mostrar opciones de posición
+                const position = prompt('¿Dónde quieres colocar la ficha?\n1 - Extremo izquierdo\n2 - Extremo derecho', '1');
+                if (position === '1') {
+                    playTile(tileId, 'left');
+                } else if (position === '2') {
+                    playTile(tileId, 'right');
+                } else if (position !== null) {
+                    alert('Opción inválida');
+                }
+            {% endif %}
+        });
+    });
+
+    // Botón pasar turno
+    const passButton = document.getElementById('pass-turn');
+    if (passButton) {
+        passButton.addEventListener('click', function() {
+            if (confirm('¿Estás seguro de que quieres pasar tu turno?')) {
+                passTurn();
+            }
+        });
+    }
+});
+
+// Auto-refresh del juego con mejor manejo de errores (DESHABILITADO TEMPORALMENTE)
+function refreshGame() {
+    if (document.visibilityState === 'visible') {
+        console.log('Auto-refresh deshabilitado para debugging');
+        // Solo recargar si no es nuestro turno o el juego no ha terminado
+        // {% if game.status == 'in_progress' and current_player.user != user %}
+        //     console.log('Refrescando juego - turno de otro jugador');
+        //     location.reload();
+        // {% elif game.status == 'waiting' %}
+        //     console.log('Refrescando juego - esperando jugadores');
+        //     location.reload();
+        // {% endif %}
+    }
+}
+
+// Función más robusta para auto-refresh (DESHABILITADO)
+// setInterval(refreshGame, 15000); // Refresh cada 15 segundos (reducido de 10)
+
+// Función auxiliar para obtener CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Efectos visuales para las fichas
+document.querySelectorAll('.domino-tile.playable').forEach(tile => {
+    tile.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateY(-5px) scale(1.1)';
+    });
+    
+    tile.addEventListener('mouseleave', function() {
+        this.style.transform = 'translateY(0) scale(1)';
+    });
+});
+
+// Funciones para acciones post-juego
+function createNewGame() {
+    // Redirigir a crear nueva partida
+    window.location.href = "{% url 'domino_create_game' %}";
+}
+
+function shareResults() {
+    // Crear texto para compartir
+    let shareText = `🎮 ¡Terminé una partida de Dominó!\n\n`;
+    shareText += `🏆 Partida: {{ game.name }}\n`;
+    {% if winner %}
+        shareText += `🥇 Ganador: {{ winner.user.username }}\n`;
+    {% else %}
+        shareText += `🤝 Resultado: Empate\n`;
+    {% endif %}
+    shareText += `👥 Jugadores: {{ players.count }}\n`;
+    shareText += `🎯 Jugadas: {{ recent_moves.count }}\n\n`;
+    shareText += `¡Únete y juega conmigo! 🎲`;
+
+    // Copiar al portapapeles
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(shareText).then(function() {
+            alert('¡Resultados copiados al portapapeles! 📋');
+        });
+    } else {
+        // Fallback para navegadores más antiguos
+        let textArea = document.createElement('textarea');
+        textArea.value = shareText;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        alert('¡Resultados copiados al portapapeles! 📋');
+    }
+}
+</script>
+{% endblock %}

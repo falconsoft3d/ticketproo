@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'crm_dashboard' %}">CRM</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'opportunity_list' %}">Oportunidades</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'opportunity_detail' opportunity.pk %}">{{ opportunity.name }}</a></li>
+                        <li class="breadcrumb-item active">{% if activity %}Editar Actividad{% else %}Nueva Actividad{% endif %}</li>
+                    </ol>
+                </nav>
+                <h1 class="h3 mb-0 text-primary">
+                    <i class="fas fa-tasks"></i> 
+                    {% if activity %}Editar Actividad{% else %}Nueva Actividad{% endif %}
+                </h1>
+                <p class="text-muted mb-0">Oportunidad: {{ opportunity.name }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar-plus"></i> 
+                    {% if activity %}Actualizar Información{% else %}Información de la Actividad{% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="{{ form.title.id_for_label }}" class="form-label">
+                                    <i class="fas fa-heading"></i> {{ form.title.label }} *
+                                </label>
+                                {{ form.title }}
+                                {% if form.title.errors %}
+                                    <div class="text-danger">{{ form.title.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="{{ form.priority.id_for_label }}" class="form-label">
+                                    <i class="fas fa-exclamation-triangle"></i> {{ form.priority.label }} *
+                                </label>
+                                {{ form.priority }}
+                                {% if form.priority.errors %}
+                                    <div class="text-danger">{{ form.priority.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">
+                            <i class="fas fa-align-left"></i> {{ form.description.label }}
+                        </label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="text-danger">{{ form.description.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.activity_type.id_for_label }}" class="form-label">
+                                    <i class="fas fa-tag"></i> {{ form.activity_type.label }} *
+                                </label>
+                                {{ form.activity_type }}
+                                {% if form.activity_type.errors %}
+                                    <div class="text-danger">{{ form.activity_type.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.assigned_to.id_for_label }}" class="form-label">
+                                    <i class="fas fa-user"></i> {{ form.assigned_to.label }} *
+                                </label>
+                                {{ form.assigned_to }}
+                                {% if form.assigned_to.errors %}
+                                    <div class="text-danger">{{ form.assigned_to.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.scheduled_date.id_for_label }}" class="form-label">
+                                    <i class="fas fa-calendar-alt"></i> {{ form.scheduled_date.label }} *
+                                </label>
+                                {{ form.scheduled_date }}
+                                {% if form.scheduled_date.errors %}
+                                    <div class="text-danger">{{ form.scheduled_date.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.duration_minutes.id_for_label }}" class="form-label">
+                                    <i class="fas fa-clock"></i> {{ form.duration_minutes.label }}
+                                </label>
+                                {{ form.duration_minutes }}
+                                {% if form.duration_minutes.errors %}
+                                    <div class="text-danger">{{ form.duration_minutes.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.location.id_for_label }}" class="form-label">
+                            <i class="fas fa-map-marker-alt"></i> {{ form.location.label }}
+                        </label>
+                        {{ form.location }}
+                        {% if form.location.errors %}
+                            <div class="text-danger">{{ form.location.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'opportunity_detail' opportunity.pk %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Volver
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> 
+                            {% if activity %}Actualizar Actividad{% else %}Crear Actividad{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Información de la Oportunidad -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-bullseye"></i> Información de la Oportunidad
+                </h6>
+            </div>
+            <div class="card-body">
+                <h6 class="text-primary">{{ opportunity.name }}</h6>
+                <p class="text-muted mb-2">{{ opportunity.company.name }}</p>
+                
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="border-end">
+                            <h6 class="text-success mb-0">${{ opportunity.value|floatformat:0 }}</h6>
+                            <small class="text-muted">Valor</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <h6 class="text-warning mb-0">{{ opportunity.probability }}%</h6>
+                        <small class="text-muted">Probabilidad</small>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">Asignado a:</small>
+                    <span class="badge bg-primary">{{ opportunity.assigned_to.get_full_name|default:opportunity.assigned_to.username }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ayuda -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-secondary text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-question-circle"></i> Ayuda
+                </h6>
+            </div>
+            <div class="card-body">
+                <h6>Tipos de Actividad:</h6>
+                <ul class="small">
+                    <li><strong>Llamada:</strong> Contacto telefónico</li>
+                    <li><strong>Reunión:</strong> Encuentro presencial o virtual</li>
+                    <li><strong>Email:</strong> Comunicación por correo</li>
+                    <li><strong>Demo:</strong> Demostración del producto</li>
+                    <li><strong>Propuesta:</strong> Envío de cotización</li>
+                </ul>
+                
+                <h6 class="mt-3">Prioridades:</h6>
+                <ul class="small">
+                    <li><span class="badge bg-success">Baja:</span> Actividades no urgentes</li>
+                    <li><span class="badge bg-warning">Media:</span> Actividades importantes</li>
+                    <li><span class="badge bg-danger">Alta:</span> Actividades urgentes</li>
+                    <li><span class="badge bg-dark">Urgente:</span> Requiere atención inmediata</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

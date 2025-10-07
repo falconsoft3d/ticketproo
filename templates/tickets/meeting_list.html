@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Reuniones{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0"><i class="fas fa-calendar-alt"></i> Gestión de Reuniones</h3>
+                    <a href="{% url 'meeting_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Nueva Reunión
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if meetings %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Título</th>
+                                        <th>Fecha</th>
+                                        <th>Empresa</th>
+                                        <th>Estado</th>
+                                        <th>Asistentes</th>
+                                        <th>Preguntas</th>
+                                        <th>Link Público</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for meeting in meetings %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ meeting.title }}</strong>
+                                            {% if meeting.description %}
+                                                <br><small class="text-muted">{{ meeting.description|truncatechars:50 }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div>{{ meeting.date|date:"d/m/Y" }}</div>
+                                            <small class="text-muted">{{ meeting.date|time:"H:i" }}</small>
+                                        </td>
+                                        <td>
+                                            {% if meeting.company %}
+                                                <span class="badge bg-light text-dark">
+                                                    <i class="fas fa-building"></i> {{ meeting.company.name }}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if meeting.status == 'scheduled' %}
+                                                <span class="badge bg-info text-dark">Programada</span>
+                                            {% elif meeting.status == 'in_progress' %}
+                                                <span class="badge bg-warning text-dark">En Progreso</span>
+                                            {% elif meeting.status == 'finished' %}
+                                                <span class="badge bg-success text-white">Finalizada</span>
+                                            {% elif meeting.status == 'cancelled' %}
+                                                <span class="badge bg-danger text-white">Cancelada</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary text-white">{{ meeting.get_attendees_count }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary text-white">{{ meeting.get_questions_count }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="input-group input-group-sm">
+                                                <input type="text" class="form-control" 
+                                                       value="{% url 'meeting_public' meeting.public_token %}" 
+                                                       id="link-{{ meeting.id }}" readonly>
+                                                <div class="input-group-append">
+                                                    <button class="btn btn-outline-secondary" type="button" 
+                                                            onclick="copyToClipboard('link-{{ meeting.id }}')">
+                                                        <i class="fas fa-copy"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a href="{% url 'meeting_detail' meeting.id %}" 
+                                                   class="btn btn-outline-info" title="Ver">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{% url 'meeting_edit' meeting.id %}" 
+                                                   class="btn btn-outline-warning" title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <a href="{% url 'meeting_delete' meeting.id %}" 
+                                                   class="btn btn-outline-danger" title="Eliminar">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-calendar-alt fa-3x text-muted mb-3"></i>
+                            <h4 class="text-muted">No hay reuniones registradas</h4>
+                            <p class="text-muted">Crea tu primera reunión para comenzar</p>
+                            <a href="{% url 'meeting_create' %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Crear Primera Reunión
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    // Construir URL absoluta
+    const absoluteUrl = window.location.origin + element.value;
+    
+    // Crear un elemento temporal para copiar
+    const tempInput = document.createElement('input');
+    tempInput.value = absoluteUrl;
+    document.body.appendChild(tempInput);
+    tempInput.select();
+    tempInput.setSelectionRange(0, 99999);
+    document.execCommand('copy');
+    document.body.removeChild(tempInput);
+    
+    // Mostrar feedback
+    const button = element.nextElementSibling.firstElementChild;
+    const originalHTML = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-check"></i>';
+    button.classList.remove('btn-outline-secondary');
+    button.classList.add('btn-success');
+    
+    setTimeout(() => {
+        button.innerHTML = originalHTML;
+        button.classList.remove('btn-success');
+        button.classList.add('btn-outline-secondary');
+    }, 1000);
+}
+</script>
+{% endblock %}
