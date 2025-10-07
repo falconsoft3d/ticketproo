@@ -127,6 +127,12 @@
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
+                                <a class="dropdown-item {% if 'contact' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'contact_list' %}">
+                                    <i class="bi bi-person-lines-fill"></i> Contactos
+                                </a>
+                            </li>
+                            <li>
                                 <a class="dropdown-item {% if 'crm' in request.resolver_match.url_name or 'opportunity' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'crm_dashboard' %}">
                                     <i class="bi bi-graph-up-arrow"></i> CRM

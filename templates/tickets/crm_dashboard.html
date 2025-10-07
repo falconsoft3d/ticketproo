@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load crm_tags %}
 
 {% block title %}CRM Dashboard - TicketProo{% endblock %}
 
@@ -76,8 +77,8 @@
             <a href="{% url 'opportunity_list' %}?order_by=-value" class="text-decoration-none">
                 <div class="card bg-success text-white h-100 clickable-card">
                     <div class="card-body text-center">
-                        <i class="bi bi-currency-dollar fs-1"></i>
-                        <h3 class="mt-2">${{ total_value|floatformat:0 }}</h3>
+                        <i class="bi {% get_currency_icon %} fs-1"></i>
+                        <h3 class="mt-2">{{ total_value|format_currency }}</h3>
                         <p class="mb-0">Valor Total</p>
                         <small class="opacity-75">Ordenar por valor</small>
                     </div>
@@ -89,7 +90,7 @@
                 <div class="card bg-info text-white h-100 clickable-card">
                     <div class="card-body text-center">
                         <i class="bi bi-target fs-1"></i>
-                        <h3 class="mt-2">${{ total_expected_value|floatformat:0 }}</h3>
+                        <h3 class="mt-2">{{ total_expected_value|format_currency }}</h3>
                         <p class="mb-0">Valor Esperado</p>
                         <small class="opacity-75">Por probabilidad</small>
                     </div>
@@ -139,7 +140,7 @@
                                                     </div>
                                                 </div>
                                                 <div class="col-6">
-                                                    <h4 class="mb-0">${{ stats.value|floatformat:0 }}</h4>
+                                                    <h4 class="mb-0">{{ stats.value|format_currency }}</h4>
                                                     <small class="text-muted">Valor</small>
                                                 </div>
                                             </div>
@@ -188,7 +189,7 @@
                                 </small>
                             </div>
                             <div class="text-end">
-                                <div class="fw-bold">${{ opportunity.value|floatformat:0 }}</div>
+                                <div class="fw-bold">{{ opportunity.value|format_currency }}</div>
                                 <small class="text-muted">{{ opportunity.probability }}%</small>
                             </div>
                         </div>

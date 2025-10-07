@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% load django_bootstrap5 %}
 {% load project_extras %}
+{% load crm_tags %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
@@ -112,14 +113,14 @@
                                             <span class="fw-bold text-info">{{ project.get_active_workers_count }}</span>
                                         </td>
                                         <td class="text-end">
-                                            <span class="fw-bold text-danger">€{{ project.get_total_cost|floatformat:2 }}</span>
+                                            <span class="fw-bold text-danger">{{ project.get_total_cost|format_currency }}</span>
                                         </td>
                                         <td class="text-end">
-                                            <span class="fw-bold text-success">€{{ project.get_total_revenue|floatformat:2 }}</span>
+                                            <span class="fw-bold text-success">{{ project.get_total_revenue|format_currency }}</span>
                                         </td>
                                         <td class="text-end">
                                             <span class="fw-bold {% if project.get_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
-                                                €{{ project.get_profit|floatformat:2 }}
+                                                {{ project.get_profit|format_currency }}
                                             </span>
                                         </td>
                                         <td class="text-center">
@@ -148,13 +149,13 @@
                                     <tr class="fw-bold">
                                         <td colspan="4" class="text-end">TOTALES:</td>
                                         <td class="text-end text-danger">
-                                            €{{ page_obj.object_list|sum_cost|floatformat:2 }}
+                                            {{ page_obj.object_list|sum_cost|format_currency }}
                                         </td>
                                         <td class="text-end text-success">
-                                            €{{ page_obj.object_list|sum_revenue|floatformat:2 }}
+                                            {{ page_obj.object_list|sum_revenue|format_currency }}
                                         </td>
                                         <td class="text-end {% if page_obj.object_list|sum_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
-                                            €{{ page_obj.object_list|sum_profit|floatformat:2 }}
+                                            {{ page_obj.object_list|sum_profit|format_currency }}
                                         </td>
                                         <td></td>
                                         <td></td>

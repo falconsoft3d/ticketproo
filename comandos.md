@@ -1,4 +1,5 @@
 # para el server
 ```
-pkill -f "python manage.py runserver"
+source .venv/bin/activate
+python manage.py runserver
 ```

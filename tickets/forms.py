@@ -5,7 +5,7 @@ from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
     UserNote, TimeEntry, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
     ChatRoom, ChatMessage, Command, ContactFormSubmission, Meeting, MeetingAttendee, MeetingQuestion, OpportunityActivity,
-    Course, CourseClass
+    Course, CourseClass, Contact
 )
 
 class CategoryForm(forms.ModelForm):
@@ -1317,7 +1317,8 @@ class SystemConfigurationForm(forms.ModelForm):
         fields = [
             'site_name',
             'allow_user_registration',
-            'default_ticket_priority'
+            'default_ticket_priority',
+            'default_currency'
         ]
         widgets = {
             'site_name': forms.TextInput(attrs={
@@ -1330,16 +1331,21 @@ class SystemConfigurationForm(forms.ModelForm):
             'default_ticket_priority': forms.Select(attrs={
                 'class': 'form-select'
             }),
+            'default_currency': forms.Select(attrs={
+                'class': 'form-select'
+            }),
         }
         labels = {
             'site_name': 'Nombre del sitio',
             'allow_user_registration': 'Permitir registro de usuarios',
             'default_ticket_priority': 'Prioridad por defecto de tickets',
+            'default_currency': 'Moneda por defecto',
         }
         help_texts = {
             'site_name': 'Nombre que aparece en el encabezado del sistema',
             'allow_user_registration': 'Permite que nuevos usuarios se registren en el sistema',
             'default_ticket_priority': 'Prioridad asignada automáticamente a nuevos tickets',
+            'default_currency': 'Moneda utilizada para mostrar valores en el sistema',
         }
     
     def clean_site_name(self):
@@ -2535,6 +2541,7 @@ class OpportunityActivityForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         opportunity = kwargs.pop('opportunity', None)
+        current_user = kwargs.pop('current_user', None)
         super().__init__(*args, **kwargs)
         
         # Filtrar usuarios a solo agentes activos
@@ -2552,6 +2559,21 @@ class OpportunityActivityForm(forms.ModelForm):
         
         self.fields['assigned_to'].queryset = agent_users
         self.fields['assigned_to'].empty_label = "Seleccionar agente"
+        
+        # Establecer valores por defecto al crear nueva actividad
+        if not self.instance.pk:
+            # Usuario actual como asignado por defecto
+            if current_user:
+                self.fields['assigned_to'].initial = current_user
+            
+            # Fecha programada: 7 días más desde hoy
+            from django.utils import timezone
+            from datetime import timedelta
+            default_date = timezone.now() + timedelta(days=7)
+            self.fields['scheduled_date'].initial = default_date.strftime('%Y-%m-%dT%H:%M')
+            
+            # Duración por defecto: 5 minutos
+            self.fields['duration_minutes'].initial = 5
         
         # Personalizar labels
         self.fields['title'].label = 'Título de la Actividad'
@@ -2685,3 +2707,71 @@ class CourseClassForm(forms.ModelForm):
         self.fields['description'].required = False
         self.fields['video_url'].required = False
         self.fields['duration_minutes'].required = False
+
+
+class ContactForm(forms.ModelForm):
+    """Formulario para crear y editar contactos"""
+    
+    class Meta:
+        model = Contact
+        fields = [
+            'name', 'email', 'phone', 'position', 'company', 
+            'status', 'source', 'notes', 'contact_date'
+        ]
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre completo del contacto'
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'ejemplo@empresa.com'
+            }),
+            'phone': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '+34 600 000 000'
+            }),
+            'position': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Director, Gerente, etc.'
+            }),
+            'company': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre de la empresa'
+            }),
+            'status': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'source': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'LinkedIn, referencia, evento, etc.'
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Notas adicionales sobre la conversación...'
+            }),
+            'contact_date': forms.DateTimeInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local'
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Establecer valores por defecto para nuevos contactos
+        if not self.instance.pk:
+            from django.utils import timezone
+            self.fields['contact_date'].initial = timezone.now().strftime('%Y-%m-%dT%H:%M')
+        
+        # Personalizar labels
+        self.fields['name'].label = 'Nombre Completo'
+        self.fields['email'].label = 'Email'
+        self.fields['phone'].label = 'Teléfono'
+        self.fields['position'].label = 'Cargo'
+        self.fields['company'].label = 'Empresa'
+        self.fields['status'].label = 'Estado del Contacto'
+        self.fields['source'].label = 'Fuente'
+        self.fields['notes'].label = 'Notas'
+        self.fields['contact_date'].label = 'Fecha y Hora de Contacto'

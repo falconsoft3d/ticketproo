@@ -138,10 +138,19 @@
                         <a href="{% url 'opportunity_detail' opportunity.pk %}" class="btn btn-secondary">
                             <i class="fas fa-arrow-left"></i> Volver
                         </a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> 
-                            {% if activity %}Actualizar Actividad{% else %}Crear Actividad{% endif %}
-                        </button>
+                        <div class="d-flex gap-2">
+                            {% if activity %}
+                                <a href="{% url 'opportunity_activity_delete' activity.pk %}" 
+                                   class="btn btn-danger"
+                                   onclick="return confirm('¿Estás seguro de que quieres eliminar esta actividad?')">
+                                    <i class="fas fa-trash"></i> Eliminar
+                                </a>
+                            {% endif %}
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> 
+                                {% if activity %}Actualizar Actividad{% else %}Crear Actividad{% endif %}
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -177,7 +186,11 @@
                 
                 <div class="d-flex justify-content-between align-items-center">
                     <small class="text-muted">Asignado a:</small>
-                    <span class="badge bg-primary">{{ opportunity.assigned_to.get_full_name|default:opportunity.assigned_to.username }}</span>
+                    {% if opportunity.assigned_to %}
+                        <span class="badge bg-primary">{{ opportunity.assigned_to.get_full_name|default:opportunity.assigned_to.username }}</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Sin asignar</span>
+                    {% endif %}
                 </div>
             </div>
         </div>

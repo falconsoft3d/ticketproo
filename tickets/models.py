@@ -1142,6 +1142,26 @@ class SystemConfiguration(models.Model):
         help_text='Prioridad asignada automáticamente a nuevos tickets'
     )
     
+    # Configuración de moneda
+    default_currency = models.CharField(
+        max_length=10,
+        choices=[
+            ('EUR', 'Euro (€)'),
+            ('USD', 'Dólar Americano ($)'),
+            ('GBP', 'Libra Esterlina (£)'),
+            ('JPY', 'Yen Japonés (¥)'),
+            ('CAD', 'Dólar Canadiense (C$)'),
+            ('AUD', 'Dólar Australiano (A$)'),
+            ('CHF', 'Franco Suizo (CHF)'),
+            ('CNY', 'Yuan Chino (¥)'),
+            ('MXN', 'Peso Mexicano ($)'),
+            ('COP', 'Peso Colombiano ($)'),
+        ],
+        default='EUR',
+        verbose_name='Moneda por defecto',
+        help_text='Moneda utilizada para mostrar valores en el sistema'
+    )
+    
     # Metadatos
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
@@ -1158,6 +1178,29 @@ class SystemConfiguration(models.Model):
         """Obtener la configuración del sistema (singleton)"""
         config, created = cls.objects.get_or_create(pk=1)
         return config
+    
+    def get_currency_symbol(self):
+        """Obtener el símbolo de la moneda configurada"""
+        currency_symbols = {
+            'EUR': '€',
+            'USD': '$',
+            'GBP': '£',
+            'JPY': '¥',
+            'CAD': 'C$',
+            'AUD': 'A$',
+            'CHF': 'CHF',
+            'CNY': '¥',
+            'MXN': '$',
+            'COP': '$',
+        }
+        return currency_symbols.get(self.default_currency, '€')
+    
+    def format_currency(self, amount):
+        """Formatear un monto con la moneda configurada"""
+        if self.default_currency in ['EUR', 'GBP']:
+            return f"{self.get_currency_symbol()}{amount:,.2f}"
+        else:
+            return f"{amount:,.2f} {self.get_currency_symbol()}"
     
     def save(self, *args, **kwargs):
         # Asegurar que solo exista una instancia de configuración
@@ -2390,6 +2433,12 @@ class Opportunity(models.Model):
         max_length=200,
         verbose_name='Contacto Principal'
     )
+    contact_position = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Cargo del Contacto',
+        help_text='Posición o cargo del contacto en la empresa'
+    )
     contact_email = models.EmailField(
         blank=True,
         verbose_name='Email de Contacto'
@@ -3106,3 +3155,93 @@ class CourseClassView(models.Model):
     
     def __str__(self):
         return f"{self.user.username} vio {self.course_class.title}"
+
+
+class Contact(models.Model):
+    """Modelo para gestionar contactos de ventas"""
+    
+    STATUS_CHOICES = [
+        ('positive', 'Positivo'),
+        ('negative', 'Negativo'),
+    ]
+    
+    name = models.CharField(
+        max_length=100,
+        verbose_name='Nombre'
+    )
+    email = models.EmailField(
+        blank=True,
+        null=True,
+        verbose_name='Email'
+    )
+    phone = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        verbose_name='Teléfono'
+    )
+    position = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='Cargo'
+    )
+    company = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='Empresa'
+    )
+    status = models.CharField(
+        max_length=10,
+        choices=STATUS_CHOICES,
+        default='positive',
+        verbose_name='Estado'
+    )
+    source = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        verbose_name='Fuente',
+        help_text='¿De dónde obtuviste este contacto?'
+    )
+    notes = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Notas',
+        help_text='Notas adicionales sobre el contacto'
+    )
+    contact_date = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de Contacto'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='contacts_created',
+        verbose_name='Creado por'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        ordering = ['-contact_date']
+        verbose_name = 'Contacto'
+        verbose_name_plural = 'Contactos'
+    
+    def __str__(self):
+        return f"{self.name} - {self.get_status_display()}"
+    
+    def get_status_color(self):
+        """Retorna el color del estado"""
+        return 'success' if self.status == 'positive' else 'danger'
+    
+    def get_status_icon(self):
+        """Retorna el icono del estado"""
+        return 'bi-check-circle' if self.status == 'positive' else 'bi-x-circle'

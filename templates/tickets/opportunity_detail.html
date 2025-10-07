@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load crm_tags %}
 
 {% block title %}{{ opportunity.name }} - TicketProo{% endblock %}
 
@@ -82,6 +83,11 @@
                         <div class="col-md-6">
                             <h6><i class="bi bi-person"></i> Contacto Principal</h6>
                             <p>{{ opportunity.contact_name }}</p>
+                            
+                            {% if opportunity.contact_position %}
+                            <h6><i class="bi bi-briefcase"></i> Cargo</h6>
+                            <p>{{ opportunity.contact_position }}</p>
+                            {% endif %}
                             
                             {% if opportunity.contact_email %}
                             <h6><i class="bi bi-envelope"></i> Email</h6>
@@ -258,15 +264,15 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-currency-dollar"></i> Información Financiera
+                        {% get_currency_icon %} Información Financiera
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="text-center">
-                        <h3 class="text-primary">${{ opportunity.value|floatformat:0 }}</h3>
+                        <h3 class="text-primary">{{ opportunity.value|format_currency }}</h3>
                         <p class="text-muted">Valor Total</p>
                         
-                        <h4 class="text-success">${{ opportunity.expected_value|floatformat:0 }}</h4>
+                        <h4 class="text-success">{{ opportunity.expected_value|format_currency }}</h4>
                         <p class="text-muted">Valor Esperado</p>
                     </div>
                 </div>

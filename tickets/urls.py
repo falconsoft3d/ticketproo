@@ -197,6 +197,13 @@ urlpatterns = [
     # URL pública para estadísticas de empresa
     path('company/stats/<str:token>/', views.public_company_stats, name='public_company_stats'),
     
+    # ============= URLs CONTACTOS =============
+    path('contacts/', views.contact_list, name='contact_list'),
+    path('contacts/create/', views.contact_create, name='contact_create'),
+    path('contacts/<int:pk>/', views.contact_detail, name='contact_detail'),
+    path('contacts/<int:pk>/edit/', views.contact_edit, name='contact_edit'),
+    path('contacts/<int:pk>/delete/', views.contact_delete, name='contact_delete'),
+    
     # ============= URLs CRM =============
     path('crm/', views.crm_dashboard, name='crm_dashboard'),
     path('crm/opportunities/', views.opportunity_list, name='opportunity_list'),

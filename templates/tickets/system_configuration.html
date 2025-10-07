@@ -141,6 +141,32 @@
                             </div>
                         </div>
 
+                        <!-- Configuración Financiera -->
+                        <div class="config-section">
+                            <h5>
+                                <i class="bi bi-currency-exchange me-2"></i>
+                                Configuración Financiera
+                            </h5>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.default_currency.id_for_label }}" class="form-label">
+                                    <i class="bi bi-cash me-1"></i>
+                                    {{ form.default_currency.label }}
+                                </label>
+                                {{ form.default_currency }}
+                                {% if form.default_currency.help_text %}
+                                    <small class="form-text text-muted">{{ form.default_currency.help_text }}</small>
+                                {% endif %}
+                                {% if form.default_currency.errors %}
+                                    <div class="text-danger mt-1">
+                                        {% for error in form.default_currency.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
                         <!-- Botones -->
                         <div class="d-flex gap-2 mt-4">
                             <button type="submit" class="btn btn-primary">
@@ -181,6 +207,11 @@
                                 <dt class="col-6">Prioridad por defecto:</dt>
                                 <dd class="col-6">
                                     <span class="badge bg-info">{{ config.get_default_ticket_priority_display }}</span>
+                                </dd>
+                                
+                                <dt class="col-6">Moneda por defecto:</dt>
+                                <dd class="col-6">
+                                    <span class="badge bg-success">{{ config.get_default_currency_display }}</span>
                                 </dd>
                                 
                                 <dt class="col-6">Última actualización:</dt>

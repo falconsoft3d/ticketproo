@@ -18,7 +18,7 @@ from .models import (
     UserNote, TimeEntry, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
     DailyTaskSession, DailyTaskItem, ChatRoom, ChatMessage, ContactFormSubmission,
     Opportunity, OpportunityStatus, OpportunityNote, OpportunityStatusHistory,
-    Meeting, MeetingAttendee, MeetingQuestion
+    Meeting, MeetingAttendee, MeetingQuestion, Contact
 )
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
@@ -1506,12 +1506,17 @@ def project_list(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
+    # Obtener configuración del sistema
+    from tickets.models import SystemConfiguration
+    system_config = SystemConfiguration.get_config()
+    
     context = {
         'page_title': 'Gestión de Proyectos',
         'page_obj': page_obj,
         'search_query': search_query,
         'status_filter': status_filter,
         'project_status_choices': Project.STATUS_CHOICES,
+        'system_config': system_config,
     }
     
     return render(request, 'tickets/project_list.html', context)
@@ -2168,7 +2173,7 @@ def url_manager_list_view(request):
         is_active = form.cleaned_data.get('is_active')
         
         if search:
-            urls = urls.filter(
+                       urls = urls.filter(
                 Q(title__icontains=search) |
                 Q(url__icontains=search) |
                 Q(description__icontains=search) |
@@ -2331,7 +2336,7 @@ def url_manager_password_view(request, url_id):
 
 
 # ===========================================
-# VISTAS PARA ÓRDENES DE TRABAJO
+# VISTAS PARA ÓRDENAS DE TRABAJO
 # ===========================================
 
 @login_required
@@ -2394,7 +2399,9 @@ def work_order_create_view(request):
     if request.method == 'POST':
         form = WorkOrderForm(request.POST, request.FILES)
         if form.is_valid():
-            work_order = form.save(created_by=request.user)
+            work_order = form.save(commit=False)
+            work_order.created_by = request.user
+            work_order.save()
             messages.success(request, f'Orden de trabajo "{work_order.title}" creada exitosamente.')
             return redirect('work_order_detail', pk=work_order.pk)
     else:
@@ -2437,7 +2444,7 @@ def work_order_edit_view(request, pk):
     if request.method == 'POST':
         form = WorkOrderForm(request.POST, request.FILES, instance=work_order)
         if form.is_valid():
-            form.save(created_by=request.user)
+            form.save(commit=False)
             messages.success(request, f'Orden de trabajo "{work_order.title}" actualizada exitosamente.')
             return redirect('work_order_detail', pk=work_order.pk)
     else:
@@ -2666,9 +2673,9 @@ def daily_report_pdf(request):
     if usuario_id:
         time_entries = time_entries.filter(user_id=usuario_id)
         usuario = User.objects.get(id=usuario_id)
-        titulo_usuario = f" - {usuario.get_full_name() or usuario.username}"
+        usuario_nombre = f" - {usuario.get_full_name() or usuario.username}"
     else:
-        titulo_usuario = " - Todos los usuarios"
+        usuario_nombre = " - Todos los usuarios"
     
     time_entries = time_entries.select_related('user', 'project', 'ticket', 'work_order', 'task').order_by('user__username', 'fecha_entrada')
     
@@ -2690,7 +2697,7 @@ def daily_report_pdf(request):
     story = []
     
     # Título
-    title = f"Reporte de Parte Diario{titulo_usuario}"
+    title = f"Reporte de Parte Diario{usuario_nombre}"
     story.append(Paragraph(title, title_style))
     
     # Rango de fechas
@@ -2909,10 +2916,7 @@ def task_toggle_status_view(request, pk):
             
             task.save()
             
-            messages.success(
-                request, 
-                f'Estado de la tarea "{task.title}" cambiado de {old_status} a {task.get_status_display()}.'
-            )
+            messages.success(request, f'Estado de la tarea "{task.title}" cambiado de {old_status} a {task.get_status_display()}.')
     
     return redirect('task_detail', pk=task.pk)
 
@@ -3024,9 +3028,9 @@ def create_task_session(request):
             # Cargar TODAS las tareas donde el usuario esté involucrado (sin filtros de fecha)
             # Incluir: asignadas al usuario O creadas por el usuario
             assigned_tasks = Task.objects.filter(
-                models.Q(assigned_users=request.user) | models.Q(created_by=request.user)
+                Q(assigned_users=request.user) | Q(created_by=request.user)
             ).exclude(
-                status='cancelled'  # Solo excluir canceladas, no completadas
+                status__in=['cancelled']  # Solo excluir canceladas, no completadas
             ).order_by('priority', '-created_at').distinct()
             
             print(f"DEBUG: Usuario {request.user.username}")
@@ -3095,7 +3099,7 @@ def delete_task_session(request, session_id):
     try:
         session = DailyTaskSession.objects.get(id=session_id)
         
-        # Verificar permisos: solo el propietario o superuser puede eliminar
+        # Verificar permisos: solo el propietario o superusuario puede eliminar
         if session.user != request.user and not request.user.is_superuser:
             messages.error(request, 'No tienes permisos para eliminar esta gestión.')
             return redirect('daily_task_management')
@@ -3462,9 +3466,7 @@ def task_control_pause(request, pk):
 
 
 def public_task_view(request, token):
-    """Vista pública simplificada para gestionar tareas sin autenticación"""
-    from django.db.models import Q
-    
+    """Vista pública para gestionar tareas sin autenticación"""
     try:
         user_profile = UserProfile.objects.get(public_token=token)
         user = user_profile.user
@@ -3494,13 +3496,13 @@ def public_task_view(request, token):
             
             # Crear un item para CADA tarea asignada
             completed_count = 0
-            for i, task in enumerate(all_user_tasks):
+            for task in all_user_tasks:
                 is_completed = task.id in selected_task_ids
                 
                 DailyTaskItem.objects.create(
                     session=session,
                     task=task,
-                    order=i + 1,
+                    order=order,
                     completed=is_completed,
                     completed_at=timezone.now() if is_completed else None
                 )
@@ -3911,7 +3913,7 @@ def pdf_join_view(request):
             pdf_writer.write(output)
             output.seek(0)
             
-            # Preparar nombre del archivo de salida
+            # Preparar nombre del archivo ZIP
             current_time = timezone.now().strftime('%Y%m%d_%H%M%S')
             output_filename = f"PDF_unido_{current_time}.pdf"
             
@@ -4061,7 +4063,6 @@ def command_library_view(request):
     dangerous_count = Command.objects.filter(is_dangerous=True).count()
     
     # Paginación
-    from django.core.paginator import Paginator
     paginator = Paginator(commands, 12)  # 12 comandos por página
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -4362,10 +4363,7 @@ def contact_submission_approve(request, pk):
                 company=company
             )
             
-            messages.success(
-                request, 
-                f'Empresa "{company.name}" creada exitosamente desde el formulario de contacto.'
-            )
+            messages.success(request, f'Empresa "{company.name}" creada exitosamente desde el formulario de contacto.')
             return redirect('company_detail', company_id=company.id)
         else:
             messages.error(request, f'Error al crear la empresa: {form.errors}')
@@ -4469,10 +4467,11 @@ def public_company_stats(request, token):
 @login_required
 def crm_dashboard(request):
     """Dashboard principal del CRM"""
-    from . import utils
+    # Obtener configuración del sistema
+    system_config = SystemConfiguration.get_config()
     
     # Obtener oportunidades del usuario
-    if utils.is_agent(request.user):
+    if is_agent(request.user):
         opportunities = Opportunity.objects.all()
     else:
         opportunities = Opportunity.objects.filter(
@@ -4512,7 +4511,8 @@ def crm_dashboard(request):
         'status_stats': status_stats,
         'upcoming_opportunities': upcoming_opportunities,
         'overdue_opportunities': overdue_opportunities,
-        'page_title': 'CRM Dashboard'
+        'page_title': 'CRM Dashboard',
+        'system_config': system_config,
     }
     
     return render(request, 'tickets/crm_dashboard.html', context)
@@ -4521,10 +4521,8 @@ def crm_dashboard(request):
 @login_required
 def opportunity_list(request):
     """Lista de oportunidades"""
-    from . import utils
-    
     # Obtener oportunidades del usuario
-    if utils.is_agent(request.user):
+    if is_agent(request.user):
         opportunities = Opportunity.objects.all()
     else:
         opportunities = Opportunity.objects.filter(
@@ -4577,7 +4575,7 @@ def opportunity_list(request):
         opportunity.user_can_edit = opportunity.can_be_edited_by(request.user)
     
     # Para los filtros
-    statuses = OpportunityStatus.objects.filter(is_active=True)
+    statuses = OpportunityStatus.objects.filter(is_active=True).order_by('order')
     companies = Company.objects.all()
     users = User.objects.filter(is_active=True)
     
@@ -4638,6 +4636,7 @@ def opportunity_create(request):
         description = request.POST.get('description', '')
         company_id = request.POST.get('company')
         contact_name = request.POST.get('contact_name')
+        contact_position = request.POST.get('contact_position', '')
         contact_email = request.POST.get('contact_email', '')
         contact_phone = request.POST.get('contact_phone', '')
         value = request.POST.get('value')
@@ -4657,6 +4656,7 @@ def opportunity_create(request):
                 description=description,
                 company=company,
                 contact_name=contact_name,
+                contact_position=contact_position,
                 contact_email=contact_email,
                 contact_phone=contact_phone,
                 value=value,
@@ -4684,8 +4684,37 @@ def opportunity_create(request):
     
     # Para GET request
     companies = Company.objects.all()
-    statuses = OpportunityStatus.objects.filter(is_active=True)
+    statuses = OpportunityStatus.objects.filter(is_active=True).order_by('order')
     users = User.objects.filter(is_active=True)
+    
+    # Valores por defecto
+    default_close_date = (timezone.now().date() + timedelta(days=90)).strftime('%Y-%m-%d')  # 3 meses
+    default_status = statuses.first()  # Estado con menor secuencia (order)
+    default_assigned_to = request.user  # Usuario que crea la oportunidad
+    
+    # Si viene un contact_id, precargar datos del contacto
+    contact_data = {}
+    contact_id = request.GET.get('contact_id')
+    if contact_id:
+        try:
+            contact = Contact.objects.get(pk=contact_id)
+            contact_data = {
+                'contact_name': contact.name,
+                'contact_email': contact.email or '',
+                'contact_phone': contact.phone or '',
+                'contact_position': contact.position or '',
+                'source': f"Contacto: {contact.source}" if contact.source else "Contacto previo",
+            }
+            # Si el contacto tiene empresa, buscar si existe en Company
+            if contact.company:
+                try:
+                    company = Company.objects.filter(name__iexact=contact.company).first()
+                    if company:
+                        contact_data['default_company'] = company
+                except:
+                    pass
+        except Contact.DoesNotExist:
+            pass
     
     # Opciones de probabilidad
     probability_choices = [
@@ -4698,7 +4727,11 @@ def opportunity_create(request):
         'statuses': statuses,
         'users': users,
         'probability_choices': probability_choices,
-        'page_title': 'Nueva Oportunidad'
+        'page_title': 'Nueva Oportunidad',
+        'default_close_date': default_close_date,
+        'default_status': default_status,
+        'default_assigned_to': default_assigned_to,
+        'contact_data': contact_data,
     }
     
     return render(request, 'tickets/opportunity_form.html', context)
@@ -4722,6 +4755,7 @@ def opportunity_edit(request, pk):
         opportunity.description = request.POST.get('description', '')
         opportunity.company_id = request.POST.get('company')
         opportunity.contact_name = request.POST.get('contact_name')
+        opportunity.contact_position = request.POST.get('contact_position', '')
         opportunity.contact_email = request.POST.get('contact_email', '')
         opportunity.contact_phone = request.POST.get('contact_phone', '')
         opportunity.value = request.POST.get('value')
@@ -4852,12 +4886,14 @@ def opportunity_status_create(request):
 @login_required
 def opportunity_status_edit(request, pk):
     """Editar estado de oportunidad"""
+    from .models import OpportunityStatus
     from . import utils
+    
+    status = get_object_or_404(OpportunityStatus, pk=pk)
+    
     if not utils.is_agent(request.user):
         messages.error(request, 'No tienes permisos para acceder a esta sección.')
         return redirect('crm_dashboard')
-    
-    status = get_object_or_404(OpportunityStatus, pk=pk)
     
     if request.method == 'POST':
         status.name = request.POST.get('name')
@@ -4883,10 +4919,7 @@ def opportunity_status_edit(request, pk):
 @login_required
 def opportunity_status_delete(request, pk):
     """Eliminar estado de oportunidad"""
-    from . import utils
-    if not utils.is_agent(request.user):
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
-        return redirect('crm_dashboard')
+    from .models import OpportunityStatus
     
     status = get_object_or_404(OpportunityStatus, pk=pk)
     
@@ -4958,7 +4991,7 @@ def opportunity_activity_create(request, opportunity_id):
             return redirect('opportunity_detail', pk=opportunity_id)
     
     if request.method == 'POST':
-        form = OpportunityActivityForm(request.POST, opportunity=opportunity)
+        form = OpportunityActivityForm(request.POST, opportunity=opportunity, current_user=request.user)
         if form.is_valid():
             activity = form.save(commit=False)
             activity.opportunity = opportunity
@@ -4968,7 +5001,7 @@ def opportunity_activity_create(request, opportunity_id):
             messages.success(request, f'Actividad "{activity.title}" creada exitosamente.')
             return redirect('opportunity_detail', pk=opportunity_id)
     else:
-        form = OpportunityActivityForm(opportunity=opportunity)
+        form = OpportunityActivityForm(opportunity=opportunity, current_user=request.user)
     
     context = {
         'form': form,
@@ -5024,9 +5057,7 @@ def opportunity_activity_detail(request, pk):
     from . import utils
     if not utils.is_agent(request.user):
         if (activity.created_by != request.user and 
-            activity.assigned_to != request.user and
-            activity.opportunity.created_by != request.user and
-            activity.opportunity.assigned_to != request.user):
+            activity.assigned_to != request.user):
             messages.error(request, 'No tienes permisos para ver esta actividad.')
             return redirect('opportunity_detail', pk=activity.opportunity.pk)
     
@@ -5783,30 +5814,35 @@ def course_class_public(request, token, class_id):
             }
         )
         
+        # Incrementar contador de vistas solo si es una nueva visualización
         if created:
-            # Incrementar contador de vistas solo si es una nueva visualización
             course_class.save()
     
     # Obtener clases siguientes y anteriores
     all_classes = course.classes.filter(is_active=True).order_by('order', 'title')
-    class_list = list(all_classes)
+    current_index = None
     
-    try:
-        current_index = class_list.index(course_class)
-        previous_class = class_list[current_index - 1] if current_index > 0 else None
-        next_class = class_list[current_index + 1] if current_index < len(class_list) - 1 else None
-    except ValueError:
-        previous_class = None
-        next_class = None
+    for i, class_item in enumerate(all_classes):
+        if class_item.pk == course_class.pk:
+            current_index = i
+            break
+    
+    prev_class = None
+    next_class = None
+    
+    if current_index is not None:
+        if current_index > 0:
+            prev_class = all_classes[current_index - 1]
+        if current_index < len(all_classes) - 1:
+            next_class = all_classes[current_index + 1]
     
     context = {
         'course': course,
         'course_class': course_class,
-        'previous_class': previous_class,
+        'page_title': f'{course.title} - {course_class.title}',
+        'user_has_viewed': user_has_viewed,
+        'prev_class': prev_class,
         'next_class': next_class,
-        'page_title': f'{course_class.title} - {course.title}',
-        'is_public_view': True,
-        'user_has_viewed': user_has_viewed
     }
     
     return render(request, 'tickets/course_class_public.html', context)
@@ -5919,9 +5955,8 @@ def course_edit(request, pk):
     course = get_object_or_404(Course, pk=pk)
     
     if not utils.is_agent(request.user):
-        if course.created_by != request.user:
-            messages.error(request, 'No tienes permisos para editar este curso.')
-            return redirect('course_detail', pk=pk)
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('crm_dashboard')
     
     if request.method == 'POST':
         form = CourseForm(request.POST, instance=course)
@@ -5950,9 +5985,8 @@ def course_delete(request, pk):
     course = get_object_or_404(Course, pk=pk)
     
     if not utils.is_agent(request.user):
-        if course.created_by != request.user:
-            messages.error(request, 'No tienes permisos para eliminar este curso.')
-            return redirect('course_detail', pk=pk)
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('crm_dashboard')
     
     if request.method == 'POST':
         course_title = course.title
@@ -5978,9 +6012,8 @@ def course_class_create(request, course_id):
     course = get_object_or_404(Course, pk=course_id)
     
     if not utils.is_agent(request.user):
-        if course.created_by != request.user:
-            messages.error(request, 'No tienes permisos para agregar clases a este curso.')
-            return redirect('course_detail', pk=course_id)
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('crm_dashboard')
     
     if request.method == 'POST':
         form = CourseClassForm(request.POST)
@@ -6016,9 +6049,8 @@ def course_class_edit(request, course_id, pk):
     course_class = get_object_or_404(CourseClass, pk=pk, course=course)
     
     if not utils.is_agent(request.user):
-        if course_class.created_by != request.user:
-            messages.error(request, 'No tienes permisos para editar esta clase.')
-            return redirect('course_detail', pk=course_id)
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('crm_dashboard')
     
     if request.method == 'POST':
         form = CourseClassForm(request.POST, instance=course_class)
@@ -6049,9 +6081,8 @@ def course_class_delete(request, course_id, pk):
     course_class = get_object_or_404(CourseClass, pk=pk, course=course)
     
     if not utils.is_agent(request.user):
-        if course_class.created_by != request.user:
-            messages.error(request, 'No tienes permisos para eliminar esta clase.')
-            return redirect('course_detail', pk=course_id)
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('crm_dashboard')
     
     if request.method == 'POST':
         class_title = course_class.title
@@ -6171,3 +6202,140 @@ def mark_class_as_viewed(request, course_id, class_id):
         
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
+
+# ===== VISTAS DE CONTACTOS =====
+
+@login_required
+def contact_list(request):
+    """Lista de contactos con filtros"""
+    contacts = Contact.objects.all()
+    
+    # Filtros
+    status = request.GET.get('status')
+    if status:
+        contacts = contacts.filter(status=status)
+    
+    search = request.GET.get('search')
+    if search:
+        contacts = contacts.filter(
+            Q(name__icontains=search) |
+            Q(email__icontains=search) |
+            Q(company__icontains=search) |
+            Q(phone__icontains=search)
+        )
+    
+    date_from = request.GET.get('date_from')
+    if date_from:
+        contacts = contacts.filter(contact_date__date__gte=date_from)
+    
+    date_to = request.GET.get('date_to')
+    if date_to:
+        contacts = contacts.filter(contact_date__date__lte=date_to)
+    
+    # Paginación
+    from django.core.paginator import Paginator
+    paginator = Paginator(contacts, 25)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Estadísticas
+    total_contacts = Contact.objects.count()
+    positive_contacts = Contact.objects.filter(status='positive').count()
+    negative_contacts = Contact.objects.filter(status='negative').count()
+    today_contacts = Contact.objects.filter(contact_date__date=timezone.now().date()).count()
+    
+    context = {
+        'page_obj': page_obj,
+        'contacts': page_obj.object_list,
+        'total_contacts': total_contacts,
+        'positive_contacts': positive_contacts,
+        'negative_contacts': negative_contacts,
+        'today_contacts': today_contacts,
+        'page_title': 'Contactos'
+    }
+    
+    return render(request, 'tickets/contact_list.html', context)
+
+
+@login_required
+def contact_create(request):
+    """Crear nuevo contacto"""
+    from .forms import ContactForm
+    
+    if request.method == 'POST':
+        form = ContactForm(request.POST)
+        if form.is_valid():
+            contact = form.save(commit=False)
+            contact.created_by = request.user
+            contact.save()
+            
+            messages.success(request, f'Contacto "{contact.name}" creado exitosamente.')
+            return redirect('contact_detail', pk=contact.pk)
+    else:
+        form = ContactForm()
+    
+    context = {
+        'form': form,
+        'page_title': 'Nuevo Contacto'
+    }
+    
+    return render(request, 'tickets/contact_form.html', context)
+
+
+@login_required
+def contact_detail(request, pk):
+    """Ver detalles de un contacto"""
+    contact = get_object_or_404(Contact, pk=pk)
+    
+    context = {
+        'contact': contact,
+        'page_title': f'Contacto: {contact.name}'
+    }
+    
+    return render(request, 'tickets/contact_detail.html', context)
+
+
+@login_required
+def contact_edit(request, pk):
+    """Editar contacto"""
+    from .forms import ContactForm
+    
+    contact = get_object_or_404(Contact, pk=pk)
+    
+    if request.method == 'POST':
+        form = ContactForm(request.POST, instance=contact)
+        if form.is_valid():
+            form.save()
+            
+            messages.success(request, f'Contacto "{contact.name}" actualizado exitosamente.')
+            return redirect('contact_detail', pk=contact.pk)
+    else:
+        form = ContactForm(instance=contact)
+    
+    context = {
+        'form': form,
+        'contact': contact,
+        'page_title': f'Editar: {contact.name}'
+    }
+    
+    return render(request, 'tickets/contact_form.html', context)
+
+
+@login_required
+def contact_delete(request, pk):
+    """Eliminar contacto"""
+    contact = get_object_or_404(Contact, pk=pk)
+    
+    if request.method == 'POST':
+        contact_name = contact.name
+        contact.delete()
+        messages.success(request, f'Contacto "{contact_name}" eliminado exitosamente.')
+        return redirect('contact_list')
+    
+    context = {
+        'contact': contact,
+        'page_title': f'Eliminar: {contact.name}'
+    }
+    
+    return render(request, 'tickets/contact_delete.html', context)

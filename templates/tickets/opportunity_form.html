@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load crm_tags %}
 
 {% block title %}{% if opportunity %}Editar{% else %}Nueva{% endif %} Oportunidad - TicketProo{% endblock %}
 
@@ -36,7 +37,11 @@
                                     <option value="">Seleccionar empresa...</option>
                                     {% for company in companies %}
                                     <option value="{{ company.pk }}" 
-                                            {% if opportunity.company.pk == company.pk %}selected{% endif %}>
+                                            {% if opportunity %}
+                                                {% if opportunity.company.pk == company.pk %}selected{% endif %}
+                                            {% else %}
+                                                {% if contact_data.default_company and company.pk == contact_data.default_company.pk %}selected{% endif %}
+                                            {% endif %}>
                                         {{ company.name }}
                                     </option>
                                     {% endfor %}
@@ -50,7 +55,11 @@
                                     <option value="">Seleccionar estado...</option>
                                     {% for status in statuses %}
                                     <option value="{{ status.pk }}" 
-                                            {% if opportunity.status.pk == status.pk %}selected{% endif %}
+                                            {% if opportunity %}
+                                                {% if opportunity.status.pk == status.pk %}selected{% endif %}
+                                            {% else %}
+                                                {% if default_status and status.pk == default_status.pk %}selected{% endif %}
+                                            {% endif %}
                                             data-color="{{ status.color }}">
                                         {{ status.name }}
                                     </option>
@@ -70,36 +79,44 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="contact_name" class="form-label">
                                     <i class="bi bi-person"></i> Contacto Principal *
                                 </label>
                                 <input type="text" class="form-control" id="contact_name" name="contact_name" 
-                                       value="{{ opportunity.contact_name|default:'' }}" required>
+                                       value="{% if opportunity %}{{ opportunity.contact_name }}{% else %}{{ contact_data.contact_name|default:'' }}{% endif %}" required>
                             </div>
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-3 mb-3">
+                                <label for="contact_position" class="form-label">
+                                    <i class="bi bi-briefcase"></i> Cargo del Contacto
+                                </label>
+                                <input type="text" class="form-control" id="contact_position" name="contact_position" 
+                                       value="{% if opportunity %}{{ opportunity.contact_position }}{% else %}{{ contact_data.contact_position|default:'' }}{% endif %}" 
+                                       placeholder="Director, Gerente, etc.">
+                            </div>
+                            <div class="col-md-3 mb-3">
                                 <label for="contact_email" class="form-label">
                                     <i class="bi bi-envelope"></i> Email de Contacto
                                 </label>
                                 <input type="email" class="form-control" id="contact_email" name="contact_email" 
-                                       value="{{ opportunity.contact_email|default:'' }}">
+                                       value="{% if opportunity %}{{ opportunity.contact_email }}{% else %}{{ contact_data.contact_email|default:'' }}{% endif %}">
                             </div>
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="contact_phone" class="form-label">
                                     <i class="bi bi-telephone"></i> Teléfono de Contacto
                                 </label>
                                 <input type="tel" class="form-control" id="contact_phone" name="contact_phone" 
-                                       value="{{ opportunity.contact_phone|default:'' }}">
+                                       value="{% if opportunity %}{{ opportunity.contact_phone }}{% else %}{{ contact_data.contact_phone|default:'' }}{% endif %}">
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="value" class="form-label">
-                                    <i class="bi bi-currency-dollar"></i> Valor Estimado *
+                                    {% get_currency_icon %} Valor Estimado *
                                 </label>
                                 <div class="input-group">
-                                    <span class="input-group-text">$</span>
+                                    <span class="input-group-text">{% get_currency_symbol %}</span>
                                     <input type="number" class="form-control" id="value" name="value" 
                                            value="{{ opportunity.value|default:'' }}" 
                                            step="0.01" min="0" required>
@@ -131,7 +148,7 @@
                                     <i class="bi bi-calendar-event"></i> Fecha Estimada de Cierre *
                                 </label>
                                 <input type="date" class="form-control" id="expected_close_date" name="expected_close_date" 
-                                       value="{{ opportunity.expected_close_date|date:'Y-m-d'|default:'' }}" required>
+                                       value="{% if opportunity %}{{ opportunity.expected_close_date|date:'Y-m-d' }}{% else %}{{ default_close_date }}{% endif %}" required>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="assigned_to" class="form-label">
@@ -141,7 +158,11 @@
                                     <option value="">Sin asignar</option>
                                     {% for user in users %}
                                     <option value="{{ user.pk }}" 
-                                            {% if opportunity.assigned_to.pk == user.pk %}selected{% endif %}>
+                                            {% if opportunity %}
+                                                {% if opportunity.assigned_to.pk == user.pk %}selected{% endif %}
+                                            {% else %}
+                                                {% if default_assigned_to and user.pk == default_assigned_to.pk %}selected{% endif %}
+                                            {% endif %}>
                                         {{ user.get_full_name|default:user.username }}
                                     </option>
                                     {% endfor %}
@@ -155,7 +176,7 @@
                                     <i class="bi bi-arrow-down-circle"></i> Fuente/Origen
                                 </label>
                                 <input type="text" class="form-control" id="source" name="source" 
-                                       value="{{ opportunity.source|default:'' }}" 
+                                       value="{% if opportunity %}{{ opportunity.source }}{% else %}{{ contact_data.source|default:'' }}{% endif %}" 
                                        placeholder="¿Cómo se originó esta oportunidad?">
                             </div>
                         </div>
