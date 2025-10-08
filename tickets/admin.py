@@ -1,9 +1,11 @@
 from django.contrib import admin
+from django.utils.html import format_html
 from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserNote, 
     TimeEntry, Project, Company, SystemConfiguration, Document, UserProfile,
     WorkOrder, WorkOrderAttachment, Task, Opportunity, OpportunityStatus, 
-    OpportunityNote, OpportunityStatusHistory, Concept
+    OpportunityNote, OpportunityStatusHistory, Concept, Exam, ExamQuestion, 
+    ExamAttempt, ExamAnswer
 )
 
 # Configuración del sitio de administración
@@ -19,7 +21,93 @@ class CategoryAdmin(admin.ModelAdmin):
     search_fields = ('name', 'description')
     list_editable = ('is_active',)
     ordering = ('name',)
-    date_hierarchy = 'created_at'
+    
+    def colored_badge(self, obj):
+        return format_html(
+            '<span class="badge" style="background-color: {}; color: white;">{}</span>',
+            obj.color, obj.name
+        )
+    colored_badge.short_description = 'Categoría'
+    
+    def ticket_count(self, obj):
+        return obj.tickets.count()
+    ticket_count.short_description = 'Tickets'
+
+
+class ExamQuestionInline(admin.TabularInline):
+    model = ExamQuestion
+    extra = 1
+    fields = ('question_text', 'option_a', 'option_b', 'option_c', 'correct_option', 'order')
+
+
+@admin.register(Exam)
+class ExamAdmin(admin.ModelAdmin):
+    list_display = ('title', 'created_by', 'get_questions_count', 'is_public', 'public_token', 'passing_score', 'created_at')
+    list_filter = ('is_public', 'created_by', 'created_at')
+    search_fields = ('title', 'description')
+    readonly_fields = ('public_token', 'created_at', 'updated_at')
+    inlines = [ExamQuestionInline]
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('title', 'description', 'passing_score', 'time_limit')
+        }),
+        ('Configuración Pública', {
+            'fields': ('is_public', 'public_token'),
+            'description': 'Si el examen es público, se generará automáticamente un token de acceso'
+        }),
+        ('Información del Sistema', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def save_model(self, request, obj, form, change):
+        if not change:  # Si es un nuevo objeto
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(ExamQuestion)
+class ExamQuestionAdmin(admin.ModelAdmin):
+    list_display = ('exam', 'question_text_preview', 'correct_option', 'order', 'created_at')
+    list_filter = ('exam', 'correct_option', 'created_at')
+    search_fields = ('question_text', 'option_a', 'option_b', 'option_c')
+    ordering = ('exam', 'order')
+    
+    def question_text_preview(self, obj):
+        return obj.question_text[:100] + '...' if len(obj.question_text) > 100 else obj.question_text
+    question_text_preview.short_description = 'Pregunta'
+
+
+@admin.register(ExamAttempt)
+class ExamAttemptAdmin(admin.ModelAdmin):
+    list_display = ('participant_name', 'participant_email', 'exam', 'score', 'passed', 'completed_at')
+    list_filter = ('passed', 'exam', 'completed_at')
+    search_fields = ('participant_name', 'participant_email', 'exam__title')
+    readonly_fields = ('score', 'total_questions', 'correct_answers', 'time_taken', 'passed', 'started_at', 'completed_at')
+    ordering = ('-completed_at',)
+    
+    fieldsets = (
+        ('Participante', {
+            'fields': ('participant_name', 'participant_email', 'user')
+        }),
+        ('Resultados', {
+            'fields': ('exam', 'score', 'total_questions', 'correct_answers', 'passed')
+        }),
+        ('Información de Tiempo', {
+            'fields': ('started_at', 'completed_at', 'time_taken'),
+            'classes': ('collapse',)
+        }),
+    )
+
+
+@admin.register(ExamAnswer)
+class ExamAnswerAdmin(admin.ModelAdmin):
+    list_display = ('attempt', 'question', 'selected_option', 'is_correct')
+    list_filter = ('is_correct', 'selected_option', 'attempt__exam')
+    search_fields = ('attempt__participant_name', 'question__question_text')
+    readonly_fields = ('is_correct',)
     
     fieldsets = (
         ('Información Básica', {

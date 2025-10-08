@@ -336,4 +336,25 @@ urlpatterns = [
     path('concepts/<int:pk>/edit/', views.concept_edit_view, name='concept_edit'),
     path('concepts/<int:pk>/delete/', views.concept_delete_view, name='concept_delete'),
     
+    # URLs de Exámenes
+    path('exams/', views.exam_list, name='exam_list'),
+    path('exams/create/', views.exam_create, name='exam_create'),
+    path('exams/<int:pk>/', views.exam_detail, name='exam_detail'),
+    path('exams/<int:pk>/edit/', views.exam_edit, name='exam_edit'),
+    path('exams/<int:pk>/delete/', views.exam_delete, name='exam_delete'),
+    path('exams/<int:pk>/take/', views.exam_take_authenticated, name='exam_take_authenticated'),
+    path('exams/attempts/', views.exam_attempts_list, name='exam_attempts_list'),
+    
+    # URLs públicas de exámenes (sin autenticación)
+    path('exam/<str:token>/', views.exam_take_public, name='exam_take_public'),
+    path('exam/<str:token>/start/', views.exam_take_questions, name='exam_take_questions'),
+    path('exam/results/<int:attempt_id>/', views.exam_results, name='exam_results'),
+    path('certificate/download/<int:attempt_id>/', views.download_certificate, name='download_certificate'),
+    path('certificate/verify/<str:token>/', views.verify_certificate, name='verify_certificate'),
+    
+    # URLs de preguntas de exámenes
+    path('exams/<int:exam_pk>/questions/create/', views.question_create, name='question_create'),
+    path('questions/<int:pk>/edit/', views.question_edit, name='question_edit'),
+    path('questions/<int:pk>/delete/', views.question_delete, name='question_delete'),
+    
 ]

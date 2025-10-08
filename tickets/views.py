@@ -30,7 +30,8 @@ from .models import (
     DailyTaskSession, DailyTaskItem, ChatRoom, ChatMessage, ContactFormSubmission,
     Opportunity, OpportunityStatus, OpportunityNote, OpportunityStatusHistory,
     Meeting, MeetingAttendee, MeetingQuestion, Contact,
-    BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, Concept
+    BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, Concept,
+    Exam, ExamQuestion, ExamAttempt, ExamAnswer
 )
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
@@ -8099,4 +8100,529 @@ def blog_ai_apply_improvements(request, pk):
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Datos JSON inválidos'}, status=400)
     except Exception as e:
-        return JsonResponse({'error': f'Error al aplicar cambios: {str(e)}'}, status=500)
+        return JsonResponse({'error': f'Error interno: {str(e)}'}, status=500)
+
+
+# =============================================================================
+# VISTAS DE EXÁMENES
+# =============================================================================
+
+@login_required
+def exam_list(request):
+    """Lista de exámenes"""
+    exams = Exam.objects.all().order_by('-created_at')
+    
+    # Agregar información del último intento del usuario para cada examen
+    for exam in exams:
+        exam.user_last_attempt = exam.attempts.filter(
+            user=request.user
+        ).order_by('-completed_at').first()
+    
+    context = {
+        'exams': exams
+    }
+    return render(request, 'tickets/exam_list.html', context)
+
+
+@login_required
+def exam_create(request):
+    """Crear nuevo examen (solo agentes)"""
+    from .utils import is_agent
+    
+    if not is_agent(request.user):
+        messages.error(request, 'No tienes permisos para crear exámenes')
+        return redirect('exam_list')
+    
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        description = request.POST.get('description', '')
+        passing_score = request.POST.get('passing_score', 70)
+        time_limit = request.POST.get('time_limit') or None
+        is_public = request.POST.get('is_public') == 'on'
+        
+        exam = Exam.objects.create(
+            title=title,
+            description=description,
+            passing_score=int(passing_score),
+            time_limit=int(time_limit) if time_limit else None,
+            is_public=is_public,
+            created_by=request.user
+        )
+        
+        messages.success(request, f'Examen "{exam.title}" creado exitosamente')
+        return redirect('exam_detail', pk=exam.pk)
+    
+    return render(request, 'tickets/exam_form.html')
+
+
+@login_required
+def exam_detail(request, pk):
+    """Detalle del examen"""
+    from .utils import is_agent
+    
+    exam = get_object_or_404(Exam, pk=pk)
+    questions = exam.questions.all().order_by('order')
+    
+    # Filtrar intentos según el tipo de usuario
+    if is_agent(request.user) or exam.created_by == request.user:
+        # Agentes y creadores ven todos los intentos
+        attempts = exam.attempts.all().order_by('-completed_at')[:10]
+    else:
+        # Usuarios normales solo ven sus propios intentos
+        attempts = exam.attempts.filter(user=request.user).order_by('-completed_at')[:5]
+    
+    # Obtener el último intento del usuario actual
+    user_last_attempt = None
+    if request.user.is_authenticated:
+        user_last_attempt = exam.attempts.filter(
+            user=request.user
+        ).order_by('-completed_at').first()
+    
+    context = {
+        'exam': exam,
+        'questions': questions,
+        'attempts': attempts,
+        'user_last_attempt': user_last_attempt,
+        'can_edit': is_agent(request.user) or exam.created_by == request.user
+    }
+    return render(request, 'tickets/exam_detail.html', context)
+
+
+@login_required
+def exam_edit(request, pk):
+    """Editar examen"""
+    from .utils import is_agent
+    
+    exam = get_object_or_404(Exam, pk=pk)
+    
+    if not (is_agent(request.user) or exam.created_by == request.user):
+        messages.error(request, 'No tienes permisos para editar este examen')
+        return redirect('exam_detail', pk=exam.pk)
+    
+    if request.method == 'POST':
+        exam.title = request.POST.get('title')
+        exam.description = request.POST.get('description', '')
+        exam.passing_score = int(request.POST.get('passing_score', 70))
+        exam.time_limit = int(request.POST.get('time_limit')) if request.POST.get('time_limit') else None
+        exam.is_public = request.POST.get('is_public') == 'on'
+        exam.save()
+        
+        messages.success(request, 'Examen actualizado exitosamente')
+        return redirect('exam_detail', pk=exam.pk)
+    
+    context = {'exam': exam}
+    return render(request, 'tickets/exam_form.html', context)
+
+
+@login_required
+def exam_delete(request, pk):
+    """Eliminar examen"""
+    from .utils import is_agent
+    
+    exam = get_object_or_404(Exam, pk=pk)
+    
+    if not (is_agent(request.user) or exam.created_by == request.user):
+        messages.error(request, 'No tienes permisos para eliminar este examen')
+        return redirect('exam_detail', pk=exam.pk)
+    
+    if request.method == 'POST':
+        exam_title = exam.title
+        exam.delete()
+        messages.success(request, f'Examen "{exam_title}" eliminado exitosamente')
+        return redirect('exam_list')
+    
+    context = {'exam': exam}
+    return render(request, 'tickets/exam_delete.html', context)
+
+
+def exam_take_public(request, token):
+    """Tomar examen público (sin autenticación)"""
+    exam = get_object_or_404(Exam, public_token=token, is_public=True)
+    
+    if request.method == 'POST':
+        # Registrar datos del participante
+        participant_name = request.POST.get('participant_name')
+        participant_email = request.POST.get('participant_email')
+        
+        if not participant_name or not participant_email:
+            messages.error(request, 'Nombre y email son requeridos')
+            return render(request, 'tickets/exam_public_start.html', {'exam': exam})
+        
+        # Redirigir al examen con los datos en sesión
+        request.session['exam_participant'] = {
+            'name': participant_name,
+            'email': participant_email,
+            'exam_id': exam.id,
+            'started_at': timezone.now().isoformat()
+        }
+        
+        return redirect('exam_take_questions', token=token)
+    
+    return render(request, 'tickets/exam_public_start.html', {'exam': exam})
+
+
+def exam_take_questions(request, token):
+    """Mostrar preguntas del examen público"""
+    exam = get_object_or_404(Exam, public_token=token, is_public=True)
+    
+    # Verificar datos del participante en sesión
+    participant_data = request.session.get('exam_participant')
+    if not participant_data or participant_data.get('exam_id') != exam.id:
+        return redirect('exam_take_public', token=token)
+    
+    questions = exam.questions.all().order_by('order')
+    
+    if request.method == 'POST':
+        # Procesar respuestas
+        from django.utils import timezone
+        from datetime import datetime
+        
+        started_at = datetime.fromisoformat(participant_data['started_at'])
+        completed_at = timezone.now()
+        time_taken = int((completed_at - started_at).total_seconds())
+        
+        # Crear intento de examen
+        attempt = ExamAttempt.objects.create(
+            exam=exam,
+            participant_name=participant_data['name'],
+            participant_email=participant_data['email'],
+            total_questions=questions.count(),
+            started_at=started_at,
+            completed_at=completed_at,
+            time_taken=time_taken,
+            score=0,  # Se calculará después
+            correct_answers=0
+        )
+        
+        # Procesar respuestas
+        correct_count = 0
+        for question in questions:
+            selected_option = request.POST.get(f'question_{question.id}')
+            if selected_option:
+                is_correct = selected_option == question.correct_option
+                if is_correct:
+                    correct_count += 1
+                
+                ExamAnswer.objects.create(
+                    attempt=attempt,
+                    question=question,
+                    selected_option=selected_option,
+                    is_correct=is_correct
+                )
+        
+        # Calcular puntuación
+        score = (correct_count / questions.count()) * 100 if questions.count() > 0 else 0
+        attempt.correct_answers = correct_count
+        attempt.score = score
+        attempt.passed = score >= exam.passing_score
+        attempt.save()
+        
+        # Limpiar sesión
+        del request.session['exam_participant']
+        
+        return redirect('exam_results', attempt_id=attempt.id)
+    
+    context = {
+        'exam': exam,
+        'questions': questions,
+        'participant_data': participant_data
+    }
+    return render(request, 'tickets/exam_take.html', context)
+
+
+@login_required
+def exam_take_authenticated(request, pk):
+    """Tomar examen autenticado"""
+    exam = get_object_or_404(Exam, pk=pk)
+    questions = exam.questions.all().order_by('order')
+    
+    if request.method == 'POST':
+        # Procesar respuestas
+        from django.utils import timezone
+        
+        started_at = timezone.now() - timezone.timedelta(
+            seconds=int(request.POST.get('time_taken', 0))
+        )
+        completed_at = timezone.now()
+        time_taken = int(request.POST.get('time_taken', 0))
+        
+        # Crear intento de examen
+        attempt = ExamAttempt.objects.create(
+            exam=exam,
+            user=request.user,
+            participant_name=f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username,
+            participant_email=request.user.email,
+            total_questions=questions.count(),
+            started_at=started_at,
+            completed_at=completed_at,
+            time_taken=time_taken,
+            score=0,
+            correct_answers=0
+        )
+        
+        # Procesar respuestas
+        correct_count = 0
+        for question in questions:
+            selected_option = request.POST.get(f'question_{question.id}')
+            if selected_option:
+                is_correct = selected_option == question.correct_option
+                if is_correct:
+                    correct_count += 1
+                
+                ExamAnswer.objects.create(
+                    attempt=attempt,
+                    question=question,
+                    selected_option=selected_option,
+                    is_correct=is_correct
+                )
+        
+        # Calcular puntuación
+        score = (correct_count / questions.count()) * 100 if questions.count() > 0 else 0
+        attempt.correct_answers = correct_count
+        attempt.score = score
+        attempt.passed = score >= exam.passing_score
+        attempt.save()
+        
+        return redirect('exam_results', attempt_id=attempt.id)
+    
+    context = {
+        'exam': exam,
+        'questions': questions
+    }
+    return render(request, 'tickets/exam_take.html', context)
+
+
+def exam_results(request, attempt_id):
+    """Mostrar resultados del examen"""
+    from .utils import is_agent
+    
+    attempt = get_object_or_404(ExamAttempt, id=attempt_id)
+    answers = attempt.answers.all().select_related('question')
+    
+    # Solo los agentes pueden ver las respuestas correctas
+    can_view_answers = request.user.is_authenticated and is_agent(request.user)
+    
+    # Generar token del certificado si es necesario
+    if attempt.passed and not attempt.certificate_token:
+        attempt.generate_certificate_token()
+    
+    context = {
+        'attempt': attempt,
+        'answers': answers,
+        'exam': attempt.exam,
+        'can_view_answers': can_view_answers
+    }
+    return render(request, 'tickets/exam_results.html', context)
+
+
+def download_certificate(request, attempt_id):
+    """Descargar certificado de examen aprobado"""
+    from .certificate_utils import create_certificate_response
+    
+    attempt = get_object_or_404(ExamAttempt, id=attempt_id)
+    
+    # Verificar que el usuario puede descargar este certificado
+    # Para exámenes públicos, cualquiera puede descargar el certificado si tiene el ID
+    # Para exámenes privados, solo el usuario o agentes pueden descargarlo
+    if not attempt.exam.is_public and request.user.is_authenticated:
+        if not (attempt.user == request.user or 
+                request.user.groups.filter(name='Agentes').exists()):
+            messages.error(request, 'No tienes permisos para descargar este certificado')
+            return redirect('exam_results', attempt_id=attempt_id)
+    elif not attempt.exam.is_public and not request.user.is_authenticated:
+        messages.error(request, 'Debes iniciar sesión para descargar este certificado')
+        return redirect('exam_results', attempt_id=attempt_id)
+    
+    # Verificar que el examen fue aprobado
+    if not attempt.passed:
+        messages.error(request, 'Solo se pueden generar certificados para exámenes aprobados')
+        return redirect('exam_results', attempt_id=attempt_id)
+    
+    # Generar y retornar el certificado
+    response = create_certificate_response(attempt)
+    if response:
+        return response
+    else:
+        messages.error(request, 'Error al generar el certificado')
+        return redirect('exam_results', attempt_id=attempt_id)
+
+
+def verify_certificate(request, token):
+    """Verificar autenticidad de un certificado"""
+    from .certificate_utils import verify_certificate_data
+    
+    cert_data = verify_certificate_data(token)
+    
+    context = {
+        'cert_data': cert_data,
+        'token': token
+    }
+    return render(request, 'tickets/certificate_verify.html', context)
+
+
+@login_required
+def question_create(request, exam_pk):
+    """Crear pregunta para examen"""
+    from .utils import is_agent
+    
+    exam = get_object_or_404(Exam, pk=exam_pk)
+    
+    if not (is_agent(request.user) or exam.created_by == request.user):
+        messages.error(request, 'No tienes permisos para agregar preguntas')
+        return redirect('exam_detail', pk=exam.pk)
+    
+    if request.method == 'POST':
+        question = ExamQuestion.objects.create(
+            exam=exam,
+            question_text=request.POST.get('question_text'),
+            option_a=request.POST.get('option_a'),
+            option_b=request.POST.get('option_b'),
+            option_c=request.POST.get('option_c'),
+            correct_option=request.POST.get('correct_option'),
+            order=exam.questions.count() + 1
+        )
+        
+        messages.success(request, 'Pregunta agregada exitosamente')
+        return redirect('exam_detail', pk=exam.pk)
+    
+    context = {'exam': exam}
+    return render(request, 'tickets/question_form.html', context)
+
+
+@login_required
+def question_edit(request, pk):
+    """Editar pregunta"""
+    from .utils import is_agent
+    
+    question = get_object_or_404(ExamQuestion, pk=pk)
+    exam = question.exam
+    
+    if not (is_agent(request.user) or exam.created_by == request.user):
+        messages.error(request, 'No tienes permisos para editar esta pregunta')
+        return redirect('exam_detail', pk=exam.pk)
+    
+    if request.method == 'POST':
+        question.question_text = request.POST.get('question_text')
+        question.option_a = request.POST.get('option_a')
+        question.option_b = request.POST.get('option_b')
+        question.option_c = request.POST.get('option_c')
+        question.correct_option = request.POST.get('correct_option')
+        question.save()
+        
+        messages.success(request, 'Pregunta actualizada exitosamente')
+        return redirect('exam_detail', pk=exam.pk)
+    
+    context = {'question': question, 'exam': exam}
+    return render(request, 'tickets/question_form.html', context)
+
+
+@login_required
+def question_delete(request, pk):
+    """Eliminar pregunta"""
+    from .utils import is_agent
+    
+    question = get_object_or_404(ExamQuestion, pk=pk)
+    exam = question.exam
+    
+    if not (is_agent(request.user) or exam.created_by == request.user):
+        messages.error(request, 'No tienes permisos para eliminar esta pregunta')
+        return redirect('exam_detail', pk=exam.pk)
+    
+    if request.method == 'POST':
+        question.delete()
+        messages.success(request, 'Pregunta eliminada exitosamente')
+        return redirect('exam_detail', pk=exam.pk)
+    
+    context = {'question': question, 'exam': exam}
+    return render(request, 'tickets/question_delete.html', context)
+
+
+@login_required
+def exam_attempts_list(request):
+    """Listado de todos los intentos de exámenes (solo para agentes)"""
+    from .utils import is_agent
+    
+    if not is_agent(request.user):
+        messages.error(request, 'No tienes permisos para acceder a esta sección')
+        return redirect('dashboard')
+    
+    # Obtener parámetros de filtrado
+    exam_filter = request.GET.get('exam', '')
+    status_filter = request.GET.get('status', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    search = request.GET.get('search', '')
+    
+    # Filtrar intentos
+    attempts = ExamAttempt.objects.select_related('exam', 'user').filter(
+        completed_at__isnull=False
+    ).order_by('-completed_at')
+    
+    # Aplicar filtros
+    if exam_filter:
+        attempts = attempts.filter(exam_id=exam_filter)
+    
+    if status_filter == 'passed':
+        attempts = attempts.filter(passed=True)
+    elif status_filter == 'failed':
+        attempts = attempts.filter(passed=False)
+    
+    if date_from:
+        try:
+            from datetime import datetime
+            date_from_obj = datetime.strptime(date_from, '%Y-%m-%d')
+            attempts = attempts.filter(completed_at__date__gte=date_from_obj.date())
+        except ValueError:
+            pass
+    
+    if date_to:
+        try:
+            from datetime import datetime
+            date_to_obj = datetime.strptime(date_to, '%Y-%m-%d')
+            attempts = attempts.filter(completed_at__date__lte=date_to_obj.date())
+        except ValueError:
+            pass
+    
+    if search:
+        from django.db.models import Q
+        attempts = attempts.filter(
+            Q(participant_name__icontains=search) |
+            Q(participant_email__icontains=search) |
+            Q(exam__title__icontains=search)
+        )
+    
+    # Paginación
+    from django.core.paginator import Paginator
+    paginator = Paginator(attempts, 25)  # 25 intentos por página
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Obtener lista de exámenes para el filtro
+    exams = Exam.objects.all().order_by('title')
+    
+    # Estadísticas generales
+    total_attempts = attempts.count()
+    passed_attempts = attempts.filter(passed=True).count()
+    failed_attempts = attempts.filter(passed=False).count()
+    pass_rate = (passed_attempts / total_attempts * 100) if total_attempts > 0 else 0
+    
+    context = {
+        'page_obj': page_obj,
+        'attempts': page_obj,
+        'exams': exams,
+        'current_filters': {
+            'exam': exam_filter,
+            'status': status_filter,
+            'date_from': date_from,
+            'date_to': date_to,
+            'search': search,
+        },
+        'stats': {
+            'total_attempts': total_attempts,
+            'passed_attempts': passed_attempts,
+            'failed_attempts': failed_attempts,
+            'pass_rate': pass_rate,
+        }
+    }
+    
+    return render(request, 'tickets/exam_attempts_list.html', context)

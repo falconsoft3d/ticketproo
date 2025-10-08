@@ -1,0 +1,379 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Intentos de Exámenes - Gestión{% endblock %}
+
+{% block extra_css %}
+<style>
+.stats-card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: all 0.3s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.filter-card {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+}
+
+.attempt-row {
+    transition: all 0.2s ease;
+}
+
+.attempt-row:hover {
+    background-color: #f8f9fa;
+}
+
+.status-badge {
+    font-size: 0.85rem;
+    padding: 0.5rem 0.75rem;
+}
+
+.score-display {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.action-buttons .btn {
+    padding: 0.25rem 0.5rem;
+    margin: 0.1rem;
+}
+
+@media (max-width: 768px) {
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+    
+    .action-buttons .btn {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.8rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="bi bi-clipboard-data"></i> Intentos de Exámenes</h2>
+                    <p class="text-muted mb-0">Gestión y seguimiento de todos los intentos de examen</p>
+                </div>
+                <div>
+                    <a href="{% url 'exam_list' %}" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-left"></i> Volver a Exámenes
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas generales -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stats-card text-center">
+                <div class="card-body">
+                    <i class="bi bi-clipboard-check fs-1 text-primary mb-2"></i>
+                    <h4 class="card-title">{{ stats.total_attempts }}</h4>
+                    <p class="card-text text-muted">Total Intentos</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card text-center">
+                <div class="card-body">
+                    <i class="bi bi-check-circle fs-1 text-success mb-2"></i>
+                    <h4 class="card-title text-success">{{ stats.passed_attempts }}</h4>
+                    <p class="card-text text-muted">Aprobados</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card text-center">
+                <div class="card-body">
+                    <i class="bi bi-x-circle fs-1 text-danger mb-2"></i>
+                    <h4 class="card-title text-danger">{{ stats.failed_attempts }}</h4>
+                    <p class="card-text text-muted">Reprobados</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card text-center">
+                <div class="card-body">
+                    <i class="bi bi-percent fs-1 text-info mb-2"></i>
+                    <h4 class="card-title text-info">{{ stats.pass_rate|floatformat:1 }}%</h4>
+                    <p class="card-text text-muted">Tasa Aprobación</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card filter-card">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="exam" class="form-label">Examen</label>
+                            <select class="form-select" id="exam" name="exam">
+                                <option value="">Todos los exámenes</option>
+                                {% for exam in exams %}
+                                <option value="{{ exam.id }}" {% if current_filters.exam == exam.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ exam.title }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="status" class="form-label">Estado</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">Todos</option>
+                                <option value="passed" {% if current_filters.status == "passed" %}selected{% endif %}>Aprobados</option>
+                                <option value="failed" {% if current_filters.status == "failed" %}selected{% endif %}>Reprobados</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="date_from" class="form-label">Desde</label>
+                            <input type="date" class="form-control" id="date_from" name="date_from" value="{{ current_filters.date_from }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="date_to" class="form-label">Hasta</label>
+                            <input type="date" class="form-control" id="date_to" name="date_to" value="{{ current_filters.date_to }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="search" class="form-label">Buscar</label>
+                            <input type="text" class="form-control" id="search" name="search" 
+                                   placeholder="Nombre, email..." value="{{ current_filters.search }}">
+                        </div>
+                        <div class="col-md-1 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                    </form>
+                    {% if current_filters.exam or current_filters.status or current_filters.date_from or current_filters.date_to or current_filters.search %}
+                    <div class="mt-3">
+                        <a href="{% url 'exam_attempts_list' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-x-circle"></i> Limpiar Filtros
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de intentos -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-table"></i> Listado de Intentos
+                        <span class="badge bg-primary ms-2">{{ page_obj.paginator.count }} total</span>
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if attempts %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Participante</th>
+                                    <th>Email</th>
+                                    <th>Examen</th>
+                                    <th>Puntuación</th>
+                                    <th>Estado</th>
+                                    <th>Fecha</th>
+                                    <th>Tiempo</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for attempt in attempts %}
+                                <tr class="attempt-row">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2">
+                                                {{ attempt.participant_name|first|upper }}
+                                            </div>
+                                            <div>
+                                                <strong class="text-dark">{{ attempt.participant_name }}</strong>
+                                                {% if attempt.user %}
+                                                <br><small class="text-muted">Usuario registrado</small>
+                                                {% else %}
+                                                <br><small class="text-muted">Usuario público</small>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="text-dark">{{ attempt.participant_email }}</span>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong class="text-dark">{{ attempt.exam.title }}</strong>
+                                            {% if attempt.exam.is_public %}
+                                            <br><span class="badge bg-info">Público</span>
+                                            {% else %}
+                                            <br><span class="badge bg-secondary">Privado</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="score-display {% if attempt.passed %}text-success{% else %}text-danger{% endif %}">
+                                            {{ attempt.score|floatformat:1 }}%
+                                        </div>
+                                        <small class="text-muted">{{ attempt.correct_answers }}/{{ attempt.total_questions }}</small>
+                                    </td>
+                                    <td>
+                                        {% if attempt.passed %}
+                                        <span class="badge bg-success status-badge">
+                                            <i class="bi bi-check-circle"></i> Aprobado
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-danger status-badge">
+                                            <i class="bi bi-x-circle"></i> Reprobado
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="text-dark">{{ attempt.completed_at|date:"d/m/Y" }}</div>
+                                        <small class="text-muted">{{ attempt.completed_at|time:"H:i" }}</small>
+                                    </td>
+                                    <td>
+                                        {% if attempt.time_taken %}
+                                        <span class="text-dark">{{ attempt.time_taken_display }}</span>
+                                        {% else %}
+                                        <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <a href="{% url 'exam_results' attempt.id %}" 
+                                               class="btn btn-sm btn-outline-primary" 
+                                               title="Ver Resultados">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            {% if attempt.passed and attempt.certificate_token %}
+                                            <a href="{% url 'download_certificate' attempt.id %}" 
+                                               class="btn btn-sm btn-outline-success" 
+                                               title="Descargar Certificado">
+                                                <i class="bi bi-download"></i>
+                                            </a>
+                                            <a href="{% url 'verify_certificate' attempt.certificate_token %}" 
+                                               class="btn btn-sm btn-outline-info" 
+                                               title="Verificar Certificado" 
+                                               target="_blank">
+                                                <i class="bi bi-qr-code"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-clipboard-x fs-1 text-muted mb-3"></i>
+                        <h5 class="text-muted">No se encontraron intentos de examen</h5>
+                        <p class="text-muted">Los intentos aparecerán aquí cuando los usuarios completen exámenes.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Paginación -->
+    {% if page_obj.has_other_pages %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <nav aria-label="Paginación de intentos">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if request.GET.exam %}&exam={{ request.GET.exam }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                            <i class="bi bi-chevron-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.exam %}&exam={{ request.GET.exam }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if request.GET.exam %}&exam={{ request.GET.exam }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.exam %}&exam={{ request.GET.exam }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.exam %}&exam={{ request.GET.exam }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                            <i class="bi bi-chevron-double-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit cuando cambien los filtros
+    const filterForm = document.querySelector('.filter-card form');
+    const selectFilters = filterForm.querySelectorAll('select');
+    
+    selectFilters.forEach(select => {
+        select.addEventListener('change', function() {
+            filterForm.submit();
+        });
+    });
+    
+    // Confirmar descarga de certificados
+    const downloadButtons = document.querySelectorAll('a[title="Descargar Certificado"]');
+    downloadButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            // Opcional: agregar confirmación o tracking
+            console.log('Descargando certificado...');
+        });
+    });
+    
+    // Mostrar tooltips en los botones de acción
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+    const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl, {
+            placement: 'top'
+        });
+    });
+});
+</script>
+{% endblock %}

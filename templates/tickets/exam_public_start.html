@@ -1,0 +1,347 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ exam.title }} - Examen Público{% endblock %}
+
+{% block extra_css %}
+<style>
+.exam-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.exam-info-card {
+    border: none;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.info-item {
+    padding: 15px;
+    border-left: 4px solid #007bff;
+    background-color: #f8f9fa;
+    margin-bottom: 15px;
+    border-radius: 0 5px 5px 0;
+}
+
+.participant-form {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+}
+
+.form-floating .form-control {
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.form-floating .form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.btn-start-exam {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    border: none;
+    padding: 15px 30px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-start-exam:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.privacy-notice {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 5px;
+    padding: 10px;
+    font-size: 0.9rem;
+}
+
+.exam-preview {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.question-preview {
+    background: white;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-left: 4px solid #6c757d;
+}
+
+@media (max-width: 768px) {
+    .exam-info-card {
+        margin-bottom: 20px;
+    }
+    
+    .btn-start-exam {
+        width: 100%;
+        padding: 12px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header del examen -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0">
+                <div class="card-header exam-header text-center py-4">
+                    <h1 class="mb-2">{{ exam.title }}</h1>
+                    <p class="lead mb-0">{{ exam.description|default:"Examen disponible públicamente" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información del examen -->
+        <div class="col-lg-8">
+            <div class="card exam-info-card mb-4">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="bi bi-info-circle"></i> Información del Examen</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-question-circle fs-4 text-primary me-3"></i>
+                                    <div>
+                                        <strong>Total de Preguntas</strong>
+                                        <div class="text-muted">{{ exam.questions.count }} preguntas</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-trophy fs-4 text-success me-3"></i>
+                                    <div>
+                                        <strong>Puntuación Mínima</strong>
+                                        <div class="text-muted">{{ exam.passing_score }}% para aprobar</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if exam.time_limit %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-clock fs-4 text-warning me-3"></i>
+                                    <div>
+                                        <strong>Tiempo Límite</strong>
+                                        <div class="text-muted">{{ exam.time_limit }} minutos</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-list-check fs-4 text-info me-3"></i>
+                                    <div>
+                                        <strong>Formato</strong>
+                                        <div class="text-muted">3 opciones por pregunta</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Instrucciones -->
+            <div class="card exam-info-card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-list-ul"></i> Instrucciones</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i class="bi bi-check text-success me-2"></i> Lee cada pregunta cuidadosamente</li>
+                        <li class="mb-2"><i class="bi bi-check text-success me-2"></i> Selecciona una opción por pregunta (A, B o C)</li>
+                        <li class="mb-2"><i class="bi bi-check text-success me-2"></i> Puedes navegar entre preguntas usando los botones</li>
+                        {% if exam.time_limit %}
+                        <li class="mb-2"><i class="bi bi-clock text-warning me-2"></i> Tienes {{ exam.time_limit }} minutos para completar el examen</li>
+                        {% endif %}
+                        <li class="mb-2"><i class="bi bi-exclamation-triangle text-warning me-2"></i> Una vez enviado, no podrás modificar tus respuestas</li>
+                        <li class="mb-0"><i class="bi bi-award text-info me-2"></i> Necesitas {{ exam.passing_score }}% para aprobar</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Vista previa de algunas preguntas -->
+            {% if show_preview %}
+            <div class="card exam-info-card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-eye"></i> Vista Previa</h5>
+                    <small class="text-muted">Primeras preguntas del examen</small>
+                </div>
+                <div class="card-body exam-preview">
+                    {% for question in preview_questions %}
+                    <div class="question-preview">
+                        <h6><span class="badge bg-primary me-2">{{ question.order }}</span>{{ question.question_text }}</h6>
+                        <div class="row mt-2">
+                            <div class="col-md-4"><small class="text-muted">A) {{ question.option_a }}</small></div>
+                            <div class="col-md-4"><small class="text-muted">B) {{ question.option_b }}</small></div>
+                            <div class="col-md-4"><small class="text-muted">C) {{ question.option_c }}</small></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% if exam.questions.count > preview_questions|length %}
+                    <div class="text-center text-muted mt-3">
+                        <small>... y {{ exam.questions.count|add:"-3" }} preguntas más</small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Formulario de registro -->
+        <div class="col-lg-4">
+            <div class="participant-form p-4">
+                <h4 class="text-center mb-4">
+                    <i class="bi bi-person-plus"></i> Comenzar Examen
+                </h4>
+                
+                <form method="post" action="{% url 'exam_take_public' exam.public_token %}" id="participantForm">
+                    {% csrf_token %}
+                    
+                    <div class="form-floating mb-3">
+                        <input type="text" 
+                               class="form-control" 
+                               id="participant_name" 
+                               name="participant_name" 
+                               placeholder="Tu nombre completo"
+                               required
+                               maxlength="100">
+                        <label for="participant_name">
+                            <i class="bi bi-person"></i> Nombre Completo *
+                        </label>
+                    </div>
+                    
+                    <div class="form-floating mb-4">
+                        <input type="email" 
+                               class="form-control" 
+                               id="participant_email" 
+                               name="participant_email" 
+                               placeholder="tu@email.com"
+                               required>
+                        <label for="participant_email">
+                            <i class="bi bi-envelope"></i> Correo Electrónico *
+                        </label>
+                    </div>
+                    
+                    <!-- Checkbox de aceptación -->
+                    <div class="form-check mb-4">
+                        <input class="form-check-input" 
+                               type="checkbox" 
+                               value="" 
+                               id="acceptTerms"
+                               required>
+                        <label class="form-check-label" for="acceptTerms">
+                            Acepto que mis datos sean utilizados únicamente para este examen
+                        </label>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-start-exam w-100">
+                        <i class="bi bi-play-circle"></i> Comenzar Examen
+                    </button>
+                </form>
+                
+                <div class="privacy-notice mt-4">
+                    <small>
+                        <i class="bi bi-shield-check"></i>
+                        <strong>Privacidad:</strong> Tus datos solo se usan para identificarte en este examen y no serán compartidos con terceros.
+                    </small>
+                </div>
+                
+                <!-- Estadísticas del examen -->
+                <div class="mt-4 pt-4 border-top">
+                    <h6 class="text-muted mb-3">Estadísticas</h6>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="fs-5 fw-bold text-primary">{{ exam.attempts_count|default:0 }}</div>
+                            <small class="text-muted">Intentos</small>
+                        </div>
+                        <div class="col-6">
+                            <div class="fs-5 fw-bold text-success">{{ exam.pass_rate|floatformat:0|default:0 }}%</div>
+                            <small class="text-muted">Aprobación</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('participantForm');
+    const nameInput = document.getElementById('participant_name');
+    const emailInput = document.getElementById('participant_email');
+    const submitBtn = form.querySelector('button[type="submit"]');
+    
+    // Validación en tiempo real
+    function validateForm() {
+        const nameValid = nameInput.value.trim().length >= 2;
+        const emailValid = emailInput.validity.valid && emailInput.value.length > 0;
+        const termsAccepted = document.getElementById('acceptTerms').checked;
+        
+        submitBtn.disabled = !(nameValid && emailValid && termsAccepted);
+    }
+    
+    nameInput.addEventListener('input', validateForm);
+    emailInput.addEventListener('input', validateForm);
+    document.getElementById('acceptTerms').addEventListener('change', validateForm);
+    
+    // Validación inicial
+    validateForm();
+    
+    // Confirmación antes de enviar
+    form.addEventListener('submit', function(e) {
+        const confirmMessage = `¿Estás listo para comenzar el examen "${exam.title}"?\n\n` +
+                              `Nombre: ${nameInput.value}\n` +
+                              `Email: ${emailInput.value}\n\n` +
+                              {% if exam.time_limit %}`Tiempo límite: {{ exam.time_limit }} minutos\n`{% endif %} +
+                              `Una vez que comiences, el tiempo empezará a correr.`;
+        
+        if (!confirm(confirmMessage)) {
+            e.preventDefault();
+        }
+    });
+    
+    // Limpiar formulario si hay errores
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == 'error' %}
+                // Mostrar el error y permitir corregir
+                console.log('Error en el formulario: {{ message }}');
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+});
+
+// Variables disponibles para el script
+const exam = {
+    title: "{{ exam.title|escapejs }}",
+    timeLimit: {{ exam.time_limit|default:"null" }},
+    questionCount: {{ exam.questions.count }},
+    passingScore: {{ exam.passing_score }}
+};
+</script>
+{% endblock %}

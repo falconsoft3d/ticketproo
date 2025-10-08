@@ -3769,3 +3769,254 @@ class Concept(models.Model):
     
     def __str__(self):
         return f"{self.term}: {self.definition[:50]}..."
+
+
+class Exam(models.Model):
+    """Modelo para los exámenes"""
+    
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título del Examen'
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Creado por'
+    )
+    is_public = models.BooleanField(
+        default=False,
+        verbose_name='¿Es público?'
+    )
+    public_token = models.CharField(
+        max_length=50,
+        unique=True,
+        blank=True,
+        null=True,
+        verbose_name='Token público'
+    )
+    passing_score = models.IntegerField(
+        default=70,
+        verbose_name='Puntuación mínima para aprobar (%)'
+    )
+    time_limit = models.IntegerField(
+        blank=True,
+        null=True,
+        verbose_name='Tiempo límite (minutos)',
+        help_text='Dejar vacío para sin límite de tiempo'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = 'Examen'
+        verbose_name_plural = 'Exámenes'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return self.title
+    
+    def save(self, *args, **kwargs):
+        if self.is_public and not self.public_token:
+            import uuid
+            self.public_token = str(uuid.uuid4())[:8]
+        elif not self.is_public:
+            self.public_token = None
+        super().save(*args, **kwargs)
+    
+    def get_questions_count(self):
+        return self.questions.count()
+    
+    def get_total_attempts(self):
+        return self.attempts.count()
+
+
+class ExamQuestion(models.Model):
+    """Modelo para las preguntas del examen"""
+    
+    exam = models.ForeignKey(
+        Exam,
+        on_delete=models.CASCADE,
+        related_name='questions',
+        verbose_name='Examen'
+    )
+    question_text = models.TextField(
+        verbose_name='Pregunta'
+    )
+    option_a = models.CharField(
+        max_length=500,
+        verbose_name='Opción A'
+    )
+    option_b = models.CharField(
+        max_length=500,
+        verbose_name='Opción B'
+    )
+    option_c = models.CharField(
+        max_length=500,
+        verbose_name='Opción C'
+    )
+    correct_option = models.CharField(
+        max_length=1,
+        choices=[('A', 'Opción A'), ('B', 'Opción B'), ('C', 'Opción C')],
+        verbose_name='Opción correcta'
+    )
+    order = models.PositiveIntegerField(
+        default=1,
+        verbose_name='Orden'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = 'Pregunta del Examen'
+        verbose_name_plural = 'Preguntas del Examen'
+        ordering = ['order']
+    
+    def __str__(self):
+        return f"{self.exam.title} - Pregunta {self.order}"
+
+
+class ExamAttempt(models.Model):
+    """Modelo para los intentos de examen"""
+    
+    exam = models.ForeignKey(
+        Exam,
+        on_delete=models.CASCADE,
+        related_name='attempts',
+        verbose_name='Examen'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        verbose_name='Usuario'
+    )
+    participant_name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre del participante'
+    )
+    participant_email = models.EmailField(
+        verbose_name='Email del participante'
+    )
+    score = models.FloatField(
+        verbose_name='Puntuación (%)'
+    )
+    total_questions = models.IntegerField(
+        verbose_name='Total de preguntas'
+    )
+    correct_answers = models.IntegerField(
+        verbose_name='Respuestas correctas'
+    )
+    started_at = models.DateTimeField(
+        verbose_name='Iniciado en'
+    )
+    completed_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Completado en'
+    )
+    time_taken = models.IntegerField(
+        verbose_name='Tiempo tomado (segundos)'
+    )
+    passed = models.BooleanField(
+        default=False,
+        verbose_name='¿Aprobado?'
+    )
+    certificate_token = models.CharField(
+        max_length=100,
+        unique=True,
+        blank=True,
+        null=True,
+        verbose_name='Token del certificado'
+    )
+    certificate_generated_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Certificado generado en'
+    )
+    
+    class Meta:
+        verbose_name = 'Intento de Examen'
+        verbose_name_plural = 'Intentos de Examen'
+        ordering = ['-completed_at']
+    
+    def __str__(self):
+        return f"{self.participant_name} - {self.exam.title} ({self.score}%)"
+    
+    @property
+    def time_taken_display(self):
+        """Retorna el tiempo tomado en formato legible"""
+        if not self.time_taken:
+            return "No disponible"
+        
+        if self.time_taken < 60:
+            return f"{self.time_taken} segundos"
+        elif self.time_taken < 3600:
+            minutes = self.time_taken // 60
+            seconds = self.time_taken % 60
+            return f"{minutes} min {seconds} seg"
+        else:
+            hours = self.time_taken // 3600
+            minutes = (self.time_taken % 3600) // 60
+            seconds = self.time_taken % 60
+            return f"{hours}h {minutes}m {seconds}s"
+    
+    @property
+    def incorrect_answers(self):
+        """Retorna el número de respuestas incorrectas"""
+        return self.total_questions - self.correct_answers
+    
+    def generate_certificate_token(self):
+        """Genera un token único para el certificado"""
+        if not self.certificate_token and self.passed:
+            import uuid
+            from django.utils import timezone
+            self.certificate_token = str(uuid.uuid4())
+            self.certificate_generated_at = timezone.now()
+            self.save(update_fields=['certificate_token', 'certificate_generated_at'])
+        return self.certificate_token
+    
+    def save(self, *args, **kwargs):
+        # Generar token del certificado automáticamente si pasa el examen
+        if self.passed and not self.certificate_token:
+            import uuid
+            self.certificate_token = str(uuid.uuid4())
+            if not self.certificate_generated_at:
+                from django.utils import timezone
+                self.certificate_generated_at = timezone.now()
+        super().save(*args, **kwargs)
+
+
+class ExamAnswer(models.Model):
+    """Modelo para las respuestas del examen"""
+    
+    attempt = models.ForeignKey(
+        ExamAttempt,
+        on_delete=models.CASCADE,
+        related_name='answers',
+        verbose_name='Intento'
+    )
+    question = models.ForeignKey(
+        ExamQuestion,
+        on_delete=models.CASCADE,
+        verbose_name='Pregunta'
+    )
+    selected_option = models.CharField(
+        max_length=1,
+        choices=[('A', 'Opción A'), ('B', 'Opción B'), ('C', 'Opción C')],
+        verbose_name='Opción seleccionada'
+    )
+    is_correct = models.BooleanField(
+        default=False,
+        verbose_name='¿Es correcta?'
+    )
+    
+    class Meta:
+        verbose_name = 'Respuesta del Examen'
+        verbose_name_plural = 'Respuestas del Examen'
+        unique_together = ['attempt', 'question']
+    
+    def __str__(self):
+        return f"{self.attempt.participant_name} - {self.question.question_text[:50]}..."

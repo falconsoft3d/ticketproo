@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if exam %}Editar Examen{% else %}Crear Examen{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">
+                        <i class="bi bi-question-circle"></i> 
+                        {% if exam %}Editar Examen{% else %}Crear Nuevo Examen{% endif %}
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Título del Examen *</label>
+                            <input type="text" class="form-control" id="title" name="title" 
+                                   value="{% if exam %}{{ exam.title }}{% endif %}" required>
+                            <div class="form-text">Nombre descriptivo del examen</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="description" name="description" rows="3">{% if exam %}{{ exam.description }}{% endif %}</textarea>
+                            <div class="form-text">Descripción opcional del contenido y objetivos del examen</div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="passing_score" class="form-label">Puntuación Mínima (%)</label>
+                                    <input type="number" class="form-control" id="passing_score" name="passing_score" 
+                                           min="0" max="100" value="{% if exam %}{{ exam.passing_score }}{% else %}70{% endif %}">
+                                    <div class="form-text">Porcentaje mínimo para aprobar</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="time_limit" class="form-label">Tiempo Límite (minutos)</label>
+                                    <input type="number" class="form-control" id="time_limit" name="time_limit" 
+                                           min="1" value="{% if exam.time_limit %}{{ exam.time_limit }}{% endif %}">
+                                    <div class="form-text">Dejar vacío para sin límite de tiempo</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="is_public" name="is_public"
+                                       {% if exam.is_public %}checked{% endif %}>
+                                <label class="form-check-label" for="is_public">
+                                    <strong>Hacer público</strong>
+                                </label>
+                                <div class="form-text">
+                                    Si está marcado, el examen será accesible públicamente mediante un enlace único.
+                                    Los participantes podrán tomarlo sin necesidad de registrarse.
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if exam.is_public and exam.public_token %}
+                        <div class="alert alert-info">
+                            <h6><i class="bi bi-link"></i> URL Pública del Examen</h6>
+                            <div class="input-group">
+                                <input type="text" class="form-control" 
+                                       value="{{ request.build_absolute_uri }}/exam/{{ exam.public_token }}/" 
+                                       readonly id="publicExamUrl">
+                                <button class="btn btn-outline-primary" type="button" 
+                                        onclick="copyToClipboard('publicExamUrl')">
+                                    <i class="bi bi-clipboard"></i> Copiar
+                                </button>
+                            </div>
+                            <small class="text-muted">Comparte este enlace para que otros puedan tomar el examen</small>
+                        </div>
+                        {% endif %}
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% if exam %}{% url 'exam_detail' exam.pk %}{% else %}{% url 'exam_list' %}{% endif %}" 
+                               class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check"></i> 
+                                {% if exam %}Actualizar Examen{% else %}Crear Examen{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {% if exam %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Información Adicional</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Creado por:</strong> {{ exam.created_by.get_full_name|default:exam.created_by.username }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Fecha de creación:</strong> {{ exam.created_at|date:"d/m/Y H:i" }}
+                        </div>
+                    </div>
+                    {% if exam.updated_at != exam.created_at %}
+                    <div class="row mt-2">
+                        <div class="col-12">
+                            <strong>Última actualización:</strong> {{ exam.updated_at|date:"d/m/Y H:i" }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    element.select();
+    element.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(element.value);
+    
+    // Mostrar feedback
+    const button = element.nextElementSibling;
+    const originalContent = button.innerHTML;
+    button.innerHTML = '<i class="bi bi-check"></i> Copiado';
+    button.classList.remove('btn-outline-primary');
+    button.classList.add('btn-success');
+    
+    setTimeout(() => {
+        button.innerHTML = originalContent;
+        button.classList.remove('btn-success');
+        button.classList.add('btn-outline-primary');
+    }, 2000);
+}
+</script>
+{% endblock %}

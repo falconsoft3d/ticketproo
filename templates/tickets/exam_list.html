@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Exámenes{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-question-circle"></i> Exámenes</h1>
+        {% if user.groups.all and user.groups.first.name == 'Agentes' %}
+        <a href="{% url 'exam_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Crear Examen
+        </a>
+        {% endif %}
+    </div>
+
+    {% if exams %}
+    <div class="row">
+        {% for exam in exams %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">{{ exam.title }}</h5>
+                    {% if exam.is_public %}
+                        <span class="badge bg-success">Público</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Privado</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if exam.description %}
+                    <p class="card-text">{{ exam.description|truncatewords:15 }}</p>
+                    {% endif %}
+                    
+                    <div class="row text-center mb-3">
+                        <div class="col-4">
+                            <small class="text-muted">Preguntas</small>
+                            <div class="fw-bold">{{ exam.get_questions_count }}</div>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted">Intentos</small>
+                            <div class="fw-bold">{{ exam.get_total_attempts }}</div>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted">Mínimo</small>
+                            <div class="fw-bold">{{ exam.passing_score }}%</div>
+                        </div>
+                    </div>
+
+                    {% if exam.time_limit %}
+                    <p class="text-muted small">
+                        <i class="bi bi-clock"></i> Tiempo límite: {{ exam.time_limit }} minutos
+                    </p>
+                    {% endif %}
+                    
+                    {% if exam.user_last_attempt %}
+                    <div class="alert {% if exam.user_last_attempt.passed %}alert-success{% else %}alert-warning{% endif %} alert-sm py-2 mb-2">
+                        <small>
+                            <strong>Tu última puntuación:</strong> {{ exam.user_last_attempt.score|floatformat:1 }}%
+                            {% if exam.user_last_attempt.passed %}
+                                <span class="badge bg-success ms-1">APROBADO</span>
+                            {% else %}
+                                <span class="badge bg-warning ms-1">REPROBADO</span>
+                            {% endif %}
+                        </small>
+                        {% if exam.user_last_attempt.passed %}
+                        <div class="mt-2">
+                            <a href="{% url 'download_certificate' exam.user_last_attempt.id %}" class="btn btn-success btn-sm me-2">
+                                <i class="bi bi-download"></i> Descargar Certificado
+                            </a>
+                            {% if exam.user_last_attempt.certificate_token %}
+                            <a href="{% url 'verify_certificate' exam.user_last_attempt.certificate_token %}" class="btn btn-info btn-sm" target="_blank">
+                                <i class="bi bi-qr-code"></i> Verificar
+                            </a>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-light alert-sm py-2 mb-2">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i> Aún no has tomado este examen
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <div class="btn-group w-100" role="group">
+                        <a href="{% url 'exam_detail' exam.pk %}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-eye"></i> Ver
+                        </a>
+                        {% if exam.get_questions_count > 0 %}
+                        <a href="{% url 'exam_take_authenticated' exam.pk %}" class="btn btn-success btn-sm">
+                            <i class="bi bi-play-circle"></i> 
+                            {% if exam.user_last_attempt %}Reintentar{% else %}Tomar{% endif %}
+                        </a>
+                        {% endif %}
+                    </div>
+                    
+                    {% if exam.is_public and exam.public_token %}
+                    <div class="mt-2">
+                        <small class="text-muted">URL Pública:</small>
+                        <div class="input-group input-group-sm">
+                            <input type="text" class="form-control" 
+                                   value="{{ request.scheme }}://{{ request.get_host }}{% url 'exam_take_public' exam.public_token %}" 
+                                   readonly id="publicUrl{{ exam.id }}">
+                            <button class="btn btn-outline-secondary" type="button" 
+                                    onclick="copyToClipboard('publicUrl{{ exam.id }}')">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-question-circle display-1 text-muted"></i>
+        <h3 class="mt-3">No hay exámenes disponibles</h3>
+        <p class="text-muted">
+            {% if user.groups.all and user.groups.first.name == 'Agentes' %}
+            Crea el primer examen para empezar a evaluar conocimientos.
+            {% else %}
+            Los exámenes serán creados por los agentes del sistema.
+            {% endif %}
+        </p>
+        {% if user.groups.all and user.groups.first.name == 'Agentes' %}
+        <a href="{% url 'exam_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Crear Primer Examen
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    element.select();
+    element.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(element.value);
+    
+    // Mostrar feedback
+    const button = element.nextElementSibling;
+    const originalContent = button.innerHTML;
+    button.innerHTML = '<i class="bi bi-check"></i>';
+    button.classList.remove('btn-outline-secondary');
+    button.classList.add('btn-success');
+    
+    setTimeout(() => {
+        button.innerHTML = originalContent;
+        button.classList.remove('btn-success');
+        button.classList.add('btn-outline-secondary');
+    }, 2000);
+}
+</script>
+{% endblock %}

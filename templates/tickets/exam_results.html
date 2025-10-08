@@ -1,0 +1,380 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Resultados del Examen{% endblock %}
+
+{% block extra_css %}
+<style>
+.result-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.score-circle {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: white;
+    margin: 0 auto;
+}
+
+.score-passed {
+    background: linear-gradient(135deg, #28a745, #20c997);
+}
+
+.score-failed {
+    background: linear-gradient(135deg, #dc3545, #fd7e14);
+}
+
+.question-review {
+    border-left: 4px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.question-correct {
+    border-left-color: #28a745;
+    background-color: #f8fff9;
+}
+
+.question-incorrect {
+    border-left-color: #dc3545;
+    background-color: #fff8f8;
+}
+
+.answer-option {
+    padding: 10px;
+    border-radius: 5px;
+    margin: 5px 0;
+}
+
+.answer-correct {
+    background-color: #d4edda;
+    border: 2px solid #28a745;
+}
+
+.answer-selected-wrong {
+    background-color: #f8d7da;
+    border: 2px solid #dc3545;
+}
+
+.answer-not-selected {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+}
+
+.stats-card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.print-hidden {
+    display: none;
+}
+
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .print-hidden {
+        display: block !important;
+    }
+    
+    .card {
+        border: 1px solid #000 !important;
+        box-shadow: none !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header con resultado principal -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0">
+                <div class="card-header result-header text-white text-center py-4">
+                    <h2 class="mb-3">Resultados del Examen</h2>
+                    <h4 class="mb-0">{{ exam.title }}</h4>
+                </div>
+                <div class="card-body text-center py-5">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <div class="score-circle {% if attempt.passed %}score-passed{% else %}score-failed{% endif %}">
+                                {{ attempt.score|floatformat:0 }}%
+                            </div>
+                            <h4 class="mt-3 {% if attempt.passed %}text-success{% else %}text-danger{% endif %}">
+                                {% if attempt.passed %}
+                                    <i class="bi bi-check-circle"></i> ¡APROBADO!
+                                    <br><small class="text-success">¡Felicitaciones! Puedes descargar tu certificado</small>
+                                {% else %}
+                                    <i class="bi bi-x-circle"></i> REPROBADO
+                                {% endif %}
+                            </h4>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="row text-center">
+                                <div class="col-6 col-md-3">
+                                    <div class="fs-2 fw-bold text-dark">{{ attempt.correct_answers }}</div>
+                                    <small class="text-dark">Correctas</small>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="fs-2 fw-bold text-dark">{{ attempt.incorrect_answers }}</div>
+                                    <small class="text-dark">Incorrectas</small>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="fs-2 fw-bold text-dark">{{ attempt.total_questions }}</div>
+                                    <small class="text-dark">Total</small>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="fs-2 fw-bold text-dark">{{ exam.passing_score }}%</div>
+                                    <small class="text-dark">Mínimo</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información del participante y estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card stats-card">
+                <div class="card-header">
+                    <h5 class="mb-0 text-dark"><i class="bi bi-person"></i> Información del Participante</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-12 mb-2">
+                            <strong class="text-dark">Nombre:</strong> <span class="text-dark">{{ attempt.participant_name }}</span>
+                        </div>
+                        <div class="col-12 mb-2">
+                            <strong class="text-dark">Email:</strong> <span class="text-dark">{{ attempt.participant_email }}</span>
+                        </div>
+                        <div class="col-12 mb-2">
+                            <strong class="text-dark">Fecha:</strong> <span class="text-dark">{{ attempt.completed_at|date:"d/m/Y H:i" }}</span>
+                        </div>
+                        {% if attempt.time_taken %}
+                        <div class="col-12">
+                            <strong class="text-dark">Tiempo:</strong> <span class="text-dark">{{ attempt.time_taken_display }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card stats-card">
+                <div class="card-header">
+                    <h5 class="mb-0 text-dark"><i class="bi bi-graph-up"></i> Estadísticas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6 text-center border-end">
+                            <div class="fs-4 fw-bold text-dark">
+                                {{ attempt.score|floatformat:1 }}%
+                            </div>
+                            <small class="text-dark">Puntuación</small>
+                        </div>
+                        <div class="col-6 text-center">
+                            <div class="fs-4 fw-bold text-dark">
+                                {% if attempt.passed %}
+                                    <i class="bi bi-trophy"></i>
+                                {% else %}
+                                    <i class="bi bi-arrow-repeat"></i>
+                                {% endif %}
+                            </div>
+                            <small class="text-dark">
+                                {% if attempt.passed %}Certificado{% else %}Reintentar{% endif %}
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="progress mb-2">
+                        <div class="progress-bar {% if attempt.passed %}bg-success{% else %}bg-danger{% endif %}" 
+                             role="progressbar" style="width: {{ attempt.score }}%"></div>
+                    </div>
+                    <div class="d-flex justify-content-between small text-dark">
+                        <span>0%</span>
+                        <span class="fw-bold">{{ exam.passing_score }}% (mínimo)</span>
+                        <span>100%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones -->
+    <div class="row mb-4 no-print">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="btn-group" role="group">
+                        {% if exam.is_public and exam.public_token %}
+                        <a href="{% url 'exam_take_public' exam.public_token %}" class="btn btn-outline-primary">
+                            <i class="bi bi-arrow-left"></i> Volver al Examen
+                        </a>
+                        {% else %}
+                        <a href="{% url 'exam_detail' exam.pk %}" class="btn btn-outline-primary">
+                            <i class="bi bi-arrow-left"></i> Volver al Examen
+                        </a>
+                        {% endif %}
+                        <button onclick="window.print()" class="btn btn-outline-secondary">
+                            <i class="bi bi-printer"></i> Imprimir Resultados
+                        </button>
+                        {% if attempt.passed %}
+                        <a href="{% url 'download_certificate' attempt.id %}" class="btn btn-success">
+                            <i class="bi bi-download"></i> Descargar Certificado
+                        </a>
+                        {% if attempt.certificate_token %}
+                        <a href="{% url 'verify_certificate' attempt.certificate_token %}" class="btn btn-info" target="_blank">
+                            <i class="bi bi-qr-code"></i> Verificar Certificado
+                        </a>
+                        {% endif %}
+                        {% else %}
+                        {% if exam.is_public and exam.public_token %}
+                        <a href="{% url 'exam_take_public' exam.public_token %}" class="btn btn-warning">
+                            <i class="bi bi-arrow-repeat"></i> Reintentar Examen
+                        </a>
+                        {% else %}
+                        <a href="{% url 'exam_take_authenticated' exam.pk %}" class="btn btn-warning">
+                            <i class="bi bi-arrow-repeat"></i> Reintentar Examen
+                        </a>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Revisión detallada de preguntas -->
+    {% if can_view_answers %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0 text-dark"><i class="bi bi-list-check"></i> Revisión Detallada</h5>
+                    <small class="text-dark">Revisa cada pregunta y sus respuestas (solo agentes)</small>
+                </div>
+                <div class="card-body">
+                    {% for answer in answers %}
+                    <div class="question-review p-3 mb-4 rounded {% if answer.is_correct %}question-correct{% else %}question-incorrect{% endif %}">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h6 class="mb-0 text-dark">
+                                <span class="badge bg-primary me-2">{{ answer.question.order }}</span>
+                                {{ answer.question.question_text }}
+                            </h6>
+                            <span class="badge {% if answer.is_correct %}bg-success{% else %}bg-danger{% endif %}">
+                                {% if answer.is_correct %}
+                                    <i class="bi bi-check"></i> Correcta
+                                {% else %}
+                                    <i class="bi bi-x"></i> Incorrecta
+                                {% endif %}
+                            </span>
+                        </div>
+                        
+                        <div class="row">
+                            <!-- Opción A -->
+                            <div class="col-md-4">
+                                <div class="answer-option 
+                                    {% if answer.question.correct_option == 'A' %}answer-correct
+                                    {% elif answer.selected_option == 'A' %}answer-selected-wrong
+                                    {% else %}answer-not-selected{% endif %}">
+                                    <div class="d-flex align-items-center">
+                                        <strong class="text-dark">A)</strong>
+                                        <span class="ms-2 text-dark">{{ answer.question.option_a }}</span>
+                                        {% if answer.question.correct_option == 'A' %}
+                                            <i class="bi bi-check-circle text-success ms-auto"></i>
+                                        {% elif answer.selected_option == 'A' %}
+                                            <i class="bi bi-x-circle text-danger ms-auto"></i>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Opción B -->
+                            <div class="col-md-4">
+                                <div class="answer-option 
+                                    {% if answer.question.correct_option == 'B' %}answer-correct
+                                    {% elif answer.selected_option == 'B' %}answer-selected-wrong
+                                    {% else %}answer-not-selected{% endif %}">
+                                    <div class="d-flex align-items-center">
+                                        <strong class="text-dark">B)</strong>
+                                        <span class="ms-2 text-dark">{{ answer.question.option_b }}</span>
+                                        {% if answer.question.correct_option == 'B' %}
+                                            <i class="bi bi-check-circle text-success ms-auto"></i>
+                                        {% elif answer.selected_option == 'B' %}
+                                            <i class="bi bi-x-circle text-danger ms-auto"></i>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Opción C -->
+                            <div class="col-md-4">
+                                <div class="answer-option 
+                                    {% if answer.question.correct_option == 'C' %}answer-correct
+                                    {% elif answer.selected_option == 'C' %}answer-selected-wrong
+                                    {% else %}answer-not-selected{% endif %}">
+                                    <div class="d-flex align-items-center">
+                                        <strong class="text-dark">C)</strong>
+                                        <span class="ms-2 text-dark">{{ answer.question.option_c }}</span>
+                                        {% if answer.question.correct_option == 'C' %}
+                                            <i class="bi bi-check-circle text-success ms-auto"></i>
+                                        {% elif answer.selected_option == 'C' %}
+                                            <i class="bi bi-x-circle text-danger ms-auto"></i>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if not answer.is_correct %}
+                        <div class="mt-2">
+                            <small class="text-dark">
+                                <i class="bi bi-info-circle"></i>
+                                Tu respuesta: <strong>{{ answer.selected_option }})</strong> | 
+                                Respuesta correcta: <strong>{{ answer.question.correct_option }})</strong>
+                            </small>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Información adicional para impresión -->
+    <div class="print-hidden mt-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <h5 class="text-dark">Certificado de Participación</h5>
+                <p class="text-dark">Se certifica que <strong>{{ attempt.participant_name }}</strong> 
+                {% if attempt.passed %}completó satisfactoriamente{% else %}participó en{% endif %} 
+                el examen "{{ exam.title }}" con una puntuación de {{ attempt.score|floatformat:1 }}%.</p>
+                <p><small class="text-dark">Fecha: {{ attempt.completed_at|date:"d de F de Y" }}</small></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Mejorar el cálculo del tiempo para mostrar
+document.addEventListener('DOMContentLoaded', function() {
+    // Aquí podrías agregar más funcionalidades como gráficos de resultados
+    console.log('Resultados del examen cargados');
+});
+</script>
+{% endblock %}

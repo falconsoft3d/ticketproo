@@ -1,0 +1,293 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Verificación de Certificado{% endblock %}
+
+{% block extra_css %}
+<style>
+.verification-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.certificate-valid {
+    border: 3px solid #28a745;
+    background: linear-gradient(135deg, #d4edda, #c3e6cb);
+}
+
+.certificate-invalid {
+    border: 3px solid #dc3545;
+    background: linear-gradient(135deg, #f8d7da, #f1aeb5);
+}
+
+.verification-badge {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.verification-details {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+}
+
+.detail-item {
+    padding: 15px;
+    border-left: 4px solid #007bff;
+    background-color: #f8f9fa;
+    margin-bottom: 10px;
+    border-radius: 0 5px 5px 0;
+}
+
+.qr-container {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    display: inline-block;
+}
+
+@media print {
+    .no-print {
+        display: none !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0">
+                <div class="card-header verification-header text-center py-4">
+                    <h1 class="mb-2">
+                        <i class="bi bi-shield-check"></i> Verificación de Certificado
+                    </h1>
+                    <p class="lead mb-0">Sistema de Validación de Certificados TicketPro</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if cert_data.valid %}
+    <!-- Certificado Válido -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card certificate-valid">
+                <div class="card-body text-center py-5">
+                    <div class="verification-badge text-success">
+                        <i class="bi bi-patch-check-fill"></i>
+                    </div>
+                    <h2 class="text-success mb-4">✓ CERTIFICADO VÁLIDO</h2>
+                    <p class="lead">Este certificado es auténtico y ha sido verificado correctamente.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detalles del Certificado -->
+    <div class="row mt-4">
+        <div class="col-lg-8">
+            <div class="card verification-details">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="bi bi-info-circle"></i> Detalles del Certificado</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="detail-item">
+                                <strong><i class="bi bi-person"></i> Participante</strong>
+                                <div class="mt-2 fs-5">{{ cert_data.participant_name }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="detail-item">
+                                <strong><i class="bi bi-envelope"></i> Email</strong>
+                                <div class="mt-2">{{ cert_data.participant_email }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="detail-item">
+                                <strong><i class="bi bi-award"></i> Examen Completado</strong>
+                                <div class="mt-2 fs-5">{{ cert_data.exam_title }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <div class="detail-item">
+                                <strong><i class="bi bi-graph-up"></i> Puntuación</strong>
+                                <div class="mt-2 fs-4 text-success">{{ cert_data.score|floatformat:1 }}%</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="detail-item">
+                                <strong><i class="bi bi-check-circle"></i> Respuestas Correctas</strong>
+                                <div class="mt-2">{{ cert_data.correct_answers }} de {{ cert_data.total_questions }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="detail-item">
+                                <strong><i class="bi bi-calendar-check"></i> Fecha de Completado</strong>
+                                <div class="mt-2">{{ cert_data.completed_at|date:"d/m/Y H:i" }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="detail-item">
+                                <strong><i class="bi bi-file-earmark-text"></i> Certificado Generado</strong>
+                                <div class="mt-2">{{ cert_data.certificate_generated_at|date:"d/m/Y H:i" }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="detail-item">
+                                <strong><i class="bi bi-key"></i> ID del Certificado</strong>
+                                <div class="mt-2">
+                                    <code>{{ token|slice:":8" }}...{{ token|slice:"-8:" }}</code>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- QR y Acciones -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-qr-code"></i> Código de Verificación</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="qr-container mb-3">
+                        <div id="qrcode"></div>
+                    </div>
+                    <small class="text-muted">Escanea este código para verificar el certificado</small>
+                    
+                    <div class="mt-4 no-print">
+                        <button onclick="window.print()" class="btn btn-outline-primary w-100 mb-2">
+                            <i class="bi bi-printer"></i> Imprimir Verificación
+                        </button>
+                        <button onclick="copyLink()" class="btn btn-outline-secondary w-100" id="copyBtn">
+                            <i class="bi bi-link"></i> Copiar Enlace
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sello de Autenticidad -->
+            <div class="card mt-3">
+                <div class="card-body text-center">
+                    <div class="text-success mb-2">
+                        <i class="bi bi-shield-fill-check" style="font-size: 2rem;"></i>
+                    </div>
+                    <h6 class="text-success mb-2">CERTIFICADO AUTÉNTICO</h6>
+                    <small class="text-muted">
+                        Verificado por el Sistema TicketPro<br>
+                        {{ "now"|date:"d/m/Y H:i" }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% else %}
+    <!-- Certificado Inválido -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card certificate-invalid">
+                <div class="card-body text-center py-5">
+                    <div class="verification-badge text-danger">
+                        <i class="bi bi-x-circle-fill"></i>
+                    </div>
+                    <h2 class="text-danger mb-4">✗ CERTIFICADO NO VÁLIDO</h2>
+                    <p class="lead">{{ cert_data.error|default:"El certificado no pudo ser verificado." }}</p>
+                    
+                    <div class="mt-4">
+                        <h5>Posibles razones:</h5>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-exclamation-triangle text-warning"></i> El código QR o enlace está dañado</li>
+                            <li><i class="bi bi-exclamation-triangle text-warning"></i> El certificado ha sido revocado</li>
+                            <li><i class="bi bi-exclamation-triangle text-warning"></i> El certificado no existe en nuestro sistema</li>
+                            <li><i class="bi bi-exclamation-triangle text-warning"></i> El enlace ha expirado o es incorrecto</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Información de Contacto -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5>¿Necesitas ayuda?</h5>
+                    <p class="text-muted mb-3">
+                        Si crees que esto es un error, contacta al administrador del sistema.
+                    </p>
+                    <a href="{% url 'contact_form' %}" class="btn btn-primary">
+                        <i class="bi bi-envelope"></i> Contactar Soporte
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script>
+{% if cert_data.valid %}
+// Generar QR Code
+const qrCodeContainer = document.getElementById('qrcode');
+const currentUrl = window.location.href;
+
+QRCode.toCanvas(qrCodeContainer, currentUrl, {
+    width: 150,
+    margin: 2,
+    color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+    }
+}, function (error) {
+    if (error) {
+        qrCodeContainer.innerHTML = '<p class="text-muted">Error al generar QR</p>';
+    }
+});
+
+// Copiar enlace
+function copyLink() {
+    navigator.clipboard.writeText(window.location.href).then(function() {
+        const btn = document.getElementById('copyBtn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check"></i> ¡Copiado!';
+        btn.classList.remove('btn-outline-secondary');
+        btn.classList.add('btn-success');
+        
+        setTimeout(function() {
+            btn.innerHTML = originalText;
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline-secondary');
+        }, 2000);
+    });
+}
+{% endif %}
+
+// Información de verificación
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Verificación de certificado cargada');
+    {% if cert_data.valid %}
+    console.log('Certificado válido verificado para: {{ cert_data.participant_name|escapejs }}');
+    {% else %}
+    console.log('Certificado inválido: {{ cert_data.error|escapejs }}');
+    {% endif %}
+});
+</script>
+{% endblock %}

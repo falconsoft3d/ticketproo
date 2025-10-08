@@ -1,0 +1,383 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Tomar Examen: {{ exam.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.question-card {
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.question-card.answered {
+    border-color: #28a745;
+    background-color: #f8fff9;
+}
+
+.timer-warning {
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+.option-card {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid #e9ecef;
+}
+
+.option-card:hover {
+    border-color: #007bff;
+    background-color: #f8f9fa;
+}
+
+.option-card.selected {
+    border-color: #007bff;
+    background-color: #e7f3ff;
+}
+
+.progress-indicator {
+    position: sticky;
+    top: 20px;
+    z-index: 100;
+}
+
+.question-nav {
+    max-height: 300px;
+    overflow-y: auto;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header con información del examen -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h4 class="mb-0">
+                                <i class="bi bi-question-circle"></i> {{ exam.title }}
+                            </h4>
+                            {% if participant_data %}
+                            <small>Participante: {{ participant_data.name }}</small>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 text-end">
+                            {% if exam.time_limit %}
+                            <div id="timer" class="fs-5 fw-bold">
+                                <i class="bi bi-clock"></i> 
+                                <span id="time-remaining">{{ exam.time_limit }}:00</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="post" id="examForm">
+        {% csrf_token %}
+        <input type="hidden" name="time_taken" id="timeTaken" value="0">
+        
+        <div class="row">
+            <!-- Columna principal con preguntas -->
+            <div class="col-lg-9">
+                {% for question in questions %}
+                <div class="card question-card mb-4" id="question-{{ question.id }}">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <span class="badge bg-primary me-2">{{ question.order }}</span>
+                            Pregunta {{ question.order }} de {{ questions.count }}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="mb-4">{{ question.question_text }}</h6>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="option-card p-3 rounded" onclick="selectOption({{ question.id }}, 'A')">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" 
+                                               name="question_{{ question.id }}" value="A" 
+                                               id="q{{ question.id }}_a" required>
+                                        <label class="form-check-label w-100" for="q{{ question.id }}_a">
+                                            <strong>A)</strong> {{ question.option_a }}
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="option-card p-3 rounded" onclick="selectOption({{ question.id }}, 'B')">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" 
+                                               name="question_{{ question.id }}" value="B" 
+                                               id="q{{ question.id }}_b" required>
+                                        <label class="form-check-label w-100" for="q{{ question.id }}_b">
+                                            <strong>B)</strong> {{ question.option_b }}
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="option-card p-3 rounded" onclick="selectOption({{ question.id }}, 'C')">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" 
+                                               name="question_{{ question.id }}" value="C" 
+                                               id="q{{ question.id }}_c" required>
+                                        <label class="form-check-label w-100" for="q{{ question.id }}_c">
+                                            <strong>C)</strong> {{ question.option_c }}
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- Botón de envío -->
+                <div class="card border-success">
+                    <div class="card-body text-center">
+                        <h5>¿Listo para enviar tu examen?</h5>
+                        <p class="text-muted">
+                            Revisa tus respuestas antes de enviar. Una vez enviado, no podrás modificar las respuestas.
+                        </p>
+                        <button type="button" class="btn btn-success btn-lg" onclick="submitExam()">
+                            <i class="bi bi-check-circle"></i> Enviar Examen
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar con progreso y navegación -->
+            <div class="col-lg-3">
+                <div class="progress-indicator">
+                    <!-- Progreso -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="bi bi-bar-chart"></i> Progreso</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="progress mb-2">
+                                <div class="progress-bar" id="progressBar" role="progressbar" 
+                                     style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <div class="text-center">
+                                <span id="answeredCount">0</span> de {{ questions.count }} respondidas
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Información del examen -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="bi bi-info-circle"></i> Información</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="small">
+                                <div class="mb-2">
+                                    <strong>Total preguntas:</strong> {{ questions.count }}
+                                </div>
+                                <div class="mb-2">
+                                    <strong>Mínimo para aprobar:</strong> {{ exam.passing_score }}%
+                                </div>
+                                {% if exam.time_limit %}
+                                <div class="mb-2">
+                                    <strong>Tiempo límite:</strong> {{ exam.time_limit }} minutos
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Navegación rápida -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="bi bi-list-ol"></i> Navegación</h6>
+                        </div>
+                        <div class="card-body question-nav">
+                            <div class="row g-2">
+                                {% for question in questions %}
+                                <div class="col-4">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm w-100 question-btn" 
+                                            data-question="{{ question.id }}" onclick="goToQuestion({{ question.id }})">
+                                        {{ question.order }}
+                                    </button>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Modal de confirmación -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Envío</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas enviar el examen?</p>
+                <div id="unansweredWarning" class="alert alert-warning" style="display: none;">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Aún tienes <span id="unansweredCount"></span> pregunta(s) sin responder.
+                </div>
+                <p class="small text-muted">Una vez enviado, no podrás modificar tus respuestas.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="confirmSubmit()">
+                    <i class="bi bi-check-circle"></i> Sí, Enviar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let startTime = new Date();
+let timeLimit = {% if exam.time_limit %}{{ exam.time_limit }} * 60{% else %}null{% endif %}; // en segundos
+let timerInterval;
+
+document.addEventListener('DOMContentLoaded', function() {
+    updateProgress();
+    
+    {% if exam.time_limit %}
+    startTimer();
+    {% endif %}
+    
+    // Event listeners para las opciones
+    document.querySelectorAll('input[type="radio"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            updateProgress();
+            markQuestionAnswered(this.name.replace('question_', ''));
+        });
+    });
+});
+
+function selectOption(questionId, option) {
+    const radio = document.getElementById(`q${questionId}_${option.toLowerCase()}`);
+    radio.checked = true;
+    
+    // Actualizar estilos visuales
+    const questionCard = document.getElementById(`question-${questionId}`);
+    const optionCards = questionCard.querySelectorAll('.option-card');
+    
+    optionCards.forEach(card => card.classList.remove('selected'));
+    radio.closest('.option-card').classList.add('selected');
+    
+    updateProgress();
+    markQuestionAnswered(questionId);
+}
+
+function markQuestionAnswered(questionId) {
+    const questionCard = document.getElementById(`question-${questionId}`);
+    questionCard.classList.add('answered');
+    
+    const navButton = document.querySelector(`[data-question="${questionId}"]`);
+    navButton.classList.remove('btn-outline-secondary');
+    navButton.classList.add('btn-success');
+}
+
+function updateProgress() {
+    const totalQuestions = {{ questions.count }};
+    const answeredInputs = document.querySelectorAll('input[type="radio"]:checked');
+    const answeredCount = answeredInputs.length;
+    
+    const percentage = (answeredCount / totalQuestions) * 100;
+    
+    document.getElementById('progressBar').style.width = percentage + '%';
+    document.getElementById('progressBar').setAttribute('aria-valuenow', percentage);
+    document.getElementById('answeredCount').textContent = answeredCount;
+}
+
+function goToQuestion(questionId) {
+    const questionElement = document.getElementById(`question-${questionId}`);
+    questionElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+{% if exam.time_limit %}
+function startTimer() {
+    let remainingSeconds = timeLimit;
+    
+    timerInterval = setInterval(function() {
+        remainingSeconds--;
+        
+        const minutes = Math.floor(remainingSeconds / 60);
+        const seconds = remainingSeconds % 60;
+        
+        const timerElement = document.getElementById('time-remaining');
+        timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
+        // Advertencia cuando quedan 5 minutos
+        if (remainingSeconds <= 300) {
+            document.getElementById('timer').classList.add('timer-warning', 'text-warning');
+        }
+        
+        // Tiempo agotado
+        if (remainingSeconds <= 0) {
+            clearInterval(timerInterval);
+            alert('¡Tiempo agotado! El examen se enviará automáticamente.');
+            document.getElementById('timeTaken').value = timeLimit;
+            document.getElementById('examForm').submit();
+        }
+    }, 1000);
+}
+{% endif %}
+
+function submitExam() {
+    const totalQuestions = {{ questions.count }};
+    const answeredInputs = document.querySelectorAll('input[type="radio"]:checked');
+    const answeredCount = answeredInputs.length;
+    const unansweredCount = totalQuestions - answeredCount;
+    
+    if (unansweredCount > 0) {
+        document.getElementById('unansweredWarning').style.display = 'block';
+        document.getElementById('unansweredCount').textContent = unansweredCount;
+    } else {
+        document.getElementById('unansweredWarning').style.display = 'none';
+    }
+    
+    // Mostrar modal de confirmación
+    new bootstrap.Modal(document.getElementById('confirmModal')).show();
+}
+
+function confirmSubmit() {
+    // Calcular tiempo tomado
+    const endTime = new Date();
+    const timeTaken = Math.floor((endTime - startTime) / 1000);
+    document.getElementById('timeTaken').value = timeTaken;
+    
+    {% if exam.time_limit %}
+    clearInterval(timerInterval);
+    {% endif %}
+    
+    // Enviar formulario
+    document.getElementById('examForm').submit();
+}
+
+// Prevenir que el usuario salga accidentalmente
+window.addEventListener('beforeunload', function(e) {
+    const answeredInputs = document.querySelectorAll('input[type="radio"]:checked');
+    if (answeredInputs.length > 0) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});
+</script>
+{% endblock %}
