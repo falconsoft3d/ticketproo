@@ -1,8 +1,8 @@
 # TicketProo 🎫
 
-**Sistema Profesional de Gestión de Tickets, Soporte Técnico y Control Empresarial**
+**Sistema Profesional de Gestión de Tickets, Soporte Técnico y Control Empresarial con Blog y Base de Conocimientos**
 
-TicketProo es una plataforma web moderna desarrollada en Django que permite gestionar tickets de soporte de manera eficiente, con control de tiempo de trabajo, gestión empresarial y análisis financiero de proyectos.
+TicketProo es una plataforma web moderna desarrollada en Django que permite gestionar tickets de soporte de manera eficiente, con control de tiempo de trabajo, gestión empresarial, análisis financiero de proyectos, sistema de blog completo, glosario de conceptos públicos y formulario de contacto web. Una solución integral para empresas que buscan optimizar su soporte técnico y presencia online.
 
 # Screenshot
 
@@ -52,6 +52,46 @@ python manage.py runserver 0.0.0.0:8000
 - ✅ **Gestión de Usuarios**: Creación y administración de usuarios (solo agentes)
 - ✅ **Panel de Configuración**: Configuración general del sistema
 - ✅ **Interfaz Responsiva**: Diseño moderno minimalista en blanco y negro
+- ✅ **Sistema de Blog**: Plataforma completa de blog con categorías y comentarios
+- ✅ **Glosario de Conceptos**: Base de conocimiento pública con términos y definiciones
+- ✅ **Formulario de Contacto Web**: Sistema de contacto público para no usuarios registrados
+- ✅ **Plantillas Unificadas**: Sistema de templates reutilizable para páginas públicas
+- ✅ **Navegación Consistente**: Menú unificado en todas las páginas públicas
+
+### 📚 Sistema de Blog
+- **Categorías de Blog**: Organización por categorías con colores personalizados
+- **Artículos Completos**: Editor de contenido rico con imágenes destacadas
+- **Estados de Publicación**: Borradores, publicados y archivados
+- **Sistema de Comentarios**: Comentarios con moderación
+- **SEO Optimizado**: Meta descripciones y URLs amigables
+- **Tags y Etiquetas**: Sistema de etiquetado para mejor organización
+- **Artículos Destacados**: Promoción de contenido importante
+- **Contador de Visualizaciones**: Métricas de popularidad de artículos
+
+### 🧠 Glosario de Conceptos Públicos
+- **Base de Conocimiento**: Términos y definiciones accesibles públicamente
+- **Categorización**: Organización por categorías para fácil navegación
+- **Búsqueda Inteligente**: Búsqueda por términos o contenido
+- **Ordenamiento Personalizable**: Control del orden de aparición
+- **Gestión de Contenido**: Panel de administración para agentes
+- **Acceso Público**: Disponible sin necesidad de registro
+
+### 📞 Sistema de Contacto Web
+- **Formulario Público**: Contacto sin necesidad de registro
+- **Gestión Completa**: Panel de administración para contactos recibidos
+- **Seguimiento de Estado**: Control de leído/no leído y respondido
+- **Información de Contexto**: Captura de IP y User Agent
+- **Campos Completos**: Nombre, email, teléfono, empresa, asunto y mensaje
+- **Notificaciones**: Sistema de alertas para nuevos contactos
+- **Estadísticas**: Métricas de contactos recibidos y estado
+
+### 🎨 Sistema de Plantillas Unificadas
+- **Plantilla Base Reutilizable**: `public_base.html` para páginas públicas
+- **Componentes Modulares**: Navbar y footer como includes
+- **Navegación Consistente**: Menú unificado en todas las páginas
+- **Diseño Responsive**: Bootstrap 5 con diseño adaptable
+- **SEO Friendly**: Estructura HTML optimizada para buscadores
+- **Personalización por Página**: Hero sections y contenido personalizable
 
 ### 🏢 Gestión Empresarial
 - **Empresas**: Registro completo con datos de contacto y estado
@@ -95,6 +135,40 @@ python manage.py runserver 0.0.0.0:8000
 
 ## 🗃️ Modelos de Datos Principales
 
+### BlogCategory (Categoría de Blog)
+- Información básica: nombre, slug, descripción
+- Color personalizado para identificación visual
+- Estado activo/inactivo
+- Creador y fecha de creación
+
+### BlogPost (Artículo de Blog)
+- Título, slug y contenido completo
+- Imagen destacada y resumen
+- Estado: borrador, publicado, archivado
+- Sistema de etiquetas y SEO
+- Contador de visualizaciones
+- Fecha de publicación programada
+
+### BlogComment (Comentario de Blog)
+- Información del comentarista
+- Contenido del comentario
+- Sistema de moderación (aprobado/pendiente)
+- Información de contexto (IP, fecha)
+
+### Concept (Concepto)
+- Término y definición completa
+- Categoría para organización
+- Orden de aparición personalizable
+- Estado activo/inactivo
+- Creador y fechas de gestión
+
+### ContactoWeb (Contacto Web)
+- Información de contacto: nombre, email, teléfono, empresa
+- Asunto y mensaje del contacto
+- Estado de seguimiento: leído, respondido
+- Información de contexto: IP, User Agent
+- Fecha de creación y gestión
+
 ### Company (Empresa)
 - Información básica: nombre, descripción, email, teléfono
 - Dirección completa
@@ -127,15 +201,51 @@ python manage.py runserver 0.0.0.0:8000
 - Títulos y descripciones personalizables
 - Configuraciones específicas por módulo
 
+## 🌐 Páginas Públicas y Arquitectura
+
+### 📄 Páginas Públicas Disponibles
+- **Home (`/`)**: Página de inicio con hero section, estadísticas y call-to-actions
+- **Blog (`/blog/`)**: Lista de artículos del blog con categorías y búsqueda
+- **Conceptos (`/public/concepts/`)**: Glosario público de términos y definiciones
+- **Contacto (`/contacto/`)**: Formulario de contacto para usuarios no registrados
+- **Login (`/login/`)**: Página de inicio de sesión
+- **Registro (`/register/`)**: Página de registro de nuevos usuarios
+
+### 🏗️ Arquitectura de Templates
+```
+templates/
+├── public_base.html           # Plantilla base para páginas públicas
+├── base.html                  # Plantilla base para páginas privadas
+├── blog_base.html             # Plantilla específica para blog
+├── includes/
+│   ├── public_navbar.html     # Navbar unificado para páginas públicas
+│   └── public_footer.html     # Footer unificado para páginas públicas
+└── tickets/
+    ├── home.html              # Página de inicio
+    ├── contacto_web.html      # Formulario de contacto
+    ├── public_concepts.html   # Glosario público
+    └── blog_*.html            # Templates del blog
+```
+
+### 🎨 Diseño Unificado
+- **Consistencia Visual**: Mismo diseño en todas las páginas públicas
+- **Navegación Unificada**: Menú consistente con enlaces activos
+- **Responsive Design**: Adaptable a todos los dispositivos
+- **SEO Optimizado**: Meta tags y estructura HTML optimizada
+- **Accesibilidad**: Cumple estándares de accesibilidad web
+
 ## 🛠️ Tecnologías Utilizadas
 
 - **Backend**: Django 5.2.6
-- **Frontend**: Bootstrap 5 + Bootstrap Icons
-- **Base de Datos**: SQLite (desarrollo)
-- **Autenticación**: Sistema de usuarios de Django
+- **Frontend**: Bootstrap 5 + Bootstrap Icons + CSS personalizado
+- **Base de Datos**: SQLite (desarrollo) / PostgreSQL (producción)
+- **Autenticación**: Sistema de usuarios de Django con roles
 - **Permisos**: Django Groups (Agentes/Usuarios)
-- **Formularios**: Django Forms con validaciones
-- **Archivos Estáticos**: Django Static Files
+- **Formularios**: Django Forms con validaciones avanzadas
+- **Archivos Estáticos**: Django Static Files + Media Files
+- **SEO**: URLs amigables, meta tags y sitemap
+- **Responsive Design**: Mobile-first con Bootstrap 5
+- **Templates**: Sistema de herencia con componentes reutilizables
 
 ## 📋 Requisitos
 
@@ -209,6 +319,11 @@ ticketproo/
 │       └── style.css          # Estilos personalizados minimalistas
 ├── templates/                  # Templates HTML
 │   ├── base.html
+│   ├── public_base.html       # Plantilla base para páginas públicas
+│   ├── blog_base.html         # Plantilla base para blog
+│   ├── includes/              # Componentes reutilizables
+│   │   ├── public_navbar.html # Navbar público unificado
+│   │   └── public_footer.html # Footer público unificado
 │   ├── registration/
 │   └── tickets/               # Templates de la aplicación
 │       ├── dashboard.html     # Dashboard principal
@@ -217,7 +332,11 @@ ticketproo/
 │       ├── company_*.html     # Gestión de empresas
 │       ├── project_*.html     # Gestión de proyectos
 │       ├── time_*.html        # Control de tiempo
-│       └── config_*.html      # Configuración del sistema
+│       ├── config_*.html      # Configuración del sistema
+│       ├── blog_*.html        # Sistema de blog
+│       ├── contacto_web.html  # Formulario de contacto público
+│       ├── public_concepts.html # Glosario público
+│       └── home.html          # Página de inicio
 ├── ticket_system/              # Configuración principal
 │   ├── settings.py
 │   ├── urls.py
@@ -387,6 +506,11 @@ def company_list_view(request):
 ### URLs Principales
 ```
 /                           # Home/Dashboard
+/blog/                      # Lista de artículos del blog
+/blog/category/{slug}/      # Artículos por categoría
+/blog/{slug}/               # Detalle de artículo
+/public/concepts/           # Glosario público de conceptos
+/contacto/                  # Formulario de contacto público
 /tickets/                   # Lista de tickets
 /tickets/create/           # Crear ticket
 /tickets/{id}/             # Detalle de ticket
@@ -420,6 +544,9 @@ DELETE /api/tickets/{id}/      # Eliminar ticket
 - **Configuración del Sistema**: Acceso al panel de configuración general
 - **Dashboard Completo**: Estadísticas globales del sistema
 - **Análisis Financiero**: Ver costes, ventas, beneficios y márgenes de proyectos
+- **Gestión de Blog**: Crear, editar y publicar artículos del blog
+- **Gestión de Conceptos**: Administrar el glosario público de términos
+- **Gestión de Contactos Web**: Ver y gestionar contactos recibidos por el formulario público
 
 ### 👤 Usuarios
 - **Gestión Personal**: Ver y gestionar solo sus propios tickets
@@ -428,6 +555,8 @@ DELETE /api/tickets/{id}/      # Eliminar ticket
 - **Gestión de Adjuntos**: Subir archivos a sus tickets
 - **Dashboard Personal**: Estadísticas de sus tickets
 - **Perfil de Usuario**: Actualizar información personal
+- **Acceso al Blog**: Leer artículos y dejar comentarios (si está habilitado)
+- **Consulta de Conceptos**: Acceder al glosario público de términos
 
 ## 📝 Comandos de Gestión Personalizados
 
@@ -498,13 +627,16 @@ python manage.py create_user_profiles
 - [x] **Enlaces Públicos**: Compartir tickets mediante enlaces únicos
 - [x] **Actualización de Perfil**: Gestión de perfil de usuario
 - [x] **Notas Internas**: Sistema de notas para agentes y usuarios
+- [x] **Sistema de Blog Completo**: Plataforma de blog con categorías, comentarios y SEO
+- [x] **Glosario de Conceptos Públicos**: Base de conocimiento accesible públicamente
+- [x] **Formulario de Contacto Web**: Sistema de contacto para usuarios no registrados
+- [x] **Plantillas Unificadas**: Sistema de templates reutilizable para páginas públicas
+- [x] **Navegación Consistente**: Menú unificado en todas las páginas públicas y privadas
+- [x] **Diseño Responsive**: Interfaz adaptable para móviles y tablets
+- [x] **SEO Optimizado**: URLs amigables y meta tags en páginas públicas
 
 ## 🚀 Próximas Características
-- [ ] Crear lista de publica de cursos.
-- [ ] Crear lista de publica de recursos.
-- [ ] **Formulario Público**: Crear tickets sin necesidad de login
 - [ ] **Paginación Avanzada**: Paginación en todas las listas
-- [ ] **Blog de Noticias**: Sistema de noticias y actualizaciones
 - [ ] **API REST**: API para gestión externa de tickets
 - [ ] **Notificaciones Email**: Alertas por correo electrónico
 - [ ] **Reportes PDF**: Generación de reportes en PDF
@@ -512,6 +644,14 @@ python manage.py create_user_profiles
 - [ ] **Integración con CRM**: Conectores con sistemas externos
 - [ ] **Aplicación Móvil**: App nativa para iOS y Android
 - [ ] **Chat en Tiempo Real**: Sistema de chat integrado
+- [ ] **Calendario de Eventos**: Gestión de citas y reuniones
+- [ ] **Sistema de Exámenes**: Evaluaciones y certificaciones online
+- [ ] **Análisis de Sentimientos**: IA para análisis de comentarios
+- [ ] **Búsqueda Avanzada**: Motor de búsqueda inteligente
+- [ ] **Exportación de Datos**: Exportar reportes a Excel/CSV
+- [ ] **Webhooks**: Integración con servicios externos
+- [ ] **Modo Offline**: Funcionalidad sin conexión
+- [ ] **Tema Oscuro**: Modo oscuro para la interfaz
 ## 🤝 Contribución
 
 1. Fork el proyecto
@@ -543,6 +683,10 @@ Para soporte técnico, consultas comerciales o colaboraciones:
 
 ---
 
-**TicketProo** - *La plataforma profesional para gestionar tickets, controlar tiempo de trabajo y analizar la rentabilidad de tus proyectos.*
+**TicketProo** - *La plataforma profesional integral para gestionar tickets, controlar tiempo de trabajo, analizar la rentabilidad de tus proyectos y mantener una presencia online sólida con blog y base de conocimientos.*
 
 > 💡 **¿Necesitas personalización?** Contacta con nosotros para adaptar TicketProo a las necesidades específicas de tu empresa.
+> 
+> 🚀 **Nuevas Funcionalidades**: Sistema de blog completo, glosario público de conceptos, formulario de contacto web y plantillas unificadas para una experiencia consistente.
+> 
+> 📱 **Acceso Público**: Tu empresa ahora puede tener presencia web completa sin necesidad de que los visitantes se registren.
