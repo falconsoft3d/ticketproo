@@ -8749,29 +8749,116 @@ def exam_attempts_list(request):
 def contacto_web(request):
     """Vista pública para formulario de contacto"""
     from .forms import ContactoWebForm
+    from .models import ContactoWeb
+    from datetime import datetime, timedelta
+    from django.utils import timezone
+    
+    # Obtener IP del usuario para control de spam
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        user_ip = x_forwarded_for.split(',')[0]
+    else:
+        user_ip = request.META.get('REMOTE_ADDR')
+    
+    # Verificar límite de envíos (máximo 3 por hora por IP)
+    one_hour_ago = timezone.now() - timedelta(hours=1)
+    recent_contacts = ContactoWeb.objects.filter(
+        ip_address=user_ip,
+        fecha_creacion__gte=one_hour_ago
+    ).count()
+    
+    if recent_contacts >= 3:
+        messages.error(request, 'Has alcanzado el límite de contactos por hora. Por favor, inténtalo más tarde.')
+        form = ContactoWebForm()
+        # Generar CAPTCHA aunque no se pueda enviar
+        import random
+        num1 = random.randint(1, 10)
+        num2 = random.randint(1, 10)
+        operation = random.choice(['+', '-', '*'])
+        
+        if operation == '+':
+            question = f"¿Cuánto es {num1} + {num2}?"
+            correct_answer = num1 + num2
+        elif operation == '-':
+            if num1 < num2:
+                num1, num2 = num2, num1
+            question = f"¿Cuánto es {num1} - {num2}?"
+            correct_answer = num1 - num2
+        else:
+            question = f"¿Cuánto es {num1} × {num2}?"
+            correct_answer = num1 * num2
+        
+        request.session['captcha_answer'] = correct_answer
+        form.fields['captcha_question'].initial = question
+        
+        context = {
+            'form': form,
+            'page_title': 'Contáctanos',
+            'rate_limited': True
+        }
+        return render(request, 'tickets/contacto_web.html', context)
     
     if request.method == 'POST':
         form = ContactoWebForm(request.POST)
+        
+        # Verificar CAPTCHA
+        captcha_answer = request.POST.get('captcha_answer')
+        correct_answer = request.session.get('captcha_answer')
+        
+        if not captcha_answer or not correct_answer:
+            form.add_error('captcha_answer', 'Error en la verificación. Recarga la página e inténtalo de nuevo.')
+        else:
+            try:
+                if int(captcha_answer) != correct_answer:
+                    form.add_error('captcha_answer', 'La respuesta del CAPTCHA es incorrecta. Inténtalo de nuevo.')
+            except (ValueError, TypeError):
+                form.add_error('captcha_answer', 'Por favor, introduce solo números en el resultado.')
+        
         if form.is_valid():
             # Guardar el contacto con información adicional
             contacto = form.save(commit=False)
             
             # Obtener IP del usuario
-            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-            if x_forwarded_for:
-                contacto.ip_address = x_forwarded_for.split(',')[0]
-            else:
-                contacto.ip_address = request.META.get('REMOTE_ADDR')
+            contacto.ip_address = user_ip
             
             # Obtener User Agent
             contacto.user_agent = request.META.get('HTTP_USER_AGENT', '')
             
             contacto.save()
             
+            # Limpiar CAPTCHA de la sesión después del envío exitoso
+            if 'captcha_answer' in request.session:
+                del request.session['captcha_answer']
+            
             messages.success(request, '¡Gracias por contactarnos! Hemos recibido tu mensaje y te responderemos pronto.')
             return redirect('contacto_web')
     else:
         form = ContactoWebForm()
+        
+    # Generar nuevo CAPTCHA y guardarlo en la sesión
+    import random
+    num1 = random.randint(1, 10)
+    num2 = random.randint(1, 10)
+    operation = random.choice(['+', '-', '*'])
+    
+    if operation == '+':
+        question = f"¿Cuánto es {num1} + {num2}?"
+        correct_answer = num1 + num2
+    elif operation == '-':
+        # Asegurar que el resultado sea positivo
+        if num1 < num2:
+            num1, num2 = num2, num1
+        question = f"¿Cuánto es {num1} - {num2}?"
+        correct_answer = num1 - num2
+    else:  # multiplicación
+        question = f"¿Cuánto es {num1} × {num2}?"
+        correct_answer = num1 * num2
+    
+    # Guardar la respuesta correcta en la sesión
+    request.session['captcha_answer'] = correct_answer
+    
+    # Establecer la pregunta en el formulario
+    form.fields['captcha_question'].initial = question
     
     context = {
         'form': form,

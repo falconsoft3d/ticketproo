@@ -55,6 +55,17 @@
                 {% endfor %}
             {% endif %}
             
+            <!-- Alerta de límite de envíos -->
+            {% if rate_limited %}
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>Límite alcanzado:</strong> Has enviado demasiados mensajes recientemente. 
+                    Para prevenir spam, permite un máximo de 3 contactos por hora. 
+                    <br><small class="text-muted">Puedes volver a intentarlo en unos minutos.</small>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endif %}
+            
             <!-- Formulario -->
             <form method="post">
                 {% csrf_token %}
@@ -159,10 +170,70 @@
                     </div>
                 </div>
                 
+                <!-- CAPTCHA -->
+                <div class="mb-4">
+                    <div class="card border-warning bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title text-warning">
+                                <i class="bi bi-shield-check me-1"></i>Verificación de Seguridad
+                            </h6>
+                            <p class="card-text text-muted small mb-3">
+                                Para prevenir spam, por favor resuelve esta operación matemática:
+                            </p>
+                            
+                            <div class="row">
+                                <div class="col-md-8 mb-3">
+                                    <label for="{{ form.captcha_question.id_for_label }}" class="form-label">
+                                        <i class="bi bi-calculator me-1"></i>{{ form.captcha_question.label }}
+                                    </label>
+                                    <div class="input-group">
+                                        {{ form.captcha_question }}
+                                        <button type="button" class="btn btn-outline-secondary" onclick="refreshCaptcha()" title="Nueva pregunta">
+                                            <i class="bi bi-arrow-clockwise"></i>
+                                        </button>
+                                    </div>
+                                    {% if form.captcha_question.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.captcha_question.errors %}
+                                                <div>{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ form.captcha_answer.id_for_label }}" class="form-label">
+                                        <i class="bi bi-arrow-right me-1"></i>{{ form.captcha_answer.label }}
+                                    </label>
+                                    {{ form.captcha_answer }}
+                                    {% if form.captcha_answer.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.captcha_answer.errors %}
+                                                <div>{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="text-center">
-                    <button type="submit" class="btn btn-primary btn-lg">
-                        <i class="bi bi-send me-2"></i>Enviar Mensaje
+                    <button type="submit" class="btn btn-primary btn-lg" {% if rate_limited %}disabled{% endif %}>
+                        <i class="bi bi-send me-2"></i>
+                        {% if rate_limited %}
+                            <i class="bi bi-clock me-1"></i>Espera para enviar
+                        {% else %}
+                            Enviar Mensaje
+                        {% endif %}
                     </button>
+                    {% if rate_limited %}
+                        <div class="text-muted small mt-2">
+                            <i class="bi bi-info-circle me-1"></i>
+                            El formulario está temporalmente deshabilitado debido al límite de envíos
+                        </div>
+                    {% endif %}
                 </div>
             </form>
             
@@ -196,6 +267,72 @@
         justify-content: center;
         margin-right: 15px;
     }
+    
+    .captcha-section {
+        background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+        border: 2px solid #f39c12;
+        border-radius: 10px;
+        padding: 20px;
+    }
+    
+    .captcha-question {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #e67e22;
+    }
+    
+    .captcha-answer input {
+        font-size: 1.2rem;
+        font-weight: 600;
+        text-align: center;
+        border: 2px solid #f39c12;
+    }
+    
+    .captcha-answer input:focus {
+        border-color: #e67e22;
+        box-shadow: 0 0 0 0.2rem rgba(243, 156, 18, 0.25);
+    }
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function refreshCaptcha() {
+    // Hacer una petición AJAX para obtener un nuevo CAPTCHA
+    fetch('{% url "contacto_web" %}', {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+    })
+    .then(response => response.text())
+    .then(data => {
+        // Crear un elemento temporal para parsear la respuesta
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = data;
+        
+        // Encontrar el nuevo valor del campo CAPTCHA
+        const newQuestion = tempDiv.querySelector('#id_captcha_question');
+        if (newQuestion) {
+            document.getElementById('id_captcha_question').value = newQuestion.value;
+            document.getElementById('id_captcha_answer').value = '';
+            document.getElementById('id_captcha_answer').focus();
+        }
+    })
+    .catch(error => {
+        console.error('Error al refrescar CAPTCHA:', error);
+        // Si hay error, simplemente recargar la página
+        window.location.reload();
+    });
+}
+
+// Limpiar el campo de respuesta cuando se carga la página
+document.addEventListener('DOMContentLoaded', function() {
+    const answerField = document.getElementById('id_captcha_answer');
+    if (answerField) {
+        answerField.value = '';
+    }
+});
+</script>
 {% endblock %}
 {% endblock %}

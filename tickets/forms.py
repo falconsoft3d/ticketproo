@@ -3101,6 +3101,27 @@ class ConceptForm(forms.ModelForm):
 class ContactoWebForm(forms.ModelForm):
     """Formulario para contactos desde la web pública"""
     
+    # Campo CAPTCHA matemático
+    captcha_question = forms.CharField(
+        max_length=50,
+        widget=forms.TextInput(attrs={
+            'readonly': True,
+            'class': 'form-control',
+            'style': 'background-color: #f8f9fa; cursor: not-allowed;'
+        }),
+        label='Verificación de seguridad',
+        required=False
+    )
+    
+    captcha_answer = forms.IntegerField(
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Introduce el resultado',
+            'required': True
+        }),
+        label='Resultado'
+    )
+    
     class Meta:
         model = ContactoWeb
         fields = ['nombre', 'email', 'telefono', 'empresa', 'asunto', 'mensaje']
