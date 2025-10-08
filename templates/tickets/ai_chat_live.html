@@ -35,12 +35,13 @@ body, html {
 }
 
 .chat-container {
-    height: 100vh;
-    max-height: 100vh;
+    height: calc(100vh - 200px); /* Altura fija menos header */
+    max-height: calc(100vh - 200px);
     display: flex;
     flex-direction: column;
     overflow: hidden;
     background: #efeae2 !important; /* Fondo similar a WhatsApp */
+    position: relative;
 }
 
 .chat-messages {
@@ -51,9 +52,12 @@ body, html {
     padding-bottom: 120px; /* Espacio para el input fijo */
     background: #efeae2 !important; /* Fondo beige como WhatsApp */
     background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="20" cy="20" r="1" fill="%23ffffff" opacity="0.05"/><circle cx="80" cy="40" r="0.5" fill="%23ffffff" opacity="0.03"/><circle cx="40" cy="80" r="1.5" fill="%23ffffff" opacity="0.02"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>') !important;
-    /* Scroll estilo WhatsApp */
+    /* Propiedades de scroll mejoradas */
+    max-height: calc(100vh - 300px); /* Altura máxima fija */
+    min-height: 400px; /* Altura mínima */
     scrollbar-width: thin;
     scrollbar-color: rgba(0,0,0,0.2) transparent;
+    scroll-behavior: smooth; /* Scroll suave */
 }
 
 .chat-messages::-webkit-scrollbar {
@@ -420,7 +424,7 @@ body, html {
                     </div>
 
                     <!-- Formulario -->
-                    <div class="chat-input">
+                    <div class="chat-input" style="position: sticky; bottom: 0; background: white; padding: 1rem; border-top: 1px solid #e9ecef; margin-top: auto; z-index: 100;">
                         <form id="chat-form">
                             {% csrf_token %}
                             <div class="input-group">
