@@ -7293,8 +7293,10 @@ def improve_ticket_with_ai(request, ticket_id):
                 max_tokens=1000,
                 temperature=0.3
             )
-        
-        ai_response = response.choices[0].message.content.strip()
+            
+            ai_response = response.choices[0].message.content.strip()
+        except Exception as e:
+            return JsonResponse({'error': f'Error al llamar a OpenAI: {str(e)}'}, status=500)
         
         # Procesar respuesta según el tipo
         if improvement_type == 'both':
