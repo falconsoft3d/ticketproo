@@ -7277,18 +7277,22 @@ def improve_ticket_with_ai(request, ticket_id):
             """
         
         # Llamar a OpenAI
-        from openai import OpenAI
-        client = OpenAI(api_key=config.openai_api_key)
+        try:
+            from openai import OpenAI
+            client = OpenAI(api_key=config.openai_api_key)
+        except Exception as e:
+            return JsonResponse({'error': f'Error al inicializar cliente OpenAI: {str(e)}'}, status=500)
         
-        response = client.chat.completions.create(
-            model=config.openai_model or 'gpt-4o-mini',
-            messages=[
-                {"role": "system", "content": "Eres un experto en soporte técnico que mejora la comunicación de tickets para hacerlos más claros y profesionales."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=1000,
-            temperature=0.3
-        )
+        try:
+            response = client.chat.completions.create(
+                model=config.openai_model or 'gpt-4o-mini',
+                messages=[
+                    {"role": "system", "content": "Eres un experto en soporte técnico que mejora la comunicación de tickets para hacerlos más claros y profesionales."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=1000,
+                temperature=0.3
+            )
         
         ai_response = response.choices[0].message.content.strip()
         
