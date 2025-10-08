@@ -8,7 +8,7 @@ TicketProo es una plataforma web moderna desarrollada en Django que permite gest
 
 ![Alt text](https://github.com/falconsoft3d/ticketproo/blob/main/docs/screenshot1.png?raw=true)
 
-![Alt text](https://github.com/falconsoft3d/ticketproo/blob/main/docs/screenshot1.png?raw=true)
+![Alt text](https://github.com/falconsoft3d/ticketproo/blob/main/docs/screenshot2.png?raw=true)
 
 ## Forma de actualizar
 ```
