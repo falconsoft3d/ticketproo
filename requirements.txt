@@ -20,6 +20,6 @@ tzdata==2023.4
 reportlab==4.0.4
 qrcode==8.2
 PyPDF2==3.0.1
-openai==1.35.0
 requests==2.31.0
 openpyxl==3.1.2
+openai==2.2.0
