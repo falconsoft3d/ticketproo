@@ -5,7 +5,7 @@ from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
     UserNote, TimeEntry, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
     ChatRoom, ChatMessage, Command, ContactFormSubmission, Meeting, MeetingAttendee, MeetingQuestion, OpportunityActivity,
-    Course, CourseClass, Contact, BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, Concept
+    Course, CourseClass, Contact, BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, Concept, ContactoWeb
 )
 
 class CategoryForm(forms.ModelForm):
@@ -3096,3 +3096,62 @@ class ConceptForm(forms.ModelForm):
             'is_active': 'Marcar si el concepto debe mostrarse',
             'order': 'Número para ordenar los conceptos (menor = primero)'
         }
+
+
+class ContactoWebForm(forms.ModelForm):
+    """Formulario para contactos desde la web pública"""
+    
+    class Meta:
+        model = ContactoWeb
+        fields = ['nombre', 'email', 'telefono', 'empresa', 'asunto', 'mensaje']
+        widgets = {
+            'nombre': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Tu nombre completo',
+                'required': True
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'tu@email.com',
+                'required': True
+            }),
+            'telefono': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Tu número de teléfono (opcional)'
+            }),
+            'empresa': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre de tu empresa (opcional)'
+            }),
+            'asunto': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '¿En qué podemos ayudarte?',
+                'required': True
+            }),
+            'mensaje': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': 'Describe tu consulta o requerimiento...',
+                'rows': 4,
+                'required': True
+            }),
+        }
+        labels = {
+            'nombre': 'Nombre completo',
+            'email': 'Correo electrónico',
+            'telefono': 'Teléfono',
+            'empresa': 'Empresa',
+            'asunto': 'Asunto',
+            'mensaje': 'Mensaje'
+        }
+    
+    def clean_nombre(self):
+        nombre = self.cleaned_data.get('nombre')
+        if len(nombre) < 2:
+            raise forms.ValidationError('El nombre debe tener al menos 2 caracteres.')
+        return nombre
+    
+    def clean_mensaje(self):
+        mensaje = self.cleaned_data.get('mensaje')
+        if len(mensaje) < 10:
+            raise forms.ValidationError('El mensaje debe tener al menos 10 caracteres.')
+        return mensaje

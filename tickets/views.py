@@ -2808,16 +2808,43 @@ def daily_report_view(request):
     total_entries = time_entries.count()
     entries_in_progress = time_entries.filter(fecha_salida__isnull=True).count()
     
-    # Calcular total de horas completadas
-    total_hours = 0
+    # Calcular total de horas completadas usando duracion_trabajada
+    total_minutos = 0
     for entry in time_entries:
-        if entry.fecha_salida:
-            # Calcular duración en horas
-            duration = entry.fecha_salida - entry.fecha_entrada
-            total_hours += duration.total_seconds() / 3600
+        total_minutos += entry.duracion_trabajada
+    
+    # Convertir a horas con formato decimal
+    total_hours = round(total_minutos / 60, 1)
+    
+    # Convertir total de minutos a formato HH:MM
+    total_horas_formateado = f"{total_minutos // 60:02d}:{total_minutos % 60:02d}"
     
     # Obtener usuarios únicos
     unique_users = time_entries.values('user').distinct().count()
+    
+    # Indicadores CRM para la cabecera del reporte
+    from .models import Contact, Opportunity, Company, Ticket
+    
+    # Obtener conteos de elementos creados en el rango de fechas
+    contactos_creados = Contact.objects.filter(
+        created_at__date__gte=fecha_desde_obj,
+        created_at__date__lte=fecha_hasta_obj
+    ).count()
+    
+    oportunidades_creadas = Opportunity.objects.filter(
+        created_at__date__gte=fecha_desde_obj,
+        created_at__date__lte=fecha_hasta_obj
+    ).count()
+    
+    tickets_creados = Ticket.objects.filter(
+        created_at__date__gte=fecha_desde_obj,
+        created_at__date__lte=fecha_hasta_obj
+    ).count()
+    
+    empresas_creadas = Company.objects.filter(
+        created_at__date__gte=fecha_desde_obj,
+        created_at__date__lte=fecha_hasta_obj
+    ).count()
     
     # Obtener usuarios para el filtro
     usuarios = User.objects.filter(is_active=True).order_by('first_name', 'last_name', 'username')
@@ -2832,8 +2859,14 @@ def daily_report_view(request):
         'page_title': 'Reporte de Parte Diario',
         'total_entries': total_entries,
         'entries_in_progress': entries_in_progress,
-        'total_hours': round(total_hours, 1),
+        'total_hours': total_hours,
+        'total_horas_formateado': total_horas_formateado,
         'unique_users': unique_users,
+        # Indicadores CRM
+        'contactos_creados': contactos_creados,
+        'oportunidades_creadas': oportunidades_creadas,
+        'tickets_creados': tickets_creados,
+        'empresas_creadas': empresas_creadas,
     }
     
     return render(request, 'tickets/daily_report.html', context)
@@ -2907,10 +2940,67 @@ def daily_report_pdf(request):
         periodo = f"Período: {fecha_desde_obj.strftime('%d/%m/%Y')} al {fecha_hasta_obj.strftime('%d/%m/%Y')}"
     
     story.append(Paragraph(periodo, styles['Normal']))
+    story.append(Spacer(1, 12))
+    
+    # Indicadores CRM para la cabecera del reporte
+    from .models import Contact, Opportunity, Company, Ticket
+    
+    # Obtener conteos de elementos creados en el rango de fechas
+    contactos_creados = Contact.objects.filter(
+        created_at__date__gte=fecha_desde_obj,
+        created_at__date__lte=fecha_hasta_obj
+    ).count()
+    
+    oportunidades_creadas = Opportunity.objects.filter(
+        created_at__date__gte=fecha_desde_obj,
+        created_at__date__lte=fecha_hasta_obj
+    ).count()
+    
+    tickets_creados = Ticket.objects.filter(
+        created_at__date__gte=fecha_desde_obj,
+        created_at__date__lte=fecha_hasta_obj
+    ).count()
+    
+    empresas_creadas = Company.objects.filter(
+        created_at__date__gte=fecha_desde_obj,
+        created_at__date__lte=fecha_hasta_obj
+    ).count()
+    
+    # Agregar indicadores CRM como una tabla
+    indicadores_data = [
+        ['INDICADORES CRM', ''],
+        ['Total de Contactos Creados:', str(contactos_creados)],
+        ['Total de Oportunidades Creadas:', str(oportunidades_creadas)],
+        ['Total de Tickets Creados:', str(tickets_creados)],
+        ['Total de Empresas Creadas:', str(empresas_creadas)],
+    ]
+    
+    indicadores_table = Table(indicadores_data, colWidths=[3*inch, 1*inch])
+    indicadores_table.setStyle(TableStyle([
+        # Estilo para la cabecera
+        ('BACKGROUND', (0, 0), (-1, 0), colors.lightblue),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        
+        # Estilo para el contenido
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 10),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+    
+    story.append(indicadores_table)
     story.append(Spacer(1, 20))
     
     # Tabla de datos
     data = [['Usuario', 'Fecha', 'Asignación', 'Entrada', 'Salida', 'Duración']]
+    
+    total_minutos = 0  # Variable para acumular el total de minutos
     
     for entry in time_entries:
         # Construir asignación
@@ -2929,6 +3019,9 @@ def daily_report_pdf(request):
         # Formatear salida
         salida = entry.fecha_salida.strftime('%H:%M') if entry.fecha_salida else "En progreso"
         
+        # Acumular minutos trabajados
+        total_minutos += entry.duracion_trabajada
+        
         data.append([
             entry.user.get_full_name() or entry.user.username,
             entry.fecha_entrada.strftime('%d/%m/%Y'),
@@ -2938,9 +3031,20 @@ def daily_report_pdf(request):
             entry.duracion_formateada
         ])
     
-    # Crear tabla
-    table = Table(data, colWidths=[1.5*inch, 1*inch, 2*inch, 0.8*inch, 0.8*inch, 0.8*inch])
-    table.setStyle(TableStyle([
+    # Agregar fila de totales
+    if time_entries.exists():
+        # Convertir total de minutos a formato HH:MM
+        total_horas = total_minutos // 60
+        total_mins = total_minutos % 60
+        total_formateado = f"{total_horas:02d}:{total_mins:02d}"
+        
+        data.append(['', '', '', '', 'TOTAL HORAS:', total_formateado])
+    
+    # Crear tabla con anchos ajustados para evitar cortes
+    table = Table(data, colWidths=[1.3*inch, 0.9*inch, 1.8*inch, 0.7*inch, 1*inch, 1*inch])
+    
+    # Estilos base de la tabla
+    table_style = [
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
@@ -2952,7 +3056,19 @@ def daily_report_pdf(request):
         ('FONTSIZE', (0, 1), (-1, -1), 8),
         ('GRID', (0, 0), (-1, -1), 1, colors.black),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-    ]))
+    ]
+    
+    # Si hay datos y por tanto fila de totales, agregar estilo especial para la última fila
+    if len(data) > 1:  # Header + al menos una fila de datos
+        last_row = len(data) - 1
+        table_style.extend([
+            ('BACKGROUND', (0, last_row), (-1, last_row), colors.lightgrey),
+            ('FONTNAME', (0, last_row), (-1, last_row), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, last_row), (-1, last_row), 10),
+            ('TEXTCOLOR', (0, last_row), (-1, last_row), colors.black),
+        ])
+    
+    table.setStyle(TableStyle(table_style))
     
     story.append(table)
     
@@ -8626,3 +8742,166 @@ def exam_attempts_list(request):
     }
     
     return render(request, 'tickets/exam_attempts_list.html', context)
+
+
+# ==================== CONTACTO WEB ====================
+
+def contacto_web(request):
+    """Vista pública para formulario de contacto"""
+    from .forms import ContactoWebForm
+    
+    if request.method == 'POST':
+        form = ContactoWebForm(request.POST)
+        if form.is_valid():
+            # Guardar el contacto con información adicional
+            contacto = form.save(commit=False)
+            
+            # Obtener IP del usuario
+            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+            if x_forwarded_for:
+                contacto.ip_address = x_forwarded_for.split(',')[0]
+            else:
+                contacto.ip_address = request.META.get('REMOTE_ADDR')
+            
+            # Obtener User Agent
+            contacto.user_agent = request.META.get('HTTP_USER_AGENT', '')
+            
+            contacto.save()
+            
+            messages.success(request, '¡Gracias por contactarnos! Hemos recibido tu mensaje y te responderemos pronto.')
+            return redirect('contacto_web')
+    else:
+        form = ContactoWebForm()
+    
+    context = {
+        'form': form,
+        'page_title': 'Contáctanos'
+    }
+    
+    return render(request, 'tickets/contacto_web.html', context)
+
+
+@login_required
+def contactos_web_list(request):
+    """Vista para listar contactos web - solo para agentes"""
+    from .utils import is_agent
+    from .models import ContactoWeb
+    
+    if not is_agent(request.user):
+        messages.error(request, 'No tienes permisos para acceder a esta sección')
+        return redirect('dashboard')
+    
+    # Filtros
+    search = request.GET.get('search', '')
+    status_filter = request.GET.get('status', 'all')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    
+    # Obtener contactos
+    contactos = ContactoWeb.objects.all().order_by('-fecha_creacion')
+    
+    # Aplicar filtros
+    if search:
+        from django.db.models import Q
+        contactos = contactos.filter(
+            Q(nombre__icontains=search) |
+            Q(email__icontains=search) |
+            Q(empresa__icontains=search) |
+            Q(asunto__icontains=search) |
+            Q(mensaje__icontains=search)
+        )
+    
+    if status_filter == 'no_leido':
+        contactos = contactos.filter(leido=False)
+    elif status_filter == 'leido':
+        contactos = contactos.filter(leido=True)
+    elif status_filter == 'respondido':
+        contactos = contactos.filter(respondido=True)
+    elif status_filter == 'pendiente':
+        contactos = contactos.filter(respondido=False)
+    
+    if date_from:
+        try:
+            from datetime import datetime
+            date_from_obj = datetime.strptime(date_from, '%Y-%m-%d')
+            contactos = contactos.filter(fecha_creacion__date__gte=date_from_obj.date())
+        except ValueError:
+            pass
+    
+    if date_to:
+        try:
+            from datetime import datetime
+            date_to_obj = datetime.strptime(date_to, '%Y-%m-%d')
+            contactos = contactos.filter(fecha_creacion__date__lte=date_to_obj.date())
+        except ValueError:
+            pass
+    
+    # Paginación
+    from django.core.paginator import Paginator
+    paginator = Paginator(contactos, 25)  # 25 contactos por página
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Estadísticas
+    total_contactos = ContactoWeb.objects.count()
+    no_leidos = ContactoWeb.objects.filter(leido=False).count()
+    respondidos = ContactoWeb.objects.filter(respondido=True).count()
+    pendientes = ContactoWeb.objects.filter(respondido=False).count()
+    
+    context = {
+        'page_obj': page_obj,
+        'contactos': page_obj,
+        'current_filters': {
+            'search': search,
+            'status': status_filter,
+            'date_from': date_from,
+            'date_to': date_to,
+        },
+        'stats': {
+            'total_contactos': total_contactos,
+            'no_leidos': no_leidos,
+            'respondidos': respondidos,
+            'pendientes': pendientes,
+        },
+        'page_title': 'Contactos Web'
+    }
+    
+    return render(request, 'tickets/contactos_web_list.html', context)
+
+
+@login_required
+def contacto_web_detail(request, pk):
+    """Vista para ver detalle de un contacto web"""
+    from .utils import is_agent
+    from .models import ContactoWeb
+    
+    if not is_agent(request.user):
+        messages.error(request, 'No tienes permisos para acceder a esta sección')
+        return redirect('dashboard')
+    
+    contacto = get_object_or_404(ContactoWeb, pk=pk)
+    
+    # Marcar como leído si no lo estaba
+    if not contacto.leido:
+        contacto.leido = True
+        contacto.save()
+    
+    # Si es POST, actualizar estado de respondido
+    if request.method == 'POST':
+        if 'marcar_respondido' in request.POST:
+            contacto.respondido = True
+            contacto.save()
+            messages.success(request, 'Contacto marcado como respondido')
+        elif 'marcar_pendiente' in request.POST:
+            contacto.respondido = False
+            contacto.save()
+            messages.success(request, 'Contacto marcado como pendiente')
+        
+        return redirect('contacto_web_detail', pk=pk)
+    
+    context = {
+        'contacto': contacto,
+        'page_title': f'Contacto: {contacto.nombre}'
+    }
+    
+    return render(request, 'tickets/contacto_web_detail.html', context)

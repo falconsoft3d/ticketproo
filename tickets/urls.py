@@ -357,4 +357,9 @@ urlpatterns = [
     path('questions/<int:pk>/edit/', views.question_edit, name='question_edit'),
     path('questions/<int:pk>/delete/', views.question_delete, name='question_delete'),
     
+    # URLs de contacto web público
+    path('contacto/', views.contacto_web, name='contacto_web'),
+    path('contactos-web/', views.contactos_web_list, name='contactos_web_list'),
+    path('contactos-web/<int:pk>/', views.contacto_web_detail, name='contacto_web_detail'),
+    
 ]

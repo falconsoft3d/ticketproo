@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>
+                <i class="bi bi-envelope-open text-primary me-2"></i>{{ page_title }}
+            </h2>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'contactos_web_list' %}" class="btn btn-outline-secondary me-2">
+                <i class="bi bi-arrow-left me-1"></i>Volver a Lista
+            </a>
+            <a href="mailto:{{ contacto.email }}?subject=Re: {{ contacto.asunto }}" class="btn btn-primary">
+                <i class="bi bi-reply me-1"></i>Responder
+            </a>
+        </div>
+    </div>
+
+    <!-- Información del Contacto -->
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Detalles del Mensaje -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-chat-text me-2"></i>Mensaje
+                    </h5>
+                    <div>
+                        {% if not contacto.leido %}
+                            <span class="badge bg-warning">
+                                <i class="bi bi-envelope me-1"></i>Nuevo
+                            </span>
+                        {% elif contacto.respondido %}
+                            <span class="badge bg-success">
+                                <i class="bi bi-check-circle me-1"></i>Respondido
+                            </span>
+                        {% else %}
+                            <span class="badge bg-info">
+                                <i class="bi bi-eye me-1"></i>Leído
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Asunto -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Asunto:</label>
+                        <div class="fs-5">{{ contacto.asunto }}</div>
+                    </div>
+                    
+                    <!-- Mensaje -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Mensaje:</label>
+                        <div class="border rounded p-3 bg-light">
+                            {{ contacto.mensaje|linebreaks }}
+                        </div>
+                    </div>
+                    
+                    <!-- Fecha -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Fecha de recepción:</label>
+                        <div>
+                            <i class="bi bi-calendar me-1"></i>{{ contacto.fecha_creacion|date:"l, d \d\e F \d\e Y \a \l\a\s H:i" }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Acciones de Respuesta -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-gear me-2"></i>Acciones
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        {% if not contacto.respondido %}
+                            <button type="submit" name="marcar_respondido" class="btn btn-success me-2">
+                                <i class="bi bi-check-circle me-1"></i>Marcar como Respondido
+                            </button>
+                        {% else %}
+                            <button type="submit" name="marcar_pendiente" class="btn btn-warning me-2">
+                                <i class="bi bi-clock me-1"></i>Marcar como Pendiente
+                            </button>
+                        {% endif %}
+                    </form>
+                    
+                    <a href="mailto:{{ contacto.email }}?subject=Re: {{ contacto.asunto }}&body=Hola {{ contacto.nombre }},%0D%0A%0D%0AGracias por contactarnos. En respuesta a tu consulta:%0D%0A%0D%0A{{ contacto.mensaje|urlencode }}%0D%0A%0D%0ASaludos cordiales,%0D%0AEquipo TicketProo" 
+                       class="btn btn-primary">
+                        <i class="bi bi-envelope me-1"></i>Responder por Email
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <!-- Información del Contacto -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person me-2"></i>Información del Contacto
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nombre:</label>
+                        <div>{{ contacto.nombre }}</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Email:</label>
+                        <div>
+                            <a href="mailto:{{ contacto.email }}" class="text-decoration-none">
+                                <i class="bi bi-envelope me-1"></i>{{ contacto.email }}
+                            </a>
+                        </div>
+                    </div>
+                    
+                    {% if contacto.telefono %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Teléfono:</label>
+                        <div>
+                            <a href="tel:{{ contacto.telefono }}" class="text-decoration-none">
+                                <i class="bi bi-telephone me-1"></i>{{ contacto.telefono }}
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if contacto.empresa %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Empresa:</label>
+                        <div>
+                            <span class="badge bg-primary">{{ contacto.empresa }}</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Información Técnica -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle me-2"></i>Información Técnica
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if contacto.ip_address %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-muted small">IP Address:</label>
+                        <div class="small font-monospace">{{ contacto.ip_address }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if contacto.user_agent %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-muted small">User Agent:</label>
+                        <div class="small text-muted" style="word-break: break-all;">
+                            {{ contacto.user_agent|truncatechars:100 }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-muted small">Estado:</label>
+                        <div>
+                            {% if not contacto.leido %}
+                                <span class="badge bg-warning">No Leído</span>
+                            {% else %}
+                                <span class="badge bg-info">Leído</span>
+                            {% endif %}
+                            
+                            {% if contacto.respondido %}
+                                <span class="badge bg-success">Respondido</span>
+                            {% else %}
+                                <span class="badge bg-danger">Pendiente</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mensajes -->
+{% if messages %}
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+{% endblock %}

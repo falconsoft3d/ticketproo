@@ -107,8 +107,8 @@
         <div class="col-md-3">
             <div class="card border-info">
                 <div class="card-body text-center">
-                    <h4 class="text-info">{{ total_hours }}h</h4>
-                    <small class="text-muted">Total Horas</small>
+                    <h4 class="text-info">{{ total_horas_formateado }}</h4>
+                    <small class="text-muted">Total Horas ({{ total_hours }}h)</small>
                 </div>
             </div>
         </div>
@@ -117,6 +117,47 @@
                 <div class="card-body text-center">
                     <h4 class="text-warning">{{ unique_users }}</h4>
                     <small class="text-muted">Usuarios Activos</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Indicadores CRM -->
+    {% if time_entries %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-secondary">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Indicadores CRM</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="text-center p-3 border rounded">
+                                <h4 class="text-primary">{{ contactos_creados }}</h4>
+                                <small class="text-muted">Contactos Creados</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center p-3 border rounded">
+                                <h4 class="text-success">{{ oportunidades_creadas }}</h4>
+                                <small class="text-muted">Oportunidades Creadas</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center p-3 border rounded">
+                                <h4 class="text-info">{{ tickets_creados }}</h4>
+                                <small class="text-muted">Tickets Creados</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center p-3 border rounded">
+                                <h4 class="text-warning">{{ empresas_creadas }}</h4>
+                                <small class="text-muted">Empresas Creadas</small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -247,6 +288,15 @@
                                         </td>
                                     </tr>
                                     {% endfor %}
+                                    
+                                    <!-- Fila de totales -->
+                                    {% if time_entries %}
+                                    <tr class="table-secondary">
+                                        <td colspan="4" class="text-end fw-bold">TOTAL HORAS:</td>
+                                        <td class="fw-bold text-primary">{{ total_horas_formateado }}</td>
+                                        <td class="fw-bold text-muted">({{ total_hours }}h)</td>
+                                    </tr>
+                                    {% endif %}
                                 </tbody>
                             </table>
                             

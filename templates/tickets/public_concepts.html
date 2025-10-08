@@ -1,7 +1,11 @@
-{% extends 'blog_base.html' %}
+{% extends 'public_base.html' %}
 {% load static %}
 
 {% block title %}{{ title }}{% endblock %}
+
+{% block hero_icon %}<i class="bi bi-lightbulb"></i>{% endblock %}
+{% block hero_title %}Conceptos{% endblock %}
+{% block hero_description %}Glosario de términos y conceptos clave para entender mejor nuestra plataforma y metodologías.{% endblock %}
 
 {% block content %}
 <div class="container mt-4">

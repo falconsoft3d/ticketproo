@@ -5,7 +5,7 @@ from .models import (
     TimeEntry, Project, Company, SystemConfiguration, Document, UserProfile,
     WorkOrder, WorkOrderAttachment, Task, Opportunity, OpportunityStatus, 
     OpportunityNote, OpportunityStatusHistory, Concept, Exam, ExamQuestion, 
-    ExamAttempt, ExamAnswer
+    ExamAttempt, ExamAnswer, ContactoWeb
 )
 
 # Configuración del sitio de administración
@@ -827,4 +827,49 @@ class ConceptAdmin(admin.ModelAdmin):
         if obj:  # Si estamos editando
             return self.readonly_fields + ('created_by',)
         return self.readonly_fields
+
+
+@admin.register(ContactoWeb)
+class ContactoWebAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'email', 'empresa', 'asunto_short', 'fecha_creacion', 'status_badges', 'leido', 'respondido', 'ip_address')
+    list_filter = ('leido', 'respondido', 'fecha_creacion', 'empresa')
+    search_fields = ('nombre', 'email', 'empresa', 'asunto', 'mensaje')
+    readonly_fields = ('fecha_creacion', 'ip_address', 'user_agent')
+    list_editable = ('leido', 'respondido')
+    date_hierarchy = 'fecha_creacion'
+    ordering = ('-fecha_creacion',)
+    
+    fieldsets = (
+        ('Información del Contacto', {
+            'fields': ('nombre', 'email', 'telefono', 'empresa')
+        }),
+        ('Mensaje', {
+            'fields': ('asunto', 'mensaje')
+        }),
+        ('Estado', {
+            'fields': ('leido', 'respondido')
+        }),
+        ('Información Técnica', {
+            'fields': ('fecha_creacion', 'ip_address', 'user_agent'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def asunto_short(self, obj):
+        return obj.asunto[:50] + "..." if len(obj.asunto) > 50 else obj.asunto
+    asunto_short.short_description = 'Asunto'
+    
+    def status_badges(self, obj):
+        html = ""
+        if not obj.leido:
+            html += '<span style="background-color: #ffc107; color: white; padding: 2px 6px; border-radius: 3px; margin-right: 5px;">Nuevo</span>'
+        if obj.respondido:
+            html += '<span style="background-color: #28a745; color: white; padding: 2px 6px; border-radius: 3px;">Respondido</span>'
+        else:
+            html += '<span style="background-color: #dc3545; color: white; padding: 2px 6px; border-radius: 3px;">Pendiente</span>'
+        return format_html(html)
+    status_badges.short_description = 'Estado'
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request)
 

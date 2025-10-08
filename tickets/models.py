@@ -4020,3 +4020,64 @@ class ExamAnswer(models.Model):
     
     def __str__(self):
         return f"{self.attempt.participant_name} - {self.question.question_text[:50]}..."
+
+
+class ContactoWeb(models.Model):
+    """Modelo para gestionar contactos desde la web pública"""
+    
+    nombre = models.CharField(
+        max_length=100,
+        verbose_name='Nombre completo'
+    )
+    email = models.EmailField(
+        verbose_name='Correo electrónico'
+    )
+    telefono = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        verbose_name='Teléfono'
+    )
+    empresa = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='Empresa'
+    )
+    asunto = models.CharField(
+        max_length=200,
+        verbose_name='Asunto'
+    )
+    mensaje = models.TextField(
+        verbose_name='Mensaje'
+    )
+    fecha_creacion = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    leido = models.BooleanField(
+        default=False,
+        verbose_name='Leído'
+    )
+    respondido = models.BooleanField(
+        default=False,
+        verbose_name='Respondido'
+    )
+    ip_address = models.GenericIPAddressField(
+        blank=True,
+        null=True,
+        verbose_name='Dirección IP'
+    )
+    user_agent = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='User Agent'
+    )
+    
+    class Meta:
+        verbose_name = 'Contacto Web'
+        verbose_name_plural = 'Contactos Web'
+        ordering = ['-fecha_creacion']
+    
+    def __str__(self):
+        return f"{self.nombre} - {self.asunto}"

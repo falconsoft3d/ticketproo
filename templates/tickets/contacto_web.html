@@ -1,0 +1,201 @@
+{% extends 'public_base.html' %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block hero_icon %}<i class="bi bi-envelope-heart"></i>{% endblock %}
+{% block hero_title %}Contáctanos{% endblock %}
+{% block hero_description %}Estamos aquí para ayudarte. Envíanos tu consulta y te responderemos pronto.{% endblock %}
+
+{% block content_section_class %}contact-container{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="contact-form">
+            <!-- Información de la empresa -->
+            <div class="company-info mb-4">
+                <div class="row">
+                    <div class="col-md-4 d-flex align-items-center mb-3">
+                        <div class="contact-icon">
+                            <i class="bi bi-telephone"></i>
+                        </div>
+                        <div>
+                            <strong>Teléfono</strong><br>
+                            <small class="text-muted">+34 662 47 0645</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center mb-3">
+                        <div class="contact-icon">
+                            <i class="bi bi-envelope"></i>
+                        </div>
+                        <div>
+                            <strong>Email</strong><br>
+                            <small class="text-muted">mfalconsoft@gmail.com</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center mb-3">
+                        <div class="contact-icon">
+                            <i class="bi bi-clock"></i>
+                        </div>
+                        <div>
+                            <strong>Horario</strong><br>
+                            <small class="text-muted">Lun - Vie: 9:00 - 18:00</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Mensajes -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        <i class="bi bi-check-circle me-2"></i>{{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <!-- Formulario -->
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="form-group">
+                            <label for="{{ form.nombre.id_for_label }}" class="form-label">
+                                <i class="bi bi-person me-1"></i>{{ form.nombre.label }}
+                            </label>
+                            {{ form.nombre }}
+                            {% if form.nombre.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.nombre.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="form-group">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">
+                                <i class="bi bi-envelope me-1"></i>{{ form.email.label }}
+                            </label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.email.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="form-group">
+                            <label for="{{ form.telefono.id_for_label }}" class="form-label">
+                                <i class="bi bi-telephone me-1"></i>{{ form.telefono.label }}
+                            </label>
+                            {{ form.telefono }}
+                            {% if form.telefono.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.telefono.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="form-group">
+                            <label for="{{ form.empresa.id_for_label }}" class="form-label">
+                                <i class="bi bi-building me-1"></i>{{ form.empresa.label }}
+                            </label>
+                            {{ form.empresa }}
+                            {% if form.empresa.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.empresa.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="form-group">
+                        <label for="{{ form.asunto.id_for_label }}" class="form-label">
+                            <i class="bi bi-chat-text me-1"></i>{{ form.asunto.label }}
+                        </label>
+                        {{ form.asunto }}
+                        {% if form.asunto.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.asunto.errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <div class="form-group">
+                        <label for="{{ form.mensaje.id_for_label }}" class="form-label">
+                            <i class="bi bi-chat-dots me-1"></i>{{ form.mensaje.label }}
+                        </label>
+                        {{ form.mensaje }}
+                        {% if form.mensaje.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.mensaje.errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="bi bi-send me-2"></i>Enviar Mensaje
+                    </button>
+                </div>
+            </form>
+            
+            <!-- Footer del formulario -->
+            <div class="text-center mt-4">
+                <small class="text-muted">
+                    <i class="bi bi-shield-check me-1"></i>
+                    Tus datos están seguros. No compartimos información personal.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+    .company-info {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+    }
+    
+    .contact-icon {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+    }
+</style>
+{% endblock %}
+{% endblock %}
