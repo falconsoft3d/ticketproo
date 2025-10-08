@@ -36,7 +36,7 @@ from .forms import (
     TicketCommentForm, UserNoteForm, TimeEntryStartForm, TimeEntryEndForm, 
     TimeEntryEditForm, ProjectForm, CompanyForm, SystemConfigurationForm, DocumentForm,
     UrlManagerForm, UrlManagerFilterForm, WorkOrderForm, WorkOrderFilterForm, TaskForm,
-    ChatMessageForm, ChatRoomForm, AIChatSessionForm, AIChatMessageForm
+    ChatMessageForm, ChatRoomForm, AIChatSessionForm, AIChatMessageForm, ConceptForm
 )
 from .utils import is_agent, is_regular_user, get_user_role, assign_user_to_group
 
@@ -218,10 +218,6 @@ def dashboard_view(request):
             'is_agent': False,
             'daily_hours': daily_hours,
         }
-    
-    # Obtener conceptos activos para mostrar en el dashboard
-    concepts = Concept.objects.filter(is_active=True)[:10]  # Máximo 10 conceptos
-    context['concepts'] = concepts
     
     return render(request, 'tickets/dashboard.html', context)
 
@@ -7631,3 +7627,107 @@ def enhance_contact_with_ai(request, contact_id):
             
     except Exception as e:
         return JsonResponse({'error': f'Error al mejorar contacto: {str(e)}'}, status=500)
+
+
+# =============================================
+# VISTAS DE CONCEPTOS
+# =============================================
+
+@login_required
+@user_passes_test(is_agent)
+def concept_list_view(request):
+    """Vista para listar todos los conceptos"""
+    concepts = Concept.objects.all().order_by('order', 'term')
+    
+    context = {
+        'concepts': concepts,
+        'title': 'Gestión de Conceptos'
+    }
+    return render(request, 'tickets/concept_list.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def concept_create_view(request):
+    """Vista para crear un nuevo concepto"""
+    if request.method == 'POST':
+        form = ConceptForm(request.POST)
+        if form.is_valid():
+            concept = form.save(commit=False)
+            concept.created_by = request.user
+            concept.save()
+            messages.success(request, f'Concepto "{concept.term}" creado exitosamente.')
+            return redirect('concept_list')
+    else:
+        form = ConceptForm()
+    
+    context = {
+        'form': form,
+        'title': 'Crear Concepto'
+    }
+    return render(request, 'tickets/concept_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def concept_edit_view(request, pk):
+    """Vista para editar un concepto existente"""
+    concept = get_object_or_404(Concept, pk=pk)
+    
+    if request.method == 'POST':
+        form = ConceptForm(request.POST, instance=concept)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Concepto "{concept.term}" actualizado exitosamente.')
+            return redirect('concept_list')
+    else:
+        form = ConceptForm(instance=concept)
+    
+    context = {
+        'form': form,
+        'concept': concept,
+        'title': 'Editar Concepto'
+    }
+    return render(request, 'tickets/concept_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def concept_delete_view(request, pk):
+    """Vista para eliminar un concepto"""
+    concept = get_object_or_404(Concept, pk=pk)
+    
+    if request.method == 'POST':
+        concept_term = concept.term
+        concept.delete()
+        messages.success(request, f'Concepto "{concept_term}" eliminado exitosamente.')
+        return redirect('concept_list')
+    
+    context = {
+        'concept': concept,
+        'title': 'Eliminar Concepto'
+    }
+    return render(request, 'tickets/concept_delete.html', context)
+
+
+@login_required
+def concept_detail_view(request, pk):
+    """Vista para ver los detalles de un concepto"""
+    concept = get_object_or_404(Concept, pk=pk)
+    
+    context = {
+        'concept': concept,
+        'title': f'Concepto: {concept.term}'
+    }
+    return render(request, 'tickets/concept_detail.html', context)
+
+
+def public_concepts_view(request):
+    """Vista pública para mostrar el glosario de conceptos"""
+    concepts = Concept.objects.filter(is_active=True).order_by('order', 'term')
+    
+    context = {
+        'concepts': concepts,
+        'title': 'Glosario de Conceptos'
+    }
+    return render(request, 'tickets/public_concepts.html', context)

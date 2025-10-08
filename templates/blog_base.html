@@ -127,9 +127,15 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'blog_list' %}">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'blog_list' %}active{% endif %}" href="{% url 'blog_list' %}">
                             <i class="bi bi-journal-richtext me-1"></i>
                             Blog
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'public_concepts' %}active{% endif %}" href="{% url 'public_concepts' %}">
+                            <i class="bi bi-lightbulb me-1"></i>
+                            Conceptos
                         </a>
                     </li>
                     {% if is_authenticated %}

@@ -253,6 +253,20 @@
                                     <i class="bi bi-people-fill"></i> Asistencia General
                                 </a>
                             </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Conceptos</li>
+                            <li>
+                                <a class="dropdown-item {% if 'concept' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'concept_list' %}">
+                                    <i class="bi bi-lightbulb"></i> Gestionar Conceptos
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'concept_create' %}active{% endif %}" 
+                                   href="{% url 'concept_create' %}">
+                                    <i class="bi bi-plus-circle"></i> Nuevo Concepto
+                                </a>
+                            </li>
                         </ul>
                     </li>
                     

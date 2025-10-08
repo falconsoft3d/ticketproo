@@ -5,7 +5,7 @@ from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
     UserNote, TimeEntry, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
     ChatRoom, ChatMessage, Command, ContactFormSubmission, Meeting, MeetingAttendee, MeetingQuestion, OpportunityActivity,
-    Course, CourseClass, Contact, BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage
+    Course, CourseClass, Contact, BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, Concept
 )
 
 class CategoryForm(forms.ModelForm):
@@ -3031,3 +3031,47 @@ class AIChatMessageForm(forms.Form):
             raise forms.ValidationError('El mensaje debe tener al menos 5 caracteres.')
         
         return message
+
+
+class ConceptForm(forms.ModelForm):
+    """Formulario para crear y editar conceptos"""
+    
+    class Meta:
+        model = Concept
+        fields = ['term', 'definition', 'category', 'is_active', 'order']
+        widgets = {
+            'term': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Término o concepto'
+            }),
+            'definition': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': 'Definición del concepto',
+                'rows': 4
+            }),
+            'category': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Categoría (opcional)'
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'order': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Orden de visualización'
+            }),
+        }
+        labels = {
+            'term': 'Término',
+            'definition': 'Definición',
+            'category': 'Categoría',
+            'is_active': 'Activo',
+            'order': 'Orden'
+        }
+        help_texts = {
+            'term': 'Nombre del concepto o término',
+            'definition': 'Explicación clara y concisa del concepto',
+            'category': 'Categoría a la que pertenece (opcional)',
+            'is_active': 'Marcar si el concepto debe mostrarse',
+            'order': 'Número para ordenar los conceptos (menor = primero)'
+        }

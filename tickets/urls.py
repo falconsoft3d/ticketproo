@@ -18,6 +18,9 @@ urlpatterns = [
     path('public/courses/<uuid:token>/', views.course_public, name='course_public'),
     path('public/courses/<uuid:token>/classes/<int:class_id>/', views.course_class_public, name='course_class_public'),
     
+    # Vista pública de conceptos (sin autenticación requerida)
+    path('public/concepts/', views.public_concepts_view, name='public_concepts'),
+    
     # URL para vista pública de tickets (sin autenticación requerida)
     path('public/<uuid:token>/', views.public_ticket_view, name='public_ticket'),
     
@@ -313,5 +316,12 @@ urlpatterns = [
     
     # AJAX para mejorar contactos con IA
     path('contacts/<int:contact_id>/enhance-ai/', views.enhance_contact_with_ai, name='enhance_contact_with_ai'),
+    
+    # URLs de conceptos
+    path('concepts/', views.concept_list_view, name='concept_list'),
+    path('concepts/create/', views.concept_create_view, name='concept_create'),
+    path('concepts/<int:pk>/', views.concept_detail_view, name='concept_detail'),
+    path('concepts/<int:pk>/edit/', views.concept_edit_view, name='concept_edit'),
+    path('concepts/<int:pk>/delete/', views.concept_delete_view, name='concept_delete'),
     
 ]

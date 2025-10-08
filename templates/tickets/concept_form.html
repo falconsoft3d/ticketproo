@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="bi bi-lightbulb"></i> {{ title }}</h2>
+                    {% if concept %}
+                        <p class="text-muted">Editando concepto: {{ concept.term }}</p>
+                    {% else %}
+                        <p class="text-muted">Agrega un nuevo concepto al glosario</p>
+                    {% endif %}
+                </div>
+                <a href="{% url 'concept_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver
+                </a>
+            </div>
+
+            <!-- Formulario -->
+            <div class="card">
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Término -->
+                        <div class="mb-3">
+                            <label for="{{ form.term.id_for_label }}" class="form-label">
+                                {{ form.term.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.term }}
+                            {% if form.term.help_text %}
+                                <div class="form-text">{{ form.term.help_text }}</div>
+                            {% endif %}
+                            {% if form.term.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.term.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Definición -->
+                        <div class="mb-3">
+                            <label for="{{ form.definition.id_for_label }}" class="form-label">
+                                {{ form.definition.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.definition }}
+                            {% if form.definition.help_text %}
+                                <div class="form-text">{{ form.definition.help_text }}</div>
+                            {% endif %}
+                            {% if form.definition.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.definition.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Categoría -->
+                        <div class="mb-3">
+                            <label for="{{ form.category.id_for_label }}" class="form-label">
+                                {{ form.category.label }}
+                            </label>
+                            {{ form.category }}
+                            {% if form.category.help_text %}
+                                <div class="form-text">{{ form.category.help_text }}</div>
+                            {% endif %}
+                            {% if form.category.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.category.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Orden -->
+                        <div class="mb-3">
+                            <label for="{{ form.order.id_for_label }}" class="form-label">
+                                {{ form.order.label }}
+                            </label>
+                            {{ form.order }}
+                            {% if form.order.help_text %}
+                                <div class="form-text">{{ form.order.help_text }}</div>
+                            {% endif %}
+                            {% if form.order.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.order.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Estado activo -->
+                        <div class="mb-4">
+                            <div class="form-check">
+                                {{ form.is_active }}
+                                <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                    {{ form.is_active.label }}
+                                </label>
+                            </div>
+                            {% if form.is_active.help_text %}
+                                <div class="form-text">{{ form.is_active.help_text }}</div>
+                            {% endif %}
+                            {% if form.is_active.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.is_active.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'concept_list' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> 
+                                {% if concept %}Actualizar{% else %}Crear{% endif %} Concepto
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
