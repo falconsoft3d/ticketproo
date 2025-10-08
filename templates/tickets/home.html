@@ -141,60 +141,65 @@
                         </div>
                     {% endif %}
                     
-                    <!-- Stats -->
+                    <!-- AI Section -->
                     <div class="row mt-5">
-                        {% if is_authenticated %}
-                            <div class="col-md-6 mb-3">
-                                <div class="stats-card p-3 text-center">
-                                    <h3 class="fw-bold">{{ user_tickets_count }}</h3>
-                                    <p class="mb-0">
-                                        {% if user_role == 'Agente' %}Total de Tickets{% else %}Total de Tickets{% endif %}
-                                    </p>
+                        <div class="col-12">
+                            <div class="text-center mb-4">
+                                <i class="bi bi-robot display-1 mb-3" style="color: rgba(255,255,255,0.8);"></i>
+                                <h2 class="fw-bold mb-3">🚀 Potenciado por Inteligencia Artificial</h2>
+                                <p class="lead">
+                                    TicketProo integra tecnología de IA avanzada para optimizar la gestión de tickets, 
+                                    automatizar respuestas y mejorar la experiencia del usuario.
+                                </p>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <div class="stats-card p-4 text-center h-100">
+                                        <i class="bi bi-chat-dots-fill display-4 mb-3" style="color: rgba(255,255,255,0.9);"></i>
+                                        <h5 class="fw-bold">Chat Inteligente</h5>
+                                        <p class="mb-0 small">Respuestas automáticas con IA para resolver consultas al instante</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <div class="stats-card p-4 text-center h-100">
+                                        <i class="bi bi-lightning-charge-fill display-4 mb-3" style="color: rgba(255,255,255,0.9);"></i>
+                                        <h5 class="fw-bold">Automatización</h5>
+                                        <p class="mb-0 small">Procesos optimizados con Machine Learning para mayor eficiencia</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <div class="stats-card p-4 text-center h-100">
+                                        <i class="bi bi-graph-up-arrow display-4 mb-3" style="color: rgba(255,255,255,0.9);"></i>
+                                        <h5 class="fw-bold">Analytics Predictivo</h5>
+                                        <p class="mb-0 small">Insights basados en datos para tomar mejores decisiones</p>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <div class="stats-card p-3 text-center">
-                                    <h3 class="fw-bold">{{ tickets_by_status.open }}</h3>
-                                    <p class="mb-0">Tickets Abiertos</p>
-                                </div>
+                            
+                            {% if is_authenticated %}
+                            <div class="text-center mt-4">
+                                <p class="mb-3">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    La IA está integrada en todas las funciones del sistema
+                                </p>
                             </div>
-                            {% if tickets_by_status.in_progress > 0 %}
-                            <div class="col-md-6 mb-3">
-                                <div class="stats-card p-3 text-center">
-                                    <h3 class="fw-bold">{{ tickets_by_status.in_progress }}</h3>
-                                    <p class="mb-0">En Progreso</p>
-                                </div>
+                            {% else %}
+                            <div class="text-center mt-4">
+                                <p class="mb-3">
+                                    <i class="bi bi-stars me-2"></i>
+                                    Experimenta el futuro de la gestión de tickets con IA
+                                </p>
                             </div>
                             {% endif %}
-                            {% if tickets_by_status.resolved > 0 %}
-                            <div class="col-md-6 mb-3">
-                                <div class="stats-card p-3 text-center">
-                                    <h3 class="fw-bold">{{ tickets_by_status.resolved }}</h3>
-                                    <p class="mb-0">Resueltos</p>
-                                </div>
-                            </div>
-                            {% endif %}
-                        {% else %}
-                            <div class="col-md-6 mb-3">
-                                <div class="stats-card p-3 text-center">
-                                    <h3 class="fw-bold">{{ total_tickets }}</h3>
-                                    <p class="mb-0">Tickets Gestionados</p>
-                                </div>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <div class="stats-card p-3 text-center">
-                                    <h3 class="fw-bold">{{ total_users }}</h3>
-                                    <p class="mb-0">Usuarios Activos</p>
-                                </div>
-                            </div>
-                        {% endif %}
+                        </div>
                     </div>
                 </div>
                 <div class="col-lg-6 text-center">
                     {% if is_authenticated %}
-                        <i class="bi bi-person-check feature-icon" style="font-size: 15rem; opacity: 0.3;"></i>
+                        <i class="bi bi-robot feature-icon" style="font-size: 15rem; opacity: 0.3; color: rgba(255,255,255,0.3);"></i>
                     {% else %}
-                        <i class="bi bi-kanban feature-icon" style="font-size: 15rem; opacity: 0.3;"></i>
+                        <i class="bi bi-cpu-fill feature-icon" style="font-size: 15rem; opacity: 0.3; color: rgba(255,255,255,0.3);"></i>
                     {% endif %}
                 </div>
             </div>
@@ -207,21 +212,14 @@
         <div class="container">
             <div class="row">
                 {% for concept in concepts %}
-                <div class="col-lg-6 mb-4">
-                    <div class="card h-100 shadow-sm border-0">
-                        <div class="card-body">
-                            <h5 class="card-title text-primary fw-bold">
+                <div class="col-lg-4 col-md-6 mb-3">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body p-3">
+                            <h6 class="card-title text-primary fw-bold mb-2">
                                 <i class="bi bi-lightbulb me-2"></i>
                                 {{ concept.term }}
-                            </h5>
-                            <p class="card-text text-muted">{{ concept.definition }}</p>
-                            {% if concept.example %}
-                            <div class="mt-3 p-3 bg-light rounded">
-                                <small class="text-muted">
-                                    <strong>Ejemplo:</strong> {{ concept.example }}
-                                </small>
-                            </div>
-                            {% endif %}
+                            </h6>
+                            <p class="card-text text-muted small mb-0">{{ concept.definition }}</p>
                         </div>
                     </div>
                 </div>

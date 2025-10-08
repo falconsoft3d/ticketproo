@@ -530,6 +530,8 @@ class Ticket(models.Model):
     
     def save(self, *args, **kwargs):
         """Override del método save para generar número de ticket automáticamente"""
+        is_new_ticket = self.pk is None
+        
         if not self.ticket_number:
             # Usar transacción para evitar condiciones de carrera
             with transaction.atomic():
@@ -544,6 +546,24 @@ class Ticket(models.Model):
                     counter += 1
         
         super().save(*args, **kwargs)
+        
+        # Enviar notificación de Telegram solo para tickets nuevos
+        if is_new_ticket:
+            try:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.info(f"Ticket nuevo creado: {self.ticket_number}, iniciando notificación Telegram")
+                
+                from .telegram_utils import notify_ticket_created
+                result = notify_ticket_created(self)
+                logger.info(f"Resultado notificación Telegram: {result}")
+            except Exception as e:
+                # No queremos que falle la creación del ticket si falla la notificación
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error al enviar notificación de Telegram para ticket {self.ticket_number}: {e}")
+                import traceback
+                logger.error(f"Traceback completo: {traceback.format_exc()}")
     
     def __str__(self):
         if self.ticket_number:
@@ -577,6 +597,39 @@ class Ticket(models.Model):
             'error': 'bg-danger',
         }
         return type_classes.get(self.ticket_type, 'bg-secondary')
+    
+    def get_age_in_hours(self):
+        """Retorna la antigüedad del ticket en horas"""
+        from django.utils import timezone
+        now = timezone.now()
+        time_diff = now - self.created_at
+        return time_diff.total_seconds() / 3600
+    
+    def get_age_badge_class(self):
+        """Retorna la clase CSS para el badge de antigüedad según las horas"""
+        hours = self.get_age_in_hours()
+        if hours < 72:  # Menos de 72 horas - Verde
+            return 'bg-success'
+        elif hours <= 140:  # Entre 72 y 140 horas - Naranja
+            return 'bg-warning'
+        else:  # Más de 140 horas - Rojo
+            return 'bg-danger'
+    
+    def get_age_display(self):
+        """Retorna la antigüedad formateada para mostrar"""
+        hours = self.get_age_in_hours()
+        if hours < 24:
+            return f"{int(hours)}h"
+        elif hours < 72:
+            days = int(hours / 24)
+            remaining_hours = int(hours % 24)
+            if remaining_hours > 0:
+                return f"{days}d {remaining_hours}h"
+            else:
+                return f"{days}d"
+        else:
+            days = int(hours / 24)
+            return f"{days}d"
     
     def get_public_url(self):
         """Retorna la URL pública del ticket si está habilitado para compartir"""
@@ -1235,6 +1288,27 @@ class SystemConfiguration(models.Model):
         default=False,
         verbose_name='Chat IA habilitado',
         help_text='Habilita o deshabilita la funcionalidad de chat con IA'
+    )
+    
+    # Configuración de Telegram
+    enable_telegram_notifications = models.BooleanField(
+        default=False,
+        verbose_name='Activar notificaciones de Telegram',
+        help_text='Envía notificaciones a un grupo de Telegram cuando se crean tickets'
+    )
+    telegram_bot_token = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        verbose_name='Token del Bot de Telegram',
+        help_text='Token del bot de Telegram proporcionado por @BotFather'
+    )
+    telegram_chat_id = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='ID del Chat/Grupo de Telegram',
+        help_text='ID del grupo o chat donde enviar las notificaciones (ej: -100123456789)'
     )
     
     # Metadatos

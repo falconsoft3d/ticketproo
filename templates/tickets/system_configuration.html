@@ -237,6 +237,90 @@
                             </div>
                         </div>
 
+                        <!-- Configuración de Telegram -->
+                        <div class="config-section">
+                            <h5>
+                                <i class="bi bi-telegram me-2"></i>
+                                Configuración de Telegram
+                            </h5>
+                            
+                            <div class="form-check mb-3">
+                                {{ form.enable_telegram_notifications }}
+                                <label class="form-check-label" for="{{ form.enable_telegram_notifications.id_for_label }}">
+                                    <i class="bi bi-bell me-1"></i>
+                                    {{ form.enable_telegram_notifications.label }}
+                                </label>
+                                {% if form.enable_telegram_notifications.help_text %}
+                                    <div class="form-text">{{ form.enable_telegram_notifications.help_text }}</div>
+                                {% endif %}
+                                {% if form.enable_telegram_notifications.errors %}
+                                    <div class="text-danger mt-1">
+                                        {% for error in form.enable_telegram_notifications.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div id="telegram-config-fields" style="{% if not config.enable_telegram_notifications %}display: none;{% endif %}">
+                                <div class="mb-3">
+                                    <label for="{{ form.telegram_bot_token.id_for_label }}" class="form-label">
+                                        <i class="bi bi-robot me-1"></i>
+                                        {{ form.telegram_bot_token.label }}
+                                    </label>
+                                    {{ form.telegram_bot_token }}
+                                    {% if form.telegram_bot_token.help_text %}
+                                        <small class="form-text text-muted">{{ form.telegram_bot_token.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.telegram_bot_token.errors %}
+                                        <div class="text-danger mt-1">
+                                            {% for error in form.telegram_bot_token.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.telegram_chat_id.id_for_label }}" class="form-label">
+                                        <i class="bi bi-chat-square-text me-1"></i>
+                                        {{ form.telegram_chat_id.label }}
+                                    </label>
+                                    {{ form.telegram_chat_id }}
+                                    {% if form.telegram_chat_id.help_text %}
+                                        <small class="form-text text-muted">{{ form.telegram_chat_id.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.telegram_chat_id.errors %}
+                                        <div class="text-danger mt-1">
+                                            {% for error in form.telegram_chat_id.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Botón de prueba -->
+                                <div class="d-flex gap-2 mb-3">
+                                    <button type="button" class="btn btn-outline-info btn-sm" id="test-telegram-btn">
+                                        <i class="bi bi-lightning me-1"></i>
+                                        Probar Conexión
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>Cómo configurar Telegram:</strong>
+                                <ol class="mt-2 mb-0">
+                                    <li>Crea un bot en Telegram hablando con <a href="https://t.me/BotFather" target="_blank" class="alert-link">@BotFather</a></li>
+                                    <li>Usa el comando <code>/newbot</code> y sigue las instrucciones</li>
+                                    <li>Copia el token del bot y pégalo arriba</li>
+                                    <li>Agrega el bot a tu grupo y hazlo administrador</li>
+                                    <li>Obtén el ID del grupo usando <a href="https://t.me/getidsbot" target="_blank" class="alert-link">@getidsbot</a></li>
+                                </ol>
+                            </div>
+                        </div>
+
                         <!-- Botones -->
                         <div class="d-flex gap-2 mt-4">
                             <button type="submit" class="btn btn-primary">
@@ -303,6 +387,19 @@
                                     <span class="badge bg-primary">{{ config.openai_model }}</span>
                                 </dd>
                                 {% endif %}
+
+                                <dt class="col-6">Notificaciones Telegram:</dt>
+                                <dd class="col-6">
+                                    {% if config.enable_telegram_notifications %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle me-1"></i>Habilitado
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-x-circle me-1"></i>Deshabilitado
+                                        </span>
+                                    {% endif %}
+                                </dd>
                                 
                                 <dt class="col-6">Última actualización:</dt>
                                 <dd class="col-6">{{ config.updated_at|date:"d/m/Y H:i" }}</dd>
@@ -377,6 +474,77 @@
             
             aiEnabledCheckbox.addEventListener('change', toggleAIFields);
             toggleAIFields(); // Ejecutar al cargar la página
+        }
+
+        // Mostrar/ocultar campos de Telegram según el checkbox
+        const telegramEnabledCheckbox = document.querySelector('#id_enable_telegram_notifications');
+        const telegramConfigFields = document.querySelector('#telegram-config-fields');
+        
+        if (telegramEnabledCheckbox && telegramConfigFields) {
+            function toggleTelegramFields() {
+                if (telegramEnabledCheckbox.checked) {
+                    telegramConfigFields.style.display = 'block';
+                } else {
+                    telegramConfigFields.style.display = 'none';
+                }
+            }
+            
+            telegramEnabledCheckbox.addEventListener('change', toggleTelegramFields);
+            toggleTelegramFields(); // Ejecutar al cargar la página
+        }
+
+        // Función para probar conexión de Telegram
+        const testTelegramBtn = document.querySelector('#test-telegram-btn');
+        if (testTelegramBtn) {
+            testTelegramBtn.addEventListener('click', function() {
+                const botToken = document.querySelector('#id_telegram_bot_token').value;
+                const chatId = document.querySelector('#id_telegram_chat_id').value;
+
+                if (!botToken || !chatId) {
+                    alert('Por favor, completa el token del bot y el Chat ID antes de probar la conexión.');
+                    return;
+                }
+
+                // Cambiar estado del botón
+                const originalText = this.innerHTML;
+                this.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Probando...';
+                this.disabled = true;
+
+                // Crear formulario temporal para enviar datos
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.style.display = 'none';
+                
+                // Agregar CSRF token
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrfmiddlewaretoken';
+                csrfInput.value = csrfToken;
+                form.appendChild(csrfInput);
+
+                // Agregar datos de prueba
+                const testInput = document.createElement('input');
+                testInput.type = 'hidden';
+                testInput.name = 'test_telegram';
+                testInput.value = '1';
+                form.appendChild(testInput);
+
+                const tokenInput = document.createElement('input');
+                tokenInput.type = 'hidden';
+                tokenInput.name = 'telegram_bot_token';
+                tokenInput.value = botToken;
+                form.appendChild(tokenInput);
+
+                const chatInput = document.createElement('input');
+                chatInput.type = 'hidden';
+                chatInput.name = 'telegram_chat_id';
+                chatInput.value = chatId;
+                form.appendChild(chatInput);
+
+                document.body.appendChild(form);
+                form.submit();
+            });
         }
     });
 </script>

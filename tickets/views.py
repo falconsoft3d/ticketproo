@@ -10,8 +10,10 @@ from django.db import models
 from django.http import HttpResponse, Http404, JsonResponse
 from django.utils import timezone
 from django.conf import settings
+from django.views.decorators.http import require_http_methods
 from datetime import datetime, date
 import os
+import json
 from datetime import timedelta
 
 # Imports para OpenAI
@@ -293,6 +295,119 @@ def ticket_list_view(request):
         'user_role': get_user_role(request.user),
     }
     return render(request, 'tickets/ticket_list.html', context)
+
+@login_required
+def ticket_export_excel(request):
+    """Vista para exportar tickets a Excel"""
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment
+    from django.http import HttpResponse
+    from datetime import datetime
+    
+    # Obtener los mismos tickets que se muestran en la lista
+    if is_agent(request.user):
+        tickets = Ticket.objects.all()
+    else:
+        user_projects = request.user.assigned_projects.all()
+        user_company = None
+        
+        try:
+            user_company = request.user.profile.company
+        except:
+            pass
+        
+        query_conditions = Q(created_by=request.user)
+        
+        if user_projects.exists():
+            query_conditions |= Q(project__in=user_projects)
+        
+        if user_company:
+            query_conditions |= Q(company=user_company)
+        
+        tickets = Ticket.objects.filter(query_conditions).distinct()
+    
+    # Aplicar los mismos filtros que en la lista
+    status_filter = request.GET.get('status')
+    priority_filter = request.GET.get('priority')
+    search = request.GET.get('search')
+    assigned_filter = request.GET.get('assigned_to')
+    
+    if status_filter:
+        tickets = tickets.filter(status=status_filter)
+    
+    if priority_filter:
+        tickets = tickets.filter(priority=priority_filter)
+    
+    if search:
+        tickets = tickets.filter(
+            Q(title__icontains=search) | 
+            Q(description__icontains=search)
+        )
+    
+    if is_agent(request.user) and assigned_filter:
+        if assigned_filter == 'unassigned':
+            tickets = tickets.filter(assigned_to__isnull=True)
+        elif assigned_filter == 'me':
+            tickets = tickets.filter(assigned_to=request.user)
+    
+    # Crear el libro de trabajo
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Tickets"
+    
+    # Configurar estilos
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+    center_alignment = Alignment(horizontal="center")
+    
+    # Encabezados
+    headers = [
+        'Número', 'Título', 'Descripción', 'Categoría', 'Tipo', 'Empresa', 
+        'Creador', 'Asignado a', 'Prioridad', 'Estado', 'Aprobación', 
+        'Antigüedad (horas)', 'Fecha Creación', 'Fecha Actualización'
+    ]
+    
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center_alignment
+    
+    # Datos de los tickets
+    for row, ticket in enumerate(tickets.order_by('-created_at'), 2):
+        ws.cell(row=row, column=1, value=ticket.ticket_number)
+        ws.cell(row=row, column=2, value=ticket.title)
+        ws.cell(row=row, column=3, value=ticket.description)
+        ws.cell(row=row, column=4, value=ticket.category.name if ticket.category else "Sin categoría")
+        ws.cell(row=row, column=5, value=ticket.get_ticket_type_display())
+        ws.cell(row=row, column=6, value=ticket.company.name if ticket.company else "Sin empresa")
+        ws.cell(row=row, column=7, value=ticket.created_by.get_full_name() if ticket.created_by.get_full_name() else ticket.created_by.username)
+        ws.cell(row=row, column=8, value=ticket.assigned_to.get_full_name() if ticket.assigned_to and ticket.assigned_to.get_full_name() else (ticket.assigned_to.username if ticket.assigned_to else "Sin asignar"))
+        ws.cell(row=row, column=9, value=ticket.get_priority_display())
+        ws.cell(row=row, column=10, value=ticket.get_status_display())
+        ws.cell(row=row, column=11, value="Aprobado" if ticket.is_approved else "Pendiente")
+        ws.cell(row=row, column=12, value=round(ticket.get_age_in_hours(), 1))
+        ws.cell(row=row, column=13, value=ticket.created_at.strftime('%d/%m/%Y %H:%M'))
+        ws.cell(row=row, column=14, value=ticket.updated_at.strftime('%d/%m/%Y %H:%M'))
+    
+    # Ajustar ancho de columnas
+    column_widths = [12, 30, 50, 15, 12, 20, 20, 20, 12, 12, 12, 15, 18, 18]
+    for col, width in enumerate(column_widths, 1):
+        ws.column_dimensions[ws.cell(row=1, column=col).column_letter].width = width
+    
+    # Preparar respuesta HTTP
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    
+    # Nombre del archivo con fecha
+    filename = f'tickets_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    # Guardar el libro en la respuesta
+    wb.save(response)
+    
+    return response
 
 @login_required
 def ticket_create_view(request):
@@ -1996,6 +2111,22 @@ def system_configuration_view(request):
     config = SystemConfiguration.get_config()
     
     if request.method == 'POST':
+        # Verificar si es una prueba de Telegram
+        if 'test_telegram' in request.POST:
+            from .telegram_utils import test_telegram_connection
+            bot_token = request.POST.get('telegram_bot_token', '').strip()
+            chat_id = request.POST.get('telegram_chat_id', '').strip()
+            
+            result = test_telegram_connection(bot_token, chat_id)
+            
+            if result['success']:
+                messages.success(request, result['message'])
+            else:
+                messages.error(request, result['message'])
+            
+            return redirect('system_configuration')
+        
+        # Procesar formulario normal
         form = SystemConfigurationForm(request.POST, instance=config)
         if form.is_valid():
             form.save()
@@ -7737,3 +7868,235 @@ def public_concepts_view(request):
         'title': 'Glosario de Conceptos'
     }
     return render(request, 'tickets/public_concepts.html', context)
+
+
+# =====================================================
+# FUNCIONALIDADES DE IA PARA BLOG
+# =====================================================
+
+@login_required
+@require_http_methods(["POST"])
+def blog_ai_improve_content(request, pk):
+    """Mejorar contenido del artículo con IA"""
+    try:
+        from .ai_utils import AIContentOptimizer
+        from .utils import is_agent
+        
+        post = get_object_or_404(BlogPost, pk=pk)
+        
+        # Verificar permisos
+        if not is_agent(request.user):
+            return JsonResponse({'error': 'Permisos insuficientes'}, status=403)
+        
+        optimizer = AIContentOptimizer()
+        result = optimizer.improve_content(post.title, post.content)
+        
+        return JsonResponse(result)
+    except Exception as e:
+        return JsonResponse({'error': f'Error interno: {str(e)}'}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def blog_ai_generate_meta_description(request, pk):
+    """Generar meta descripción con IA"""
+    try:
+        from .ai_utils import AIContentOptimizer
+        from .utils import is_agent
+        
+        post = get_object_or_404(BlogPost, pk=pk)
+        
+        # Verificar permisos
+        if not is_agent(request.user):
+            return JsonResponse({'error': 'Permisos insuficientes'}, status=403)
+        
+        optimizer = AIContentOptimizer()
+        result = optimizer.generate_meta_description(post.title, post.content)
+        
+        return JsonResponse(result)
+    except Exception as e:
+        return JsonResponse({'error': f'Error interno: {str(e)}'}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def blog_ai_suggest_titles(request, pk):
+    """Sugerir títulos alternativos con IA"""
+    try:
+        from .ai_utils import AIContentOptimizer
+        from .utils import is_agent
+        
+        post = get_object_or_404(BlogPost, pk=pk)
+        
+        # Verificar permisos
+        if not is_agent(request.user):
+            return JsonResponse({'error': 'Permisos insuficientes'}, status=403)
+        
+        optimizer = AIContentOptimizer()
+        result = optimizer.suggest_titles(post.content)
+        
+        return JsonResponse(result)
+    except Exception as e:
+        return JsonResponse({'error': f'Error interno: {str(e)}'}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def blog_ai_generate_tags(request, pk):
+    """Generar etiquetas con IA"""
+    try:
+        from .ai_utils import AIContentOptimizer
+        from .utils import is_agent
+        
+        post = get_object_or_404(BlogPost, pk=pk)
+        
+        # Verificar permisos
+        if not is_agent(request.user):
+            return JsonResponse({'error': 'Permisos insuficientes'}, status=403)
+        
+        optimizer = AIContentOptimizer()
+        result = optimizer.generate_tags(post.title, post.content)
+        
+        return JsonResponse(result)
+    except Exception as e:
+        return JsonResponse({'error': f'Error interno: {str(e)}'}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def blog_ai_analyze_readability(request, pk):
+    """Analizar legibilidad del contenido con IA"""
+    try:
+        from .ai_utils import AIContentOptimizer
+        from .utils import is_agent
+        
+        post = get_object_or_404(BlogPost, pk=pk)
+        
+        # Verificar permisos
+        if not is_agent(request.user):
+            return JsonResponse({'error': 'Permisos insuficientes'}, status=403)
+        
+        optimizer = AIContentOptimizer()
+        result = optimizer.analyze_readability(post.content)
+        
+        return JsonResponse(result)
+    except Exception as e:
+        return JsonResponse({'error': f'Error interno: {str(e)}'}, status=500)
+
+
+@login_required
+def blog_ai_test_connection(request):
+    """Probar conexión con IA"""
+    try:
+        from .ai_utils import test_ai_connection
+        from .utils import is_agent
+        
+        # Verificar permisos
+        if not is_agent(request.user):
+            return JsonResponse({'error': 'Permisos insuficientes'}, status=403)
+        
+        result = test_ai_connection()
+        return JsonResponse(result)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'Error interno: {str(e)}'}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def blog_ai_improve_complete_article(request, pk):
+    """Mejorar completamente el artículo (título + contenido) con IA"""
+    try:
+        from .ai_utils import AIContentOptimizer
+        from .utils import is_agent
+        
+        post = get_object_or_404(BlogPost, pk=pk)
+        
+        # Verificar permisos
+        if not is_agent(request.user):
+            return JsonResponse({'error': 'Permisos insuficientes'}, status=403)
+        
+        optimizer = AIContentOptimizer()
+        result = optimizer.improve_complete_article(post.title, post.content)
+        
+        return JsonResponse(result)
+    except Exception as e:
+        return JsonResponse({'error': f'Error interno: {str(e)}'}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def blog_ai_generate_image(request, pk):
+    """Generar imagen para el artículo con IA basándose en el título"""
+    try:
+        from .ai_utils import AIContentOptimizer
+        from .utils import is_agent
+        
+        post = get_object_or_404(BlogPost, pk=pk)
+        
+        # Verificar permisos
+        if not is_agent(request.user):
+            return JsonResponse({'error': 'Permisos insuficientes'}, status=403)
+        
+        optimizer = AIContentOptimizer()
+        result = optimizer.generate_article_image(post.title, post.content)
+        
+        if result.get("success"):
+            # Actualizar el post con la nueva imagen
+            post.featured_image = result["file_path"]
+            post.save()
+            
+            return JsonResponse({
+                "success": True,
+                "image_url": result["local_url"],
+                "file_path": result["file_path"],
+                "message": "Imagen generada y guardada exitosamente"
+            })
+        else:
+            return JsonResponse(result)
+            
+    except Exception as e:
+        return JsonResponse({'error': f'Error interno: {str(e)}'}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def blog_ai_apply_improvements(request, pk):
+    """Aplicar mejoras sugeridas por IA al artículo"""
+    try:
+        from .utils import is_agent
+        
+        post = get_object_or_404(BlogPost, pk=pk)
+        
+        # Verificar permisos
+        if not is_agent(request.user):
+            return JsonResponse({'error': 'Permisos insuficientes'}, status=403)
+        
+        data = json.loads(request.body)
+        
+        # Aplicar cambios si están presentes
+        if 'content' in data and data['content']:
+            post.content = data['content']
+        
+        if 'meta_description' in data and data['meta_description']:
+            post.meta_description = data['meta_description']
+        
+        if 'tags' in data and data['tags']:
+            post.tags = data['tags']
+        
+        if 'title' in data and data['title']:
+            post.title = data['title']
+            # Regenerar slug si se cambia el título
+            from django.utils.text import slugify
+            post.slug = slugify(post.title)
+        
+        post.save()
+        
+        return JsonResponse({
+            'success': True, 
+            'message': 'Artículo actualizado exitosamente con las mejoras de IA'
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Datos JSON inválidos'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': f'Error al aplicar cambios: {str(e)}'}, status=500)

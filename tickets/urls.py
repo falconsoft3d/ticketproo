@@ -7,6 +7,7 @@ urlpatterns = [
     
     # URLs de tickets
     path('tickets/', views.ticket_list_view, name='ticket_list'),
+    path('tickets/export/excel/', views.ticket_export_excel, name='ticket_export_excel'),
     path('tickets/create/', views.ticket_create_view, name='ticket_create'),
     path('tickets/<int:pk>/', views.ticket_detail_view, name='ticket_detail'),
     path('tickets/<int:pk>/edit/', views.ticket_edit_view, name='ticket_edit'),
@@ -292,6 +293,17 @@ urlpatterns = [
     # URLs de comentarios de blog (con autenticación)
     path('blog-admin/comments/<int:pk>/approve/', views.blog_comment_approve, name='blog_comment_approve'),
     path('blog-admin/comments/<int:pk>/delete/', views.blog_comment_delete, name='blog_comment_delete'),
+    
+    # URLs de IA para Blog (con autenticación)
+    path('blog-admin/post/<int:pk>/ai/improve-content/', views.blog_ai_improve_content, name='blog_ai_improve_content'),
+    path('blog-admin/post/<int:pk>/ai/improve-complete/', views.blog_ai_improve_complete_article, name='blog_ai_improve_complete_article'),
+    path('blog-admin/post/<int:pk>/ai/generate-meta/', views.blog_ai_generate_meta_description, name='blog_ai_generate_meta_description'),
+    path('blog-admin/post/<int:pk>/ai/suggest-titles/', views.blog_ai_suggest_titles, name='blog_ai_suggest_titles'),
+    path('blog-admin/post/<int:pk>/ai/generate-tags/', views.blog_ai_generate_tags, name='blog_ai_generate_tags'),
+    path('blog-admin/post/<int:pk>/ai/analyze-readability/', views.blog_ai_analyze_readability, name='blog_ai_analyze_readability'),
+    path('blog-admin/post/<int:pk>/ai/generate-image/', views.blog_ai_generate_image, name='blog_ai_generate_image'),
+    path('blog-admin/post/<int:pk>/ai/apply-improvements/', views.blog_ai_apply_improvements, name='blog_ai_apply_improvements'),
+    path('blog-admin/ai/test-connection/', views.blog_ai_test_connection, name='blog_ai_test_connection'),
     
     # URLs de Chat con IA
     path('ai-chat/', views.ai_chat_list_view, name='ai_chat_list'),

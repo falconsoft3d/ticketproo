@@ -31,132 +31,6 @@
     </div>
 </div>
 
-<!-- Estadísticas -->
-<div class="row mb-4">
-    <div class="col-md-3 mb-3">
-        <a href="{% url 'ticket_list' %}" class="text-decoration-none">
-            <div class="card dashboard-stat-card card-dark">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title">
-                                {% if is_agent %}
-                                    Total Tickets
-                                {% else %}
-                                    {% if user_company %}
-                                        Mis Tickets + {{ user_company.name }}
-                                    {% else %}
-                                        Mis Tickets
-                                    {% endif %}
-                                {% endif %}
-                            </h6>
-                            <h2 class="mb-0">{{ total_tickets }}</h2>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="bi bi-ticket-perforated display-6"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-    
-    <div class="col-md-3 mb-3">
-        <a href="{% url 'ticket_list' %}?status=open" class="text-decoration-none">
-            <div class="card dashboard-stat-card card-secondary">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title">Abiertos</h6>
-                            <h2 class="mb-0">{{ open_tickets }}</h2>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="bi bi-exclamation-circle display-6"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-    
-    <div class="col-md-3 mb-3">
-        <a href="{% url 'ticket_list' %}?status=in_progress" class="text-decoration-none">
-            <div class="card dashboard-stat-card card-light">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title">En Progreso</h6>
-                            <h2 class="mb-0">{{ in_progress_tickets }}</h2>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="bi bi-clock display-6"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-    
-    <div class="col-md-3 mb-3">
-        <a href="{% url 'ticket_list' %}?status=resolved" class="text-decoration-none">
-            <div class="card dashboard-stat-card card-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title">Resueltos</h6>
-                            <h2 class="mb-0">{{ resolved_tickets }}</h2>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="bi bi-check-circle display-6"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-</div>
-
-<!-- Estadísticas adicionales para agentes -->
-{% if is_agent %}
-<div class="row mb-4">
-    <div class="col-md-6 mb-3">
-        <a href="{% url 'ticket_list' %}?assigned_to=unassigned" class="text-decoration-none">
-            <div class="card dashboard-stat-card card-light">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title">Sin Asignar</h6>
-                            <h2 class="mb-0">{{ unassigned_tickets }}</h2>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="bi bi-person-x display-6"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-    
-    <div class="col-md-6 mb-3">
-        <a href="{% url 'ticket_list' %}?assigned_to=me" class="text-decoration-none">
-            <div class="card dashboard-stat-card card-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title">Asignados a Mí</h6>
-                            <h2 class="mb-0">{{ my_assigned_tickets }}</h2>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="bi bi-person-check display-6"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-</div>
-{% endif %}
-
 <!-- Órdenes de trabajo pendientes de aprobación (solo para agentes) -->
 {% if is_agent and pending_work_orders %}
 <div class="row mb-4">
@@ -430,6 +304,7 @@
                                 <th>Título</th>
                                 <th>Prioridad</th>
                                 <th>Estado</th>
+                                <th>Antigüedad</th>
                                 {% if is_agent %}<th>Horas</th>{% endif %}
                                 <th>Fecha</th>
                             </tr>
@@ -455,6 +330,11 @@
                                 <td>
                                     <span class="badge {{ ticket.get_status_badge_class }}">
                                         {{ ticket.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge {{ ticket.get_age_badge_class }}" title="{{ ticket.get_age_in_hours|floatformat:1 }} horas">
+                                        <i class="bi bi-clock-history me-1"></i>{{ ticket.get_age_display }}
                                     </span>
                                 </td>
                                 {% if is_agent %}

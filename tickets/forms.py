@@ -1337,7 +1337,10 @@ class SystemConfigurationForm(forms.ModelForm):
             'default_currency',
             'ai_chat_enabled',
             'openai_api_key',
-            'openai_model'
+            'openai_model',
+            'enable_telegram_notifications',
+            'telegram_bot_token',
+            'telegram_chat_id'
         ]
         widgets = {
             'site_name': forms.TextInput(attrs={
@@ -1365,6 +1368,18 @@ class SystemConfigurationForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'gpt-4o'
             }),
+            'enable_telegram_notifications': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'telegram_bot_token': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Token del bot de Telegram',
+                'type': 'password'
+            }),
+            'telegram_chat_id': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '-100123456789'
+            }),
         }
         labels = {
             'site_name': 'Nombre del sitio',
@@ -1374,6 +1389,9 @@ class SystemConfigurationForm(forms.ModelForm):
             'ai_chat_enabled': 'Habilitar Chat IA',
             'openai_api_key': 'API Key de OpenAI',
             'openai_model': 'Modelo de IA',
+            'enable_telegram_notifications': 'Activar notificaciones de Telegram',
+            'telegram_bot_token': 'Token del Bot de Telegram',
+            'telegram_chat_id': 'ID del Chat/Grupo de Telegram',
         }
         help_texts = {
             'site_name': 'Nombre que aparece en el encabezado del sistema',
@@ -1383,6 +1401,9 @@ class SystemConfigurationForm(forms.ModelForm):
             'ai_chat_enabled': 'Habilita la funcionalidad de chat con IA',
             'openai_api_key': 'Clave de API de OpenAI para acceder a ChatGPT',
             'openai_model': 'Modelo de IA a utilizar (ej: gpt-4o, gpt-3.5-turbo)',
+            'enable_telegram_notifications': 'Envía notificaciones cuando se crean nuevos tickets',
+            'telegram_bot_token': 'Token proporcionado por @BotFather al crear el bot',
+            'telegram_chat_id': 'ID del grupo donde enviar notificaciones (ej: -100123456789)',
         }
     
     def clean_site_name(self):

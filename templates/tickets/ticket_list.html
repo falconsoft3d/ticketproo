@@ -22,9 +22,15 @@
             {% endif %}
         {% endif %}
     </div>
-    <a href="{% url 'ticket_create' %}" class="btn btn-primary">
-        <i class="bi bi-plus"></i> Nuevo Ticket
-    </a>
+    <div class="d-flex gap-2">
+        <a href="{% url 'ticket_export_excel' %}{% if search or status_filter or priority_filter or assigned_filter %}?{% endif %}{% if search %}search={{ search|urlencode }}{% endif %}{% if status_filter %}{% if search %}&{% endif %}status={{ status_filter }}{% endif %}{% if priority_filter %}{% if search or status_filter %}&{% endif %}priority={{ priority_filter }}{% endif %}{% if assigned_filter %}{% if search or status_filter or priority_filter %}&{% endif %}assigned_to={{ assigned_filter }}{% endif %}" 
+           class="btn btn-success" title="Exportar a Excel">
+            <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+        </a>
+        <a href="{% url 'ticket_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus"></i> Nuevo Ticket
+        </a>
+    </div>
 </div>
 
 <!-- Filtros -->
@@ -79,6 +85,7 @@
                         {% if is_agent %}<th style="width: 8%; min-width: 80px;">Creador</th>{% endif %}
                         <th style="width: 8%; min-width: 80px;">Estado</th>
                         <th style="width: 8%; min-width: 80px;">Aprobación</th>
+                        <th style="width: 8%; min-width: 80px;">Antigüedad</th>
                         <th style="width: 10%; min-width: 100px;">Fecha Creación</th>
                         <th style="width: 12%; min-width: 120px;">Acciones</th>
                     </tr>
@@ -158,6 +165,11 @@
                                     <i class="bi bi-clock me-1"></i>Pendiente
                                 </span>
                             {% endif %}
+                        </td>
+                        <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center;">
+                            <span class="badge {{ ticket.get_age_badge_class }}" title="{{ ticket.get_age_in_hours|floatformat:1 }} horas">
+                                <i class="bi bi-clock-history me-1"></i>{{ ticket.get_age_display }}
+                            </span>
                         </td>
                         <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" class="text-muted">
                             {{ ticket.created_at|date:"d/m/Y H:i" }}

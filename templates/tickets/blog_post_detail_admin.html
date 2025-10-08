@@ -2,6 +2,77 @@
 
 {% block page_title %}{{ page_title }}{% endblock %}
 
+{% block extra_css %}
+<style>
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.btn-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-gradient-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    color: white;
+}
+
+.ai-results-container {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 10px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.ai-button {
+    transition: all 0.3s ease;
+    border-radius: 8px;
+}
+
+.ai-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}
+
+.ai-content-preview {
+    max-height: 300px;
+    overflow-y: auto;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+/* Estilo para el separador */
+hr.my-4 {
+    border-top: 2px solid #e9ecef;
+    opacity: 0.5;
+}
+
+/* Animación para el botón principal */
+@keyframes pulse {
+    0% { box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); }
+    50% { box-shadow: 0 4px 20px rgba(102, 126, 234, 0.5); }
+    100% { box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); }
+}
+
+.btn-gradient-primary:focus {
+    animation: pulse 2s infinite;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row">
     <div class="col-md-8">
@@ -114,7 +185,7 @@
         </div>
         
         <!-- Acciones -->
-        <div class="card">
+        <div class="card mb-4">
             <div class="card-header">
                 <h6><i class="fas fa-cog"></i> Acciones</h6>
             </div>
@@ -141,6 +212,101 @@
                        onclick="return confirm('¿Estás seguro de que quieres eliminar este artículo?')">
                         <i class="fas fa-trash"></i> Eliminar
                     </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sección de IA -->
+        <div class="card">
+            <div class="card-header bg-gradient-primary text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-robot"></i> Mejoras con Inteligencia Artificial
+                </h6>
+            </div>
+            <div class="card-body">
+                <!-- Botón principal de mejora completa -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <button class="btn btn-gradient-primary btn-lg w-100 ai-button" onclick="improveCompleteArticle()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white; font-weight: bold;">
+                            <i class="fas fa-rocket"></i> Mejorar Artículo Completo con IA
+                        </button>
+                        <small class="text-muted d-block text-center mt-2">
+                            <i class="fas fa-info-circle"></i> 
+                            Mejora automáticamente título y contenido basándose en el tema actual
+                        </small>
+                    </div>
+                </div>
+                
+                <!-- Botón para generar imagen -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <button class="btn btn-warning btn-lg w-100 ai-button" onclick="generateArticleImage()" style="font-weight: bold;">
+                            <i class="fas fa-image"></i> Generar Imagen con IA
+                        </button>
+                        <small class="text-muted d-block text-center mt-2">
+                            <i class="fas fa-info-circle"></i> 
+                            Genera una imagen atractiva basándose en el título del artículo
+                        </small>
+                    </div>
+                </div>
+                
+                <hr class="my-4">
+                
+                <!-- Funciones individuales -->
+                <h6 class="text-muted mb-3">
+                    <i class="fas fa-tools"></i> Herramientas Específicas
+                </h6>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <button class="btn btn-outline-primary btn-sm w-100 ai-button" onclick="improveContent()">
+                            <i class="fas fa-magic"></i> Mejorar Solo Contenido
+                        </button>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <button class="btn btn-outline-info btn-sm w-100 ai-button" onclick="generateMetaDescription()">
+                            <i class="fas fa-search"></i> Generar Meta SEO
+                        </button>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <button class="btn btn-outline-success btn-sm w-100 ai-button" onclick="suggestTitles()">
+                            <i class="fas fa-lightbulb"></i> Sugerir Títulos
+                        </button>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <button class="btn btn-outline-warning btn-sm w-100 ai-button" onclick="generateTags()">
+                            <i class="fas fa-tags"></i> Generar Etiquetas
+                        </button>
+                    </div>
+                    <div class="col-12 mb-3">
+                        <button class="btn btn-outline-secondary btn-sm w-100 ai-button" onclick="analyzeReadability()">
+                            <i class="fas fa-chart-line"></i> Analizar Legibilidad
+                        </button>
+                    </div>
+                    <div class="col-12 mb-3">
+                        <button class="btn btn-outline-dark btn-sm w-100 ai-button" onclick="testAIConnection()">
+                            <i class="fas fa-wifi"></i> Probar Conexión IA
+                        </button>
+                    </div>
+                    <div class="col-12">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i> 
+                            Las mejoras son sugerencias generadas por IA. Revisa antes de aplicar.
+                        </small>
+                    </div>
+                </div>
+                
+                <!-- Área de resultados de IA -->
+                <div id="ai-results" style="display: none;" class="ai-results-container">
+                    <div id="ai-loading" style="display: none;" class="text-center">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                            <span class="visually-hidden">Procesando...</span>
+                        </div>
+                        <span class="ms-2"><strong>Procesando con IA...</strong></span>
+                        <div class="mt-2">
+                            <small class="text-muted">Esto puede tomar unos segundos</small>
+                        </div>
+                    </div>
+                    <div id="ai-content" class="ai-content-preview"></div>
                 </div>
             </div>
         </div>
@@ -257,4 +423,511 @@
         </div>
     </div>
 </div>
+
+<script>
+// Variables globales para IA
+let currentAIData = {};
+
+// Función para mostrar loading
+function showAILoading() {
+    document.getElementById('ai-results').style.display = 'block';
+    document.getElementById('ai-loading').style.display = 'block';
+    document.getElementById('ai-content').innerHTML = '';
+}
+
+// Función para ocultar loading
+function hideAILoading() {
+    document.getElementById('ai-loading').style.display = 'none';
+}
+
+// Función para mostrar resultados
+function showAIResults(content) {
+    hideAILoading();
+    document.getElementById('ai-content').innerHTML = content;
+}
+
+// Función para mostrar error
+function showAIError(message) {
+    hideAILoading();
+    document.getElementById('ai-content').innerHTML = 
+        `<div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle"></i> Error: ${message}
+        </div>`;
+}
+
+// Mejorar artículo completo con IA
+function improveCompleteArticle() {
+    if (!confirm('¿Mejorar completamente el artículo? Esto puede cambiar significativamente el título y contenido.')) {
+        return;
+    }
+    
+    showAILoading();
+    
+    fetch(`{% url 'blog_ai_improve_complete_article' post.pk %}`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            currentAIData.title = data.title;
+            currentAIData.content = data.content;
+            
+            showAIResults(`
+                <div class="alert alert-primary">
+                    <h5><i class="fas fa-rocket"></i> Artículo Mejorado Completamente</h5>
+                    
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <strong><i class="fas fa-heading"></i> Nuevo Título:</strong>
+                            <div class="mt-2 p-3 bg-light rounded">
+                                <h6 class="text-primary mb-0">${data.title}</h6>
+                            </div>
+                        </div>
+                        
+                        <div class="col-12 mb-3">
+                            <strong><i class="fas fa-file-alt"></i> Contenido Mejorado:</strong>
+                            <div class="mt-2 p-3 bg-light rounded ai-content-preview" style="max-height: 400px; overflow-y: auto;">
+                                <div style="white-space: pre-wrap; font-family: inherit;">${data.content}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 text-center">
+                        <button class="btn btn-success btn-lg me-2" onclick="applyCompleteImprovement()">
+                            <i class="fas fa-check"></i> Aplicar Mejoras Completas
+                        </button>
+                        <button class="btn btn-outline-success me-2" onclick="applyImprovement('title')">
+                            <i class="fas fa-heading"></i> Solo Título
+                        </button>
+                        <button class="btn btn-outline-success me-2" onclick="applyImprovement('content')">
+                            <i class="fas fa-file-alt"></i> Solo Contenido
+                        </button>
+                        <button class="btn btn-secondary" onclick="copyCompleteToClipboard()">
+                            <i class="fas fa-copy"></i> Copiar Todo
+                        </button>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-lightbulb"></i> 
+                            <strong>Consejo:</strong> Revisa cuidadosamente antes de aplicar. Puedes aplicar solo el título o contenido por separado.
+                        </small>
+                    </div>
+                </div>
+            `);
+        } else {
+            showAIError(data.error || 'Error al mejorar artículo completo');
+        }
+    })
+    .catch(error => {
+        showAIError('Error de conexión: ' + error.message);
+    });
+}
+
+// Aplicar mejora completa (título + contenido)
+function applyCompleteImprovement() {
+    if (!currentAIData.title || !currentAIData.content) {
+        alert('No hay datos completos para aplicar');
+        return;
+    }
+    
+    if (!confirm('¿Aplicar tanto el nuevo título como el contenido mejorado? Esta acción guardará ambos cambios.')) {
+        return;
+    }
+    
+    const data = {
+        title: currentAIData.title,
+        content: currentAIData.content
+    };
+    
+    fetch(`{% url 'blog_ai_apply_improvements' post.pk %}`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('¡Artículo mejorado completamente! Los cambios han sido guardados.');
+            location.reload(); // Recargar para mostrar cambios
+        } else {
+            alert('Error: ' + (data.error || 'Error al aplicar cambios completos'));
+        }
+    })
+    .catch(error => {
+        alert('Error de conexión: ' + error.message);
+    });
+}
+
+// Generar imagen del artículo con IA
+function generateArticleImage() {
+    if (!confirm('¿Generar una nueva imagen para este artículo? Esto puede tomar unos segundos.')) {
+        return;
+    }
+    
+    showAILoading();
+    
+    fetch(`{% url 'blog_ai_generate_image' post.pk %}`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAIResults(`
+                <div class="alert alert-success">
+                    <h6><i class="fas fa-check-circle"></i> ¡Imagen generada exitosamente!</h6>
+                    <div class="mt-3">
+                        <img src="${data.image_url}" class="img-fluid rounded" style="max-width: 300px;" alt="Imagen generada">
+                    </div>
+                    <div class="mt-3">
+                        <p><strong>Estado:</strong> ${data.message}</p>
+                        <button class="btn btn-success btn-sm" onclick="location.reload()">
+                            <i class="fas fa-sync"></i> Recargar para ver cambios
+                        </button>
+                    </div>
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i> 
+                            La imagen ha sido guardada automáticamente como imagen destacada del artículo.
+                        </small>
+                    </div>
+                </div>
+            `);
+        } else {
+            showAIError(data.error || 'Error al generar imagen');
+        }
+    })
+    .catch(error => {
+        showAIError('Error de conexión: ' + error.message);
+    });
+}
+
+// Copiar todo el contenido mejorado al portapapeles
+function copyCompleteToClipboard() {
+    if (!currentAIData.title || !currentAIData.content) {
+        alert('No hay datos para copiar');
+        return;
+    }
+    
+    const fullText = `TÍTULO: ${currentAIData.title}\n\nCONTENIDO:\n${currentAIData.content}`;
+    
+    navigator.clipboard.writeText(fullText).then(() => {
+        alert('Artículo completo copiado al portapapeles');
+    }).catch(() => {
+        alert('Error al copiar al portapapeles');
+    });
+}
+
+// Mejorar contenido con IA (función existente)
+function improveContent() {
+    showAILoading();
+    
+    fetch(`{% url 'blog_ai_improve_content' post.pk %}`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            currentAIData.content = data.content;
+            showAIResults(`
+                <div class="alert alert-success">
+                    <h6><i class="fas fa-magic"></i> Contenido Mejorado</h6>
+                    <div class="mt-3 p-3 bg-light rounded">
+                        <pre style="white-space: pre-wrap; font-family: inherit;">${data.content}</pre>
+                    </div>
+                    <div class="mt-3">
+                        <button class="btn btn-success btn-sm" onclick="applyImprovement('content')">
+                            <i class="fas fa-check"></i> Aplicar Mejora
+                        </button>
+                        <button class="btn btn-secondary btn-sm" onclick="copyToClipboard('${data.content.replace(/'/g, "\\'")}')">
+                            <i class="fas fa-copy"></i> Copiar
+                        </button>
+                    </div>
+                </div>
+            `);
+        } else {
+            showAIError(data.error || 'Error al mejorar contenido');
+        }
+    })
+    .catch(error => {
+        showAIError('Error de conexión: ' + error.message);
+    });
+}
+
+// Generar meta descripción
+function generateMetaDescription() {
+    showAILoading();
+    
+    fetch(`{% url 'blog_ai_generate_meta_description' post.pk %}`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            currentAIData.meta_description = data.meta_description;
+            showAIResults(`
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-search"></i> Meta Descripción SEO</h6>
+                    <div class="mt-3 p-3 bg-light rounded">
+                        <strong>Meta Descripción (${data.meta_description.length}/160 caracteres):</strong><br>
+                        <em>${data.meta_description}</em>
+                    </div>
+                    <div class="mt-3">
+                        <button class="btn btn-info btn-sm" onclick="applyImprovement('meta_description')">
+                            <i class="fas fa-check"></i> Aplicar Meta Descripción
+                        </button>
+                        <button class="btn btn-secondary btn-sm" onclick="copyToClipboard('${data.meta_description.replace(/'/g, "\\'")}')">
+                            <i class="fas fa-copy"></i> Copiar
+                        </button>
+                    </div>
+                </div>
+            `);
+        } else {
+            showAIError(data.error || 'Error al generar meta descripción');
+        }
+    })
+    .catch(error => {
+        showAIError('Error de conexión: ' + error.message);
+    });
+}
+
+// Sugerir títulos
+function suggestTitles() {
+    showAILoading();
+    
+    fetch(`{% url 'blog_ai_suggest_titles' post.pk %}`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            let titlesHtml = data.titles.map((title, index) => 
+                `<div class="border rounded p-2 mb-2">
+                    <strong>Opción ${index + 1}:</strong> ${title}
+                    <div class="mt-2">
+                        <button class="btn btn-outline-success btn-sm" onclick="applyTitle('${title.replace(/'/g, "\\'")}')">
+                            <i class="fas fa-check"></i> Usar este título
+                        </button>
+                    </div>
+                </div>`
+            ).join('');
+            
+            showAIResults(`
+                <div class="alert alert-success">
+                    <h6><i class="fas fa-lightbulb"></i> Títulos Sugeridos</h6>
+                    <div class="mt-3">
+                        ${titlesHtml}
+                    </div>
+                </div>
+            `);
+        } else {
+            showAIError(data.error || 'Error al sugerir títulos');
+        }
+    })
+    .catch(error => {
+        showAIError('Error de conexión: ' + error.message);
+    });
+}
+
+// Generar etiquetas
+function generateTags() {
+    showAILoading();
+    
+    fetch(`{% url 'blog_ai_generate_tags' post.pk %}`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            currentAIData.tags = data.tags;
+            showAIResults(`
+                <div class="alert alert-warning">
+                    <h6><i class="fas fa-tags"></i> Etiquetas Generadas</h6>
+                    <div class="mt-3 p-3 bg-light rounded">
+                        <strong>Etiquetas sugeridas:</strong><br>
+                        <span class="text-primary">${data.tags}</span>
+                    </div>
+                    <div class="mt-3">
+                        <button class="btn btn-warning btn-sm" onclick="applyImprovement('tags')">
+                            <i class="fas fa-check"></i> Aplicar Etiquetas
+                        </button>
+                        <button class="btn btn-secondary btn-sm" onclick="copyToClipboard('${data.tags.replace(/'/g, "\\'")}')">
+                            <i class="fas fa-copy"></i> Copiar
+                        </button>
+                    </div>
+                </div>
+            `);
+        } else {
+            showAIError(data.error || 'Error al generar etiquetas');
+        }
+    })
+    .catch(error => {
+        showAIError('Error de conexión: ' + error.message);
+    });
+}
+
+// Analizar legibilidad
+function analyzeReadability() {
+    showAILoading();
+    
+    fetch(`{% url 'blog_ai_analyze_readability' post.pk %}`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAIResults(`
+                <div class="alert alert-secondary">
+                    <h6><i class="fas fa-chart-line"></i> Análisis de Legibilidad</h6>
+                    <div class="mt-3 p-3 bg-light rounded">
+                        <pre style="white-space: pre-wrap; font-family: inherit;">${data.analysis}</pre>
+                    </div>
+                </div>
+            `);
+        } else {
+            showAIError(data.error || 'Error al analizar legibilidad');
+        }
+    })
+    .catch(error => {
+        showAIError('Error de conexión: ' + error.message);
+    });
+}
+
+// Probar conexión con IA
+function testAIConnection() {
+    showAILoading();
+    
+    fetch(`{% url 'blog_ai_test_connection' %}`, {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAIResults(`
+                <div class="alert alert-success">
+                    <h6><i class="fas fa-check-circle"></i> Conexión IA Exitosa</h6>
+                    <p class="mb-0">${data.message}</p>
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i> 
+                        La API de OpenAI está funcionando correctamente.
+                    </small>
+                </div>
+            `);
+        } else {
+            showAIError(data.message || 'Error de conexión con IA');
+        }
+    })
+    .catch(error => {
+        showAIError('Error de conexión: ' + error.message);
+    });
+}
+
+// Aplicar mejora específica
+function applyImprovement(type) {
+    if (!currentAIData[type]) {
+        alert('No hay datos para aplicar');
+        return;
+    }
+    
+    if (!confirm(`¿Aplicar esta mejora al artículo? Esta acción guardará los cambios.`)) {
+        return;
+    }
+    
+    const data = {};
+    data[type] = currentAIData[type];
+    
+    fetch(`{% url 'blog_ai_apply_improvements' post.pk %}`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Mejora aplicada exitosamente');
+            location.reload(); // Recargar para mostrar cambios
+        } else {
+            alert('Error: ' + (data.error || 'Error al aplicar cambios'));
+        }
+    })
+    .catch(error => {
+        alert('Error de conexión: ' + error.message);
+    });
+}
+
+// Aplicar título específico
+function applyTitle(title) {
+    if (!confirm(`¿Cambiar el título a: "${title}"?`)) {
+        return;
+    }
+    
+    fetch(`{% url 'blog_ai_apply_improvements' post.pk %}`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({title: title})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Título actualizado exitosamente');
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Error al aplicar título'));
+        }
+    })
+    .catch(error => {
+        alert('Error de conexión: ' + error.message);
+    });
+}
+
+// Copiar al portapapeles
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        alert('Copiado al portapapeles');
+    }).catch(() => {
+        alert('Error al copiar al portapapeles');
+    });
+}
+</script>
 {% endblock %}
