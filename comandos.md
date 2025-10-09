@@ -7,6 +7,69 @@ kill -9 71529 80202
 lsof -ti:8000 | xargs kill -9
 ```
 
+## 🚀 Proyecto de Código Abierto
+
+### TicketProo - Sistema de Gestión Empresarial
+**TicketProo** es un sistema completo de gestión empresarial desarrollado en Django, diseñado para modernizar y automatizar los procesos de soporte, recursos humanos, capacitación y administración de empresas.
+
+### 📋 Información del Repositorio
+- **URL del Repositorio**: [https://github.com/falconsoft3d/ticketproo](https://github.com/falconsoft3d/ticketproo)
+- **Licencia**: Código Abierto (Open Source)
+- **Tecnología**: Django 4.2.20 + Python 3.9+
+- **Base de Datos**: SQLite / PostgreSQL / MySQL
+- **Frontend**: Bootstrap 5 + JavaScript
+
+### 🔧 Comandos Git Útiles
+```bash
+# Clonar el repositorio
+git clone https://github.com/falconsoft3d/ticketproo.git
+
+# Actualizar desde el repositorio remoto
+git pull origin main
+
+# Ver estado de cambios
+git status
+
+# Agregar cambios
+git add .
+
+# Crear commit
+git commit -m "Descripción de cambios"
+
+# Subir cambios
+git push origin main
+```
+
+### 🌟 Características del Proyecto
+- ✅ **100% Código Abierto**: Libre para usar, modificar y distribuir
+- ✅ **Modular**: Arquitectura por módulos independientes
+- ✅ **Escalable**: Diseñado para crecer con tu empresa
+- ✅ **Responsive**: Interfaz adaptativa para móviles y desktop
+- ✅ **API REST**: Integración con sistemas externos
+- ✅ **Seguridad**: Autenticación robusta y permisos granulares
+
+### 🤝 Contribuir al Proyecto
+```bash
+# Fork del repositorio en GitHub
+# Crear rama para nueva funcionalidad
+git checkout -b feature/nueva-funcionalidad
+
+# Desarrollar y hacer commits
+git commit -m "feat: nueva funcionalidad implementada"
+
+# Push de la rama
+git push origin feature/nueva-funcionalidad
+
+# Crear Pull Request en GitHub
+```
+
+### 📞 Soporte y Comunidad
+- **Issues**: [GitHub Issues](https://github.com/falconsoft3d/ticketproo/issues)
+- **Documentación**: [Wiki del Proyecto](https://github.com/falconsoft3d/ticketproo/wiki)
+- **Desarrollador**: [@falconsoft3d](https://github.com/falconsoft3d)
+
+---
+
 ## Funcionalidades Implementadas
 
 ### Sistema de Roles
