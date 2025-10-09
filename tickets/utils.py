@@ -16,6 +16,22 @@ def is_regular_user(user):
         return False
     return user.groups.filter(name='Usuarios').exists()
 
+def is_teacher(user):
+    """
+    Verifica si un usuario pertenece al grupo de Profesores
+    """
+    if not user.is_authenticated:
+        return False
+    return user.groups.filter(name='Profesores').exists()
+
+def can_manage_courses(user):
+    """
+    Verifica si un usuario puede gestionar cursos (Agentes o Profesores)
+    """
+    if not user.is_authenticated:
+        return False
+    return user.groups.filter(name__in=['Agentes', 'Profesores']).exists()
+
 def get_user_role(user):
     """
     Obtiene el rol del usuario
@@ -25,6 +41,8 @@ def get_user_role(user):
     
     if is_agent(user):
         return 'agent'
+    elif is_teacher(user):
+        return 'teacher'
     elif is_regular_user(user):
         return 'user'
     else:

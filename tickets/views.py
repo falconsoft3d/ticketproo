@@ -41,7 +41,7 @@ from .forms import (
     UrlManagerForm, UrlManagerFilterForm, WorkOrderForm, WorkOrderFilterForm, TaskForm,
     ChatMessageForm, ChatRoomForm, AIChatSessionForm, AIChatMessageForm, ConceptForm
 )
-from .utils import is_agent, is_regular_user, get_user_role, assign_user_to_group
+from .utils import is_agent, is_regular_user, is_teacher, can_manage_courses, get_user_role, assign_user_to_group
 
 def home_view(request):
     """Vista para la página de inicio de TicketProo - accesible para todos"""
@@ -678,6 +678,10 @@ def logout_view(request):
 def agent_required(user):
     """Decorador para verificar si el usuario es agente"""
     return is_agent(user)
+
+def course_manager_required(user):
+    """Decorador para verificar si el usuario puede gestionar cursos (Agente o Profesor)"""
+    return can_manage_courses(user)
 
 @login_required
 @user_passes_test(agent_required, login_url='dashboard')
@@ -6170,18 +6174,19 @@ def course_class_public(request, token, class_id):
 def course_list(request):
     """Lista todos los cursos disponibles"""
     from .models import Course
+    from . import utils
     
-    # Verificar si el usuario es agente
-    is_agent = request.user.groups.filter(name='Agentes').exists()
+    # Verificar si el usuario puede gestionar cursos (agentes y profesores)
+    can_manage = utils.can_manage_courses(request.user)
     
     # Filtrar cursos según la empresa del usuario
     courses = Course.objects.filter(is_active=True)
     
-    if is_agent:
-        # Los agentes siempre ven todos los cursos (públicos y empresariales)
+    if can_manage:
+        # Los gestores (agentes y profesores) siempre ven todos los cursos (públicos y empresariales)
         user_accessible_courses = list(courses)
     else:
-        # Filtrar según empresa del usuario para usuarios no agentes
+        # Filtrar según empresa del usuario para usuarios no gestores
         user_accessible_courses = []
         for course in courses:
             if course.can_user_access(request.user):
@@ -6189,6 +6194,7 @@ def course_list(request):
     
     context = {
         'courses': user_accessible_courses,
+        'can_manage_courses': can_manage,
         'page_title': 'Cursos de Capacitación'
     }
     
@@ -6199,14 +6205,15 @@ def course_list(request):
 def course_detail(request, pk):
     """Detalle de un curso con sus clases"""
     from .models import Course
+    from . import utils
     
     course = get_object_or_404(Course, pk=pk, is_active=True)
     
-    # Verificar si el usuario es agente
-    is_agent = request.user.groups.filter(name='Agentes').exists()
+    # Verificar si el usuario puede gestionar cursos (agentes y profesores)
+    can_manage = utils.can_manage_courses(request.user)
     
     # Verificar si el usuario puede acceder a este curso
-    if not is_agent and not course.can_user_access(request.user):
+    if not can_manage and not course.can_user_access(request.user):
         messages.error(request, 'No tienes permisos para acceder a este curso.')
         return redirect('course_list')
     
@@ -6228,6 +6235,7 @@ def course_detail(request, pk):
         'course': course,
         'classes': classes,
         'classes_with_views': classes_with_views,
+        'can_manage_courses': can_manage,
         'page_title': f'Curso: {course.title}'
     }
     
@@ -6236,13 +6244,13 @@ def course_detail(request, pk):
 
 @login_required
 def course_create(request):
-    """Crear nuevo curso (solo agentes)"""
+    """Crear nuevo curso (agentes y profesores)"""
     from .models import Course
     from .forms import CourseForm
     from . import utils
     
-    if not utils.is_agent(request.user):
-        messages.error(request, 'Solo los agentes pueden crear cursos.')
+    if not utils.can_manage_courses(request.user):
+        messages.error(request, 'Solo los agentes y profesores pueden crear cursos.')
         return redirect('course_list')
     
     if request.method == 'POST':
@@ -6266,14 +6274,14 @@ def course_create(request):
 
 @login_required
 def course_edit(request, pk):
-    """Editar curso (solo agentes)"""
+    """Editar curso (agentes y profesores)"""
     from .models import Course
     from .forms import CourseForm
     from . import utils
     
     course = get_object_or_404(Course, pk=pk)
     
-    if not utils.is_agent(request.user):
+    if not utils.can_manage_courses(request.user):
         messages.error(request, 'No tienes permisos para acceder a esta sección.')
         return redirect('crm_dashboard')
     
@@ -6297,13 +6305,13 @@ def course_edit(request, pk):
 
 @login_required
 def course_delete(request, pk):
-    """Eliminar curso (solo agentes)"""
+    """Eliminar curso (agentes y profesores)"""
     from .models import Course
     from . import utils
     
     course = get_object_or_404(Course, pk=pk)
     
-    if not utils.is_agent(request.user):
+    if not utils.can_manage_courses(request.user):
         messages.error(request, 'No tienes permisos para acceder a esta sección.')
         return redirect('crm_dashboard')
     
@@ -6323,14 +6331,14 @@ def course_delete(request, pk):
 
 @login_required
 def course_class_create(request, course_id):
-    """Crear nueva clase para un curso (solo agentes)"""
+    """Crear nueva clase para un curso (agentes y profesores)"""
     from .models import Course, CourseClass
     from .forms import CourseClassForm
     from . import utils
     
     course = get_object_or_404(Course, pk=course_id)
     
-    if not utils.is_agent(request.user):
+    if not utils.can_manage_courses(request.user):
         messages.error(request, 'No tienes permisos para acceder a esta sección.')
         return redirect('crm_dashboard')
     
@@ -6359,7 +6367,7 @@ def course_class_create(request, course_id):
 
 @login_required
 def course_class_edit(request, course_id, pk):
-    """Editar clase (solo agentes)"""
+    """Editar clase (agentes y profesores)"""
     from .models import Course, CourseClass
     from .forms import CourseClassForm
     from . import utils
@@ -6367,7 +6375,7 @@ def course_class_edit(request, course_id, pk):
     course = get_object_or_404(Course, pk=course_id)
     course_class = get_object_or_404(CourseClass, pk=pk, course=course)
     
-    if not utils.is_agent(request.user):
+    if not utils.can_manage_courses(request.user):
         messages.error(request, 'No tienes permisos para acceder a esta sección.')
         return redirect('crm_dashboard')
     
@@ -6392,14 +6400,14 @@ def course_class_edit(request, course_id, pk):
 
 @login_required
 def course_class_delete(request, course_id, pk):
-    """Eliminar clase (solo agentes)"""
+    """Eliminar clase (agentes y profesores)"""
     from .models import Course, CourseClass
     from . import utils
     
     course = get_object_or_404(Course, pk=course_id)
     course_class = get_object_or_404(CourseClass, pk=pk, course=course)
     
-    if not utils.is_agent(request.user):
+    if not utils.can_manage_courses(request.user):
         messages.error(request, 'No tienes permisos para acceder a esta sección.')
         return redirect('crm_dashboard')
     
@@ -8242,10 +8250,10 @@ def exam_list(request):
 
 @login_required
 def exam_create(request):
-    """Crear nuevo examen (solo agentes)"""
-    from .utils import is_agent
+    """Crear nuevo examen (agentes y profesores)"""
+    from .utils import can_manage_courses
     
-    if not is_agent(request.user):
+    if not can_manage_courses(request.user):
         messages.error(request, 'No tienes permisos para crear exámenes')
         return redirect('exam_list')
     
@@ -8307,11 +8315,11 @@ def exam_detail(request, pk):
 @login_required
 def exam_edit(request, pk):
     """Editar examen"""
-    from .utils import is_agent
+    from .utils import can_manage_courses
     
     exam = get_object_or_404(Exam, pk=pk)
     
-    if not (is_agent(request.user) or exam.created_by == request.user):
+    if not (can_manage_courses(request.user) or exam.created_by == request.user):
         messages.error(request, 'No tienes permisos para editar este examen')
         return redirect('exam_detail', pk=exam.pk)
     
@@ -8333,11 +8341,11 @@ def exam_edit(request, pk):
 @login_required
 def exam_delete(request, pk):
     """Eliminar examen"""
-    from .utils import is_agent
+    from .utils import can_manage_courses
     
     exam = get_object_or_404(Exam, pk=pk)
     
-    if not (is_agent(request.user) or exam.created_by == request.user):
+    if not (can_manage_courses(request.user) or exam.created_by == request.user):
         messages.error(request, 'No tienes permisos para eliminar este examen')
         return redirect('exam_detail', pk=exam.pk)
     
@@ -8579,11 +8587,11 @@ def verify_certificate(request, token):
 @login_required
 def question_create(request, exam_pk):
     """Crear pregunta para examen"""
-    from .utils import is_agent
+    from .utils import can_manage_courses
     
     exam = get_object_or_404(Exam, pk=exam_pk)
     
-    if not (is_agent(request.user) or exam.created_by == request.user):
+    if not (can_manage_courses(request.user) or exam.created_by == request.user):
         messages.error(request, 'No tienes permisos para agregar preguntas')
         return redirect('exam_detail', pk=exam.pk)
     
@@ -8608,12 +8616,12 @@ def question_create(request, exam_pk):
 @login_required
 def question_edit(request, pk):
     """Editar pregunta"""
-    from .utils import is_agent
+    from .utils import can_manage_courses
     
     question = get_object_or_404(ExamQuestion, pk=pk)
     exam = question.exam
     
-    if not (is_agent(request.user) or exam.created_by == request.user):
+    if not (can_manage_courses(request.user) or exam.created_by == request.user):
         messages.error(request, 'No tienes permisos para editar esta pregunta')
         return redirect('exam_detail', pk=exam.pk)
     
@@ -8635,12 +8643,12 @@ def question_edit(request, pk):
 @login_required
 def question_delete(request, pk):
     """Eliminar pregunta"""
-    from .utils import is_agent
+    from .utils import can_manage_courses
     
     question = get_object_or_404(ExamQuestion, pk=pk)
     exam = question.exam
     
-    if not (is_agent(request.user) or exam.created_by == request.user):
+    if not (can_manage_courses(request.user) or exam.created_by == request.user):
         messages.error(request, 'No tienes permisos para eliminar esta pregunta')
         return redirect('exam_detail', pk=exam.pk)
     
@@ -9156,3 +9164,211 @@ def public_document_upload(request, token):
     }
     
     return render(request, 'tickets/public_upload_form.html', context)
+
+
+# === VISTAS DE REGISTRO PÚBLICO DE CURSOS ===
+
+@login_required
+def course_generate_registration_token(request, pk):
+    """Generar token de registro público para un curso"""
+    from .models import Course, CourseRegistrationToken
+    from . import utils
+    
+    course = get_object_or_404(Course, pk=pk)
+    
+    if not utils.can_manage_courses(request.user):
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('course_detail', pk=pk)
+    
+    if request.method == 'POST':
+        # Obtener parámetros del formulario
+        expires_in_days = request.POST.get('expires_in_days')
+        max_registrations = request.POST.get('max_registrations')
+        
+        # Calcular fecha de expiración
+        expires_at = None
+        if expires_in_days:
+            try:
+                days = int(expires_in_days)
+                expires_at = timezone.now() + timezone.timedelta(days=days)
+            except ValueError:
+                pass
+        
+        # Validar max_registrations
+        max_regs = None
+        if max_registrations:
+            try:
+                max_regs = int(max_registrations)
+            except ValueError:
+                pass
+        
+        # Crear el token
+        token = CourseRegistrationToken.objects.create(
+            course=course,
+            created_by=request.user,
+            expires_at=expires_at,
+            max_registrations=max_regs
+        )
+        
+        messages.success(request, f'Token de registro creado exitosamente.')
+        return redirect('course_detail', pk=pk)
+    
+    context = {
+        'course': course,
+        'page_title': f'Generar Token de Registro - {course.title}'
+    }
+    
+    return render(request, 'tickets/course_generate_registration_token.html', context)
+
+
+@login_required
+def course_disable_registration_token(request, pk, token_id):
+    """Desactivar token de registro público"""
+    from .models import Course, CourseRegistrationToken
+    from . import utils
+    
+    course = get_object_or_404(Course, pk=pk)
+    token = get_object_or_404(CourseRegistrationToken, pk=token_id, course=course)
+    
+    if not utils.can_manage_courses(request.user):
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('course_detail', pk=pk)
+    
+    token.is_active = False
+    token.save()
+    
+    messages.success(request, 'Token de registro desactivado exitosamente.')
+    return redirect('course_detail', pk=pk)
+
+
+def course_public_register(request, token):
+    """Formulario de registro público para cursos"""
+    from .models import CourseRegistrationToken, UserProfile
+    from django.contrib.auth.models import User
+    from django.contrib.auth import login
+    
+    # Buscar el token
+    try:
+        registration_token = CourseRegistrationToken.objects.get(token=token)
+    except CourseRegistrationToken.DoesNotExist:
+        messages.error(request, 'Token de registro no válido.')
+        return redirect('course_public')
+    
+    # Verificar si el token es válido
+    is_valid, message = registration_token.is_valid()
+    if not is_valid:
+        messages.error(request, f'Token no válido: {message}')
+        return redirect('course_public')
+    
+    course = registration_token.course
+    
+    if request.method == 'POST':
+        # Obtener datos del formulario
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        email = request.POST.get('email', '').strip()
+        password = request.POST.get('password', '')
+        password_confirm = request.POST.get('password_confirm', '')
+        
+        # Validaciones
+        errors = []
+        
+        if not first_name:
+            errors.append('El nombre es obligatorio.')
+        
+        if not last_name:
+            errors.append('El apellido es obligatorio.')
+        
+        if not email:
+            errors.append('El correo electrónico es obligatorio.')
+        elif User.objects.filter(email=email).exists():
+            errors.append('Ya existe un usuario con este correo electrónico.')
+        
+        if not password:
+            errors.append('La contraseña es obligatoria.')
+        elif len(password) < 8:
+            errors.append('La contraseña debe tener al menos 8 caracteres.')
+        
+        if password != password_confirm:
+            errors.append('Las contraseñas no coinciden.')
+        
+        if errors:
+            for error in errors:
+                messages.error(request, error)
+        else:
+            try:
+                # Crear el usuario
+                username = email.split('@')[0]
+                counter = 1
+                original_username = username
+                
+                # Asegurar que el username sea único
+                while User.objects.filter(username=username).exists():
+                    username = f"{original_username}{counter}"
+                    counter += 1
+                
+                user = User.objects.create_user(
+                    username=username,
+                    email=email,
+                    password=password,
+                    first_name=first_name,
+                    last_name=last_name
+                )
+                
+                # Crear o actualizar el perfil del usuario
+                user_profile, created = UserProfile.objects.get_or_create(user=user)
+                
+                # Asignar la empresa del profesor/agente que creó el token
+                try:
+                    creator_profile = UserProfile.objects.get(user=registration_token.created_by)
+                    if creator_profile.company:
+                        user_profile.company = creator_profile.company
+                        user_profile.save()
+                except UserProfile.DoesNotExist:
+                    # Si el creador del token no tiene perfil, usar la empresa del curso como fallback
+                    if course.company:
+                        user_profile.company = course.company
+                        user_profile.save()
+                
+                # Incrementar contador de registros
+                registration_token.increment_registration_count()
+                
+                # Iniciar sesión automáticamente
+                login(request, user)
+                
+                messages.success(request, f'¡Registro exitoso! Bienvenido al curso "{course.title}".')
+                return redirect('course_detail', pk=course.pk)
+                
+            except Exception as e:
+                messages.error(request, f'Error al crear el usuario: {str(e)}')
+    
+    context = {
+        'course': course,
+        'token': registration_token,
+        'page_title': f'Registro para {course.title}'
+    }
+    
+    return render(request, 'tickets/course_public_register.html', context)
+
+
+@login_required
+def course_registration_tokens_list(request, pk):
+    """Lista de tokens de registro para un curso"""
+    from .models import Course, CourseRegistrationToken
+    from . import utils
+    
+    course = get_object_or_404(Course, pk=pk)
+    
+    if not utils.can_manage_courses(request.user):
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('course_detail', pk=pk)
+    
+    tokens = CourseRegistrationToken.objects.filter(course=course).order_by('-created_at')
+    
+    context = {
+        'course': course,
+        'tokens': tokens,
+        'page_title': f'Tokens de Registro - {course.title}'
+    }
+    
+    return render(request, 'tickets/course_registration_tokens_list.html', context)

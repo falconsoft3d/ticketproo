@@ -373,8 +373,9 @@ class UserManagementForm(UserCreationForm):
     """Formulario para crear usuarios con selección de rol"""
     
     ROLE_CHOICES = [
-        ('Usuarios', 'Usuario Regular'),
-        ('Agentes', 'Agente de Soporte'),
+        ('Usuarios', 'Usuario'),
+        ('Agentes', 'Agente'),
+        ('Profesores', 'Profesor'),
     ]
     
     first_name = forms.CharField(
@@ -500,8 +501,9 @@ class UserEditForm(forms.ModelForm):
     """Formulario para editar usuarios existentes"""
     
     ROLE_CHOICES = [
-        ('Usuarios', 'Usuario Regular'),
-        ('Agentes', 'Agente de Soporte'),
+        ('Usuarios', 'Usuario'),
+        ('Agentes', 'Agente'),
+        ('Profesores', 'Profesor'),
     ]
     
     role = forms.ChoiceField(
@@ -606,6 +608,8 @@ class UserEditForm(forms.ModelForm):
             # Determinar el rol actual del usuario
             if self.instance.groups.filter(name='Agentes').exists():
                 self.fields['role'].initial = 'Agentes'
+            elif self.instance.groups.filter(name='Profesores').exists():
+                self.fields['role'].initial = 'Profesores'
             else:
                 self.fields['role'].initial = 'Usuarios'
             

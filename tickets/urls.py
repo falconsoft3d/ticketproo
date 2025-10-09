@@ -270,6 +270,12 @@ urlpatterns = [
     # AJAX para marcar clases como vistas
     path('courses/<int:course_id>/classes/<int:class_id>/mark-viewed/', views.mark_class_as_viewed, name='mark_class_as_viewed'),
     
+    # URLs de Registro Público de Cursos
+    path('courses/<int:pk>/generate-registration-token/', views.course_generate_registration_token, name='course_generate_registration_token'),
+    path('courses/<int:pk>/registration-tokens/', views.course_registration_tokens_list, name='course_registration_tokens_list'),
+    path('courses/<int:pk>/registration-tokens/<int:token_id>/disable/', views.course_disable_registration_token, name='course_disable_registration_token'),
+    path('course-register/<uuid:token>/', views.course_public_register, name='course_public_register'),
+    
     # URL de debug para cursos
     path('debug/user-access/', views.debug_user_access, name='debug_user_access'),
     

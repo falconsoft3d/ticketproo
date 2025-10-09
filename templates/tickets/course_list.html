@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load project_extras %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
@@ -19,7 +20,7 @@
                 </h1>
                 <p class="text-muted mb-0">Explora nuestros cursos de capacitación</p>
             </div>
-            {% if user.groups.all and user.groups.first.name == 'Agentes' %}
+            {% if user|can_manage_courses %}
             <div>
                 <a href="{% url 'course_create' %}" class="btn btn-primary">
                     <i class="bi bi-plus-circle"></i> Nuevo Curso
@@ -67,8 +68,8 @@
                                 <span class="badge bg-info">
                                     <i class="bi bi-building"></i> {{ course.company.name }}
                                 </span>
-                                {% if user.groups.all and user.groups.first.name == 'Agentes' %}
-                                    <small class="text-muted d-block">Curso empresarial (Visible como agente)</small>
+                                {% if user|can_manage_courses %}
+                                    <small class="text-muted d-block">Curso empresarial (Visible como gestor)</small>
                                 {% else %}
                                     <small class="text-muted d-block">Curso empresarial</small>
                                 {% endif %}
@@ -85,7 +86,7 @@
                                 <i class="bi bi-eye"></i> Ver Curso
                             </a>
                             
-                            {% if user.groups.all and user.groups.first.name == 'Agentes' %}
+                            {% if user|can_manage_courses %}
                                 {% if course.created_by == user or user.is_superuser %}
                                 <div class="btn-group">
                                     <a href="{% url 'course_edit' course.pk %}" class="btn btn-outline-secondary btn-sm">
@@ -116,7 +117,7 @@
                     <i class="bi bi-book display-1 text-muted mb-3"></i>
                     <h4 class="text-muted">No hay cursos disponibles</h4>
                     <p class="text-muted">Aún no se han creado cursos de capacitación.</p>
-                    {% if user.groups.all and user.groups.first.name == 'Agentes' %}
+                    {% if user|can_manage_courses %}
                     <a href="{% url 'course_create' %}" class="btn btn-primary">
                         <i class="bi bi-plus-circle"></i> Crear Primer Curso
                     </a>

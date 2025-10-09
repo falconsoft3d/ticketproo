@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'crm_dashboard' %}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'course_list' %}">Cursos</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'course_detail' course.pk %}">{{ course.title }}</a></li>
+                        <li class="breadcrumb-item active">Tokens de Registro</li>
+                    </ol>
+                </nav>
+                <h1 class="h3 mb-0">
+                    <i class="bi bi-link-45deg"></i> Tokens de Registro
+                </h1>
+                <p class="text-muted">Para: {{ course.title }}</p>
+            </div>
+            <div>
+                <a href="{% url 'course_generate_registration_token' course.pk %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Nuevo Token
+                </a>
+                <a href="{% url 'course_detail' course.pk %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver al Curso
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if tokens %}
+<div class="row">
+    {% for token in tokens %}
+    <div class="col-lg-6 mb-4">
+        <div class="card {% if not token.is_active %}border-secondary{% elif token.expires_at and token.expires_at < now %}border-warning{% else %}border-success{% endif %}">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-0">
+                        <i class="bi bi-link-45deg"></i> Token #{{ forloop.counter }}
+                    </div>
+                <div>
+                    {% if not token.is_active %}
+                        <span class="badge bg-secondary">Inactivo</span>
+                    {% elif token.expires_at and token.expires_at < now %}
+                        <span class="badge bg-warning">Expirado</span>
+                    {% else %}
+                        <span class="badge bg-success">Activo</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Estadísticas del Token -->
+                <div class="row mb-3">
+                    <div class="col-4 text-center">
+                        <div class="border-end">
+                            <h5 class="mb-0 text-primary">{{ token.registration_count }}</h5>
+                            <small class="text-muted">Registros</small>
+                        </div>
+                    </div>
+                    <div class="col-4 text-center">
+                        <div class="border-end">
+                            <h5 class="mb-0 text-info">
+                                {% if token.max_registrations %}{{ token.max_registrations }}{% else %}∞{% endif %}
+                            </h5>
+                            <small class="text-muted">Límite</small>
+                        </div>
+                    </div>
+                    <div class="col-4 text-center">
+                        <h5 class="mb-0 text-warning">
+                            {% if token.expires_at %}{{ token.expires_at|timeuntil }}{% else %}∞{% endif %}
+                        </h5>
+                        <small class="text-muted">Tiempo restante</small>
+                    </div>
+                </div>
+                
+                <!-- URL del Token -->
+                <div class="mb-3">
+                    <label class="form-label"><small class="text-muted">URL de Registro:</small></label>
+                    <div class="input-group">
+                        <input type="text" 
+                               class="form-control form-control-sm" 
+                               value="{{ request.scheme }}://{{ request.get_host }}{{ token.get_registration_url }}" 
+                               readonly 
+                               id="token-url-{{ token.id }}">
+                        <button class="btn btn-outline-secondary btn-sm" 
+                                type="button" 
+                                onclick="copyToClipboard('token-url-{{ token.id }}')">
+                            <i class="bi bi-copy"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Información adicional -->
+                <div class="row">
+                    <div class="col-6">
+                        <small class="text-muted">Creado por:</small><br>
+                        <small>{{ token.created_by.get_full_name|default:token.created_by.username }}</small>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Fecha de creación:</small><br>
+                        <small>{{ token.created_at|date:"d/m/Y H:i" }}</small>
+                    </div>
+                </div>
+                
+                {% if token.expires_at %}
+                <div class="row mt-2">
+                    <div class="col-12">
+                        <small class="text-muted">Expira el:</small><br>
+                        <small>{{ token.expires_at|date:"d/m/Y H:i" }}</small>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            {% if token.is_active %}
+            <div class="card-footer">
+                <div class="d-flex gap-2 justify-content-end">
+                    <button class="btn btn-sm btn-outline-primary" 
+                            onclick="generateQRCode('{{ request.scheme }}://{{ request.get_host }}{{ token.get_registration_url }}', 'qr-{{ token.id }}')">
+                        <i class="bi bi-qr-code"></i> QR
+                    </button>
+                    <a href="{% url 'course_disable_registration_token' course.pk token.id %}" 
+                       class="btn btn-sm btn-outline-danger"
+                       onclick="return confirm('¿Desactivar este token de registro?')">
+                        <i class="bi bi-x-circle"></i> Desactivar
+                    </a>
+                </div>
+                
+                <!-- Contenedor para QR Code -->
+                <div id="qr-{{ token.id }}" class="text-center mt-3" style="display: none;"></div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-link-45deg display-1 text-muted mb-3"></i>
+                <h4 class="text-muted">No hay tokens de registro</h4>
+                <p class="text-muted">Aún no se han creado tokens de registro para este curso.</p>
+                <a href="{% url 'course_generate_registration_token' course.pk %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Crear Primer Token
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal para QR Code -->
+<div class="modal fade" id="qrModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-qr-code"></i> Código QR de Registro
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div id="qr-code-container"></div>
+                <p class="mt-3 text-muted">
+                    Escanea este código QR para acceder al formulario de registro
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- QR Code Library -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
+<script>
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    element.select();
+    element.setSelectionRange(0, 99999);
+    
+    navigator.clipboard.writeText(element.value).then(function() {
+        // Mostrar feedback visual
+        const button = element.nextElementSibling;
+        const originalHTML = button.innerHTML;
+        button.innerHTML = '<i class="bi bi-check"></i>';
+        button.classList.remove('btn-outline-secondary');
+        button.classList.add('btn-success');
+        
+        setTimeout(function() {
+            button.innerHTML = originalHTML;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-secondary');
+        }, 2000);
+    });
+}
+
+function generateQRCode(url, containerId) {
+    const container = document.getElementById(containerId);
+    
+    if (container.style.display === 'none') {
+        // Limpiar contenido previo
+        container.innerHTML = '';
+        
+        // Generar QR Code
+        QRCode.toCanvas(url, {
+            width: 200,
+            margin: 2,
+            color: {
+                dark: '#000000',
+                light: '#FFFFFF'
+            }
+        }, function (error, canvas) {
+            if (error) console.error(error);
+            container.appendChild(canvas);
+            container.style.display = 'block';
+        });
+    } else {
+        container.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

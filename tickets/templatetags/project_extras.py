@@ -5,6 +5,12 @@ import re
 register = template.Library()
 
 @register.filter
+def can_manage_courses(user):
+    """Verifica si el usuario puede gestionar cursos (agentes y profesores)"""
+    from tickets import utils
+    return utils.can_manage_courses(user)
+
+@register.filter
 def sum_cost(projects):
     """Suma el coste total de todos los proyectos"""
     total = Decimal('0.00')

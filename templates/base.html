@@ -1,5 +1,6 @@
 {% load django_bootstrap5 %}
 {% load static %}
+{% load project_extras %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -84,6 +85,7 @@
                     </li>
                     
                     <!-- Menú de Capacitación -->
+                    {% if user.is_authenticated %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle {% if 'course' in request.resolver_match.url_name or 'exam' in request.resolver_match.url_name %}active{% endif %}" 
                            href="#" id="navbarDropdownTraining" role="button" data-bs-toggle="dropdown">
@@ -102,9 +104,16 @@
                                     <i class="bi bi-question-circle"></i> Exámenes
                                 </a>
                             </li>
-                            {% if user.groups.all and user.groups.first.name == 'Agentes' %}
+                            
+                            <!-- Opciones adicionales para Agentes y Profesores -->
+                            {% if user|can_manage_courses %}
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Gestión (Solo Agentes)</li>
+                            <li class="dropdown-header">
+                                Gestión 
+                                {% if user.groups.all %}
+                                    ({{ user.groups.first.name }})
+                                {% endif %}
+                            </li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'course_create' %}active{% endif %}" 
                                    href="{% url 'course_create' %}">
@@ -117,6 +126,7 @@
                                     <i class="bi bi-plus-circle"></i> Crear Examen
                                 </a>
                             </li>
+                            {% if user.groups.all and user.groups.first.name == 'Agentes' %}
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'exam_attempts_list' %}active{% endif %}" 
                                    href="{% url 'exam_attempts_list' %}">
@@ -124,9 +134,10 @@
                                 </a>
                             </li>
                             {% endif %}
+                            {% endif %}
                         </ul>
                     </li>
-                    
+                    {% endif %}
 
                     
                     <!-- Menú de gestión para agentes -->

@@ -3211,6 +3211,87 @@ class Course(models.Model):
         return self.company is None
 
 
+class CourseRegistrationToken(models.Model):
+    """Modelo para gestionar tokens de registro público para cursos"""
+    
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        related_name='registration_tokens',
+        verbose_name='Curso'
+    )
+    token = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        unique=True,
+        verbose_name='Token'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Creado por'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo'
+    )
+    expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de expiración',
+        help_text='Dejar vacío para que no expire'
+    )
+    max_registrations = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name='Máximo de registros',
+        help_text='Número máximo de usuarios que pueden registrarse con este token'
+    )
+    registration_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Registros realizados'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Token de Registro de Curso'
+        verbose_name_plural = 'Tokens de Registro de Curso'
+    
+    def __str__(self):
+        return f"Token para {self.course.title} - {self.token}"
+    
+    def is_valid(self):
+        """Verifica si el token es válido para registro"""
+        if not self.is_active:
+            return False, "El token no está activo"
+        
+        if self.expires_at and timezone.now() > self.expires_at:
+            return False, "El token ha expirado"
+        
+        if self.max_registrations and self.registration_count >= self.max_registrations:
+            return False, "Se ha alcanzado el límite máximo de registros"
+        
+        return True, "Token válido"
+    
+    def increment_registration_count(self):
+        """Incrementa el contador de registros"""
+        self.registration_count += 1
+        self.save(update_fields=['registration_count'])
+    
+    def get_registration_url(self):
+        """Retorna la URL completa para registro público"""
+        from django.urls import reverse
+        return reverse('course_public_register', kwargs={'token': self.token})
+
+
 class CourseClass(models.Model):
     """Modelo para gestionar clases dentro de un curso"""
     

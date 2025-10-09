@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load project_extras %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
@@ -24,8 +25,8 @@
                         <span class="badge bg-info">
                             <i class="bi bi-building"></i> {{ course.company.name }}
                         </span>
-                        {% if user.groups.all and user.groups.first.name == 'Agentes' %}
-                            <small class="text-muted ms-2">Curso empresarial - Acceso como agente</small>
+                        {% if user|can_manage_courses %}
+                            <small class="text-muted ms-2">Curso empresarial - Acceso como gestor</small>
                         {% else %}
                             <small class="text-muted ms-2">Curso empresarial</small>
                         {% endif %}
@@ -37,7 +38,7 @@
                     {% endif %}
                 </div>
             </div>
-            {% if user.groups.all and user.groups.first.name == 'Agentes' %}
+            {% if user|can_manage_courses %}
                 {% if course.created_by == user or user.is_superuser %}
                 <div class="btn-group">
                     <a href="{% url 'course_class_create' course.pk %}" class="btn btn-success">
@@ -46,6 +47,19 @@
                     <a href="{% url 'course_edit' course.pk %}" class="btn btn-outline-primary">
                         <i class="bi bi-pencil"></i> Editar Curso
                     </a>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-info dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-plus"></i> Registro Público
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'course_generate_registration_token' course.pk %}">
+                                <i class="bi bi-plus-circle"></i> Crear token de registro
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'course_registration_tokens_list' course.pk %}">
+                                <i class="bi bi-list-ul"></i> Ver tokens existentes
+                            </a></li>
+                        </ul>
+                    </div>
                     <div class="btn-group" role="group">
                         <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
                             <i class="bi bi-share"></i> Compartir
@@ -176,7 +190,7 @@
                                        class="btn btn-sm btn-outline-primary">
                                         <i class="bi bi-eye"></i> Ver
                                     </a>
-                                    {% if user.groups.all and user.groups.first.name == 'Agentes' %}
+                                    {% if user|can_manage_courses %}
                                         {% if class.created_by == user or user.is_superuser %}
                                         <a href="{% url 'course_class_edit' course.pk class.pk %}" 
                                            class="btn btn-sm btn-outline-secondary">
@@ -202,7 +216,7 @@
                         <i class="bi bi-play-circle display-4 text-muted mb-3"></i>
                         <h5 class="text-muted">No hay clases disponibles</h5>
                         <p class="text-muted">Este curso aún no tiene clases.</p>
-                        {% if user.groups.all and user.groups.first.name == 'Agentes' %}
+                        {% if user|can_manage_courses %}
                             {% if course.created_by == user or user.is_superuser %}
                             <a href="{% url 'course_class_create' course.pk %}" class="btn btn-success">
                                 <i class="bi bi-plus-circle"></i> Agregar Primera Clase
@@ -254,7 +268,7 @@
                     <span>{{ course.updated_at|date:"d/m/Y" }}</span>
                 </div>
                 
-                {% if user.groups.all and user.groups.first.name == 'Agentes' %}
+                {% if user|can_manage_courses %}
                     {% if course.created_by == user or user.is_superuser %}
                         <hr>
                         <h6 class="text-muted mb-3">
@@ -337,7 +351,7 @@
                     <a href="{% url 'course_list' %}" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left"></i> Volver a Cursos
                     </a>
-                    {% if user.groups.all and user.groups.first.name == 'Agentes' %}
+                    {% if user|can_manage_courses %}
                         {% if course.created_by == user or user.is_superuser %}
                         <a href="{% url 'course_class_create' course.pk %}" class="btn btn-success">
                             <i class="bi bi-plus-circle"></i> Agregar Clase
