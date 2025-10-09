@@ -8835,6 +8835,16 @@ def contacto_web(request):
             
             contacto.save()
             
+            # Enviar notificación por email
+            try:
+                from .utils import send_contact_notification
+                send_contact_notification(contacto)
+            except Exception as e:
+                # Log del error pero no interrumpir el flujo
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error enviando notificación de contacto: {str(e)}")
+            
             # Limpiar CAPTCHA de la sesión después del envío exitoso
             if 'captcha_answer' in request.session:
                 del request.session['captcha_answer']

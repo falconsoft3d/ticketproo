@@ -1318,6 +1318,58 @@ class SystemConfiguration(models.Model):
         help_text='ID del grupo o chat donde enviar las notificaciones (ej: -100123456789)'
     )
     
+    # Configuración de Email
+    enable_email_notifications = models.BooleanField(
+        default=False,
+        verbose_name='Activar notificaciones por email',
+        help_text='Envía notificaciones por email cuando se reciben contactos desde la web'
+    )
+    email_host = models.CharField(
+        max_length=255,
+        blank=True,
+        default='smtp.gmail.com',
+        verbose_name='Servidor SMTP',
+        help_text='Servidor de correo saliente (ej: smtp.gmail.com, mail.tu-dominio.com)'
+    )
+    email_port = models.IntegerField(
+        blank=True,
+        null=True,
+        default=587,
+        verbose_name='Puerto SMTP',
+        help_text='Puerto del servidor SMTP (587 para TLS, 465 para SSL, 25 para sin cifrado)'
+    )
+    email_host_user = models.EmailField(
+        blank=True,
+        verbose_name='Usuario SMTP',
+        help_text='Dirección de email para autenticación SMTP'
+    )
+    email_host_password = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name='Contraseña SMTP',
+        help_text='Contraseña o token de aplicación para SMTP'
+    )
+    email_use_tls = models.BooleanField(
+        default=True,
+        verbose_name='Usar TLS',
+        help_text='Activar cifrado TLS (recomendado para puerto 587)'
+    )
+    email_use_ssl = models.BooleanField(
+        default=False,
+        verbose_name='Usar SSL',
+        help_text='Activar cifrado SSL (para puerto 465)'
+    )
+    email_from = models.EmailField(
+        blank=True,
+        verbose_name='Email remitente',
+        help_text='Dirección de email que aparecerá como remitente'
+    )
+    notification_emails = models.TextField(
+        blank=True,
+        verbose_name='Emails de notificación',
+        help_text='Direcciones de email donde enviar notificaciones (una por línea)'
+    )
+    
     # Metadatos
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
