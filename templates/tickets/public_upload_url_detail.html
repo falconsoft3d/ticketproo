@@ -1,0 +1,344 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ upload_url.title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'public_upload_url_list' %}">URLs Públicas</a></li>
+                    <li class="breadcrumb-item active">{{ upload_url.title|truncatechars:30 }}</li>
+                </ol>
+            </nav>
+
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-cloud-upload text-primary me-2"></i>
+                        {{ upload_url.title }}
+                    </h1>
+                    <p class="text-muted">Gestión de URL pública de subida</p>
+                </div>
+                <div class="btn-group">
+                    <a href="{% url 'public_upload_url_toggle' upload_url.pk %}" 
+                       class="btn btn-{% if upload_url.is_active %}warning{% else %}success{% endif %}">
+                        <i class="bi bi-{% if upload_url.is_active %}toggle-off{% else %}toggle-on{% endif %} me-1"></i>
+                        {% if upload_url.is_active %}Desactivar{% else %}Activar{% endif %}
+                    </a>
+                    <a href="{% url 'public_upload_url_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>
+                        Volver
+                    </a>
+                </div>
+            </div>
+
+            <!-- Alertas -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="row">
+                <!-- Información de la URL -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-info-circle me-2"></i>
+                                Información de la URL
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Estado -->
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Estado:</label>
+                                <div>
+                                    {% if not upload_url.is_active %}
+                                        <span class="badge bg-danger fs-6">
+                                            <i class="bi bi-x-circle me-1"></i>Desactivada
+                                        </span>
+                                    {% elif not upload_url.is_valid %}
+                                        <span class="badge bg-warning fs-6">
+                                            <i class="bi bi-exclamation-triangle me-1"></i>Expirada
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-success fs-6">
+                                            <i class="bi bi-check-circle me-1"></i>Activa
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- URL Pública -->
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">URL Pública:</label>
+                                <div class="input-group">
+                                    <input type="text" 
+                                           class="form-control" 
+                                           value="{{ public_url }}" 
+                                           readonly 
+                                           id="publicUrl">
+                                    <button class="btn btn-outline-secondary" 
+                                            type="button" 
+                                            onclick="copyToClipboard('publicUrl')">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Comparte esta URL para que otros puedan subir documentos
+                                </div>
+                            </div>
+
+                            <!-- QR Code -->
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Código QR:</label>
+                                <div class="text-center p-3 border rounded">
+                                    <div id="qrcode"></div>
+                                    <small class="text-muted">Escanea con tu móvil para acceder rápidamente</small>
+                                </div>
+                            </div>
+
+                            <!-- Descripción -->
+                            {% if upload_url.description %}
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Instrucciones:</label>
+                                    <p class="text-muted">{{ upload_url.description }}</p>
+                                </div>
+                            {% endif %}
+
+                            <!-- Empresa -->
+                            {% if upload_url.company %}
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Empresa:</label>
+                                    <p class="text-muted">
+                                        <i class="bi bi-building me-1"></i>
+                                        {{ upload_url.company.name }}
+                                    </p>
+                                </div>
+                            {% endif %}
+
+                            <!-- Fechas -->
+                            <div class="row">
+                                <div class="col-sm-6 mb-3">
+                                    <label class="form-label fw-bold">Creada:</label>
+                                    <p class="text-muted">
+                                        <i class="bi bi-calendar me-1"></i>
+                                        {{ upload_url.created_at|date:"d/m/Y H:i" }}
+                                    </p>
+                                </div>
+                                {% if upload_url.expires_at %}
+                                    <div class="col-sm-6 mb-3">
+                                        <label class="form-label fw-bold">Expira:</label>
+                                        <p class="text-muted">
+                                            <i class="bi bi-clock me-1"></i>
+                                            {{ upload_url.expires_at|date:"d/m/Y H:i" }}
+                                        </p>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            {% if upload_url.last_used_at %}
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Último uso:</label>
+                                    <p class="text-muted">
+                                        <i class="bi bi-clock-history me-1"></i>
+                                        {{ upload_url.last_used_at|date:"d/m/Y H:i" }}
+                                    </p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estadísticas -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-bar-chart me-2"></i>
+                                Estadísticas
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-6 mb-4">
+                                    <div class="border-end">
+                                        <div class="display-4 fw-bold text-primary">{{ upload_url.upload_count }}</div>
+                                        <div class="text-muted">Documentos Subidos</div>
+                                    </div>
+                                </div>
+                                <div class="col-6 mb-4">
+                                    <div class="display-4 fw-bold text-info">
+                                        {% if upload_url.max_uploads %}
+                                            {{ upload_url.max_uploads|add:"-"|add:upload_url.upload_count }}
+                                        {% else %}
+                                            ∞
+                                        {% endif %}
+                                    </div>
+                                    <div class="text-muted">Subidas Restantes</div>
+                                </div>
+                            </div>
+
+                            {% if upload_url.max_uploads %}
+                                <!-- Barra de progreso -->
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Progreso:</label>
+                                    {% widthratio upload_url.upload_count upload_url.max_uploads 100 as percentage %}
+                                    <div class="progress">
+                                        <div class="progress-bar {% if percentage >= 90 %}bg-danger{% elif percentage >= 70 %}bg-warning{% else %}bg-success{% endif %}" 
+                                             role="progressbar" 
+                                             style="width: {{ percentage }}%"
+                                             aria-valuenow="{{ percentage }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                            {{ percentage }}%
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">
+                                        {{ upload_url.upload_count }} de {{ upload_url.max_uploads }} subidas utilizadas
+                                    </small>
+                                </div>
+                            {% endif %}
+
+                            <!-- Token -->
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Token:</label>
+                                <div class="input-group">
+                                    <input type="text" 
+                                           class="form-control font-monospace small" 
+                                           value="{{ upload_url.upload_token }}" 
+                                           readonly 
+                                           id="tokenInput">
+                                    <button class="btn btn-outline-secondary" 
+                                            type="button" 
+                                            onclick="copyToClipboard('tokenInput')">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documentos subidos -->
+            {% if uploaded_documents %}
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-files me-2"></i>
+                            Documentos Subidos ({{ uploaded_documents.count }})
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Documento</th>
+                                        <th>Tamaño</th>
+                                        <th>Fecha</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for document in uploaded_documents %}
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <i class="bi bi-file-earmark text-primary me-2"></i>
+                                                    <div>
+                                                        <div class="fw-bold">{{ document.title }}</div>
+                                                        {% if document.description %}
+                                                            <small class="text-muted">{{ document.description|truncatechars:50 }}</small>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-light text-dark">
+                                                    {{ document.file_size|filesizeformat }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">
+                                                    {{ document.created_at|date:"d/m/Y H:i" }}
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'document_detail' document.pk %}" 
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-eye me-1"></i>Ver
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="bi bi-inbox display-1 text-muted mb-3"></i>
+                        <h4 class="text-muted">No hay documentos subidos aún</h4>
+                        <p class="text-muted">Los documentos subidos usando esta URL aparecerán aquí</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Include QR Code library -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
+<script>
+// Función para copiar al portapapeles
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    element.select();
+    element.setSelectionRange(0, 99999);
+    document.execCommand('copy');
+    
+    // Mostrar feedback
+    const button = element.nextElementSibling;
+    const originalContent = button.innerHTML;
+    button.innerHTML = '<i class="bi bi-check"></i>';
+    button.classList.add('btn-success');
+    button.classList.remove('btn-outline-secondary');
+    
+    setTimeout(() => {
+        button.innerHTML = originalContent;
+        button.classList.remove('btn-success');
+        button.classList.add('btn-outline-secondary');
+    }, 2000);
+}
+
+// Generar código QR
+document.addEventListener('DOMContentLoaded', function() {
+    const publicUrl = "{{ public_url }}";
+    QRCode.toCanvas(document.getElementById('qrcode'), publicUrl, {
+        width: 200,
+        margin: 2,
+        color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+        }
+    }, function (error) {
+        if (error) console.error(error);
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,157 @@
+{% extends 'public_base.html' %}
+
+{% block title %}Documento Subido Exitosamente - TicketProo{% endblock %}
+
+{% block hero_icon %}<i class="bi bi-check-circle text-success"></i>{% endblock %}
+{% block hero_title %}¡Documento Subido!{% endblock %}
+{% block hero_description %}Tu documento ha sido subido exitosamente y está siendo procesado{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Mensaje de éxito -->
+        <div class="card shadow-lg border-success">
+            <div class="card-header bg-success text-white text-center">
+                <i class="bi bi-check-circle display-3 mb-3"></i>
+                <h3 class="mb-0">¡Subida Exitosa!</h3>
+            </div>
+            <div class="card-body p-4">
+                <div class="text-center mb-4">
+                    <p class="lead">Tu documento ha sido subido correctamente y estará disponible para revisión</p>
+                </div>
+
+                <!-- Información del documento -->
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="bi bi-file-earmark-check text-success me-2"></i>
+                            Información del Documento
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Título:</strong><br>{{ document.title }}</p>
+                                {% if document.description %}
+                                    <p><strong>Descripción:</strong><br>{{ document.description }}</p>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Tamaño:</strong><br>{{ document.file_size|filesizeformat }}</p>
+                                <p><strong>Fecha de subida:</strong><br>{{ document.created_at|date:"d/m/Y H:i" }}</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Empresa asociada -->
+                        {% if upload_url.company %}
+                            <div class="alert alert-info mt-3">
+                                <i class="bi bi-building me-2"></i>
+                                <strong>Empresa:</strong> {{ upload_url.company.name }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Siguiente pasos -->
+                <div class="mt-4">
+                    <h5>
+                        <i class="bi bi-list-check me-2"></i>
+                        Próximos pasos:
+                    </h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item border-0 px-0">
+                            <i class="bi bi-1-circle text-primary me-2"></i>
+                            El documento será revisado por nuestro equipo
+                        </li>
+                        <li class="list-group-item border-0 px-0">
+                            <i class="bi bi-2-circle text-primary me-2"></i>
+                            Recibirás una notificación cuando esté procesado
+                        </li>
+                        <li class="list-group-item border-0 px-0">
+                            <i class="bi bi-3-circle text-primary me-2"></i>
+                            El documento estará disponible en el sistema
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Estadísticas actualizadas -->
+                <div class="mt-4">
+                    <div class="card border-primary">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="bi bi-bar-chart me-2"></i>
+                                Estadísticas de subida
+                            </h6>
+                            <div class="row text-center">
+                                <div class="col-sm-6">
+                                    <div class="d-flex align-items-center justify-content-center">
+                                        <i class="bi bi-files text-success me-2 fs-4"></i>
+                                        <div>
+                                            <div class="fs-4 fw-bold text-success">{{ upload_url.upload_count }}</div>
+                                            <small class="text-muted">Total de documentos</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="d-flex align-items-center justify-content-center">
+                                        <i class="bi bi-clock text-info me-2 fs-4"></i>
+                                        <div>
+                                            <div class="fs-4 fw-bold text-info">{{ upload_url.last_used_at|date:"H:i" }}</div>
+                                            <small class="text-muted">Última subida</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% if upload_url.max_uploads %}
+                                <div class="mt-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <small class="text-muted">Progreso de subidas</small>
+                                        <small class="text-muted">{{ upload_url.upload_count }}/{{ upload_url.max_uploads }}</small>
+                                    </div>
+                                    {% widthratio upload_url.upload_count upload_url.max_uploads 100 as percentage %}
+                                    <div class="progress">
+                                        <div class="progress-bar bg-success" 
+                                             role="progressbar" 
+                                             style="width: {{ percentage }}%"
+                                             aria-valuenow="{{ percentage }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Acciones -->
+                <div class="text-center mt-4">
+                    <div class="btn-group">
+                        {% if upload_url.is_valid %}
+                            <a href="{% url 'public_document_upload' upload_url.upload_token %}" class="btn btn-primary">
+                                <i class="bi bi-plus-circle me-1"></i>
+                                Subir Otro Documento
+                            </a>
+                        {% endif %}
+                        <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-house me-1"></i>
+                            Ir al Inicio
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Información de contacto -->
+                <div class="alert alert-light mt-4">
+                    <h6 class="alert-heading">
+                        <i class="bi bi-info-circle me-1"></i>
+                        ¿Necesitas ayuda?
+                    </h6>
+                    <p class="mb-0">
+                        Si tienes alguna pregunta sobre tu documento o el proceso de subida, 
+                        puedes <a href="{% url 'contacto_web' %}" class="alert-link">contactarnos aquí</a>.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

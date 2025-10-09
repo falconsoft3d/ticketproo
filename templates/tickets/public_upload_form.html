@@ -1,0 +1,322 @@
+{% extends 'public_base.html' %}
+
+{% block title %}{{ upload_url.title }} - TicketProo{% endblock %}
+
+{% block hero_icon %}<i class="bi bi-cloud-upload"></i>{% endblock %}
+{% block hero_title %}{{ upload_url.title }}{% endblock %}
+{% block hero_description %}
+    {% if upload_url.description %}
+        {{ upload_url.description }}
+    {% else %}
+        Sube tu documento de forma rápida y segura
+    {% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .upload-area {
+        border: 2px dashed #dee2e6;
+        border-radius: 10px;
+        padding: 2rem;
+        text-align: center;
+        background: #f8f9fa;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    .upload-area:hover {
+        border-color: #0d6efd;
+        background: #e7f1ff;
+    }
+    .upload-area.dragover {
+        border-color: #0d6efd;
+        background: #e7f1ff;
+        transform: scale(1.02);
+    }
+    .file-preview {
+        max-width: 100%;
+        max-height: 200px;
+        border-radius: 5px;
+    }
+    .file-info {
+        background: #e9ecef;
+        border-radius: 5px;
+        padding: 0.5rem;
+        margin-top: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Información de la empresa -->
+        {% if upload_url.company %}
+            <div class="alert alert-info mb-4">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-building display-6 me-3"></i>
+                    <div>
+                        <h5 class="alert-heading mb-1">{{ upload_url.company.name }}</h5>
+                        <p class="mb-0">Este documento se asociará automáticamente a esta empresa</p>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Alertas -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    <i class="bi bi-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Formulario de subida -->
+        <div class="card shadow-lg">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-upload me-2"></i>
+                    Subir Documento
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" enctype="multipart/form-data" id="uploadForm">
+                    {% csrf_token %}
+                    
+                    <!-- Título del documento -->
+                    <div class="mb-4">
+                        <label for="title" class="form-label fw-bold">
+                            <i class="bi bi-type me-1"></i>
+                            Título del documento *
+                        </label>
+                        <input type="text" 
+                               class="form-control form-control-lg" 
+                               id="title" 
+                               name="title" 
+                               placeholder="ej: Contrato firmado, Factura, etc."
+                               required>
+                        <div class="form-text">Proporciona un nombre descriptivo para el documento</div>
+                    </div>
+
+                    <!-- Descripción opcional -->
+                    <div class="mb-4">
+                        <label for="description" class="form-label fw-bold">
+                            <i class="bi bi-text-paragraph me-1"></i>
+                            Descripción (opcional)
+                        </label>
+                        <textarea class="form-control" 
+                                  id="description" 
+                                  name="description" 
+                                  rows="3"
+                                  placeholder="Información adicional sobre el documento..."></textarea>
+                    </div>
+
+                    <!-- Área de subida de archivos -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="bi bi-file-earmark me-1"></i>
+                            Archivo *
+                        </label>
+                        <div class="upload-area" id="uploadArea">
+                            <input type="file" 
+                                   class="form-control d-none" 
+                                   id="file" 
+                                   name="file" 
+                                   accept="image/*,.pdf,.doc,.docx,.txt,.xlsx,.xls,.zip,.rar"
+                                   required>
+                            
+                            <div id="uploadPrompt">
+                                <i class="bi bi-cloud-upload display-1 text-primary mb-3"></i>
+                                <h5>Arrastra tu archivo aquí</h5>
+                                <p class="text-muted mb-3">o haz clic para seleccionar</p>
+                                <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('file').click()">
+                                    <i class="bi bi-folder2-open me-1"></i>
+                                    Seleccionar Archivo
+                                </button>
+                                <div class="mt-3">
+                                    <small class="text-muted">
+                                        Formatos admitidos: PDF, Word, Excel, imágenes, ZIP, TXT
+                                        <br>Tamaño máximo: 50MB
+                                    </small>
+                                </div>
+                            </div>
+
+                            <div id="filePreview" style="display: none;">
+                                <div class="file-info">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-file-earmark text-primary fs-3 me-3"></i>
+                                            <div>
+                                                <div class="fw-bold" id="fileName"></div>
+                                                <small class="text-muted" id="fileSize"></small>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFile()">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mt-3">
+                                    <img id="imagePreview" class="file-preview d-none" alt="Vista previa">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Información adicional -->
+                    <div class="alert alert-light">
+                        <h6 class="alert-heading">
+                            <i class="bi bi-shield-check me-1"></i>
+                            Tu información está segura
+                        </h6>
+                        <ul class="mb-0 small">
+                            <li>El archivo se subirá de forma segura y encriptada</li>
+                            <li>Solo las personas autorizadas podrán acceder al documento</li>
+                            <li>Recibirás una confirmación una vez completada la subida</li>
+                        </ul>
+                    </div>
+
+                    <!-- Botón de envío -->
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                            <i class="bi bi-upload me-2"></i>
+                            Subir Documento
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Estadísticas de la URL -->
+        <div class="card mt-4">
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-sm-4">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <i class="bi bi-files text-primary me-2"></i>
+                            <div>
+                                <div class="fw-bold">{{ upload_url.upload_count }}</div>
+                                <small class="text-muted">Documentos subidos</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <i class="bi bi-shield-check text-success me-2"></i>
+                            <div>
+                                <div class="fw-bold">100%</div>
+                                <small class="text-muted">Seguro</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <i class="bi bi-clock text-info me-2"></i>
+                            <div>
+                                <div class="fw-bold">Rápido</div>
+                                <small class="text-muted">Subida instantánea</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('file');
+    const uploadPrompt = document.getElementById('uploadPrompt');
+    const filePreview = document.getElementById('filePreview');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const imagePreview = document.getElementById('imagePreview');
+    const submitBtn = document.getElementById('submitBtn');
+    const form = document.getElementById('uploadForm');
+
+    // Eventos de drag and drop
+    uploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            handleFileSelect(files[0]);
+        }
+    });
+
+    // Click en el área de subida
+    uploadArea.addEventListener('click', function(e) {
+        if (e.target === uploadArea || e.target.closest('#uploadPrompt')) {
+            fileInput.click();
+        }
+    });
+
+    // Cambio en el input de archivo
+    fileInput.addEventListener('change', function(e) {
+        if (e.target.files.length > 0) {
+            handleFileSelect(e.target.files[0]);
+        }
+    });
+
+    // Función para manejar la selección de archivo
+    function handleFileSelect(file) {
+        fileName.textContent = file.name;
+        fileSize.textContent = formatFileSize(file.size);
+        
+        uploadPrompt.style.display = 'none';
+        filePreview.style.display = 'block';
+
+        // Mostrar vista previa si es una imagen
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.src = e.target.result;
+                imagePreview.classList.remove('d-none');
+            };
+            reader.readAsDataURL(file);
+        } else {
+            imagePreview.classList.add('d-none');
+        }
+    }
+
+    // Función para remover archivo
+    window.removeFile = function() {
+        fileInput.value = '';
+        uploadPrompt.style.display = 'block';
+        filePreview.style.display = 'none';
+        imagePreview.classList.add('d-none');
+    };
+
+    // Función para formatear tamaño de archivo
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // Manejar envío del formulario
+    form.addEventListener('submit', function(e) {
+        submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Subiendo...';
+        submitBtn.disabled = true;
+    });
+});
+</script>
+{% endblock %}

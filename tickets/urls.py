@@ -362,4 +362,13 @@ urlpatterns = [
     path('contactos-web/', views.contactos_web_list, name='contactos_web_list'),
     path('contactos-web/<int:pk>/', views.contacto_web_detail, name='contacto_web_detail'),
     
+    # URLs públicas de subida de documentos
+    path('public-uploads/', views.public_upload_url_list, name='public_upload_url_list'),
+    path('public-uploads/create/', views.public_upload_url_create, name='public_upload_url_create'),
+    path('public-uploads/<int:pk>/', views.public_upload_url_detail, name='public_upload_url_detail'),
+    path('public-uploads/<int:pk>/toggle/', views.public_upload_url_toggle, name='public_upload_url_toggle'),
+    
+    # URL pública para subir documentos (sin autenticación)
+    path('upload/<uuid:token>/', views.public_document_upload, name='public_document_upload'),
+    
 ]

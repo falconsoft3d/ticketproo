@@ -4081,3 +4081,112 @@ class ContactoWeb(models.Model):
     
     def __str__(self):
         return f"{self.nombre} - {self.asunto}"
+
+
+class PublicDocumentUpload(models.Model):
+    """Modelo para URLs públicas de subida de documentos"""
+    
+    # Token único para la URL pública
+    upload_token = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+        verbose_name='Token de subida',
+        help_text='Token único para la URL pública de subida'
+    )
+    
+    # Configuración de la URL
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título de la subida',
+        help_text='Descripción de qué tipo de documentos se esperan'
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name='Instrucciones',
+        help_text='Instrucciones para quien vaya a subir el documento'
+    )
+    
+    # Usuario que creó la URL
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='public_upload_urls',
+        verbose_name='Creado por'
+    )
+    
+    # Empresa asociada (opcional)
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='public_upload_urls',
+        verbose_name='Empresa/Cliente',
+        help_text='Empresa o cliente para el cual se subirán los documentos'
+    )
+    
+    # Configuración de expiración
+    expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de expiración',
+        help_text='Opcional: fecha límite para usar esta URL'
+    )
+    
+    # Estado
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activa',
+        help_text='Si está desactivada, no se pueden subir más documentos'
+    )
+    
+    # Configuración de límites
+    max_uploads = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name='Máximo de subidas',
+        help_text='Opcional: límite de documentos que se pueden subir'
+    )
+    upload_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Documentos subidos',
+        help_text='Contador de documentos subidos usando esta URL'
+    )
+    
+    # Timestamps
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    last_used_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Último uso'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'URL Pública de Subida'
+        verbose_name_plural = 'URLs Públicas de Subida'
+    
+    def __str__(self):
+        return f"{self.title} - {self.upload_token}"
+    
+    def is_valid(self):
+        """Verifica si la URL está válida para usarse"""
+        if not self.is_active:
+            return False
+        
+        if self.expires_at and timezone.now() > self.expires_at:
+            return False
+        
+        if self.max_uploads and self.upload_count >= self.max_uploads:
+            return False
+        
+        return True
+    
+    def get_public_url(self):
+        """Devuelve la URL pública para subir documentos"""
+        from django.urls import reverse
+        return reverse('public_document_upload', kwargs={'token': self.upload_token})

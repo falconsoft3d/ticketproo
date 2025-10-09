@@ -31,7 +31,7 @@ from .models import (
     Opportunity, OpportunityStatus, OpportunityNote, OpportunityStatusHistory,
     Meeting, MeetingAttendee, MeetingQuestion, Contact,
     BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, Concept,
-    Exam, ExamQuestion, ExamAttempt, ExamAnswer
+    Exam, ExamQuestion, ExamAttempt, ExamAnswer, ContactoWeb, PublicDocumentUpload
 )
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
@@ -8992,3 +8992,167 @@ def contacto_web_detail(request, pk):
     }
     
     return render(request, 'tickets/contacto_web_detail.html', context)
+
+
+# =================================
+# URLS PÚBLICAS DE SUBIDA DE DOCUMENTOS
+# =================================
+
+@login_required
+@user_passes_test(is_agent)
+def public_upload_url_list(request):
+    """Lista las URLs públicas de subida de documentos"""
+    upload_urls = PublicDocumentUpload.objects.filter(created_by=request.user)
+    
+    context = {
+        'upload_urls': upload_urls,
+        'page_title': 'URLs Públicas de Subida'
+    }
+    
+    return render(request, 'tickets/public_upload_url_list.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def public_upload_url_create(request):
+    """Crea una nueva URL pública de subida"""
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        description = request.POST.get('description', '')
+        company_id = request.POST.get('company')
+        expires_at = request.POST.get('expires_at')
+        max_uploads = request.POST.get('max_uploads')
+        
+        # Crear la URL pública
+        upload_url = PublicDocumentUpload(
+            title=title,
+            description=description,
+            created_by=request.user
+        )
+        
+        if company_id:
+            upload_url.company_id = company_id
+        
+        if expires_at:
+            upload_url.expires_at = expires_at
+        
+        if max_uploads:
+            upload_url.max_uploads = int(max_uploads)
+        
+        upload_url.save()
+        
+        messages.success(request, f'URL pública creada exitosamente. Token: {upload_url.upload_token}')
+        return redirect('public_upload_url_detail', pk=upload_url.pk)
+    
+    companies = Company.objects.all()
+    
+    context = {
+        'companies': companies,
+        'page_title': 'Crear URL Pública de Subida'
+    }
+    
+    return render(request, 'tickets/public_upload_url_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def public_upload_url_detail(request, pk):
+    """Detalle de una URL pública de subida"""
+    upload_url = get_object_or_404(PublicDocumentUpload, pk=pk, created_by=request.user)
+    
+    # Obtener documentos subidos usando esta URL
+    uploaded_documents = Document.objects.filter(
+        tags__icontains=f'upload-token:{upload_url.upload_token}'
+    ).order_by('-created_at')
+    
+    # Generar URL completa
+    public_url = request.build_absolute_uri(upload_url.get_public_url())
+    
+    context = {
+        'upload_url': upload_url,
+        'uploaded_documents': uploaded_documents,
+        'public_url': public_url,
+        'page_title': f'URL Pública: {upload_url.title}'
+    }
+    
+    return render(request, 'tickets/public_upload_url_detail.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def public_upload_url_toggle(request, pk):
+    """Activa/desactiva una URL pública"""
+    upload_url = get_object_or_404(PublicDocumentUpload, pk=pk, created_by=request.user)
+    
+    upload_url.is_active = not upload_url.is_active
+    upload_url.save()
+    
+    status = "activada" if upload_url.is_active else "desactivada"
+    messages.success(request, f'URL pública {status} exitosamente')
+    
+    return redirect('public_upload_url_detail', pk=pk)
+
+
+def public_document_upload(request, token):
+    """Vista pública para subir documentos (no requiere login)"""
+    upload_url = get_object_or_404(PublicDocumentUpload, upload_token=token)
+    
+    # Verificar si la URL es válida
+    if not upload_url.is_valid():
+        context = {
+            'error': 'Esta URL de subida ha expirado o ya no está disponible.',
+            'upload_url': upload_url
+        }
+        return render(request, 'tickets/public_upload_error.html', context)
+    
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        description = request.POST.get('description', '').strip()
+        uploaded_file = request.FILES.get('file')
+        
+        if not title:
+            messages.error(request, 'El título es obligatorio')
+        elif not uploaded_file:
+            messages.error(request, 'Debe seleccionar un archivo')
+        else:
+            try:
+                # Crear el documento
+                document = Document(
+                    title=title,
+                    description=description,
+                    file=uploaded_file,
+                    created_by=upload_url.created_by,
+                    company=upload_url.company,
+                    tags=f'upload-token:{upload_url.upload_token},public-upload'
+                )
+                
+                # Establecer metadatos del archivo
+                document.file_size = uploaded_file.size
+                document.file_type = uploaded_file.content_type or 'unknown'
+                
+                document.save()
+                
+                # Actualizar contador y última fecha de uso
+                upload_url.upload_count += 1
+                upload_url.last_used_at = timezone.now()
+                upload_url.save()
+                
+                messages.success(request, '¡Archivo subido exitosamente!')
+                
+                # Redirigir a una página de éxito
+                context = {
+                    'document': document,
+                    'upload_url': upload_url,
+                    'success': True
+                }
+                return render(request, 'tickets/public_upload_success.html', context)
+                
+            except Exception as e:
+                messages.error(request, f'Error al subir el archivo: {str(e)}')
+    
+    context = {
+        'upload_url': upload_url,
+        'page_title': f'Subir Documento: {upload_url.title}'
+    }
+    
+    return render(request, 'tickets/public_upload_form.html', context)

@@ -246,35 +246,9 @@
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <a class="dropdown-item {% if 'url_manager' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'url_manager_list' %}">
-                                    <i class="bi bi-link-45deg"></i> Gestión de URLs
-                                </a>
-                            </li>
-                            <li>
                                 <a class="dropdown-item {% if 'work_order' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'work_order_list' %}">
                                     <i class="bi bi-clipboard-check"></i> Órdenes de Trabajo
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item {% if 'system_configuration' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'system_configuration' %}">
-                                    <i class="bi bi-gear-fill"></i> Configuración del Sistema
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item {% if 'time' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'time_clock' %}">
-                                    <i class="bi bi-clock"></i> Control de Horario
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item {% if 'attendance' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'attendance_overview' %}">
-                                    <i class="bi bi-people-fill"></i> Asistencia General
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
@@ -347,6 +321,38 @@
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'user_create' %}active{% endif %}" 
                                    href="{% url 'user_create' %}">
                                     <i class="bi bi-person-plus"></i> Crear Usuario
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Sistema</li>
+                            <li>
+                                <a class="dropdown-item {% if 'system_configuration' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'system_configuration' %}">
+                                    <i class="bi bi-gear-fill"></i> Configuración del Sistema
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'url_manager' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'url_manager_list' %}">
+                                    <i class="bi bi-link-45deg"></i> Gestión de URLs
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'public_upload' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'public_upload_url_list' %}">
+                                    <i class="bi bi-cloud-upload"></i> URLs Públicas de Subida
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'time' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'time_clock' %}">
+                                    <i class="bi bi-clock"></i> Control de Horario
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'attendance' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'attendance_overview' %}">
+                                    <i class="bi bi-people-fill"></i> Asistencia General
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
