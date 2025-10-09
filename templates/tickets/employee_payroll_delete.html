@@ -1,0 +1,351 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+.delete-header {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+.warning-card {
+    border: 3px solid #dc3545;
+    border-radius: 15px;
+    background: #fff5f5;
+    box-shadow: 0 8px 25px rgba(220, 53, 69, 0.15);
+}
+.warning-icon {
+    font-size: 4rem;
+    color: #dc3545;
+    animation: pulse 2s infinite;
+}
+.payroll-info-card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+.info-item {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid #dc3545;
+}
+.info-label {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.info-value {
+    font-size: 1.1rem;
+    margin-top: 0.5rem;
+}
+.file-preview {
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    text-align: center;
+    margin: 1rem 0;
+}
+.file-icon {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+}
+.danger-list {
+    background: #fff5f5;
+    border: 2px solid #dc3545;
+    border-radius: 10px;
+    padding: 1.5rem;
+}
+.danger-list ul {
+    margin-bottom: 0;
+    color: #721c24;
+}
+.danger-list li {
+    margin-bottom: 0.5rem;
+}
+.action-buttons {
+    padding: 2rem 0;
+}
+.btn-confirm-delete {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    border: none;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    font-size: 1.1rem;
+    border-radius: 8px;
+}
+.btn-confirm-delete:hover {
+    background: linear-gradient(135deg, #c82333 0%, #a71e2a 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(220, 53, 69, 0.3);
+}
+.btn-cancel {
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    font-size: 1.1rem;
+    border-radius: 8px;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+@media (max-width: 768px) {
+    .action-buttons {
+        text-align: center;
+    }
+    .action-buttons .btn {
+        display: block;
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block title %}Eliminar Nómina - {{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="delete-header rounded">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1><i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación</h1>
+                    <h4>Nómina {{ payroll.get_period_display }}</h4>
+                    <p class="mb-0">{{ employee.get_full_name }} - {{ employee.position }}</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="{% url 'employee_payroll_detail' employee.pk payroll.pk %}" class="btn btn-light">
+                        <i class="bi bi-arrow-left"></i> Volver al Detalle
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Advertencia principal -->
+            <div class="warning-card mb-4">
+                <div class="card-body text-center py-5">
+                    <div class="warning-icon mb-3">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                    </div>
+                    <h2 class="text-danger mb-3">¡ATENCIÓN!</h2>
+                    <h5 class="mb-4">Estás a punto de eliminar permanentemente esta nómina</h5>
+                    <p class="text-muted">Esta acción no se puede deshacer. Todos los archivos asociados serán eliminados del sistema.</p>
+                </div>
+            </div>
+
+            <!-- Información de la nómina a eliminar -->
+            <div class="payroll-info-card mb-4">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Información de la Nómina a Eliminar</h5>
+                </div>
+                <div class="card-body">
+                    <div class="info-grid mb-4">
+                        <div class="info-item">
+                            <div class="info-label">Empleado</div>
+                            <div class="info-value">{{ employee.get_full_name }}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Período</div>
+                            <div class="info-value">{{ payroll.get_period_display }}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Fecha de registro</div>
+                            <div class="info-value">{{ payroll.created_at|date:"d/m/Y H:i" }}</div>
+                        </div>
+                        {% if payroll.created_by %}
+                        <div class="info-item">
+                            <div class="info-label">Creado por</div>
+                            <div class="info-value">{{ payroll.created_by.get_full_name }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Información salarial si existe -->
+                    {% if payroll.gross_salary or payroll.net_salary %}
+                    <div class="row mb-4">
+                        {% if payroll.gross_salary %}
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <div class="info-label">Salario Bruto</div>
+                                <div class="info-value text-primary">€{{ payroll.gross_salary|floatformat:2 }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if payroll.net_salary %}
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <div class="info-label">Salario Neto</div>
+                                <div class="info-value text-success">€{{ payroll.net_salary|floatformat:2 }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Archivos que serán eliminados -->
+                    <h6 class="text-danger mb-3">
+                        <i class="bi bi-files"></i> Archivos que serán eliminados:
+                    </h6>
+                    <div class="row">
+                        <!-- Nómina PDF -->
+                        <div class="col-md-6">
+                            <div class="file-preview">
+                                <div class="file-icon text-danger">
+                                    <i class="bi bi-file-earmark-pdf"></i>
+                                </div>
+                                <strong>Nómina PDF</strong>
+                                <div class="text-muted small">{{ payroll.payroll_pdf.name|cut:"payrolls/" }}</div>
+                            </div>
+                        </div>
+
+                        <!-- Comprobante de pago -->
+                        <div class="col-md-6">
+                            <div class="file-preview">
+                                {% if payroll.payment_receipt %}
+                                    <div class="file-icon text-success">
+                                        {% if payroll.payment_receipt.name|slice:"-4:" == ".pdf" %}
+                                            <i class="bi bi-file-earmark-pdf"></i>
+                                        {% else %}
+                                            <i class="bi bi-image"></i>
+                                        {% endif %}
+                                    </div>
+                                    <strong>Comprobante de Pago</strong>
+                                    <div class="text-muted small">{{ payroll.payment_receipt.name|cut:"payment_receipts/" }}</div>
+                                {% else %}
+                                    <div class="file-icon text-muted">
+                                        <i class="bi bi-file-x"></i>
+                                    </div>
+                                    <strong class="text-muted">No hay comprobante</strong>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista de consecuencias -->
+            <div class="danger-list mb-4">
+                <h6 class="text-danger mb-3">
+                    <i class="bi bi-exclamation-circle"></i> Al confirmar la eliminación:
+                </h6>
+                <ul>
+                    <li>Se eliminará permanentemente el registro de nómina del {{ payroll.get_period_display }}</li>
+                    <li>Se borrará el archivo PDF de la nómina del servidor</li>
+                    {% if payroll.payment_receipt %}
+                        <li>Se eliminará el comprobante de pago adjunto</li>
+                    {% endif %}
+                    <li>Se perderá toda la información salarial registrada</li>
+                    {% if payroll.notes %}
+                        <li>Se perderán las notas asociadas a esta nómina</li>
+                    {% endif %}
+                    <li>Esta acción <strong>NO SE PUEDE DESHACER</strong></li>
+                </ul>
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="action-buttons">
+                <div class="row">
+                    <div class="col-md-6">
+                        <a href="{% url 'employee_payroll_detail' employee.pk payroll.pk %}" class="btn btn-outline-secondary btn-cancel w-100">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <form method="post" style="display: inline;" id="deleteForm">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-confirm-delete w-100" id="confirmDelete">
+                                <i class="bi bi-trash"></i> Confirmar Eliminación
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    let confirmationCount = 0;
+    const $confirmButton = $('#confirmDelete');
+    const $form = $('#deleteForm');
+    
+    // Requerir doble confirmación
+    $confirmButton.on('click', function(e) {
+        e.preventDefault();
+        
+        if (confirmationCount === 0) {
+            // Primera confirmación
+            if (confirm('¿Estás completamente seguro de que deseas eliminar esta nómina? Esta acción NO se puede deshacer.')) {
+                confirmationCount++;
+                $confirmButton.html('<i class="bi bi-exclamation-triangle"></i> Confirmar DEFINITIVAMENTE');
+                $confirmButton.removeClass('btn-danger').addClass('btn-outline-danger');
+                
+                // Auto-reset después de 5 segundos
+                setTimeout(function() {
+                    confirmationCount = 0;
+                    $confirmButton.html('<i class="bi bi-trash"></i> Confirmar Eliminación');
+                    $confirmButton.removeClass('btn-outline-danger').addClass('btn-danger');
+                }, 5000);
+            }
+        } else {
+            // Segunda confirmación
+            if (confirm('ÚLTIMA OPORTUNIDAD: ¿Realmente deseas proceder? Los archivos se eliminarán permanentemente.')) {
+                $form.submit();
+            } else {
+                confirmationCount = 0;
+                $confirmButton.html('<i class="bi bi-trash"></i> Confirmar Eliminación');
+                $confirmButton.removeClass('btn-outline-danger').addClass('btn-danger');
+            }
+        }
+    });
+    
+    // Atajos de teclado
+    $(document).keydown(function(e) {
+        // Escape para cancelar
+        if (e.keyCode === 27) {
+            window.location.href = "{% url 'employee_payroll_detail' employee.pk payroll.pk %}";
+        }
+    });
+    
+    // Mostrar tiempo restante para segunda confirmación
+    function showCountdown() {
+        if (confirmationCount === 1) {
+            let seconds = 5;
+            const interval = setInterval(function() {
+                $confirmButton.html(`<i class="bi bi-exclamation-triangle"></i> Confirmar DEFINITIVAMENTE (${seconds}s)`);
+                seconds--;
+                
+                if (seconds < 0 || confirmationCount === 0) {
+                    clearInterval(interval);
+                    if (confirmationCount === 1) {
+                        confirmationCount = 0;
+                        $confirmButton.html('<i class="bi bi-trash"></i> Confirmar Eliminación');
+                        $confirmButton.removeClass('btn-outline-danger').addClass('btn-danger');
+                    }
+                }
+            }, 1000);
+        }
+    }
+});
+</script>
+{% endblock %}

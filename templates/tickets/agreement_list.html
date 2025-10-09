@@ -1,0 +1,308 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+.agreement-header {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+.agreement-card {
+    border: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.agreement-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+.status-badge {
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+}
+.status-draft { background-color: #6c757d; }
+.status-published { background-color: #28a745; }
+.status-signed { background-color: #007bff; }
+.status-cancelled { background-color: #dc3545; }
+.stats-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+.filter-card {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+</style>
+{% endblock %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="agreement-header rounded">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1><i class="bi bi-file-earmark-check"></i> Gestión de Acuerdos</h1>
+                    <p class="mb-0">Crea, gestiona y obtén firmas digitales para tus contratos y acuerdos</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="{% url 'agreement_create' %}" class="btn btn-light btn-lg">
+                        <i class="bi bi-plus-circle"></i> Nuevo Acuerdo
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stats-card card">
+                <div class="card-body text-center">
+                    <div class="display-4 text-secondary mb-2">
+                        <i class="bi bi-files"></i>
+                    </div>
+                    <h3>{{ agreements.paginator.count }}</h3>
+                    <p class="text-muted mb-0">Total Acuerdos</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card card">
+                <div class="card-body text-center">
+                    <div class="display-4 text-warning mb-2">
+                        <i class="bi bi-pencil-square"></i>
+                    </div>
+                    <h3>{{ agreements.object_list|length }}</h3>
+                    <p class="text-muted mb-0">Borradores</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card card">
+                <div class="card-body text-center">
+                    <div class="display-4 text-success mb-2">
+                        <i class="bi bi-globe"></i>
+                    </div>
+                    <h3>0</h3>
+                    <p class="text-muted mb-0">Publicados</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card card">
+                <div class="card-body text-center">
+                    <div class="display-4 text-info mb-2">
+                        <i class="bi bi-pen"></i>
+                    </div>
+                    <h3>0</h3>
+                    <p class="text-muted mb-0">Firmados</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros de búsqueda -->
+    <div class="filter-card">
+        <form method="get">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="search">Buscar acuerdos:</label>
+                        <input type="text" name="search" value="{{ search }}" class="form-control" 
+                               placeholder="Título o contenido del acuerdo..." id="search">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="status">Estado:</label>
+                        <select name="status" class="form-select" id="status">
+                            <option value="">Todos los estados</option>
+                            <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Borrador</option>
+                            <option value="published" {% if status_filter == 'published' %}selected{% endif %}>Publicado</option>
+                            <option value="signed" {% if status_filter == 'signed' %}selected{% endif %}>Firmado</option>
+                            <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelado</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i> Buscar
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Lista de acuerdos -->
+    {% if agreements %}
+        <div class="row">
+            {% for agreement in agreements %}
+            <div class="col-lg-6 col-xl-4">
+                <div class="agreement-card card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">{{ agreement.title|truncatechars:40 }}</h5>
+                        <span class="badge status-{{ agreement.status }} status-badge">
+                            {{ agreement.get_status_display }}
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">{{ agreement.body|truncatechars:150 }}</p>
+                        
+                        <div class="row text-center mb-3">
+                            <div class="col-6">
+                                <strong>{{ agreement.signature_count }}</strong>
+                                <br><small class="text-muted">Firmas</small>
+                            </div>
+                            <div class="col-6">
+                                <strong>{{ agreement.max_signers }}</strong>
+                                <br><small class="text-muted">Máximo</small>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <small class="text-muted">
+                                <i class="bi bi-calendar"></i> {{ agreement.created_at|date:"d/m/Y H:i" }}
+                            </small>
+                            {% if agreement.created_by %}
+                                <br><small class="text-muted">
+                                    <i class="bi bi-person"></i> {{ agreement.created_by.get_full_name }}
+                                </small>
+                            {% endif %}
+                        </div>
+
+                        {% if agreement.status == 'published' %}
+                            <div class="alert alert-success alert-sm">
+                                <i class="bi bi-link-45deg"></i> 
+                                <strong>URL Pública:</strong>
+                                <br><small>{{ request.scheme }}://{{ request.get_host }}{% url 'public_agreement_sign' agreement.public_token %}</small>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a href="{% url 'agreement_detail' agreement.pk %}" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-eye"></i> Ver
+                            </a>
+                            {% if agreement.is_editable %}
+                                <a href="{% url 'agreement_edit' agreement.pk %}" class="btn btn-outline-warning btn-sm">
+                                    <i class="bi bi-pencil"></i> Editar
+                                </a>
+                            {% endif %}
+                            {% if agreement.status == 'draft' %}
+                                <a href="{% url 'agreement_publish' agreement.pk %}" class="btn btn-success btn-sm">
+                                    <i class="bi bi-globe"></i> Publicar
+                                </a>
+                            {% endif %}
+                            {% if agreement.status == 'published' %}
+                                <button class="btn btn-info btn-sm" onclick="copyToClipboard('{{ request.scheme }}://{{ request.get_host }}{% url 'public_agreement_sign' agreement.public_token %}')">
+                                    <i class="bi bi-clipboard"></i> Copiar URL
+                                </button>
+                                <a href="{% url 'public_agreement_sign' agreement.public_token %}" 
+                                   class="btn btn-outline-success btn-sm" 
+                                   target="_blank">
+                                    <i class="bi bi-box-arrow-up-right"></i> Abrir
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Paginación -->
+        {% if agreements.has_other_pages %}
+            <div class="d-flex justify-content-center mt-4">
+                <nav aria-label="Paginación">
+                    <ul class="pagination">
+                        {% if agreements.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ agreements.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for num in agreements.paginator.page_range %}
+                            {% if num == agreements.number %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% else %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if agreements.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ agreements.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-file-earmark-check display-1 text-muted mb-3"></i>
+                <h4>No hay acuerdos creados</h4>
+                {% if search %}
+                    <p class="text-muted">No se encontraron acuerdos que coincidan con "{{ search }}"</p>
+                    <a href="{% url 'agreement_list' %}" class="btn btn-primary">Ver todos los acuerdos</a>
+                {% else %}
+                    <p class="text-muted">Aún no has creado ningún acuerdo o contrato.</p>
+                    <a href="{% url 'agreement_create' %}" class="btn btn-primary">Crear primer acuerdo</a>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        // Mostrar notificación de éxito
+        const toast = document.createElement('div');
+        toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed top-0 end-0 m-3';
+        toast.style.zIndex = '9999';
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi bi-check-circle"></i> URL copiada al portapapeles
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        document.body.appendChild(toast);
+        
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+        
+        // Remover el toast después de que se oculte
+        toast.addEventListener('hidden.bs.toast', () => {
+            document.body.removeChild(toast);
+        });
+    }).catch(function(err) {
+        alert('Error al copiar: ' + err);
+    });
+}
+</script>
+{% endblock %}

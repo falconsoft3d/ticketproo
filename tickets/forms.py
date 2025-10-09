@@ -5,7 +5,8 @@ from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
     UserNote, TimeEntry, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
     ChatRoom, ChatMessage, Command, ContactFormSubmission, Meeting, MeetingAttendee, MeetingQuestion, OpportunityActivity,
-    Course, CourseClass, Contact, BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, Concept, ContactoWeb
+    Course, CourseClass, Contact, BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, Concept, ContactoWeb, Employee, EmployeePayroll,
+    Agreement, AgreementSignature
 )
 
 class CategoryForm(forms.ModelForm):
@@ -1342,6 +1343,7 @@ class SystemConfigurationForm(forms.ModelForm):
             'ai_chat_enabled',
             'openai_api_key',
             'openai_model',
+            'ai_employee_analysis_prompt',
             'enable_telegram_notifications',
             'telegram_bot_token',
             'telegram_chat_id'
@@ -1372,6 +1374,11 @@ class SystemConfigurationForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'gpt-4o'
             }),
+            'ai_employee_analysis_prompt': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 8,
+                'placeholder': 'Prompt personalizado para el análisis de empleados...'
+            }),
             'enable_telegram_notifications': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
@@ -1393,6 +1400,7 @@ class SystemConfigurationForm(forms.ModelForm):
             'ai_chat_enabled': 'Habilitar Chat IA',
             'openai_api_key': 'API Key de OpenAI',
             'openai_model': 'Modelo de IA',
+            'ai_employee_analysis_prompt': 'Prompt para análisis de empleados',
             'enable_telegram_notifications': 'Activar notificaciones de Telegram',
             'telegram_bot_token': 'Token del Bot de Telegram',
             'telegram_chat_id': 'ID del Chat/Grupo de Telegram',
@@ -1405,6 +1413,7 @@ class SystemConfigurationForm(forms.ModelForm):
             'ai_chat_enabled': 'Habilita la funcionalidad de chat con IA',
             'openai_api_key': 'Clave de API de OpenAI para acceder a ChatGPT',
             'openai_model': 'Modelo de IA a utilizar (ej: gpt-4o, gpt-3.5-turbo)',
+            'ai_employee_analysis_prompt': 'Plantilla del prompt que se enviará a la IA para analizar candidatos. Usa {datos} donde se insertarán los datos del candidato.',
             'enable_telegram_notifications': 'Envía notificaciones cuando se crean nuevos tickets',
             'telegram_bot_token': 'Token proporcionado por @BotFather al crear el bot',
             'telegram_chat_id': 'ID del grupo donde enviar notificaciones (ej: -100123456789)',
@@ -1424,6 +1433,15 @@ class SystemConfigurationForm(forms.ModelForm):
             raise forms.ValidationError('El nombre del sitio no puede exceder 100 caracteres.')
         
         return site_name
+    
+    def clean_ai_employee_analysis_prompt(self):
+        """Validar el prompt de análisis de empleados"""
+        prompt = self.cleaned_data.get('ai_employee_analysis_prompt', '').strip()
+        
+        if prompt and '{datos}' not in prompt:
+            raise forms.ValidationError('El prompt debe contener la variable {datos} donde se insertarán los datos del candidato.')
+        
+        return prompt
 
 
 class DocumentForm(forms.ModelForm):
@@ -3180,3 +3198,322 @@ class ContactoWebForm(forms.ModelForm):
         if len(mensaje) < 10:
             raise forms.ValidationError('El mensaje debe tener al menos 10 caracteres.')
         return mensaje
+
+
+class EmployeeHiringOpinionForm(forms.ModelForm):
+    """Formulario para editar la opinión de reunión de contratación"""
+    
+    class Meta:
+        model = Employee
+        fields = ['hiring_meeting_opinion']
+        widgets = {
+            'hiring_meeting_opinion': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 6,
+                'placeholder': 'Escriba aquí la opinión sobre la reunión/entrevista de contratación...\n\nPuede incluir:\n- Impresión general del candidato\n- Puntos fuertes identificados\n- Áreas de mejora o preocupaciones\n- Recomendaciones para la decisión final\n- Comentarios sobre fit cultural',
+            })
+        }
+        labels = {
+            'hiring_meeting_opinion': 'Opinión de Reunión de Contratación'
+        }
+        help_texts = {
+            'hiring_meeting_opinion': 'Registre aquí sus comentarios y evaluación de la reunión/entrevista con el candidato.'
+        }
+
+
+class EmployeePayrollForm(forms.ModelForm):
+    """Formulario para agregar nóminas de empleados"""
+    
+    class Meta:
+        model = EmployeePayroll
+        fields = ['period_month', 'period_year', 'payroll_pdf', 'payment_receipt', 'gross_salary', 'net_salary', 'notes']
+        widgets = {
+            'period_month': forms.Select(attrs={
+                'class': 'form-select'
+            }, choices=[
+                (1, 'Enero'), (2, 'Febrero'), (3, 'Marzo'), (4, 'Abril'),
+                (5, 'Mayo'), (6, 'Junio'), (7, 'Julio'), (8, 'Agosto'),
+                (9, 'Septiembre'), (10, 'Octubre'), (11, 'Noviembre'), (12, 'Diciembre')
+            ]),
+            'period_year': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '2020',
+                'max': '2030',
+                'placeholder': 'Ej: 2025'
+            }),
+            'payroll_pdf': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': '.pdf'
+            }),
+            'payment_receipt': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': '.pdf,.jpg,.jpeg,.png'
+            }),
+            'gross_salary': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'placeholder': '0.00'
+            }),
+            'net_salary': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'placeholder': '0.00'
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Notas adicionales sobre esta nómina...'
+            })
+        }
+        labels = {
+            'period_month': 'Mes',
+            'period_year': 'Año',
+            'payroll_pdf': 'Archivo de Nómina (PDF)',
+            'payment_receipt': 'Comprobante de Pago',
+            'gross_salary': 'Salario Bruto (€)',
+            'net_salary': 'Salario Neto (€)',
+            'notes': 'Notas'
+        }
+        help_texts = {
+            'period_month': 'Seleccione el mes de la nómina',
+            'period_year': 'Ingrese el año de la nómina',
+            'payroll_pdf': 'Archivo PDF de la nómina (requerido)',
+            'payment_receipt': 'Comprobante de pago (opcional) - PDF, JPG o PNG',
+            'gross_salary': 'Salario bruto antes de descuentos',
+            'net_salary': 'Salario neto después de descuentos',
+            'notes': 'Información adicional sobre esta nómina'
+        }
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        period_month = cleaned_data.get('period_month')
+        period_year = cleaned_data.get('period_year')
+        
+        if period_month and period_year:
+            # Verificar que no sea una fecha futura
+            from django.utils import timezone
+            import datetime
+            
+            current_date = timezone.now().date()
+            period_date = datetime.date(period_year, period_month, 1)
+            
+            if period_date > current_date:
+                raise forms.ValidationError('No se puede agregar una nómina de un período futuro.')
+        
+        return cleaned_data
+    
+    def clean_payroll_pdf(self):
+        payroll_pdf = self.cleaned_data.get('payroll_pdf')
+        if payroll_pdf:
+            if not payroll_pdf.name.lower().endswith('.pdf'):
+                raise forms.ValidationError('El archivo de nómina debe ser un PDF.')
+            if payroll_pdf.size > 10 * 1024 * 1024:  # 10MB
+                raise forms.ValidationError('El archivo es demasiado grande. Máximo 10MB.')
+        return payroll_pdf
+    
+    def clean_payment_receipt(self):
+        payment_receipt = self.cleaned_data.get('payment_receipt')
+        if payment_receipt:
+            allowed_extensions = ['.pdf', '.jpg', '.jpeg', '.png']
+            if not any(payment_receipt.name.lower().endswith(ext) for ext in allowed_extensions):
+                raise forms.ValidationError('El comprobante debe ser PDF, JPG, JPEG o PNG.')
+            if payment_receipt.size > 5 * 1024 * 1024:  # 5MB
+                raise forms.ValidationError('El archivo es demasiado grande. Máximo 5MB.')
+        return payment_receipt
+
+
+class AgreementForm(forms.ModelForm):
+    """Formulario para crear y editar acuerdos"""
+    
+    generate_ai_content = forms.BooleanField(
+        required=False,
+        initial=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        label='Generar contenido con IA',
+        help_text='Generar automáticamente el contenido del acuerdo basado en el título'
+    )
+    
+    ai_prompt_addition = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 3,
+            'placeholder': 'Instrucciones adicionales para la IA (opcional)...'
+        }),
+        label='Instrucciones adicionales para IA',
+        help_text='Detalles específicos que quieres incluir en el acuerdo'
+    )
+    
+    class Meta:
+        model = Agreement
+        fields = ['title', 'body', 'status', 'expires_at', 'max_signers', 'requires_approval']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Acuerdo de Confidencialidad'
+            }),
+            'body': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 15,
+                'placeholder': 'Contenido completo del acuerdo...'
+            }),
+            'status': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'expires_at': forms.DateTimeInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local'
+            }),
+            'max_signers': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '1',
+                'max': '1000'
+            }),
+            'requires_approval': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            })
+        }
+        labels = {
+            'title': 'Título del Acuerdo',
+            'body': 'Contenido del Acuerdo',
+            'status': 'Estado',
+            'expires_at': 'Fecha de Expiración',
+            'max_signers': 'Máximo de Firmantes',
+            'requires_approval': 'Requiere Aprobación'
+        }
+        help_texts = {
+            'title': 'Nombre descriptivo del acuerdo',
+            'body': 'Contenido completo del acuerdo/contrato',
+            'status': 'Estado actual del acuerdo',
+            'expires_at': 'Fecha límite para firmar (opcional)',
+            'max_signers': 'Número máximo de personas que pueden firmar',
+            'requires_approval': 'Las firmas necesitan aprobación manual'
+        }
+    
+    def clean_expires_at(self):
+        expires_at = self.cleaned_data.get('expires_at')
+        if expires_at:
+            from django.utils import timezone
+            if expires_at <= timezone.now():
+                raise forms.ValidationError('La fecha de expiración debe ser en el futuro.')
+        return expires_at
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        generate_ai = cleaned_data.get('generate_ai_content')
+        body = cleaned_data.get('body')
+        title = cleaned_data.get('title')
+        
+        # Si se solicita generar contenido IA, no es necesario que haya body
+        if generate_ai and title:
+            # El contenido se generará en la vista
+            pass
+        elif not generate_ai and not body:
+            raise forms.ValidationError('Debes proporcionar el contenido del acuerdo o usar la generación con IA.')
+        
+        return cleaned_data
+
+
+class AgreementSignatureForm(forms.ModelForm):
+    """Formulario para firmar un acuerdo"""
+    
+    accept_terms = forms.BooleanField(
+        required=True,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        label='Acepto los términos y condiciones de este acuerdo',
+        help_text='Debes aceptar los términos para poder firmar'
+    )
+    
+    class Meta:
+        model = AgreementSignature
+        fields = ['signer_name', 'signer_email', 'signature_data']
+        widgets = {
+            'signer_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Tu nombre completo'
+            }),
+            'signer_email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'tu@email.com'
+            }),
+            'signature_data': forms.HiddenInput()
+        }
+        labels = {
+            'signer_name': 'Nombre Completo',
+            'signer_email': 'Correo Electrónico',
+            'signature_data': 'Firma'
+        }
+        help_texts = {
+            'signer_name': 'Tu nombre como aparecerá en el acuerdo',
+            'signer_email': 'Correo para notificaciones y descarga del PDF',
+        }
+    
+    def clean_signer_email(self):
+        email = self.cleaned_data.get('signer_email')
+        agreement = getattr(self, 'agreement', None)
+        
+        if agreement and email:
+            # Verificar si ya existe una firma para este email en este acuerdo
+            existing = AgreementSignature.objects.filter(
+                agreement=agreement,
+                signer_email=email
+            ).first()
+            
+            if existing and existing != self.instance:
+                raise forms.ValidationError('Este correo ya ha firmado este acuerdo.')
+        
+        return email
+    
+    def clean_signature_data(self):
+        signature_data = self.cleaned_data.get('signature_data')
+        if not signature_data:
+            raise forms.ValidationError('Debes proporcionar tu firma digital.')
+        return signature_data
+
+
+class AgreementPublicForm(forms.Form):
+    """Formulario para publicar un acuerdo"""
+    
+    confirm_publish = forms.BooleanField(
+        required=True,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        label='Confirmo que quiero publicar este acuerdo',
+        help_text='Una vez publicado, el acuerdo estará disponible para firmar'
+    )
+    
+    send_notifications = forms.BooleanField(
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        label='Enviar notificaciones por email',
+        help_text='Enviar el enlace del acuerdo por correo (si está configurado)'
+    )
+    
+    email_list = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 3,
+            'placeholder': 'email1@ejemplo.com, email2@ejemplo.com'
+        }),
+        label='Lista de correos (opcional)',
+        help_text='Correos separados por comas para enviar el enlace del acuerdo'
+    )
+    
+    def clean_email_list(self):
+        email_list = self.cleaned_data.get('email_list', '').strip()
+        if email_list:
+            emails = [email.strip() for email in email_list.split(',')]
+            from django.core.validators import validate_email
+            from django.core.exceptions import ValidationError
+            
+            for email in emails:
+                try:
+                    validate_email(email)
+                except ValidationError:
+                    raise forms.ValidationError(f'Email inválido: {email}')
+            
+            return emails
+        return []

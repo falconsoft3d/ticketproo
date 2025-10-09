@@ -1,0 +1,318 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+.publish-header {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+.publish-card {
+    border: none;
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
+    border-radius: 15px;
+    border-top: 4px solid #007bff;
+}
+.agreement-preview {
+    background: #f8f9fa;
+    border-left: 4px solid #007bff;
+    border-radius: 0 10px 10px 0;
+    padding: 1.5rem;
+    margin: 1rem 0;
+    max-height: 400px;
+    overflow-y: auto;
+}
+.publish-icon {
+    font-size: 4rem;
+    color: #007bff;
+    opacity: 0.3;
+}
+.checklist-item {
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+}
+.checklist-ok {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+}
+.checklist-warning {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+}
+.checklist-error {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+}
+.url-display {
+    background: #e3f2fd;
+    border: 2px dashed #2196f3;
+    border-radius: 10px;
+    padding: 1rem;
+    font-family: monospace;
+    word-break: break-all;
+}
+</style>
+{% endblock %}
+
+{% block title %}Publicar Acuerdo - {{ agreement.title }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="publish-header rounded">
+        <div class="text-center">
+            <h1>
+                <i class="bi bi-broadcast"></i> 
+                Publicar Acuerdo
+            </h1>
+            <p class="mb-0">Habilita las firmas digitales para este acuerdo</p>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="publish-card card">
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Información y checklist -->
+                        <div class="col-lg-6">
+                            <div class="text-center mb-4">
+                                <div class="publish-icon mb-3">
+                                    <i class="bi bi-rocket-takeoff"></i>
+                                </div>
+                                <h4>¿Listo para publicar?</h4>
+                                <p class="text-muted">
+                                    Al publicar este acuerdo, las personas podrán acceder y firmarlo usando una URL pública.
+                                </p>
+                            </div>
+
+                            <!-- Checklist de validación -->
+                            <div class="mb-4">
+                                <h5><i class="bi bi-list-check"></i> Verificación Pre-Publicación</h5>
+                                
+                                <!-- Verificar título -->
+                                {% if agreement.title %}
+                                    <div class="checklist-item checklist-ok">
+                                        <i class="bi bi-check-circle-fill me-2"></i>
+                                        <div>
+                                            <strong>Título definido:</strong> {{ agreement.title|truncatechars:50 }}
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="checklist-item checklist-error">
+                                        <i class="bi bi-x-circle-fill me-2"></i>
+                                        <div><strong>Falta título del acuerdo</strong></div>
+                                    </div>
+                                {% endif %}
+
+                                <!-- Verificar contenido -->
+                                {% if agreement.body %}
+                                    <div class="checklist-item checklist-ok">
+                                        <i class="bi bi-check-circle-fill me-2"></i>
+                                        <div>
+                                            <strong>Contenido definido:</strong> {{ agreement.body|length }} caracteres
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="checklist-item checklist-error">
+                                        <i class="bi bi-x-circle-fill me-2"></i>
+                                        <div><strong>Falta contenido del acuerdo</strong></div>
+                                    </div>
+                                {% endif %}
+
+                                <!-- Verificar límite de firmas -->
+                                {% if agreement.max_signers and agreement.max_signers > 0 %}
+                                    <div class="checklist-item checklist-ok">
+                                        <i class="bi bi-check-circle-fill me-2"></i>
+                                        <div>
+                                            <strong>Límite de firmas:</strong> Máximo {{ agreement.max_signers }} firma{{ agreement.max_signers|pluralize }}
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="checklist-item checklist-warning">
+                                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                        <div><strong>Sin límite de firmas definido</strong></div>
+                                    </div>
+                                {% endif %}
+
+                                <!-- Verificar vencimiento -->
+                                {% if agreement.expires_at %}
+                                    {% if agreement.expires_at > now %}
+                                        <div class="checklist-item checklist-ok">
+                                            <i class="bi bi-check-circle-fill me-2"></i>
+                                            <div>
+                                                <strong>Vencimiento:</strong> {{ agreement.expires_at|date:"d/m/Y H:i" }}
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <div class="checklist-item checklist-error">
+                                            <i class="bi bi-x-circle-fill me-2"></i>
+                                            <div><strong>Fecha de vencimiento ya pasó</strong></div>
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    <div class="checklist-item checklist-ok">
+                                        <i class="bi bi-check-circle-fill me-2"></i>
+                                        <div><strong>Sin fecha de vencimiento</strong> (válido indefinidamente)</div>
+                                    </div>
+                                {% endif %}
+
+                                <!-- Verificar aprobación -->
+                                {% if agreement.requires_approval %}
+                                    <div class="checklist-item checklist-warning">
+                                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                        <div><strong>Requiere aprobación</strong> de las firmas</div>
+                                    </div>
+                                {% else %}
+                                    <div class="checklist-item checklist-ok">
+                                        <i class="bi bi-check-circle-fill me-2"></i>
+                                        <div><strong>Firmas automáticas</strong> (sin aprobación)</div>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- URL que se generará -->
+                            <div class="mb-4">
+                                <h6><i class="bi bi-link-45deg"></i> URL Pública que se Generará:</h6>
+                                <div class="url-display">
+                                    <small>{{ request.build_absolute_uri }}{% url 'public_agreement_sign' 'TOKEN-GENERADO' %}</small>
+                                </div>
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i>
+                                    Esta URL se generará automáticamente con un token único y seguro
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Vista previa del acuerdo -->
+                        <div class="col-lg-6">
+                            <h5><i class="bi bi-eye"></i> Vista Previa</h5>
+                            <div class="agreement-preview">
+                                <h5>{{ agreement.title }}</h5>
+                                <hr>
+                                <div class="text-muted small">
+                                    <div class="row mb-2">
+                                        <div class="col-6"><strong>Empresa:</strong></div>
+                                        <div class="col-6">{{ agreement.company.name }}</div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col-6"><strong>Creado por:</strong></div>
+                                        <div class="col-6">{{ agreement.created_by.get_full_name|default:agreement.created_by.username }}</div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col-6"><strong>Fecha:</strong></div>
+                                        <div class="col-6">{{ agreement.created_at|date:"d/m/Y" }}</div>
+                                    </div>
+                                </div>
+                                <hr>
+                                <div style="white-space: pre-wrap; font-size: 0.9rem;">
+                                    {{ agreement.body }}
+                                </div>
+                                
+                                <div class="mt-3 p-3 bg-white border rounded">
+                                    <h6>Sección de Firmas (se mostrará después)</h6>
+                                    <div class="text-center text-muted">
+                                        <i class="bi bi-pen display-6"></i><br>
+                                        <small>Aquí aparecerá el formulario de firma digital</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Opciones de publicación -->
+                    <form method="post" class="border-top pt-4">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle"></i>
+                                    <strong>¿Qué sucede al publicar?</strong>
+                                    <ul class="mb-0 mt-2">
+                                        <li>Se genera una URL pública única</li>
+                                        <li>Las personas pueden acceder sin registro</li>
+                                        <li>Se habilita la firma digital</li>
+                                        <li>El acuerdo cambia a estado "Publicado"</li>
+                                        <li>Se restringe la edición del contenido</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    <strong>Importante:</strong>
+                                    <ul class="mb-0 mt-2">
+                                        <li>Una vez publicado, no podrás editar el contenido</li>
+                                        <li>Solo podrás cambiar configuración básica</li>
+                                        <li>La URL será accesible públicamente</li>
+                                        <li>Puedes despublicar en cualquier momento</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones de acción -->
+                        <div class="d-flex gap-3 justify-content-center mt-4">
+                            <a href="{% url 'agreement_detail' agreement.id %}" class="btn btn-secondary btn-lg">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            
+                            {% if agreement.title and agreement.body %}
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-rocket-takeoff"></i> Publicar Acuerdo
+                                </button>
+                            {% else %}
+                                <button type="button" class="btn btn-primary btn-lg" disabled 
+                                        title="Completa el título y contenido antes de publicar">
+                                    <i class="bi bi-rocket-takeoff"></i> Publicar Acuerdo
+                                </button>
+                                <small class="text-danger align-self-center">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    Completa la información requerida
+                                </small>
+                            {% endif %}
+                        </div>
+
+                        <div class="text-center mt-3">
+                            <small class="text-muted">
+                                También puedes <a href="{% url 'agreement_edit' agreement.id %}">editar el acuerdo</a> 
+                                antes de publicarlo
+                            </small>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Confirmar publicación
+document.querySelector('form').addEventListener('submit', function(e) {
+    const confirmed = confirm(
+        '¿Estás seguro de que quieres publicar este acuerdo?\n\n' +
+        'Una vez publicado:\n' +
+        '• Se generará una URL pública\n' +
+        '• Las personas podrán firmarlo\n' +
+        '• No podrás editar el contenido\n' +
+        '• El acuerdo será visible públicamente'
+    );
+    
+    if (!confirmed) {
+        e.preventDefault();
+    }
+});
+</script>
+{% endblock %}

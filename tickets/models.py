@@ -1290,6 +1290,13 @@ class SystemConfiguration(models.Model):
         help_text='Habilita o deshabilita la funcionalidad de chat con IA'
     )
     
+    # Configuración de análisis de empleados con IA
+    ai_employee_analysis_prompt = models.TextField(
+        default='Analiza el siguiente perfil de candidato y dame un resumen profesional y una puntuación del 1 al 10 para el cargo solicitado. Considera experiencia, formación, habilidades y adecuación al puesto.\n\nDatos del candidato:\n{datos}\n\nPor favor, responde en este formato:\nResumen: [Aquí tu análisis profesional del candidato]\nPuntuación: [Número del 1 al 10]',
+        verbose_name='Prompt para análisis de empleados',
+        help_text='Plantilla del prompt que se enviará a la IA para analizar candidatos. Usa {datos} donde se insertarán los datos del candidato.'
+    )
+    
     # Configuración de Telegram
     enable_telegram_notifications = models.BooleanField(
         default=False,
@@ -4271,3 +4278,624 @@ class PublicDocumentUpload(models.Model):
         """Devuelve la URL pública para subir documentos"""
         from django.urls import reverse
         return reverse('public_document_upload', kwargs={'token': self.upload_token})
+
+
+class Employee(models.Model):
+    """Modelo para gestionar empleados de la empresa"""
+    
+    # Información personal básica
+    first_name = models.CharField(
+        max_length=100,
+        verbose_name='Nombre'
+    )
+    last_name = models.CharField(
+        max_length=100,
+        verbose_name='Apellidos'
+    )
+    email = models.EmailField(
+        unique=True,
+        verbose_name='Correo electrónico'
+    )
+    phone = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name='Teléfono'
+    )
+    
+    # Información profesional
+    position = models.CharField(
+        max_length=150,
+        verbose_name='Cargo'
+    )
+    salary_euros = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Salario (EUR)'
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción/Experiencia'
+    )
+    
+    # Currículo
+    resume_file = models.FileField(
+        upload_to='resumes/',
+        null=True,
+        blank=True,
+        verbose_name='Archivo de currículo'
+    )
+    
+    # Análisis de IA
+    ai_analysis = models.TextField(
+        blank=True,
+        verbose_name='Análisis de IA',
+        help_text='Resumen automático generado por IA'
+    )
+    ai_score = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name='Puntuación IA (1-10)',
+        help_text='Puntuación automática del candidato'
+    )
+    
+    # Opinión de reunión de contratación
+    hiring_meeting_opinion = models.TextField(
+        blank=True,
+        verbose_name='Opinión de reunión de contratación',
+        help_text='Comentarios y evaluación de la reunión/entrevista de contratación'
+    )
+    
+    # Relaciones
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.CASCADE,
+        related_name='employees',
+        verbose_name='Empresa'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_employees',
+        verbose_name='Creado por'
+    )
+    
+    # Estados
+    STATUS_CHOICES = [
+        ('candidate', 'Candidato'),
+        ('in_process', 'En trámites'),
+        ('employee', 'Empleado'),
+        ('not_employee', 'No empleado'),
+    ]
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='candidate',
+        verbose_name='Estado'
+    )
+    
+    # Timestamps
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de aplicación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Empleado'
+        verbose_name_plural = 'Empleados'
+    
+    def __str__(self):
+        return f"{self.first_name} {self.last_name} - {self.position}"
+    
+    def get_full_name(self):
+        return f"{self.first_name} {self.last_name}"
+    
+    def is_candidate(self):
+        return self.status == 'candidate'
+    
+    def is_in_process(self):
+        return self.status == 'in_process'
+    
+    def is_employee(self):
+        return self.status == 'employee'
+    
+    def is_not_employee(self):
+        return self.status == 'not_employee'
+    
+    def get_status_color(self):
+        """Devuelve el color para el badge según el estado"""
+        colors = {
+            'candidate': 'primary',
+            'in_process': 'warning',
+            'employee': 'success',
+            'not_employee': 'danger',
+        }
+        return colors.get(self.status, 'secondary')
+
+
+class EmployeePayroll(models.Model):
+    """Modelo para gestionar nóminas de empleados"""
+    
+    # Relación con el empleado
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name='payrolls',
+        verbose_name='Empleado'
+    )
+    
+    # Información de la nómina
+    period_month = models.PositiveIntegerField(
+        verbose_name='Mes',
+        help_text='Mes de la nómina (1-12)'
+    )
+    period_year = models.PositiveIntegerField(
+        verbose_name='Año',
+        help_text='Año de la nómina'
+    )
+    
+    # Archivos
+    payroll_pdf = models.FileField(
+        upload_to='payrolls/',
+        verbose_name='Nómina (PDF)',
+        help_text='Archivo PDF de la nómina'
+    )
+    payment_receipt = models.FileField(
+        upload_to='payment_receipts/',
+        null=True,
+        blank=True,
+        verbose_name='Comprobante de pago',
+        help_text='Archivo del comprobante de pago (opcional)'
+    )
+    
+    # Información adicional
+    gross_salary = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Salario bruto'
+    )
+    net_salary = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Salario neto'
+    )
+    notes = models.TextField(
+        blank=True,
+        verbose_name='Notas',
+        help_text='Notas adicionales sobre esta nómina'
+    )
+    
+    # Control
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_payrolls',
+        verbose_name='Creado por'
+    )
+    
+    # Timestamps
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de registro'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        ordering = ['-period_year', '-period_month', '-created_at']
+        verbose_name = 'Nómina de Empleado'
+        verbose_name_plural = 'Nóminas de Empleados'
+        unique_together = ['employee', 'period_month', 'period_year']
+    
+    def __str__(self):
+        return f"{self.employee.get_full_name()} - {self.get_period_display()}"
+    
+    def get_period_display(self):
+        """Devuelve el período en formato legible"""
+        months = {
+            1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril',
+            5: 'Mayo', 6: 'Junio', 7: 'Julio', 8: 'Agosto',
+            9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
+        }
+        return f"{months.get(self.period_month, self.period_month)}/{self.period_year}"
+    
+    def has_payment_receipt(self):
+        """Verifica si tiene comprobante de pago"""
+        return bool(self.payment_receipt)
+
+
+class JobApplicationToken(models.Model):
+    """Modelo para gestionar tokens de aplicación pública a empleos"""
+    
+    # Token único
+    application_token = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+        verbose_name='Token de aplicación'
+    )
+    
+    # Información del puesto
+    job_title = models.CharField(
+        max_length=150,
+        verbose_name='Título del puesto'
+    )
+    job_description = models.TextField(
+        verbose_name='Descripción del puesto'
+    )
+    proposed_salary_euros = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Salario propuesto (EUR)',
+        help_text='Salario que la empresa está dispuesta a pagar'
+    )
+    
+    # Configuración
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.CASCADE,
+        related_name='job_application_tokens',
+        verbose_name='Empresa'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='created_job_tokens',
+        verbose_name='Creado por'
+    )
+    
+    # Estado y expiración
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo'
+    )
+    expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de expiración'
+    )
+    max_applications = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name='Máximo de aplicaciones'
+    )
+    application_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Aplicaciones recibidas'
+    )
+    
+    # Timestamps
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Token de Aplicación de Empleo'
+        verbose_name_plural = 'Tokens de Aplicación de Empleo'
+    
+    def __str__(self):
+        return f"{self.job_title} - {self.application_token}"
+    
+    def is_valid(self):
+        """Verifica si el token está válido para aplicaciones"""
+        if not self.is_active:
+            return False
+        
+        if self.expires_at and timezone.now() > self.expires_at:
+            return False
+        
+        if self.max_applications and self.application_count >= self.max_applications:
+            return False
+        
+        return True
+    
+    def get_public_url(self, request=None):
+        """Devuelve la URL pública para aplicar al empleo"""
+        from django.urls import reverse
+        url = reverse('public_job_application', kwargs={'token': self.application_token})
+        if request:
+            return request.build_absolute_uri(url)
+        return url
+    
+    def get_qr_data(self):
+        """Datos para generar código QR"""
+        from django.conf import settings
+        base_url = getattr(settings, 'BASE_URL', 'http://localhost:8000')
+        return f"{base_url}{self.get_public_url()}"
+
+
+class Agreement(models.Model):
+    """Modelo para gestionar acuerdos/contratos con firma digital"""
+    
+    STATUS_CHOICES = [
+        ('draft', 'Borrador'),
+        ('published', 'Publicado'),
+        ('signed', 'Firmado'),
+        ('cancelled', 'Cancelado'),
+    ]
+    
+    # Información básica del acuerdo
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título del Acuerdo'
+    )
+    body = models.TextField(
+        verbose_name='Cuerpo del Acuerdo',
+        help_text='Contenido completo del acuerdo/contrato'
+    )
+    
+    # Control de estado
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='draft',
+        verbose_name='Estado'
+    )
+    
+    # URLs y tokens
+    public_token = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name='Token Público'
+    )
+    
+    # Metadatos
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name='Empresa'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_agreements',
+        verbose_name='Creado por'
+    )
+    
+    # Control de fechas
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    published_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de publicación'
+    )
+    expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de expiración'
+    )
+    
+    # Configuración
+    max_signers = models.PositiveIntegerField(
+        default=10,
+        verbose_name='Máximo de firmantes',
+        help_text='Número máximo de personas que pueden firmar este acuerdo'
+    )
+    requires_approval = models.BooleanField(
+        default=False,
+        verbose_name='Requiere aprobación',
+        help_text='Las firmas requieren aprobación antes de ser válidas'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Acuerdo'
+        verbose_name_plural = 'Acuerdos'
+    
+    def __str__(self):
+        return self.title
+    
+    def save(self, *args, **kwargs):
+        if not self.public_token:
+            import secrets
+            self.public_token = secrets.token_urlsafe(32)
+        super().save(*args, **kwargs)
+    
+    @property
+    def is_editable(self):
+        """Un acuerdo es editable si no tiene firmas válidas"""
+        return not self.signatures.filter(is_valid=True).exists()
+    
+    @property
+    def signature_count(self):
+        """Número de firmas válidas"""
+        return self.signatures.filter(is_valid=True).count()
+    
+    @property
+    def is_expired(self):
+        """Verifica si el acuerdo ha expirado"""
+        if self.expires_at:
+            return timezone.now() > self.expires_at
+        return False
+    
+    @property
+    def can_be_signed(self):
+        """Verifica si el acuerdo puede ser firmado"""
+        if self.status != 'published':
+            return False
+        if self.is_expired:
+            return False
+        if self.max_signers and self.signature_count >= self.max_signers:
+            return False
+        return True
+    
+    def get_public_url(self, request=None):
+        """URL pública para firmar el acuerdo"""
+        from django.urls import reverse
+        url = reverse('public_agreement_sign', kwargs={'token': self.public_token})
+        if request:
+            return request.build_absolute_uri(url)
+        return url
+    
+    def generate_ai_content(self, prompt_addition=""):
+        """Generar contenido del acuerdo con IA basado en el título"""
+        from tickets.models import SystemConfiguration
+        
+        config = SystemConfiguration.objects.first()
+        if not config or not config.ai_chat_enabled or not config.openai_api_key:
+            return None
+            
+        try:
+            import openai
+            client = openai.OpenAI(api_key=config.openai_api_key)
+            
+            base_prompt = f"""
+Genera el contenido completo de un acuerdo/contrato profesional con el título: "{self.title}"
+
+El acuerdo debe incluir:
+1. Introducción y propósito
+2. Términos y condiciones principales
+3. Derechos y obligaciones de las partes
+4. Cláusulas de cumplimiento
+5. Términos de vigencia
+6. Cláusulas de resolución de conflictos
+7. Firmas y fecha
+
+Haz que sea profesional, claro y legalmente sólido.
+Usa un lenguaje formal pero comprensible.
+Incluye espacios para nombres y firmas al final.
+
+{prompt_addition}
+"""
+            
+            response = client.chat.completions.create(
+                model=config.openai_model or "gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "Eres un experto abogado especializado en redacción de contratos y acuerdos legales."},
+                    {"role": "user", "content": base_prompt}
+                ],
+                max_tokens=2000,
+                temperature=0.7
+            )
+            
+            return response.choices[0].message.content
+            
+        except Exception as e:
+            print(f"Error generando contenido IA: {e}")
+            return None
+
+
+class AgreementSignature(models.Model):
+    """Modelo para las firmas de acuerdos"""
+    
+    # Relación con el acuerdo
+    agreement = models.ForeignKey(
+        Agreement,
+        on_delete=models.CASCADE,
+        related_name='signatures',
+        verbose_name='Acuerdo'
+    )
+    
+    # Información del firmante
+    signer_name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre del firmante'
+    )
+    signer_email = models.EmailField(
+        verbose_name='Email del firmante'
+    )
+    signature_data = models.TextField(
+        verbose_name='Datos de la firma',
+        help_text='Datos de la firma digital (base64)'
+    )
+    
+    # Control de firma
+    signed_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de firma'
+    )
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name='Dirección IP'
+    )
+    user_agent = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name='User Agent'
+    )
+    
+    # Estado de la firma
+    is_valid = models.BooleanField(
+        default=True,
+        verbose_name='Firma válida'
+    )
+    is_approved = models.BooleanField(
+        default=True,
+        verbose_name='Firma aprobada'
+    )
+    approved_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='approved_signatures',
+        verbose_name='Aprobado por'
+    )
+    approved_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de aprobación'
+    )
+    
+    # Descarga del PDF
+    pdf_downloaded_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='PDF descargado en'
+    )
+    download_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Veces descargado'
+    )
+    
+    class Meta:
+        ordering = ['-signed_at']
+        verbose_name = 'Firma de Acuerdo'
+        verbose_name_plural = 'Firmas de Acuerdos'
+        unique_together = ['agreement', 'signer_email']
+    
+    def __str__(self):
+        return f"{self.signer_name} - {self.agreement.title}"
+    
+    def get_download_url(self, request=None):
+        """URL para descargar el PDF firmado"""
+        from django.urls import reverse
+        url = reverse('download_signed_agreement', kwargs={
+            'agreement_token': self.agreement.public_token,
+            'signature_id': self.pk
+        })
+        if request:
+            return request.build_absolute_uri(url)
+        return url

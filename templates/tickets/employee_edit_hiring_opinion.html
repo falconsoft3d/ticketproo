@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+.opinion-form {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 2rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+.employee-info {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1.5rem;
+    border-radius: 10px;
+    margin-bottom: 2rem;
+}
+.status-badge {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.75rem;
+}
+.form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+.btn-save {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    padding: 0.75rem 2rem;
+    font-weight: 500;
+}
+.btn-save:hover {
+    background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+    transform: translateY(-1px);
+    transition: all 0.2s ease;
+}
+.guidelines {
+    background: #e3f2fd;
+    border: 1px solid #bbdefb;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+.guidelines h6 {
+    color: #1976d2;
+    font-weight: 600;
+}
+.guidelines ul {
+    margin-bottom: 0;
+    color: #424242;
+}
+</style>
+{% endblock %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Información del empleado -->
+    <div class="employee-info">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h2><i class="bi bi-person-badge"></i> {{ employee.get_full_name }}</h2>
+                <h5>{{ employee.position }} - {{ employee.company.name }}</h5>
+                <p class="mb-0"><i class="bi bi-envelope"></i> {{ employee.email }}</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <span class="badge bg-{{ employee.get_status_color }} status-badge">
+                    <i class="bi bi-circle-fill"></i> {{ employee.get_status_display }}
+                </span>
+                <div class="mt-2">
+                    <small>Aplicó: {{ employee.created_at|date:"d/m/Y" }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulario de opinión -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="opinion-form">
+                <h4 class="mb-4">
+                    <i class="bi bi-chat-square-text"></i> 
+                    Opinión de Reunión de Contratación
+                </h4>
+
+                <!-- Pautas para la evaluación -->
+                <div class="guidelines">
+                    <h6><i class="bi bi-lightbulb"></i> Pautas para la evaluación:</h6>
+                    <ul class="mb-0">
+                        <li><strong>Impresión general:</strong> ¿Cómo fue la primera impresión y la química general?</li>
+                        <li><strong>Competencias técnicas:</strong> ¿Demostró las habilidades requeridas para el puesto?</li>
+                        <li><strong>Fit cultural:</strong> ¿Se alinea con los valores y cultura de la empresa?</li>
+                        <li><strong>Motivación:</strong> ¿Mostró interés genuino en el puesto y la empresa?</li>
+                        <li><strong>Comunicación:</strong> ¿Se expresó claramente y escuchó activamente?</li>
+                        <li><strong>Recomendación:</strong> ¿Cuál es su recomendación para la decisión final?</li>
+                    </ul>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    {% if form.errors %}
+                        <div class="alert alert-danger">
+                            <h6><i class="bi bi-exclamation-triangle"></i> Por favor, corrige los siguientes errores:</h6>
+                            {{ form.errors }}
+                        </div>
+                    {% endif %}
+
+                    <div class="mb-4">
+                        <label for="{{ form.hiring_meeting_opinion.id_for_label }}" class="form-label">
+                            <i class="bi bi-chat-dots"></i> {{ form.hiring_meeting_opinion.label }}
+                        </label>
+                        {{ form.hiring_meeting_opinion }}
+                        <div class="form-text">
+                            <i class="bi bi-info-circle"></i> {{ form.hiring_meeting_opinion.help_text }}
+                        </div>
+                        {% if employee.hiring_meeting_opinion %}
+                        <div class="mt-2">
+                            <small class="text-success">
+                                <i class="bi bi-check-circle"></i> Última actualización: {{ employee.updated_at|date:"d/m/Y H:i" }}
+                            </small>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex gap-3">
+                        <button type="submit" class="btn btn-primary btn-save">
+                            <i class="bi bi-check-lg"></i> Guardar Opinión
+                        </button>
+                        
+                        {% if employee.status in 'candidate,in_process' %}
+                            <a href="{% url 'candidate_detail' employee.pk %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Volver al Perfil
+                            </a>
+                        {% else %}
+                            <a href="{% url 'active_employee_detail' employee.pk %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Volver al Perfil
+                            </a>
+                        {% endif %}
+                        
+                        {% if employee.status == 'candidate' %}
+                            <a href="{% url 'candidate_list' %}" class="btn btn-outline-info">
+                                <i class="bi bi-list"></i> Lista de Candidatos
+                            </a>
+                        {% elif employee.status == 'employee' %}
+                            <a href="{% url 'active_employee_list' %}" class="btn btn-outline-info">
+                                <i class="bi bi-list"></i> Lista de Empleados
+                            </a>
+                        {% endif %}
+                    </div>
+                </form>
+
+                <!-- Vista previa de la opinión actual -->
+                {% if employee.hiring_meeting_opinion %}
+                <div class="mt-4 pt-4 border-top">
+                    <h6><i class="bi bi-eye"></i> Opinión Actual:</h6>
+                    <div class="bg-white p-3 border rounded">
+                        <div style="white-space: pre-wrap;">{{ employee.hiring_meeting_opinion }}</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Auto-focus en el campo de texto
+    $('#{{ form.hiring_meeting_opinion.id_for_label }}').focus();
+    
+    // Contador de caracteres (opcional)
+    const textarea = $('#{{ form.hiring_meeting_opinion.id_for_label }}');
+    const charCount = $('<div class="text-muted small mt-1">Caracteres: <span id="char-count">0</span></div>');
+    textarea.after(charCount);
+    
+    textarea.on('input', function() {
+        $('#char-count').text($(this).val().length);
+    });
+    
+    // Trigger inicial
+    textarea.trigger('input');
+    
+    // Confirmar si hay cambios no guardados
+    let originalValue = textarea.val();
+    window.addEventListener('beforeunload', function(e) {
+        if (textarea.val() !== originalValue) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+    
+    // Resetear cuando se envía el formulario
+    $('form').on('submit', function() {
+        window.removeEventListener('beforeunload');
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,338 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load project_extras %}
+
+{% block extra_css %}
+<style>
+.token-header {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+.qr-code {
+    max-width: 200px;
+}
+.url-box {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    font-family: monospace;
+    font-size: 0.9em;
+    word-break: break-all;
+}
+.salary-highlight {
+    color: #28a745;
+    font-weight: 600;
+    font-size: 1.2em;
+}
+.stats-card {
+    border-left: 4px solid #007bff;
+    background-color: #f8f9fa;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Cabecera del token -->
+    <div class="token-header rounded">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1><i class="bi bi-briefcase"></i> {{ token.job_title }}</h1>
+                    <h4>{{ token.company.name }}</h4>
+                    <p class="mb-0">
+                        Enlace de aplicación creado por {{ token.created_by.get_full_name|default:token.created_by.username }}
+                    </p>
+                </div>
+                <div class="col-md-4 text-end">
+                    {% if token.is_active %}
+                        <span class="badge bg-success fs-6 px-3 py-2">Activo</span>
+                    {% else %}
+                        <span class="badge bg-danger fs-6 px-3 py-2">Inactivo</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información del enlace -->
+        <div class="col-lg-8">
+            <!-- Descripción del puesto -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-info-circle"></i> Descripción del Puesto</h5>
+                </div>
+                <div class="card-body">
+                    <div style="white-space: pre-wrap;">{{ token.job_description }}</div>
+                    
+                    {% if token.proposed_salary_euros %}
+                    <div class="mt-3 p-3 bg-light rounded">
+                        <h6>Salario Propuesto:</h6>
+                        <span class="salary-highlight">€{{ token.proposed_salary_euros|floatformat:0 }}</span> anuales
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Configuración del enlace -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-gear"></i> Configuración del Enlace</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <strong>Estado:</strong><br>
+                                {% if token.is_active %}
+                                    <span class="text-success">✅ Activo</span>
+                                {% else %}
+                                    <span class="text-danger">❌ Inactivo</span>
+                                {% endif %}
+                            </div>
+                            <div class="mb-3">
+                                <strong>Aplicaciones recibidas:</strong><br>
+                                {{ token.application_count }}
+                                {% if token.max_applications %} / {{ token.max_applications }}{% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <strong>Creado:</strong><br>
+                                {{ token.created_at|date:"d/m/Y H:i" }}
+                            </div>
+                            {% if token.expires_at %}
+                            <div class="mb-3">
+                                <strong>Expira:</strong><br>
+                                <span class="{% if token.expires_at < now %}text-danger{% else %}text-warning{% endif %}">
+                                    {{ token.expires_at|date:"d/m/Y H:i" }}
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aplicaciones recibidas -->
+            {% if applications %}
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-people"></i> Aplicaciones Recibidas ({{ applications|length }})</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Email</th>
+                                    <th>Estado</th>
+                                    <th>Puntuación IA</th>
+                                    <th>Fecha</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for application in applications %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ application.get_full_name }}</strong><br>
+                                        <small class="text-muted">{{ application.position }}</small>
+                                    </td>
+                                    <td>
+                                        <a href="mailto:{{ application.email }}">{{ application.email }}</a>
+                                        {% if application.phone %}<br>
+                                        <small><a href="tel:{{ application.phone }}">{{ application.phone }}</a></small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if application.status == 'applied' %}
+                                            <span class="badge bg-warning">{{ application.get_status_display }}</span>
+                                        {% elif application.status == 'interview' %}
+                                            <span class="badge bg-info">{{ application.get_status_display }}</span>
+                                        {% elif application.status == 'hired' %}
+                                            <span class="badge bg-success">{{ application.get_status_display }}</span>
+                                        {% elif application.status == 'rejected' %}
+                                            <span class="badge bg-danger">{{ application.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if application.ai_score %}
+                                            {% if application.ai_score >= 8 %}
+                                                <span class="text-success fw-bold">{{ application.ai_score }}/10</span>
+                                            {% elif application.ai_score >= 6 %}
+                                                <span class="text-warning fw-bold">{{ application.ai_score }}/10</span>
+                                            {% else %}
+                                                <span class="text-danger fw-bold">{{ application.ai_score }}/10</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {{ application.created_at|date:"d/m/Y" }}<br>
+                                        <small class="text-muted">{{ application.created_at|time:"H:i" }}</small>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'employee_detail' application.pk %}" class="btn btn-sm btn-primary">
+                                            <i class="bi bi-eye"></i> Ver
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="bi bi-inbox fa-3x text-muted mb-3"></i>
+                    <h5>Sin aplicaciones aún</h5>
+                    <p class="text-muted">No se han recibido aplicaciones para este puesto.</p>
+                    <p class="small text-muted">Comparte el enlace para empezar a recibir candidatos.</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Panel lateral -->
+        <div class="col-lg-4">
+            <!-- Código QR y URL -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-qr-code"></i> Código QR y URL</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ token.get_qr_data|urlencode }}" 
+                             alt="QR Code" class="img-fluid qr-code">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">URL Pública:</label>
+                        <div class="url-box">
+                            {% absolute_url token.get_public_url %}
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" onclick="copyToClipboard('{% absolute_url token.get_public_url %}')">
+                            <i class="bi bi-clipboard"></i> Copiar URL
+                        </button>
+                        <a href="{{ token.get_public_url }}" class="btn btn-outline-primary" target="_blank">
+                            <i class="bi bi-box-arrow-up-right"></i> Abrir Enlace
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-graph-up"></i> Estadísticas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="stats-card p-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="mb-0 text-primary">{{ token.application_count }}</h4>
+                                <small class="text-muted">Aplicaciones totales</small>
+                            </div>
+                            <i class="bi bi-people fa-2x text-primary"></i>
+                        </div>
+                    </div>
+                    
+                    {% if token.max_applications %}
+                    <div class="stats-card p-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="mb-0 text-warning">{{ token.max_applications|add:"-token.application_count" }}</h4>
+                                <small class="text-muted">Plazas restantes</small>
+                            </div>
+                            <i class="bi bi-hourglass-split fa-2x text-warning"></i>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="stats-card p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="mb-0 text-success">
+                                    {% if token.is_valid %}✅{% else %}❌{% endif %}
+                                </h4>
+                                <small class="text-muted">Estado del enlace</small>
+                            </div>
+                            <i class="bi bi-link-45deg fa-2x text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-tools"></i> Acciones</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'job_application_token_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver a la Lista
+                        </a>
+                        <a href="{% url 'employee_list' %}" class="btn btn-primary">
+                            <i class="bi bi-people"></i> Ver Todos los Empleados
+                        </a>
+                        {% if token.is_active %}
+                        <button class="btn btn-warning" onclick="if(confirm('¿Desactivar este enlace?')) window.location.href='#'">
+                            <i class="bi bi-pause-circle"></i> Desactivar Enlace
+                        </button>
+                        {% else %}
+                        <button class="btn btn-success" onclick="if(confirm('¿Reactivar este enlace?')) window.location.href='#'">
+                            <i class="bi bi-play-circle"></i> Reactivar Enlace
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        // Mostrar notificación de éxito
+        const toast = document.createElement('div');
+        toast.className = 'toast position-fixed top-0 end-0 m-3';
+        toast.setAttribute('role', 'alert');
+        toast.innerHTML = `
+            <div class="toast-header">
+                <i class="bi bi-check-circle text-success me-2"></i>
+                <strong class="me-auto">¡Copiado!</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">
+                URL copiada al portapapeles
+            </div>
+        `;
+        document.body.appendChild(toast);
+        
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+        
+        // Eliminar el toast después de ocultarse
+        toast.addEventListener('hidden.bs.toast', () => {
+            document.body.removeChild(toast);
+        });
+    }).catch(function() {
+        alert('Error al copiar la URL');
+    });
+}
+</script>
+{% endblock %}

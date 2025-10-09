@@ -1,0 +1,391 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+.agreement-header {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+.status-badge {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+}
+.agreement-body {
+    background: white;
+    border-radius: 10px;
+    padding: 2rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    line-height: 1.6;
+    white-space: pre-wrap;
+    min-height: 300px;
+}
+.signature-card {
+    border-left: 4px solid #28a745;
+    background: #f8fff9;
+}
+.signature-item {
+    border-bottom: 1px solid #e9ecef;
+    padding: 1rem 0;
+}
+.signature-item:last-child {
+    border-bottom: none;
+}
+.signature-preview {
+    border: 2px dashed #dee2e6;
+    border-radius: 10px;
+    background: #f8f9fa;
+    padding: 1rem;
+    text-align: center;
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.signature-image {
+    max-width: 200px;
+    max-height: 80px;
+    border: 1px solid #dee2e6;
+    background: white;
+    padding: 0.5rem;
+    border-radius: 5px;
+}
+.info-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 10px;
+    padding: 1.5rem;
+}
+.action-buttons {
+    background: white;
+    padding: 1rem 0;
+    border-top: 1px solid #e9ecef;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+</style>
+{% endblock %}
+
+{% block title %}{{ agreement.title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="agreement-header rounded">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        <h1 class="me-3">
+                            <i class="bi bi-file-earmark-text"></i> {{ agreement.title }}
+                        </h1>
+                        {% if agreement.status == 'draft' %}
+                            <span class="badge bg-secondary status-badge">Borrador</span>
+                        {% elif agreement.status == 'published' %}
+                            <span class="badge bg-primary status-badge">Publicado</span>
+                        {% elif agreement.status == 'completed' %}
+                            <span class="badge bg-success status-badge">Completado</span>
+                        {% elif agreement.status == 'expired' %}
+                            <span class="badge bg-danger status-badge">Vencido</span>
+                        {% endif %}
+                    </div>
+                    <div class="d-flex flex-wrap gap-3 mt-2">
+                        <small><i class="bi bi-person"></i> Creado por: {{ agreement.created_by.get_full_name|default:agreement.created_by.username }}</small>
+                        <small><i class="bi bi-calendar"></i> {{ agreement.created_at|date:"d/m/Y H:i" }}</small>
+                        {% if agreement.expires_at %}
+                            <small><i class="bi bi-clock"></i> Expira: {{ agreement.expires_at|date:"d/m/Y H:i" }}</small>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="btn-group" role="group">
+                        <a href="{% url 'agreement_list' %}" class="btn btn-light">
+                            <i class="bi bi-arrow-left"></i> Volver
+                        </a>
+                        {% if agreement.is_editable %}
+                            <a href="{% url 'agreement_edit' agreement.id %}" class="btn btn-warning">
+                                <i class="bi bi-pencil"></i> Editar
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Contenido del Acuerdo -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-file-text"></i> Contenido del Acuerdo</h5>
+                    {% if agreement.status == 'published' and agreement.signature_count < agreement.max_signers %}
+                        <button class="btn btn-sm btn-outline-primary" onclick="copyPublicUrl()">
+                            <i class="bi bi-link-45deg"></i> Copiar URL Pública
+                        </button>
+                    {% endif %}
+                </div>
+                <div class="card-body p-0">
+                    <div class="agreement-body">
+                        {{ agreement.body }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Firmas -->
+            {% if agreement.signatures.exists %}
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-pen"></i> 
+                            Firmas ({{ agreement.signature_count }} / {{ agreement.max_signers }})
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% for signature in agreement.signatures.all %}
+                            <div class="signature-item">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="signature-preview">
+                                            {% if signature.signature_data %}
+                                                <img src="{{ signature.signature_data }}" 
+                                                     alt="Firma de {{ signature.signer_name }}"
+                                                     class="signature-image">
+                                            {% else %}
+                                                <span class="text-muted">
+                                                    <i class="bi bi-pen display-6"></i><br>
+                                                    Sin firma
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-9">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <strong>{{ signature.signer_name }}</strong><br>
+                                                <small class="text-muted">{{ signature.signer_email }}</small><br>
+                                                <small>
+                                                    <i class="bi bi-calendar-check"></i> 
+                                                    {{ signature.signed_at|date:"d/m/Y H:i" }}
+                                                </small>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <small class="text-muted">
+                                                    <i class="bi bi-globe"></i> IP: {{ signature.ip_address }}<br>
+                                                    <i class="bi bi-device-hdd"></i> {{ signature.user_agent|truncatechars:50 }}<br>
+                                                    <i class="bi bi-download"></i> Descargas: {{ signature.download_count }}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% else %}
+                <div class="card mt-4">
+                    <div class="card-body text-center text-muted">
+                        <i class="bi bi-pen display-1"></i>
+                        <h5>No hay firmas aún</h5>
+                        {% if agreement.status == 'published' %}
+                            <p>Comparte la URL pública para que las personas puedan firmar</p>
+                        {% else %}
+                            <p>Publica el acuerdo para habilitar las firmas</p>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Información lateral -->
+        <div class="col-lg-4">
+            <div class="sticky-top" style="top: 2rem;">
+                <!-- Información general -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-info-circle"></i> Información</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="info-card">
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <div class="text-center">
+                                        <div class="display-6">{{ agreement.signature_count }}</div>
+                                        <small class="text-muted">Firmas</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="text-center">
+                                        <div class="display-6">{{ agreement.max_signers }}</div>
+                                        <small class="text-muted">Máximo</small>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="progress" style="height: 10px;">
+                                        {% widthratio agreement.signature_count agreement.max_signers 100 as progress_percent %}
+                                        <div class="progress-bar bg-success" 
+                                             style="width: {{ progress_percent }}%"></div>
+                                    </div>
+                                    <small class="text-muted">{{ progress_percent }}% completado</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="mb-3">
+                            <strong>Estado:</strong><br>
+                            <span class="badge bg-secondary">{{ agreement.get_status_display }}</span>
+                        </div>
+
+                        <div class="mb-3">
+                            <strong>Empresa:</strong><br>
+                            {{ agreement.company.name }}
+                        </div>
+
+                        {% if agreement.expires_at %}
+                            <div class="mb-3">
+                                <strong>Vencimiento:</strong><br>
+                                <span class="{% if agreement.status == 'expired' %}text-danger{% endif %}">
+                                    {{ agreement.expires_at|date:"d/m/Y H:i" }}
+                                </span>
+                            </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <strong>Requiere aprobación:</strong><br>
+                            {% if agreement.requires_approval %}
+                                <span class="text-warning">Sí</span>
+                            {% else %}
+                                <span class="text-success">No</span>
+                            {% endif %}
+                        </div>
+
+                        {% if agreement.public_token %}
+                            <div class="mb-3">
+                                <strong>Token público:</strong><br>
+                                <code class="small">{{ agreement.public_token|truncatechars:30 }}</code>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Acciones -->
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-gear"></i> Acciones</h5>
+                    </div>
+                    <div class="card-body d-grid gap-2">
+                        {% if agreement.is_editable %}
+                            <a href="{% url 'agreement_edit' agreement.id %}" class="btn btn-warning">
+                                <i class="bi bi-pencil"></i> Editar Acuerdo
+                            </a>
+                        {% endif %}
+
+                        {% if agreement.status == 'draft' %}
+                            <button class="btn btn-primary" onclick="publishAgreement()">
+                                <i class="bi bi-broadcast"></i> Publicar Acuerdo
+                            </button>
+                        {% endif %}
+
+                        {% if agreement.status == 'published' %}
+                            <button class="btn btn-info" onclick="copyPublicUrl()">
+                                <i class="bi bi-link-45deg"></i> Copiar URL de Firma
+                            </button>
+                            <a href="{% url 'public_agreement_sign' agreement.public_token %}" 
+                               class="btn btn-outline-success" 
+                               target="_blank">
+                                <i class="bi bi-box-arrow-up-right"></i> Ir al Acuerdo Público
+                            </a>
+                        {% endif %}
+
+                        {% if agreement.signatures.exists %}
+                            <div class="dropdown d-inline">
+                                <button class="btn btn-success dropdown-toggle" 
+                                        type="button" 
+                                        data-bs-toggle="dropdown" 
+                                        aria-expanded="false">
+                                    <i class="bi bi-download"></i> Descargar PDF
+                                </button>
+                                <ul class="dropdown-menu">
+                                    {% for signature in agreement.signatures.all %}
+                                        <li>
+                                            <a class="dropdown-item" 
+                                               href="{% url 'download_signed_agreement' agreement.public_token signature.pk %}" 
+                                               target="_blank">
+                                                <i class="bi bi-file-earmark-pdf"></i> 
+                                                {{ signature.signer_name }}
+                                                <br>
+                                                <small class="text-muted">{{ signature.signed_at|date:"d/m/Y H:i" }}</small>
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+
+                        {% if agreement.is_editable %}
+                            <button class="btn btn-danger" onclick="deleteAgreement()">
+                                <i class="bi bi-trash"></i> Eliminar
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- URL pública oculta para copiar -->
+                {% if agreement.status == 'published' %}
+                    <input type="hidden" id="public-url" 
+                           value="{{ request.scheme }}://{{ request.get_host }}{% url 'public_agreement_sign' agreement.public_token %}">
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyPublicUrl() {
+    const url = document.getElementById('public-url').value;
+    navigator.clipboard.writeText(url).then(function() {
+        // Mostrar notificación de éxito
+        const toast = document.createElement('div');
+        toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed top-0 end-0 m-3';
+        toast.style.zIndex = '9999';
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi bi-check-circle me-2"></i>URL copiada al portapapeles
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        document.body.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+        
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
+    }).catch(function() {
+        alert('No se pudo copiar la URL. Cópiala manualmente:\n\n' + url);
+    });
+}
+
+function publishAgreement() {
+    if (confirm('¿Estás seguro de que quieres publicar este acuerdo? Una vez publicado, las personas podrán firmarlo.')) {
+        // Aquí irían las instrucciones para publicar (AJAX)
+        window.location.href = "{% url 'agreement_publish' agreement.id %}";
+    }
+}
+
+function deleteAgreement() {
+    if (confirm('¿Estás seguro de que quieres eliminar este acuerdo? Esta acción no se puede deshacer.')) {
+        window.location.href = "{% url 'agreement_delete' agreement.id %}";
+    }
+}
+</script>
+{% endblock %}

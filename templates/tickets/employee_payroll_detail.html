@@ -1,0 +1,348 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load project_extras %}
+
+{% block extra_css %}
+<style>
+.payroll-header {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+.detail-card {
+    border: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border-radius: 15px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+.detail-header {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-bottom: 3px solid #28a745;
+}
+.file-section {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-align: center;
+    border: 2px solid #e9ecef;
+}
+.file-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+.salary-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    padding: 1.5rem;
+}
+.salary-amount {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+.info-row {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f1f3f4;
+}
+.info-row:last-child {
+    border-bottom: none;
+}
+.info-label {
+    font-weight: 600;
+    color: #495057;
+}
+.status-badge {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    font-weight: 500;
+}
+.action-buttons {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-top: 1px solid #dee2e6;
+}
+.notes-section {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+.timeline-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+.timeline-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    font-size: 1.2rem;
+}
+</style>
+{% endblock %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="payroll-header rounded">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1><i class="bi bi-receipt-cutoff"></i> Nómina {{ payroll.get_period_display }}</h1>
+                    <h4>{{ employee.get_full_name }}</h4>
+                    <p class="mb-0">{{ employee.position }} - {{ employee.company.name }}</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <span class="badge bg-{{ employee.get_status_color }} status-badge">
+                        {{ employee.get_status_display }}
+                    </span>
+                    <div class="mt-3">
+                        <a href="{% url 'employee_payroll_list' employee.pk %}" class="btn btn-light">
+                            <i class="bi bi-arrow-left"></i> Lista de Nóminas
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información general -->
+        <div class="col-lg-8">
+            <!-- Detalles de la nómina -->
+            <div class="detail-card">
+                <div class="detail-header">
+                    <h5><i class="bi bi-info-circle"></i> Información General</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-row">
+                                <div class="info-label">Período:</div>
+                                <div>{{ payroll.get_period_display }}</div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">Fecha de registro:</div>
+                                <div>{{ payroll.created_at|date:"d/m/Y H:i" }}</div>
+                            </div>
+                            {% if payroll.created_by %}
+                                <div class="info-row">
+                                    <div class="info-label">Registrado por:</div>
+                                    <div>{{ payroll.created_by.get_full_name }}</div>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-row">
+                                <div class="info-label">Última actualización:</div>
+                                <div>{{ payroll.updated_at|date:"d/m/Y H:i" }}</div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">Comprobante de pago:</div>
+                                <div>
+                                    {% if payroll.has_payment_receipt %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle"></i> Disponible
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-warning">
+                                            <i class="bi bi-exclamation-circle"></i> No disponible
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Archivos -->
+            <div class="detail-card">
+                <div class="detail-header">
+                    <h5><i class="bi bi-folder"></i> Archivos</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Nómina PDF -->
+                        <div class="col-md-6">
+                            <div class="file-section">
+                                <div class="file-icon text-danger">
+                                    <i class="bi bi-file-earmark-pdf"></i>
+                                </div>
+                                <h5>Nómina PDF</h5>
+                                <p class="text-muted">{{ payroll.payroll_pdf.name|cut:"payrolls/" }}</p>
+                                <a href="{{ payroll.payroll_pdf.url }}" target="_blank" class="btn btn-danger">
+                                    <i class="bi bi-download"></i> Descargar PDF
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Comprobante de pago -->
+                        <div class="col-md-6">
+                            <div class="file-section">
+                                {% if payroll.payment_receipt %}
+                                    <div class="file-icon text-success">
+                                        {% if payroll.payment_receipt.name|slice:"-4:" == ".pdf" %}
+                                            <i class="bi bi-file-earmark-pdf"></i>
+                                        {% else %}
+                                            <i class="bi bi-image"></i>
+                                        {% endif %}
+                                    </div>
+                                    <h5>Comprobante de Pago</h5>
+                                    <p class="text-muted">{{ payroll.payment_receipt.name|cut:"payment_receipts/" }}</p>
+                                    <a href="{{ payroll.payment_receipt.url }}" target="_blank" class="btn btn-success">
+                                        <i class="bi bi-eye"></i> Ver Comprobante
+                                    </a>
+                                {% else %}
+                                    <div class="file-icon text-muted">
+                                        <i class="bi bi-receipt"></i>
+                                    </div>
+                                    <h5 class="text-muted">Comprobante de Pago</h5>
+                                    <p class="text-muted">No disponible</p>
+                                    <a href="{% url 'employee_payroll_edit' employee.pk payroll.pk %}" class="btn btn-outline-warning">
+                                        <i class="bi bi-plus"></i> Agregar Comprobante
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notas -->
+            {% if payroll.notes %}
+                <div class="detail-card">
+                    <div class="detail-header">
+                        <h5><i class="bi bi-chat-dots"></i> Notas</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="notes-section">
+                            <div style="white-space: pre-wrap;">{{ payroll.notes }}</div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Información salarial -->
+            {% if payroll.gross_salary or payroll.net_salary %}
+                <div class="salary-card mb-4">
+                    <h5 class="text-center mb-4">
+                        <i class="bi bi-currency-euro"></i> Información Salarial
+                    </h5>
+                    
+                    {% if payroll.gross_salary %}
+                        <div class="text-center mb-3">
+                            <div class="info-label">Salario Bruto</div>
+                            <div class="salary-amount text-primary">€{{ payroll.gross_salary|floatformat:2 }}</div>
+                        </div>
+                    {% endif %}
+                    
+                    {% if payroll.net_salary %}
+                        <div class="text-center mb-3">
+                            <div class="info-label">Salario Neto</div>
+                            <div class="salary-amount text-success">€{{ payroll.net_salary|floatformat:2 }}</div>
+                        </div>
+                    {% endif %}
+
+                    {% if payroll.gross_salary and payroll.net_salary %}
+                        <hr>
+                        <div class="text-center">
+                            <div class="info-label">Descuentos</div>
+                            <div class="text-danger">
+                                €{{ payroll.gross_salary|sub:payroll.net_salary|floatformat:2 }}
+                                ({{ payroll.gross_salary|sub:payroll.net_salary|div:payroll.gross_salary|mul:100|floatformat:1 }}%)
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            <!-- Timeline de acciones -->
+            <div class="detail-card">
+                <div class="detail-header">
+                    <h5><i class="bi bi-clock-history"></i> Historial</h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline-item">
+                        <div class="timeline-icon bg-success text-white">
+                            <i class="bi bi-plus"></i>
+                        </div>
+                        <div>
+                            <strong>Nómina creada</strong><br>
+                            <small class="text-muted">{{ payroll.created_at|date:"d/m/Y H:i" }}</small>
+                            {% if payroll.created_by %}
+                                <br><small class="text-muted">por {{ payroll.created_by.get_full_name }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if payroll.created_at != payroll.updated_at %}
+                        <div class="timeline-item">
+                            <div class="timeline-icon bg-warning text-white">
+                                <i class="bi bi-pencil"></i>
+                            </div>
+                            <div>
+                                <strong>Última modificación</strong><br>
+                                <small class="text-muted">{{ payroll.updated_at|date:"d/m/Y H:i" }}</small>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Acciones rápidas -->
+            <div class="detail-card">
+                <div class="detail-header">
+                    <h5><i class="bi bi-gear"></i> Acciones</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'employee_payroll_edit' employee.pk payroll.pk %}" class="btn btn-warning">
+                            <i class="bi bi-pencil"></i> Editar Nómina
+                        </a>
+                        <a href="{{ payroll.payroll_pdf.url }}" target="_blank" class="btn btn-danger">
+                            <i class="bi bi-download"></i> Descargar PDF
+                        </a>
+                        {% if payroll.payment_receipt %}
+                            <a href="{{ payroll.payment_receipt.url }}" target="_blank" class="btn btn-success">
+                                <i class="bi bi-eye"></i> Ver Comprobante
+                            </a>
+                        {% endif %}
+                        <hr>
+                        <a href="{% url 'employee_payroll_delete' employee.pk payroll.pk %}" class="btn btn-outline-danger">
+                            <i class="bi bi-trash"></i> Eliminar Nómina
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Confirmar eliminación
+    $('a[href*="delete"]').on('click', function(e) {
+        if (!confirm('¿Estás seguro de que deseas eliminar esta nómina? Esta acción no se puede deshacer.')) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

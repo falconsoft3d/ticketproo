@@ -377,4 +377,44 @@ urlpatterns = [
     # URL pública para subir documentos (sin autenticación)
     path('upload/<uuid:token>/', views.public_document_upload, name='public_document_upload'),
     
+    # URLs de gestión de empleados (en Herramientas) - Mantener compatibilidad
+    path('employees/', views.employee_list, name='employee_list'),
+    path('employees/<int:pk>/', views.employee_detail, name='employee_detail'),
+    path('employees/<int:pk>/change-status/', views.employee_change_status, name='employee_change_status'),
+    path('employees/<int:pk>/edit-hiring-opinion/', views.employee_edit_hiring_opinion, name='employee_edit_hiring_opinion'),
+    
+    # URLs de nóminas de empleados
+    path('employees/<int:pk>/payrolls/', views.employee_payroll_list, name='employee_payroll_list'),
+    path('employees/<int:pk>/payrolls/create/', views.employee_payroll_create, name='employee_payroll_create'),
+    path('employees/<int:employee_pk>/payrolls/<int:payroll_pk>/', views.employee_payroll_detail, name='employee_payroll_detail'),
+    path('employees/<int:employee_pk>/payrolls/<int:payroll_pk>/edit/', views.employee_payroll_edit, name='employee_payroll_edit'),
+    path('employees/<int:employee_pk>/payrolls/<int:payroll_pk>/delete/', views.employee_payroll_delete, name='employee_payroll_delete'),
+    
+    # URLs separadas para Candidatos y Empleados
+    path('candidates/', views.candidate_list, name='candidate_list'),
+    path('candidates/<int:pk>/', views.candidate_detail, name='candidate_detail'),
+    path('active-employees/', views.active_employee_list, name='active_employee_list'),
+    path('active-employees/<int:pk>/', views.active_employee_detail, name='active_employee_detail'),
+    
+    # URLs de gestión de enlaces de aplicación de empleo
+    path('job-applications/', views.job_application_token_list, name='job_application_token_list'),
+    path('job-applications/create/', views.job_application_token_create, name='job_application_token_create'),
+    path('job-applications/<int:pk>/', views.job_application_token_detail, name='job_application_token_detail'),
+    
+    # URL pública para aplicar a empleos (sin autenticación)
+    path('job-apply/<uuid:token>/', views.public_job_application, name='public_job_application'),
+
+    # URLs de Acuerdos/Contratos (solo para agentes)
+    path('agreements/', views.agreement_list, name='agreement_list'),
+    path('agreements/create/', views.agreement_create, name='agreement_create'),
+    path('agreements/<int:pk>/', views.agreement_detail, name='agreement_detail'),
+    path('agreements/<int:pk>/edit/', views.agreement_edit, name='agreement_edit'),
+    path('agreements/<int:pk>/delete/', views.agreement_delete, name='agreement_delete'),
+    path('agreements/<int:pk>/publish/', views.agreement_publish, name='agreement_publish'),
+    
+    # URLs públicas de Acuerdos (sin autenticación)
+    path('sign/<str:token>/', views.public_agreement_sign, name='public_agreement_sign'),
+    path('sign/<str:token>/success/<int:signature_id>/', views.public_agreement_success, name='public_agreement_success'),
+    path('agreement/<str:agreement_token>/download/<int:signature_id>/', views.download_signed_agreement, name='download_signed_agreement'),
+
 ]

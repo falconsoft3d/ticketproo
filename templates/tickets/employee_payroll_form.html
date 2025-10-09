@@ -1,0 +1,364 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+.form-container {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    padding: 2rem;
+    margin: 2rem 0;
+}
+.form-header {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    padding: 1.5rem;
+    border-radius: 10px;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+.employee-info {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    border-left: 4px solid #28a745;
+}
+.form-group {
+    margin-bottom: 1.5rem;
+}
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+.form-control, .form-select {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 0.75rem;
+}
+.form-control:focus, .form-select:focus {
+    border-color: #28a745;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+.file-upload-area {
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+.file-upload-area:hover {
+    border-color: #28a745;
+    background-color: rgba(40, 167, 69, 0.05);
+}
+.file-upload-area.dragover {
+    border-color: #28a745;
+    background-color: rgba(40, 167, 69, 0.1);
+}
+.btn-submit {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    border: none;
+    padding: 1rem 2rem;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+.btn-submit:hover {
+    background: linear-gradient(135deg, #218838 0%, #1c7b6b 100%);
+    transform: translateY(-2px);
+    transition: all 0.3s ease;
+}
+.salary-inputs {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 1rem 0;
+}
+.current-file {
+    background: #e7f3ff;
+    border: 1px solid #b8daff;
+    border-radius: 5px;
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+}
+.file-info {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-top: 0.5rem;
+}
+</style>
+{% endblock %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="form-container">
+                <!-- Header -->
+                <div class="form-header">
+                    <h2>
+                        <i class="bi bi-receipt-cutoff"></i>
+                        {% if payroll %}Editar Nómina{% else %}Nueva Nómina{% endif %}
+                    </h2>
+                    <p class="mb-0">{{ employee.get_full_name }} - {{ employee.position }}</p>
+                </div>
+
+                <!-- Información del empleado -->
+                <div class="employee-info">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Empleado:</strong> {{ employee.get_full_name }}<br>
+                            <strong>Empresa:</strong> {{ employee.company.name }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Posición:</strong> {{ employee.position }}<br>
+                            <strong>Estado:</strong> <span class="badge bg-{{ employee.get_status_color }}">{{ employee.get_status_display }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Formulario -->
+                <form method="post" enctype="multipart/form-data" id="payroll-form">
+                    {% csrf_token %}
+                    
+                    {% if form.errors %}
+                        <div class="alert alert-danger">
+                            <h6><i class="bi bi-exclamation-triangle"></i> Errores en el formulario:</h6>
+                            {{ form.errors }}
+                        </div>
+                    {% endif %}
+
+                    <!-- Período -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.period_month.id_for_label }}" class="form-label">
+                                    {{ form.period_month.label }}
+                                </label>
+                                {{ form.period_month }}
+                                <div class="file-info">{{ form.period_month.help_text }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.period_year.id_for_label }}" class="form-label">
+                                    {{ form.period_year.label }}
+                                </label>
+                                {{ form.period_year }}
+                                <div class="file-info">{{ form.period_year.help_text }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Archivo de nómina -->
+                    <div class="form-group">
+                        <label for="{{ form.payroll_pdf.id_for_label }}" class="form-label">
+                            <i class="bi bi-file-earmark-pdf text-danger"></i> {{ form.payroll_pdf.label }}
+                        </label>
+                        <div class="file-upload-area" onclick="document.getElementById('{{ form.payroll_pdf.id_for_label }}').click()">
+                            <i class="bi bi-cloud-upload fs-1 text-muted mb-3 d-block"></i>
+                            <h5>Seleccionar archivo PDF de nómina</h5>
+                            <p class="text-muted">Haz clic aquí o arrastra el archivo</p>
+                            {{ form.payroll_pdf }}
+                        </div>
+                        <div class="file-info">
+                            <i class="bi bi-info-circle"></i> {{ form.payroll_pdf.help_text }}
+                        </div>
+                        {% if payroll and payroll.payroll_pdf %}
+                            <div class="current-file">
+                                <i class="bi bi-file-earmark-pdf text-danger"></i>
+                                <strong>Archivo actual:</strong> {{ payroll.payroll_pdf.name|cut:"payrolls/" }}
+                                <a href="{{ payroll.payroll_pdf.url }}" target="_blank" class="btn btn-sm btn-outline-danger ms-2">
+                                    <i class="bi bi-download"></i> Descargar
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Comprobante de pago -->
+                    <div class="form-group">
+                        <label for="{{ form.payment_receipt.id_for_label }}" class="form-label">
+                            <i class="bi bi-receipt text-success"></i> {{ form.payment_receipt.label }}
+                        </label>
+                        <div class="file-upload-area" onclick="document.getElementById('{{ form.payment_receipt.id_for_label }}').click()">
+                            <i class="bi bi-receipt fs-1 text-muted mb-3 d-block"></i>
+                            <h5>Seleccionar comprobante de pago</h5>
+                            <p class="text-muted">Opcional - PDF, JPG o PNG</p>
+                            {{ form.payment_receipt }}
+                        </div>
+                        <div class="file-info">
+                            <i class="bi bi-info-circle"></i> {{ form.payment_receipt.help_text }}
+                        </div>
+                        {% if payroll and payroll.payment_receipt %}
+                            <div class="current-file">
+                                <i class="bi bi-receipt text-success"></i>
+                                <strong>Archivo actual:</strong> {{ payroll.payment_receipt.name|cut:"payment_receipts/" }}
+                                <a href="{{ payroll.payment_receipt.url }}" target="_blank" class="btn btn-sm btn-outline-success ms-2">
+                                    <i class="bi bi-eye"></i> Ver
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Información salarial -->
+                    <div class="salary-inputs">
+                        <h5><i class="bi bi-currency-euro"></i> Información Salarial (Opcional)</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.gross_salary.id_for_label }}" class="form-label">
+                                        {{ form.gross_salary.label }}
+                                    </label>
+                                    {{ form.gross_salary }}
+                                    <div class="file-info">{{ form.gross_salary.help_text }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.net_salary.id_for_label }}" class="form-label">
+                                        {{ form.net_salary.label }}
+                                    </label>
+                                    {{ form.net_salary }}
+                                    <div class="file-info">{{ form.net_salary.help_text }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notas -->
+                    <div class="form-group">
+                        <label for="{{ form.notes.id_for_label }}" class="form-label">
+                            <i class="bi bi-chat-dots"></i> {{ form.notes.label }}
+                        </label>
+                        {{ form.notes }}
+                        <div class="file-info">{{ form.notes.help_text }}</div>
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="d-flex gap-3 mt-4">
+                        <button type="submit" class="btn btn-success btn-submit">
+                            <i class="bi bi-check-lg"></i> 
+                            {% if payroll %}Actualizar Nómina{% else %}Guardar Nómina{% endif %}
+                        </button>
+                        
+                        <a href="{% url 'employee_payroll_list' employee.pk %}" class="btn btn-outline-secondary btn-lg">
+                            <i class="bi bi-arrow-left"></i> Cancelar
+                        </a>
+                        
+                        {% if payroll %}
+                            <a href="{% url 'employee_payroll_detail' employee.pk payroll.pk %}" class="btn btn-outline-info btn-lg">
+                                <i class="bi bi-eye"></i> Ver Detalles
+                            </a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Ocultar inputs de archivo reales
+    $('#{{ form.payroll_pdf.id_for_label }}, #{{ form.payment_receipt.id_for_label }}').hide();
+    
+    // Manejar cambio de archivos
+    $('#{{ form.payroll_pdf.id_for_label }}').change(function() {
+        const file = this.files[0];
+        if (file) {
+            const area = $(this).closest('.file-upload-area');
+            area.find('h5').text('Archivo seleccionado: ' + file.name);
+            area.find('p').text('Tamaño: ' + formatFileSize(file.size));
+            area.addClass('border-success');
+        }
+    });
+    
+    $('#{{ form.payment_receipt.id_for_label }}').change(function() {
+        const file = this.files[0];
+        console.log('Archivo de comprobante seleccionado:', file);
+        if (file) {
+            console.log('Archivo válido:', file.name, file.size);
+            const area = $(this).closest('.file-upload-area');
+            area.find('h5').text('Comprobante seleccionado: ' + file.name);
+            area.find('p').text('Tamaño: ' + formatFileSize(file.size));
+            area.addClass('border-success');
+        } else {
+            console.log('No se seleccionó archivo de comprobante');
+        }
+    });
+    
+    // Drag and drop
+    $('.file-upload-area').on('dragover', function(e) {
+        e.preventDefault();
+        $(this).addClass('dragover');
+    });
+    
+    $('.file-upload-area').on('dragleave', function() {
+        $(this).removeClass('dragover');
+    });
+    
+    $('.file-upload-area').on('drop', function(e) {
+        e.preventDefault();
+        $(this).removeClass('dragover');
+        
+        const files = e.originalEvent.dataTransfer.files;
+        if (files.length > 0) {
+            const input = $(this).find('input[type="file"]')[0];
+            input.files = files;
+            $(input).trigger('change');
+        }
+    });
+    
+    // Calcular salario neto automáticamente (ejemplo simple)
+    $('#{{ form.gross_salary.id_for_label }}').on('input', function() {
+        const grossSalary = parseFloat($(this).val()) || 0;
+        if (grossSalary > 0 && !$('#{{ form.net_salary.id_for_label }}').val()) {
+            // Estimación simple (puedes ajustar según las reglas fiscales)
+            const estimatedNet = grossSalary * 0.75; // 25% de descuentos aproximado
+            $('#{{ form.net_salary.id_for_label }}').attr('placeholder', `Estimado: €${estimatedNet.toFixed(2)}`);
+        }
+    });
+    
+    // Validación antes de enviar
+    $('#payroll-form').on('submit', function(e) {
+        let valid = true;
+        let errorMessage = '';
+        
+        // Debug: Verificar archivos antes de enviar
+        const payrollFile = document.getElementById('{{ form.payroll_pdf.id_for_label }}').files[0];
+        const receiptFile = document.getElementById('{{ form.payment_receipt.id_for_label }}').files[0];
+        console.log('Enviando formulario - PDF:', payrollFile, 'Comprobante:', receiptFile);
+        {% if not payroll %}
+            if (!payrollFile) {
+                valid = false;
+                errorMessage += 'Debe seleccionar un archivo PDF para la nómina.\n';
+            }
+        {% endif %}
+        
+        if (payrollFile && !payrollFile.name.toLowerCase().endsWith('.pdf')) {
+            valid = false;
+            errorMessage += 'El archivo de nómina debe ser un PDF.\n';
+        }
+        
+        if (!valid) {
+            e.preventDefault();
+            alert(errorMessage);
+        }
+    });
+});
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+</script>
+{% endblock %}

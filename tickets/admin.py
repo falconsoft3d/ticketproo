@@ -5,7 +5,7 @@ from .models import (
     TimeEntry, Project, Company, SystemConfiguration, Document, UserProfile,
     WorkOrder, WorkOrderAttachment, Task, Opportunity, OpportunityStatus, 
     OpportunityNote, OpportunityStatusHistory, Concept, Exam, ExamQuestion, 
-    ExamAttempt, ExamAnswer, ContactoWeb
+    ExamAttempt, ExamAnswer, ContactoWeb, Employee, JobApplicationToken
 )
 
 # Configuración del sitio de administración
@@ -872,4 +872,82 @@ class ContactoWebAdmin(admin.ModelAdmin):
     
     def get_queryset(self, request):
         return super().get_queryset(request)
+
+
+@admin.register(Employee)
+class EmployeeAdmin(admin.ModelAdmin):
+    """Administrador para empleados"""
+    list_display = ('get_full_name', 'email', 'position', 'salary_euros', 'status', 'ai_score', 'company', 'created_at')
+    list_filter = ('status', 'company', 'created_at', 'ai_score')
+    search_fields = ('first_name', 'last_name', 'email', 'position', 'description')
+    list_editable = ('status',)
+    ordering = ('-created_at',)
+    date_hierarchy = 'created_at'
+    readonly_fields = ('created_at', 'updated_at', 'ai_analysis', 'ai_score')
+    
+    fieldsets = (
+        ('Información Personal', {
+            'fields': ('first_name', 'last_name', 'email', 'phone')
+        }),
+        ('Información Profesional', {
+            'fields': ('position', 'salary_euros', 'description', 'resume_file')
+        }),
+        ('Análisis de IA', {
+            'fields': ('ai_analysis', 'ai_score'),
+            'classes': ('collapse',)
+        }),
+        ('Estado y Empresa', {
+            'fields': ('status', 'company', 'created_by')
+        }),
+        ('Fechas del Sistema', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('company', 'created_by')
+
+
+@admin.register(JobApplicationToken)
+class JobApplicationTokenAdmin(admin.ModelAdmin):
+    """Administrador para tokens de aplicación de empleo"""
+    list_display = ('job_title', 'proposed_salary_euros', 'company', 'is_active', 'application_count', 'max_applications', 'created_by', 'created_at')
+    list_filter = ('is_active', 'company', 'created_at', 'created_by')
+    search_fields = ('job_title', 'job_description', 'company__name')
+    readonly_fields = ('application_token', 'application_count', 'created_at', 'get_public_url', 'get_qr_data')
+    ordering = ('-created_at',)
+    date_hierarchy = 'created_at'
+    
+    fieldsets = (
+        ('Información del Puesto', {
+            'fields': ('job_title', 'job_description', 'proposed_salary_euros')
+        }),
+        ('Configuración', {
+            'fields': ('company', 'created_by', 'is_active')
+        }),
+        ('Límites y Expiración', {
+            'fields': ('max_applications', 'expires_at')
+        }),
+        ('Token y URLs', {
+            'fields': ('application_token', 'get_public_url', 'get_qr_data'),
+            'classes': ('collapse',)
+        }),
+        ('Estadísticas', {
+            'fields': ('application_count',),
+            'classes': ('collapse',)
+        }),
+        ('Fechas del Sistema', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def save_model(self, request, obj, form, change):
+        if not change:  # Si es un nuevo objeto
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('company', 'created_by')
 

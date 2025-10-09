@@ -222,6 +222,12 @@
                                     <i class="bi bi-file-earmark-text"></i> Documentos
                                 </a>
                             </li>
+                            <li>
+                                <a class="dropdown-item {% if 'agreement' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'agreement_list' %}">
+                                    <i class="bi bi-file-earmark-check"></i> Acuerdos
+                                </a>
+                            </li>
                             <li><hr class="dropdown-divider"></li>
                             <li class="dropdown-header">Blog</li>
                             <li>
@@ -318,6 +324,42 @@
                                 <a class="dropdown-item {% if 'command_library' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'command_library' %}">
                                     <i class="bi bi-terminal"></i> Biblioteca de Comandos
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Proceso de Selección</li>
+                            <li>
+                                <a class="dropdown-item {% if 'candidate' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'candidate_list' %}">
+                                    <i class="bi bi-person-check"></i> Candidatos
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'job_application' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'job_application_token_list' %}">
+                                    <i class="bi bi-briefcase"></i> Enlaces de Aplicación
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Empleados Activos</li>
+                            <li>
+                                <a class="dropdown-item {% if 'active_employee' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'active_employee_list' %}">
+                                    <i class="bi bi-people-fill"></i> Empleados
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'employee' in request.resolver_match.url_name and 'active' not in request.resolver_match.url_name and 'candidate' not in request.resolver_match.url_name and 'payroll' not in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'employee_list' %}">
+                                    <i class="bi bi-list-ul"></i> Todos los Registros
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Nóminas</li>
+                            <li>
+                                <a class="dropdown-item {% if 'payroll' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'active_employee_list' %}">
+                                    <i class="bi bi-receipt-cutoff"></i> Gestionar Nóminas
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>

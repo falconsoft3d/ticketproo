@@ -42,3 +42,37 @@ def clean_phone_for_whatsapp(phone):
     # Eliminar todos los caracteres que no sean números o el símbolo +
     cleaned = re.sub(r'[^\d+]', '', str(phone))
     return cleaned
+
+@register.simple_tag(takes_context=True)
+def absolute_url(context, relative_url):
+    """Convierte una URL relativa en URL absoluta usando el request del contexto"""
+    request = context.get('request')
+    if request:
+        return request.build_absolute_uri(relative_url)
+    return relative_url
+
+@register.filter
+def sub(value, arg):
+    """Resta arg de value"""
+    try:
+        return float(value) - float(arg)
+    except (ValueError, TypeError):
+        return 0
+
+@register.filter
+def mul(value, arg):
+    """Multiplica value por arg"""
+    try:
+        return float(value) * float(arg)
+    except (ValueError, TypeError):
+        return 0
+
+@register.filter
+def div(value, arg):
+    """Divide value entre arg"""
+    try:
+        if float(arg) == 0:
+            return 0
+        return float(value) / float(arg)
+    except (ValueError, TypeError):
+        return 0

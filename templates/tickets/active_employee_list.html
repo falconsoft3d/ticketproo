@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+.employee-card {
+    transition: transform 0.2s;
+}
+.employee-card:hover {
+    transform: translateY(-2px);
+}
+.employee-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #28a745, #20c997);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    font-weight: bold;
+}
+.salary-highlight {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #28a745;
+}
+</style>
+{% endblock %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="bi bi-people-fill"></i> {{ page_title }}</h2>
+                    <p class="text-muted">Gestión de empleados contratados</p>
+                </div>
+                <div>
+                    <span class="badge bg-success fs-6">
+                        <i class="bi bi-check-circle"></i> 
+                        {{ employees|length }} empleado{{ employees|length|pluralize:",s" }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Filtros de búsqueda -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-8">
+                            <input type="text" name="search" class="form-control" 
+                                   placeholder="Buscar por nombre, email o posición..." 
+                                   value="{{ search }}">
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-search"></i> Buscar
+                                </button>
+                                {% if search %}
+                                <a href="{% url 'active_employee_list' %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x"></i> Limpiar
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Lista de empleados -->
+            {% if employees %}
+            <div class="row">
+                {% for employee in employees %}
+                <div class="col-lg-6 col-xl-4 mb-4">
+                    <div class="card employee-card h-100">
+                        <div class="card-header">
+                            <div class="d-flex align-items-center">
+                                <div class="employee-avatar me-3">
+                                    {{ employee.first_name.0 }}{{ employee.last_name.0 }}
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-0">{{ employee.get_full_name }}</h6>
+                                    <small class="text-muted">{{ employee.position }}</small>
+                                </div>
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle"></i>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            {% if employee.email %}
+                            <div class="mb-2">
+                                <i class="bi bi-envelope text-muted me-2"></i>
+                                <small>{{ employee.email }}</small>
+                            </div>
+                            {% endif %}
+                            
+                            {% if employee.phone %}
+                            <div class="mb-2">
+                                <i class="bi bi-telephone text-muted me-2"></i>
+                                <small>{{ employee.phone }}</small>
+                            </div>
+                            {% endif %}
+
+                            {% if employee.salary_euros %}
+                            <div class="mb-3 text-center">
+                                <div class="salary-highlight">
+                                    €{{ employee.salary_euros|floatformat:0 }}
+                                </div>
+                                <small class="text-muted">Salario anual</small>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="mb-2">
+                                <i class="bi bi-calendar-check text-muted me-2"></i>
+                                <small>Contratado: {{ employee.created_at|date:"d/m/Y" }}</small>
+                            </div>
+
+                            {% if employee.ai_score %}
+                            <div class="mt-3 text-center">
+                                <div class="d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-robot text-primary me-2"></i>
+                                    <span class="badge bg-primary">{{ employee.ai_score }}/10</span>
+                                </div>
+                                <small class="text-muted">Evaluación inicial</small>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="card-footer">
+                            <div class="d-flex gap-2 flex-column">
+                                <div class="d-flex gap-2">
+                                    <a href="{% url 'active_employee_detail' employee.pk %}" class="btn btn-primary btn-sm flex-grow-1">
+                                        <i class="bi bi-eye"></i> Ver Perfil
+                                    </a>
+                                    {% if employee.resume_file %}
+                                    <a href="{{ employee.resume_file.url }}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                                        <i class="bi bi-file-pdf"></i>
+                                    </a>
+                                    {% endif %}
+                                    <a href="mailto:{{ employee.email }}" class="btn btn-outline-success btn-sm">
+                                        <i class="bi bi-envelope"></i>
+                                    </a>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <a href="{% url 'employee_payroll_list' employee.pk %}" class="btn btn-success btn-sm flex-grow-1">
+                                        <i class="bi bi-receipt-cutoff"></i> Nóminas
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Paginación -->
+            {% if employees.has_other_pages %}
+            <div class="d-flex justify-content-center mt-4">
+                <nav aria-label="Paginación">
+                    <ul class="pagination">
+                        {% if employees.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ employees.previous_page_number }}{% if search %}&search={{ search }}{% endif %}">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for num in employees.paginator.page_range %}
+                            {% if num == employees.number %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% else %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if employees.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ employees.next_page_number }}{% if search %}&search={{ search }}{% endif %}">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+
+            {% else %}
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-people display-1 text-muted mb-3"></i>
+                    <h4>No hay empleados activos</h4>
+                    {% if search %}
+                    <p class="text-muted">No se encontraron empleados que coincidan con "{{ search }}"</p>
+                    <a href="{% url 'active_employee_list' %}" class="btn btn-primary">Ver todos los empleados</a>
+                    {% else %}
+                    <p class="text-muted">Aún no hay empleados contratados en el sistema.</p>
+                    <a href="{% url 'candidate_list' %}" class="btn btn-primary">Ver candidatos</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

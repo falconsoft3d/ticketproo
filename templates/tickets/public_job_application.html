@@ -1,0 +1,338 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+.application-header {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    padding: 3rem 0;
+    margin-bottom: 2rem;
+}
+.company-logo {
+    max-height: 60px;
+}
+.salary-highlight {
+    background-color: #e7f3ff;
+    border: 1px solid #b3d9ff;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    text-align: center;
+}
+.job-description {
+    background-color: #f8f9fa;
+    border-left: 4px solid #007bff;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+}
+.form-section {
+    border-left: 4px solid #28a745;
+    padding-left: 1rem;
+    margin-bottom: 2rem;
+}
+.required-field {
+    color: #dc3545;
+}
+</style>
+{% endblock %}
+
+{% block title %}Aplicar a: {{ token.job_title }} - {{ token.company.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Cabecera de la aplicación -->
+    <div class="application-header rounded">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1><i class="bi bi-briefcase"></i> {{ token.job_title }}</h1>
+                    <h4>{{ token.company.name }}</h4>
+                    <p class="mb-0">
+                        <i class="bi bi-geo-alt"></i> Posición disponible
+                        {% if token.proposed_salary_euros %}
+                        | <i class="bi bi-currency-euro"></i> €{{ token.proposed_salary_euros|floatformat:0 }} anuales
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="col-md-4 text-end">
+                    {% if token.company.logo %}
+                    <img src="{{ token.company.logo.url }}" alt="{{ token.company.name }}" class="company-logo">
+                    {% else %}
+                    <div class="bg-white text-primary p-3 rounded">
+                        <i class="bi bi-building fa-3x"></i>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información del puesto -->
+        <div class="col-lg-8">
+            <!-- Descripción del puesto -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-info-circle"></i> Descripción del Puesto</h5>
+                </div>
+                <div class="card-body">
+                    <div class="job-description">
+                        <div style="white-space: pre-wrap;">{{ token.job_description }}</div>
+                    </div>
+                    
+                    {% if token.proposed_salary_euros %}
+                    <div class="salary-highlight">
+                        <h5 class="text-primary mb-1">Salario Propuesto</h5>
+                        <h3 class="text-success mb-0">€{{ token.proposed_salary_euros|floatformat:0 }}</h3>
+                        <small class="text-muted">Salario anual bruto</small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Formulario de aplicación -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-person-plus"></i> Aplicar a este Puesto</h5>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post" enctype="multipart/form-data" id="applicationForm">
+                        {% csrf_token %}
+                        
+                        <!-- Información personal -->
+                        <div class="form-section">
+                            <h6 class="text-success">Información Personal</h6>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="first_name" class="form-label">
+                                            Nombre <span class="required-field">*</span>
+                                        </label>
+                                        <input type="text" class="form-control" id="first_name" name="first_name" 
+                                               placeholder="Tu nombre" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="last_name" class="form-label">
+                                            Apellidos <span class="required-field">*</span>
+                                        </label>
+                                        <input type="text" class="form-control" id="last_name" name="last_name" 
+                                               placeholder="Tus apellidos" required>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="email" class="form-label">
+                                            Correo Electrónico <span class="required-field">*</span>
+                                        </label>
+                                        <input type="email" class="form-control" id="email" name="email" 
+                                               placeholder="tu@email.com" required>
+                                        <div class="form-text">Te contactaremos a través de este email</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="phone" class="form-label">Teléfono</label>
+                                        <input type="tel" class="form-control" id="phone" name="phone" 
+                                               placeholder="+34 600 000 000">
+                                        <div class="form-text">Opcional: para contacto directo</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Experiencia profesional -->
+                        <div class="form-section">
+                            <h6 class="text-success">Experiencia y Motivación</h6>
+                            
+                            <div class="mb-3">
+                                <label for="description" class="form-label">
+                                    Descríbete profesionalmente <span class="required-field">*</span>
+                                </label>
+                                <textarea class="form-control" id="description" name="description" 
+                                          rows="8" placeholder="Cuéntanos sobre tu experiencia, habilidades, proyectos destacados y por qué te interesa este puesto..." required></textarea>
+                                <div class="form-text">Mínimo 100 caracteres. Incluye tu experiencia relevante, habilidades técnicas y motivación para aplicar</div>
+                            </div>
+                        </div>
+
+                        <!-- Currículo -->
+                        <div class="form-section">
+                            <h6 class="text-success">Documentación</h6>
+                            
+                            <div class="mb-3">
+                                <label for="resume_file" class="form-label">Currículo (CV)</label>
+                                <input type="file" class="form-control" id="resume_file" name="resume_file" 
+                                       accept=".pdf,.doc,.docx,.txt">
+                                <div class="form-text">
+                                    Opcional pero recomendado. Formatos aceptados: PDF, DOC, DOCX, TXT (máx. 5MB)
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Términos y condiciones -->
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="terms" name="terms" required>
+                                <label class="form-check-label" for="terms">
+                                    Acepto que mis datos sean procesados para el proceso de selección <span class="required-field">*</span>
+                                </label>
+                            </div>
+                            <small class="text-muted">
+                                Tus datos serán utilizados únicamente para el proceso de selección y serán tratados conforme a la normativa de protección de datos.
+                            </small>
+                        </div>
+
+                        <!-- Botón de envío -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-send"></i> Enviar Aplicación
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información lateral -->
+        <div class="col-lg-4">
+            <!-- Información de la empresa -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-building"></i> Sobre la Empresa</h5>
+                </div>
+                <div class="card-body">
+                    <h6>{{ token.company.name }}</h6>
+                    {% if token.company.description %}
+                    <p class="text-muted">{{ token.company.description|truncatewords:30 }}</p>
+                    {% endif %}
+                    
+                    {% if token.company.website %}
+                    <div class="mb-2">
+                        <i class="bi bi-globe"></i>
+                        <a href="{{ token.company.website }}" target="_blank">{{ token.company.website }}</a>
+                    </div>
+                    {% endif %}
+                    
+                    {% if token.company.email %}
+                    <div class="mb-2">
+                        <i class="bi bi-envelope"></i>
+                        <a href="mailto:{{ token.company.email }}">{{ token.company.email }}</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Estadísticas del puesto -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-graph-up"></i> Estado de la Convocatoria</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h4 class="text-primary">{{ token.application_count }}</h4>
+                            <small class="text-muted">Aplicaciones</small>
+                        </div>
+                        <div class="col-6">
+                            {% if token.max_applications %}
+                            <h4 class="text-warning">{{ token.max_applications|add:"-token.application_count" }}</h4>
+                            <small class="text-muted">Plazas restantes</small>
+                            {% else %}
+                            <h4 class="text-success">∞</h4>
+                            <small class="text-muted">Sin límite</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if token.expires_at %}
+                    <hr>
+                    <div class="text-center">
+                        <small class="text-muted">Aplicaciones hasta:</small><br>
+                        <strong class="text-danger">{{ token.expires_at|date:"d/m/Y H:i" }}</strong>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Proceso de selección -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-list-check"></i> Proceso de Selección</h5>
+                </div>
+                <div class="card-body">
+                    <div class="small">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-1-circle text-primary me-2"></i>
+                            <span>Envío de aplicación</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-2-circle text-primary me-2"></i>
+                            <span>Revisión automática (IA)</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-3-circle text-primary me-2"></i>
+                            <span>Evaluación por RR.HH.</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-4-circle text-primary me-2"></i>
+                            <span>Entrevista personal</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-5-circle text-success me-2"></i>
+                            <span>Decisión final</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('applicationForm');
+    const descriptionField = document.getElementById('description');
+    
+    // Validación del formulario
+    form.addEventListener('submit', function(e) {
+        const description = descriptionField.value.trim();
+        
+        if (description.length < 100) {
+            e.preventDefault();
+            alert('La descripción debe tener al menos 100 caracteres. Actualmente tiene ' + description.length + ' caracteres.');
+            descriptionField.focus();
+            return false;
+        }
+    });
+    
+    // Contador de caracteres para descripción
+    descriptionField.addEventListener('input', function() {
+        const current = this.value.length;
+        const min = 100;
+        const helpText = this.nextElementSibling;
+        
+        if (current < min) {
+            helpText.innerHTML = `Mínimo 100 caracteres. Faltan ${min - current} caracteres.`;
+            helpText.className = 'form-text text-danger';
+        } else {
+            helpText.innerHTML = 'Perfecto. Incluye tu experiencia relevante, habilidades técnicas y motivación para aplicar';
+            helpText.className = 'form-text text-success';
+        }
+    });
+});
+</script>
+{% endblock %}

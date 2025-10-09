@@ -62,3 +62,11 @@ python manage.py manage_roles assign <username> profesor
 # Asignar rol agente a un usuario
 python manage.py manage_roles assign <username> agente
 ```
+
+
+```
+python manage.py shell
+from tickets.models import Agreement
+agreements = Agreement.objects.all()
+for a in agreements: print(f'ID: {a.id}, Título: {a.title}, Estado: {a.status}, Token: {a.public_token}')
+```

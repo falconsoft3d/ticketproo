@@ -230,6 +230,27 @@
                                 </div>
                             </div>
 
+                            <!-- Prompt para análisis de empleados -->
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label for="{{ form.ai_employee_analysis_prompt.id_for_label }}" class="form-label">
+                                        <i class="bi bi-chat-text me-1"></i>
+                                        {{ form.ai_employee_analysis_prompt.label }}
+                                    </label>
+                                    {{ form.ai_employee_analysis_prompt }}
+                                    {% if form.ai_employee_analysis_prompt.help_text %}
+                                        <small class="form-text text-muted">{{ form.ai_employee_analysis_prompt.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.ai_employee_analysis_prompt.errors %}
+                                        <div class="text-danger mt-1">
+                                            {% for error in form.ai_employee_analysis_prompt.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
                             <div class="alert alert-info">
                                 <i class="bi bi-info-circle me-2"></i>
                                 <strong>Información:</strong> Para habilitar el chat con IA, necesitas configurar una API key válida de OpenAI. 

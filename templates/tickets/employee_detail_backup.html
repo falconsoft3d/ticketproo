@@ -1,0 +1,349 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+.profile-header {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+.ai-analysis {
+    background-color: #f8f9fa;
+    border-left: 4px solid #007bff;
+    padding: 1rem;
+}
+.status-badge {
+    font-size: 1em;
+    padding: 0.5rem 1rem;
+}
+.salary-highlight {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #28a745;
+}
+.ai-score-circle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2em;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Cabecera del perfil -->
+    <div class="profile-header rounded">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1><i class="bi bi-person-badge"></i> {{ employee.get_full_name }}</h1>
+                    <h4>{{ employee.position }}</h4>
+                    <p class="mb-0">{{ employee.company.name }}</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <span class="badge bg-{{ employee.get_status_color }} status-badge">
+                        {{ employee.get_status_display }}
+                    </span>
+                    <div class="mt-3">
+                        <a href="{% url 'employee_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botones de cambio de estado -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5><i class="bi bi-gear"></i> Cambiar Estado</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" action="{% url 'employee_change_status' employee.pk %}" class="d-flex gap-2 flex-wrap">
+                {% csrf_token %}
+                
+                <button type="submit" name="status" value="candidate" 
+                        class="btn {% if employee.status == 'candidate' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                    <i class="bi bi-person"></i> Candidato
+                </button>
+                
+                <button type="submit" name="status" value="in_process" 
+                        class="btn {% if employee.status == 'in_process' %}btn-warning{% else %}btn-outline-warning{% endif %}">
+                    <i class="bi bi-hourglass-split"></i> En Trámites
+                </button>
+                
+                <button type="submit" name="status" value="employee" 
+                        class="btn {% if employee.status == 'employee' %}btn-success{% else %}btn-outline-success{% endif %}">
+                    <i class="bi bi-check-circle"></i> Empleado
+                </button>
+                
+                <button type="submit" name="status" value="not_employee" 
+                        class="btn {% if employee.status == 'not_employee' %}btn-danger{% else %}btn-outline-danger{% endif %}">
+                    <i class="bi bi-x-circle"></i> No Empleado
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información Personal -->
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-person"></i> Información Personal</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-sm-4"><strong>Email:</strong></div>
+                        <div class="col-sm-8">
+                            <a href="mailto:{{ employee.email }}">{{ employee.email }}</a>
+                        </div>
+                    </div>
+                    
+                    {% if employee.phone %}
+                    <div class="row mb-3">
+                        <div class="col-sm-4"><strong>Teléfono:</strong></div>
+                        <div class="col-sm-8">
+                            <a href="tel:{{ employee.phone }}">{{ employee.phone }}</a>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row mb-3">
+                        <div class="col-sm-4"><strong>Aplicó:</strong></div>
+                        <div class="col-sm-8">{{ employee.created_at|date:"d/m/Y H:i" }}</div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-sm-4"><strong>Actualizado:</strong></div>
+                        <div class="col-sm-8">{{ employee.updated_at|date:"d/m/Y H:i" }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información Salarial -->
+            {% if employee.salary_euros %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-currency-euro"></i> Información Salarial</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="salary-highlight">
+                        €{{ employee.salary_euros|floatformat:0 }}
+                    </div>
+                    <small class="text-muted">Salario propuesto anual</small>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Botón para análisis IA -->
+            {% if config.ai_chat_enabled and config.openai_api_key %}
+            <form method="post" style="margin-bottom: 20px;">
+                {% csrf_token %}
+                <button type="submit" name="analyze_ai" class="btn btn-outline-primary w-100">
+                    <i class="bi bi-robot"></i> Analizar con IA
+                </button>
+            </form>
+            {% endif %}
+
+            <!-- Puntuación IA -->
+            {% if employee.ai_score %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-robot"></i> Evaluación IA</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="d-flex justify-content-center mb-3">
+                        {% if employee.ai_score >= 8 %}
+                            <div class="ai-score-circle bg-success text-white">
+                                {{ employee.ai_score }}/10
+                            </div>
+                        {% elif employee.ai_score >= 6 %}
+                            <div class="ai-score-circle bg-warning text-white">
+                                {{ employee.ai_score }}/10
+                            </div>
+                        {% else %}
+                            <div class="ai-score-circle bg-danger text-white">
+                                {{ employee.ai_score }}/10
+                            </div>
+                        {% endif %}
+                    </div>
+                    <small class="text-muted">Puntuación automática</small>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Información Profesional -->
+        <div class="col-lg-8">
+            {% if employee.description %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-briefcase"></i> Experiencia Profesional</h5>
+                </div>
+                <div class="card-body">
+                    <div style="white-space: pre-wrap;">{{ employee.description }}</div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Análisis de IA -->
+            {% if employee.ai_analysis %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-cpu"></i> Análisis de IA</h5>
+                </div>
+                <div class="card-body">
+                    <div class="ai-analysis">
+                        <div style="white-space: pre-wrap;">{{ employee.ai_analysis }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Currículo -->
+            {% if employee.resume_file %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-file-earmark-pdf"></i> Currículo</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6>Archivo de Currículo</h6>
+                            <small class="text-muted">{{ employee.resume_file.name|cut:"resumes/" }}</small>
+                        </div>
+                        <div>
+                            <a href="{{ employee.resume_file.url }}" class="btn btn-primary" target="_blank">
+                                <i class="bi bi-download"></i> Descargar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Historial de Estados -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-clock-history"></i> Historial</h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <h6>Aplicación Recibida</h6>
+                                <p class="text-muted mb-0">{{ employee.created_at|date:"d/m/Y H:i" }}</p>
+                                <small>El candidato envió su aplicación</small>
+                            </div>
+                        </div>
+                        
+                        {% if employee.ai_analysis %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-info"></div>
+                            <div class="timeline-content">
+                                <h6>Análisis IA Completado</h6>
+                                <p class="text-muted mb-0">{{ employee.created_at|date:"d/m/Y H:i" }}</p>
+                                <small>Procesamiento automático del perfil</small>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-marker 
+                                {% if employee.status == 'applied' %}bg-warning
+                                {% elif employee.status == 'interview' %}bg-info
+                                {% elif employee.status == 'hired' %}bg-success
+                                {% elif employee.status == 'rejected' %}bg-danger
+                                {% endif %}"></div>
+                            <div class="timeline-content">
+                                <h6>Estado Actual: {{ employee.get_status_display }}</h6>
+                                <p class="text-muted mb-0">{{ employee.updated_at|date:"d/m/Y H:i" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6>Acciones disponibles</h6>
+                            <small class="text-muted">Gestionar el estado de este candidato</small>
+                        </div>
+                        <div>
+                            <a href="{% url 'employee_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Volver a la Lista
+                            </a>
+                            <a href="mailto:{{ employee.email }}" class="btn btn-primary">
+                                <i class="bi bi-envelope"></i> Contactar
+                            </a>
+                            {% if employee.phone %}
+                            <a href="tel:{{ employee.phone }}" class="btn btn-success">
+                                <i class="bi bi-telephone"></i> Llamar
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 3rem;
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 2rem;
+}
+
+.timeline-item:before {
+    content: '';
+    position: absolute;
+    left: -1.5rem;
+    top: 0.5rem;
+    bottom: -2rem;
+    width: 2px;
+    background-color: #dee2e6;
+}
+
+.timeline-item:last-child:before {
+    display: none;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -2rem;
+    top: 0.5rem;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #dee2e6;
+}
+
+.timeline-content {
+    padding-left: 1rem;
+}
+</style>
+{% endblock %}

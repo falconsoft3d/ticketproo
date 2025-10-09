@@ -11,10 +11,9 @@ from django.http import HttpResponse, Http404, JsonResponse
 from django.utils import timezone
 from django.conf import settings
 from django.views.decorators.http import require_http_methods
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import os
 import json
-from datetime import timedelta
 
 # Imports para OpenAI
 try:
@@ -31,7 +30,8 @@ from .models import (
     Opportunity, OpportunityStatus, OpportunityNote, OpportunityStatusHistory,
     Meeting, MeetingAttendee, MeetingQuestion, Contact,
     BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, Concept,
-    Exam, ExamQuestion, ExamAttempt, ExamAnswer, ContactoWeb, PublicDocumentUpload
+    Exam, ExamQuestion, ExamAttempt, ExamAnswer, ContactoWeb, PublicDocumentUpload,
+    Employee, JobApplicationToken, EmployeePayroll, Agreement, AgreementSignature
 )
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
@@ -39,7 +39,8 @@ from .forms import (
     TicketCommentForm, UserNoteForm, TimeEntryStartForm, TimeEntryEndForm, 
     TimeEntryEditForm, ProjectForm, CompanyForm, SystemConfigurationForm, DocumentForm,
     UrlManagerForm, UrlManagerFilterForm, WorkOrderForm, WorkOrderFilterForm, TaskForm,
-    ChatMessageForm, ChatRoomForm, AIChatSessionForm, AIChatMessageForm, ConceptForm
+    ChatMessageForm, ChatRoomForm, AIChatSessionForm, AIChatMessageForm, ConceptForm,
+    EmployeeHiringOpinionForm, EmployeePayrollForm, AgreementForm, AgreementSignatureForm, AgreementPublicForm
 )
 from .utils import is_agent, is_regular_user, is_teacher, can_manage_courses, get_user_role, assign_user_to_group
 
@@ -9372,3 +9373,1255 @@ def course_registration_tokens_list(request, pk):
     }
     
     return render(request, 'tickets/course_registration_tokens_list.html', context)
+
+
+# =============================================================================
+# VISTAS DE EMPLEADOS Y APLICACIONES DE TRABAJO
+# =============================================================================
+
+@login_required
+def employee_list(request):
+    """Lista de empleados"""
+    if not request.user.groups.filter(name__in=['Administradores', 'Agentes', 'Profesores']).exists():
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('dashboard')
+    
+    # Filtrar por empresa del usuario
+    user_profile = UserProfile.objects.filter(user=request.user).first()
+    if user_profile and user_profile.company:
+        employees = Employee.objects.filter(company=user_profile.company).order_by('-created_at')
+    else:
+        employees = Employee.objects.all().order_by('-created_at')
+    
+    # Filtros
+    status_filter = request.GET.get('status')
+    search = request.GET.get('search')
+    
+    if status_filter:
+        employees = employees.filter(status=status_filter)
+    
+    if search:
+        employees = employees.filter(
+            Q(first_name__icontains=search) |
+            Q(last_name__icontains=search) |
+            Q(email__icontains=search) |
+            Q(position__icontains=search)
+        )
+    
+    # Paginación
+    paginator = Paginator(employees, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'status_choices': Employee.STATUS_CHOICES,
+        'current_status': status_filter,
+        'search': search,
+        'page_title': 'Gestión de Empleados'
+    }
+    
+    return render(request, 'tickets/employee_list.html', context)
+
+
+@login_required
+def employee_detail(request, pk):
+    """Detalle de un empleado"""
+    employee = get_object_or_404(Employee, pk=pk)
+    
+    # Verificar permisos
+    if not request.user.groups.filter(name__in=['Administradores', 'Agentes', 'Profesores']).exists():
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('employee_list')
+    
+    # Verificar que el usuario puede ver este empleado (misma empresa)
+    user_profile = UserProfile.objects.filter(user=request.user).first()
+    if user_profile and user_profile.company and employee.company != user_profile.company:
+        messages.error(request, 'No tienes permisos para ver este empleado.')
+        return redirect('employee_list')
+    
+    if request.method == 'POST' and 'analyze_ai' in request.POST:
+        # Obtener configuración del sistema
+        config = SystemConfiguration.objects.first()
+        if not config or not config.openai_api_key:
+            messages.error(request, 'La configuración de IA no está disponible. Contacta al administrador.')
+            return redirect('employee_detail', pk=pk)
+            
+        # Preparar datos para IA
+        datos = f"Nombre: {employee.get_full_name()}\nEmail: {employee.email}\nTeléfono: {employee.phone}\nCargo: {employee.position}"
+        if employee.salary_euros:
+            datos += f"\nSalario propuesto: €{employee.salary_euros}"
+        if employee.description:
+            datos += f"\nDescripción/Experiencia: {employee.description}"
+        if employee.resume_file:
+            datos += f"\nCurrículo adjunto: {employee.resume_file.name}"
+            
+        # Usar el prompt personalizado de la configuración
+        prompt = config.ai_employee_analysis_prompt.format(datos=datos)
+        
+        # Llamada a OpenAI
+        try:
+            from openai import OpenAI
+            
+            client = OpenAI(api_key=config.openai_api_key)
+            
+            response = client.chat.completions.create(
+                model=config.openai_model,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=500,
+                temperature=0.7
+            )
+            
+            texto = response.choices[0].message.content.strip()
+            resumen = ""
+            puntuacion = None
+            
+            # Extraer resumen y puntuación
+            import re
+            resumen_match = re.search(r"Resumen:\s*(.*?)(?=Puntuación:|$)", texto, re.DOTALL)
+            puntuacion_match = re.search(r"Puntuación:\s*(\d+)", texto)
+            
+            if resumen_match:
+                resumen = resumen_match.group(1).strip()
+            else:
+                # Si no encuentra el formato esperado, usar todo el texto
+                resumen = texto
+                
+            if puntuacion_match:
+                puntuacion = int(puntuacion_match.group(1))
+                # Validar que la puntuación esté entre 1 y 10
+                if puntuacion < 1 or puntuacion > 10:
+                    puntuacion = None
+                    
+            # Guardar resultados
+            employee.ai_analysis = resumen if resumen else texto
+            employee.ai_score = puntuacion
+            employee.save()
+            
+            messages.success(request, "Análisis de IA completado y guardado correctamente.")
+            
+        except Exception as e:
+            messages.error(request, f"Error al analizar con IA: {str(e)}")
+            
+        return redirect('employee_detail', pk=pk)
+    context = {
+        'employee': employee,
+        'page_title': f'Empleado: {employee.get_full_name()}',
+        'config': SystemConfiguration.objects.first()
+    }
+    return render(request, 'tickets/employee_detail.html', context)
+
+
+@login_required
+def employee_change_status(request, pk):
+    """Cambiar el estado de un empleado"""
+    employee = get_object_or_404(Employee, pk=pk)
+    
+    # Verificar permisos
+    if not request.user.groups.filter(name__in=['Administradores', 'Agentes', 'Profesores']).exists():
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('employee_list')
+    
+    # Verificar que el usuario puede modificar este empleado (misma empresa)
+    user_profile = UserProfile.objects.filter(user=request.user).first()
+    if user_profile and user_profile.company and employee.company != user_profile.company:
+        messages.error(request, 'No tienes permisos para modificar este empleado.')
+        return redirect('employee_list')
+    
+    if request.method == 'POST':
+        new_status = request.POST.get('status')
+        if new_status in ['candidate', 'in_process', 'employee', 'not_employee']:
+            employee.status = new_status
+            employee.save()
+            messages.success(request, f'Estado actualizado a {employee.get_status_display()}')
+            return redirect('employee_detail', pk=pk)
+        else:
+            messages.error(request, 'Estado no válido.')
+    
+    return redirect('employee_detail', pk=pk)
+
+
+@login_required
+def employee_edit_hiring_opinion(request, pk):
+    """Editar opinión de reunión de contratación"""
+    employee = get_object_or_404(Employee, pk=pk)
+    
+    # Verificar permisos
+    if not request.user.groups.filter(name__in=['Administradores', 'Agentes', 'Profesores']).exists():
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('employee_list')
+    
+    # Verificar que el usuario puede modificar este empleado (misma empresa)
+    user_profile = UserProfile.objects.filter(user=request.user).first()
+    if user_profile and user_profile.company and employee.company != user_profile.company:
+        messages.error(request, 'No tienes permisos para modificar este empleado.')
+        return redirect('employee_list')
+    
+    if request.method == 'POST':
+        form = EmployeeHiringOpinionForm(request.POST, instance=employee)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Opinión de reunión actualizada correctamente.')
+            
+            # Redirigir según el tipo de empleado
+            if employee.status in ['candidate', 'in_process']:
+                return redirect('candidate_detail', pk=pk)
+            else:
+                return redirect('active_employee_detail', pk=pk)
+        else:
+            messages.error(request, 'Por favor, corrige los errores en el formulario.')
+    else:
+        form = EmployeeHiringOpinionForm(instance=employee)
+    
+    context = {
+        'form': form,
+        'employee': employee,
+        'page_title': f'Editar Opinión de Reunión - {employee.get_full_name()}',
+    }
+    
+    return render(request, 'tickets/employee_edit_hiring_opinion.html', context)
+
+
+@login_required
+def employee_payroll_list(request, pk):
+    """Lista de nóminas de un empleado"""
+    employee = get_object_or_404(Employee, pk=pk)
+    
+    # Verificar permisos
+    if not request.user.groups.filter(name__in=['Administradores', 'Agentes', 'Profesores']).exists():
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('employee_list')
+    
+    # Verificar que el usuario puede ver este empleado (misma empresa)
+    user_profile = UserProfile.objects.filter(user=request.user).first()
+    if user_profile and user_profile.company and employee.company != user_profile.company:
+        messages.error(request, 'No tienes permisos para ver este empleado.')
+        return redirect('employee_list')
+    
+    # Obtener nóminas del empleado
+    payrolls = employee.payrolls.all().order_by('-period_year', '-period_month')
+    
+    context = {
+        'employee': employee,
+        'payrolls': payrolls,
+        'page_title': f'Nóminas - {employee.get_full_name()}',
+    }
+    
+    return render(request, 'tickets/employee_payroll_list.html', context)
+
+
+@login_required
+def employee_payroll_create(request, pk):
+    """Agregar nueva nómina a un empleado"""
+    employee = get_object_or_404(Employee, pk=pk)
+    
+    # Verificar permisos
+    if not request.user.groups.filter(name__in=['Administradores', 'Agentes', 'Profesores']).exists():
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('employee_list')
+    
+    # Verificar que el usuario puede modificar este empleado (misma empresa)
+    user_profile = UserProfile.objects.filter(user=request.user).first()
+    if user_profile and user_profile.company and employee.company != user_profile.company:
+        messages.error(request, 'No tienes permisos para modificar este empleado.')
+        return redirect('employee_list')
+    
+    if request.method == 'POST':
+        form = EmployeePayrollForm(request.POST, request.FILES)
+        if form.is_valid():
+            payroll = form.save(commit=False)
+            payroll.employee = employee
+            payroll.created_by = request.user
+            try:
+                payroll.save()
+                messages.success(request, f'Nómina de {payroll.get_period_display()} agregada correctamente.')
+                return redirect('employee_payroll_list', pk=employee.pk)
+            except Exception as e:
+                if 'UNIQUE constraint failed' in str(e) or 'unique_together' in str(e):
+                    messages.error(request, f'Ya existe una nómina para {payroll.get_period_display()}.')
+                else:
+                    messages.error(request, f'Error al guardar la nómina: {str(e)}')
+        else:
+            messages.error(request, 'Por favor, corrige los errores en el formulario.')
+    else:
+        form = EmployeePayrollForm()
+    
+    context = {
+        'form': form,
+        'employee': employee,
+        'page_title': f'Nueva Nómina - {employee.get_full_name()}',
+    }
+    
+    return render(request, 'tickets/employee_payroll_form.html', context)
+
+
+@login_required
+def employee_payroll_detail(request, employee_pk, payroll_pk):
+    """Ver detalles de una nómina específica"""
+    employee = get_object_or_404(Employee, pk=employee_pk)
+    payroll = get_object_or_404(EmployeePayroll, pk=payroll_pk, employee=employee)
+    
+    # Verificar permisos
+    if not request.user.groups.filter(name__in=['Administradores', 'Agentes', 'Profesores']).exists():
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('employee_list')
+    
+    # Verificar que el usuario puede ver este empleado (misma empresa)
+    user_profile = UserProfile.objects.filter(user=request.user).first()
+    if user_profile and user_profile.company and employee.company != user_profile.company:
+        messages.error(request, 'No tienes permisos para ver este empleado.')
+        return redirect('employee_list')
+    
+    context = {
+        'employee': employee,
+        'payroll': payroll,
+        'page_title': f'Nómina {payroll.get_period_display()} - {employee.get_full_name()}',
+    }
+    
+    return render(request, 'tickets/employee_payroll_detail.html', context)
+
+
+@login_required
+def employee_payroll_edit(request, employee_pk, payroll_pk):
+    """Editar una nómina existente"""
+    employee = get_object_or_404(Employee, pk=employee_pk)
+    payroll = get_object_or_404(EmployeePayroll, pk=payroll_pk, employee=employee)
+    
+    # Verificar permisos
+    if not request.user.groups.filter(name__in=['Administradores', 'Agentes', 'Profesores']).exists():
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('employee_list')
+    
+    # Verificar que el usuario puede modificar este empleado (misma empresa)
+    user_profile = UserProfile.objects.filter(user=request.user).first()
+    if user_profile and user_profile.company and employee.company != user_profile.company:
+        messages.error(request, 'No tienes permisos para modificar este empleado.')
+        return redirect('employee_list')
+    
+    if request.method == 'POST':
+        # Debug: Verificar archivos recibidos
+        print(f"DEBUG - FILES recibidos: {request.FILES}")
+        print(f"DEBUG - POST data: {request.POST}")
+        
+        form = EmployeePayrollForm(request.POST, request.FILES, instance=payroll)
+        if form.is_valid():
+            try:
+                saved_payroll = form.save()
+                print(f"DEBUG - Nómina guardada - Comprobante: {saved_payroll.payment_receipt}")
+                messages.success(request, f'Nómina de {payroll.get_period_display()} actualizada correctamente.')
+                return redirect('employee_payroll_detail', employee_pk=employee.pk, payroll_pk=payroll.pk)
+            except Exception as e:
+                print(f"DEBUG - Error al guardar: {str(e)}")
+                messages.error(request, f'Error al actualizar la nómina: {str(e)}')
+        else:
+            print(f"DEBUG - Errores del formulario: {form.errors}")
+            messages.error(request, 'Por favor, corrige los errores en el formulario.')
+    else:
+        form = EmployeePayrollForm(instance=payroll)
+    
+    context = {
+        'form': form,
+        'employee': employee,
+        'payroll': payroll,
+        'page_title': f'Editar Nómina {payroll.get_period_display()} - {employee.get_full_name()}',
+    }
+    
+    return render(request, 'tickets/employee_payroll_form.html', context)
+
+
+@login_required
+def employee_payroll_delete(request, employee_pk, payroll_pk):
+    """Eliminar una nómina"""
+    employee = get_object_or_404(Employee, pk=employee_pk)
+    payroll = get_object_or_404(EmployeePayroll, pk=payroll_pk, employee=employee)
+    
+    # Verificar permisos
+    if not request.user.groups.filter(name__in=['Administradores', 'Agentes', 'Profesores']).exists():
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('employee_list')
+    
+    # Verificar que el usuario puede modificar este empleado (misma empresa)
+    user_profile = UserProfile.objects.filter(user=request.user).first()
+    if user_profile and user_profile.company and employee.company != user_profile.company:
+        messages.error(request, 'No tienes permisos para modificar este empleado.')
+        return redirect('employee_list')
+    
+    if request.method == 'POST':
+        period_display = payroll.get_period_display()
+        payroll.delete()
+        messages.success(request, f'Nómina de {period_display} eliminada correctamente.')
+        return redirect('employee_payroll_list', pk=employee.pk)
+    
+    context = {
+        'employee': employee,
+        'payroll': payroll,
+        'page_title': f'Eliminar Nómina {payroll.get_period_display()} - {employee.get_full_name()}',
+    }
+    
+    return render(request, 'tickets/employee_payroll_delete.html', context)
+
+
+@login_required
+def candidate_list(request):
+    """Lista de candidatos (estado: candidato e in_process)"""
+    if not request.user.groups.filter(name__in=['Administradores', 'Agentes', 'Profesores']).exists():
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('dashboard')
+    
+    # Filtrar por empresa del usuario
+    user_profile = UserProfile.objects.filter(user=request.user).first()
+    if user_profile and user_profile.company:
+        employees = Employee.objects.filter(
+            company=user_profile.company,
+            status__in=['candidate', 'in_process']
+        ).order_by('-created_at')
+    else:
+        employees = Employee.objects.filter(status__in=['candidate', 'in_process']).order_by('-created_at')
+    
+    # Búsqueda
+    search = request.GET.get('search')
+    if search:
+        employees = employees.filter(
+            models.Q(first_name__icontains=search) |
+            models.Q(last_name__icontains=search) |
+            models.Q(email__icontains=search) |
+            models.Q(position__icontains=search)
+        )
+    
+    # Paginación
+    paginator = Paginator(employees, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'employees': page_obj,
+        'search': search,
+        'page_title': 'Candidatos',
+        'section': 'candidates'
+    }
+    
+    return render(request, 'tickets/candidate_list.html', context)
+
+
+@login_required
+def candidate_detail(request, pk):
+    """Detalle de un candidato"""
+    employee = get_object_or_404(Employee, pk=pk)
+    
+    # Verificar permisos
+    if not request.user.groups.filter(name__in=['Administradores', 'Agentes', 'Profesores']).exists():
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('candidate_list')
+    
+    # Verificar que el usuario puede ver este candidato (misma empresa)
+    user_profile = UserProfile.objects.filter(user=request.user).first()
+    if user_profile and user_profile.company and employee.company != user_profile.company:
+        messages.error(request, 'No tienes permisos para ver este candidato.')
+        return redirect('candidate_list')
+    
+    # Análisis de IA (mismo código que employee_detail)
+    if request.method == 'POST' and 'analyze_ai' in request.POST:
+        config = SystemConfiguration.objects.first()
+        if not config or not config.openai_api_key:
+            messages.error(request, 'La configuración de IA no está disponible. Contacta al administrador.')
+            return redirect('candidate_detail', pk=pk)
+            
+        # Preparar datos para IA
+        datos = f"Nombre: {employee.get_full_name()}\nEmail: {employee.email}\nTeléfono: {employee.phone}\nCargo: {employee.position}"
+        if employee.salary_euros:
+            datos += f"\nSalario propuesto: €{employee.salary_euros}"
+        if employee.description:
+            datos += f"\nDescripción/Experiencia: {employee.description}"
+        if employee.resume_file:
+            datos += f"\nCurrículo adjunto: {employee.resume_file.name}"
+            
+        # Usar el prompt personalizado de la configuración
+        prompt = config.ai_employee_analysis_prompt.format(datos=datos)
+        
+        # Llamada a OpenAI
+        try:
+            from openai import OpenAI
+            
+            client = OpenAI(api_key=config.openai_api_key)
+            
+            response = client.chat.completions.create(
+                model=config.openai_model,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=500,
+                temperature=0.7
+            )
+            
+            texto = response.choices[0].message.content.strip()
+            resumen = ""
+            puntuacion = None
+            
+            # Extraer resumen y puntuación
+            import re
+            resumen_match = re.search(r"Resumen:\s*(.*?)(?=Puntuación:|$)", texto, re.DOTALL)
+            puntuacion_match = re.search(r"Puntuación:\s*(\d+)", texto)
+            
+            if resumen_match:
+                resumen = resumen_match.group(1).strip()
+            else:
+                # Si no encuentra el formato esperado, usar todo el texto
+                resumen = texto
+                
+            if puntuacion_match:
+                puntuacion = int(puntuacion_match.group(1))
+                # Validar que la puntuación esté entre 1 y 10
+                if puntuacion < 1 or puntuacion > 10:
+                    puntuacion = None
+                    
+            # Guardar resultados
+            employee.ai_analysis = resumen if resumen else texto
+            employee.ai_score = puntuacion
+            employee.save()
+            
+            messages.success(request, "Análisis de IA completado y guardado correctamente.")
+            
+        except Exception as e:
+            messages.error(request, f"Error al analizar con IA: {str(e)}")
+            
+        return redirect('candidate_detail', pk=pk)
+    
+    context = {
+        'employee': employee,
+        'page_title': f'Candidato: {employee.get_full_name()}',
+        'config': SystemConfiguration.objects.first(),
+        'section': 'candidates'
+    }
+    
+    return render(request, 'tickets/candidate_detail.html', context)
+
+
+@login_required
+def active_employee_list(request):
+    """Lista de empleados activos (estado: employee)"""
+    if not request.user.groups.filter(name__in=['Administradores', 'Agentes', 'Profesores']).exists():
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('dashboard')
+    
+    # Filtrar por empresa del usuario
+    user_profile = UserProfile.objects.filter(user=request.user).first()
+    if user_profile and user_profile.company:
+        employees = Employee.objects.filter(
+            company=user_profile.company,
+            status='employee'
+        ).order_by('-created_at')
+    else:
+        employees = Employee.objects.filter(status='employee').order_by('-created_at')
+    
+    # Búsqueda
+    search = request.GET.get('search')
+    if search:
+        employees = employees.filter(
+            models.Q(first_name__icontains=search) |
+            models.Q(last_name__icontains=search) |
+            models.Q(email__icontains=search) |
+            models.Q(position__icontains=search)
+        )
+    
+    # Paginación
+    paginator = Paginator(employees, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'employees': page_obj,
+        'search': search,
+        'page_title': 'Empleados Activos',
+        'section': 'employees'
+    }
+    
+    return render(request, 'tickets/active_employee_list.html', context)
+
+
+@login_required
+def active_employee_detail(request, pk):
+    """Detalle de un empleado activo"""
+    employee = get_object_or_404(Employee, pk=pk)
+    
+    # Verificar permisos
+    if not request.user.groups.filter(name__in=['Administradores', 'Agentes', 'Profesores']).exists():
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('active_employee_list')
+    
+    # Verificar que el usuario puede ver este empleado (misma empresa)
+    user_profile = UserProfile.objects.filter(user=request.user).first()
+    if user_profile and user_profile.company and employee.company != user_profile.company:
+        messages.error(request, 'No tienes permisos para ver este empleado.')
+        return redirect('active_employee_list')
+    
+    context = {
+        'employee': employee,
+        'page_title': f'Empleado: {employee.get_full_name()}',
+        'config': SystemConfiguration.objects.first(),
+        'section': 'employees'
+    }
+    
+    return render(request, 'tickets/active_employee_detail.html', context)
+
+
+@login_required
+def job_application_token_list(request):
+    """Lista de tokens de aplicación de trabajo"""
+    if not request.user.groups.filter(name__in=['Administradores', 'Agentes', 'Profesores']).exists():
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('dashboard')
+    
+    # Filtrar por empresa del usuario
+    user_profile = UserProfile.objects.filter(user=request.user).first()
+    if user_profile and user_profile.company:
+        tokens = JobApplicationToken.objects.filter(company=user_profile.company).order_by('-created_at')
+    else:
+        tokens = JobApplicationToken.objects.all().order_by('-created_at')
+    
+    # Paginación
+    paginator = Paginator(tokens, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'page_title': 'Enlaces de Aplicación de Empleo'
+    }
+    
+    return render(request, 'tickets/job_application_token_list.html', context)
+
+
+@login_required
+def job_application_token_create(request):
+    """Crear nuevo token de aplicación de trabajo"""
+    if not request.user.groups.filter(name__in=['Administradores', 'Agentes', 'Profesores']).exists():
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('dashboard')
+    
+    if request.method == 'POST':
+        try:
+            job_title = request.POST.get('job_title')
+            job_description = request.POST.get('job_description')
+            proposed_salary_euros = request.POST.get('proposed_salary_euros')
+            max_applications = request.POST.get('max_applications')
+            expires_at = request.POST.get('expires_at')
+            
+            if not job_title or not job_description:
+                messages.error(request, 'El título y descripción del trabajo son obligatorios.')
+                return render(request, 'tickets/job_application_token_form.html')
+            
+            # Obtener empresa del usuario
+            user_profile = UserProfile.objects.filter(user=request.user).first()
+            if not user_profile or not user_profile.company:
+                messages.error(request, 'Debes estar asociado a una empresa para crear enlaces de aplicación.')
+                return redirect('job_application_token_list')
+            
+            # Crear el token
+            token = JobApplicationToken.objects.create(
+                job_title=job_title,
+                job_description=job_description,
+                proposed_salary_euros=float(proposed_salary_euros) if proposed_salary_euros else None,
+                max_applications=int(max_applications) if max_applications else None,
+                expires_at=datetime.strptime(expires_at, '%Y-%m-%dT%H:%M') if expires_at else None,
+                company=user_profile.company,
+                created_by=request.user
+            )
+            
+            messages.success(request, f'Enlace de aplicación creado exitosamente para "{job_title}".')
+            return redirect('job_application_token_detail', pk=token.pk)
+            
+        except Exception as e:
+            messages.error(request, f'Error al crear el enlace: {str(e)}')
+    
+    context = {
+        'page_title': 'Crear Enlace de Aplicación de Empleo'
+    }
+    
+    return render(request, 'tickets/job_application_token_form.html', context)
+
+
+@login_required
+def job_application_token_detail(request, pk):
+    """Detalle de un token de aplicación de trabajo"""
+    token = get_object_or_404(JobApplicationToken, pk=pk)
+    
+    # Verificar permisos
+    if not request.user.groups.filter(name__in=['Administradores', 'Agentes', 'Profesores']).exists():
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('job_application_token_list')
+    
+    # Verificar que el usuario puede ver este token (misma empresa)
+    user_profile = UserProfile.objects.filter(user=request.user).first()
+    if user_profile and user_profile.company and token.company != user_profile.company:
+        messages.error(request, 'No tienes permisos para ver este enlace.')
+        return redirect('job_application_token_list')
+    
+    # Obtener aplicaciones relacionadas
+    applications = Employee.objects.filter(
+        company=token.company,
+        created_at__gte=token.created_at
+    ).order_by('-created_at')
+    
+    context = {
+        'token': token,
+        'applications': applications,
+        'page_title': f'Enlace: {token.job_title}'
+    }
+    
+    return render(request, 'tickets/job_application_token_detail.html', context)
+
+
+def public_job_application(request, token):
+    """Vista pública para aplicar a un empleo"""
+    try:
+        application_token = get_object_or_404(JobApplicationToken, application_token=token)
+    except Exception:
+        return render(request, 'tickets/public_job_application_error.html', {
+            'error': 'El enlace de aplicación no es válido.'
+        })
+    
+    if not application_token.is_valid():
+        error_msg = 'Este enlace de aplicación ya no está disponible.'
+        if application_token.expires_at and timezone.now() > application_token.expires_at:
+            error_msg = 'Este enlace de aplicación ha expirado.'
+        elif application_token.max_applications and application_token.application_count >= application_token.max_applications:
+            error_msg = 'Este enlace ha alcanzado el máximo de aplicaciones permitidas.'
+        
+        return render(request, 'tickets/public_job_application_error.html', {
+            'error': error_msg
+        })
+    
+    if request.method == 'POST':
+        try:
+            # Obtener datos del formulario
+            first_name = request.POST.get('first_name', '').strip()
+            last_name = request.POST.get('last_name', '').strip()
+            email = request.POST.get('email', '').strip()
+            phone = request.POST.get('phone', '').strip()
+            description = request.POST.get('description', '').strip()
+            resume_file = request.FILES.get('resume_file')
+            
+            # Validaciones básicas
+            if not all([first_name, last_name, email, description]):
+                messages.error(request, 'Todos los campos marcados con * son obligatorios.')
+                return render(request, 'tickets/public_job_application.html', {
+                    'token': application_token,
+                    'page_title': f'Aplicar a: {application_token.job_title}'
+                })
+            
+            # Verificar que el email no exista ya
+            if Employee.objects.filter(email=email, company=application_token.company).exists():
+                messages.error(request, 'Ya existe una aplicación con este correo electrónico.')
+                return render(request, 'tickets/public_job_application.html', {
+                    'token': application_token,
+                    'page_title': f'Aplicar a: {application_token.job_title}'
+                })
+            
+            # Crear el empleado/aplicante
+            employee = Employee.objects.create(
+                first_name=first_name,
+                last_name=last_name,
+                email=email,
+                phone=phone,
+                position=application_token.job_title,
+                salary_euros=application_token.proposed_salary_euros,
+                description=description,
+                resume_file=resume_file,
+                company=application_token.company,
+                status='applied'
+            )
+            
+            # Incrementar contador de aplicaciones
+            application_token.application_count += 1
+            application_token.save()
+            
+            # Procesar CV con IA si está configurada
+            try:
+                analyze_resume_with_ai(employee)
+            except Exception as e:
+                print(f"Error al analizar CV con IA: {e}")
+            
+            return render(request, 'tickets/public_job_application_success.html', {
+                'employee': employee,
+                'token': application_token,
+                'page_title': 'Aplicación Enviada'
+            })
+            
+        except Exception as e:
+            messages.error(request, f'Error al enviar la aplicación: {str(e)}')
+    
+    context = {
+        'token': application_token,
+        'page_title': f'Aplicar a: {application_token.job_title}'
+    }
+    
+    return render(request, 'tickets/public_job_application.html', context)
+
+
+def analyze_resume_with_ai(employee):
+    """Analizar currículo con IA si está configurada"""
+    try:
+        # Obtener configuración de IA
+        ai_config = SystemConfiguration.objects.first()
+        if not ai_config or not hasattr(ai_config, 'openai_api_key') or not ai_config.openai_api_key:
+            return
+        
+        # Si no hay archivo de CV, analizar solo la descripción
+        content_to_analyze = employee.description
+        
+        if employee.resume_file:
+            try:
+                # Leer el contenido del archivo (solo si es texto plano o PDF simple)
+                file_path = employee.resume_file.path
+                if file_path.endswith('.txt'):
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        content_to_analyze += f"\n\nContenido del CV:\n{f.read()}"
+            except Exception:
+                pass  # Si no se puede leer el archivo, solo usar la descripción
+        
+        if not content_to_analyze.strip():
+            return
+        
+        # Configurar OpenAI
+        import openai
+        openai.api_key = ai_config.openai_api_key
+        
+        # Prompt para análisis de CV
+        prompt = f"""
+        Analiza el siguiente currículo/perfil profesional y proporciona:
+        
+        1. Un resumen ejecutivo del candidato (máximo 3 párrafos)
+        2. Fortalezas principales
+        3. Áreas de mejora o faltantes
+        4. Puntuación del 1 al 10 basada en:
+           - Experiencia relevante
+           - Habilidades técnicas
+           - Comunicación escrita
+           - Potencial de crecimiento
+        
+        Puesto aplicado: {employee.position}
+        
+        Perfil del candidato:
+        {content_to_analyze}
+        
+        Responde en formato estructurado y profesional.
+        """
+        
+        # Llamar a la API de OpenAI
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "Eres un experto en recursos humanos y análisis de currículos."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=800,
+            temperature=0.3
+        )
+        
+        ai_analysis = response.choices[0].message.content
+        
+        # Extraer puntuación del análisis (buscar números del 1-10)
+        import re
+        score_match = re.search(r'(\d+)/10|(\d+)\s*de\s*10|puntuación.*?(\d+)', ai_analysis.lower())
+        ai_score = None
+        if score_match:
+            for group in score_match.groups():
+                if group and 1 <= int(group) <= 10:
+                    ai_score = int(group)
+                    break
+        
+        # Guardar análisis
+        employee.ai_analysis = ai_analysis
+        employee.ai_score = ai_score
+        employee.save()
+        
+    except Exception as e:
+        print(f"Error en análisis de IA: {e}")
+        # No fallar silenciosamente, pero tampoco interrumpir el proceso
+
+
+# =============================================================================
+# VISTAS DE ACUERDOS/CONTRATOS
+# =============================================================================
+
+@login_required
+def agreement_list(request):
+    """Lista de acuerdos"""
+    if not request.user.groups.filter(name__in=['Administradores', 'Agentes']).exists():
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('dashboard')
+    
+    # Filtrar por empresa del usuario si es necesario
+    user_profile = UserProfile.objects.filter(user=request.user).first()
+    if user_profile and user_profile.company:
+        agreements = Agreement.objects.filter(company=user_profile.company)
+    else:
+        agreements = Agreement.objects.all()
+    
+    # Filtros de búsqueda
+    search = request.GET.get('search', '').strip()
+    status_filter = request.GET.get('status', '')
+    
+    if search:
+        agreements = agreements.filter(
+            models.Q(title__icontains=search) |
+            models.Q(body__icontains=search)
+        )
+    
+    if status_filter:
+        agreements = agreements.filter(status=status_filter)
+    
+    agreements = agreements.order_by('-created_at')
+    
+    # Paginación
+    from django.core.paginator import Paginator
+    paginator = Paginator(agreements, 20)
+    page_number = request.GET.get('page')
+    agreements = paginator.get_page(page_number)
+    
+    context = {
+        'agreements': agreements,
+        'search': search,
+        'status_filter': status_filter,
+        'page_title': 'Gestión de Acuerdos',
+    }
+    
+    return render(request, 'tickets/agreement_list.html', context)
+
+
+@login_required
+def agreement_create(request):
+    """Crear nuevo acuerdo"""
+    if not request.user.groups.filter(name__in=['Administradores', 'Agentes']).exists():
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('dashboard')
+    
+    if request.method == 'POST':
+        form = AgreementForm(request.POST)
+        if form.is_valid():
+            agreement = form.save(commit=False)
+            agreement.created_by = request.user
+            
+            # Asignar empresa del usuario
+            user_profile = UserProfile.objects.filter(user=request.user).first()
+            if user_profile and user_profile.company:
+                agreement.company = user_profile.company
+            
+            # Generar contenido con IA si se solicitó
+            if form.cleaned_data.get('generate_ai_content'):
+                ai_content = agreement.generate_ai_content(
+                    form.cleaned_data.get('ai_prompt_addition', '')
+                )
+                if ai_content:
+                    agreement.body = ai_content
+                    messages.success(request, 'Contenido generado con IA exitosamente.')
+                else:
+                    messages.warning(request, 'No se pudo generar contenido con IA. Verifica la configuración.')
+            
+            agreement.save()
+            messages.success(request, f'Acuerdo "{agreement.title}" creado correctamente.')
+            return redirect('agreement_detail', pk=agreement.pk)
+        else:
+            messages.error(request, 'Por favor, corrige los errores en el formulario.')
+    else:
+        form = AgreementForm()
+    
+    context = {
+        'form': form,
+        'page_title': 'Nuevo Acuerdo',
+    }
+    
+    return render(request, 'tickets/agreement_form.html', context)
+
+
+@login_required
+def agreement_detail(request, pk):
+    """Ver detalles de un acuerdo"""
+    agreement = get_object_or_404(Agreement, pk=pk)
+    
+    # Verificar permisos
+    if not request.user.groups.filter(name__in=['Administradores', 'Agentes']).exists():
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('dashboard')
+    
+    # Verificar empresa
+    user_profile = UserProfile.objects.filter(user=request.user).first()
+    if user_profile and user_profile.company and agreement.company != user_profile.company:
+        messages.error(request, 'No tienes permisos para ver este acuerdo.')
+        return redirect('agreement_list')
+    
+    signatures = agreement.signatures.all().order_by('-signed_at')
+    
+    context = {
+        'agreement': agreement,
+        'signatures': signatures,
+        'page_title': f'Acuerdo - {agreement.title}',
+    }
+    
+    return render(request, 'tickets/agreement_detail.html', context)
+
+
+@login_required
+def agreement_edit(request, pk):
+    """Editar acuerdo existente"""
+    agreement = get_object_or_404(Agreement, pk=pk)
+    
+    # Verificar permisos
+    if not request.user.groups.filter(name__in=['Administradores', 'Agentes']).exists():
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('dashboard')
+    
+    # Verificar empresa
+    user_profile = UserProfile.objects.filter(user=request.user).first()
+    if user_profile and user_profile.company and agreement.company != user_profile.company:
+        messages.error(request, 'No tienes permisos para editar este acuerdo.')
+        return redirect('agreement_list')
+    
+    # Verificar si es editable
+    if not agreement.is_editable:
+        messages.error(request, 'Este acuerdo ya no se puede editar porque tiene firmas válidas.')
+        return redirect('agreement_detail', pk=agreement.pk)
+    
+    if request.method == 'POST':
+        form = AgreementForm(request.POST, instance=agreement)
+        if form.is_valid():
+            agreement = form.save()
+            
+            # Generar contenido con IA si se solicitó
+            if form.cleaned_data.get('generate_ai_content'):
+                ai_content = agreement.generate_ai_content(
+                    form.cleaned_data.get('ai_prompt_addition', '')
+                )
+                if ai_content:
+                    agreement.body = ai_content
+                    agreement.save()
+                    messages.success(request, 'Contenido actualizado con IA exitosamente.')
+                else:
+                    messages.warning(request, 'No se pudo generar contenido con IA.')
+            
+            messages.success(request, f'Acuerdo "{agreement.title}" actualizado correctamente.')
+            return redirect('agreement_detail', pk=agreement.pk)
+        else:
+            messages.error(request, 'Por favor, corrige los errores en el formulario.')
+    else:
+        form = AgreementForm(instance=agreement)
+    
+    context = {
+        'form': form,
+        'agreement': agreement,
+        'page_title': f'Editar - {agreement.title}',
+    }
+    
+    return render(request, 'tickets/agreement_form.html', context)
+
+
+@login_required
+def agreement_delete(request, pk):
+    """Eliminar acuerdo"""
+    agreement = get_object_or_404(Agreement, pk=pk)
+    
+    # Verificar permisos
+    if not request.user.groups.filter(name__in=['Administradores', 'Agentes']).exists():
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('dashboard')
+    
+    # Verificar empresa
+    user_profile = UserProfile.objects.filter(user=request.user).first()
+    if user_profile and user_profile.company and agreement.company != user_profile.company:
+        messages.error(request, 'No tienes permisos para eliminar este acuerdo.')
+        return redirect('agreement_list')
+    
+    if request.method == 'POST':
+        title = agreement.title
+        agreement.delete()
+        messages.success(request, f'Acuerdo "{title}" eliminado correctamente.')
+        return redirect('agreement_list')
+    
+    context = {
+        'agreement': agreement,
+        'page_title': f'Eliminar - {agreement.title}',
+    }
+    
+    return render(request, 'tickets/agreement_delete.html', context)
+
+
+@login_required
+def agreement_publish(request, pk):
+    """Publicar acuerdo para firma"""
+    agreement = get_object_or_404(Agreement, pk=pk)
+    
+    # Verificar permisos
+    if not request.user.groups.filter(name__in=['Administradores', 'Agentes']).exists():
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('dashboard')
+    
+    # Verificar empresa
+    user_profile = UserProfile.objects.filter(user=request.user).first()
+    if user_profile and user_profile.company and agreement.company != user_profile.company:
+        messages.error(request, 'No tienes permisos para publicar este acuerdo.')
+        return redirect('agreement_list')
+    
+    if request.method == 'POST':
+        form = AgreementPublicForm(request.POST)
+        if form.is_valid():
+            agreement.status = 'published'
+            agreement.published_at = timezone.now()
+            agreement.save()
+            
+            messages.success(request, f'Acuerdo "{agreement.title}" publicado correctamente.')
+            messages.info(request, f'URL pública: {agreement.get_public_url(request)}')
+            
+            # TODO: Enviar notificaciones por email si está configurado
+            email_list = form.cleaned_data.get('email_list', [])
+            if email_list and form.cleaned_data.get('send_notifications'):
+                # Implementar envío de emails
+                pass
+            
+            return redirect('agreement_detail', pk=agreement.pk)
+        else:
+            messages.error(request, 'Por favor, corrige los errores en el formulario.')
+    else:
+        form = AgreementPublicForm()
+    
+    context = {
+        'form': form,
+        'agreement': agreement,
+        'page_title': f'Publicar - {agreement.title}',
+    }
+    
+    return render(request, 'tickets/agreement_publish.html', context)
+
+
+# =============================================================================
+# VISTAS PÚBLICAS DE ACUERDOS (SIN LOGIN)
+# =============================================================================
+
+def public_agreement_sign(request, token):
+    """Vista pública para firmar un acuerdo"""
+    agreement = get_object_or_404(Agreement, public_token=token)
+    
+    # Verificar si el acuerdo puede ser firmado
+    if not agreement.can_be_signed:
+        error_msg = "Este acuerdo no está disponible para firmar."
+        if agreement.status != 'published':
+            error_msg = "Este acuerdo aún no ha sido publicado."
+        elif agreement.is_expired:
+            error_msg = "Este acuerdo ha expirado."
+        elif agreement.max_signers and agreement.signature_count >= agreement.max_signers:
+            error_msg = "Este acuerdo ha alcanzado el número máximo de firmantes."
+        
+        context = {
+            'agreement': agreement,
+            'error_message': error_msg,
+            'page_title': f'Acuerdo - {agreement.title}',
+        }
+        return render(request, 'tickets/public_agreement_error.html', context)
+    
+    if request.method == 'POST':
+        form = AgreementSignatureForm(request.POST)
+        form.agreement = agreement  # Para validaciones
+        
+        if form.is_valid():
+            signature = form.save(commit=False)
+            signature.agreement = agreement
+            
+            # Capturar información adicional
+            signature.ip_address = request.META.get('REMOTE_ADDR')
+            signature.user_agent = request.META.get('HTTP_USER_AGENT', '')
+            
+            # Si el acuerdo requiere aprobación, marcar como no aprobado
+            if agreement.requires_approval:
+                signature.is_approved = False
+            
+            signature.save()
+            
+            messages.success(request, '¡Acuerdo firmado correctamente!')
+            return redirect('public_agreement_success', token=token, signature_id=signature.pk)
+        else:
+            messages.error(request, 'Por favor, corrige los errores en el formulario.')
+    else:
+        form = AgreementSignatureForm()
+    
+    context = {
+        'agreement': agreement,
+        'form': form,
+        'signatures_count': agreement.signature_count,
+        'page_title': f'Firmar - {agreement.title}',
+    }
+    
+    return render(request, 'tickets/public_agreement_sign.html', context)
+
+
+def public_agreement_success(request, token, signature_id):
+    """Vista de confirmación después de firmar"""
+    agreement = get_object_or_404(Agreement, public_token=token)
+    signature = get_object_or_404(AgreementSignature, pk=signature_id, agreement=agreement)
+    
+    context = {
+        'agreement': agreement,
+        'signature': signature,
+        'download_url': signature.get_download_url(request),
+        'page_title': f'Firmado - {agreement.title}',
+    }
+    
+    return render(request, 'tickets/public_agreement_success.html', context)
+
+
+def download_signed_agreement(request, agreement_token, signature_id):
+    """Descargar PDF del acuerdo firmado"""
+    agreement = get_object_or_404(Agreement, public_token=agreement_token)
+    signature = get_object_or_404(AgreementSignature, pk=signature_id, agreement=agreement)
+    
+    # Actualizar estadísticas de descarga
+    signature.pdf_downloaded_at = timezone.now()
+    signature.download_count += 1
+    signature.save()
+    
+    # Generar PDF del acuerdo firmado
+    from django.http import HttpResponse
+    from reportlab.pdfgen import canvas
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+    from io import BytesIO
+    
+    # Crear PDF en memoria
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    styles = getSampleStyleSheet()
+    story = []
+    
+    # Título
+    title = Paragraph(f"<b>{agreement.title}</b>", styles['Title'])
+    story.append(title)
+    story.append(Spacer(1, 20))
+    
+    # Contenido del acuerdo
+    body_paragraphs = agreement.body.split('\n')
+    for para in body_paragraphs:
+        if para.strip():
+            p = Paragraph(para, styles['Normal'])
+            story.append(p)
+            story.append(Spacer(1, 10))
+    
+    # Información de la firma
+    story.append(Spacer(1, 30))
+    story.append(Paragraph("<b>INFORMACIÓN DE LA FIRMA:</b>", styles['Heading2']))
+    story.append(Spacer(1, 10))
+    
+    signature_info = f"""
+    <b>Firmante:</b> {signature.signer_name}<br/>
+    <b>Email:</b> {signature.signer_email}<br/>
+    <b>Fecha de Firma:</b> {signature.signed_at.strftime('%d/%m/%Y %H:%M')}<br/>
+    <b>IP:</b> {signature.ip_address or 'No disponible'}<br/>
+    """
+    
+    story.append(Paragraph(signature_info, styles['Normal']))
+    
+    # Construir PDF
+    doc.build(story)
+    
+    # Preparar respuesta
+    buffer.seek(0)
+    response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{agreement.title}_firmado_{signature.signer_name}.pdf"'
+    
+    return response

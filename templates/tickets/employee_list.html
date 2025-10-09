@@ -1,0 +1,263 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+.employee-card {
+    transition: transform 0.2s;
+}
+.employee-card:hover {
+    transform: translateY(-2px);
+}
+.status-badge {
+    font-size: 0.8em;
+    padding: 0.25rem 0.5rem;
+}
+.ai-score {
+    font-weight: bold;
+}
+.salary-info {
+    color: #28a745;
+    font-weight: 600;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Encabezado -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1><i class="bi bi-person-badge"></i> {{ page_title }}</h1>
+                    <p class="text-muted">Gestión de empleados y aplicaciones de trabajo</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="search" class="form-label">Buscar</label>
+                            <input type="text" class="form-control" id="search" name="search" 
+                                   value="{{ search }}" placeholder="Nombre, email, cargo...">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="status" class="form-label">Estado</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">Todos</option>
+                                {% for value, label in status_choices %}
+                                    <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-search"></i> Buscar
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">&nbsp;</label>
+                            <div>
+                                <a href="{% url 'job_application_token_create' %}" class="btn btn-success">
+                                    <i class="bi bi-plus-circle"></i> Crear Enlace de Aplicación
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5>Total Empleados</h5>
+                            <h3>{{ page_obj.paginator.count }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-people fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5>Aplicados</h5>
+                            <h3>{{ page_obj.object_list|length }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-person-plus fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de empleados -->
+    <div class="row">
+        {% for employee in page_obj %}
+        <div class="col-xl-4 col-lg-6 col-md-6 mb-4">
+            <div class="card employee-card h-100">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="bi bi-person"></i>
+                            <strong>{{ employee.get_full_name }}</strong>
+                        </h6>
+                        <span class="badge bg-{{ employee.get_status_color }} status-badge">
+                            {{ employee.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-12">
+                            <small class="text-muted">Email:</small><br>
+                            <a href="mailto:{{ employee.email }}">{{ employee.email }}</a>
+                        </div>
+                    </div>
+                    
+                    {% if employee.phone %}
+                    <div class="row mb-2">
+                        <div class="col-12">
+                            <small class="text-muted">Teléfono:</small><br>
+                            <a href="tel:{{ employee.phone }}">{{ employee.phone }}</a>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row mb-2">
+                        <div class="col-12">
+                            <small class="text-muted">Cargo:</small><br>
+                            <strong>{{ employee.position }}</strong>
+                        </div>
+                    </div>
+                    
+                    {% if employee.salary_euros %}
+                    <div class="row mb-2">
+                        <div class="col-12">
+                            <small class="text-muted">Salario propuesto:</small><br>
+                            <span class="salary-info">€{{ employee.salary_euros|floatformat:0 }}</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if employee.ai_score %}
+                    <div class="row mb-2">
+                        <div class="col-12">
+                            <small class="text-muted">Puntuación IA:</small><br>
+                            <span class="ai-score">
+                                {% if employee.ai_score >= 8 %}
+                                    <span class="text-success">{{ employee.ai_score }}/10</span>
+                                {% elif employee.ai_score >= 6 %}
+                                    <span class="text-warning">{{ employee.ai_score }}/10</span>
+                                {% else %}
+                                    <span class="text-danger">{{ employee.ai_score }}/10</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if employee.description %}
+                    <div class="row mb-2">
+                        <div class="col-12">
+                            <small class="text-muted">Descripción:</small><br>
+                            <p class="small">{{ employee.description|truncatewords:15 }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="bi bi-calendar"></i>
+                            {{ employee.created_at|date:"d/m/Y H:i" }}
+                        </small>
+                        <a href="{% url 'employee_detail' employee.pk %}" class="btn btn-primary btn-sm">
+                            <i class="bi bi-eye"></i> Ver Detalle
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info text-center">
+                <i class="bi bi-info-circle fa-2x mb-3"></i>
+                <h5>No hay empleados registrados</h5>
+                <p>No se han encontrado empleados que coincidan con los filtros aplicados.</p>
+                <a href="{% url 'job_application_token_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Crear Enlace de Aplicación
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Paginación -->
+    {% if page_obj.has_other_pages %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <nav aria-label="Paginación de empleados">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% if search %}search={{ search }}&{% endif %}{% if current_status %}status={{ current_status }}&{% endif %}page=1">
+                                <i class="bi bi-chevron-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?{% if search %}search={{ search }}&{% endif %}{% if current_status %}status={{ current_status }}&{% endif %}page={{ page_obj.previous_page_number }}">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% if search %}search={{ search }}&{% endif %}{% if current_status %}status={{ current_status }}&{% endif %}page={{ page_obj.next_page_number }}">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?{% if search %}search={{ search }}&{% endif %}{% if current_status %}status={{ current_status }}&{% endif %}page={{ page_obj.paginator.num_pages }}">
+                                <i class="bi bi-chevron-double-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

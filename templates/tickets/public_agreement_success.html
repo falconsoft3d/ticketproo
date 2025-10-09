@@ -1,0 +1,376 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+.success-header {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    padding: 4rem 0;
+    margin-bottom: 3rem;
+}
+.success-card {
+    border: none;
+    box-shadow: 0 8px 25px rgba(40, 167, 69, 0.2);
+    border-radius: 20px;
+    border-top: 5px solid #28a745;
+}
+.success-icon {
+    font-size: 6rem;
+    color: #28a745;
+    animation: pulse 2s infinite;
+}
+.signature-summary {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 15px;
+    padding: 2rem;
+    border-left: 5px solid #28a745;
+}
+.signature-display {
+    background: white;
+    border: 2px solid #28a745;
+    border-radius: 10px;
+    padding: 1rem;
+    text-align: center;
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.signature-image {
+    max-width: 250px;
+    max-height: 100px;
+    border: 1px solid #dee2e6;
+    background: white;
+    padding: 0.5rem;
+    border-radius: 5px;
+}
+.company-badge {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 25px;
+    font-weight: 500;
+}
+.action-buttons {
+    background: white;
+    padding: 2rem;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+</style>
+{% endblock %}
+
+{% block title %}Firma Registrada Exitosamente{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header de éxito -->
+    <div class="success-header rounded">
+        <div class="container text-center">
+            <div class="success-icon mb-4">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+            <h1 class="display-4">¡Firma Registrada Exitosamente!</h1>
+            <p class="lead mb-0">Tu firma digital ha sido capturada y almacenada de forma segura</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="success-card card">
+                    <div class="card-body p-4">
+                        <div class="row">
+                            <!-- Información de la firma -->
+                            <div class="col-lg-8">
+                                <div class="signature-summary">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <h4 class="me-3 mb-0">Resumen de tu Firma</h4>
+                                        <span class="company-badge">{{ agreement.company.name }}</span>
+                                    </div>
+
+                                    <div class="row mb-4">
+                                        <div class="col-md-6">
+                                            <h6><i class="bi bi-file-earmark-text"></i> Acuerdo Firmado:</h6>
+                                            <p class="mb-2"><strong>{{ agreement.title }}</strong></p>
+                                            <small class="text-muted">
+                                                Creado el {{ agreement.created_at|date:"d/m/Y" }} por 
+                                                {{ agreement.created_by.get_full_name|default:agreement.created_by.username }}
+                                            </small>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6><i class="bi bi-person-check"></i> Información del Firmante:</h6>
+                                            <p class="mb-1"><strong>{{ signature.signer_name }}</strong></p>
+                                            <p class="mb-1">{{ signature.signer_email }}</p>
+                                            {% if signature.signer_phone %}
+                                                <p class="mb-1">{{ signature.signer_phone }}</p>
+                                            {% endif %}
+                                            <small class="text-muted">
+                                                <i class="bi bi-calendar-check"></i> 
+                                                {{ signature.signed_at|date:"d/m/Y H:i:s" }}
+                                            </small>
+                                        </div>
+                                    </div>
+
+                                    <!-- Firma capturada -->
+                                    <div class="mb-4">
+                                        <h6><i class="bi bi-pen-fill"></i> Tu Firma Digital:</h6>
+                                        <div class="signature-display">
+                                            {% if signature.signature_data %}
+                                                <img src="{{ signature.signature_data }}" 
+                                                     alt="Firma de {{ signature.signer_name }}"
+                                                     class="signature-image">
+                                            {% else %}
+                                                <span class="text-muted">
+                                                    <i class="bi bi-pen display-4"></i><br>
+                                                    Firma digital registrada
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <!-- Estado del acuerdo -->
+                                    <div class="row text-center">
+                                        <div class="col-md-4">
+                                            <div class="p-3 bg-white rounded">
+                                                <i class="bi bi-people display-4 text-info"></i>
+                                                <h6>Total de Firmas</h6>
+                                                <h4 class="text-info">{{ agreement.signature_count }}</h4>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="p-3 bg-white rounded">
+                                                <i class="bi bi-target display-4 text-warning"></i>
+                                                <h6>Objetivo</h6>
+                                                <h4 class="text-warning">{{ agreement.max_signers }}</h4>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="p-3 bg-white rounded">
+                                                {% if agreement.status == 'completed' %}
+                                                    <i class="bi bi-check-circle display-4 text-success"></i>
+                                                    <h6>Estado</h6>
+                                                    <h4 class="text-success">Completado</h4>
+                                                {% else %}
+                                                    <i class="bi bi-clock display-4 text-primary"></i>
+                                                    <h6>Estado</h6>
+                                                    <h4 class="text-primary">En Proceso</h4>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Progreso -->
+                                    <div class="mt-4">
+                                        <h6>Progreso del Acuerdo:</h6>
+                                        <div class="progress mb-2" style="height: 15px;">
+                                            {% widthratio agreement.signature_count agreement.max_signers 100 as progress_percent %}
+                                            <div class="progress-bar bg-success progress-bar-striped" 
+                                                 style="width: {{ progress_percent }}%">
+                                                {{ progress_percent }}%
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">
+                                            {% if agreement.status == 'completed' %}
+                                                🎉 ¡El acuerdo ha sido completado con todas las firmas necesarias!
+                                            {% else %}
+                                                Faltan {{ agreement.max_signers|add:"-1"|add:agreement.signature_count|mul:"-1" }} firma(s) para completar el acuerdo
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Acciones disponibles -->
+                            <div class="col-lg-4">
+                                <div class="action-buttons">
+                                    <h5><i class="bi bi-gear"></i> ¿Qué puedes hacer ahora?</h5>
+                                    
+                                    <div class="d-grid gap-3">
+                                        <!-- Descargar PDF -->
+                                        <a href="{% url 'download_signed_agreement' agreement.public_token %}" 
+                                           class="btn btn-success btn-lg" target="_blank">
+                                            <i class="bi bi-download"></i> 
+                                            Descargar PDF Firmado
+                                        </a>
+
+                                        <!-- Compartir -->
+                                        <button class="btn btn-info btn-lg" onclick="shareAgreement()">
+                                            <i class="bi bi-share"></i> 
+                                            Compartir Acuerdo
+                                        </button>
+
+                                        <!-- Ver detalles -->
+                                        <a href="{% url 'public_agreement_sign' agreement.public_token %}" 
+                                           class="btn btn-outline-primary">
+                                            <i class="bi bi-eye"></i> 
+                                            Ver Acuerdo Completo
+                                        </a>
+                                    </div>
+
+                                    <hr class="my-4">
+
+                                    <!-- Información adicional -->
+                                    <div class="alert alert-info">
+                                        <i class="bi bi-info-circle"></i>
+                                        <strong>Información Importante:</strong>
+                                        <ul class="mb-0 mt-2">
+                                            <li>Tu firma es legalmente vinculante</li>
+                                            <li>Puedes descargar el PDF en cualquier momento</li>
+                                            <li>Se ha enviado una confirmación por email</li>
+                                            {% if agreement.requires_approval %}
+                                                <li>La firma requiere aprobación</li>
+                                            {% endif %}
+                                        </ul>
+                                    </div>
+
+                                    <!-- Datos técnicos -->
+                                    <div class="mt-4">
+                                        <h6><i class="bi bi-shield-lock"></i> Datos de Seguridad</h6>
+                                        <div class="small text-muted">
+                                            <div class="mb-1">
+                                                <strong>IP:</strong> {{ signature.ip_address }}
+                                            </div>
+                                            <div class="mb-1">
+                                                <strong>Navegador:</strong> {{ signature.user_agent|truncatechars:50 }}
+                                            </div>
+                                            <div class="mb-1">
+                                                <strong>Timestamp:</strong> {{ signature.signed_at|date:"c" }}
+                                            </div>
+                                            {% if signature.geolocation %}
+                                                <div class="mb-1">
+                                                    <strong>Ubicación:</strong> {{ signature.geolocation }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mensaje de confirmación por email -->
+                <div class="alert alert-success mt-4 text-center">
+                    <i class="bi bi-envelope-check display-4"></i>
+                    <h5 class="mt-2">Confirmación Enviada</h5>
+                    <p class="mb-0">
+                        Hemos enviado una confirmación a <strong>{{ signature.signer_email }}</strong> 
+                        con una copia del acuerdo firmado y el enlace de descarga.
+                    </p>
+                </div>
+
+                <!-- Botón para regresar -->
+                <div class="text-center mt-4">
+                    <a href="{% url 'public_agreement_sign' agreement.public_token %}" 
+                       class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver al Acuerdo
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function shareAgreement() {
+    const url = window.location.origin + "{% url 'public_agreement_sign' agreement.public_token %}";
+    const title = "{{ agreement.title }}";
+    const text = "He firmado el acuerdo: " + title;
+    
+    if (navigator.share) {
+        // API nativa de compartir (móviles)
+        navigator.share({
+            title: title,
+            text: text,
+            url: url
+        }).catch(err => console.log('Error sharing:', err));
+    } else {
+        // Fallback: copiar al portapapeles
+        const shareText = `${text}\n\nVer acuerdo: ${url}`;
+        
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(shareText).then(() => {
+                showToast('Enlace copiado al portapapeles', 'success');
+            }).catch(() => {
+                showShareDialog(shareText);
+            });
+        } else {
+            showShareDialog(shareText);
+        }
+    }
+}
+
+function showShareDialog(text) {
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.innerHTML = `
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Compartir Acuerdo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Copia este texto para compartir:</p>
+                    <textarea class="form-control" readonly rows="4">${text}</textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+    
+    // Seleccionar texto
+    modal.querySelector('textarea').select();
+    
+    // Limpiar después de cerrar
+    modal.addEventListener('hidden.bs.modal', () => {
+        modal.remove();
+    });
+}
+
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white bg-${type} border-0 position-fixed top-0 end-0 m-3`;
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="bi bi-check-circle me-2"></i>${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 5000);
+}
+
+// Mostrar mensaje de bienvenida
+$(document).ready(function() {
+    setTimeout(() => {
+        showToast('¡Tu firma ha sido registrada exitosamente!', 'success');
+    }, 1000);
+});
+</script>
+{% endblock %}

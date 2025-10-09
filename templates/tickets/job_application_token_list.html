@@ -1,0 +1,265 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load project_extras %}
+
+{% block extra_css %}
+<style>
+.token-card {
+    transition: transform 0.2s;
+}
+.token-card:hover {
+    transform: translateY(-2px);
+}
+.qr-code {
+    max-width: 150px;
+}
+.salary-highlight {
+    color: #28a745;
+    font-weight: 600;
+}
+.url-box {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+    font-family: monospace;
+    font-size: 0.9em;
+    word-break: break-all;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Encabezado -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1><i class="bi bi-briefcase"></i> {{ page_title }}</h1>
+                    <p class="text-muted">Enlaces públicos para aplicaciones de empleo</p>
+                </div>
+                <div>
+                    <a href="{% url 'job_application_token_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Crear Nuevo Enlace
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5>Total Enlaces</h5>
+                            <h3>{{ page_obj.paginator.count }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-link-45deg fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5>Enlaces Activos</h5>
+                            <h3>{{ page_obj.object_list|length }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-check-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de tokens -->
+    <div class="row">
+        {% for token in page_obj %}
+        <div class="col-xl-6 col-lg-12 mb-4">
+            <div class="card token-card h-100">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-briefcase"></i>
+                            {{ token.job_title }}
+                        </h5>
+                        {% if token.is_active %}
+                            <span class="badge bg-success">Activo</span>
+                        {% else %}
+                            <span class="badge bg-danger">Inactivo</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <h6>Descripción del Puesto:</h6>
+                                <p class="text-muted">{{ token.job_description|truncatewords:20 }}</p>
+                            </div>
+                            
+                            {% if token.proposed_salary_euros %}
+                            <div class="mb-3">
+                                <h6>Salario Propuesto:</h6>
+                                <span class="salary-highlight">€{{ token.proposed_salary_euros|floatformat:0 }}</span> anuales
+                            </div>
+                            {% endif %}
+                            
+                            <div class="mb-3">
+                                <h6>Estadísticas:</h6>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <small class="text-muted">Aplicaciones:</small><br>
+                                        <strong>{{ token.application_count }}</strong>
+                                        {% if token.max_applications %}/ {{ token.max_applications }}{% endif %}
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted">Creado:</small><br>
+                                        <strong>{{ token.created_at|date:"d/m/Y" }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% if token.expires_at %}
+                            <div class="mb-3">
+                                <h6>Expira:</h6>
+                                <span class="{% if token.expires_at < now %}text-danger{% else %}text-warning{% endif %}">
+                                    {{ token.expires_at|date:"d/m/Y H:i" }}
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <h6>Código QR</h6>
+                            <div class="qr-code-container mb-3">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ token.get_qr_data|urlencode }}" 
+                                     alt="QR Code" class="img-fluid qr-code">
+                            </div>
+                            <small class="text-muted">Escanea para aplicar</small>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6>URL Pública:</h6>
+                        <div class="url-box">
+                            {% absolute_url token.get_public_url %}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="bi bi-person"></i> {{ token.created_by.get_full_name|default:token.created_by.username }}
+                        </small>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('{% absolute_url token.get_public_url %}')">
+                                <i class="bi bi-clipboard"></i> Copiar URL
+                            </button>
+                            <a href="{% url 'job_application_token_detail' token.pk %}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-eye"></i> Ver Detalle
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info text-center">
+                <i class="bi bi-info-circle fa-2x mb-3"></i>
+                <h5>No hay enlaces de aplicación</h5>
+                <p>No has creado ningún enlace público para aplicaciones de empleo.</p>
+                <a href="{% url 'job_application_token_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Crear Primer Enlace
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Paginación -->
+    {% if page_obj.has_other_pages %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <nav aria-label="Paginación de enlaces">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1">
+                                <i class="bi bi-chevron-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">
+                                <i class="bi bi-chevron-double-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        // Mostrar notificación de éxito
+        const toast = document.createElement('div');
+        toast.className = 'toast position-fixed top-0 end-0 m-3';
+        toast.setAttribute('role', 'alert');
+        toast.innerHTML = `
+            <div class="toast-header">
+                <i class="bi bi-check-circle text-success me-2"></i>
+                <strong class="me-auto">¡Copiado!</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">
+                URL copiada al portapapeles
+            </div>
+        `;
+        document.body.appendChild(toast);
+        
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+        
+        // Eliminar el toast después de ocultarse
+        toast.addEventListener('hidden.bs.toast', () => {
+            document.body.removeChild(toast);
+        });
+    }).catch(function() {
+        alert('Error al copiar la URL');
+    });
+}
+</script>
+{% endblock %}
