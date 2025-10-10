@@ -4951,3 +4951,208 @@ class AgreementSignature(models.Model):
         if request:
             return request.build_absolute_uri(url)
         return url
+
+
+class LandingPage(models.Model):
+    """Modelo para Landing Pages de campañas de marketing"""
+    
+    # Información básica
+    nombre_producto = models.CharField(
+        max_length=200,
+        verbose_name='Nombre del Producto'
+    )
+    descripcion = models.TextField(
+        verbose_name='Descripción del Producto',
+        help_text='Descripción que aparecerá en la landing page'
+    )
+    imagen = models.ImageField(
+        upload_to='landing_pages/',
+        blank=True,
+        null=True,
+        verbose_name='Imagen del Producto',
+        help_text='Imagen principal de la landing page'
+    )
+    
+    # Configuración de URL pública
+    slug = models.SlugField(
+        max_length=200,
+        unique=True,
+        verbose_name='URL de la Landing Page',
+        help_text='URL única para acceder a la landing page (ej: mi-producto)'
+    )
+    
+    # Estado
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Página Activa',
+        help_text='Si está activa, la landing page será accesible públicamente'
+    )
+    
+    # Configuración de diseño
+    color_principal = models.CharField(
+        max_length=7,
+        default='#00A651',
+        verbose_name='Color Principal',
+        help_text='Color principal de la landing page (formato HEX: #00A651)'
+    )
+    color_secundario = models.CharField(
+        max_length=7,
+        default='#E8F5E8',
+        verbose_name='Color Secundario',
+        help_text='Color secundario para fondos (formato HEX: #E8F5E8)'
+    )
+    
+    # Configuración del formulario
+    titulo_formulario = models.CharField(
+        max_length=200,
+        default='VEA TODAS LAS DEMOSTRACIONES',
+        verbose_name='Título del Formulario'
+    )
+    subtitulo_formulario = models.TextField(
+        default='Salesforce acerca a las empresas con sus clientes. Vea nuestras demostraciones gratuitas y obtenga más información sobre cómo podemos ayudar a su negocio.',
+        verbose_name='Subtítulo del Formulario'
+    )
+    
+    # Configuración de empresa/campaña
+    empresa_campana = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Empresa de la Campaña',
+        help_text='Nombre de la empresa que ejecuta la campaña'
+    )
+    
+    # Metadatos
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Creado por'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    # Estadísticas
+    views_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Número de visitas'
+    )
+    submissions_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Formularios enviados'
+    )
+    
+    class Meta:
+        verbose_name = 'Landing Page'
+        verbose_name_plural = 'Landing Pages'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.nombre_producto} - {self.slug}"
+    
+    def get_public_url(self):
+        """URL pública de la landing page"""
+        from django.urls import reverse
+        return reverse('landing_page_public', kwargs={'slug': self.slug})
+    
+    def get_absolute_url(self):
+        """URL para el detalle de la landing page en admin"""
+        from django.urls import reverse
+        return reverse('landing_page_detail', kwargs={'pk': self.pk})
+    
+    def increment_views(self):
+        """Incrementar contador de visitas"""
+        self.views_count += 1
+        self.save(update_fields=['views_count'])
+    
+    def increment_submissions(self):
+        """Incrementar contador de envíos"""
+        self.submissions_count += 1
+        self.save(update_fields=['submissions_count'])
+
+
+class LandingPageSubmission(models.Model):
+    """Modelo para los envíos de formularios de landing pages"""
+    
+    landing_page = models.ForeignKey(
+        LandingPage,
+        on_delete=models.CASCADE,
+        related_name='submissions',
+        verbose_name='Landing Page'
+    )
+    
+    # Datos del formulario
+    nombre = models.CharField(
+        max_length=100,
+        verbose_name='Nombre'
+    )
+    apellido = models.CharField(
+        max_length=100,
+        verbose_name='Apellido'
+    )
+    email = models.EmailField(
+        verbose_name='Email'
+    )
+    telefono = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name='Teléfono'
+    )
+    empresa = models.CharField(
+        max_length=200,
+        verbose_name='Empresa'
+    )
+    
+    # Metadatos de seguimiento
+    ip_address = models.GenericIPAddressField(
+        blank=True,
+        null=True,
+        verbose_name='Dirección IP'
+    )
+    user_agent = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='User Agent'
+    )
+    utm_source = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='UTM Source'
+    )
+    utm_medium = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='UTM Medium'
+    )
+    utm_campaign = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='UTM Campaign'
+    )
+    
+    # Estado
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de envío'
+    )
+    processed = models.BooleanField(
+        default=False,
+        verbose_name='Procesado'
+    )
+    processed_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Fecha de procesamiento'
+    )
+    
+    class Meta:
+        verbose_name = 'Envío de Landing Page'
+        verbose_name_plural = 'Envíos de Landing Pages'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.nombre} {self.apellido} - {self.landing_page.nombre_producto}"

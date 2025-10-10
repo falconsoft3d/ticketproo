@@ -6,7 +6,7 @@ from .models import (
     UserNote, TimeEntry, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
     ChatRoom, ChatMessage, Command, ContactFormSubmission, Meeting, MeetingAttendee, MeetingQuestion, OpportunityActivity,
     Course, CourseClass, Contact, BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, Concept, ContactoWeb, Employee, EmployeePayroll,
-    Agreement, AgreementSignature
+    Agreement, AgreementSignature, LandingPage, LandingPageSubmission
 )
 
 class CategoryForm(forms.ModelForm):
@@ -1346,7 +1346,16 @@ class SystemConfigurationForm(forms.ModelForm):
             'ai_employee_analysis_prompt',
             'enable_telegram_notifications',
             'telegram_bot_token',
-            'telegram_chat_id'
+            'telegram_chat_id',
+            'enable_email_notifications',
+            'notification_emails',
+            'email_host',
+            'email_port',
+            'email_host_user',
+            'email_host_password',
+            'email_use_tls',
+            'email_use_ssl',
+            'email_from'
         ]
         widgets = {
             'site_name': forms.TextInput(attrs={
@@ -1391,6 +1400,41 @@ class SystemConfigurationForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': '-100123456789'
             }),
+            'enable_email_notifications': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'notification_emails': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'admin@ejemplo.com\nsupport@ejemplo.com'
+            }),
+            'email_host': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'smtp.gmail.com'
+            }),
+            'email_port': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': '587'
+            }),
+            'email_host_user': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'tu-email@gmail.com'
+            }),
+            'email_host_password': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Contraseña o token de aplicación',
+                'type': 'password'
+            }),
+            'email_use_tls': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'email_use_ssl': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'email_from': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'noreply@tu-dominio.com'
+            }),
         }
         labels = {
             'site_name': 'Nombre del sitio',
@@ -1404,6 +1448,15 @@ class SystemConfigurationForm(forms.ModelForm):
             'enable_telegram_notifications': 'Activar notificaciones de Telegram',
             'telegram_bot_token': 'Token del Bot de Telegram',
             'telegram_chat_id': 'ID del Chat/Grupo de Telegram',
+            'enable_email_notifications': 'Activar notificaciones por email',
+            'notification_emails': 'Emails de notificación',
+            'email_host': 'Servidor SMTP',
+            'email_port': 'Puerto SMTP',
+            'email_host_user': 'Usuario SMTP',
+            'email_host_password': 'Contraseña SMTP',
+            'email_use_tls': 'Usar TLS',
+            'email_use_ssl': 'Usar SSL',
+            'email_from': 'Email remitente',
         }
         help_texts = {
             'site_name': 'Nombre que aparece en el encabezado del sistema',
@@ -1417,6 +1470,15 @@ class SystemConfigurationForm(forms.ModelForm):
             'enable_telegram_notifications': 'Envía notificaciones cuando se crean nuevos tickets',
             'telegram_bot_token': 'Token proporcionado por @BotFather al crear el bot',
             'telegram_chat_id': 'ID del grupo donde enviar notificaciones (ej: -100123456789)',
+            'enable_email_notifications': 'Envía notificaciones por email cuando se reciben contactos desde la web',
+            'notification_emails': 'Direcciones de email donde enviar notificaciones (una por línea)',
+            'email_host': 'Servidor de correo saliente (ej: smtp.gmail.com, mail.tu-dominio.com)',
+            'email_port': 'Puerto del servidor SMTP (587 para TLS, 465 para SSL, 25 para sin cifrado)',
+            'email_host_user': 'Dirección de email para autenticación SMTP',
+            'email_host_password': 'Contraseña o token de aplicación para SMTP',
+            'email_use_tls': 'Activar cifrado TLS (recomendado para puerto 587)',
+            'email_use_ssl': 'Activar cifrado SSL (para puerto 465)',
+            'email_from': 'Dirección de email que aparecerá como remitente',
         }
     
     def clean_site_name(self):
@@ -3516,4 +3578,155 @@ class AgreementPublicForm(forms.Form):
                     raise forms.ValidationError(f'Email inválido: {email}')
             
             return emails
+
+
+class LandingPageForm(forms.ModelForm):
+    """Formulario para crear/editar Landing Pages"""
+    
+    class Meta:
+        model = LandingPage
+        fields = [
+            'nombre_producto',
+            'descripcion',
+            'imagen',
+            'slug',
+            'is_active',
+            'color_principal',
+            'color_secundario',
+            'titulo_formulario',
+            'subtitulo_formulario',
+            'empresa_campana'
+        ]
+        widgets = {
+            'nombre_producto': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre del producto o servicio'
+            }),
+            'descripcion': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Descripción del producto que aparecerá en la landing page'
+            }),
+            'imagen': forms.ClearableFileInput(attrs={
+                'class': 'form-control'
+            }),
+            'slug': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'mi-producto-2025'
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'color_principal': forms.TextInput(attrs={
+                'class': 'form-control',
+                'type': 'color'
+            }),
+            'color_secundario': forms.TextInput(attrs={
+                'class': 'form-control',
+                'type': 'color'
+            }),
+            'titulo_formulario': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'VEA TODAS LAS DEMOSTRACIONES'
+            }),
+            'subtitulo_formulario': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción que aparecerá debajo del título del formulario'
+            }),
+            'empresa_campana': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre de la empresa de la campaña'
+            })
+        }
+        labels = {
+            'nombre_producto': 'Nombre del Producto',
+            'descripcion': 'Descripción',
+            'imagen': 'Imagen Principal',
+            'slug': 'URL de la Landing Page',
+            'is_active': 'Página Activa',
+            'color_principal': 'Color Principal',
+            'color_secundario': 'Color Secundario',
+            'titulo_formulario': 'Título del Formulario',
+            'subtitulo_formulario': 'Subtítulo del Formulario',
+            'empresa_campana': 'Empresa de la Campaña'
+        }
+        help_texts = {
+            'slug': 'URL única para acceder a la landing page (solo letras, números y guiones)',
+            'color_principal': 'Color principal usado en botones y elementos destacados',
+            'color_secundario': 'Color de fondo y elementos secundarios',
+            'is_active': 'Si está marcado, la landing page será visible públicamente'
+        }
+    
+    def clean_slug(self):
+        """Validar que el slug sea único y válido"""
+        slug = self.cleaned_data.get('slug')
+        if slug:
+            # Convertir a minúsculas y reemplazar espacios
+            slug = slug.lower().replace(' ', '-')
+            
+            # Validar caracteres permitidos
+            import re
+            if not re.match(r'^[a-z0-9-]+$', slug):
+                raise forms.ValidationError('Solo se permiten letras minúsculas, números y guiones')
+            
+            # Verificar unicidad
+            if self.instance.pk:
+                # Editando una landing page existente
+                if LandingPage.objects.filter(slug=slug).exclude(pk=self.instance.pk).exists():
+                    raise forms.ValidationError('Ya existe una landing page con esta URL')
+            else:
+                # Creando nueva landing page
+                if LandingPage.objects.filter(slug=slug).exists():
+                    raise forms.ValidationError('Ya existe una landing page con esta URL')
+        
+        return slug
+
+
+class LandingPageSubmissionForm(forms.ModelForm):
+    """Formulario público para envíos de landing pages"""
+    
+    class Meta:
+        model = LandingPageSubmission
+        fields = ['nombre', 'apellido', 'email', 'telefono', 'empresa']
+        widgets = {
+            'nombre': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre',
+                'required': True
+            }),
+            'apellido': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Apellidos',
+                'required': True
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Email',
+                'required': True
+            }),
+            'telefono': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Teléfono (Opcional)'
+            }),
+            'empresa': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Empresa',
+                'required': True
+            })
+        }
+        labels = {
+            'nombre': 'Nombre',
+            'apellido': 'Apellidos',
+            'email': 'Email',
+            'telefono': 'Teléfono',
+            'empresa': 'Empresa'
+        }
+    
+    def clean_email(self):
+        """Validar formato de email"""
+        email = self.cleaned_data.get('email')
+        if email:
+            email = email.lower().strip()
+        return email
         return []

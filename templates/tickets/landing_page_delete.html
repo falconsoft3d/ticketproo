@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        Confirmar Eliminación
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <h5><i class="fas fa-warning"></i> ¡Atención!</h5>
+                        <p class="mb-0">
+                            Estás a punto de eliminar permanentemente la landing page 
+                            <strong>"{{ landing_page.nombre_producto }}"</strong>.
+                        </p>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            {% if landing_page.imagen %}
+                                <img src="{{ landing_page.imagen.url }}" class="img-fluid rounded" alt="{{ landing_page.nombre_producto }}">
+                            {% else %}
+                                <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 150px;">
+                                    <i class="fas fa-image fa-3x text-muted"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-8">
+                            <h5>{{ landing_page.nombre_producto }}</h5>
+                            <p class="text-muted">{{ landing_page.descripcion|truncatewords:20 }}</p>
+                            
+                            <div class="row text-center mb-3">
+                                <div class="col-4">
+                                    <div class="fw-bold text-primary">{{ landing_page.total_views }}</div>
+                                    <small class="text-muted">Vistas</small>
+                                </div>
+                                <div class="col-4">
+                                    <div class="fw-bold text-success">{{ landing_page.total_submissions }}</div>
+                                    <small class="text-muted">Envíos</small>
+                                </div>
+                                <div class="col-4">
+                                    <div class="fw-bold text-info">{{ landing_page.conversion_rate|floatformat:1 }}%</div>
+                                    <small class="text-muted">Conversión</small>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-info">
+                                <strong>URL:</strong> <code>/lp/{{ landing_page.slug }}/</code><br>
+                                <strong>Creado:</strong> {{ landing_page.created_at }}<br>
+                                <strong>Por:</strong> {{ landing_page.created_by.get_full_name|default:landing_page.created_by.username }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-danger">
+                        <h6><i class="fas fa-exclamation-circle"></i> Consecuencias de la eliminación:</h6>
+                        <ul class="mb-0">
+                            <li>La landing page será eliminada permanentemente</li>
+                            <li>Todos los envíos asociados ({{ landing_page.total_submissions }}) serán eliminados</li>
+                            <li>La URL pública dejará de funcionar</li>
+                            <li>Las estadísticas se perderán</li>
+                            <li><strong>Esta acción NO se puede deshacer</strong></li>
+                        </ul>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'landing_page_detail' landing_page.pk %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás completamente seguro de que deseas eliminar esta landing page y todos sus datos asociados?')">
+                                <i class="fas fa-trash"></i> Sí, Eliminar Permanentemente
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

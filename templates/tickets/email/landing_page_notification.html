@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nueva Solicitud de Landing Page</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        
+        .email-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, {{ landing_page.color_primario }}, {{ landing_page.color_secundario }});
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .header p {
+            margin: 10px 0 0;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 30px 20px;
+        }
+        
+        .landing-page-info {
+            background: #f8f9fa;
+            border-left: 4px solid {{ landing_page.color_primario }};
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .customer-details {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .customer-details h3 {
+            background: {{ landing_page.color_primario }};
+            color: white;
+            margin: 0;
+            padding: 15px 20px;
+            border-radius: 8px 8px 0 0;
+            font-size: 18px;
+        }
+        
+        .detail-row {
+            display: flex;
+            padding: 12px 20px;
+            border-bottom: 1px solid #f1f3f4;
+        }
+        
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        
+        .detail-label {
+            font-weight: 600;
+            width: 120px;
+            color: #495057;
+        }
+        
+        .detail-value {
+            flex: 1;
+            color: #212529;
+        }
+        
+        .utm-info {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin: 20px 0;
+        }
+        
+        .utm-info h4 {
+            margin: 0 0 10px;
+            color: #1976d2;
+            font-size: 16px;
+        }
+        
+        .utm-tag {
+            display: inline-block;
+            background: #2196f3;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin: 2px;
+        }
+        
+        .actions {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: {{ landing_page.color_boton }};
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            margin: 5px;
+            transition: background-color 0.3s ease;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: {{ landing_page.color_primario }};
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+        }
+        
+        .footer {
+            background: #343a40;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        .footer a {
+            color: #adb5bd;
+        }
+        
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            
+            .content {
+                padding: 20px 15px;
+            }
+            
+            .detail-row {
+                flex-direction: column;
+            }
+            
+            .detail-label {
+                width: auto;
+                margin-bottom: 5px;
+            }
+            
+            .stats {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>🎯 Nueva Solicitud de Landing Page</h1>
+            <p>{{ landing_page.nombre_producto }}</p>
+        </div>
+        
+        <div class="content">
+            <div class="landing-page-info">
+                <h2 style="margin: 0 0 10px; color: {{ landing_page.color_primario }};">
+                    📊 Landing Page: {{ landing_page.nombre_producto }}
+                </h2>
+                <p style="margin: 0; color: #6c757d;">
+                    {{ landing_page.descripcion }}
+                </p>
+            </div>
+            
+            <div class="customer-details">
+                <h3>👤 Información del Cliente</h3>
+                <div class="detail-row">
+                    <div class="detail-label">Nombre:</div>
+                    <div class="detail-value">{{ submission.nombre }} {{ submission.apellido }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Email:</div>
+                    <div class="detail-value">
+                        <a href="mailto:{{ submission.email }}" style="color: {{ landing_page.color_primario }};">
+                            {{ submission.email }}
+                        </a>
+                    </div>
+                </div>
+                {% if submission.telefono %}
+                <div class="detail-row">
+                    <div class="detail-label">Teléfono:</div>
+                    <div class="detail-value">
+                        <a href="tel:{{ submission.telefono }}" style="color: {{ landing_page.color_primario }};">
+                            {{ submission.telefono }}
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+                {% if submission.empresa %}
+                <div class="detail-row">
+                    <div class="detail-label">Empresa:</div>
+                    <div class="detail-value">{{ submission.empresa }}</div>
+                </div>
+                {% endif %}
+                <div class="detail-row">
+                    <div class="detail-label">Fecha:</div>
+                    <div class="detail-value">{{ submission.created_at|date:"d/m/Y H:i" }}</div>
+                </div>
+                {% if submission.ip_address %}
+                <div class="detail-row">
+                    <div class="detail-label">IP:</div>
+                    <div class="detail-value">{{ submission.ip_address }}</div>
+                </div>
+                {% endif %}
+            </div>
+            
+            {% if submission.utm_source or submission.utm_medium or submission.utm_campaign %}
+            <div class="utm-info">
+                <h4>📈 Información de Campaña (UTM)</h4>
+                {% if submission.utm_source %}
+                    <span class="utm-tag">Fuente: {{ submission.utm_source }}</span>
+                {% endif %}
+                {% if submission.utm_medium %}
+                    <span class="utm-tag">Medio: {{ submission.utm_medium }}</span>
+                {% endif %}
+                {% if submission.utm_campaign %}
+                    <span class="utm-tag">Campaña: {{ submission.utm_campaign }}</span>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number">{{ landing_page.total_views }}</div>
+                    <div class="stat-label">Vistas Totales</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">{{ landing_page.total_submissions }}</div>
+                    <div class="stat-label">Envíos Totales</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">{{ landing_page.conversion_rate|floatformat:1 }}%</div>
+                    <div class="stat-label">Conversión</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="actions">
+            <h3 style="margin: 0 0 15px; color: #495057;">🚀 Acciones Recomendadas</h3>
+            <a href="mailto:{{ submission.email }}?subject=Información sobre {{ landing_page.nombre_producto }}&body=Hola {{ submission.nombre }},
+
+Gracias por tu interés en {{ landing_page.nombre_producto }}.
+
+Me pongo en contacto contigo para brindarte más información personalizada.
+
+Saludos cordiales," class="btn">
+                📧 Responder por Email
+            </a>
+            {% if submission.telefono %}
+            <a href="tel:{{ submission.telefono }}" class="btn btn-secondary">
+                📞 Llamar Ahora
+            </a>
+            {% endif %}
+        </div>
+        
+        <div class="footer">
+            <p style="margin: 0;">
+                Esta notificación fue generada automáticamente por el sistema de Landing Pages.<br>
+                <strong>{{ landing_page.nombre_producto }}</strong> | 
+                Envío recibido el {{ submission.created_at|date:"d/m/Y" }} a las {{ submission.created_at|date:"H:i" }}
+            </p>
+        </div>
+    </div>
+</body>
+</html>

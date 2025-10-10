@@ -36,11 +36,19 @@
         {% for course in courses %}
         <div class="col-lg-4 col-md-6 mb-4">
             <div class="card h-100 shadow-sm">
+                {% if course.company %}
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
                         <i class="bi bi-collection"></i> {{ course.title }}
                     </h5>
                 </div>
+                {% else %}
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="bi bi-collection"></i> {{ course.title }}
+                    </h5>
+                </div>
+                {% endif %}
                 <div class="card-body d-flex flex-column">
                     {% if course.description %}
                     <p class="text-muted">{{ course.description|truncatewords:20 }}</p>

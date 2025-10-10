@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>
+                    <i class="fas fa-rocket text-primary"></i> 
+                    {{ landing_page.nombre_producto }}
+                </h1>
+                <div class="btn-group" role="group">
+                    <a href="{% url 'landing_page_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Volver
+                    </a>
+                    <a href="{% url 'landing_page_public' landing_page.slug %}" class="btn btn-success" target="_blank">
+                        <i class="fas fa-globe"></i> Ver Landing Pública
+                    </a>
+                    <a href="{% url 'landing_page_edit' landing_page.pk %}" class="btn btn-outline-primary">
+                        <i class="fas fa-edit"></i> Editar
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Información Principal -->
+                <div class="col-lg-8">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {% if landing_page.imagen %}
+                                        <img src="{{ landing_page.imagen.url }}" class="img-fluid rounded mb-3" alt="{{ landing_page.nombre_producto }}">
+                                    {% else %}
+                                        <div class="bg-light rounded d-flex align-items-center justify-content-center mb-3" style="height: 200px;">
+                                            <i class="fas fa-image fa-3x text-muted"></i>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <h3>{{ landing_page.nombre_producto }}</h3>
+                                    <p class="text-muted">{{ landing_page.descripcion }}</p>
+                                    
+                                    <div class="mb-3">
+                                        <strong>URL Pública:</strong><br>
+                                        <code>{{ request.build_absolute_uri }}{% url 'landing_page_public' landing_page.slug %}</code>
+                                        <button class="btn btn-sm btn-outline-secondary ms-2" onclick="copyToClipboard('{{ request.build_absolute_uri }}{% url 'landing_page_public' landing_page.slug %}')">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <strong>Estado:</strong>
+                                        {% if landing_page.is_active %}
+                                            <span class="badge bg-success ms-2">Activa</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary ms-2">Inactiva</span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <strong>Colores:</strong><br>
+                                        <div class="d-flex gap-2 mt-1">
+                                            <div class="d-flex align-items-center">
+                                                <div style="width: 20px; height: 20px; background-color: {{ landing_page.color_primario }}; border: 1px solid #ddd; border-radius: 3px;"></div>
+                                                <small class="ms-1">Primario</small>
+                                            </div>
+                                            <div class="d-flex align-items-center">
+                                                <div style="width: 20px; height: 20px; background-color: {{ landing_page.color_secundario }}; border: 1px solid #ddd; border-radius: 3px;"></div>
+                                                <small class="ms-1">Secundario</small>
+                                            </div>
+                                            <div class="d-flex align-items-center">
+                                                <div style="width: 20px; height: 20px; background-color: {{ landing_page.color_boton }}; border: 1px solid #ddd; border-radius: 3px;"></div>
+                                                <small class="ms-1">Botón</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row text-center">
+                                        <div class="col-4">
+                                            <div class="fw-bold text-primary h4">{{ landing_page.total_views }}</div>
+                                            <small class="text-muted">Vistas Totales</small>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="fw-bold text-success h4">{{ landing_page.total_submissions }}</div>
+                                            <small class="text-muted">Envíos Totales</small>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="fw-bold text-info h4">{{ landing_page.conversion_rate|floatformat:1 }}%</div>
+                                            <small class="text-muted">Tasa de Conversión</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Envíos Recientes -->
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5><i class="fas fa-paper-plane"></i> Envíos Recientes</h5>
+                            <a href="{% url 'landing_page_submissions' landing_page.pk %}" class="btn btn-sm btn-outline-primary">
+                                Ver Todos
+                            </a>
+                        </div>
+                        <div class="card-body">
+                            {% if submissions %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Nombre</th>
+                                                <th>Email</th>
+                                                <th>Teléfono</th>
+                                                <th>Empresa</th>
+                                                <th>Fecha</th>
+                                                <th>UTM</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for submission in submissions %}
+                                                <tr>
+                                                    <td>{{ submission.nombre }} {{ submission.apellido }}</td>
+                                                    <td>
+                                                        <a href="mailto:{{ submission.email }}">{{ submission.email }}</a>
+                                                    </td>
+                                                    <td>
+                                                        {% if submission.telefono %}
+                                                            <a href="tel:{{ submission.telefono }}">{{ submission.telefono }}</a>
+                                                        {% else %}
+                                                            <span class="text-muted">-</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>{{ submission.empresa|default:"-" }}</td>
+                                                    <td>
+                                                        <span title="{{ submission.created_at }}">
+                                                            {{ submission.created_at|timesince }} ago
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        {% if submission.utm_source or submission.utm_medium or submission.utm_campaign %}
+                                                            <small class="text-muted">
+                                                                {% if submission.utm_source %}{{ submission.utm_source }}{% endif %}
+                                                                {% if submission.utm_medium %} / {{ submission.utm_medium }}{% endif %}
+                                                                {% if submission.utm_campaign %} / {{ submission.utm_campaign }}{% endif %}
+                                                            </small>
+                                                        {% else %}
+                                                            <span class="text-muted">-</span>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                    <h5 class="text-muted">No hay envíos aún</h5>
+                                    <p class="text-muted">Los envíos del formulario aparecerán aquí cuando los visitantes completen la landing page.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Panel Lateral -->
+                <div class="col-lg-4">
+                    <!-- Acciones Rápidas -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5><i class="fas fa-tools"></i> Acciones Rápidas</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'landing_page_public' landing_page.slug %}" class="btn btn-success" target="_blank">
+                                    <i class="fas fa-globe"></i> Ver Landing Pública
+                                </a>
+                                <a href="{% url 'landing_page_edit' landing_page.pk %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-edit"></i> Editar Landing Page
+                                </a>
+                                <a href="{% url 'landing_page_submissions' landing_page.pk %}" class="btn btn-outline-info">
+                                    <i class="fas fa-list"></i> Ver Todos los Envíos
+                                </a>
+                                <button class="btn btn-outline-warning" onclick="copyToClipboard('{{ request.build_absolute_uri }}{% url 'landing_page_public' landing_page.slug %}')">
+                                    <i class="fas fa-copy"></i> Copiar URL
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Información Técnica -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-info-circle"></i> Información</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <strong>Creado por:</strong><br>
+                                <span class="text-muted">{{ landing_page.created_by.get_full_name|default:landing_page.created_by.username }}</span>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <strong>Fecha de creación:</strong><br>
+                                <span class="text-muted">{{ landing_page.created_at }}</span>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <strong>Última actualización:</strong><br>
+                                <span class="text-muted">{{ landing_page.updated_at }}</span>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <strong>Slug:</strong><br>
+                                <code>{{ landing_page.slug }}</code>
+                            </div>
+                            
+                            {% if landing_page.total_views > 0 %}
+                                <div class="mb-3">
+                                    <strong>Mejor día:</strong><br>
+                                    <span class="text-muted">Próximamente estadísticas avanzadas</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        // Mostrar mensaje de éxito
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+        });
+        
+        Toast.fire({
+            icon: 'success',
+            title: 'URL copiada al portapapeles'
+        });
+    }, function(err) {
+        console.error('Error copiando al portapapeles: ', err);
+        // Fallback para navegadores que no soportan navigator.clipboard
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            alert('URL copiada al portapapeles');
+        } catch (err) {
+            console.error('Fallback: Error copiando al portapapeles', err);
+        }
+        document.body.removeChild(textArea);
+    });
+}
+</script>
+{% endblock %}

@@ -111,117 +111,16 @@ def send_contact_notification(contacto_web):
             logger.warning("No hay emails de notificación válidos configurados")
             return False
         
-        # Preparar el asunto y mensaje
+        # Preparar el asunto
         subject = f"🔔 Nuevo contacto web: {contacto_web.asunto}"
         
-        # Crear mensaje HTML
-        html_message = f"""
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center;">
-                <h1 style="margin: 0;">📧 Nuevo Contacto Web</h1>
-                <p style="margin: 5px 0 0 0;">TicketProo - Sistema de Gestión</p>
-            </div>
-            
-            <div style="padding: 20px; border: 1px solid #e0e0e0;">
-                <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">
-                    Detalles del Contacto
-                </h2>
-                
-                <table style="width: 100%; border-collapse: collapse;">
-                    <tr>
-                        <td style="padding: 8px 0; font-weight: bold; color: #666; width: 120px;">
-                            <strong>👤 Nombre:</strong>
-                        </td>
-                        <td style="padding: 8px 0;">{contacto_web.nombre}</td>
-                    </tr>
-                    <tr style="background-color: #f9f9f9;">
-                        <td style="padding: 8px 0; font-weight: bold; color: #666;">
-                            <strong>📧 Email:</strong>
-                        </td>
-                        <td style="padding: 8px 0;">
-                            <a href="mailto:{contacto_web.email}" style="color: #667eea;">
-                                {contacto_web.email}
-                            </a>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 8px 0; font-weight: bold; color: #666;">
-                            <strong>📱 Teléfono:</strong>
-                        </td>
-                        <td style="padding: 8px 0;">{contacto_web.telefono or 'No proporcionado'}</td>
-                    </tr>
-                    <tr style="background-color: #f9f9f9;">
-                        <td style="padding: 8px 0; font-weight: bold; color: #666;">
-                            <strong>🏢 Empresa:</strong>
-                        </td>
-                        <td style="padding: 8px 0;">{contacto_web.empresa or 'No proporcionada'}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 8px 0; font-weight: bold; color: #666;">
-                            <strong>📝 Asunto:</strong>
-                        </td>
-                        <td style="padding: 8px 0;"><strong>{contacto_web.asunto}</strong></td>
-                    </tr>
-                    <tr style="background-color: #f9f9f9;">
-                        <td style="padding: 8px 0; font-weight: bold; color: #666; vertical-align: top;">
-                            <strong>💬 Mensaje:</strong>
-                        </td>
-                        <td style="padding: 8px 0;">
-                            <div style="background: white; padding: 10px; border-left: 3px solid #667eea; margin: 5px 0;">
-                                {contacto_web.mensaje.replace(chr(10), '<br>')}
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 8px 0; font-weight: bold; color: #666;">
-                            <strong>🕒 Fecha:</strong>
-                        </td>
-                        <td style="padding: 8px 0;">{contacto_web.fecha_creacion.strftime('%d/%m/%Y %H:%M')}</td>
-                    </tr>
-                    <tr style="background-color: #f9f9f9;">
-                        <td style="padding: 8px 0; font-weight: bold; color: #666;">
-                            <strong>🌐 IP:</strong>
-                        </td>
-                        <td style="padding: 8px 0;">{contacto_web.ip_address or 'No disponible'}</td>
-                    </tr>
-                </table>
-                
-                <div style="margin-top: 20px; text-align: center;">
-                    <a href="http://localhost:8000/admin/tickets/contactoweb/{contacto_web.id}/change/" 
-                       style="background: #667eea; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">
-                        🔗 Ver en Panel de Administración
-                    </a>
-                </div>
-            </div>
-            
-            <div style="background: #f5f5f5; padding: 15px; text-align: center; font-size: 12px; color: #666;">
-                <p style="margin: 0;">Este email fue enviado automáticamente por TicketProo</p>
-                <p style="margin: 5px 0 0 0;">Para desactivar estas notificaciones, modifica la configuración del sistema</p>
-            </div>
-        </div>
-        """
+        # Renderizar template HTML
+        html_message = render_to_string('emails/contact_notification.html', {
+            'contacto': contacto_web
+        })
         
         # Crear versión de texto plano
-        plain_message = f"""
-Nuevo Contacto Web - TicketProo
-
-Detalles del Contacto:
-- Nombre: {contacto_web.nombre}
-- Email: {contacto_web.email}
-- Teléfono: {contacto_web.telefono or 'No proporcionado'}
-- Empresa: {contacto_web.empresa or 'No proporcionada'}
-- Asunto: {contacto_web.asunto}
-- Fecha: {contacto_web.fecha_creacion.strftime('%d/%m/%Y %H:%M')}
-- IP: {contacto_web.ip_address or 'No disponible'}
-
-Mensaje:
-{contacto_web.mensaje}
-
----
-Ver en panel de administración: http://localhost:8000/admin/tickets/contactoweb/{contacto_web.id}/change/
-
-Este email fue enviado automáticamente por TicketProo.
-        """
+        plain_message = strip_tags(html_message)
         
         # Enviar el email
         send_mail(
@@ -237,5 +136,101 @@ Este email fue enviado automáticamente por TicketProo.
         return True
         
     except Exception as e:
-        logger.error(f"Error enviando notificación de contacto web: {str(e)}")
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error enviando notificación por email: {str(e)}")
+        return False
+
+
+def send_landing_page_notification(submission):
+    """
+    Envía notificación por email cuando se recibe un envío de landing page
+    """
+    try:
+        from django.core.mail import send_mail
+        from django.template.loader import render_to_string
+        from django.utils.html import strip_tags
+        from .models import SystemConfiguration
+        
+        # Obtener configuración del sistema
+        config = SystemConfiguration.get_instance()
+        
+        if not config or not config.email_notifications_enabled:
+            return True
+        
+        # Preparar datos para el template
+        context = {
+            'submission': submission,
+            'landing_page': submission.landing_page,
+        }
+        
+        # Renderizar contenido del email
+        html_message = render_to_string('tickets/email/landing_page_notification.html', context)
+        plain_message = strip_tags(html_message)
+        
+        subject = f'Nueva solicitud de {submission.landing_page.nombre_producto} - {submission.nombre} {submission.apellido}'
+        
+        # Enviar email
+        send_mail(
+            subject=subject,
+            message=plain_message,
+            from_email=config.smtp_from_email,
+            recipient_list=[config.notification_email],
+            html_message=html_message,
+            fail_silently=False,
+        )
+        
+        return True
+        
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error enviando notificación de landing page: {str(e)}")
+        return False
+
+
+def send_contact_creation_notification(contact, landing_page):
+    """
+    Envía notificación por email cuando se crea un contacto desde una landing page
+    """
+    try:
+        from django.core.mail import send_mail
+        from django.template.loader import render_to_string
+        from django.utils.html import strip_tags
+        from .models import SystemConfiguration
+        
+        # Obtener configuración del sistema
+        config = SystemConfiguration.get_instance()
+        
+        if not config or not config.email_notifications_enabled:
+            return True
+        
+        # Preparar datos para el template
+        context = {
+            'contact': contact,
+            'landing_page': landing_page,
+        }
+        
+        # Renderizar contenido del email
+        html_message = render_to_string('tickets/email/contact_creation_notification.html', context)
+        plain_message = strip_tags(html_message)
+        
+        subject = f'Nuevo contacto generado: {contact.nombre} - {landing_page.nombre_producto}'
+        
+        # Enviar email
+        send_mail(
+            subject=subject,
+            message=plain_message,
+            from_email=config.smtp_from_email,
+            recipient_list=[config.notification_email],
+            html_message=html_message,
+            fail_silently=False,
+        )
+        
+        return True
+        
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error enviando notificación de creación de contacto: {str(e)}")
         return False

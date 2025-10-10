@@ -178,6 +178,12 @@
                                     <i class="bi bi-envelope-plus"></i> Contactos Web
                                 </a>
                             </li>
+                            <li>
+                                <a class="dropdown-item {% if 'landing_page' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'landing_page_list' %}">
+                                    <i class="fas fa-rocket"></i> Landing Pages
+                                </a>
+                            </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <a class="dropdown-item {% if 'contact' in request.resolver_match.url_name %}active{% endif %}" 

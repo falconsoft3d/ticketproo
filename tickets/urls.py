@@ -417,4 +417,23 @@ urlpatterns = [
     path('sign/<str:token>/success/<int:signature_id>/', views.public_agreement_success, name='public_agreement_success'),
     path('agreement/<str:agreement_token>/download/<int:signature_id>/', views.download_signed_agreement, name='download_signed_agreement'),
 
+    # ============= URLs LANDING PAGES =============
+    # URLs de gestión de landing pages (solo para agentes)
+    path('landing-pages/', views.landing_page_list, name='landing_page_list'),
+    path('landing-pages/create/', views.landing_page_create, name='landing_page_create'),
+    path('landing-pages/<int:pk>/', views.landing_page_detail, name='landing_page_detail'),
+    path('landing-pages/<int:pk>/edit/', views.landing_page_edit, name='landing_page_edit'),
+    path('landing-pages/<int:pk>/delete/', views.landing_page_delete, name='landing_page_delete'),
+    path('landing-pages/<int:pk>/submissions/', views.landing_page_submissions, name='landing_page_submissions'),
+    path('landing-pages/contacts/', views.landing_page_contacts, name='landing_page_contacts'),
+    path('landing-pages/submissions/<int:submission_id>/create-contact/', views.create_contact_from_submission_view, name='create_contact_from_submission'),
+    
+    # URLs AJAX para landing pages
+    path('ajax/landing-pages/submissions/<int:submission_id>/create-contact/', views.ajax_create_contact_from_submission, name='ajax_create_contact_from_submission'),
+    path('ajax/landing-pages/submissions/create-contacts-batch/', views.ajax_create_contacts_batch, name='ajax_create_contacts_batch'),
+    path('ajax/landing-pages/submissions/<int:submission_id>/details/', views.ajax_submission_details, name='ajax_submission_details'),
+    
+    # URL pública de landing page (sin autenticación)
+    path('lp/<slug:slug>/', views.landing_page_public, name='landing_page_public'),
+
 ]
