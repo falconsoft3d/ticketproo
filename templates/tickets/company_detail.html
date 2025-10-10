@@ -36,6 +36,12 @@
                         <i class="bi bi-share me-2"></i>
                         URL Pública
                     </button>
+                    {% if company.public_token %}
+                    <button type="button" class="btn btn-success" onclick="copyTicketUrl()" title="Copiar URL para crear tickets">
+                        <i class="bi bi-ticket me-2"></i>
+                        URL Tickets
+                    </button>
+                    {% endif %}
                     <a href="{% url 'company_edit' company.id %}" class="btn btn-primary">
                         <i class="bi bi-pencil me-2"></i>
                         Editar
@@ -378,14 +384,85 @@
     </div>
 </div>
 
+<!-- Modal para URL de Tickets -->
+<div class="modal fade" id="ticketUrlModal" tabindex="-1" aria-labelledby="ticketUrlModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ticketUrlModalLabel">
+                    <i class="bi bi-ticket me-2"></i>
+                    URL Pública para Crear Tickets
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-3">
+                    Comparte esta URL con tus clientes para que puedan crear tickets de soporte directamente:
+                </p>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="ticketUrl" readonly
+                           value="{{ request.scheme }}://{{ request.get_host }}{% url 'public_company_ticket_create' public_token=company.public_token %}" 
+                           onclick="this.select()">
+                    <button class="btn btn-outline-primary" type="button" onclick="copyTicketToClipboard()">
+                        <i class="bi bi-clipboard"></i> Copiar
+                    </button>
+                </div>
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Tus clientes podrán crear tickets sin necesidad de registrarse. Los tickets se asignarán automáticamente a tu empresa.
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="{% url 'public_company_ticket_create' public_token=company.public_token %}" 
+                   target="_blank" class="btn btn-success">
+                    <i class="bi bi-box-arrow-up-right me-2"></i>
+                    Ver Formulario
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 function copyPublicUrl() {
     const modal = new bootstrap.Modal(document.getElementById('publicUrlModal'));
     modal.show();
 }
 
+function copyTicketUrl() {
+    const modal = new bootstrap.Modal(document.getElementById('ticketUrlModal'));
+    modal.show();
+}
+
 function copyToClipboard() {
     const urlInput = document.getElementById('publicUrl');
+    urlInput.select();
+    urlInput.setSelectionRange(0, 99999); // Para móviles
+    
+    navigator.clipboard.writeText(urlInput.value).then(function() {
+        // Cambiar el texto del botón temporalmente
+        const copyBtn = event.target.closest('button');
+        const originalHTML = copyBtn.innerHTML;
+        copyBtn.innerHTML = '<i class="bi bi-check"></i> ¡Copiado!';
+        copyBtn.classList.remove('btn-outline-primary');
+        copyBtn.classList.add('btn-success');
+        
+        setTimeout(function() {
+            copyBtn.innerHTML = originalHTML;
+            copyBtn.classList.remove('btn-success');
+            copyBtn.classList.add('btn-outline-primary');
+        }, 2000);
+    }).catch(function(err) {
+        console.error('Error al copiar: ', err);
+        alert('Error al copiar la URL. Por favor, cópiala manualmente.');
+    });
+}
+
+function copyTicketToClipboard() {
+    const urlInput = document.getElementById('ticketUrl');
     urlInput.select();
     urlInput.setSelectionRange(0, 99999); // Para móviles
     

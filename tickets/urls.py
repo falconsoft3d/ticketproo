@@ -436,5 +436,8 @@ urlpatterns = [
     
     # URL pública de landing page (sin autenticación)
     path('lp/<slug:slug>/', views.landing_page_public, name='landing_page_public'),
+    
+    # URL pública para crear tickets desde empresa (sin autenticación)
+    path('public/company/<uuid:public_token>/create-ticket/', views.public_company_ticket_create, name='public_company_ticket_create'),
 
 ]

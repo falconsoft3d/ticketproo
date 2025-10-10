@@ -3751,3 +3751,92 @@ class LandingPageSubmissionForm(forms.ModelForm):
             email = email.lower().strip()
         return email
         return []
+
+
+class PublicCompanyTicketForm(forms.ModelForm):
+    """Formulario público para crear tickets desde una empresa"""
+    
+    customer_name = forms.CharField(
+        max_length=100,
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Tu nombre completo'
+        }),
+        label='Nombre'
+    )
+    
+    customer_email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'tu@email.com'
+        }),
+        label='Email de contacto'
+    )
+    
+    customer_phone = forms.CharField(
+        max_length=20,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '+34 123 456 789'
+        }),
+        label='Teléfono (opcional)'
+    )
+    
+    class Meta:
+        model = Ticket
+        fields = ['title', 'description', 'priority']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Describe brevemente tu solicitud'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 6,
+                'placeholder': 'Explica detalladamente tu problema o solicitud...'
+            }),
+            'priority': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+        }
+        labels = {
+            'title': 'Asunto',
+            'description': 'Descripción detallada',
+            'priority': 'Prioridad',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        self.company = kwargs.pop('company', None)
+        super().__init__(*args, **kwargs)
+        
+        # Configurar las opciones de prioridad (excluir "urgent" para usuarios públicos)
+        self.fields['priority'].choices = [
+            ('low', 'Baja'),
+            ('medium', 'Media'),
+            ('high', 'Alta'),
+        ]
+        self.fields['priority'].initial = 'medium'
+    
+    def save(self, commit=True):
+        """Crear el ticket con información adicional del cliente"""
+        ticket = super().save(commit=False)
+        
+        if self.company:
+            ticket.company = self.company
+        
+        # Agregar información del cliente a la descripción
+        customer_info = f"\n\n--- Información del Cliente ---\n"
+        customer_info += f"Nombre: {self.cleaned_data['customer_name']}\n"
+        customer_info += f"Email: {self.cleaned_data['customer_email']}\n"
+        if self.cleaned_data['customer_phone']:
+            customer_info += f"Teléfono: {self.cleaned_data['customer_phone']}\n"
+        
+        ticket.description = f"{ticket.description}{customer_info}"
+        
+        if commit:
+            ticket.save()
+        
+        return ticket

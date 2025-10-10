@@ -42,7 +42,7 @@ from .forms import (
     UrlManagerForm, UrlManagerFilterForm, WorkOrderForm, WorkOrderFilterForm, TaskForm,
     ChatMessageForm, ChatRoomForm, AIChatSessionForm, AIChatMessageForm, ConceptForm,
     EmployeeHiringOpinionForm, EmployeePayrollForm, AgreementForm, AgreementSignatureForm, AgreementPublicForm,
-    LandingPageForm, LandingPageSubmissionForm
+    LandingPageForm, LandingPageSubmissionForm, PublicCompanyTicketForm
 )
 from .utils import is_agent, is_regular_user, is_teacher, can_manage_courses, get_user_role, assign_user_to_group
 
@@ -2021,6 +2021,12 @@ def company_create_view(request):
 def company_detail_view(request, company_id):
     """Vista para ver detalles de una empresa"""
     company = get_object_or_404(Company, id=company_id)
+    
+    # Generar public_token si no existe
+    if not company.public_token:
+        import uuid
+        company.public_token = uuid.uuid4()
+        company.save()
     
     # Estadísticas de la empresa
     total_tickets = company.tickets.count()
@@ -11172,3 +11178,52 @@ def ajax_submission_details(request, submission_id):
             'success': False,
             'message': f'Error al obtener detalles: {str(e)}'
         })
+
+
+def public_company_ticket_create(request, public_token):
+    """Vista pública para crear tickets desde una empresa usando su token público"""
+    try:
+        company = get_object_or_404(Company, public_token=public_token, is_active=True)
+    except (Company.DoesNotExist, ValueError):
+        return render(request, 'tickets/public_company_ticket_error.html', {
+            'error_message': 'Esta empresa no existe o no tiene habilitada la creación pública de tickets.'
+        })
+    
+    if request.method == 'POST':
+        form = PublicCompanyTicketForm(request.POST, company=company)
+        if form.is_valid():
+            try:
+                # Crear o obtener usuario del sistema para tickets públicos
+                system_user, created = User.objects.get_or_create(
+                    username='system_public_tickets',
+                    defaults={
+                        'email': 'system@ticketproo.com',
+                        'first_name': 'Sistema',
+                        'last_name': 'Tickets Públicos',
+                        'is_active': True,
+                    }
+                )
+                
+                # Crear el ticket
+                ticket = form.save(commit=False)
+                ticket.created_by = system_user
+                ticket.ticket_type = 'desarrollo'  # Tipo por defecto para tickets públicos
+                ticket.status = 'open'
+                ticket.save()
+                
+                return render(request, 'tickets/public_company_ticket_success.html', {
+                    'ticket': ticket,
+                    'company': company,
+                    'customer_name': form.cleaned_data['customer_name'],
+                    'customer_email': form.cleaned_data['customer_email'],
+                })
+                
+            except Exception as e:
+                form.add_error(None, f'Error al crear el ticket: {str(e)}')
+    else:
+        form = PublicCompanyTicketForm(company=company)
+    
+    return render(request, 'tickets/public_company_ticket_create.html', {
+        'form': form,
+        'company': company,
+    })
