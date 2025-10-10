@@ -30,27 +30,20 @@
                     <div class="card mb-4">
                         <div class="card-body">
                             <div class="row">
-                                <div class="col-md-6">
-                                    {% if landing_page.imagen %}
-                                        <img src="{{ landing_page.imagen.url }}" class="img-fluid rounded mb-3" alt="{{ landing_page.nombre_producto }}">
-                                    {% else %}
-                                        <div class="bg-light rounded d-flex align-items-center justify-content-center mb-3" style="height: 200px;">
-                                            <i class="fas fa-image fa-3x text-muted"></i>
-                                        </div>
-                                    {% endif %}
-                                </div>
-                                <div class="col-md-6">
+
+<div class="col-md-6">
                                     <h3>{{ landing_page.nombre_producto }}</h3>
-                                    <p class="text-muted">{{ landing_page.descripcion }}</p>
+                                    <p class="text-muted">{{ landing_page.descripcion|linebreaks }}</p>
                                     
-                                    <div class="mb-3">
-                                        <strong>URL Pública:</strong><br>
-                                        <code>{{ request.build_absolute_uri }}{% url 'landing_page_public' landing_page.slug %}</code>
-                                        <button class="btn btn-sm btn-outline-secondary ms-2" onclick="copyToClipboard('{{ request.build_absolute_uri }}{% url 'landing_page_public' landing_page.slug %}')">
-                                            <i class="fas fa-copy"></i>
-                                        </button>
-                                    </div>
+                                
                                     
+                                    
+                                    
+                                    
+                                </div>
+
+
+                                <div class="col-md-6">
                                     <div class="mb-3">
                                         <strong>Estado:</strong>
                                         {% if landing_page.is_active %}
@@ -59,25 +52,20 @@
                                             <span class="badge bg-secondary ms-2">Inactiva</span>
                                         {% endif %}
                                     </div>
-                                    
-                                    <div class="mb-3">
-                                        <strong>Colores:</strong><br>
-                                        <div class="d-flex gap-2 mt-1">
-                                            <div class="d-flex align-items-center">
-                                                <div style="width: 20px; height: 20px; background-color: {{ landing_page.color_primario }}; border: 1px solid #ddd; border-radius: 3px;"></div>
-                                                <small class="ms-1">Primario</small>
-                                            </div>
-                                            <div class="d-flex align-items-center">
-                                                <div style="width: 20px; height: 20px; background-color: {{ landing_page.color_secundario }}; border: 1px solid #ddd; border-radius: 3px;"></div>
-                                                <small class="ms-1">Secundario</small>
-                                            </div>
-                                            <div class="d-flex align-items-center">
-                                                <div style="width: 20px; height: 20px; background-color: {{ landing_page.color_boton }}; border: 1px solid #ddd; border-radius: 3px;"></div>
-                                                <small class="ms-1">Botón</small>
-                                            </div>
+
+
+                                    {% if landing_page.imagen %}
+                                        <img src="{{ landing_page.imagen.url }}" class="img-fluid rounded mb-3" alt="{{ landing_page.nombre_producto }}">
+                                    {% else %}
+                                        <div class="bg-light rounded d-flex align-items-center justify-content-center mb-3" style="height: 200px;">
+                                            <i class="fas fa-image fa-3x text-muted"></i>
                                         </div>
-                                    </div>
-                                    
+                                    {% endif %}
+
+
+                                    <hr/>
+
+
                                     <div class="row text-center">
                                         <div class="col-4">
                                             <div class="fw-bold text-primary h4">{{ landing_page.total_views }}</div>
@@ -92,7 +80,9 @@
                                             <small class="text-muted">Tasa de Conversión</small>
                                         </div>
                                     </div>
+
                                 </div>
+                                
                             </div>
                         </div>
                     </div>
@@ -116,7 +106,6 @@
                                                 <th>Teléfono</th>
                                                 <th>Empresa</th>
                                                 <th>Fecha</th>
-                                                <th>UTM</th>
                                                 <th>Acciones</th>
                                             </tr>
                                         </thead>
@@ -140,20 +129,10 @@
                                                             {{ submission.created_at|timesince }} ago
                                                         </span>
                                                     </td>
-                                                    <td>
-                                                        {% if submission.utm_source or submission.utm_medium or submission.utm_campaign %}
-                                                            <small class="text-muted">
-                                                                {% if submission.utm_source %}{{ submission.utm_source }}{% endif %}
-                                                                {% if submission.utm_medium %} / {{ submission.utm_medium }}{% endif %}
-                                                                {% if submission.utm_campaign %} / {{ submission.utm_campaign }}{% endif %}
-                                                            </small>
-                                                        {% else %}
-                                                            <span class="text-muted">-</span>
-                                                        {% endif %}
-                                                    </td>
+                                                
                                                     <td>
                                                         <a href="{% url 'landing_page_submission_detail' submission.id %}" class="btn btn-outline-primary btn-sm" title="Ver detalle">
-                                                            <i class="fas fa-eye"></i> Ver Detalle
+                                                            <i class="fas fa-eye"></i>
                                                         </a>
                                                     </td>
                                                 </tr>
