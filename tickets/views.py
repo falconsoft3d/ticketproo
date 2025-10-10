@@ -31,7 +31,8 @@ from .models import (
     Meeting, MeetingAttendee, MeetingQuestion, Contact,
     BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, Concept,
     Exam, ExamQuestion, ExamAttempt, ExamAnswer, ContactoWeb, PublicDocumentUpload,
-    Employee, JobApplicationToken, EmployeePayroll, Agreement, AgreementSignature
+    Employee, JobApplicationToken, EmployeePayroll, Agreement, AgreementSignature,
+    LandingPage, LandingPageSubmission
 )
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
@@ -40,7 +41,8 @@ from .forms import (
     TimeEntryEditForm, ProjectForm, CompanyForm, SystemConfigurationForm, DocumentForm,
     UrlManagerForm, UrlManagerFilterForm, WorkOrderForm, WorkOrderFilterForm, TaskForm,
     ChatMessageForm, ChatRoomForm, AIChatSessionForm, AIChatMessageForm, ConceptForm,
-    EmployeeHiringOpinionForm, EmployeePayrollForm, AgreementForm, AgreementSignatureForm, AgreementPublicForm
+    EmployeeHiringOpinionForm, EmployeePayrollForm, AgreementForm, AgreementSignatureForm, AgreementPublicForm,
+    LandingPageForm, LandingPageSubmissionForm
 )
 from .utils import is_agent, is_regular_user, is_teacher, can_manage_courses, get_user_role, assign_user_to_group
 
@@ -2129,6 +2131,37 @@ def system_configuration_view(request):
                 messages.success(request, result['message'])
             else:
                 messages.error(request, result['message'])
+            
+            return redirect('system_configuration')
+        
+        # Verificar si es una prueba de email
+        if 'test_email' in request.POST:
+            try:
+                from .utils import send_contact_notification
+                from .models import ContactoWeb
+                
+                # Crear un contacto de prueba temporal
+                contacto_prueba = ContactoWeb(
+                    nombre='Prueba del Sistema',
+                    email='prueba@sistema.local',
+                    telefono='+34 600 000 000',
+                    empresa='Sistema TicketProo',
+                    asunto='Prueba de notificación por email',
+                    mensaje='Este es un mensaje de prueba generado desde la configuración del sistema.',
+                    ip_address='127.0.0.1',
+                    user_agent='System Configuration Test'
+                )
+                
+                # Intentar enviar la notificación sin guardar el contacto
+                result = send_contact_notification(contacto_prueba)
+                
+                if result:
+                    messages.success(request, '✅ Email de prueba enviado exitosamente. Revisa los emails configurados.')
+                else:
+                    messages.error(request, '❌ Error enviando el email de prueba. Revisa la configuración.')
+                    
+            except Exception as e:
+                messages.error(request, f'❌ Error en la prueba de email: {str(e)}')
             
             return redirect('system_configuration')
         
@@ -8835,6 +8868,16 @@ def contacto_web(request):
             
             contacto.save()
             
+            # Enviar notificación por email
+            try:
+                from .utils import send_contact_notification
+                send_contact_notification(contacto)
+            except Exception as e:
+                # Log del error pero no interrumpir el flujo
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error enviando notificación de contacto: {str(e)}")
+            
             # Limpiar CAPTCHA de la sesión después del envío exitoso
             if 'captcha_answer' in request.session:
                 del request.session['captcha_answer']
@@ -10625,3 +10668,467 @@ def download_signed_agreement(request, agreement_token, signature_id):
     response['Content-Disposition'] = f'attachment; filename="{agreement.title}_firmado_{signature.signer_name}.pdf"'
     
     return response
+
+
+# =============================================================================
+# VISTAS PARA LANDING PAGES
+# =============================================================================
+
+def is_agent_or_superuser(user):
+    """
+    Verifica si un usuario es agente o superusuario
+    """
+    if not user.is_authenticated:
+        return False
+    return user.is_superuser or is_agent(user)
+
+@login_required
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def landing_page_list(request):
+    """Vista para listar todas las landing pages"""
+    landing_pages = LandingPage.objects.all().order_by('-created_at')
+    
+    context = {
+        'page_title': 'Landing Pages',
+        'landing_pages': landing_pages,
+    }
+    
+    return render(request, 'tickets/landing_page_list.html', context)
+
+
+@login_required
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def landing_page_create(request):
+    """Vista para crear una nueva landing page"""
+    if request.method == 'POST':
+        form = LandingPageForm(request.POST, request.FILES)
+        if form.is_valid():
+            landing_page = form.save(commit=False)
+            landing_page.created_by = request.user
+            landing_page.save()
+            messages.success(request, 'Landing Page creada exitosamente.')
+            return redirect('landing_page_detail', pk=landing_page.pk)
+        else:
+            # Agregar errores del formulario a los mensajes
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'Error en {field}: {error}')
+    else:
+        form = LandingPageForm()
+    
+    context = {
+        'page_title': 'Crear Landing Page',
+        'form': form,
+    }
+    
+    return render(request, 'tickets/landing_page_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def landing_page_detail(request, pk):
+    """Vista para ver detalles de una landing page"""
+    landing_page = get_object_or_404(LandingPage, pk=pk)
+    submissions = landing_page.submissions.all().order_by('-created_at')[:20]
+    
+    context = {
+        'page_title': f'Landing Page: {landing_page.nombre_producto}',
+        'landing_page': landing_page,
+        'submissions': submissions,
+    }
+    
+    return render(request, 'tickets/landing_page_detail.html', context)
+
+
+@login_required
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def landing_page_edit(request, pk):
+    """Vista para editar una landing page"""
+    landing_page = get_object_or_404(LandingPage, pk=pk)
+    
+    if request.method == 'POST':
+        form = LandingPageForm(request.POST, request.FILES, instance=landing_page)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Landing Page actualizada exitosamente.')
+            return redirect('landing_page_detail', pk=landing_page.pk)
+    else:
+        form = LandingPageForm(instance=landing_page)
+    
+    context = {
+        'page_title': f'Editar Landing Page: {landing_page.nombre_producto}',
+        'form': form,
+        'landing_page': landing_page,
+    }
+    
+    return render(request, 'tickets/landing_page_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def landing_page_delete(request, pk):
+    """Vista para eliminar una landing page"""
+    landing_page = get_object_or_404(LandingPage, pk=pk)
+    
+    if request.method == 'POST':
+        landing_page.delete()
+        messages.success(request, 'Landing Page eliminada exitosamente.')
+        return redirect('landing_page_list')
+    
+    context = {
+        'page_title': f'Eliminar Landing Page: {landing_page.nombre_producto}',
+        'landing_page': landing_page,
+    }
+    
+    return render(request, 'tickets/landing_page_delete.html', context)
+
+
+def landing_page_public(request, slug):
+    """Vista pública de la landing page"""
+    landing_page = get_object_or_404(LandingPage, slug=slug, is_active=True)
+    
+    # Incrementar contador de visitas
+    landing_page.increment_views()
+    
+    if request.method == 'POST':
+        form = LandingPageSubmissionForm(request.POST)
+        if form.is_valid():
+            submission = form.save(commit=False)
+            submission.landing_page = landing_page
+            
+            # Capturar información adicional
+            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+            if x_forwarded_for:
+                submission.ip_address = x_forwarded_for.split(',')[0]
+            else:
+                submission.ip_address = request.META.get('REMOTE_ADDR')
+            
+            submission.user_agent = request.META.get('HTTP_USER_AGENT', '')
+            submission.utm_source = request.GET.get('utm_source', '')
+            submission.utm_medium = request.GET.get('utm_medium', '')
+            submission.utm_campaign = request.GET.get('utm_campaign', '')
+            
+            submission.save()
+            
+            # Crear contacto web automáticamente
+            try:
+                contact = create_contact_from_submission(submission, landing_page)
+                
+                # Enviar notificación de creación de contacto
+                try:
+                    from .utils import send_contact_creation_notification
+                    send_contact_creation_notification(contact, landing_page)
+                except Exception as e:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.error(f"Error enviando notificación de contacto: {str(e)}")
+                    
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error creando contacto desde landing page: {str(e)}")
+            
+            # Incrementar contador de envíos
+            landing_page.increment_submissions()
+            
+            # Enviar notificación por email si está configurada
+            try:
+                from .utils import send_landing_page_notification
+                send_landing_page_notification(submission)
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error enviando notificación de landing page: {str(e)}")
+            
+            # Enviar notificación por Telegram si está configurada
+            try:
+                from .utils import send_telegram_notification
+                send_telegram_notification(landing_page, submission)
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error enviando notificación de Telegram: {str(e)}")
+            
+            # Redirigir a página de gracias
+            return render(request, 'tickets/landing_page_thanks.html', {
+                'landing_page': landing_page,
+                'submission': submission,
+            })
+    else:
+        form = LandingPageSubmissionForm()
+    
+    context = {
+        'landing_page': landing_page,
+        'form': form,
+    }
+    
+    return render(request, 'tickets/landing_page_public.html', context)
+
+
+def create_contact_from_submission(submission, landing_page):
+    """Crear un contacto desde un envío de landing page"""
+    from .models import Contact
+    
+    # Verificar si ya existe un contacto con el mismo email
+    existing_contact = Contact.objects.filter(
+        email=submission.email
+    ).first()
+    
+    # Preparar notas con información del landing page y mensaje del usuario
+    notas_base = f"Contacto generado desde landing page: {landing_page.nombre_producto}\n\n"
+    
+    # Agregar mensaje del usuario si existe
+    if hasattr(submission, 'mensaje') and submission.mensaje:
+        notas_base += f"Mensaje del cliente:\n{submission.mensaje}\n\n"
+    
+    # Agregar información de seguimiento
+    notas_base += f"Datos de seguimiento:\n" \
+                  f"- UTM Source: {submission.utm_source or 'N/A'}\n" \
+                  f"- UTM Medium: {submission.utm_medium or 'N/A'}\n" \
+                  f"- UTM Campaign: {submission.utm_campaign or 'N/A'}\n" \
+                  f"- IP Address: {submission.ip_address or 'N/A'}\n" \
+                  f"- Fecha de envío: {submission.created_at.strftime('%d/%m/%Y %H:%M')}"
+    
+    if existing_contact:
+        # Actualizar el contacto existente con nueva información
+        existing_contact.name = f"{submission.nombre} {submission.apellido}".strip()
+        if submission.telefono:
+            existing_contact.phone = submission.telefono
+        if submission.empresa:
+            existing_contact.company = submission.empresa
+        existing_contact.source = f"Landing Page: {landing_page.nombre_producto}"
+        existing_contact.notes = notas_base
+        existing_contact.status = 'positive'  # Nuevo lead es positivo
+        existing_contact.save()
+        
+        return existing_contact
+    else:
+        # Crear nuevo contacto
+        contact = Contact.objects.create(
+            name=f"{submission.nombre} {submission.apellido}".strip(),
+            email=submission.email,
+            phone=submission.telefono or '',
+            company=submission.empresa or '',
+            source=f"Landing Page: {landing_page.nombre_producto}",
+            notes=notas_base,
+            status='positive'  # Nuevo lead es positivo por defecto
+        )
+        
+        return contact
+
+
+@login_required
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def landing_page_submissions(request, pk):
+    """Vista para ver todos los envíos de una landing page"""
+    landing_page = get_object_or_404(LandingPage, pk=pk)
+    submissions = landing_page.submissions.all().order_by('-created_at')
+    
+    # Agregar información de contactos existentes
+    from .models import Contact
+    for submission in submissions:
+        # Buscar contacto existente por email
+        existing_contact = Contact.objects.filter(
+            email=submission.email
+        ).first()
+        submission.existing_contact = existing_contact
+    
+    context = {
+        'page_title': f'Envíos: {landing_page.nombre_producto}',
+        'landing_page': landing_page,
+        'submissions': submissions,
+    }
+    
+    return render(request, 'tickets/landing_page_submissions.html', context)
+
+
+@login_required
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def create_contact_from_submission_view(request, submission_id):
+    """Vista para crear un contacto manualmente desde un envío de landing page"""
+    from .models import LandingPageSubmission
+    
+    submission = get_object_or_404(LandingPageSubmission, pk=submission_id)
+    
+    if request.method == 'POST':
+        try:
+            contact = create_contact_from_submission(submission, submission.landing_page)
+            messages.success(request, f'Contacto creado exitosamente para {contact.name}')
+            
+            # Enviar notificación
+            try:
+                from .utils import send_contact_creation_notification
+                send_contact_creation_notification(contact, submission.landing_page)
+            except Exception as e:
+                messages.warning(request, 'Contacto creado pero no se pudo enviar la notificación por email.')
+                
+        except Exception as e:
+            messages.error(request, f'Error al crear el contacto: {str(e)}')
+    
+    return redirect('landing_page_submissions', pk=submission.landing_page.pk)
+
+
+@login_required
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def landing_page_contacts(request):
+    """Vista para ver todos los contactos creados desde landing pages"""
+    from .models import Contact
+    
+    # Filtrar contactos que contienen "landing page" en la fuente o notas
+    contacts = Contact.objects.filter(
+        models.Q(source__icontains='landing page') |
+        models.Q(notes__icontains='landing page')
+    ).order_by('-created_at')
+    
+    # Estadísticas
+    total_contacts = contacts.count()
+    positive_contacts = contacts.filter(status='positive').count()
+    negative_contacts = contacts.filter(status='negative').count()
+    
+    context = {
+        'page_title': 'Contactos desde Landing Pages',
+        'contacts': contacts,
+        'total_contacts': total_contacts,
+        'positive_contacts': positive_contacts,
+        'negative_contacts': negative_contacts,
+    }
+    
+    return render(request, 'tickets/landing_page_contacts.html', context)
+
+
+@login_required
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def ajax_create_contact_from_submission(request, submission_id):
+    """Vista AJAX para crear un contacto desde un envío"""
+    if request.method == 'POST':
+        try:
+            from .models import LandingPageSubmission
+            submission = get_object_or_404(LandingPageSubmission, pk=submission_id)
+            
+            contact = create_contact_from_submission(submission, submission.landing_page)
+            
+            if not contact:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'No se pudo crear el contacto'
+                })
+            
+            # Verificar si es un contacto nuevo o actualizado
+            from .models import ContactoWeb
+            existing_contact_count = ContactoWeb.objects.filter(email=submission.email).count()
+            
+            if existing_contact_count > 1:
+                message = f'Contacto actualizado para {contact.nombre} ({contact.email})'
+            else:
+                message = f'Contacto creado exitosamente para {contact.nombre}'
+            
+            # Log para debugging
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"Contacto procesado: {message}")
+            
+            # Enviar notificación (opcional)
+            try:
+                from .utils import send_contact_creation_notification
+                send_contact_creation_notification(contact, submission.landing_page)
+            except Exception as e:
+                logger.warning(f"Error enviando notificación de contacto: {str(e)}")
+            
+            response_data = {
+                'success': True,
+                'message': message,
+                'contact_id': contact.id
+            }
+            
+            logger.info(f"Enviando respuesta: {response_data}")
+            return JsonResponse(response_data)
+            
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error creando contacto desde submission {submission_id}: {str(e)}")
+            
+            return JsonResponse({
+                'success': False,
+                'message': f'Error al crear el contacto: {str(e)}'
+            })
+    
+    return JsonResponse({'success': False, 'message': 'Método no permitido'})
+
+
+@login_required
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def ajax_create_contacts_batch(request):
+    """Vista AJAX para crear contactos en lote desde múltiples envíos"""
+    if request.method == 'POST':
+        try:
+            import json
+            data = json.loads(request.body)
+            submission_ids = data.get('submission_ids', [])
+            
+            if not submission_ids:
+                return JsonResponse({'success': False, 'message': 'No se seleccionaron envíos'})
+            
+            from .models import LandingPageSubmission
+            contacts_created = 0
+            errors = []
+            
+            for submission_id in submission_ids:
+                try:
+                    submission = LandingPageSubmission.objects.get(pk=submission_id)
+                    contact = create_contact_from_submission(submission, submission.landing_page)
+                    if contact:
+                        contacts_created += 1
+                except Exception as e:
+                    errors.append(f'Error en envío {submission_id}: {str(e)}')
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Se crearon {contacts_created} contactos exitosamente',
+                'contacts_created': contacts_created,
+                'errors': errors
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Error en la operación: {str(e)}'
+            })
+    
+    return JsonResponse({'success': False, 'message': 'Método no permitido'})
+
+
+@login_required  
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def ajax_submission_details(request, submission_id):
+    """Vista AJAX para obtener detalles de un envío"""
+    try:
+        from .models import LandingPageSubmission
+        submission = get_object_or_404(LandingPageSubmission, pk=submission_id)
+        
+        data = {
+            'success': True,
+            'submission': {
+                'id': submission.id,
+                'nombre': submission.nombre,
+                'apellido': submission.apellido,
+                'email': submission.email,
+                'telefono': submission.telefono or '',
+                'empresa': submission.empresa or '',
+                'ip_address': submission.ip_address or '',
+                'user_agent': submission.user_agent or '',
+                'utm_source': submission.utm_source or '',
+                'utm_medium': submission.utm_medium or '',
+                'utm_campaign': submission.utm_campaign or '',
+                'created_at': submission.created_at.strftime('%d/%m/%Y %H:%M:%S'),
+                'landing_page': submission.landing_page.nombre_producto
+            }
+        }
+        
+        return JsonResponse(data)
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error al obtener detalles: {str(e)}'
+        })

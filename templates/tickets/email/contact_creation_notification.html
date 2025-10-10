@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuevo Contacto Generado</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .contact-info {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #4f46e5;
+        }
+        .contact-info h3 {
+            margin-top: 0;
+            color: #4f46e5;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .label {
+            font-weight: bold;
+            color: #6b7280;
+            min-width: 120px;
+        }
+        .value {
+            color: #374151;
+            flex: 1;
+            text-align: right;
+        }
+        .landing-info {
+            background: #ecfdf5;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #10b981;
+        }
+        .landing-info h3 {
+            margin-top: 0;
+            color: #10b981;
+        }
+        .message-box {
+            background: #fff7ed;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #f59e0b;
+        }
+        .message-box h3 {
+            margin-top: 0;
+            color: #f59e0b;
+        }
+        .footer {
+            background: #f9fafb;
+            padding: 20px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 14px;
+        }
+        .btn {
+            display: inline-block;
+            background: #4f46e5;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 10px 5px;
+            font-weight: bold;
+        }
+        .btn:hover {
+            background: #4338ca;
+        }
+        .btn-secondary {
+            background: #6b7280;
+        }
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+        .actions {
+            text-align: center;
+            margin: 30px 0;
+        }
+        @media (max-width: 600px) {
+            .container {
+                margin: 10px;
+                border-radius: 0;
+            }
+            .content {
+                padding: 20px;
+            }
+            .info-row {
+                flex-direction: column;
+            }
+            .value {
+                text-align: left;
+                margin-top: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🆕 Nuevo Contacto Generado</h1>
+            <p>Se ha creado un nuevo contacto desde la landing page</p>
+        </div>
+        
+        <div class="content">
+            <div class="contact-info">
+                <h3>📋 Información del Contacto</h3>
+                <div class="info-row">
+                    <span class="label">Nombre:</span>
+                    <span class="value">{{ contact.nombre }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Email:</span>
+                    <span class="value">{{ contact.email }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Teléfono:</span>
+                    <span class="value">{{ contact.telefono|default:"No proporcionado" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Empresa:</span>
+                    <span class="value">{{ contact.empresa|default:"No proporcionada" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Fecha:</span>
+                    <span class="value">{{ contact.fecha_creacion|date:"d/m/Y H:i" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">IP Address:</span>
+                    <span class="value">{{ contact.ip_address|default:"No disponible" }}</span>
+                </div>
+            </div>
+            
+            <div class="landing-info">
+                <h3>🚀 Información de la Landing Page</h3>
+                <div class="info-row">
+                    <span class="label">Producto:</span>
+                    <span class="value">{{ landing_page.nombre_producto }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">URL:</span>
+                    <span class="value">/lp/{{ landing_page.slug }}/</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Empresa:</span>
+                    <span class="value">{{ landing_page.empresa_campana|default:"No especificada" }}</span>
+                </div>
+            </div>
+            
+            <div class="message-box">
+                <h3>💬 Asunto del Contacto</h3>
+                <p><strong>{{ contact.asunto }}</strong></p>
+                
+                <h4>Mensaje:</h4>
+                <div style="background: white; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 14px; line-height: 1.4;">
+                    {{ contact.mensaje|linebreaksbr }}
+                </div>
+            </div>
+            
+            <div class="actions">
+                <a href="#" class="btn">Ver Contacto en Admin</a>
+                <a href="#" class="btn btn-secondary">Ver Landing Page</a>
+            </div>
+            
+            <div style="background: #f0f9ff; border-radius: 8px; padding: 15px; margin: 20px 0; border-left: 4px solid #0ea5e9;">
+                <h4 style="margin-top: 0; color: #0ea5e9;">📊 Próximos Pasos</h4>
+                <ul style="margin: 0; padding-left: 20px;">
+                    <li>Revisa la información del contacto en el panel de administración</li>
+                    <li>Contacta al lead lo antes posible para maximizar conversión</li>
+                    <li>Actualiza el estado del contacto una vez que hayas respondido</li>
+                    <li>Considera agregar este contacto a tu CRM si tienes uno integrado</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Esta notificación fue generada automáticamente por TicketProo</p>
+            <p>Landing Page: {{ landing_page.nombre_producto }} | Fecha: {{ contact.fecha_creacion|date:"d/m/Y H:i" }}</p>
+        </div>
+    </div>
+</body>
+</html>

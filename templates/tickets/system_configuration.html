@@ -342,6 +342,201 @@
                             </div>
                         </div>
 
+                        <!-- Configuración de Email -->
+                        <div class="config-section">
+                            <h5>
+                                <i class="bi bi-envelope me-2"></i>
+                                Notificaciones por Email
+                            </h5>
+                            
+                            <div class="form-check mb-3">
+                                {{ form.enable_email_notifications }}
+                                <label class="form-check-label" for="{{ form.enable_email_notifications.id_for_label }}">
+                                    <i class="bi bi-bell me-1"></i>
+                                    {{ form.enable_email_notifications.label }}
+                                </label>
+                                {% if form.enable_email_notifications.help_text %}
+                                    <div class="form-text">{{ form.enable_email_notifications.help_text }}</div>
+                                {% endif %}
+                                {% if form.enable_email_notifications.errors %}
+                                    <div class="text-danger mt-1">
+                                        {% for error in form.enable_email_notifications.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div id="email-config-fields" style="{% if not config.enable_email_notifications %}display: none;{% endif %}">
+                                <div class="mb-3">
+                                    <label for="{{ form.notification_emails.id_for_label }}" class="form-label">
+                                        <i class="bi bi-people me-1"></i>
+                                        {{ form.notification_emails.label }}
+                                    </label>
+                                    {{ form.notification_emails }}
+                                    {% if form.notification_emails.help_text %}
+                                        <small class="form-text text-muted">{{ form.notification_emails.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.notification_emails.errors %}
+                                        <div class="text-danger mt-1">
+                                            {% for error in form.notification_emails.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <div class="mb-3">
+                                            <label for="{{ form.email_host.id_for_label }}" class="form-label">
+                                                <i class="bi bi-server me-1"></i>
+                                                {{ form.email_host.label }}
+                                            </label>
+                                            {{ form.email_host }}
+                                            {% if form.email_host.help_text %}
+                                                <small class="form-text text-muted">{{ form.email_host.help_text }}</small>
+                                            {% endif %}
+                                            {% if form.email_host.errors %}
+                                                <div class="text-danger mt-1">
+                                                    {% for error in form.email_host.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="{{ form.email_port.id_for_label }}" class="form-label">
+                                                <i class="bi bi-router me-1"></i>
+                                                {{ form.email_port.label }}
+                                            </label>
+                                            {{ form.email_port }}
+                                            {% if form.email_port.help_text %}
+                                                <small class="form-text text-muted">{{ form.email_port.help_text }}</small>
+                                            {% endif %}
+                                            {% if form.email_port.errors %}
+                                                <div class="text-danger mt-1">
+                                                    {% for error in form.email_port.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.email_host_user.id_for_label }}" class="form-label">
+                                        <i class="bi bi-person me-1"></i>
+                                        {{ form.email_host_user.label }}
+                                    </label>
+                                    {{ form.email_host_user }}
+                                    {% if form.email_host_user.help_text %}
+                                        <small class="form-text text-muted">{{ form.email_host_user.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.email_host_user.errors %}
+                                        <div class="text-danger mt-1">
+                                            {% for error in form.email_host_user.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.email_host_password.id_for_label }}" class="form-label">
+                                        <i class="bi bi-key me-1"></i>
+                                        {{ form.email_host_password.label }}
+                                    </label>
+                                    {{ form.email_host_password }}
+                                    {% if form.email_host_password.help_text %}
+                                        <small class="form-text text-muted">{{ form.email_host_password.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.email_host_password.errors %}
+                                        <div class="text-danger mt-1">
+                                            {% for error in form.email_host_password.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.email_from.id_for_label }}" class="form-label">
+                                        <i class="bi bi-envelope-at me-1"></i>
+                                        {{ form.email_from.label }}
+                                    </label>
+                                    {{ form.email_from }}
+                                    {% if form.email_from.help_text %}
+                                        <small class="form-text text-muted">{{ form.email_from.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.email_from.errors %}
+                                        <div class="text-danger mt-1">
+                                            {% for error in form.email_from.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-check mb-3">
+                                            {{ form.email_use_tls }}
+                                            <label class="form-check-label" for="{{ form.email_use_tls.id_for_label }}">
+                                                <i class="bi bi-shield-lock me-1"></i>
+                                                {{ form.email_use_tls.label }}
+                                            </label>
+                                            {% if form.email_use_tls.help_text %}
+                                                <div class="form-text">{{ form.email_use_tls.help_text }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check mb-3">
+                                            {{ form.email_use_ssl }}
+                                            <label class="form-check-label" for="{{ form.email_use_ssl.id_for_label }}">
+                                                <i class="bi bi-shield-check me-1"></i>
+                                                {{ form.email_use_ssl.label }}
+                                            </label>
+                                            {% if form.email_use_ssl.help_text %}
+                                                <div class="form-text">{{ form.email_use_ssl.help_text }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Botón de prueba de email -->
+                                <div class="d-flex gap-2 mb-3">
+                                    <button type="button" class="btn btn-outline-info btn-sm" id="test-email-btn">
+                                        <i class="bi bi-lightning me-1"></i>
+                                        Probar Email
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>Configuración recomendada para Gmail:</strong>
+                                <ul class="mt-2 mb-0">
+                                    <li><strong>Servidor SMTP:</strong> smtp.gmail.com</li>
+                                    <li><strong>Puerto:</strong> 587</li>
+                                    <li><strong>TLS:</strong> Activado</li>
+                                    <li><strong>Contraseña:</strong> Usar contraseña de aplicación (no la contraseña normal)</li>
+                                </ul>
+                                <div class="mt-2">
+                                    <small>
+                                        Para crear una contraseña de aplicación: 
+                                        <a href="https://support.google.com/accounts/answer/185833" target="_blank" class="alert-link">
+                                            Guía de Google
+                                        </a>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Botones -->
                         <div class="d-flex gap-2 mt-4">
                             <button type="submit" class="btn btn-primary">
@@ -412,6 +607,19 @@
                                 <dt class="col-6">Notificaciones Telegram:</dt>
                                 <dd class="col-6">
                                     {% if config.enable_telegram_notifications %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle me-1"></i>Habilitado
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-x-circle me-1"></i>Deshabilitado
+                                        </span>
+                                    {% endif %}
+                                </dd>
+
+                                <dt class="col-6">Notificaciones Email:</dt>
+                                <dd class="col-6">
+                                    {% if config.enable_email_notifications %}
                                         <span class="badge bg-success">
                                             <i class="bi bi-check-circle me-1"></i>Habilitado
                                         </span>
@@ -514,6 +722,23 @@
             toggleTelegramFields(); // Ejecutar al cargar la página
         }
 
+        // Mostrar/ocultar campos de Email según el checkbox
+        const emailEnabledCheckbox = document.querySelector('#id_enable_email_notifications');
+        const emailConfigFields = document.querySelector('#email-config-fields');
+        
+        if (emailEnabledCheckbox && emailConfigFields) {
+            function toggleEmailFields() {
+                if (emailEnabledCheckbox.checked) {
+                    emailConfigFields.style.display = 'block';
+                } else {
+                    emailConfigFields.style.display = 'none';
+                }
+            }
+            
+            emailEnabledCheckbox.addEventListener('change', toggleEmailFields);
+            toggleEmailFields(); // Ejecutar al cargar la página
+        }
+
         // Función para probar conexión de Telegram
         const testTelegramBtn = document.querySelector('#test-telegram-btn');
         if (testTelegramBtn) {
@@ -562,6 +787,50 @@
                 chatInput.name = 'telegram_chat_id';
                 chatInput.value = chatId;
                 form.appendChild(chatInput);
+
+                document.body.appendChild(form);
+                form.submit();
+            });
+        }
+
+        // Función para probar email
+        const testEmailBtn = document.querySelector('#test-email-btn');
+        if (testEmailBtn) {
+            testEmailBtn.addEventListener('click', function() {
+                const emailHost = document.querySelector('#id_email_host').value;
+                const emailPort = document.querySelector('#id_email_port').value;
+                const emailUser = document.querySelector('#id_email_host_user').value;
+                const notificationEmails = document.querySelector('#id_notification_emails').value;
+
+                if (!emailHost || !emailPort || !emailUser || !notificationEmails) {
+                    alert('Por favor, completa todos los campos de configuración de email antes de probar.');
+                    return;
+                }
+
+                // Cambiar estado del botón
+                const originalText = this.innerHTML;
+                this.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Enviando...';
+                this.disabled = true;
+
+                // Crear formulario temporal para enviar datos
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.style.display = 'none';
+                
+                // Agregar CSRF token
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrfmiddlewaretoken';
+                csrfInput.value = csrfToken;
+                form.appendChild(csrfInput);
+
+                // Agregar datos de prueba
+                const testInput = document.createElement('input');
+                testInput.type = 'hidden';
+                testInput.name = 'test_email';
+                testInput.value = '1';
+                form.appendChild(testInput);
 
                 document.body.appendChild(form);
                 form.submit();

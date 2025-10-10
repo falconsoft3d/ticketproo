@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ landing_page.nombre_producto }}</title>
+    <meta name="description" content="{{ landing_page.descripcion|truncatewords:20 }}">
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: {{ landing_page.color_principal|default:"#4f46e5" }};
+            --secondary-color: {{ landing_page.color_secundario|default:"#e0e7ff" }};
+            --accent-color: #06b6d4;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --dark-color: #1f2937;
+            --light-color: #f8fafc;
+            --border-radius: 16px;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.7;
+            color: var(--dark-color);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+            min-height: 100vh;
+            font-feature-settings: 'kern' 1, 'liga' 1;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        .hero-section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            padding: 5rem 0;
+        }
+        
+        .hero-content {
+            position: relative;
+            z-index: 10;
+        }
+        
+        .hero-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+            opacity: 0.95;
+        }
+        
+        .hero-background::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+        }
+        
+        .hero-shapes {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        .shape {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 50%;
+            animation: float 8s ease-in-out infinite;
+            backdrop-filter: blur(10px);
+        }
+        
+        .shape-1 {
+            top: 15%;
+            left: 8%;
+            width: 120px;
+            height: 120px;
+            animation-delay: 0s;
+        }
+        
+        .shape-2 {
+            top: 45%;
+            right: 12%;
+            width: 180px;
+            height: 180px;
+            animation-delay: 2s;
+        }
+        
+        .shape-3 {
+            bottom: 25%;
+            left: 15%;
+            width: 90px;
+            height: 90px;
+            animation-delay: 4s;
+        }
+        
+        .shape-4 {
+            top: 70%;
+            right: 25%;
+            width: 60px;
+            height: 60px;
+            animation-delay: 6s;
+        }
+        
+        @keyframes float {
+            0%, 100% { 
+                transform: translateY(0px) rotate(0deg); 
+                opacity: 0.7;
+            }
+            50% { 
+                transform: translateY(-30px) rotate(180deg); 
+                opacity: 1;
+            }
+        }
+        
+        .main-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: var(--shadow-xl);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            overflow: hidden;
+            margin: 2rem 1rem;
+            transform: translateY(0);
+            transition: all 0.3s ease;
+        }
+        
+        .main-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+        }
+        
+        .product-image {
+            width: 100%;
+            height: 320px;
+            object-fit: cover;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-lg);
+            transition: all 0.3s ease;
+            margin: 1.5rem 0;
+        }
+        
+        .product-image:hover {
+            transform: scale(1.02);
+            box-shadow: var(--shadow-xl);
+        }
+        
+        .form-section {
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            padding: 3rem 2.5rem;
+            border-radius: 0 24px 24px 0;
+            position: relative;
+        }
+        
+        .form-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(145deg, transparent 0%, rgba(79, 70, 229, 0.02) 100%);
+            border-radius: 0 24px 24px 0;
+        }
+        
+        .form-control {
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(248, 250, 252, 0.8);
+            backdrop-filter: blur(10px);
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            background: white;
+            transform: translateY(-1px);
+        }
+        
+        .form-control:hover:not(:focus) {
+            border-color: #d1d5db;
+            background: rgba(255, 255, 255, 0.9);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 2rem;
+            font-size: 1.125rem;
+            font-weight: 600;
+            text-transform: none;
+            letter-spacing: 0.025em;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-xl);
+            background: linear-gradient(135deg, 
+                color-mix(in srgb, var(--primary-color) 90%, black) 0%, 
+                color-mix(in srgb, var(--accent-color) 90%, black) 100%);
+        }
+        
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+        
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+        
+        .feature-badge {
+            background: linear-gradient(135deg, var(--success-color) 0%, #34d399 100%);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow-md);
+            animation: pulse 3s infinite;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .feature-badge::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .form-floating {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-floating label {
+            font-weight: 500;
+            color: #6b7280;
+            padding: 0.75rem 1.25rem;
+            font-size: 1rem;
+        }
+        
+        .form-floating textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .form-floating textarea + label {
+            padding: 1rem 1.25rem;
+        }
+        
+        .trust-indicators {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2.5rem;
+            padding: 2rem 0;
+            border-top: 2px solid #f3f4f6;
+        }
+        
+        .trust-item {
+            text-align: center;
+            color: #6b7280;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            padding: 1rem;
+            border-radius: 12px;
+            background: rgba(248, 250, 252, 0.5);
+        }
+        
+        .trust-item:hover {
+            transform: translateY(-2px);
+            background: rgba(248, 250, 252, 0.8);
+            color: var(--primary-color);
+        }
+        
+        .trust-item i {
+            font-size: 1.75rem;
+            color: var(--primary-color);
+            margin-bottom: 0.75rem;
+            display: block;
+            transition: all 0.3s ease;
+        }
+        
+        .trust-item:hover i {
+            transform: scale(1.1);
+            color: var(--accent-color);
+        }
+        
+        .benefits-list {
+            list-style: none;
+            padding: 0;
+            margin: 2rem 0;
+        }
+        
+        .benefits-list li {
+            padding: 1rem 0;
+            position: relative;
+            padding-left: 2.5rem;
+            font-weight: 500;
+            color: #374151;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            margin: 0.5rem 0;
+        }
+        
+        .benefits-list li:hover {
+            background: rgba(79, 70, 229, 0.05);
+            padding-left: 3rem;
+            color: var(--primary-color);
+        }
+        
+        .benefits-list li::before {
+            content: '\f00c';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            top: 1rem;
+            color: var(--success-color);
+            font-size: 1.125rem;
+            width: 1.5rem;
+            height: 1.5rem;
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+        }
+        
+        .content-section {
+            padding: 3rem 2.5rem;
+            border-radius: 24px 0 0 24px;
+            background: linear-gradient(145deg, #ffffff 0%, #f9fafb 100%);
+            position: relative;
+        }
+        
+        .content-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(145deg, rgba(79, 70, 229, 0.02) 0%, transparent 100%);
+            border-radius: 24px 0 0 24px;
+        }
+        
+        .section-title {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--dark-color);
+            margin-bottom: 1.5rem;
+            line-height: 1.1;
+            background: linear-gradient(135deg, var(--dark-color) 0%, var(--primary-color) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .section-subtitle {
+            font-size: 1.25rem;
+            color: #6b7280;
+            margin-bottom: 2rem;
+            font-weight: 400;
+            line-height: 1.7;
+        }
+        
+        .loading-spinner {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .form-container.loading .loading-spinner {
+            display: block;
+        }
+        
+        .form-container.loading .form-content {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        
+        
+        @media (max-width: 768px) {
+            .hero-section {
+                min-height: auto;
+                padding: 2rem 0;
+            }
+            
+            .section-title {
+                font-size: 2.25rem;
+            }
+            
+            .form-section,
+            .content-section {
+                padding: 2rem 1.5rem;
+                border-radius: 24px;
+            }
+            
+            .main-card {
+                margin: 1rem 0.5rem;
+            }
+            
+            .trust-indicators {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+            
+            .benefits-list li {
+                padding: 0.75rem 0;
+                padding-left: 2rem;
+            }
+            
+            .product-image {
+                height: 250px;
+                margin: 1rem 0;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .section-title {
+                font-size: 1.875rem;
+            }
+            
+            .form-section,
+            .content-section {
+                padding: 1.5rem 1rem;
+            }
+            
+            .trust-indicators {
+                grid-template-columns: 1fr;
+            }
+            
+            .btn-primary {
+                padding: 0.875rem 1.5rem;
+                font-size: 1rem;
+            }
+        }
+        
+        .success-animation {
+            animation: slideInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        .required-field::after {
+            content: '*';
+            color: var(--danger-color);
+            margin-left: 0.25rem;
+            font-weight: 600;
+        }
+        
+        .form-control.is-invalid {
+            border-color: var(--danger-color);
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+        }
+        
+        .invalid-feedback {
+            color: var(--danger-color);
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-top: 0.5rem;
+        }
+        
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 24px;
+            z-index: 100;
+        }
+        
+        .spinner-border-custom {
+            width: 3rem;
+            height: 3rem;
+            border: 0.25rem solid var(--primary-color);
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: spinner-border 0.75s linear infinite;
+        }
+        
+        @keyframes spinner-border {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero-section">
+        <div class="hero-background"></div>
+        <div class="hero-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
+            <div class="shape shape-4"></div>
+        </div>
+        
+        <div class="container hero-content">
+            <div class="row justify-content-center">
+                <div class="col-12 col-xl-11">
+                    <div class="main-card success-animation">
+                        <div class="row g-0">
+                            <!-- Sección de Contenido -->
+                            <div class="col-lg-7">
+                                <div class="content-section">
+                                    <div class="feature-badge">
+                                        <i class="fas fa-star"></i> 
+                                        <span>Oferta Exclusiva</span>
+                                    </div>
+                                    
+                                    <h1 class="section-title">{{ landing_page.nombre_producto }}</h1>
+                                    <p class="section-subtitle">{{ landing_page.descripcion }}</p>
+                                    
+                                    {% if landing_page.imagen %}
+                                        <div class="text-center">
+                                            <img src="{{ landing_page.imagen.url }}" alt="{{ landing_page.nombre_producto }}" class="product-image">
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Sección del Formulario -->
+                            <div class="col-lg-5">
+                                <div class="form-section position-relative">
+                                    <div class="form-content">
+                                        <div class="text-center mb-4">
+                                            <h3 class="h4 mb-3" style="color: var(--primary-color); font-weight: 700;">
+                                                <i class="fas fa-gift me-2"></i>
+                                                {{ landing_page.titulo_formulario|default:"¡Solicita Información!" }}
+                                            </h3>
+                                            <p class="text-muted small mb-0">
+                                                {{ landing_page.subtitulo_formulario|default:"Completa el formulario y recibe información detallada sobre nuestros productos y servicios." }}
+                                            </p>
+                                        </div>
+                                        
+                                        <form method="post" id="landingForm" novalidate>
+                                            {% csrf_token %}
+                                            
+                                            <div class="row">
+                                                <div class="col-sm-6">
+                                                    <div class="form-floating">
+                                                        {{ form.nombre }}
+                                                        <label for="{{ form.nombre.id_for_label }}" class="required-field">{{ form.nombre.label }}</label>
+                                                    </div>
+                                                    <div class="invalid-feedback"></div>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <div class="form-floating">
+                                                        {{ form.apellido }}
+                                                        <label for="{{ form.apellido.id_for_label }}" class="required-field">{{ form.apellido.label }}</label>
+                                                    </div>
+                                                    <div class="invalid-feedback"></div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="form-floating">
+                                                {{ form.email }}
+                                                <label for="{{ form.email.id_for_label }}" class="required-field">{{ form.email.label }}</label>
+                                            </div>
+                                            <div class="invalid-feedback"></div>
+                                            
+                                            <div class="form-floating">
+                                                {{ form.telefono }}
+                                                <label for="{{ form.telefono.id_for_label }}">{{ form.telefono.label }}</label>
+                                            </div>
+                                            <div class="invalid-feedback"></div>
+                                            
+                                            <div class="form-floating">
+                                                {{ form.empresa }}
+                                                <label for="{{ form.empresa.id_for_label }}">{{ form.empresa.label }}</label>
+                                            </div>
+                                            <div class="invalid-feedback"></div>
+                                            
+                                            <div class="form-floating">
+                                                {{ form.mensaje }}
+                                                <label for="{{ form.mensaje.id_for_label }}">{{ form.mensaje.label }}</label>
+                                            </div>
+                                            <div class="invalid-feedback"></div>
+                                            
+                                            <div class="d-grid mb-3">
+                                                <button type="submit" class="btn btn-primary btn-lg">
+                                                    <i class="fas fa-paper-plane me-2"></i>
+                                                    Solicitar Información Gratuita
+                                                </button>
+                                            </div>
+                                            
+                                            <div class="text-center">
+                                                <p class="text-muted small mb-0">
+                                                    <i class="fas fa-lock me-2" style="color: var(--success-color);"></i>
+                                                    Tus datos están seguros. Sin spam garantizado.
+                                                </p>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('landingForm');
+            let isSubmitting = false;
+            
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                if (isSubmitting) return;
+                
+                // Validación del formulario
+                if (!validateForm()) {
+                    return;
+                }
+                
+                isSubmitting = true;
+                
+                // Mostrar overlay de carga
+                showLoadingOverlay();
+                
+                // Enviar formulario
+                const formData = new FormData(form);
+                
+                fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        // Envío exitoso
+                        showSuccessMessage();
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                    } else {
+                        throw new Error('Error en el envío');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    hideLoadingOverlay();
+                    showErrorMessage();
+                    isSubmitting = false;
+                });
+            });
+            
+            function showLoadingOverlay() {
+                const overlay = document.createElement('div');
+                overlay.className = 'loading-overlay';
+                overlay.innerHTML = `
+                    <div class="text-center">
+                        <div class="spinner-border-custom"></div>
+                        <div class="mt-3 text-primary fw-semibold">Enviando información...</div>
+                    </div>
+                `;
+                form.parentElement.appendChild(overlay);
+            }
+            
+            function hideLoadingOverlay() {
+                const overlay = form.parentElement.querySelector('.loading-overlay');
+                if (overlay) {
+                    overlay.remove();
+                }
+            }
+            
+            function showSuccessMessage() {
+                hideLoadingOverlay();
+                const overlay = document.createElement('div');
+                overlay.className = 'loading-overlay';
+                overlay.innerHTML = `
+                    <div class="text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-check-circle" style="font-size: 4rem; color: var(--success-color);"></i>
+                        </div>
+                        <h4 class="text-success mb-2">¡Enviado con éxito!</h4>
+                        <p class="text-muted">Nos pondremos en contacto contigo pronto.</p>
+                    </div>
+                `;
+                form.parentElement.appendChild(overlay);
+            }
+            
+            function showErrorMessage() {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-danger alert-dismissible fade show mt-3';
+                alertDiv.innerHTML = `
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Hubo un error al enviar el formulario. Por favor, inténtalo de nuevo.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                form.appendChild(alertDiv);
+            }
+            
+            function validateForm() {
+                let isValid = true;
+                const requiredFields = ['nombre', 'apellido', 'email'];
+                
+                // Limpiar validaciones previas
+                form.querySelectorAll('.is-invalid').forEach(field => {
+                    field.classList.remove('is-invalid');
+                });
+                form.querySelectorAll('.invalid-feedback').forEach(feedback => {
+                    feedback.textContent = '';
+                });
+                
+                requiredFields.forEach(fieldName => {
+                    const field = form.querySelector(`[name="${fieldName}"]`);
+                    const feedback = field.closest('.form-floating').nextElementSibling;
+                    
+                    if (!field.value.trim()) {
+                        field.classList.add('is-invalid');
+                        feedback.textContent = 'Este campo es obligatorio';
+                        isValid = false;
+                    } else {
+                        // Validación específica para email
+                        if (fieldName === 'email' && !isValidEmail(field.value)) {
+                            field.classList.add('is-invalid');
+                            feedback.textContent = 'Ingresa un email válido';
+                            isValid = false;
+                        }
+                    }
+                });
+                
+                return isValid;
+            }
+            
+            function isValidEmail(email) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return emailRegex.test(email);
+            }
+            
+            // Limpiar validación al escribir con efecto mejorado
+            form.querySelectorAll('input').forEach(input => {
+                input.addEventListener('input', function() {
+                    this.classList.remove('is-invalid');
+                    const feedback = this.closest('.form-floating').nextElementSibling;
+                    if (feedback) {
+                        feedback.textContent = '';
+                    }
+                });
+                
+                // Efecto de focus mejorado
+                input.addEventListener('focus', function() {
+                    this.closest('.form-floating').style.transform = 'scale(1.02)';
+                });
+                
+                input.addEventListener('blur', function() {
+                    this.closest('.form-floating').style.transform = 'scale(1)';
+                });
+            });
+        });
+        
+        // Animaciones de parallax mejoradas
+        window.addEventListener('scroll', function() {
+            const scrolled = window.pageYOffset;
+            const shapes = document.querySelectorAll('.shape');
+            
+            shapes.forEach((shape, index) => {
+                const speed = (index + 1) * 0.3;
+                const yPos = scrolled * speed;
+                const rotation = scrolled * (index + 1) * 0.1;
+                shape.style.transform = `translateY(${yPos}px) rotate(${rotation}deg)`;
+            });
+            
+            // Efecto parallax en el contenido
+            const heroContent = document.querySelector('.hero-content');
+            if (heroContent) {
+                const offset = scrolled * 0.1;
+                heroContent.style.transform = `translateY(${offset}px)`;
+            }
+        });
+        
+        // Animación de aparición en scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+        
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('success-animation');
+                }
+            });
+        }, observerOptions);
+        
+        // Observar elementos para animaciones
+        document.querySelectorAll('.trust-item, .benefits-list li').forEach(el => {
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>

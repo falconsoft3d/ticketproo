@@ -5,7 +5,8 @@ from .models import (
     TimeEntry, Project, Company, SystemConfiguration, Document, UserProfile,
     WorkOrder, WorkOrderAttachment, Task, Opportunity, OpportunityStatus, 
     OpportunityNote, OpportunityStatusHistory, Concept, Exam, ExamQuestion, 
-    ExamAttempt, ExamAnswer, ContactoWeb, Employee, JobApplicationToken
+    ExamAttempt, ExamAnswer, ContactoWeb, Employee, JobApplicationToken,
+    LandingPage, LandingPageSubmission
 )
 
 # Configuración del sitio de administración
@@ -437,12 +438,12 @@ class CompanyAdmin(admin.ModelAdmin):
 class SystemConfigurationAdmin(admin.ModelAdmin):
     """Administración de la configuración del sistema"""
     
-    list_display = ('site_name', 'registration_status', 'default_ticket_priority', 'updated_at')
+    list_display = ('site_name', 'registration_status', 'email_notifications_status', 'telegram_notifications_status', 'updated_at')
     readonly_fields = ('created_at', 'updated_at')
     
     fieldsets = (
         ('Configuración General', {
-            'fields': ('site_name',)
+            'fields': ('site_name', 'default_currency')
         }),
         ('Configuración de Usuarios', {
             'fields': ('allow_user_registration',),
@@ -451,6 +452,30 @@ class SystemConfigurationAdmin(admin.ModelAdmin):
         ('Configuración de Tickets', {
             'fields': ('default_ticket_priority',),
             'description': 'Establece la prioridad por defecto para nuevos tickets'
+        }),
+        ('Configuración de IA', {
+            'fields': ('ai_chat_enabled', 'openai_api_key', 'openai_model', 'ai_employee_analysis_prompt'),
+            'description': 'Configuración para funcionalidades de inteligencia artificial',
+            'classes': ('collapse',)
+        }),
+        ('Notificaciones por Email', {
+            'fields': (
+                'enable_email_notifications',
+                'notification_emails',
+                'email_host',
+                'email_port',
+                'email_host_user',
+                'email_host_password',
+                'email_use_tls',
+                'email_use_ssl',
+                'email_from'
+            ),
+            'description': 'Configuración para envío de notificaciones por email cuando se reciben contactos web'
+        }),
+        ('Notificaciones de Telegram', {
+            'fields': ('enable_telegram_notifications', 'telegram_bot_token', 'telegram_chat_id'),
+            'description': 'Configuración para envío de notificaciones a Telegram',
+            'classes': ('collapse',)
         }),
         ('Información del Sistema', {
             'fields': ('created_at', 'updated_at'),
@@ -464,6 +489,20 @@ class SystemConfigurationAdmin(admin.ModelAdmin):
             return '✅ Habilitado'
         return '❌ Deshabilitado'
     registration_status.short_description = 'Registro de Usuarios'
+    
+    def email_notifications_status(self, obj):
+        """Muestra el estado de las notificaciones por email"""
+        if obj.enable_email_notifications:
+            return '📧 Activo'
+        return '📧 Inactivo'
+    email_notifications_status.short_description = 'Notificaciones Email'
+    
+    def telegram_notifications_status(self, obj):
+        """Muestra el estado de las notificaciones de Telegram"""
+        if obj.enable_telegram_notifications:
+            return '📱 Activo'
+        return '📱 Inactivo'
+    telegram_notifications_status.short_description = 'Notificaciones Telegram'
     
     def has_add_permission(self, request):
         """Solo permitir una instancia de configuración"""
@@ -950,4 +989,129 @@ class JobApplicationTokenAdmin(admin.ModelAdmin):
     
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('company', 'created_by')
+
+
+# =============================================================================
+# ADMIN PARA LANDING PAGES
+# =============================================================================
+
+class LandingPageSubmissionInline(admin.TabularInline):
+    model = LandingPageSubmission
+    extra = 0
+    readonly_fields = ('nombre', 'apellido', 'email', 'telefono', 'empresa', 'created_at', 'ip_address', 'utm_source', 'utm_medium', 'utm_campaign')
+    fields = ('nombre', 'apellido', 'email', 'telefono', 'empresa', 'created_at', 'utm_source')
+    
+    def has_add_permission(self, request, obj=None):
+        return False
+    
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(LandingPage)
+class LandingPageAdmin(admin.ModelAdmin):
+    list_display = ('nombre_producto', 'slug', 'is_active', 'get_total_views', 'get_total_submissions', 'conversion_rate_display', 'created_by', 'created_at')
+    list_filter = ('is_active', 'created_by', 'created_at')
+    search_fields = ('nombre_producto', 'descripcion', 'slug')
+    list_editable = ('is_active',)
+    readonly_fields = ('slug', 'created_at', 'updated_at', 'get_public_url')
+    prepopulated_fields = {'slug': ('nombre_producto',)}
+    inlines = [LandingPageSubmissionInline]
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('nombre_producto', 'descripcion', 'imagen', 'slug', 'is_active')
+        }),
+        ('Configuración de Colores', {
+            'fields': ('color_primario', 'color_secundario', 'color_boton'),
+            'classes': ('collapse',)
+        }),
+        ('URL Pública', {
+            'fields': ('get_public_url',),
+            'classes': ('collapse',)
+        }),
+        ('Fechas del Sistema', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def get_total_views(self, obj):
+        return obj.total_views
+    get_total_views.short_description = 'Vistas'
+    
+    def get_total_submissions(self, obj):
+        return obj.total_submissions
+    get_total_submissions.short_description = 'Envíos'
+    
+    def conversion_rate_display(self, obj):
+        if obj.total_views > 0:
+            rate = (obj.total_submissions / obj.total_views) * 100
+            color = 'red' if rate < 2 else 'orange' if rate < 5 else 'green'
+            return format_html(
+                '<span style="color: {}; font-weight: bold;">{:.1f}%</span>',
+                color, rate
+            )
+        return '0%'
+    conversion_rate_display.short_description = 'Tasa de Conversión'
+    
+    def get_public_url(self, obj):
+        if obj.slug:
+            from django.urls import reverse
+            from django.utils.safestring import mark_safe
+            url = reverse('landing_page_public', args=[obj.slug])
+            return mark_safe(f'<a href="{url}" target="_blank">{url}</a>')
+        return '-'
+    get_public_url.short_description = 'URL Pública'
+    
+    def save_model(self, request, obj, form, change):
+        if not change:  # Si es un nuevo objeto
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('created_by').prefetch_related('submissions')
+
+
+@admin.register(LandingPageSubmission)
+class LandingPageSubmissionAdmin(admin.ModelAdmin):
+    list_display = ('get_full_name', 'email', 'telefono', 'empresa', 'landing_page', 'created_at', 'utm_source', 'utm_medium')
+    list_filter = ('landing_page', 'created_at', 'utm_source', 'utm_medium')
+    search_fields = ('nombre', 'apellido', 'email', 'telefono', 'empresa', 'landing_page__nombre_producto')
+    readonly_fields = ('landing_page', 'nombre', 'apellido', 'email', 'telefono', 'empresa', 'created_at', 'ip_address', 'user_agent', 'utm_source', 'utm_medium', 'utm_campaign')
+    date_hierarchy = 'created_at'
+    
+    fieldsets = (
+        ('Información de Contacto', {
+            'fields': ('nombre', 'apellido', 'email', 'telefono', 'empresa')
+        }),
+        ('Landing Page', {
+            'fields': ('landing_page',)
+        }),
+        ('Información Técnica', {
+            'fields': ('ip_address', 'user_agent'),
+            'classes': ('collapse',)
+        }),
+        ('Información de Campaña (UTM)', {
+            'fields': ('utm_source', 'utm_medium', 'utm_campaign'),
+            'classes': ('collapse',)
+        }),
+        ('Fechas del Sistema', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def get_full_name(self, obj):
+        return f"{obj.nombre} {obj.apellido}"
+    get_full_name.short_description = 'Nombre Completo'
+    
+    def has_add_permission(self, request):
+        return False  # No permitir agregar desde admin
+    
+    def has_delete_permission(self, request, obj=None):
+        return True  # Permitir eliminar
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('landing_page')
 

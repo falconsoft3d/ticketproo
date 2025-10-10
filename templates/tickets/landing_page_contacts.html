@@ -1,0 +1,261 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="fas fa-users text-primary"></i> Contactos desde Landing Pages</h1>
+                <a href="{% url 'landing_page_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver a Landing Pages
+                </a>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5 class="card-title">Total</h5>
+                                    <h2 class="mb-0">{{ total_contacts }}</h2>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-users fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5 class="card-title">No Leídos</h5>
+                                    <h2 class="mb-0">{{ unread_contacts }}</h2>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-eye-slash fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5 class="card-title">Respondidos</h5>
+                                    <h2 class="mb-0">{{ answered_contacts }}</h2>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-check-circle fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5 class="card-title">Tasa Conv.</h5>
+                                    <h2 class="mb-0">
+                                        {% if total_contacts > 0 %}
+                                            {{ answered_contacts|floatformat:0 }}%
+                                        {% else %}
+                                            0%
+                                        {% endif %}
+                                    </h2>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-chart-line fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if contacts %}
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Estado</th>
+                                        <th>Nombre</th>
+                                        <th>Email</th>
+                                        <th>Empresa</th>
+                                        <th>Asunto</th>
+                                        <th>Fecha</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for contact in contacts %}
+                                        <tr class="{% if not contact.leido %}table-warning{% endif %}">
+                                            <td>
+                                                <div class="d-flex gap-1">
+                                                    {% if not contact.leido %}
+                                                        <span class="badge bg-warning" title="No leído">
+                                                            <i class="fas fa-eye-slash"></i>
+                                                        </span>
+                                                    {% endif %}
+                                                    {% if contact.respondido %}
+                                                        <span class="badge bg-success" title="Respondido">
+                                                            <i class="fas fa-check"></i>
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary" title="Pendiente">
+                                                            <i class="fas fa-clock"></i>
+                                                        </span>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <strong>{{ contact.nombre }}</strong>
+                                                {% if contact.telefono %}
+                                                    <br><small class="text-muted">
+                                                        <i class="fas fa-phone"></i> {{ contact.telefono }}
+                                                    </small>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="mailto:{{ contact.email }}">{{ contact.email }}</a>
+                                            </td>
+                                            <td>
+                                                {{ contact.empresa|default:"-" }}
+                                            </td>
+                                            <td>
+                                                <span title="{{ contact.asunto }}">
+                                                    {{ contact.asunto|truncatechars:40 }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span title="{{ contact.fecha_creacion }}">
+                                                    {{ contact.fecha_creacion|timesince }} ago
+                                                </span>
+                                                <br><small class="text-muted">
+                                                    {{ contact.fecha_creacion|date:"d/m/Y H:i" }}
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <button class="btn btn-sm btn-outline-primary" 
+                                                            onclick="viewContact('{{ contact.id }}')" 
+                                                            title="Ver detalles">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    <a href="mailto:{{ contact.email }}" 
+                                                       class="btn btn-sm btn-outline-success" 
+                                                       title="Enviar email">
+                                                        <i class="fas fa-envelope"></i>
+                                                    </a>
+                                                    {% if not contact.leido %}
+                                                        <button class="btn btn-sm btn-outline-warning" 
+                                                                onclick="markAsRead('{{ contact.id }}')" 
+                                                                title="Marcar como leído">
+                                                            <i class="fas fa-eye"></i>
+                                                        </button>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-users fa-4x text-muted mb-3"></i>
+                    <h3 class="text-muted">No hay contactos aún</h3>
+                    <p class="text-muted">Los contactos creados desde landing pages aparecerán aquí.</p>
+                    <a href="{% url 'landing_page_list' %}" class="btn btn-primary">
+                        <i class="fas fa-rocket"></i> Ver Landing Pages
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal para ver detalles del contacto -->
+<div class="modal fade" id="contactModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user"></i> Detalles del Contacto
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="contactModalBody">
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="replyToContact()">Responder</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentContactId = null;
+
+function viewContact(contactId) {
+    currentContactId = contactId;
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('contactModal'));
+    modal.show();
+    
+    // Cargar detalles del contacto (aquí harías una petición AJAX)
+    // Por ahora mostramos información básica
+    const modalBody = document.getElementById('contactModalBody');
+    modalBody.innerHTML = `
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i>
+            Esta funcionalidad se puede expandir para mostrar más detalles del contacto,
+            historial de comunicaciones, etc.
+        </div>
+        <p><strong>ID del Contacto:</strong> ${contactId}</p>
+        <p>Para implementar completamente esta funcionalidad, necesitarías:</p>
+        <ul>
+            <li>Una vista AJAX para obtener detalles del contacto</li>
+            <li>Historial de comunicaciones</li>
+            <li>Integración con sistema CRM</li>
+            <li>Capacidad de editar la información</li>
+        </ul>
+    `;
+}
+
+function markAsRead(contactId) {
+    // Aquí implementarías la lógica para marcar como leído
+    alert(`Marcar contacto ${contactId} como leído - Función pendiente de implementar`);
+}
+
+function replyToContact() {
+    if (currentContactId) {
+        // Aquí implementarías la lógica para responder al contacto
+        alert(`Responder al contacto ${currentContactId} - Función pendiente de implementar`);
+    }
+}
+</script>
+{% endblock %}

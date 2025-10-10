@@ -1,0 +1,618 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>
+                    <i class="fas fa-paper-plane text-primary"></i> 
+                    Envíos: {{ landing_page.nombre_producto }}
+                </h1>
+                <div class="btn-group" role="group">
+                    <a href="{% url 'landing_page_detail' landing_page.pk %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Volver
+                    </a>
+                    <button class="btn btn-outline-success" onclick="exportToCSV()">
+                        <i class="fas fa-download"></i> Exportar CSV
+                    </button>
+                </div>
+            </div>
+
+            <!-- Estadísticas Rápidas -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <div class="h3 text-primary">{{ landing_page.total_views }}</div>
+                            <div class="text-muted">Vistas Totales</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <div class="h3 text-success">{{ submissions.count }}</div>
+                            <div class="text-muted">Envíos Totales</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <div class="h3 text-info">{{ landing_page.conversion_rate|floatformat:1 }}%</div>
+                            <div class="text-muted">Tasa de Conversión</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <div class="h3 text-warning">
+                                {% if submissions.exists %}
+                                    {{ submissions.first.created_at|timesince }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </div>
+                            <div class="text-muted">Último Envío</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de Envíos -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5><i class="fas fa-list"></i> Lista de Envíos</h5>
+                    <div class="d-flex gap-2">
+                        <input type="search" class="form-control form-control-sm" placeholder="Buscar..." id="searchInput" style="width: 200px;">
+                        <select class="form-select form-select-sm" id="filterSource" style="width: 150px;">
+                            <option value="">Todas las fuentes</option>
+                            <option value="google">Google</option>
+                            <option value="facebook">Facebook</option>
+                            <option value="email">Email</option>
+                            <option value="direct">Directo</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if submissions %}
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="submissionsTable">
+                                <thead>
+                                    <tr>
+                                        <th>
+                                            <input type="checkbox" id="selectAll" title="Seleccionar todos">
+                                        </th>
+                                        <th>Nombre Completo</th>
+                                        <th>Email</th>
+                                        <th>Teléfono</th>
+                                        <th>Empresa</th>
+                                        <th>Mensaje</th>
+                                        <th>Fecha</th>
+                                        <th>UTM Source</th>
+                                        <th>UTM Medium</th>
+                                        <th>UTM Campaign</th>
+                                        <th>IP</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for submission in submissions %}
+                                        <tr data-submission-id="{{ submission.id }}">
+                                            <td>
+                                                <input type="checkbox" class="submission-checkbox" value="{{ submission.id }}" data-submission-id="{{ submission.id }}">
+                                            </td>
+                                            <td>
+                                                <strong>{{ submission.nombre }} {{ submission.apellido }}</strong>
+                                            </td>
+                                            <td>
+                                                <a href="mailto:{{ submission.email }}" class="text-decoration-none">
+                                                    {{ submission.email }}
+                                                </a>
+                                            </td>
+                                            <td>
+                                                {% if submission.telefono %}
+                                                    <a href="tel:{{ submission.telefono }}" class="text-decoration-none">
+                                                        {{ submission.telefono }}
+                                                    </a>
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {{ submission.empresa|default:"-" }}
+                                            </td>
+                                            <td>
+                                                {% if submission.mensaje %}
+                                                    <div class="mensaje-preview" style="max-width: 200px;">
+                                                        <span title="{{ submission.mensaje }}">
+                                                            {{ submission.mensaje|truncatechars:50 }}
+                                                        </span>
+                                                        {% if submission.mensaje|length > 50 %}
+                                                            <small class="text-muted d-block">
+                                                                <i class="fas fa-eye" style="cursor: pointer;" 
+                                                                   onclick="showFullMessage('{{ submission.mensaje|escapejs }}')"></i>
+                                                                Ver completo
+                                                            </small>
+                                                        {% endif %}
+                                                    </div>
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span title="{{ submission.created_at }}">
+                                                    {{ submission.created_at|date:"d/m/Y H:i" }}
+                                                </span>
+                                                <br>
+                                                <small class="text-muted">{{ submission.created_at|timesince }} ago</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-light text-dark">
+                                                    {{ submission.utm_source|default:"-" }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-light text-dark">
+                                                    {{ submission.utm_medium|default:"-" }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-light text-dark">
+                                                    {{ submission.utm_campaign|default:"-" }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <small class="text-muted font-monospace">
+                                                    {{ submission.ip_address|default:"-" }}
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <button class="btn btn-outline-primary create-contact-btn" data-submission-id="{{ submission.id }}" title="Crear Contacto">
+                                                        <i class="fas fa-user-plus"></i>
+                                                    </button>
+                                                    <button class="btn btn-outline-success" onclick="sendEmail('{{ submission.email }}')" title="Enviar Email">
+                                                        <i class="fas fa-envelope"></i>
+                                                    </button>
+                                                    <button class="btn btn-outline-info" onclick="viewDetails({{ submission.id }})" title="Ver Detalles">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Acciones en lote -->
+                        <div class="mt-3 d-none" id="batchActions">
+                            <div class="alert alert-info">
+                                <span id="selectedCount">0</span> envíos seleccionados.
+                                <div class="btn-group btn-group-sm ms-3" role="group">
+                                    <button class="btn btn-outline-primary" onclick="createContactsBatch()">
+                                        <i class="fas fa-users"></i> Crear Contactos
+                                    </button>
+                                    <button class="btn btn-outline-success" onclick="exportSelected()">
+                                        <i class="fas fa-download"></i> Exportar Seleccionados
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
+                            <h4 class="text-muted">No hay envíos aún</h4>
+                            <p class="text-muted">
+                                Los envíos del formulario aparecerán aquí cuando los visitantes completen la landing page.
+                            </p>
+                            <a href="{% url 'landing_page_public' landing_page.slug %}" class="btn btn-primary" target="_blank">
+                                <i class="fas fa-external-link-alt"></i> Ver Landing Page
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Búsqueda en tiempo real
+    const searchInput = document.getElementById('searchInput');
+    const filterSource = document.getElementById('filterSource');
+    const table = document.getElementById('submissionsTable');
+    const tbody = table ? table.querySelector('tbody') : null;
+    
+    if (searchInput && tbody) {
+        searchInput.addEventListener('input', filterTable);
+        filterSource.addEventListener('change', filterTable);
+    }
+    
+    function filterTable() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const sourceFilter = filterSource.value.toLowerCase();
+        const rows = tbody.querySelectorAll('tr');
+        
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            const utmSource = row.querySelector('td:nth-child(7)').textContent.toLowerCase();
+            
+            const matchesSearch = text.includes(searchTerm);
+            const matchesSource = !sourceFilter || utmSource.includes(sourceFilter);
+            
+            row.style.display = (matchesSearch && matchesSource) ? '' : 'none';
+        });
+    }
+    
+    // Selección múltiple
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.submission-checkbox');
+    const batchActions = document.getElementById('batchActions');
+    const selectedCount = document.getElementById('selectedCount');
+    
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateBatchActions();
+        });
+    }
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateBatchActions);
+    });
+    
+    function updateBatchActions() {
+        const selected = document.querySelectorAll('.submission-checkbox:checked');
+        
+        if (selected.length > 0) {
+            batchActions.classList.remove('d-none');
+            selectedCount.textContent = selected.length;
+        } else {
+            batchActions.classList.add('d-none');
+        }
+    }
+});
+
+function exportToCSV() {
+    const table = document.getElementById('submissionsTable');
+    if (!table) return;
+    
+    let csv = [];
+    const rows = table.querySelectorAll('tr');
+    
+    // Headers (excluding first column which is checkbox)
+    const headers = [];
+    const headerCells = rows[0].querySelectorAll('th');
+    for (let i = 1; i < headerCells.length - 1; i++) { // Exclude checkbox and actions
+        headers.push(headerCells[i].textContent.trim());
+    }
+    csv.push(headers.join(','));
+    
+    // Data rows
+    for (let i = 1; i < rows.length; i++) {
+        const row = [];
+        const cells = rows[i].querySelectorAll('td');
+        for (let j = 1; j < cells.length - 1; j++) { // Exclude checkbox and actions
+            let cellText = cells[j].textContent.trim().replace(/\n/g, ' ').replace(/,/g, ';');
+            row.push(`"${cellText}"`);
+        }
+        csv.push(row.join(','));
+    }
+    
+    // Download
+    const csvContent = csv.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `envios_{{ landing_page.slug }}_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Script de debugging y event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== DEBUG INFO ===');
+    console.log('Página cargada correctamente');
+    console.log('CSRF Token disponible:', document.querySelector('[name=csrfmiddlewaretoken]') ? 'SÍ' : 'NO');
+    
+    // Verificar que los botones existan
+    const buttons = document.querySelectorAll('.create-contact-btn');
+    console.log('Botones de crear contacto encontrados:', buttons.length);
+    
+    // Agregar event listeners a todos los botones
+    buttons.forEach(function(button) {
+        button.addEventListener('click', function() {
+            const submissionId = this.getAttribute('data-submission-id');
+            console.log('Click en botón, submission ID:', submissionId);
+            createContactHandler(submissionId);
+        });
+    });
+    
+    console.log('Event listeners agregados exitosamente');
+    console.log('==================');
+});
+
+// Función handler para crear contacto
+function createContactHandler(submissionId) {
+    console.log('Función createContactHandler ejecutada con ID:', submissionId);
+    
+    // Usar confirm nativo para simplificar
+    if (!confirm('¿Crear contacto desde este envío?')) {
+        console.log('Usuario canceló la operación');
+        return;
+    }
+    
+    console.log('Usuario confirmó, enviando petición...');
+    
+    // Obtener CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    console.log('CSRF Token:', csrfToken);
+    
+    const url = `/ajax/landing-pages/submissions/${submissionId}/create-contact/`;
+    console.log('URL de destino:', url);
+    
+    // Usar fetch directamente
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => {
+        console.log('Respuesta recibida:', response.status, response.statusText);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Datos de respuesta:', data);
+        
+        if (data.success) {
+            alert('Éxito: ' + data.message);
+            
+            // Actualizar el botón
+            const button = document.querySelector(`[data-submission-id="${submissionId}"]`);
+            if (button) {
+                button.innerHTML = '<i class="fas fa-check text-success"></i> Procesado';
+                button.disabled = true;
+                button.classList.remove('btn-outline-primary');
+                button.classList.add('btn-success');
+            }
+            
+            // Recargar después de 1 segundo
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            alert('Error: ' + (data.message || 'Error desconocido'));
+        }
+    })
+    .catch(error => {
+        console.error('Error en la petición:', error);
+        alert('Error de conexión: ' + error.message);
+    });
+}
+}
+
+function sendEmail(email) {
+    window.location.href = `mailto:${email}`;
+}
+
+function viewDetails(submissionId) {
+    fetch(`/ajax/landing-pages/submissions/${submissionId}/details/`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const submission = data.submission;
+            
+            // Crear modal con detalles
+            const modalHtml = `
+                <div class="modal fade" id="detailsModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">
+                                    <i class="fas fa-info-circle text-primary"></i>
+                                    Detalles del Envío #${submission.id}
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6><i class="fas fa-user"></i> Información Personal</h6>
+                                        <table class="table table-sm">
+                                            <tr><td><strong>Nombre:</strong></td><td>${submission.nombre}</td></tr>
+                                            <tr><td><strong>Apellido:</strong></td><td>${submission.apellido}</td></tr>
+                                            <tr><td><strong>Email:</strong></td><td>${submission.email}</td></tr>
+                                            <tr><td><strong>Teléfono:</strong></td><td>${submission.telefono || 'No proporcionado'}</td></tr>
+                                            <tr><td><strong>Empresa:</strong></td><td>${submission.empresa || 'No proporcionada'}</td></tr>
+                                            <tr><td><strong>Mensaje:</strong></td><td><div style="max-height: 100px; overflow-y: auto; white-space: pre-wrap; background: #f8f9fa; padding: 8px; border-radius: 4px;">${submission.mensaje || 'Sin mensaje'}</div></td></tr>
+                                        </table>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6><i class="fas fa-chart-bar"></i> Información Técnica</h6>
+                                        <table class="table table-sm">
+                                            <tr><td><strong>IP:</strong></td><td>${submission.ip_address || 'No disponible'}</td></tr>
+                                            <tr><td><strong>Fecha:</strong></td><td>${submission.created_at}</td></tr>
+                                            <tr><td><strong>Landing Page:</strong></td><td>${submission.landing_page}</td></tr>
+                                        </table>
+                                        
+                                        <h6><i class="fas fa-tag"></i> UTM Parameters</h6>
+                                        <table class="table table-sm">
+                                            <tr><td><strong>Source:</strong></td><td>${submission.utm_source || 'No disponible'}</td></tr>
+                                            <tr><td><strong>Medium:</strong></td><td>${submission.utm_medium || 'No disponible'}</td></tr>
+                                            <tr><td><strong>Campaign:</strong></td><td>${submission.utm_campaign || 'No disponible'}</td></tr>
+                                        </table>
+                                    </div>
+                                </div>
+                                ${submission.user_agent ? `
+                                    <div class="mt-3">
+                                        <h6><i class="fas fa-browser"></i> User Agent</h6>
+                                        <small class="text-muted">${submission.user_agent}</small>
+                                    </div>
+                                ` : ''}
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                <a href="mailto:${submission.email}" class="btn btn-primary">
+                                    <i class="fas fa-envelope"></i> Enviar Email
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Eliminar modal anterior si existe
+            const existingModal = document.getElementById('detailsModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Agregar modal al DOM y mostrarlo
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            const modal = new bootstrap.Modal(document.getElementById('detailsModal'));
+            modal.show();
+            
+        } else {
+            alert(`Error: ${data.message}`);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al obtener los detalles. Inténtalo de nuevo.');
+    });
+}
+
+function createContactsBatch() {
+    const selected = document.querySelectorAll('.submission-checkbox:checked');
+    
+    if (selected.length === 0) {
+        alert('Selecciona al menos un envío para crear contactos.');
+        return;
+    }
+    
+    if (!confirm(`¿Crear contactos para ${selected.length} envío(s) seleccionado(s)?`)) {
+        return;
+    }
+    
+    const submissionIds = Array.from(selected).map(cb => 
+        parseInt(cb.getAttribute('data-submission-id'))
+    );
+    
+    fetch('/ajax/landing-pages/submissions/create-contacts-batch/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            submission_ids: submissionIds
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Mostrar mensaje de éxito
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 4000,
+                timerProgressBar: true,
+            });
+            
+            Toast.fire({
+                icon: 'success',
+                title: data.message
+            });
+            
+            // Si hay errores, mostrarlos también
+            if (data.errors && data.errors.length > 0) {
+                setTimeout(() => {
+                    alert(`Algunos errores ocurrieron:\n${data.errors.join('\n')}`);
+                }, 1000);
+            }
+            
+            // Desmarcar checkboxes
+            selected.forEach(cb => cb.checked = false);
+            
+            // Actualizar contador
+            updateSelectionCounter();
+            
+        } else {
+            alert(`Error: ${data.message}`);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al crear los contactos. Inténtalo de nuevo.');
+    });
+}
+
+function exportSelected() {
+    const selected = document.querySelectorAll('.submission-checkbox:checked');
+    if (selected.length === 0) return;
+    
+    // Similar a exportToCSV pero solo para filas seleccionadas
+    exportToCSV(); // Por ahora exporta todo, se puede mejorar
+}
+
+// Función para mostrar el mensaje completo
+function showFullMessage(message) {
+    Swal.fire({
+        title: '<i class="fas fa-comment-alt text-primary"></i> Mensaje Completo',
+        html: `<div style="text-align: left; max-height: 300px; overflow-y: auto; white-space: pre-wrap; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6;">${message}</div>`,
+        width: '600px',
+        showConfirmButton: true,
+        confirmButtonText: '<i class="fas fa-check"></i> Cerrar',
+        confirmButtonColor: '#28a745',
+        customClass: {
+            popup: 'border-0 shadow'
+        }
+    });
+}
+
+// Script de debugging y event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== DEBUG INFO ===');
+    console.log('Página cargada correctamente');
+    console.log('CSRF Token disponible:', document.querySelector('[name=csrfmiddlewaretoken]') ? 'SÍ' : 'NO');
+    
+    // Verificar que los botones existan
+    const buttons = document.querySelectorAll('button[onclick*="createContact"]');
+    console.log('Botones de crear contacto encontrados:', buttons.length);
+    
+    // Probar que las funciones existan
+    console.log('Función createContact existe en window:', typeof window.createContact === 'function');
+    console.log('Función createContact existe globalmente:', typeof createContact === 'function');
+    
+    // Test manual
+    console.log('Para probar manualmente, usa: window.createContact(5)');
+    console.log('==================');
+});
+
+</script>
+{% endblock %}

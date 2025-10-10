@@ -1,0 +1,421 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .color-preview {
+        width: 30px;
+        height: 30px;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+        display: inline-block;
+        margin-left: 10px;
+    }
+    .form-row {
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>
+                    <i class="fas fa-rocket text-primary"></i> 
+                    {% if landing_page %}Editar{% else %}Crear{% endif %} Landing Page
+                </h1>
+                <a href="{% url 'landing_page_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+            </div>
+
+            <!-- Mensajes de error/éxito -->
+            {% if messages %}
+                <div class="row mb-3">
+                    <div class="col-12">
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-body">
+                            <form method="post" enctype="multipart/form-data" id="landingPageForm">
+                                {% csrf_token %}
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.nombre_producto.id_for_label }}" class="form-label">
+                                                <i class="fas fa-tag"></i> {{ form.nombre_producto.label }}
+                                            </label>
+                                            {{ form.nombre_producto }}
+                                            {% if form.nombre_producto.errors %}
+                                                <div class="text-danger mt-1">
+                                                    {% for error in form.nombre_producto.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.slug.id_for_label }}" class="form-label">
+                                                <i class="fas fa-link"></i> {{ form.slug.label }}
+                                            </label>
+                                            {{ form.slug }}
+                                            {% if form.slug.errors %}
+                                                <div class="text-danger mt-1">
+                                                    {% for error in form.slug.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                            <small class="text-muted">La URL será: /lp/<span id="slug-preview">{{ form.slug.value|default:"tu-producto" }}</span>/</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.descripcion.id_for_label }}" class="form-label">
+                                        <i class="fas fa-align-left"></i> {{ form.descripcion.label }}
+                                    </label>
+                                    {{ form.descripcion }}
+                                    {% if form.descripcion.errors %}
+                                        <div class="text-danger mt-1">
+                                            {% for error in form.descripcion.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.imagen.id_for_label }}" class="form-label">
+                                                <i class="fas fa-image"></i> {{ form.imagen.label }}
+                                            </label>
+                                            {{ form.imagen }}
+                                            {% if form.imagen.errors %}
+                                                <div class="text-danger mt-1">
+                                                    {% for error in form.imagen.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                            {% if landing_page.imagen %}
+                                                <div class="mt-2">
+                                                    <img src="{{ landing_page.imagen.url }}" class="img-thumbnail" style="max-width: 200px;" alt="Imagen actual">
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">
+                                                <i class="fas fa-toggle-on"></i> Estado
+                                            </label>
+                                            <div class="form-check">
+                                                {{ form.is_active }}
+                                                <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                                    {{ form.is_active.label }}
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.color_principal.id_for_label }}" class="form-label">
+                                                <i class="fas fa-palette"></i> {{ form.color_principal.label }}
+                                            </label>
+                                            <div class="d-flex align-items-center">
+                                                {{ form.color_principal }}
+                                                <div class="color-preview" id="preview-principal" style="background-color: {{ form.color_principal.value|default:'#007bff' }};"></div>
+                                            </div>
+                                            {% if form.color_principal.errors %}
+                                                <div class="text-danger mt-1">
+                                                    {% for error in form.color_principal.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.color_secundario.id_for_label }}" class="form-label">
+                                                <i class="fas fa-palette"></i> {{ form.color_secundario.label }}
+                                            </label>
+                                            <div class="d-flex align-items-center">
+                                                {{ form.color_secundario }}
+                                                <div class="color-preview" id="preview-secundario" style="background-color: {{ form.color_secundario.value|default:'#6c757d' }};"></div>
+                                            </div>
+                                            {% if form.color_secundario.errors %}
+                                                <div class="text-danger mt-1">
+                                                    {% for error in form.color_secundario.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Configuración del Formulario -->
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.titulo_formulario.id_for_label }}" class="form-label">
+                                                <i class="fas fa-heading"></i> {{ form.titulo_formulario.label }}
+                                            </label>
+                                            {{ form.titulo_formulario }}
+                                            {% if form.titulo_formulario.errors %}
+                                                <div class="text-danger mt-1">
+                                                    {% for error in form.titulo_formulario.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.empresa_campana.id_for_label }}" class="form-label">
+                                                <i class="fas fa-building"></i> {{ form.empresa_campana.label }}
+                                            </label>
+                                            {{ form.empresa_campana }}
+                                            {% if form.empresa_campana.errors %}
+                                                <div class="text-danger mt-1">
+                                                    {% for error in form.empresa_campana.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.subtitulo_formulario.id_for_label }}" class="form-label">
+                                        <i class="fas fa-align-left"></i> {{ form.subtitulo_formulario.label }}
+                                    </label>
+                                    {{ form.subtitulo_formulario }}
+                                    {% if form.subtitulo_formulario.errors %}
+                                        <div class="text-danger mt-1">
+                                            {% for error in form.subtitulo_formulario.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Configuración de Telegram -->
+                                <hr class="my-4">
+                                <h5 class="mb-3">
+                                    <i class="fab fa-telegram-plane text-info"></i> Integración con Telegram
+                                    <small class="text-muted fs-6">Opcional - Recibe notificaciones automáticas</small>
+                                </h5>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.telegram_bot_token.id_for_label }}" class="form-label">
+                                                <i class="fas fa-robot"></i> {{ form.telegram_bot_token.label }}
+                                            </label>
+                                            {{ form.telegram_bot_token }}
+                                            {% if form.telegram_bot_token.errors %}
+                                                <div class="text-danger mt-1">
+                                                    {% for error in form.telegram_bot_token.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                            <small class="text-muted">
+                                                Crea un bot con <a href="https://t.me/BotFather" target="_blank">@BotFather</a> en Telegram
+                                            </small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.telegram_chat_id.id_for_label }}" class="form-label">
+                                                <i class="fas fa-comments"></i> {{ form.telegram_chat_id.label }}
+                                            </label>
+                                            {{ form.telegram_chat_id }}
+                                            {% if form.telegram_chat_id.errors %}
+                                                <div class="text-danger mt-1">
+                                                    {% for error in form.telegram_chat_id.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                            <small class="text-muted">
+                                                Obtén el ID con <a href="https://t.me/userinfobot" target="_blank">@userinfobot</a>
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i>
+                                    <strong>¿Cómo configurar Telegram?</strong>
+                                    <ol class="mb-0 mt-2">
+                                        <li>Habla con <strong>@BotFather</strong> en Telegram</li>
+                                        <li>Usa el comando <code>/newbot</code> para crear un bot</li>
+                                        <li>Copia el token que te dé BotFather</li>
+                                        <li>Habla con <strong>@userinfobot</strong> para obtener tu Chat ID</li>
+                                        <li>Asegúrate de iniciar una conversación con tu bot antes de usar</li>
+                                    </ol>
+                                </div>
+
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> 
+                                        {% if landing_page %}Actualizar{% else %}Crear{% endif %} Landing Page
+                                    </button>
+                                    <a href="{% url 'landing_page_list' %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times"></i> Cancelar
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-info-circle"></i> Información</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <h6><i class="fas fa-question-circle text-info"></i> ¿Qué es una Landing Page?</h6>
+                                <p class="small text-muted">
+                                    Una landing page es una página web diseñada específicamente para convertir visitantes en leads. 
+                                    Está enfocada en una sola acción: capturar información de contacto.
+                                </p>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <h6><i class="fas fa-lightbulb text-warning"></i> Consejos</h6>
+                                <ul class="small text-muted">
+                                    <li>Usa títulos claros y atractivos</li>
+                                    <li>Incluye una imagen de alta calidad</li>
+                                    <li>Mantén el formulario simple</li>
+                                    <li>Usa colores que reflejen tu marca</li>
+                                    <li>Configura Telegram para notificaciones instantáneas</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <h6><i class="fab fa-telegram-plane text-info"></i> Notificaciones Telegram</h6>
+                                <p class="small text-muted">
+                                    Recibe un mensaje inmediato en Telegram cada vez que alguien complete el formulario. 
+                                    Incluye toda la información del lead y datos de seguimiento UTM.
+                                </p>
+                            </div>
+                            
+                            {% if landing_page %}
+                                <div class="mb-3">
+                                    <h6><i class="fas fa-chart-line text-success"></i> Estadísticas</h6>
+                                    <div class="row text-center">
+                                        <div class="col-4">
+                                            <div class="fw-bold text-primary">{{ landing_page.total_views }}</div>
+                                            <small class="text-muted">Vistas</small>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="fw-bold text-success">{{ landing_page.total_submissions }}</div>
+                                            <small class="text-muted">Envíos</small>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="fw-bold text-info">{{ landing_page.conversion_rate|floatformat:1 }}%</div>
+                                            <small class="text-muted">Conversión</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-grid">
+                                    <a href="{% url 'landing_page_public' landing_page.slug %}" class="btn btn-outline-success btn-sm" target="_blank">
+                                        <i class="fas fa-external-link-alt"></i> Ver Landing Page
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Actualizar preview de colores
+    function updateColorPreview(inputId, previewId) {
+        const input = document.getElementById(inputId);
+        const preview = document.getElementById(previewId);
+        
+        if (input && preview) {
+            input.addEventListener('input', function() {
+                preview.style.backgroundColor = this.value;
+            });
+        }
+    }
+    
+    updateColorPreview('{{ form.color_principal.id_for_label }}', 'preview-principal');
+    updateColorPreview('{{ form.color_secundario.id_for_label }}', 'preview-secundario');
+    
+    // Actualizar preview del slug
+    const slugInput = document.getElementById('{{ form.slug.id_for_label }}');
+    const slugPreview = document.getElementById('slug-preview');
+    
+    if (slugInput && slugPreview) {
+        slugInput.addEventListener('input', function() {
+            slugPreview.textContent = this.value || 'tu-producto';
+        });
+    }
+    
+    // Auto-generar slug desde el nombre del producto
+    const nombreInput = document.getElementById('{{ form.nombre_producto.id_for_label }}');
+    
+    if (nombreInput && slugInput && !slugInput.value) {
+        nombreInput.addEventListener('input', function() {
+            const slug = this.value
+                .toLowerCase()
+                .replace(/[áéíóúñ]/g, function(match) {
+                    const map = {'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u', 'ñ': 'n'};
+                    return map[match];
+                })
+                .replace(/[^a-z0-9\s-]/g, '')
+                .replace(/\s+/g, '-')
+                .replace(/-+/g, '-')
+                .trim('-');
+            
+            slugInput.value = slug;
+            slugPreview.textContent = slug || 'tu-producto';
+        });
+    }
+});
+</script>
+{% endblock %}
