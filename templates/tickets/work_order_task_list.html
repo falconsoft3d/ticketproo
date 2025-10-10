@@ -1,0 +1,252 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <!-- Header con información de la orden -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-tasks"></i> {{ page_title }}
+                    </h4>
+                    <div>
+                        <a href="{% url 'work_order_detail' work_order.pk %}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> Volver a la Orden
+                        </a>
+                        <a href="{% url 'work_order_task_create' work_order.pk %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus"></i> Nueva Tarea
+                        </a>
+                        <a href="{% url 'work_order_task_bulk_create' work_order.pk %}" class="btn btn-info btn-sm">
+                            <i class="fas fa-list"></i> Crear Múltiples
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h5>{{ work_order.title }}</h5>
+                            <p class="text-muted">{{ work_order.description|truncatewords:20 }}</p>
+                            <span class="badge badge-{{ work_order.status|yesno:'success,warning,secondary' }}">
+                                {{ work_order.get_status_display }}
+                            </span>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <div class="card bg-light">
+                                        <div class="card-body p-2">
+                                            <h6 class="mb-1">{{ total_estimated_hours|floatformat:1 }}h</h6>
+                                            <small class="text-muted">Estimado</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="card bg-light">
+                                        <div class="card-body p-2">
+                                            <h6 class="mb-1">{{ total_logged_hours|floatformat:1 }}h</h6>
+                                            <small class="text-muted">Trabajado</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="progress mt-2">
+                                <div class="progress-bar" role="progressbar" style="width: {{ progress_percentage }}%">
+                                    {{ progress_percentage|floatformat:0 }}%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista de tareas -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list"></i> Tareas ({{ tasks|length }})
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if tasks %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th width="5%">#</th>
+                                        <th width="30%">Título</th>
+                                        <th width="20%">Estado</th>
+                                        <th width="10%">Estimado</th>
+                                        <th width="10%">Trabajado</th>
+                                        <th width="15%">Progreso</th>
+                                        <th width="10%">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for task in tasks %}
+                                    <tr id="task-{{ task.id }}">
+                                        <td>{{ task.order|default:forloop.counter }}</td>
+                                        <td>
+                                            <strong>{{ task.title }}</strong>
+                                            {% if task.description %}
+                                                <br><small class="text-muted">{{ task.description|truncatewords:10 }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm dropdown-toggle 
+                                                    {% if task.status == 'pending' %}btn-outline-secondary
+                                                    {% elif task.status == 'in_progress' %}btn-outline-warning
+                                                    {% else %}btn-outline-success{% endif %}" 
+                                                    type="button" data-toggle="dropdown">
+                                                    {{ task.get_status_display }}
+                                                </button>
+                                                <div class="dropdown-menu">
+                                                    <a class="dropdown-item" href="#" onclick="updateTaskStatus({{ task.id }}, 'pending')">
+                                                        <i class="fas fa-clock text-secondary"></i> Pendiente
+                                                    </a>
+                                                    <a class="dropdown-item" href="#" onclick="updateTaskStatus({{ task.id }}, 'in_progress')">
+                                                        <i class="fas fa-play text-warning"></i> En Progreso
+                                                    </a>
+                                                    <a class="dropdown-item" href="#" onclick="updateTaskStatus({{ task.id }}, 'completed')">
+                                                        <i class="fas fa-check text-success"></i> Completada
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>{{ task.estimated_hours|default:"--"|floatformat:1 }}h</td>
+                                        <td>
+                                            <span id="task-time-{{ task.id }}">{{ task.get_total_time_logged|floatformat:1 }}h</span>
+                                        </td>
+                                        <td>
+                                            {% if task.estimated_hours %}
+                                                {% with progress=task.get_progress_percentage %}
+                                                <div class="progress" style="height: 20px;">
+                                                    <div class="progress-bar 
+                                                        {% if progress < 100 %}bg-info{% else %}bg-success{% endif %}" 
+                                                        style="width: {% if progress > 100 %}100{% else %}{{ progress }}{% endif %}%">
+                                                        {{ progress|floatformat:0 }}%
+                                                    </div>
+                                                </div>
+                                                {% endwith %}
+                                            {% else %}
+                                                <span class="text-muted">N/A</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <!-- Botón de tiempo -->
+                                                {% if task.has_active_time_entry %}
+                                                    <button class="btn btn-danger btn-sm" onclick="stopTaskTime({{ task.id }})" title="Detener tiempo">
+                                                        <i class="fas fa-stop"></i>
+                                                    </button>
+                                                {% else %}
+                                                    <button class="btn btn-success btn-sm" onclick="startTaskTime({{ task.id }})" title="Iniciar tiempo">
+                                                        <i class="fas fa-play"></i>
+                                                    </button>
+                                                {% endif %}
+                                                
+                                                <!-- Botón editar -->
+                                                <a href="{% url 'work_order_task_edit' work_order.pk task.pk %}" 
+                                                   class="btn btn-outline-primary btn-sm" title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                
+                                                <!-- Botón eliminar -->
+                                                <a href="{% url 'work_order_task_delete' work_order.pk task.pk %}" 
+                                                   class="btn btn-outline-danger btn-sm" title="Eliminar">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No hay tareas registradas</h5>
+                            <p class="text-muted">Comienza agregando la primera tarea a esta orden de trabajo.</p>
+                            <a href="{% url 'work_order_task_create' work_order.pk %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Crear Primera Tarea
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript para funcionalidad AJAX -->
+<script>
+function updateTaskStatus(taskId, newStatus) {
+    $.ajax({
+        url: `{% url 'work_order_task_status_update' work_order.pk 0 %}`.replace('0', taskId),
+        method: 'POST',
+        data: {
+            'status': newStatus,
+            'csrfmiddlewaretoken': '{{ csrf_token }}'
+        },
+        success: function(response) {
+            if (response.success) {
+                // Actualizar el botón de estado
+                location.reload();
+            } else {
+                alert('Error: ' + response.error);
+            }
+        },
+        error: function() {
+            alert('Error al actualizar el estado de la tarea');
+        }
+    });
+}
+
+function startTaskTime(taskId) {
+    $.ajax({
+        url: `{% url 'work_order_task_time_start' work_order.pk 0 %}`.replace('0', taskId),
+        method: 'POST',
+        data: {
+            'csrfmiddlewaretoken': '{{ csrf_token }}'
+        },
+        success: function(response) {
+            if (response.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + response.error);
+            }
+        },
+        error: function() {
+            alert('Error al iniciar el tiempo de la tarea');
+        }
+    });
+}
+
+function stopTaskTime(taskId) {
+    $.ajax({
+        url: `{% url 'work_order_task_time_stop' work_order.pk 0 %}`.replace('0', taskId),
+        method: 'POST',
+        data: {
+            'csrfmiddlewaretoken': '{{ csrf_token }}'
+        },
+        success: function(response) {
+            if (response.success) {
+                // Actualizar el tiempo trabajado
+                $('#task-time-' + taskId).text(response.total_time + 'h');
+                location.reload();
+            } else {
+                alert('Error: ' + response.error);
+            }
+        },
+        error: function() {
+            alert('Error al detener el tiempo de la tarea');
+        }
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0 text-danger">
+                        <i class="fas fa-exclamation-triangle"></i> {{ page_title }}
+                    </h4>
+                    <a href="{% url 'work_order_task_list' work_order.pk %}" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-arrow-left"></i> Volver a Tareas
+                    </a>
+                </div>
+                <div class="card-body">
+                    <!-- Información de la orden -->
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle"></i> Orden de Trabajo: {{ work_order.order_number }}</h6>
+                        <p class="mb-0">{{ work_order.title }}</p>
+                    </div>
+
+                    <!-- Confirmación -->
+                    <div class="alert alert-danger">
+                        <h5><i class="fas fa-exclamation-triangle"></i> ¿Está seguro?</h5>
+                        <p class="mb-0">
+                            Esta acción eliminará permanentemente la tarea y <strong>todos sus registros de tiempo asociados</strong>. 
+                            Esta operación no se puede deshacer.
+                        </p>
+                    </div>
+
+                    <!-- Detalles de la tarea -->
+                    <div class="card bg-light mb-3">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="fas fa-tasks"></i> {{ task.title }}
+                            </h6>
+                            {% if task.description %}
+                                <p class="card-text">{{ task.description }}</p>
+                            {% endif %}
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <small class="text-muted">
+                                        <strong>Estado:</strong> 
+                                        <span class="badge badge-{% if task.status == 'pending' %}secondary{% elif task.status == 'in_progress' %}warning{% else %}success{% endif %}">
+                                            {{ task.get_status_display }}
+                                        </span>
+                                    </small>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-muted">
+                                        <strong>Tiempo estimado:</strong> {{ task.estimated_hours|default:"No especificado" }}{% if task.estimated_hours %}h{% endif %}
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-md-6">
+                                    <small class="text-muted">
+                                        <strong>Tiempo trabajado:</strong> {{ task.get_total_time_logged|floatformat:1 }}h
+                                    </small>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-muted">
+                                        <strong>Registros de tiempo:</strong> {{ task.time_entries.count }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formulario de confirmación -->
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Sí, eliminar tarea
+                            </button>
+                            <a href="{% url 'work_order_task_list' work_order.pk %}" class="btn btn-secondary ml-2">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

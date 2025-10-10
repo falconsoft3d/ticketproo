@@ -1870,6 +1870,83 @@ class WorkOrder(models.Model):
     def order_number(self):
         """Retorna el número de orden formateado"""
         return f"OT-{self.id:04d}"
+    
+    def get_tasks_summary(self):
+        """Retorna un resumen de las tareas"""
+        tasks = self.tasks.all()
+        total_tasks = tasks.count()
+        pending_tasks = tasks.filter(status='pending').count()
+        in_progress_tasks = tasks.filter(status='in_progress').count()
+        completed_tasks = tasks.filter(status='completed').count()
+        
+        return {
+            'total': total_tasks,
+            'pending': pending_tasks,
+            'in_progress': in_progress_tasks,
+            'completed': completed_tasks,
+            'progress_percentage': (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0
+        }
+    
+    def get_total_actual_hours(self):
+        """Retorna el total de horas reales trabajadas en todas las tareas"""
+        return self.tasks.aggregate(
+            total=models.Sum('actual_hours')
+        )['total'] or 0
+    
+    def get_total_estimated_hours(self):
+        """Retorna el total de horas estimadas de todas las tareas"""
+        return self.tasks.aggregate(
+            total=models.Sum('estimated_hours')
+        )['total'] or 0
+    
+    def get_completion_percentage(self):
+        """Retorna el porcentaje de completitud basado en tareas"""
+        summary = self.get_tasks_summary()
+        return summary['progress_percentage']
+    
+    def get_total_hours_logged(self):
+        """Retorna el total de horas trabajadas en todas las tareas"""
+        from django.db.models import Sum
+        total_duration = 0
+        
+        for task in self.tasks.all():
+            task_total = task.time_entries.aggregate(
+                total_seconds=Sum(
+                    models.F('end_time') - models.F('start_time'),
+                    output_field=models.DurationField()
+                )
+            )['total_seconds']
+            
+            if task_total:
+                total_duration += task_total.total_seconds()
+        
+        # Convertir segundos a horas
+        return round(total_duration / 3600, 2)
+    
+    def get_progress_percentage(self):
+        """Retorna el porcentaje de progreso basado en tareas completadas"""
+        total_tasks = self.get_total_tasks()
+        if total_tasks == 0:
+            return 0
+        
+        completed_tasks = self.get_completed_tasks()
+        return round((completed_tasks / total_tasks) * 100, 1)
+    
+    def get_total_tasks(self):
+        """Retorna el número total de tareas"""
+        return self.tasks.count()
+    
+    def get_pending_tasks(self):
+        """Retorna el número de tareas pendientes"""
+        return self.tasks.filter(status='pending').count()
+    
+    def get_in_progress_tasks(self):
+        """Retorna el número de tareas en progreso"""
+        return self.tasks.filter(status='in_progress').count()
+    
+    def get_completed_tasks(self):
+        """Retorna el número de tareas completadas"""
+        return self.tasks.filter(status='completed').count()
 
 
 def work_order_attachment_upload_path(instance, filename):
@@ -1923,6 +2000,178 @@ class WorkOrderAttachment(models.Model):
                 return f"{size:.1f} {unit}"
             size /= 1024
         return f"{size:.1f} TB"
+
+
+class WorkOrderTask(models.Model):
+    """Modelo para gestionar tareas específicas de órdenes de trabajo"""
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pendiente'),
+        ('in_progress', 'En Progreso'),
+        ('completed', 'Completada'),
+    ]
+    
+    work_order = models.ForeignKey(
+        WorkOrder,
+        on_delete=models.CASCADE,
+        related_name='tasks',
+        verbose_name='Orden de Trabajo'
+    )
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título de la Tarea'
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción',
+        help_text='Descripción detallada de la tarea (opcional)'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        verbose_name='Estado'
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Orden',
+        help_text='Orden de aparición de la tarea'
+    )
+    estimated_hours = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Horas Estimadas',
+        help_text='Tiempo estimado para completar la tarea'
+    )
+    actual_hours = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        default=0,
+        verbose_name='Horas Reales',
+        help_text='Tiempo real trabajado en la tarea'
+    )
+    started_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Iniciado en'
+    )
+    completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Completado en'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        ordering = ['order', 'id']
+        verbose_name = 'Tarea de Orden de Trabajo'
+        verbose_name_plural = 'Tareas de Órdenes de Trabajo'
+        indexes = [
+            models.Index(fields=['work_order', 'status']),
+            models.Index(fields=['work_order', 'order']),
+        ]
+    
+    def __str__(self):
+        return f"{self.work_order.order_number} - {self.title}"
+    
+    def get_status_badge_class(self):
+        """Retorna la clase CSS para el badge de estado"""
+        status_classes = {
+            'pending': 'bg-secondary',
+            'in_progress': 'bg-primary',
+            'completed': 'bg-success',
+        }
+        return status_classes.get(self.status, 'bg-secondary')
+    
+    def get_status_icon(self):
+        """Retorna el icono para el estado"""
+        status_icons = {
+            'pending': 'fas fa-clock',
+            'in_progress': 'fas fa-play-circle',
+            'completed': 'fas fa-check-circle',
+        }
+        return status_icons.get(self.status, 'fas fa-question')
+    
+    def start_task(self):
+        """Marca la tarea como iniciada"""
+        if self.status == 'pending':
+            self.status = 'in_progress'
+            self.started_at = timezone.now()
+            self.save(update_fields=['status', 'started_at'])
+    
+    def complete_task(self):
+        """Marca la tarea como completada"""
+        if self.status == 'in_progress':
+            self.status = 'completed'
+            self.completed_at = timezone.now()
+            self.save(update_fields=['status', 'completed_at'])
+    
+    def get_duration(self):
+        """Retorna la duración de la tarea si está completada"""
+        if self.started_at and self.completed_at:
+            delta = self.completed_at - self.started_at
+            hours = delta.total_seconds() / 3600
+            return round(hours, 2)
+        return None
+    
+    def update_actual_hours(self):
+        """Actualiza las horas reales basado en los time entries"""
+        total_hours = self.time_entries.aggregate(
+            total=models.Sum('hours')
+        )['total'] or 0
+        
+        self.actual_hours = total_hours
+        self.save(update_fields=['actual_hours'])
+        return total_hours
+
+
+class WorkOrderTaskTimeEntry(models.Model):
+    """Modelo para registrar tiempo trabajado en tareas de órdenes de trabajo"""
+    
+    task = models.ForeignKey(
+        WorkOrderTask,
+        on_delete=models.CASCADE,
+        related_name='time_entries',
+        verbose_name='Tarea'
+    )
+    hours = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        verbose_name='Horas Trabajadas'
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción del Trabajo',
+        help_text='Descripción opcional del trabajo realizado'
+    )
+    date = models.DateField(
+        default=timezone.now,
+        verbose_name='Fecha'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Registrado en'
+    )
+    
+    class Meta:
+        ordering = ['-date', '-created_at']
+        verbose_name = 'Registro de Tiempo de Tarea'
+        verbose_name_plural = 'Registros de Tiempo de Tareas'
+        indexes = [
+            models.Index(fields=['task', 'date']),
+        ]
+    
+    def __str__(self):
+        return f"{self.task} - {self.hours}h ({self.date})"
 
 
 class Task(models.Model):

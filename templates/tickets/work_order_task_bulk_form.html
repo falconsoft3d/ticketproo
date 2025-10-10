@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-list"></i> {{ page_title }}
+                    </h4>
+                    <a href="{% url 'work_order_task_list' work_order.pk %}" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-arrow-left"></i> Volver a Tareas
+                    </a>
+                </div>
+                <div class="card-body">
+                    <!-- Información de la orden -->
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle"></i> Orden de Trabajo: {{ work_order.order_number }}</h6>
+                        <p class="mb-0">{{ work_order.title }}</p>
+                    </div>
+
+                    <!-- Instrucciones -->
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-lightbulb"></i> Instrucciones:</h6>
+                        <ul class="mb-0">
+                            <li>Escriba cada tarea en una línea separada</li>
+                            <li>Las tareas se crearán en el orden especificado</li>
+                            <li>Las líneas vacías serán ignoradas</li>
+                            <li>Todas las tareas se crearán con estado "Pendiente"</li>
+                        </ul>
+                    </div>
+
+                    <!-- Formulario -->
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="form-group">
+                            <label for="{{ form.tasks_text.id_for_label }}" class="font-weight-bold">
+                                {{ form.tasks_text.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.tasks_text }}
+                            {% if form.tasks_text.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.tasks_text.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                Ejemplo:<br>
+                                Analizar requerimientos<br>
+                                Diseñar base de datos<br>
+                                Implementar funcionalidad<br>
+                                Realizar pruebas<br>
+                                Documentar código
+                            </small>
+                        </div>
+
+                        <!-- Errores generales del formulario -->
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    <p class="mb-0">{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <!-- Botones -->
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Crear Tareas
+                            </button>
+                            <a href="{% url 'work_order_task_list' work_order.pk %}" class="btn btn-secondary ml-2">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Agregar clases de Bootstrap a los campos del formulario
+$(document).ready(function() {
+    $('#id_tasks_text').addClass('form-control');
+    $('#id_tasks_text').attr('rows', '10');
+    $('#id_tasks_text').attr('placeholder', 'Escriba cada tarea en una línea separada...');
+});
+</script>
+{% endblock %}

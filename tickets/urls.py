@@ -123,8 +123,19 @@ urlpatterns = [
     path('work-orders/<int:pk>/delete/', views.work_order_delete_view, name='work_order_delete'),
     path('work-orders/<int:pk>/change-status/', views.work_order_change_status_view, name='work_order_change_status'),
     
+    # URLs de gestión de tareas en órdenes de trabajo (solo para agentes)
+    path('work-orders/<int:work_order_pk>/tasks/', views.work_order_task_list_view, name='work_order_task_list'),
+    path('work-orders/<int:work_order_pk>/tasks/create/', views.work_order_task_create_view, name='work_order_task_create'),
+    path('work-orders/<int:work_order_pk>/tasks/bulk-create/', views.work_order_task_bulk_create_view, name='work_order_task_bulk_create'),
+    path('work-orders/<int:work_order_pk>/tasks/<int:task_pk>/edit/', views.work_order_task_edit_view, name='work_order_task_edit'),
+    path('work-orders/<int:work_order_pk>/tasks/<int:task_pk>/delete/', views.work_order_task_delete_view, name='work_order_task_delete'),
+    path('work-orders/<int:work_order_pk>/tasks/<int:task_pk>/status/', views.work_order_task_status_update_view, name='work_order_task_status_update'),
+    path('work-orders/<int:work_order_pk>/tasks/<int:task_pk>/time/start/', views.work_order_task_time_start_view, name='work_order_task_time_start'),
+    path('work-orders/<int:work_order_pk>/tasks/<int:task_pk>/time/stop/', views.work_order_task_time_stop_view, name='work_order_task_time_stop'),
+    
     # URL pública para órdenes de trabajo compartidas (sin autenticación)
     path('work-order/public/<uuid:token>/', views.work_order_public_view, name='public_work_order'),
+    path('work-order/public/<uuid:token>/tasks/', views.work_order_public_task_view, name='public_work_order_tasks'),
     
     # URLs de reportes (solo para agentes)
     path('reports/daily/', views.daily_report_view, name='daily_report'),

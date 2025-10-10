@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-{% if task %}edit{% else %}plus{% endif %}"></i> 
+                        {{ page_title }}
+                    </h4>
+                    <a href="{% url 'work_order_task_list' work_order.pk %}" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-arrow-left"></i> Volver a Tareas
+                    </a>
+                </div>
+                <div class="card-body">
+                    <!-- Información de la orden -->
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle"></i> Orden de Trabajo: {{ work_order.order_number }}</h6>
+                        <p class="mb-0">{{ work_order.title }}</p>
+                    </div>
+
+                    <!-- Formulario -->
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="form-group">
+                            <label for="{{ form.title.id_for_label }}" class="font-weight-bold">
+                                {{ form.title.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.title.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ form.description.id_for_label }}" class="font-weight-bold">
+                                {{ form.description.label }}
+                            </label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.description.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">Descripción detallada de la tarea</small>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.status.id_for_label }}" class="font-weight-bold">
+                                        {{ form.status.label }}
+                                    </label>
+                                    {{ form.status }}
+                                    {% if form.status.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.status.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.estimated_hours.id_for_label }}" class="font-weight-bold">
+                                        {{ form.estimated_hours.label }}
+                                    </label>
+                                    {{ form.estimated_hours }}
+                                    {% if form.estimated_hours.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.estimated_hours.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">Tiempo estimado en horas</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ form.order.id_for_label }}" class="font-weight-bold">
+                                {{ form.order.label }}
+                            </label>
+                            {{ form.order }}
+                            {% if form.order.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.order.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">Orden de ejecución (número mayor = mayor prioridad)</small>
+                        </div>
+
+                        <!-- Errores generales del formulario -->
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    <p class="mb-0">{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <!-- Botones -->
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> 
+                                {% if task %}Actualizar{% else %}Crear{% endif %} Tarea
+                            </button>
+                            <a href="{% url 'work_order_task_list' work_order.pk %}" class="btn btn-secondary ml-2">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Agregar clases de Bootstrap a los campos del formulario
+$(document).ready(function() {
+    $('#id_title').addClass('form-control');
+    $('#id_description').addClass('form-control');
+    $('#id_status').addClass('form-control');
+    $('#id_estimated_hours').addClass('form-control');
+    $('#id_order').addClass('form-control');
+});
+</script>
+{% endblock %}

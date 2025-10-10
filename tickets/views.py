@@ -32,7 +32,7 @@ from .models import (
     BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, Concept,
     Exam, ExamQuestion, ExamAttempt, ExamAnswer, ContactoWeb, PublicDocumentUpload,
     Employee, JobApplicationToken, EmployeePayroll, Agreement, AgreementSignature,
-    LandingPage, LandingPageSubmission
+    LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry
 )
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
@@ -42,7 +42,8 @@ from .forms import (
     UrlManagerForm, UrlManagerFilterForm, WorkOrderForm, WorkOrderFilterForm, TaskForm,
     ChatMessageForm, ChatRoomForm, AIChatSessionForm, AIChatMessageForm, ConceptForm,
     EmployeeHiringOpinionForm, EmployeePayrollForm, AgreementForm, AgreementSignatureForm, AgreementPublicForm,
-    LandingPageForm, LandingPageSubmissionForm, PublicCompanyTicketForm
+    LandingPageForm, LandingPageSubmissionForm, PublicCompanyTicketForm, WorkOrderTaskForm, 
+    WorkOrderTaskTimeEntryForm, WorkOrderTaskBulkForm
 )
 from .utils import is_agent, is_regular_user, is_teacher, can_manage_courses, get_user_role, assign_user_to_group
 
@@ -11227,3 +11228,297 @@ def public_company_ticket_create(request, public_token):
         'form': form,
         'company': company,
     })
+
+
+# ===========================================
+# VISTAS PARA TAREAS DE ÓRDENES DE TRABAJO
+# ===========================================
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def work_order_task_list_view(request, work_order_pk):
+    """Vista para listar tareas de una orden de trabajo"""
+    work_order = get_object_or_404(WorkOrder, pk=work_order_pk)
+    tasks = work_order.tasks.all().order_by('order', 'created_at')
+    
+    context = {
+        'work_order': work_order,
+        'tasks': tasks,
+        'page_title': f'Tareas - {work_order.order_number}',
+        'total_estimated_hours': sum(task.estimated_hours or 0 for task in tasks),
+        'total_logged_hours': work_order.get_total_hours_logged(),
+        'progress_percentage': work_order.get_progress_percentage(),
+    }
+    
+    return render(request, 'tickets/work_order_task_list.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def work_order_task_create_view(request, work_order_pk):
+    """Vista para crear una nueva tarea en una orden de trabajo"""
+    work_order = get_object_or_404(WorkOrder, pk=work_order_pk)
+    
+    if request.method == 'POST':
+        from .forms import WorkOrderTaskForm
+        form = WorkOrderTaskForm(request.POST)
+        if form.is_valid():
+            task = form.save(commit=False)
+            task.work_order = work_order
+            task.created_by = request.user
+            task.save()
+            messages.success(request, f'Tarea "{task.title}" creada exitosamente.')
+            return redirect('work_order_task_list', work_order_pk=work_order.pk)
+    else:
+        from .forms import WorkOrderTaskForm
+        form = WorkOrderTaskForm()
+    
+    context = {
+        'form': form,
+        'work_order': work_order,
+        'page_title': f'Nueva Tarea - {work_order.order_number}'
+    }
+    
+    return render(request, 'tickets/work_order_task_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def work_order_task_edit_view(request, work_order_pk, task_pk):
+    """Vista para editar una tarea"""
+    work_order = get_object_or_404(WorkOrder, pk=work_order_pk)
+    from .models import WorkOrderTask
+    task = get_object_or_404(WorkOrderTask, pk=task_pk, work_order=work_order)
+    
+    if request.method == 'POST':
+        from .forms import WorkOrderTaskForm
+        form = WorkOrderTaskForm(request.POST, instance=task)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Tarea "{task.title}" actualizada exitosamente.')
+            return redirect('work_order_task_list', work_order_pk=work_order.pk)
+    else:
+        from .forms import WorkOrderTaskForm
+        form = WorkOrderTaskForm(instance=task)
+    
+    context = {
+        'form': form,
+        'work_order': work_order,
+        'task': task,
+        'page_title': f'Editar Tarea - {task.title}'
+    }
+    
+    return render(request, 'tickets/work_order_task_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def work_order_task_delete_view(request, work_order_pk, task_pk):
+    """Vista para eliminar una tarea"""
+    work_order = get_object_or_404(WorkOrder, pk=work_order_pk)
+    from .models import WorkOrderTask
+    task = get_object_or_404(WorkOrderTask, pk=task_pk, work_order=work_order)
+    
+    if request.method == 'POST':
+        title = task.title
+        task.delete()
+        messages.success(request, f'Tarea "{title}" eliminada exitosamente.')
+        return redirect('work_order_task_list', work_order_pk=work_order.pk)
+    
+    context = {
+        'work_order': work_order,
+        'task': task,
+        'page_title': f'Eliminar Tarea - {task.title}'
+    }
+    
+    return render(request, 'tickets/work_order_task_delete.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def work_order_task_bulk_create_view(request, work_order_pk):
+    """Vista para crear múltiples tareas de una vez"""
+    work_order = get_object_or_404(WorkOrder, pk=work_order_pk)
+    
+    if request.method == 'POST':
+        from .forms import WorkOrderTaskBulkForm
+        form = WorkOrderTaskBulkForm(request.POST)
+        if form.is_valid():
+            tasks_text = form.cleaned_data['tasks_text']
+            tasks_created = 0
+            
+            for i, line in enumerate(tasks_text.strip().split('\n')):
+                line = line.strip()
+                if line:
+                    from .models import WorkOrderTask
+                    WorkOrderTask.objects.create(
+                        work_order=work_order,
+                        title=line,
+                        description=f'Tarea creada automáticamente',
+                        status='pending',
+                        order=i + 1,
+                        created_by=request.user
+                    )
+                    tasks_created += 1
+            
+            messages.success(request, f'{tasks_created} tareas creadas exitosamente.')
+            return redirect('work_order_task_list', work_order_pk=work_order.pk)
+    else:
+        from .forms import WorkOrderTaskBulkForm
+        form = WorkOrderTaskBulkForm()
+    
+    context = {
+        'form': form,
+        'work_order': work_order,
+        'page_title': f'Crear Tareas Múltiples - {work_order.order_number}'
+    }
+    
+    return render(request, 'tickets/work_order_task_bulk_form.html', context)
+
+
+def work_order_task_status_update_view(request, work_order_pk, task_pk):
+    """Vista AJAX para actualizar el estado de una tarea"""
+    if request.method == 'POST':
+        work_order = get_object_or_404(WorkOrder, pk=work_order_pk)
+        from .models import WorkOrderTask
+        task = get_object_or_404(WorkOrderTask, pk=task_pk, work_order=work_order)
+        
+        new_status = request.POST.get('status')
+        
+        if new_status in ['pending', 'in_progress', 'completed']:
+            old_status = task.get_status_display()
+            task.status = new_status
+            
+            # Si se marca como completada, establecer fecha de finalización
+            if new_status == 'completed':
+                task.completed_at = timezone.now()
+            elif new_status == 'in_progress':
+                task.started_at = timezone.now()
+                task.completed_at = None
+            else:  # pending
+                task.started_at = None
+                task.completed_at = None
+            
+            task.save()
+            
+            new_status_display = task.get_status_display()
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Estado actualizado a "{new_status_display}"',
+                'new_status': new_status,
+                'new_status_display': new_status_display,
+                'progress_percentage': work_order.get_progress_percentage()
+            })
+        
+        return JsonResponse({
+            'success': False,
+            'error': 'Estado inválido'
+        })
+    
+    return JsonResponse({'success': False, 'error': 'Método no permitido'})
+
+
+def work_order_task_time_start_view(request, work_order_pk, task_pk):
+    """Vista para marcar una tarea como iniciada"""
+    if request.method == 'POST':
+        work_order = get_object_or_404(WorkOrder, pk=work_order_pk)
+        from .models import WorkOrderTask
+        task = get_object_or_404(WorkOrderTask, pk=task_pk, work_order=work_order)
+        
+        # Actualizar estado de la tarea a "en progreso" si está pendiente
+        if task.status == 'pending':
+            task.status = 'in_progress'
+            task.started_at = timezone.now()
+            task.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Tarea marcada como iniciada',
+                'status': 'in_progress',
+                'started_at': task.started_at.strftime('%H:%M:%S')
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': 'La tarea ya fue iniciada o está completada'
+            })
+    
+    return JsonResponse({'success': False, 'error': 'Método no permitido'})
+
+
+def work_order_task_time_stop_view(request, work_order_pk, task_pk):
+    """Vista para marcar una tarea como completada"""
+    if request.method == 'POST':
+        work_order = get_object_or_404(WorkOrder, pk=work_order_pk)
+        from .models import WorkOrderTask
+        task = get_object_or_404(WorkOrderTask, pk=task_pk, work_order=work_order)
+        
+        # Marcar tarea como completada
+        if task.status != 'completed':
+            task.status = 'completed'
+            task.completed_at = timezone.now()
+            task.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Tarea marcada como completada',
+                'status': 'completed',
+                'completed_at': task.completed_at.strftime('%H:%M:%S')
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': 'La tarea ya está completada'
+            })
+    
+    return JsonResponse({'success': False, 'error': 'Método no permitido'})
+
+
+def work_order_public_task_view(request, token):
+    """Vista pública para tareas de órdenes de trabajo compartidas"""
+    work_order = get_object_or_404(WorkOrder, public_share_token=token, is_public=True)
+    tasks = work_order.tasks.all().order_by('order', 'created_at')
+    
+    # Manejar actualización de estado de tarea por POST
+    if request.method == 'POST':
+        task_id = request.POST.get('task_id')
+        new_status = request.POST.get('status')
+        
+        if task_id and new_status in ['pending', 'in_progress', 'completed']:
+            from .models import WorkOrderTask
+            try:
+                task = WorkOrderTask.objects.get(id=task_id, work_order=work_order)
+                old_status = task.get_status_display()
+                task.status = new_status
+                
+                # Actualizar fechas según el estado
+                if new_status == 'completed':
+                    task.completed_at = timezone.now()
+                elif new_status == 'in_progress':
+                    task.started_at = timezone.now()
+                    task.completed_at = None
+                else:  # pending
+                    task.started_at = None
+                    task.completed_at = None
+                
+                task.save()
+                
+                new_status_display = task.get_status_display()
+                messages.success(request, f'Tarea "{task.title}" actualizada de "{old_status}" a "{new_status_display}".')
+            except WorkOrderTask.DoesNotExist:
+                messages.error(request, 'Tarea no encontrada.')
+        
+        return redirect('public_work_order_tasks', token=token)
+    
+    context = {
+        'work_order': work_order,
+        'tasks': tasks,
+        'page_title': f'Tareas - {work_order.order_number}',
+        'is_public_view': True,
+        'total_estimated_hours': sum(task.estimated_hours or 0 for task in tasks),
+        'total_logged_hours': work_order.get_total_hours_logged(),
+        'progress_percentage': work_order.get_progress_percentage(),
+    }
+    
+    return render(request, 'tickets/work_order_public_tasks.html', context)

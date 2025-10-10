@@ -15,6 +15,15 @@
         </div>
         <div class="col-md-6 text-end">
             <div class="btn-group me-2" role="group">
+                <!-- Botón de tareas -->
+                {% for group in user.groups.all %}
+                    {% if group.name == 'Agentes' %}
+                        <a href="{% url 'work_order_task_list' work_order.pk %}" class="btn btn-outline-info">
+                            <i class="bi bi-list-task me-1"></i>Tareas
+                        </a>
+                    {% endif %}
+                {% endfor %}
+                
                 <!-- Solo los agentes pueden editar/eliminar -->
                 {% for group in user.groups.all %}
                     {% if group.name == 'Agentes' %}

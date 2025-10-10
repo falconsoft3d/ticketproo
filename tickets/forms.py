@@ -6,7 +6,7 @@ from .models import (
     UserNote, TimeEntry, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
     ChatRoom, ChatMessage, Command, ContactFormSubmission, Meeting, MeetingAttendee, MeetingQuestion, OpportunityActivity,
     Course, CourseClass, Contact, BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, Concept, ContactoWeb, Employee, EmployeePayroll,
-    Agreement, AgreementSignature, LandingPage, LandingPageSubmission
+    Agreement, AgreementSignature, LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry
 )
 
 class CategoryForm(forms.ModelForm):
@@ -3840,3 +3840,111 @@ class PublicCompanyTicketForm(forms.ModelForm):
             ticket.save()
         
         return ticket
+
+
+class WorkOrderTaskForm(forms.ModelForm):
+    """Formulario para crear y editar tareas de órdenes de trabajo"""
+    
+    class Meta:
+        model = WorkOrderTask
+        fields = ['title', 'description', 'estimated_hours', 'order']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título de la tarea'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción de la tarea (opcional)'
+            }),
+            'estimated_hours': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.5',
+                'min': '0',
+                'placeholder': '0.0'
+            }),
+            'order': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '0'
+            }),
+        }
+        labels = {
+            'title': 'Título de la Tarea',
+            'description': 'Descripción',
+            'estimated_hours': 'Horas Estimadas',
+            'order': 'Orden de Ejecución',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        self.work_order = kwargs.pop('work_order', None)
+        super().__init__(*args, **kwargs)
+        
+        # Si no hay orden especificada, usar la siguiente disponible
+        if not self.instance.pk and self.work_order:
+            next_order = self.work_order.tasks.count() + 1
+            self.fields['order'].initial = next_order
+
+
+class WorkOrderTaskTimeEntryForm(forms.ModelForm):
+    """Formulario para registrar tiempo en tareas de órdenes de trabajo"""
+    
+    class Meta:
+        model = WorkOrderTaskTimeEntry
+        fields = ['hours', 'description', 'date']
+        widgets = {
+            'hours': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.25',
+                'min': '0.25',
+                'placeholder': '1.0'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción del trabajo realizado (opcional)'
+            }),
+            'date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+        }
+        labels = {
+            'hours': 'Horas Trabajadas',
+            'description': 'Descripción del Trabajo',
+            'date': 'Fecha',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Usar la fecha actual por defecto
+        if not self.instance.pk:
+            from django.utils import timezone
+            self.fields['date'].initial = timezone.now().date()
+
+
+class WorkOrderTaskBulkForm(forms.Form):
+    """Formulario para agregar múltiples tareas a una orden de trabajo"""
+    
+    tasks_text = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 10,
+            'placeholder': 'Escribe una tarea por línea:\n\nTarea 1\nTarea 2\nTarea 3\n...'
+        }),
+        label='Tareas',
+        help_text='Escribe una tarea por línea. Cada línea se convertirá en una tarea separada.'
+    )
+    
+    def clean_tasks_text(self):
+        """Valida y limpia el texto de tareas"""
+        tasks_text = self.cleaned_data['tasks_text']
+        lines = [line.strip() for line in tasks_text.split('\n') if line.strip()]
+        
+        if not lines:
+            raise forms.ValidationError('Debes escribir al menos una tarea.')
+        
+        if len(lines) > 50:
+            raise forms.ValidationError('No puedes crear más de 50 tareas a la vez.')
+        
+        return lines
