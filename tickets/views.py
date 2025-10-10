@@ -10812,7 +10812,8 @@ def landing_page_public(request, slug):
             
             # Crear contacto web automáticamente
             try:
-                contact = create_contact_from_submission(submission, landing_page)
+                # En vista pública no hay usuario logueado, así que created_by será None
+                contact = create_contact_from_submission(submission, landing_page, created_by=None)
                 
                 # Enviar notificación de creación de contacto
                 try:
@@ -10865,9 +10866,24 @@ def landing_page_public(request, slug):
     return render(request, 'tickets/landing_page_public.html', context)
 
 
-def create_contact_from_submission(submission, landing_page):
+def create_contact_from_submission(submission, landing_page, created_by=None):
     """Crear un contacto desde un envío de landing page"""
     from .models import Contact
+    from django.contrib.auth.models import User
+    
+    # Si no hay usuario logueado, usar un usuario sistema
+    if created_by is None:
+        # Buscar o crear un usuario sistema para contacts automáticos
+        system_user, created = User.objects.get_or_create(
+            username='system_landing_pages',
+            defaults={
+                'first_name': 'Sistema',
+                'last_name': 'Landing Pages',
+                'email': 'system@landingpages.local',
+                'is_active': False  # Usuario inactivo para que no pueda loguearse
+            }
+        )
+        created_by = system_user
     
     # Verificar si ya existe un contacto con el mismo email
     existing_contact = Contact.objects.filter(
@@ -10911,7 +10927,8 @@ def create_contact_from_submission(submission, landing_page):
             company=submission.empresa or '',
             source=f"Landing Page: {landing_page.nombre_producto}",
             notes=notas_base,
-            status='positive'  # Nuevo lead es positivo por defecto
+            status='positive',  # Nuevo lead es positivo por defecto
+            created_by=created_by  # Asignar el usuario que creó el contacto
         )
         
         return contact
@@ -10944,6 +10961,29 @@ def landing_page_submissions(request, pk):
 
 @login_required
 @user_passes_test(is_agent_or_superuser, login_url='/')
+def landing_page_submission_detail(request, submission_id):
+    """Vista para ver los detalles de un envío específico de landing page"""
+    from .models import LandingPageSubmission, Contact
+    
+    submission = get_object_or_404(LandingPageSubmission, pk=submission_id)
+    
+    # Buscar contacto existente por email
+    existing_contact = Contact.objects.filter(
+        email=submission.email
+    ).first()
+    
+    context = {
+        'page_title': f'Detalle del Envío #{submission.id}',
+        'submission': submission,
+        'landing_page': submission.landing_page,
+        'existing_contact': existing_contact,
+    }
+    
+    return render(request, 'tickets/landing_page_submission_detail.html', context)
+
+
+@login_required
+@user_passes_test(is_agent_or_superuser, login_url='/')
 def create_contact_from_submission_view(request, submission_id):
     """Vista para crear un contacto manualmente desde un envío de landing page"""
     from .models import LandingPageSubmission
@@ -10952,7 +10992,7 @@ def create_contact_from_submission_view(request, submission_id):
     
     if request.method == 'POST':
         try:
-            contact = create_contact_from_submission(submission, submission.landing_page)
+            contact = create_contact_from_submission(submission, submission.landing_page, created_by=request.user)
             messages.success(request, f'Contacto creado exitosamente para {contact.name}')
             
             # Enviar notificación
@@ -11005,7 +11045,7 @@ def ajax_create_contact_from_submission(request, submission_id):
             from .models import LandingPageSubmission
             submission = get_object_or_404(LandingPageSubmission, pk=submission_id)
             
-            contact = create_contact_from_submission(submission, submission.landing_page)
+            contact = create_contact_from_submission(submission, submission.landing_page, created_by=request.user)
             
             if not contact:
                 return JsonResponse({
@@ -11018,9 +11058,9 @@ def ajax_create_contact_from_submission(request, submission_id):
             existing_contact_count = ContactoWeb.objects.filter(email=submission.email).count()
             
             if existing_contact_count > 1:
-                message = f'Contacto actualizado para {contact.nombre} ({contact.email})'
+                message = f'Contacto actualizado para {contact.name} ({contact.email})'
             else:
-                message = f'Contacto creado exitosamente para {contact.nombre}'
+                message = f'Contacto creado exitosamente para {contact.name}'
             
             # Log para debugging
             import logging
@@ -11076,7 +11116,7 @@ def ajax_create_contacts_batch(request):
             for submission_id in submission_ids:
                 try:
                     submission = LandingPageSubmission.objects.get(pk=submission_id)
-                    contact = create_contact_from_submission(submission, submission.landing_page)
+                    contact = create_contact_from_submission(submission, submission.landing_page, created_by=request.user)
                     if contact:
                         contacts_created += 1
                 except Exception as e:

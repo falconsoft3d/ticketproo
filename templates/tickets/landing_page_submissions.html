@@ -98,9 +98,6 @@
                                         <th>Empresa</th>
                                         <th>Mensaje</th>
                                         <th>Fecha</th>
-                                        <th>UTM Source</th>
-                                        <th>UTM Medium</th>
-                                        <th>UTM Campaign</th>
                                         <th>IP</th>
                                         <th>Acciones</th>
                                     </tr>
@@ -155,21 +152,6 @@
                                                 </span>
                                                 <br>
                                                 <small class="text-muted">{{ submission.created_at|timesince }} ago</small>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-light text-dark">
-                                                    {{ submission.utm_source|default:"-" }}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-light text-dark">
-                                                    {{ submission.utm_medium|default:"-" }}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-light text-dark">
-                                                    {{ submission.utm_campaign|default:"-" }}
-                                                </span>
                                             </td>
                                             <td>
                                                 <small class="text-muted font-monospace">

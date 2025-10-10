@@ -5087,6 +5087,23 @@ class LandingPage(models.Model):
         """Incrementar contador de envíos"""
         self.submissions_count += 1
         self.save(update_fields=['submissions_count'])
+    
+    @property
+    def total_views(self):
+        """Total de vistas de la landing page"""
+        return self.views_count
+    
+    @property
+    def total_submissions(self):
+        """Total de envíos de la landing page"""
+        return self.submissions_count
+    
+    @property
+    def conversion_rate(self):
+        """Tasa de conversión en porcentaje"""
+        if self.views_count > 0:
+            return round((self.submissions_count / self.views_count) * 100, 1)
+        return 0
 
 
 class LandingPageSubmission(models.Model):

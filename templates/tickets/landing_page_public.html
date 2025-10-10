@@ -591,7 +591,7 @@
                                 <div class="content-section">
                                 
                                     <h1 class="section-title">{{ landing_page.nombre_producto }}</h1>
-                                    <p class="section-subtitle">{{ landing_page.descripcion }}</p>
+                                    <p class="section-subtitle">{{ landing_page.descripcion|linebreaks }}</p>
                                     
                                     {% if landing_page.imagen %}
                                         <div class="text-center">

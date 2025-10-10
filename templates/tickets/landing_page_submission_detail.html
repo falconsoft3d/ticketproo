@@ -1,0 +1,322 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header con navegación -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-0">
+                        <i class="fas fa-eye text-primary me-2"></i>
+                        {{ page_title }}
+                    </h2>
+                    <p class="text-muted mb-0">
+                        Envío desde: <strong>{{ landing_page.nombre_producto }}</strong>
+                    </p>
+                </div>
+                <div>
+                    <a href="{% url 'landing_page_submissions' pk=landing_page.pk %}" 
+                       class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>
+                        Volver a la Lista
+                    </a>
+                    {% if not existing_contact %}
+                    <button onclick="createContact({{ submission.id }})" 
+                            class="btn btn-success ms-2">
+                        <i class="fas fa-user-plus me-1"></i>
+                        Crear Contacto
+                    </button>
+                    {% endif %}
+                    <button onclick="deleteSubmission({{ submission.id }})" 
+                            class="btn btn-danger ms-2">
+                        <i class="fas fa-trash me-1"></i>
+                        Eliminar Envío
+                    </button>
+                </div>
+            </div>
+
+            <!-- Información del envío -->
+            <div class="row">
+                <!-- Datos principales -->
+                <div class="col-lg-8">
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-user me-2"></i>
+                                Información del Contacto
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">Nombre:</label>
+                                        <p class="fw-bold">{{ submission.nombre }}</p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">Email:</label>
+                                        <p class="fw-bold">
+                                            <a href="mailto:{{ submission.email }}" class="text-decoration-none">
+                                                {{ submission.email }}
+                                                <i class="fas fa-external-link-alt ms-1 text-muted"></i>
+                                            </a>
+                                        </p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">Empresa:</label>
+                                        <p class="fw-bold">{{ submission.empresa|default:"No especificada" }}</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">Apellido:</label>
+                                        <p class="fw-bold">{{ submission.apellido }}</p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">Teléfono:</label>
+                                        <p class="fw-bold">
+                                            {% if submission.telefono %}
+                                                <a href="tel:{{ submission.telefono }}" class="text-decoration-none">
+                                                    {{ submission.telefono }}
+                                                    <i class="fas fa-phone ms-1 text-muted"></i>
+                                                </a>
+                                            {% else %}
+                                                No especificado
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% if submission.mensaje %}
+                            <div class="mt-3">
+                                <label class="form-label text-muted">Mensaje:</label>
+                                <div class="bg-light p-3 rounded">
+                                    <p class="mb-0">{{ submission.mensaje|linebreaks }}</p>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Información técnica -->
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-chart-line me-2"></i>
+                                Información de Marketing
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">Fuente UTM:</label>
+                                        <p class="fw-bold">{{ submission.utm_source|default:"No disponible" }}</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">Medio UTM:</label>
+                                        <p class="fw-bold">{{ submission.utm_medium|default:"No disponible" }}</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">Campaña UTM:</label>
+                                        <p class="fw-bold">{{ submission.utm_campaign|default:"No disponible" }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">IP Address:</label>
+                                        <p class="fw-bold">{{ submission.ip_address|default:"No disponible" }}</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">User Agent:</label>
+                                        <p class="fw-bold text-truncate" title="{{ submission.user_agent }}">
+                                            {{ submission.user_agent|default:"No disponible" }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panel lateral -->
+                <div class="col-lg-4">
+                    <!-- Estado del contacto -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Estado del Contacto
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if existing_contact %}
+                                <div class="alert alert-success">
+                                    <i class="fas fa-check-circle me-2"></i>
+                                    <strong>Contacto ya existe</strong>
+                                    <p class="mb-2 mt-2">Este envío ya fue convertido en contacto.</p>
+                                    <a href="{% url 'contact_detail' pk=existing_contact.id %}" class="btn btn-outline-success btn-sm">
+                                        <i class="fas fa-user me-1"></i>
+                                        Ver Contacto
+                                    </a>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <strong>Pendiente de conversión</strong>
+                                    <p class="mb-2 mt-2">Este envío aún no ha sido convertido en contacto.</p>
+                                    <button onclick="createContact({{ submission.id }})" 
+                                            class="btn btn-warning btn-sm">
+                                        <i class="fas fa-user-plus me-1"></i>
+                                        Crear Contacto Ahora
+                                    </button>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Información del envío -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-clock me-2"></i>
+                                Información del Envío
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">ID del Envío:</label>
+                                <p class="fw-bold">#{{ submission.id }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Fecha de Envío:</label>
+                                <p class="fw-bold">{{ submission.created_at|date:"d/m/Y H:i" }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Landing Page:</label>
+                                <p class="fw-bold">
+                                    <a href="{% url 'landing_page_detail' pk=landing_page.pk %}" 
+                                       class="text-decoration-none">
+                                        {{ landing_page.nombre_producto }}
+                                        <i class="fas fa-external-link-alt ms-1 text-muted"></i>
+                                    </a>
+                                </p>
+                            </div>
+                            <div class="mb-0">
+                                <label class="form-label text-muted">URL de Origen:</label>
+                                <p class="fw-bold">
+                                    <a href="{% url 'landing_page_public' slug=landing_page.slug %}" 
+                                       target="_blank" 
+                                       class="text-decoration-none">
+                                        Ver Landing Page
+                                        <i class="fas fa-external-link-alt ms-1 text-muted"></i>
+                                    </a>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% csrf_token %}
+<script>
+// Función para crear contacto desde el detalle
+function createContact(submissionId) {
+    if (confirm('¿Estás seguro de que quieres crear un contacto con esta información?')) {
+        // Mostrar loading
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Creando...';
+        button.disabled = true;
+        
+        // Hacer petición AJAX para crear contacto
+        fetch(`/ajax/landing-pages/submissions/${submissionId}/create-contact/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ Contacto creado exitosamente');
+                // Redirigir a la página de contactos si se proporcionó el ID del contacto
+                if (data.contact_id) {
+                    window.location.href = `/contacts/${data.contact_id}/`;
+                } else {
+                    // Si no hay ID específico, ir a la lista de contactos
+                    window.location.href = '/contacts/';
+                }
+            } else {
+                alert('❌ Error: ' + (data.error || 'No se pudo crear el contacto'));
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('❌ Error de conexión. Inténtalo de nuevo.');
+            button.innerHTML = originalText;
+            button.disabled = false;
+        });
+    }
+}
+
+// Función para eliminar envío
+function deleteSubmission(submissionId) {
+    if (confirm('⚠️ ¿Estás seguro de que quieres eliminar este envío?\n\nEsta acción no se puede deshacer.')) {
+        // Mostrar loading
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Eliminando...';
+        button.disabled = true;
+        
+        // Hacer petición AJAX para eliminar
+        fetch(`/ajax/landing-pages/submissions/${submissionId}/delete/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ Envío eliminado exitosamente');
+                // Redirigir a la lista de envíos
+                window.location.href = data.redirect_url || '/landing-pages/{{ landing_page.pk }}/submissions/';
+            } else {
+                alert('❌ Error: ' + (data.error || 'No se pudo eliminar el envío'));
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('❌ Error de conexión. Inténtalo de nuevo.');
+            button.innerHTML = originalText;
+            button.disabled = false;
+        });
+    }
+}
+</script>
+{% endblock %}
