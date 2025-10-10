@@ -10840,6 +10840,15 @@ def landing_page_public(request, slug):
                 logger = logging.getLogger(__name__)
                 logger.error(f"Error enviando notificación de landing page: {str(e)}")
             
+            # Enviar notificación por Telegram si está configurada
+            try:
+                from .utils import send_telegram_notification
+                send_telegram_notification(landing_page, submission)
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error enviando notificación de Telegram: {str(e)}")
+            
             # Redirigir a página de gracias
             return render(request, 'tickets/landing_page_thanks.html', {
                 'landing_page': landing_page,
@@ -10857,58 +10866,52 @@ def landing_page_public(request, slug):
 
 
 def create_contact_from_submission(submission, landing_page):
-    """Crear un contacto web desde un envío de landing page"""
-    from .models import ContactoWeb
+    """Crear un contacto desde un envío de landing page"""
+    from .models import Contact
     
     # Verificar si ya existe un contacto con el mismo email
-    existing_contact = ContactoWeb.objects.filter(
+    existing_contact = Contact.objects.filter(
         email=submission.email
     ).first()
     
+    # Preparar notas con información del landing page y mensaje del usuario
+    notas_base = f"Contacto generado desde landing page: {landing_page.nombre_producto}\n\n"
+    
+    # Agregar mensaje del usuario si existe
+    if hasattr(submission, 'mensaje') and submission.mensaje:
+        notas_base += f"Mensaje del cliente:\n{submission.mensaje}\n\n"
+    
+    # Agregar información de seguimiento
+    notas_base += f"Datos de seguimiento:\n" \
+                  f"- UTM Source: {submission.utm_source or 'N/A'}\n" \
+                  f"- UTM Medium: {submission.utm_medium or 'N/A'}\n" \
+                  f"- UTM Campaign: {submission.utm_campaign or 'N/A'}\n" \
+                  f"- IP Address: {submission.ip_address or 'N/A'}\n" \
+                  f"- Fecha de envío: {submission.created_at.strftime('%d/%m/%Y %H:%M')}"
+    
     if existing_contact:
         # Actualizar el contacto existente con nueva información
-        existing_contact.nombre = f"{submission.nombre} {submission.apellido}".strip()
+        existing_contact.name = f"{submission.nombre} {submission.apellido}".strip()
         if submission.telefono:
-            existing_contact.telefono = submission.telefono
+            existing_contact.phone = submission.telefono
         if submission.empresa:
-            existing_contact.empresa = submission.empresa
-        existing_contact.asunto = f"Interés en {landing_page.nombre_producto}"
-        existing_contact.mensaje = f"Contacto generado desde landing page: {landing_page.nombre_producto}\n\n" \
-                                 f"UTM Source: {submission.utm_source or 'N/A'}\n" \
-                                 f"UTM Medium: {submission.utm_medium or 'N/A'}\n" \
-                                 f"UTM Campaign: {submission.utm_campaign or 'N/A'}\n" \
-                                 f"IP: {submission.ip_address or 'N/A'}\n" \
-                                 f"Fecha: {submission.created_at.strftime('%d/%m/%Y %H:%M')}"
-        existing_contact.leido = False  # Marcar como no leído para destacar la actualización
-        existing_contact.ip_address = submission.ip_address
-        existing_contact.user_agent = submission.user_agent
+            existing_contact.company = submission.empresa
+        existing_contact.source = f"Landing Page: {landing_page.nombre_producto}"
+        existing_contact.notes = notas_base
+        existing_contact.status = 'positive'  # Nuevo lead es positivo
         existing_contact.save()
         
         return existing_contact
     else:
         # Crear nuevo contacto
-        contact = ContactoWeb.objects.create(
-            nombre=f"{submission.nombre} {submission.apellido}".strip(),
+        contact = Contact.objects.create(
+            name=f"{submission.nombre} {submission.apellido}".strip(),
             email=submission.email,
-            telefono=submission.telefono or '',
-            empresa=submission.empresa or '',
-            asunto=f"Interés en {landing_page.nombre_producto}",
-            mensaje=f"Contacto generado desde landing page: {landing_page.nombre_producto}\n\n" \
-                   f"Información del lead:\n" \
-                   f"- Nombre: {submission.nombre} {submission.apellido}\n" \
-                   f"- Email: {submission.email}\n" \
-                   f"- Teléfono: {submission.telefono or 'No proporcionado'}\n" \
-                   f"- Empresa: {submission.empresa or 'No proporcionada'}\n\n" \
-                   f"Datos de seguimiento:\n" \
-                   f"- UTM Source: {submission.utm_source or 'N/A'}\n" \
-                   f"- UTM Medium: {submission.utm_medium or 'N/A'}\n" \
-                   f"- UTM Campaign: {submission.utm_campaign or 'N/A'}\n" \
-                   f"- IP Address: {submission.ip_address or 'N/A'}\n" \
-                   f"- Fecha de envío: {submission.created_at.strftime('%d/%m/%Y %H:%M')}",
-            leido=False,
-            respondido=False,
-            ip_address=submission.ip_address,
-            user_agent=submission.user_agent
+            phone=submission.telefono or '',
+            company=submission.empresa or '',
+            source=f"Landing Page: {landing_page.nombre_producto}",
+            notes=notas_base,
+            status='positive'  # Nuevo lead es positivo por defecto
         )
         
         return contact
@@ -10922,10 +10925,10 @@ def landing_page_submissions(request, pk):
     submissions = landing_page.submissions.all().order_by('-created_at')
     
     # Agregar información de contactos existentes
-    from .models import ContactoWeb
+    from .models import Contact
     for submission in submissions:
         # Buscar contacto existente por email
-        existing_contact = ContactoWeb.objects.filter(
+        existing_contact = Contact.objects.filter(
             email=submission.email
         ).first()
         submission.existing_contact = existing_contact
@@ -10950,7 +10953,7 @@ def create_contact_from_submission_view(request, submission_id):
     if request.method == 'POST':
         try:
             contact = create_contact_from_submission(submission, submission.landing_page)
-            messages.success(request, f'Contacto creado exitosamente para {contact.nombre}')
+            messages.success(request, f'Contacto creado exitosamente para {contact.name}')
             
             # Enviar notificación
             try:
@@ -10969,24 +10972,25 @@ def create_contact_from_submission_view(request, submission_id):
 @user_passes_test(is_agent_or_superuser, login_url='/')
 def landing_page_contacts(request):
     """Vista para ver todos los contactos creados desde landing pages"""
-    from .models import ContactoWeb
+    from .models import Contact
     
-    # Filtrar contactos que contienen "landing page" en el mensaje
-    contacts = ContactoWeb.objects.filter(
-        mensaje__icontains='landing page'
-    ).order_by('-fecha_creacion')
+    # Filtrar contactos que contienen "landing page" en la fuente o notas
+    contacts = Contact.objects.filter(
+        models.Q(source__icontains='landing page') |
+        models.Q(notes__icontains='landing page')
+    ).order_by('-created_at')
     
     # Estadísticas
     total_contacts = contacts.count()
-    unread_contacts = contacts.filter(leido=False).count()
-    answered_contacts = contacts.filter(respondido=True).count()
+    positive_contacts = contacts.filter(status='positive').count()
+    negative_contacts = contacts.filter(status='negative').count()
     
     context = {
         'page_title': 'Contactos desde Landing Pages',
         'contacts': contacts,
         'total_contacts': total_contacts,
-        'unread_contacts': unread_contacts,
-        'answered_contacts': answered_contacts,
+        'positive_contacts': positive_contacts,
+        'negative_contacts': negative_contacts,
     }
     
     return render(request, 'tickets/landing_page_contacts.html', context)
@@ -11001,16 +11005,6 @@ def ajax_create_contact_from_submission(request, submission_id):
             from .models import LandingPageSubmission
             submission = get_object_or_404(LandingPageSubmission, pk=submission_id)
             
-            # Verificar si ya existe un contacto para este email
-            from .models import ContactoWeb
-            existing_contact = ContactoWeb.objects.filter(email=submission.email).first()
-            
-            if existing_contact:
-                return JsonResponse({
-                    'success': False,
-                    'message': f'Ya existe un contacto con el email {submission.email}'
-                })
-            
             contact = create_contact_from_submission(submission, submission.landing_page)
             
             if not contact:
@@ -11019,20 +11013,35 @@ def ajax_create_contact_from_submission(request, submission_id):
                     'message': 'No se pudo crear el contacto'
                 })
             
+            # Verificar si es un contacto nuevo o actualizado
+            from .models import ContactoWeb
+            existing_contact_count = ContactoWeb.objects.filter(email=submission.email).count()
+            
+            if existing_contact_count > 1:
+                message = f'Contacto actualizado para {contact.nombre} ({contact.email})'
+            else:
+                message = f'Contacto creado exitosamente para {contact.nombre}'
+            
+            # Log para debugging
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"Contacto procesado: {message}")
+            
             # Enviar notificación (opcional)
             try:
                 from .utils import send_contact_creation_notification
                 send_contact_creation_notification(contact, submission.landing_page)
             except Exception as e:
-                import logging
-                logger = logging.getLogger(__name__)
                 logger.warning(f"Error enviando notificación de contacto: {str(e)}")
             
-            return JsonResponse({
+            response_data = {
                 'success': True,
-                'message': f'Contacto creado exitosamente para {contact.nombre}',
+                'message': message,
                 'contact_id': contact.id
-            })
+            }
+            
+            logger.info(f"Enviando respuesta: {response_data}")
+            return JsonResponse(response_data)
             
         except Exception as e:
             import logging

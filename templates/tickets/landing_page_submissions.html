@@ -96,6 +96,7 @@
                                         <th>Email</th>
                                         <th>Teléfono</th>
                                         <th>Empresa</th>
+                                        <th>Mensaje</th>
                                         <th>Fecha</th>
                                         <th>UTM Source</th>
                                         <th>UTM Medium</th>
@@ -131,6 +132,24 @@
                                                 {{ submission.empresa|default:"-" }}
                                             </td>
                                             <td>
+                                                {% if submission.mensaje %}
+                                                    <div class="mensaje-preview" style="max-width: 200px;">
+                                                        <span title="{{ submission.mensaje }}">
+                                                            {{ submission.mensaje|truncatechars:50 }}
+                                                        </span>
+                                                        {% if submission.mensaje|length > 50 %}
+                                                            <small class="text-muted d-block">
+                                                                <i class="fas fa-eye" style="cursor: pointer;" 
+                                                                   onclick="showFullMessage('{{ submission.mensaje|escapejs }}')"></i>
+                                                                Ver completo
+                                                            </small>
+                                                        {% endif %}
+                                                    </div>
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
                                                 <span title="{{ submission.created_at }}">
                                                     {{ submission.created_at|date:"d/m/Y H:i" }}
                                                 </span>
@@ -159,13 +178,13 @@
                                             </td>
                                             <td>
                                                 <div class="btn-group btn-group-sm" role="group">
-                                                    <button class="btn btn-outline-primary" onclick="createContact('{{ submission.id }}')" title="Crear Contacto">
+                                                    <button class="btn btn-outline-primary create-contact-btn" data-submission-id="{{ submission.id }}" title="Crear Contacto">
                                                         <i class="fas fa-user-plus"></i>
                                                     </button>
                                                     <button class="btn btn-outline-success" onclick="sendEmail('{{ submission.email }}')" title="Enviar Email">
                                                         <i class="fas fa-envelope"></i>
                                                     </button>
-                                                    <button class="btn btn-outline-info" onclick="viewDetails('{{ submission.id }}')" title="Ver Detalles">
+                                                    <button class="btn btn-outline-info" onclick="viewDetails({{ submission.id }})" title="Ver Detalles">
                                                         <i class="fas fa-eye"></i>
                                                     </button>
                                                 </div>
@@ -309,45 +328,91 @@ function exportToCSV() {
     document.body.removeChild(link);
 }
 
-function createContact(submissionId) {
-    if (!confirm('¿Crear un contacto a partir de este envío?')) return;
+// Script de debugging y event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== DEBUG INFO ===');
+    console.log('Página cargada correctamente');
+    console.log('CSRF Token disponible:', document.querySelector('[name=csrfmiddlewaretoken]') ? 'SÍ' : 'NO');
     
-    fetch(`/ajax/landing-pages/submissions/${submissionId}/create-contact/`, {
+    // Verificar que los botones existan
+    const buttons = document.querySelectorAll('.create-contact-btn');
+    console.log('Botones de crear contacto encontrados:', buttons.length);
+    
+    // Agregar event listeners a todos los botones
+    buttons.forEach(function(button) {
+        button.addEventListener('click', function() {
+            const submissionId = this.getAttribute('data-submission-id');
+            console.log('Click en botón, submission ID:', submissionId);
+            createContactHandler(submissionId);
+        });
+    });
+    
+    console.log('Event listeners agregados exitosamente');
+    console.log('==================');
+});
+
+// Función handler para crear contacto
+function createContactHandler(submissionId) {
+    console.log('Función createContactHandler ejecutada con ID:', submissionId);
+    
+    // Usar confirm nativo para simplificar
+    if (!confirm('¿Crear contacto desde este envío?')) {
+        console.log('Usuario canceló la operación');
+        return;
+    }
+    
+    console.log('Usuario confirmó, enviando petición...');
+    
+    // Obtener CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    console.log('CSRF Token:', csrfToken);
+    
+    const url = `/ajax/landing-pages/submissions/${submissionId}/create-contact/`;
+    console.log('URL de destino:', url);
+    
+    // Usar fetch directamente
+    fetch(url, {
         method: 'POST',
         headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'X-CSRFToken': csrfToken,
             'Content-Type': 'application/json',
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Respuesta recibida:', response.status, response.statusText);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
+        console.log('Datos de respuesta:', data);
+        
         if (data.success) {
-            // Mostrar mensaje de éxito
-            const Toast = Swal.mixin({
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 3000,
-                timerProgressBar: true,
-            });
+            alert('Éxito: ' + data.message);
             
-            Toast.fire({
-                icon: 'success',
-                title: data.message
-            });
+            // Actualizar el botón
+            const button = document.querySelector(`[data-submission-id="${submissionId}"]`);
+            if (button) {
+                button.innerHTML = '<i class="fas fa-check text-success"></i> Procesado';
+                button.disabled = true;
+                button.classList.remove('btn-outline-primary');
+                button.classList.add('btn-success');
+            }
             
-            // Opcional: actualizar el botón para indicar que ya se creó el contacto
-            const button = event.target;
-            button.innerHTML = '<i class="fas fa-check text-success"></i>';
-            button.disabled = true;
+            // Recargar después de 1 segundo
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
         } else {
-            alert(`Error: ${data.message}`);
+            alert('Error: ' + (data.message || 'Error desconocido'));
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert('Error al crear el contacto. Inténtalo de nuevo.');
+        console.error('Error en la petición:', error);
+        alert('Error de conexión: ' + error.message);
     });
+}
 }
 
 function sendEmail(email) {
@@ -383,6 +448,7 @@ function viewDetails(submissionId) {
                                             <tr><td><strong>Email:</strong></td><td>${submission.email}</td></tr>
                                             <tr><td><strong>Teléfono:</strong></td><td>${submission.telefono || 'No proporcionado'}</td></tr>
                                             <tr><td><strong>Empresa:</strong></td><td>${submission.empresa || 'No proporcionada'}</td></tr>
+                                            <tr><td><strong>Mensaje:</strong></td><td><div style="max-height: 100px; overflow-y: auto; white-space: pre-wrap; background: #f8f9fa; padding: 8px; border-radius: 4px;">${submission.mensaje || 'Sin mensaje'}</div></td></tr>
                                         </table>
                                     </div>
                                     <div class="col-md-6">
@@ -513,5 +579,40 @@ function exportSelected() {
     // Similar a exportToCSV pero solo para filas seleccionadas
     exportToCSV(); // Por ahora exporta todo, se puede mejorar
 }
+
+// Función para mostrar el mensaje completo
+function showFullMessage(message) {
+    Swal.fire({
+        title: '<i class="fas fa-comment-alt text-primary"></i> Mensaje Completo',
+        html: `<div style="text-align: left; max-height: 300px; overflow-y: auto; white-space: pre-wrap; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6;">${message}</div>`,
+        width: '600px',
+        showConfirmButton: true,
+        confirmButtonText: '<i class="fas fa-check"></i> Cerrar',
+        confirmButtonColor: '#28a745',
+        customClass: {
+            popup: 'border-0 shadow'
+        }
+    });
+}
+
+// Script de debugging y event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== DEBUG INFO ===');
+    console.log('Página cargada correctamente');
+    console.log('CSRF Token disponible:', document.querySelector('[name=csrfmiddlewaretoken]') ? 'SÍ' : 'NO');
+    
+    // Verificar que los botones existan
+    const buttons = document.querySelectorAll('button[onclick*="createContact"]');
+    console.log('Botones de crear contacto encontrados:', buttons.length);
+    
+    // Probar que las funciones existan
+    console.log('Función createContact existe en window:', typeof window.createContact === 'function');
+    console.log('Función createContact existe globalmente:', typeof createContact === 'function');
+    
+    // Test manual
+    console.log('Para probar manualmente, usa: window.createContact(5)');
+    console.log('==================');
+});
+
 </script>
 {% endblock %}

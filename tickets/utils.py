@@ -215,7 +215,7 @@ def send_contact_creation_notification(contact, landing_page):
         html_message = render_to_string('tickets/email/contact_creation_notification.html', context)
         plain_message = strip_tags(html_message)
         
-        subject = f'Nuevo contacto generado: {contact.nombre} - {landing_page.nombre_producto}'
+        subject = f'Nuevo contacto generado: {contact.name} - {landing_page.nombre_producto}'
         
         # Enviar email
         send_mail(
@@ -233,4 +233,66 @@ def send_contact_creation_notification(contact, landing_page):
         import logging
         logger = logging.getLogger(__name__)
         logger.error(f"Error enviando notificación de creación de contacto: {str(e)}")
+        return False
+
+
+def send_telegram_notification(landing_page, submission):
+    """
+    Envía notificación por Telegram cuando se recibe un nuevo envío de formulario
+    """
+    if not landing_page.telegram_bot_token or not landing_page.telegram_chat_id:
+        return False
+    
+    try:
+        import requests
+        import json
+        
+        # Preparar mensaje
+        mensaje = f"🎯 *Nuevo Lead desde Landing Page*\n\n"
+        mensaje += f"📱 *Producto:* {landing_page.nombre_producto}\n"
+        mensaje += f"👤 *Nombre:* {submission.nombre} {submission.apellido}\n"
+        mensaje += f"📧 *Email:* {submission.email}\n"
+        
+        if submission.telefono:
+            mensaje += f"📞 *Teléfono:* {submission.telefono}\n"
+        
+        if submission.empresa:
+            mensaje += f"🏢 *Empresa:* {submission.empresa}\n"
+            
+        if hasattr(submission, 'mensaje') and submission.mensaje:
+            mensaje += f"💬 *Mensaje:*\n{submission.mensaje}\n"
+        
+        mensaje += f"\n📊 *Información de seguimiento:*\n"
+        if submission.utm_source:
+            mensaje += f"• Source: {submission.utm_source}\n"
+        if submission.utm_medium:
+            mensaje += f"• Medium: {submission.utm_medium}\n"
+        if submission.utm_campaign:
+            mensaje += f"• Campaign: {submission.utm_campaign}\n"
+        
+        mensaje += f"⏰ *Fecha:* {submission.created_at.strftime('%d/%m/%Y %H:%M')}\n"
+        mensaje += f"🌐 *IP:* {submission.ip_address or 'N/A'}"
+        
+        # Enviar mensaje
+        url = f"https://api.telegram.org/bot{landing_page.telegram_bot_token}/sendMessage"
+        data = {
+            'chat_id': landing_page.telegram_chat_id,
+            'text': mensaje,
+            'parse_mode': 'Markdown'
+        }
+        
+        response = requests.post(url, data=data, timeout=10)
+        
+        if response.status_code == 200:
+            return True
+        else:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error enviando mensaje de Telegram: {response.status_code} - {response.text}")
+            return False
+            
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error enviando notificación de Telegram: {str(e)}")
         return False

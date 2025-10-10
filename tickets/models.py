@@ -5021,6 +5021,20 @@ class LandingPage(models.Model):
         help_text='Nombre de la empresa que ejecuta la campaña'
     )
     
+    # Configuración de Telegram
+    telegram_bot_token = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Bot Token de Telegram',
+        help_text='Token del bot de Telegram para enviar notificaciones (ej: 123456789:ABCdefGHIjklMNOpqrsTUVwxyz)'
+    )
+    telegram_chat_id = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Chat ID de Telegram',
+        help_text='ID del chat o canal donde enviar las notificaciones (ej: -1001234567890 o @mi_canal)'
+    )
+    
     # Metadatos
     created_by = models.ForeignKey(
         User,
@@ -5105,6 +5119,11 @@ class LandingPageSubmission(models.Model):
     empresa = models.CharField(
         max_length=200,
         verbose_name='Empresa'
+    )
+    mensaje = models.TextField(
+        blank=True,
+        verbose_name='Mensaje o comentarios',
+        help_text='Cuéntanos más sobre tus necesidades o proyecto'
     )
     
     # Metadatos de seguimiento

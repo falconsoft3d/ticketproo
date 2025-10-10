@@ -306,6 +306,15 @@
             font-size: 1rem;
         }
         
+        .form-floating textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .form-floating textarea + label {
+            padding: 1rem 1.25rem;
+        }
+        
         .trust-indicators {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
@@ -593,32 +602,6 @@
                                             <img src="{{ landing_page.imagen.url }}" alt="{{ landing_page.nombre_producto }}" class="product-image">
                                         </div>
                                     {% endif %}
-                                    
-                                    <ul class="benefits-list">
-                                        <li>Solución profesional y confiable</li>
-                                        <li>Soporte técnico especializado</li>
-                                        <li>Implementación rápida y sencilla</li>
-                                        <li>Garantía de satisfacción total</li>
-                                    </ul>
-                                    
-                                    <div class="trust-indicators">
-                                        <div class="trust-item">
-                                            <i class="fas fa-shield-alt"></i>
-                                            <div>100% Seguro</div>
-                                        </div>
-                                        <div class="trust-item">
-                                            <i class="fas fa-users"></i>
-                                            <div>Confiable</div>
-                                        </div>
-                                        <div class="trust-item">
-                                            <i class="fas fa-rocket"></i>
-                                            <div>Rápido</div>
-                                        </div>
-                                        <div class="trust-item">
-                                            <i class="fas fa-headset"></i>
-                                            <div>Soporte 24/7</div>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
                             
@@ -671,6 +654,12 @@
                                             <div class="form-floating">
                                                 {{ form.empresa }}
                                                 <label for="{{ form.empresa.id_for_label }}">{{ form.empresa.label }}</label>
+                                            </div>
+                                            <div class="invalid-feedback"></div>
+                                            
+                                            <div class="form-floating">
+                                                {{ form.mensaje }}
+                                                <label for="{{ form.mensaje.id_for_label }}">{{ form.mensaje.label }}</label>
                                             </div>
                                             <div class="invalid-feedback"></div>
                                             

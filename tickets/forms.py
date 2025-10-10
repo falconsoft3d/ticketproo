@@ -3595,7 +3595,9 @@ class LandingPageForm(forms.ModelForm):
             'color_secundario',
             'titulo_formulario',
             'subtitulo_formulario',
-            'empresa_campana'
+            'empresa_campana',
+            'telegram_bot_token',
+            'telegram_chat_id'
         ]
         widgets = {
             'nombre_producto': forms.TextInput(attrs={
@@ -3637,6 +3639,14 @@ class LandingPageForm(forms.ModelForm):
             'empresa_campana': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Nombre de la empresa de la campaña'
+            }),
+            'telegram_bot_token': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '123456789:ABCdefGHIjklMNOpqrsTUVwxyz'
+            }),
+            'telegram_chat_id': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '-1001234567890 o @mi_canal'
             })
         }
         labels = {
@@ -3649,13 +3659,17 @@ class LandingPageForm(forms.ModelForm):
             'color_secundario': 'Color Secundario',
             'titulo_formulario': 'Título del Formulario',
             'subtitulo_formulario': 'Subtítulo del Formulario',
-            'empresa_campana': 'Empresa de la Campaña'
+            'empresa_campana': 'Empresa de la Campaña',
+            'telegram_bot_token': 'Bot Token de Telegram',
+            'telegram_chat_id': 'Chat ID de Telegram'
         }
         help_texts = {
             'slug': 'URL única para acceder a la landing page (solo letras, números y guiones)',
             'color_principal': 'Color principal usado en botones y elementos destacados',
             'color_secundario': 'Color de fondo y elementos secundarios',
-            'is_active': 'Si está marcado, la landing page será visible públicamente'
+            'is_active': 'Si está marcado, la landing page será visible públicamente',
+            'telegram_bot_token': 'Token del bot de Telegram para enviar notificaciones. Obtén uno creando un bot con @BotFather',
+            'telegram_chat_id': 'ID del chat o canal donde enviar notificaciones. Puedes usar @userinfobot para obtenerlo'
         }
     
     def clean_slug(self):
@@ -3688,7 +3702,7 @@ class LandingPageSubmissionForm(forms.ModelForm):
     
     class Meta:
         model = LandingPageSubmission
-        fields = ['nombre', 'apellido', 'email', 'telefono', 'empresa']
+        fields = ['nombre', 'apellido', 'email', 'telefono', 'empresa', 'mensaje']
         widgets = {
             'nombre': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -3713,6 +3727,12 @@ class LandingPageSubmissionForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Empresa',
                 'required': True
+            }),
+            'mensaje': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': 'Cuéntanos sobre tu proyecto o necesidades...',
+                'rows': 4,
+                'style': 'resize: vertical;'
             })
         }
         labels = {
@@ -3720,7 +3740,8 @@ class LandingPageSubmissionForm(forms.ModelForm):
             'apellido': 'Apellidos',
             'email': 'Email',
             'telefono': 'Teléfono',
-            'empresa': 'Empresa'
+            'empresa': 'Empresa',
+            'mensaje': 'Mensaje o comentarios'
         }
     
     def clean_email(self):

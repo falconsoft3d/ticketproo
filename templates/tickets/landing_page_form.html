@@ -228,6 +228,65 @@
                                     {% endif %}
                                 </div>
 
+                                <!-- Configuración de Telegram -->
+                                <hr class="my-4">
+                                <h5 class="mb-3">
+                                    <i class="fab fa-telegram-plane text-info"></i> Integración con Telegram
+                                    <small class="text-muted fs-6">Opcional - Recibe notificaciones automáticas</small>
+                                </h5>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.telegram_bot_token.id_for_label }}" class="form-label">
+                                                <i class="fas fa-robot"></i> {{ form.telegram_bot_token.label }}
+                                            </label>
+                                            {{ form.telegram_bot_token }}
+                                            {% if form.telegram_bot_token.errors %}
+                                                <div class="text-danger mt-1">
+                                                    {% for error in form.telegram_bot_token.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                            <small class="text-muted">
+                                                Crea un bot con <a href="https://t.me/BotFather" target="_blank">@BotFather</a> en Telegram
+                                            </small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.telegram_chat_id.id_for_label }}" class="form-label">
+                                                <i class="fas fa-comments"></i> {{ form.telegram_chat_id.label }}
+                                            </label>
+                                            {{ form.telegram_chat_id }}
+                                            {% if form.telegram_chat_id.errors %}
+                                                <div class="text-danger mt-1">
+                                                    {% for error in form.telegram_chat_id.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                            <small class="text-muted">
+                                                Obtén el ID con <a href="https://t.me/userinfobot" target="_blank">@userinfobot</a>
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i>
+                                    <strong>¿Cómo configurar Telegram?</strong>
+                                    <ol class="mb-0 mt-2">
+                                        <li>Habla con <strong>@BotFather</strong> en Telegram</li>
+                                        <li>Usa el comando <code>/newbot</code> para crear un bot</li>
+                                        <li>Copia el token que te dé BotFather</li>
+                                        <li>Habla con <strong>@userinfobot</strong> para obtener tu Chat ID</li>
+                                        <li>Asegúrate de iniciar una conversación con tu bot antes de usar</li>
+                                    </ol>
+                                </div>
+
                                 <div class="d-flex gap-2">
                                     <button type="submit" class="btn btn-primary">
                                         <i class="fas fa-save"></i> 
@@ -263,7 +322,16 @@
                                     <li>Incluye una imagen de alta calidad</li>
                                     <li>Mantén el formulario simple</li>
                                     <li>Usa colores que reflejen tu marca</li>
+                                    <li>Configura Telegram para notificaciones instantáneas</li>
                                 </ul>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <h6><i class="fab fa-telegram-plane text-info"></i> Notificaciones Telegram</h6>
+                                <p class="small text-muted">
+                                    Recibe un mensaje inmediato en Telegram cada vez que alguien complete el formulario. 
+                                    Incluye toda la información del lead y datos de seguimiento UTM.
+                                </p>
                             </div>
                             
                             {% if landing_page %}
