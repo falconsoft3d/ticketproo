@@ -12838,3 +12838,351 @@ def voice_command_interface_view(request):
     }
     
     return render(request, 'tickets/voice_command_interface.html', context)
+
+
+# ====================================
+# VISTAS DE ANALYTICS Y REPORTES
+# ====================================
+
+@login_required
+@require_http_methods(["GET"])
+def page_visits_analytics_view(request):
+    """Vista principal de analytics de visitas a páginas públicas"""
+    from django.db.models import Count, Q
+    from django.utils import timezone
+    from datetime import datetime, timedelta
+    from .models import PageVisit
+    
+    # Filtros de fecha
+    end_date = timezone.now().date()
+    start_date = end_date - timedelta(days=30)  # Por defecto últimos 30 días
+    
+    # Obtener fechas desde parámetros
+    fecha_desde = request.GET.get('fecha_desde')
+    fecha_hasta = request.GET.get('fecha_hasta')
+    
+    if fecha_desde:
+        try:
+            start_date = datetime.strptime(fecha_desde, '%Y-%m-%d').date()
+        except ValueError:
+            pass
+    
+    if fecha_hasta:
+        try:
+            end_date = datetime.strptime(fecha_hasta, '%Y-%m-%d').date()
+        except ValueError:
+            pass
+    
+    # Filtros adicionales
+    page_type_filter = request.GET.get('page_type')
+    country_filter = request.GET.get('country')
+    exclude_bots = request.GET.get('exclude_bots', 'true') == 'true'
+    
+    # Query base
+    visits = PageVisit.objects.filter(
+        visited_at__date__gte=start_date,
+        visited_at__date__lte=end_date
+    )
+    
+    if page_type_filter:
+        visits = visits.filter(page_type=page_type_filter)
+    
+    if country_filter:
+        visits = visits.filter(country_code=country_filter)
+    
+    if exclude_bots:
+        visits = visits.filter(is_bot=False)
+    
+    # Estadísticas generales
+    total_visits = visits.count()
+    unique_ips = visits.values('ip_address').distinct().count()
+    unique_countries = visits.exclude(country_code='').values('country_code').distinct().count()
+    
+    # Visitas por página
+    visits_by_page = visits.values('page_type').annotate(
+        count=Count('id')
+    ).order_by('-count')
+    
+    # Visitas por día (últimos 30 días)
+    visits_by_day = []
+    current_date = start_date
+    while current_date <= end_date:
+        day_visits = visits.filter(visited_at__date=current_date).count()
+        visits_by_day.append({
+            'date': current_date.strftime('%Y-%m-%d'),
+            'visits': day_visits
+        })
+        current_date += timedelta(days=1)
+    
+    # Top países
+    top_countries = visits.exclude(country='').values('country', 'country_code').annotate(
+        count=Count('id')
+    ).order_by('-count')[:10]
+    
+    # Top navegadores
+    top_browsers = visits.exclude(browser='').values('browser').annotate(
+        count=Count('id')
+    ).order_by('-count')[:10]
+    
+    # Dispositivos móviles vs desktop
+    mobile_visits = visits.filter(is_mobile=True).count()
+    desktop_visits = visits.filter(is_mobile=False).count()
+    
+    # Asegurar que hay al menos un dispositivo para el gráfico
+    if mobile_visits == 0 and desktop_visits == 0:
+        desktop_visits = 0
+        mobile_visits = 0
+    
+    # Páginas más visitadas (detalle)
+    top_pages = visits.values('page_url', 'page_title', 'page_type').annotate(
+        count=Count('id')
+    ).order_by('-count')[:20]
+    
+    # Landing pages específicas
+    landing_pages_stats = visits.filter(page_type='landing').values('page_url', 'page_title').annotate(
+        count=Count('id')
+    ).order_by('-count')[:10]
+    
+    # Estadísticas específicas de landing pages
+    landing_total_visits = visits.filter(page_type='landing').count()
+    landing_unique_visitors = visits.filter(page_type='landing').values('ip_address').distinct().count()
+    
+    # Conversión de landing pages (si hay parámetros UTM)
+    landing_utm_sources = visits.filter(
+        page_type='landing',
+        utm_source__isnull=False
+    ).exclude(utm_source='').values('utm_source').annotate(
+        count=Count('id')
+    ).order_by('-count')[:5]
+    
+    # Fuentes de tráfico (referrers)
+    referrers = visits.exclude(referrer='').values('referrer').annotate(
+        count=Count('id')
+    ).order_by('-count')[:10]
+    
+    # Visitas recientes
+    recent_visits = visits.order_by('-visited_at')[:50]
+    
+    # Para filtros
+    page_types = PageVisit.PAGE_CHOICES
+    countries = visits.exclude(country_code='').values('country_code', 'country').distinct().order_by('country')
+    
+    context = {
+        'page_title': 'Analytics de Páginas Públicas',
+        'start_date': start_date,
+        'end_date': end_date,
+        'total_visits': total_visits,
+        'unique_ips': unique_ips,
+        'unique_countries': unique_countries,
+        'visits_by_page': visits_by_page,
+        'visits_by_day': visits_by_day,
+        'top_countries': top_countries,
+        'top_browsers': top_browsers,
+        'mobile_visits': mobile_visits,
+        'desktop_visits': desktop_visits,
+        'top_pages': top_pages,
+        'landing_pages_stats': landing_pages_stats,
+        'landing_total_visits': landing_total_visits,
+        'landing_unique_visitors': landing_unique_visitors,
+        'landing_utm_sources': landing_utm_sources,
+        'referrers': referrers,
+        'recent_visits': recent_visits,
+        'page_types': page_types,
+        'countries': countries,
+        # Filtros aplicados
+        'page_type_filter': page_type_filter,
+        'country_filter': country_filter,
+        'exclude_bots': exclude_bots,
+    }
+    
+    return render(request, 'tickets/page_visits_analytics.html', context)
+
+
+@login_required
+@require_http_methods(["GET"])
+def page_visits_detail_view(request):
+    """Vista detallada de visitas a páginas con filtros avanzados"""
+    from django.core.paginator import Paginator
+    from django.db.models import Q
+    from .models import PageVisit
+    
+    # Query base
+    visits = PageVisit.objects.all().order_by('-visited_at')
+    
+    # Filtros
+    search = request.GET.get('search')
+    page_type = request.GET.get('page_type')
+    country = request.GET.get('country')
+    is_mobile = request.GET.get('is_mobile')
+    exclude_bots = request.GET.get('exclude_bots', 'true') == 'true'
+    fecha_desde = request.GET.get('fecha_desde')
+    fecha_hasta = request.GET.get('fecha_hasta')
+    
+    if search:
+        visits = visits.filter(
+            Q(page_url__icontains=search) |
+            Q(page_title__icontains=search) |
+            Q(ip_address__icontains=search) |
+            Q(country__icontains=search) |
+            Q(browser__icontains=search)
+        )
+    
+    if page_type:
+        visits = visits.filter(page_type=page_type)
+    
+    if country:
+        visits = visits.filter(country_code=country)
+    
+    if is_mobile:
+        visits = visits.filter(is_mobile=is_mobile == 'true')
+    
+    if exclude_bots:
+        visits = visits.filter(is_bot=False)
+    
+    if fecha_desde:
+        try:
+            from datetime import datetime
+            start_date = datetime.strptime(fecha_desde, '%Y-%m-%d').date()
+            visits = visits.filter(visited_at__date__gte=start_date)
+        except ValueError:
+            pass
+    
+    if fecha_hasta:
+        try:
+            from datetime import datetime
+            end_date = datetime.strptime(fecha_hasta, '%Y-%m-%d').date()
+            visits = visits.filter(visited_at__date__lte=end_date)
+        except ValueError:
+            pass
+    
+    # Paginación
+    paginator = Paginator(visits, 50)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Para filtros
+    page_types = PageVisit.PAGE_CHOICES
+    countries = PageVisit.objects.exclude(country_code='').values('country_code', 'country').distinct().order_by('country')
+    
+    context = {
+        'page_title': 'Detalle de Visitas',
+        'page_obj': page_obj,
+        'page_types': page_types,
+        'countries': countries,
+        # Filtros aplicados
+        'search': search,
+        'page_type': page_type,
+        'country': country,
+        'is_mobile': is_mobile,
+        'exclude_bots': exclude_bots,
+        'fecha_desde': fecha_desde,
+        'fecha_hasta': fecha_hasta,
+    }
+    
+    return render(request, 'tickets/page_visits_detail.html', context)
+
+
+@login_required
+@require_http_methods(["GET"])
+def page_visits_export_view(request):
+    """Vista para exportar datos de visitas en CSV"""
+    import csv
+    from django.http import HttpResponse
+    from django.utils import timezone
+    from .models import PageVisit
+    
+    # Aplicar los mismos filtros que en la vista principal
+    visits = PageVisit.objects.all().order_by('-visited_at')
+    
+    # Filtros (copiar lógica de page_visits_detail_view)
+    search = request.GET.get('search')
+    page_type = request.GET.get('page_type')
+    country = request.GET.get('country')
+    exclude_bots = request.GET.get('exclude_bots', 'true') == 'true'
+    fecha_desde = request.GET.get('fecha_desde')
+    fecha_hasta = request.GET.get('fecha_hasta')
+    
+    if search:
+        from django.db.models import Q
+        visits = visits.filter(
+            Q(page_url__icontains=search) |
+            Q(page_title__icontains=search) |
+            Q(ip_address__icontains=search) |
+            Q(country__icontains=search) |
+            Q(browser__icontains=search)
+        )
+    
+    if page_type:
+        visits = visits.filter(page_type=page_type)
+    
+    if country:
+        visits = visits.filter(country_code=country)
+    
+    if exclude_bots:
+        visits = visits.filter(is_bot=False)
+    
+    if fecha_desde:
+        try:
+            from datetime import datetime
+            start_date = datetime.strptime(fecha_desde, '%Y-%m-%d').date()
+            visits = visits.filter(visited_at__date__gte=start_date)
+        except ValueError:
+            pass
+    
+    if fecha_hasta:
+        try:
+            from datetime import datetime
+            end_date = datetime.strptime(fecha_hasta, '%Y-%m-%d').date()
+            visits = visits.filter(visited_at__date__lte=end_date)
+        except ValueError:
+            pass
+    
+    # Limitar a 10000 registros para evitar problemas de memoria
+    visits = visits[:10000]
+    
+    # Crear respuesta CSV
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="visitas_paginas_{timezone.now().strftime("%Y%m%d_%H%M%S")}.csv"'
+    
+    writer = csv.writer(response)
+    
+    # Encabezados
+    writer.writerow([
+        'Fecha/Hora',
+        'Tipo de Página',
+        'URL',
+        'Título',
+        'IP',
+        'País',
+        'Ciudad',
+        'Navegador',
+        'Sistema Operativo',
+        'Es Móvil',
+        'Es Bot',
+        'Referrer',
+        'UTM Source',
+        'UTM Medium',
+        'UTM Campaign'
+    ])
+    
+    # Datos
+    for visit in visits:
+        writer.writerow([
+            visit.visited_at.strftime('%Y-%m-%d %H:%M:%S'),
+            visit.get_page_type_display(),
+            visit.page_url,
+            visit.page_title,
+            visit.ip_address,
+            visit.country,
+            visit.city,
+            visit.browser_info,
+            visit.operating_system,
+            'Sí' if visit.is_mobile else 'No',
+            'Sí' if visit.is_bot else 'No',
+            visit.referrer,
+            visit.utm_source,
+            visit.utm_medium,
+            visit.utm_campaign
+        ])
+    
+    return response

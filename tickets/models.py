@@ -5993,3 +5993,172 @@ class RecordingPlayback(models.Model):
     def __str__(self):
         user = self.played_by.username if self.played_by else 'Anónimo'
         return f"{self.recording.title} - {user} - {self.played_at}"
+
+
+class PageVisit(models.Model):
+    """Modelo para registrar visitas a páginas públicas"""
+    
+    PAGE_CHOICES = [
+        ('home', 'Página de Inicio'),
+        ('blog', 'Blog'),
+        ('blog_post', 'Artículo de Blog'),
+        ('conceptos', 'Conceptos Públicos'),
+        ('contact', 'Contacto'),
+        ('landing', 'Landing Page'),
+        ('course_public', 'Curso Público'),
+        ('ticket_public', 'Ticket Público'),
+        ('other', 'Otra'),
+    ]
+    
+    # Información de la página visitada
+    page_type = models.CharField(
+        max_length=50,
+        choices=PAGE_CHOICES,
+        verbose_name='Tipo de Página'
+    )
+    page_url = models.URLField(
+        max_length=500,
+        verbose_name='URL Visitada'
+    )
+    page_title = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Título de la Página'
+    )
+    
+    # Información del visitante
+    ip_address = models.GenericIPAddressField(
+        verbose_name='Dirección IP'
+    )
+    country = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='País'
+    )
+    country_code = models.CharField(
+        max_length=2,
+        blank=True,
+        verbose_name='Código de País'
+    )
+    city = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Ciudad'
+    )
+    region = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Región/Estado'
+    )
+    
+    # Información técnica
+    user_agent = models.TextField(
+        verbose_name='User Agent'
+    )
+    browser = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Navegador'
+    )
+    browser_version = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name='Versión del Navegador'
+    )
+    operating_system = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Sistema Operativo'
+    )
+    device_type = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name='Tipo de Dispositivo'
+    )
+    is_mobile = models.BooleanField(
+        default=False,
+        verbose_name='Es Móvil'
+    )
+    is_bot = models.BooleanField(
+        default=False,
+        verbose_name='Es Bot'
+    )
+    
+    # Información de referencia
+    referrer = models.URLField(
+        max_length=500,
+        blank=True,
+        verbose_name='Página de Referencia'
+    )
+    utm_source = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='UTM Source'
+    )
+    utm_medium = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='UTM Medium'
+    )
+    utm_campaign = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='UTM Campaign'
+    )
+    
+    # Información de sesión
+    session_id = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='ID de Sesión'
+    )
+    duration_seconds = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name='Duración en Segundos'
+    )
+    
+    # Metadatos
+    visited_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de Visita'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de Creación'
+    )
+    
+    class Meta:
+        ordering = ['-visited_at']
+        verbose_name = 'Visita a Página'
+        verbose_name_plural = 'Visitas a Páginas'
+        indexes = [
+            models.Index(fields=['page_type', 'visited_at']),
+            models.Index(fields=['ip_address', 'visited_at']),
+            models.Index(fields=['country_code']),
+            models.Index(fields=['is_bot']),
+        ]
+    
+    def __str__(self):
+        return f"{self.get_page_type_display()} - {self.ip_address} - {self.visited_at}"
+    
+    @property
+    def location(self):
+        """Devuelve una representación legible de la ubicación"""
+        parts = []
+        if self.city:
+            parts.append(self.city)
+        if self.region:
+            parts.append(self.region)
+        if self.country:
+            parts.append(self.country)
+        return ', '.join(parts) if parts else 'Desconocida'
+    
+    @property
+    def browser_info(self):
+        """Devuelve información del navegador formateada"""
+        if self.browser and self.browser_version:
+            return f"{self.browser} {self.browser_version}"
+        elif self.browser:
+            return self.browser
+        return 'Desconocido'

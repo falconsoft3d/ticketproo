@@ -49,6 +49,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',  # Para archivos estáticos en producción
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'tickets.middleware.PageVisitTrackingMiddleware',  # Tracking de visitas a páginas públicas
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',

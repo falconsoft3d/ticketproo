@@ -515,6 +515,22 @@
                                     <i class="bi bi-calendar-day"></i> Parte Diario
                                 </a>
                             </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <h6 class="dropdown-header">Analytics Web</h6>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'page_visits_analytics' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'page_visits_analytics' %}">
+                                    <i class="fas fa-chart-bar"></i> Analytics de Páginas
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'page_visits_detail' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'page_visits_detail' %}">
+                                    <i class="fas fa-list"></i> Detalle de Visitas
+                                </a>
+                            </li>
                         </ul>
                     </li>
                     {% endif %}

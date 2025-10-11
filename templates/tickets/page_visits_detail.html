@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .filter-card {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .table-responsive {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+    
+    .badge-page-type {
+        font-size: 0.8rem;
+        padding: 5px 10px;
+    }
+    
+    .location-badge {
+        background: #e3f2fd;
+        color: #1976d2;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+    }
+    
+    .device-badge {
+        background: #f3e5f5;
+        color: #7b1fa2;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+    }
+    
+    .visit-row:hover {
+        background-color: #f8f9fa;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">📋 {{ page_title }}</h1>
+                    <p class="text-muted">Vista detallada de todas las visitas registradas</p>
+                </div>
+                <div>
+                    <a href="{% url 'page_visits_analytics' %}" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-chart-bar"></i> Ver Analytics
+                    </a>
+                    <a href="{% url 'page_visits_export' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-success">
+                        <i class="fas fa-download"></i> Exportar CSV
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filter-card">
+        <form method="get" class="row g-3">
+            <div class="col-md-2">
+                <label class="form-label">Buscar</label>
+                <input type="text" class="form-control" name="search" value="{{ search }}" placeholder="IP, URL, título...">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Fecha Desde</label>
+                <input type="date" class="form-control" name="fecha_desde" value="{{ fecha_desde }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Fecha Hasta</label>
+                <input type="date" class="form-control" name="fecha_hasta" value="{{ fecha_hasta }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Tipo de Página</label>
+                <select class="form-select" name="page_type">
+                    <option value="">Todas</option>
+                    {% for value, label in page_types %}
+                        <option value="{{ value }}" {% if page_type == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">País</label>
+                <select class="form-select" name="country">
+                    <option value="">Todos</option>
+                    {% for country in countries %}
+                        <option value="{{ country.country_code }}" {% if country == country.country_code %}selected{% endif %}>
+                            {{ country.country }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Dispositivo</label>
+                <select class="form-select" name="is_mobile">
+                    <option value="">Todos</option>
+                    <option value="true" {% if is_mobile == 'true' %}selected{% endif %}>Móvil</option>
+                    <option value="false" {% if is_mobile == 'false' %}selected{% endif %}>Desktop</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <div class="form-check mt-4">
+                    <input class="form-check-input" type="checkbox" name="exclude_bots" value="true" {% if exclude_bots %}checked{% endif %}>
+                    <label class="form-check-label">Excluir bots</label>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">&nbsp;</label>
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter"></i> Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Información de resultados -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <span class="text-muted">
+                Mostrando {{ page_obj.start_index }} - {{ page_obj.end_index }} de {{ page_obj.paginator.count }} visitas
+            </span>
+        </div>
+        <div>
+            {% if page_obj.has_other_pages %}
+                <span class="text-muted">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Tabla de visitas -->
+    <div class="table-responsive">
+        <table class="table table-hover table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>Fecha/Hora</th>
+                    <th>Página</th>
+                    <th>Título</th>
+                    <th>IP</th>
+                    <th>Ubicación</th>
+                    <th>Navegador</th>
+                    <th>SO</th>
+                    <th>Dispositivo</th>
+                    <th>Referrer</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for visit in page_obj %}
+                <tr class="visit-row">
+                    <td>
+                        <small class="text-muted">{{ visit.visited_at|date:"d/m/Y" }}</small><br>
+                        <small class="text-muted">{{ visit.visited_at|date:"H:i:s" }}</small>
+                    </td>
+                    <td>
+                        <span class="badge badge-page-type bg-primary">{{ visit.get_page_type_display }}</span>
+                        {% if visit.is_bot %}
+                            <br><span class="badge bg-warning">Bot</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if visit.page_title %}
+                            <span title="{{ visit.page_title }}">{{ visit.page_title|truncatechars:30 }}</span>
+                        {% else %}
+                            <span class="text-muted">Sin título</span>
+                        {% endif %}
+                        <br>
+                        <small class="text-muted" title="{{ visit.page_url }}">{{ visit.page_url|truncatechars:40 }}</small>
+                    </td>
+                    <td>
+                        <code>{{ visit.ip_address }}</code>
+                    </td>
+                    <td>
+                        {% if visit.location %}
+                            <span class="location-badge" title="{{ visit.location }}">
+                                {% if visit.country_code %}{{ visit.country_code|upper }}{% endif %}
+                                {{ visit.city|default:visit.country|truncatechars:15 }}
+                            </span>
+                        {% else %}
+                            <span class="text-muted">Desconocida</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="device-badge">{{ visit.browser_info|truncatechars:20 }}</span>
+                    </td>
+                    <td>
+                        <small>{{ visit.operating_system|truncatechars:15 }}</small>
+                    </td>
+                    <td class="text-center">
+                        {% if visit.is_mobile %}
+                            <i class="fas fa-mobile text-success" title="Móvil"></i>
+                        {% else %}
+                            <i class="fas fa-desktop text-primary" title="Desktop"></i>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if visit.referrer %}
+                            <small title="{{ visit.referrer }}">{{ visit.referrer|truncatechars:25 }}</small>
+                        {% else %}
+                            <span class="text-muted">Directo</span>
+                        {% endif %}
+                        
+                        {% if visit.utm_source or visit.utm_medium or visit.utm_campaign %}
+                        <br>
+                        <div class="mt-1">
+                            {% if visit.utm_source %}
+                                <span class="badge bg-info text-dark">{{ visit.utm_source }}</span>
+                            {% endif %}
+                            {% if visit.utm_medium %}
+                                <span class="badge bg-secondary">{{ visit.utm_medium }}</span>
+                            {% endif %}
+                            {% if visit.utm_campaign %}
+                                <span class="badge bg-warning text-dark">{{ visit.utm_campaign }}</span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="text-center py-4">
+                        <div class="text-muted">
+                            <i class="fas fa-inbox fa-3x mb-3"></i>
+                            <p>No se encontraron visitas con los filtros aplicados.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Paginación -->
+    {% if page_obj.has_other_pages %}
+    <nav aria-label="Paginación de visitas">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}page=1">Primera</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}page={{ page_obj.previous_page_number }}">Anterior</a>
+                </li>
+            {% endif %}
+            
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}page={{ num }}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}page={{ page_obj.next_page_number }}">Siguiente</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}page={{ page_obj.paginator.num_pages }}">Última</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-enviar formulario cuando cambian ciertos campos
+    document.addEventListener('DOMContentLoaded', function() {
+        const autoSubmitFields = ['page_type', 'country', 'is_mobile'];
+        
+        autoSubmitFields.forEach(fieldName => {
+            const field = document.querySelector(`[name="${fieldName}"]`);
+            if (field) {
+                field.addEventListener('change', function() {
+                    this.form.submit();
+                });
+            }
+        });
+        
+        // Checkbox de exclude_bots
+        const excludeBotsCheckbox = document.querySelector('[name="exclude_bots"]');
+        if (excludeBotsCheckbox) {
+            excludeBotsCheckbox.addEventListener('change', function() {
+                this.form.submit();
+            });
+        }
+    });
+</script>
+{% endblock %}

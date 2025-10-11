@@ -487,5 +487,10 @@ urlpatterns = [
     # URLs de comandos de voz IA
     path('voice-commands/', views.voice_command_interface_view, name='voice_command_interface'),
     path('voice-commands/create-ticket/', views.voice_command_create_ticket_view, name='voice_command_create_ticket'),
+    
+    # URLs de Analytics de Páginas Públicas
+    path('analytics/page-visits/', views.page_visits_analytics_view, name='page_visits_analytics'),
+    path('analytics/page-visits/detail/', views.page_visits_detail_view, name='page_visits_detail'),
+    path('analytics/page-visits/export/', views.page_visits_export_view, name='page_visits_export'),
 
 ]

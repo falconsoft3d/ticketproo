@@ -7,7 +7,8 @@ from .models import (
     OpportunityNote, OpportunityStatusHistory, Concept, Exam, ExamQuestion, 
     ExamAttempt, ExamAnswer, ContactoWeb, Employee, JobApplicationToken,
     LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry,
-    WorkOrderTaskTimeSession, SharedFile, SharedFileDownload, Recording, RecordingPlayback
+    WorkOrderTaskTimeSession, SharedFile, SharedFileDownload, Recording, RecordingPlayback,
+    PageVisit
 )
 
 # Configuración del sitio de administración
@@ -1469,4 +1470,134 @@ class RecordingPlaybackAdmin(admin.ModelAdmin):
     
     def has_change_permission(self, request, obj=None):
         return False  # No permitir editar reproducciones
+
+
+@admin.register(PageVisit)
+class PageVisitAdmin(admin.ModelAdmin):
+    list_display = (
+        'visited_at',
+        'page_type',
+        'page_title_short',
+        'ip_address',
+        'location_info',
+        'browser_info',
+        'device_info',
+        'is_bot'
+    )
+    list_filter = (
+        'page_type',
+        'visited_at',
+        'country_code',
+        'is_mobile',
+        'is_bot',
+        'browser'
+    )
+    search_fields = (
+        'page_url',
+        'page_title',
+        'ip_address',
+        'country',
+        'city',
+        'browser',
+        'operating_system'
+    )
+    readonly_fields = (
+        'page_type',
+        'page_url',
+        'page_title',
+        'ip_address',
+        'country',
+        'country_code',
+        'city',
+        'region',
+        'user_agent',
+        'browser',
+        'browser_version',
+        'operating_system',
+        'device_type',
+        'is_mobile',
+        'is_bot',
+        'referrer',
+        'utm_source',
+        'utm_medium',
+        'utm_campaign',
+        'session_id',
+        'visited_at',
+        'created_at'
+    )
+    
+    date_hierarchy = 'visited_at'
+    ordering = ('-visited_at',)
+    
+    fieldsets = (
+        ('Información de la Página', {
+            'fields': (
+                'page_type',
+                'page_url', 
+                'page_title'
+            )
+        }),
+        ('Información del Visitante', {
+            'fields': (
+                'ip_address',
+                'country',
+                'country_code',
+                'region',
+                'city'
+            )
+        }),
+        ('Información Técnica', {
+            'fields': (
+                'user_agent',
+                'browser',
+                'browser_version',
+                'operating_system',
+                'device_type',
+                'is_mobile',
+                'is_bot'
+            ),
+            'classes': ('collapse',)
+        }),
+        ('Información de Referencia', {
+            'fields': (
+                'referrer',
+                'utm_source',
+                'utm_medium',
+                'utm_campaign',
+                'session_id'
+            ),
+            'classes': ('collapse',)
+        }),
+        ('Metadatos', {
+            'fields': (
+                'visited_at',
+                'created_at'
+            ),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def page_title_short(self, obj):
+        if obj.page_title:
+            return obj.page_title[:50] + '...' if len(obj.page_title) > 50 else obj.page_title
+        return '(Sin título)'
+    page_title_short.short_description = 'Título'
+    
+    def location_info(self, obj):
+        return obj.location if obj.location != 'Desconocida' else '🌍 Desconocida'
+    location_info.short_description = 'Ubicación'
+    
+    def device_info(self, obj):
+        icon = '📱' if obj.is_mobile else '💻'
+        return f"{icon} {obj.device_type}"
+    device_info.short_description = 'Dispositivo'
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request)
+    
+    def has_add_permission(self, request):
+        return False  # No permitir agregar visitas manualmente
+    
+    def has_change_permission(self, request, obj=None):
+        return False  # No permitir editar visitas (son datos de tracking)
 

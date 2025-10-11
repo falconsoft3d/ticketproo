@@ -1,0 +1,583 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stats-card h3 {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .stats-card p {
+        margin-bottom: 0;
+        opacity: 0.9;
+    }
+    
+    .chart-container {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        min-height: 320px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .chart-container #visitsChart,
+    .chart-container #devicesChart {
+        height: 250px !important;
+        max-height: 250px !important;
+    }
+    
+    .chart-no-data {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 200px;
+        color: #6c757d;
+        font-style: italic;
+    }
+    
+    /* Evitar problemas de scroll infinito */
+    .apexcharts-canvas {
+        max-height: 250px !important;
+        overflow: hidden !important;
+    }
+    
+    .filter-card {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .table-responsive {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+    
+    .badge-page-type {
+        font-size: 0.8rem;
+        padding: 5px 10px;
+    }
+    
+    .location-badge {
+        background: #e3f2fd;
+        color: #1976d2;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+    }
+    
+    .device-badge {
+        background: #f3e5f5;
+        color: #7b1fa2;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+    }
+    
+    .progress-bar-custom {
+        height: 8px;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">📊 Analytics de Páginas Públicas</h1>
+                    <p class="text-muted">Análisis de visitas del {{ start_date|date:"d/m/Y" }} al {{ end_date|date:"d/m/Y" }}</p>
+                </div>
+                <div>
+                    <a href="{% url 'page_visits_detail' %}" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-list"></i> Ver Detalle
+                    </a>
+                    <a href="{% url 'page_visits_export' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-success">
+                        <i class="fas fa-download"></i> Exportar CSV
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filter-card">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Fecha Desde</label>
+                <input type="date" class="form-control" name="fecha_desde" value="{{ start_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Fecha Hasta</label>
+                <input type="date" class="form-control" name="fecha_hasta" value="{{ end_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Tipo de Página</label>
+                <select class="form-select" name="page_type">
+                    <option value="">Todas las páginas</option>
+                    {% for value, label in page_types %}
+                        <option value="{{ value }}" {% if page_type_filter == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">País</label>
+                <select class="form-select" name="country">
+                    <option value="">Todos los países</option>
+                    {% for country in countries %}
+                        <option value="{{ country.country_code }}" {% if country_filter == country.country_code %}selected{% endif %}>
+                            {{ country.country }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="exclude_bots" value="true" {% if exclude_bots %}checked{% endif %}>
+                    <label class="form-check-label">Excluir bots</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">&nbsp;</label>
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter"></i> Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Estadísticas principales -->
+    <div class="row">
+        <div class="col-md-3">
+            <div class="stats-card">
+                <h3>{{ total_visits|floatformat:0 }}</h3>
+                <p><i class="fas fa-eye"></i> Total de Visitas</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <h3>{{ unique_ips|floatformat:0 }}</h3>
+                <p><i class="fas fa-users"></i> Visitantes Únicos</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <h3>{{ unique_countries|floatformat:0 }}</h3>
+                <p><i class="fas fa-globe"></i> Países Diferentes</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <h3>{{ landing_total_visits|floatformat:0 }}</h3>
+                <p><i class="fas fa-rocket"></i> Visitas Landing</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas específicas de Landing Pages -->
+    {% if landing_total_visits > 0 %}
+    <div class="row">
+        <div class="col-md-4">
+            <div class="stats-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <h3>{{ landing_total_visits|floatformat:0 }}</h3>
+                <p><i class="fas fa-bullseye"></i> Total Visitas Landing</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stats-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <h3>{{ landing_unique_visitors|floatformat:0 }}</h3>
+                <p><i class="fas fa-users"></i> Visitantes Únicos Landing</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stats-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                <h3>{% if landing_total_visits > 0 %}{{ landing_unique_visitors|floatformat:0 }}/{{ landing_total_visits|floatformat:0 }}{% else %}0%{% endif %}</h3>
+                <p><i class="fas fa-chart-line"></i> Ratio Conversión</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Gráficos -->
+    <div class="row">
+        <!-- Visitas por día -->
+        <div class="col-md-8">
+            <div class="chart-container">
+                <h5><i class="fas fa-chart-line"></i> Visitas por Día</h5>
+                {% if total_visits > 0 %}
+                    <div id="visitsChart"></div>
+                {% else %}
+                    <div class="chart-no-data">
+                        <div class="text-center">
+                            <i class="fas fa-chart-line fa-3x mb-2"></i>
+                            <p>No hay datos de visitas en el período seleccionado</p>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Dispositivos -->
+        <div class="col-md-4">
+            <div class="chart-container">
+                <h5><i class="fas fa-chart-pie"></i> Dispositivos</h5>
+                {% if mobile_visits > 0 or desktop_visits > 0 %}
+                    <div id="devicesChart"></div>
+                {% else %}
+                    <div class="chart-no-data">
+                        <div class="text-center">
+                            <i class="fas fa-mobile fa-3x mb-2"></i>
+                            <p>No hay datos de dispositivos</p>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Visitas por página -->
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h5><i class="fas fa-chart-bar"></i> Páginas Más Visitadas</h5>
+                {% for page in visits_by_page %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span class="badge badge-page-type bg-primary">{{ page.page_type|upper }}</span>
+                        <strong>{{ page.count }} visitas</strong>
+                    </div>
+                    <div class="progress progress-bar-custom mt-1">
+                        <div class="progress-bar bg-primary" style="width: {% widthratio page.count visits_by_page.0.count 100 %}%"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Top países -->
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h5><i class="fas fa-globe-americas"></i> Países con Más Visitas</h5>
+                {% for country in top_countries %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span class="location-badge">
+                            {{ country.country_code|upper }} {{ country.country }}
+                        </span>
+                        <strong>{{ country.count }} visitas</strong>
+                    </div>
+                    <div class="progress progress-bar-custom mt-1">
+                        <div class="progress-bar bg-success" style="width: {% widthratio country.count top_countries.0.count 100 %}%"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Landing Pages Específicas -->
+    {% if landing_pages_stats %}
+    <div class="row">
+        <div class="col-12">
+            <div class="chart-container">
+                <h5><i class="fas fa-rocket"></i> Landing Pages Más Visitadas</h5>
+                <div class="row">
+                    {% for landing in landing_pages_stats %}
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="badge bg-warning text-dark">
+                                    <i class="fas fa-bullseye"></i> Landing
+                                </span>
+                                <div class="mt-1">
+                                    <strong>{{ landing.page_title|default:"Sin título" }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ landing.page_url|truncatechars:50 }}</small>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <h6 class="mb-0">{{ landing.count }}</h6>
+                                <small class="text-muted">visitas</small>
+                            </div>
+                        </div>
+                        <div class="progress progress-bar-custom mt-2">
+                            <div class="progress-bar bg-warning" style="width: {% widthratio landing.count landing_pages_stats.0.count 100 %}%"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Fuentes UTM de Landing Pages -->
+                {% if landing_utm_sources %}
+                <div class="mt-4">
+                    <h6><i class="fas fa-tag"></i> Fuentes de Tráfico (UTM) para Landing Pages</h6>
+                    {% for utm in landing_utm_sources %}
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between">
+                            <span class="badge bg-info">{{ utm.utm_source }}</span>
+                            <small>{{ utm.count }} visitas</small>
+                        </div>
+                        <div class="progress progress-bar-custom mt-1" style="height: 4px;">
+                            <div class="progress-bar bg-info" style="width: {% widthratio utm.count landing_utm_sources.0.count 100 %}%"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Navegadores y páginas -->
+    <div class="row">
+        <!-- Top navegadores -->
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h5><i class="fas fa-browser"></i> Navegadores Más Usados</h5>
+                {% for browser in top_browsers %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span class="device-badge">{{ browser.browser }}</span>
+                        <strong>{{ browser.count }} visitas</strong>
+                    </div>
+                    <div class="progress progress-bar-custom mt-1">
+                        <div class="progress-bar bg-info" style="width: {% widthratio browser.count top_browsers.0.count 100 %}%"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Fuentes de tráfico -->
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h5><i class="fas fa-link"></i> Principales Fuentes de Tráfico</h5>
+                {% for referrer in referrers %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span class="text-truncate" style="max-width: 200px;" title="{{ referrer.referrer }}">
+                            {% if referrer.referrer %}
+                                {{ referrer.referrer|truncatechars:30 }}
+                            {% else %}
+                                Acceso directo
+                            {% endif %}
+                        </span>
+                        <strong>{{ referrer.count }} visitas</strong>
+                    </div>
+                    <div class="progress progress-bar-custom mt-1">
+                        <div class="progress-bar bg-warning" style="width: {% widthratio referrer.count referrers.0.count 100 %}%"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Visitas recientes -->
+    <div class="row">
+        <div class="col-12">
+            <div class="chart-container">
+                <h5><i class="fas fa-clock"></i> Visitas Recientes</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Fecha/Hora</th>
+                                <th>Página</th>
+                                <th>Ubicación</th>
+                                <th>Navegador</th>
+                                <th>Dispositivo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for visit in recent_visits %}
+                            <tr>
+                                <td>
+                                    <small class="text-muted">{{ visit.visited_at|date:"d/m/Y H:i" }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary">{{ visit.get_page_type_display }}</span>
+                                    {% if visit.page_title %}
+                                        <br><small class="text-muted">{{ visit.page_title|truncatechars:40 }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if visit.location %}
+                                        <span class="location-badge">{{ visit.location }}</span>
+                                    {% else %}
+                                        <span class="text-muted">Desconocida</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="device-badge">{{ visit.browser_info }}</span>
+                                </td>
+                                <td>
+                                    {% if visit.is_mobile %}
+                                        <i class="fas fa-mobile text-success" title="Móvil"></i>
+                                    {% else %}
+                                        <i class="fas fa-desktop text-primary" title="Desktop"></i>
+                                    {% endif %}
+                                    {% if visit.is_bot %}
+                                        <span class="badge bg-warning ms-1">Bot</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        try {
+            // Datos de visitas por día
+            const visitsData = [
+                {% for day in visits_by_day %}
+                {
+                    x: "{{ day.date }}",
+                    y: {{ day.visits }}
+                }{% if not forloop.last %},{% endif %}
+                {% empty %}
+                {
+                    x: "{{ start_date|date:'Y-m-d' }}",
+                    y: 0
+                }
+                {% endfor %}
+            ];
+            
+            // Gráfico de visitas por día
+            const visitsChartElement = document.getElementById('visitsChart');
+            if (visitsChartElement && visitsData.length > 0) {
+                const visitsOptions = {
+                    series: [{
+                        name: 'Visitas',
+                        data: visitsData
+                    }],
+                    chart: {
+                        type: 'area',
+                        height: 250,
+                        toolbar: {
+                            show: false
+                        },
+                        animations: {
+                            enabled: false
+                        }
+                    },
+                    colors: ['#667eea'],
+                    fill: {
+                        type: 'gradient',
+                        gradient: {
+                            shadeIntensity: 1,
+                            opacityFrom: 0.7,
+                            opacityTo: 0.1,
+                        }
+                    },
+                    stroke: {
+                        curve: 'smooth',
+                        width: 3
+                    },
+                    xaxis: {
+                        type: 'datetime',
+                        labels: {
+                            format: 'dd/MM'
+                        }
+                    },
+                    yaxis: {
+                        min: 0,
+                        forceNiceScale: true
+                    },
+                    grid: {
+                        show: true,
+                        strokeDashArray: 3
+                    },
+                    tooltip: {
+                        x: {
+                            format: 'dd/MM/yyyy'
+                        }
+                    }
+                };
+                
+                const visitsChart = new ApexCharts(visitsChartElement, visitsOptions);
+                visitsChart.render();
+            }
+
+            // Gráfico de dispositivos
+            const devicesChartElement = document.getElementById('devicesChart');
+            if (devicesChartElement) {
+                const mobileVisits = {{ mobile_visits|default:0 }};
+                const desktopVisits = {{ desktop_visits|default:0 }};
+                
+                if (mobileVisits > 0 || desktopVisits > 0) {
+                    const devicesOptions = {
+                        series: [mobileVisits, desktopVisits],
+                        chart: {
+                            type: 'donut',
+                            height: 200,
+                            animations: {
+                                enabled: false
+                            }
+                        },
+                        labels: ['Móvil', 'Desktop'],
+                        colors: ['#667eea', '#764ba2'],
+                        legend: {
+                            position: 'bottom'
+                        },
+                        plotOptions: {
+                            pie: {
+                                donut: {
+                                    size: '70%'
+                                }
+                            }
+                        },
+                        responsive: [{
+                            breakpoint: 480,
+                            options: {
+                                chart: {
+                                    height: 200
+                                },
+                                legend: {
+                                    position: 'bottom'
+                                }
+                            }
+                        }]
+                    };
+                    
+                    const devicesChart = new ApexCharts(devicesChartElement, devicesOptions);
+                    devicesChart.render();
+                }
+            }
+            
+        } catch (error) {
+            console.error('Error inicializando gráficos:', error);
+        }
+    });
+</script>
+{% endblock %}
