@@ -6,7 +6,8 @@ from .models import (
     WorkOrder, WorkOrderAttachment, Task, Opportunity, OpportunityStatus, 
     OpportunityNote, OpportunityStatusHistory, Concept, Exam, ExamQuestion, 
     ExamAttempt, ExamAnswer, ContactoWeb, Employee, JobApplicationToken,
-    LandingPage, LandingPageSubmission
+    LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry,
+    WorkOrderTaskTimeSession, SharedFile, SharedFileDownload, Recording, RecordingPlayback
 )
 
 # Configuración del sitio de administración
@@ -668,6 +669,94 @@ class WorkOrderAttachmentAdmin(admin.ModelAdmin):
         return super().get_queryset(request).select_related('work_order', 'uploaded_by')
 
 
+class WorkOrderTaskTimeEntryInline(admin.TabularInline):
+    model = WorkOrderTaskTimeEntry
+    extra = 0
+    fields = ('hours', 'description', 'date', 'created_at')
+    readonly_fields = ('created_at',)
+
+
+class WorkOrderTaskTimeSessionInline(admin.TabularInline):
+    model = WorkOrderTaskTimeSession
+    extra = 0
+    fields = ('user', 'start_time', 'end_time', 'is_active', 'description')
+    readonly_fields = ('start_time',)
+
+
+@admin.register(WorkOrderTask)
+class WorkOrderTaskAdmin(admin.ModelAdmin):
+    """Administrador para tareas de órdenes de trabajo"""
+    list_display = ('title', 'work_order', 'status', 'estimated_hours', 'actual_hours', 'get_progress_display', 'order')
+    list_filter = ('status', 'work_order__status', 'created_at')
+    search_fields = ('title', 'description', 'work_order__title', 'work_order__order_number')
+    list_editable = ('status', 'order')
+    ordering = ('work_order', 'order', 'created_at')
+    readonly_fields = ('created_at', 'updated_at', 'started_at', 'completed_at')
+    inlines = [WorkOrderTaskTimeEntryInline, WorkOrderTaskTimeSessionInline]
+    
+    fieldsets = (
+        ('Información básica', {
+            'fields': ('work_order', 'title', 'description', 'order')
+        }),
+        ('Estado y tiempo', {
+            'fields': ('status', 'estimated_hours', 'actual_hours')
+        }),
+        ('Fechas del sistema', {
+            'fields': ('created_at', 'updated_at', 'started_at', 'completed_at'),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def get_progress_display(self, obj):
+        """Muestra el progreso de la tarea"""
+        percentage = obj.get_progress_percentage()
+        if percentage > 0:
+            return f"{percentage:.1f}%"
+        return "0%"
+    get_progress_display.short_description = 'Progreso'
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('work_order')
+
+
+@admin.register(WorkOrderTaskTimeEntry)
+class WorkOrderTaskTimeEntryAdmin(admin.ModelAdmin):
+    """Administrador para entradas de tiempo de tareas"""
+    list_display = ('task', 'hours', 'date', 'get_task_work_order', 'created_at')
+    list_filter = ('date', 'created_at', 'task__status')
+    search_fields = ('description', 'task__title', 'task__work_order__title')
+    ordering = ('-date', '-created_at')
+    readonly_fields = ('created_at',)
+    date_hierarchy = 'date'
+    
+    def get_task_work_order(self, obj):
+        return obj.task.work_order.order_number
+    get_task_work_order.short_description = 'Orden de Trabajo'
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('task', 'task__work_order')
+
+
+@admin.register(WorkOrderTaskTimeSession)
+class WorkOrderTaskTimeSessionAdmin(admin.ModelAdmin):
+    """Administrador para sesiones de tiempo de tareas"""
+    list_display = ('task', 'user', 'start_time', 'end_time', 'get_duration_display', 'is_active')
+    list_filter = ('is_active', 'start_time', 'user', 'task__status')
+    search_fields = ('description', 'task__title', 'user__username', 'task__work_order__title')
+    ordering = ('-start_time',)
+    readonly_fields = ('start_time', 'get_duration_display')
+    date_hierarchy = 'start_time'
+    
+    def get_duration_display(self, obj):
+        """Muestra la duración de la sesión"""
+        hours = obj.get_duration_hours()
+        return f"{hours}h"
+    get_duration_display.short_description = 'Duración'
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('task', 'user', 'task__work_order')
+
+
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
     """Administrador para tareas"""
@@ -1114,4 +1203,270 @@ class LandingPageSubmissionAdmin(admin.ModelAdmin):
     
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('landing_page')
+
+
+class SharedFileDownloadInline(admin.TabularInline):
+    model = SharedFileDownload
+    extra = 0
+    readonly_fields = ('downloaded_by', 'ip_address', 'downloaded_at')
+    can_delete = False
+
+
+@admin.register(SharedFile)
+class SharedFileAdmin(admin.ModelAdmin):
+    list_display = (
+        'title', 
+        'company', 
+        'uploaded_by', 
+        'file_type', 
+        'get_file_size_display', 
+        'download_count', 
+        'is_public',
+        'created_at'
+    )
+    list_filter = (
+        'company', 
+        'file_type', 
+        'is_public', 
+        'created_at',
+        'uploaded_by'
+    )
+    search_fields = ('title', 'description', 'company__name', 'uploaded_by__username')
+    readonly_fields = (
+        'file_size', 
+        'file_type', 
+        'download_count', 
+        'created_at', 
+        'updated_at',
+        'get_file_size_display'
+    )
+    list_per_page = 50
+    date_hierarchy = 'created_at'
+    inlines = [SharedFileDownloadInline]
+    
+    fieldsets = (
+        ('Información básica', {
+            'fields': ('title', 'description', 'file')
+        }),
+        ('Configuración', {
+            'fields': ('company', 'uploaded_by', 'is_public')
+        }),
+        ('Información del archivo', {
+            'fields': ('file_type', 'file_size', 'get_file_size_display', 'download_count'),
+            'classes': ('collapse',)
+        }),
+        ('Fechas', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('company', 'uploaded_by')
+    
+    def save_model(self, request, obj, form, change):
+        if not change:  # Si es un objeto nuevo
+            if not obj.uploaded_by:
+                obj.uploaded_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(SharedFileDownload)
+class SharedFileDownloadAdmin(admin.ModelAdmin):
+    list_display = (
+        'shared_file', 
+        'downloaded_by', 
+        'ip_address', 
+        'downloaded_at'
+    )
+    list_filter = (
+        'downloaded_at', 
+        'shared_file__company',
+        'downloaded_by'
+    )
+    search_fields = (
+        'shared_file__title', 
+        'downloaded_by__username', 
+        'ip_address'
+    )
+    readonly_fields = (
+        'shared_file', 
+        'downloaded_by', 
+        'ip_address', 
+        'user_agent', 
+        'downloaded_at'
+    )
+    list_per_page = 100
+    date_hierarchy = 'downloaded_at'
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related(
+            'shared_file', 
+            'shared_file__company', 
+            'downloaded_by'
+        )
+    
+    def has_add_permission(self, request):
+        return False  # No permitir agregar descargas manualmente
+    
+    def has_change_permission(self, request, obj=None):
+        return False  # No permitir editar descargas
+
+
+@admin.register(Recording)
+class RecordingAdmin(admin.ModelAdmin):
+    list_display = (
+        'title', 
+        'company', 
+        'uploaded_by', 
+        'transcription_status_badge',
+        'file_size_display', 
+        'duration_display',
+        'playback_count',
+        'is_public',
+        'created_at'
+    )
+    list_filter = (
+        'transcription_status',
+        'is_public', 
+        'company', 
+        'created_at',
+        'transcribed_at'
+    )
+    search_fields = (
+        'title', 
+        'description', 
+        'transcription_text',
+        'uploaded_by__username', 
+        'uploaded_by__email',
+        'company__name'
+    )
+    readonly_fields = (
+        'file_size', 
+        'duration_seconds',
+        'transcription_status',
+        'transcription_text',
+        'transcription_confidence',
+        'transcription_language',
+        'transcribed_at',
+        'created_at', 
+        'updated_at',
+        'playback_count_display'
+    )
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('title', 'description', 'audio_file', 'company', 'uploaded_by', 'is_public')
+        }),
+        ('Información del Archivo', {
+            'fields': ('file_size', 'duration_seconds'),
+            'classes': ('collapse',)
+        }),
+        ('Transcripción', {
+            'fields': (
+                'transcription_status', 
+                'transcription_text', 
+                'transcription_confidence',
+                'transcription_language',
+                'transcribed_at'
+            ),
+            'classes': ('collapse',)
+        }),
+        ('Estadísticas', {
+            'fields': ('playback_count_display',),
+            'classes': ('collapse',)
+        }),
+        ('Metadatos', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    date_hierarchy = 'created_at'
+    
+    def transcription_status_badge(self, obj):
+        colors = {
+            'completed': 'success',
+            'processing': 'warning', 
+            'failed': 'danger',
+            'pending': 'secondary'
+        }
+        color = colors.get(obj.transcription_status, 'secondary')
+        status_display = obj.get_transcription_status_display()
+        return format_html(
+            '<span class="badge badge-{}">{}</span>',
+            color,
+            status_display
+        )
+    transcription_status_badge.short_description = 'Estado Transcripción'
+    
+    def file_size_display(self, obj):
+        return obj.get_file_size_display()
+    file_size_display.short_description = 'Tamaño'
+    
+    def duration_display(self, obj):
+        return obj.get_duration_display()
+    duration_display.short_description = 'Duración'
+    
+    def playback_count(self, obj):
+        return obj.playbacks.count()
+    playback_count.short_description = 'Reproducciones'
+    
+    def playback_count_display(self, obj):
+        count = obj.playbacks.count()
+        return f"{count} reproducciones"
+    playback_count_display.short_description = 'Total de Reproducciones'
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related(
+            'company', 
+            'uploaded_by'
+        ).prefetch_related('playbacks')
+
+
+@admin.register(RecordingPlayback)
+class RecordingPlaybackAdmin(admin.ModelAdmin):
+    list_display = (
+        'recording_title',
+        'played_by', 
+        'played_at',
+        'ip_address'
+    )
+    list_filter = (
+        'played_at', 
+        'recording__company',
+        'played_by'
+    )
+    search_fields = (
+        'recording__title',
+        'played_by__username', 
+        'played_by__email',
+        'ip_address'
+    )
+    readonly_fields = (
+        'recording', 
+        'played_by', 
+        'played_at', 
+        'ip_address', 
+        'user_agent'
+    )
+    
+    date_hierarchy = 'played_at'
+    
+    def recording_title(self, obj):
+        return obj.recording.title
+    recording_title.short_description = 'Grabación'
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related(
+            'recording', 
+            'recording__company', 
+            'played_by'
+        )
+    
+    def has_add_permission(self, request):
+        return False  # No permitir agregar reproducciones manualmente
+    
+    def has_change_permission(self, request, obj=None):
+        return False  # No permitir editar reproducciones
 

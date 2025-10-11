@@ -1,0 +1,394 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}Grabar Audio - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-mic-fill"></i> Grabar Audio</h2>
+                <a href="{% url 'recordings_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver a grabaciones
+                </a>
+            </div>
+            
+            <!-- Controles de grabación -->
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-mic"></i> Control de Grabación</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div id="recording-status" class="mb-3">
+                        <span class="badge bg-secondary">Listo para grabar</span>
+                    </div>
+                    
+                    <div class="btn-group mb-3" role="group">
+                        <button type="button" id="start-recording" class="btn btn-danger">
+                            <i class="bi bi-record-circle"></i> Iniciar Grabación
+                        </button>
+                        <button type="button" id="stop-recording" class="btn btn-secondary" disabled>
+                            <i class="bi bi-stop-circle"></i> Detener
+                        </button>
+                        <button type="button" id="play-recording" class="btn btn-primary" disabled>
+                            <i class="bi bi-play-circle"></i> Reproducir
+                        </button>
+                    </div>
+                    
+                    <div id="timer" class="h4 text-primary mb-3" style="display: none;">00:00</div>
+                    
+                    <!-- Visualizador de audio -->
+                    <canvas id="visualizer" width="600" height="100" class="mb-3" style="border: 1px solid #ddd; border-radius: 5px; display: none;"></canvas>
+                    
+                    <!-- Reproductor para previsualizar -->
+                    <audio id="audio-preview" controls class="w-100" style="display: none;"></audio>
+                    
+                    <div id="recording-info" class="mt-3" style="display: none;">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i> 
+                            Duración: <span id="duration-display">00:00</span> | 
+                            Tamaño: <span id="size-display">0 KB</span>
+                        </small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow">
+                <div class="card-body">
+                    <form method="post" id="recording-form">
+                        {% csrf_token %}
+                        {% bootstrap_form form %}
+                        
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg" id="submit-btn" disabled>
+                                <i class="bi bi-cloud-upload"></i> Guardar Grabación
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Información sobre grabaciones -->
+            <div class="row mt-5">
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <i class="bi bi-mic-fill display-4 text-primary"></i>
+                        <h5 class="mt-3">Grabación Directa</h5>
+                        <p class="text-muted small">Graba directamente desde tu micrófono sin necesidad de archivos</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <i class="bi bi-robot display-4 text-success"></i>
+                        <h5 class="mt-3">Transcripción Automática</h5>
+                        <p class="text-muted small">Transcripción con IA en segundo plano</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <i class="bi bi-shield-check display-4 text-info"></i>
+                        <h5 class="mt-3">Seguro</h5>
+                        <p class="text-muted small">Almacenamiento seguro con control de acceso</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Información técnica -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> Información importante</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Características de grabación:</h6>
+                            <ul class="small">
+                                <li><strong>Formato:</strong> WebM con codec Opus</li>
+                                <li><strong>Calidad:</strong> Alta fidelidad</li>
+                                <li><strong>Micrófono:</strong> Detección automática</li>
+                                <li><strong>Tiempo máximo:</strong> Sin límite</li>
+                                <li><strong>Visualización:</strong> En tiempo real</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Características del sistema:</h6>
+                            <ul class="small">
+                                <li>Grabación directa desde el navegador</li>
+                                <li>Transcripción automática con IA</li>
+                                <li>Control de acceso por empresa</li>
+                                <li>Estadísticas de reproducción</li>
+                                <li>Búsqueda en texto transcrito</li>
+                                <li>Reproductor web integrado</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-primary mt-3">
+                        <i class="bi bi-lightbulb"></i>
+                        <strong>Consejo:</strong> Para mejores resultados en la transcripción, 
+                        habla claramente y asegúrate de estar en un ambiente con poco ruido de fondo.
+                        La transcripción se procesará automáticamente después de guardar la grabación.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let mediaRecorder;
+let audioChunks = [];
+let stream;
+let recordingStartTime;
+let timerInterval;
+let audioContext;
+let analyser;
+let dataArray;
+let animationId;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const startBtn = document.getElementById('start-recording');
+    const stopBtn = document.getElementById('stop-recording');
+    const playBtn = document.getElementById('play-recording');
+    const audioPreview = document.getElementById('audio-preview');
+    const timer = document.getElementById('timer');
+    const visualizer = document.getElementById('visualizer');
+    const canvas = visualizer.getContext('2d');
+    const form = document.getElementById('recording-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const audioDataField = document.getElementById('id_audio_data');
+    
+    // Solicitar permisos de micrófono al cargar la página
+    async function initializeRecording() {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ 
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true
+                } 
+            });
+            
+            // Configurar contexto de audio para visualización
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+            const source = audioContext.createMediaStreamSource(stream);
+            source.connect(analyser);
+            
+            analyser.fftSize = 256;
+            const bufferLength = analyser.frequencyBinCount;
+            dataArray = new Uint8Array(bufferLength);
+            
+            document.getElementById('recording-status').innerHTML = '<span class="badge bg-success">Micrófono listo</span>';
+            
+        } catch (err) {
+            console.error('Error accessing microphone:', err);
+            document.getElementById('recording-status').innerHTML = '<span class="badge bg-danger">Error: No se puede acceder al micrófono</span>';
+            startBtn.disabled = true;
+        }
+    }
+    
+    // Inicializar cuando se carga la página
+    initializeRecording();
+    
+    // Función para actualizar el timer
+    function updateTimer() {
+        const elapsed = Date.now() - recordingStartTime;
+        const minutes = Math.floor(elapsed / 60000);
+        const seconds = Math.floor((elapsed % 60000) / 1000);
+        timer.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    
+    // Función para visualizar audio
+    function visualizeAudio() {
+        analyser.getByteFrequencyData(dataArray);
+        
+        canvas.fillStyle = '#f8f9fa';
+        canvas.fillRect(0, 0, visualizer.width, visualizer.height);
+        
+        const barWidth = visualizer.width / dataArray.length;
+        let x = 0;
+        
+        for (let i = 0; i < dataArray.length; i++) {
+            const barHeight = (dataArray[i] / 255) * visualizer.height;
+            
+            const r = barHeight + 25 * (i / dataArray.length);
+            const g = 250 * (i / dataArray.length);
+            const b = 50;
+            
+            canvas.fillStyle = `rgb(${r},${g},${b})`;
+            canvas.fillRect(x, visualizer.height - barHeight, barWidth, barHeight);
+            
+            x += barWidth + 1;
+        }
+        
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            animationId = requestAnimationFrame(visualizeAudio);
+        }
+    }
+    
+    // Iniciar grabación
+    startBtn.addEventListener('click', async function() {
+        audioChunks = [];
+        
+        try {
+            mediaRecorder = new MediaRecorder(stream, {
+                mimeType: 'audio/webm;codecs=opus'
+            });
+            
+            mediaRecorder.ondataavailable = function(event) {
+                if (event.data.size > 0) {
+                    audioChunks.push(event.data);
+                }
+            };
+            
+            mediaRecorder.onstop = function() {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm;codecs=opus' });
+                const audioUrl = URL.createObjectURL(audioBlob);
+                
+                audioPreview.src = audioUrl;
+                audioPreview.style.display = 'block';
+                playBtn.disabled = false;
+                submitBtn.disabled = false;
+                
+                // Convertir a base64 para enviar al servidor
+                const reader = new FileReader();
+                reader.onloadend = function() {
+                    audioDataField.value = reader.result;
+                };
+                reader.readAsDataURL(audioBlob);
+                
+                // Mostrar información de la grabación
+                const duration = (Date.now() - recordingStartTime) / 1000;
+                const size = audioBlob.size;
+                
+                document.getElementById('duration-display').textContent = formatTime(duration);
+                document.getElementById('size-display').textContent = formatSize(size);
+                document.getElementById('recording-info').style.display = 'block';
+            };
+            
+            mediaRecorder.start();
+            recordingStartTime = Date.now();
+            
+            // Actualizar UI
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            playBtn.disabled = true;
+            submitBtn.disabled = true;
+            timer.style.display = 'block';
+            visualizer.style.display = 'block';
+            
+            document.getElementById('recording-status').innerHTML = '<span class="badge bg-danger"><i class="bi bi-record-circle"></i> Grabando...</span>';
+            
+            // Iniciar timer y visualización
+            timerInterval = setInterval(updateTimer, 1000);
+            visualizeAudio();
+            
+        } catch (err) {
+            console.error('Error starting recording:', err);
+            alert('Error al iniciar la grabación: ' + err.message);
+        }
+    });
+    
+    // Detener grabación
+    stopBtn.addEventListener('click', function() {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+            
+            // Actualizar UI
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            
+            clearInterval(timerInterval);
+            cancelAnimationFrame(animationId);
+            
+            document.getElementById('recording-status').innerHTML = '<span class="badge bg-success">Grabación completada</span>';
+        }
+    });
+    
+    // Reproducir grabación
+    playBtn.addEventListener('click', function() {
+        if (audioPreview.paused) {
+            audioPreview.play();
+            playBtn.innerHTML = '<i class="bi bi-pause-circle"></i> Pausar';
+        } else {
+            audioPreview.pause();
+            playBtn.innerHTML = '<i class="bi bi-play-circle"></i> Reproducir';
+        }
+    });
+    
+    // Actualizar botón cuando termina la reproducción
+    audioPreview.addEventListener('ended', function() {
+        playBtn.innerHTML = '<i class="bi bi-play-circle"></i> Reproducir';
+    });
+    
+    // Validación del formulario
+    form.addEventListener('submit', function(e) {
+        if (!audioDataField.value) {
+            e.preventDefault();
+            alert('Debe grabar audio antes de enviar el formulario.');
+            return;
+        }
+        
+        const requiredFields = form.querySelectorAll('[required]');
+        let allValid = true;
+        
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                allValid = false;
+                field.classList.add('is-invalid');
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        });
+        
+        if (!allValid) {
+            e.preventDefault();
+            alert('Por favor, completa todos los campos requeridos.');
+            return;
+        }
+        
+        // Mostrar estado de carga
+        submitBtn.innerHTML = `
+            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+            Guardando grabación...
+        `;
+        submitBtn.disabled = true;
+    });
+    
+    // Funciones auxiliares
+    function formatTime(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = Math.floor(seconds % 60);
+        return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }
+    
+    function formatSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        else if (bytes < 1048576) return Math.round(bytes / 1024) + ' KB';
+        else return Math.round(bytes / 1048576) + ' MB';
+    }
+});
+</script>
+
+<style>
+#visualizer {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.btn-group .btn {
+    min-width: 120px;
+}
+
+#timer {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+}
+
+.badge {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+}
+</style>
+{% endblock %}

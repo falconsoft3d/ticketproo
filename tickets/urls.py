@@ -136,6 +136,8 @@ urlpatterns = [
     # URL pública para órdenes de trabajo compartidas (sin autenticación)
     path('work-order/public/<uuid:token>/', views.work_order_public_view, name='public_work_order'),
     path('work-order/public/<uuid:token>/tasks/', views.work_order_public_task_view, name='public_work_order_tasks'),
+    path('work-order/public/<uuid:token>/tasks/<int:task_pk>/time/start/', views.work_order_public_task_time_start_view, name='public_work_order_task_time_start'),
+    path('work-order/public/<uuid:token>/tasks/<int:task_pk>/time/stop/', views.work_order_public_task_time_stop_view, name='public_work_order_task_time_stop'),
     
     # URLs de reportes (solo para agentes)
     path('reports/daily/', views.daily_report_view, name='daily_report'),
@@ -445,10 +447,41 @@ urlpatterns = [
     path('ajax/landing-pages/submissions/create-contacts-batch/', views.ajax_create_contacts_batch, name='ajax_create_contacts_batch'),
     path('ajax/landing-pages/submissions/<int:submission_id>/details/', views.ajax_submission_details, name='ajax_submission_details'),
     
+    # URLs para evaluación IA de landing pages
+    path('ai/landing-submissions/', views.landing_submissions_list_view, name='landing_submissions_list'),
+    path('ai/landing-submissions/<int:submission_id>/', views.landing_submission_detail_view, name='landing_submission_detail'),
+    path('ai/landing-submissions/<int:submission_id>/evaluate/', views.evaluate_submission_ai_view, name='evaluate_submission_ai'),
+    path('ai/landing-submissions/batch-evaluate/', views.batch_evaluate_submissions_view, name='batch_evaluate_submissions'),
+    path('ai/dashboard/', views.ai_evaluation_dashboard_view, name='ai_evaluation_dashboard'),
+    
     # URL pública de landing page (sin autenticación)
     path('lp/<slug:slug>/', views.landing_page_public, name='landing_page_public'),
     
     # URL pública para crear tickets desde empresa (sin autenticación)
     path('public/company/<uuid:public_token>/create-ticket/', views.public_company_ticket_create, name='public_company_ticket_create'),
+    
+    # URLs de archivos compartidos
+    path('shared-files/', views.shared_files_list_view, name='shared_files_list'),
+    path('shared-files/upload/', views.shared_file_upload_view, name='shared_file_upload'),
+    path('shared-files/<int:file_id>/', views.shared_file_detail_view, name='shared_file_detail'),
+    path('shared-files/<int:file_id>/download/', views.shared_file_download_view, name='shared_file_download'),
+    path('shared-files/<int:file_id>/delete/', views.shared_file_delete_view, name='shared_file_delete'),
+    path('shared-files/stats/', views.shared_files_stats_view, name='shared_files_stats'),
+    
+    # URL pública para subir archivos
+    path('public/upload-file/', views.public_file_upload_view, name='public_file_upload'),
+    
+    # URLs de grabaciones
+    path('recordings/', views.recordings_list_view, name='recordings_list'),
+    path('recordings/upload/', views.recording_upload_view, name='recording_upload'),
+    path('recordings/<int:recording_id>/', views.recording_detail_view, name='recording_detail'),
+    path('recordings/<int:recording_id>/play/', views.recording_play_view, name='recording_play'),
+    path('recordings/<int:recording_id>/delete/', views.recording_delete_view, name='recording_delete'),
+    path('recordings/<int:recording_id>/transcribe/', views.recording_transcribe_async_view, name='recording_transcribe'),
+    path('recordings/bulk-transcribe/', views.recording_bulk_transcribe_view, name='recording_bulk_transcribe'),
+    path('recordings/stats/', views.recordings_stats_view, name='recordings_stats'),
+    
+    # URL pública para subir grabaciones
+    path('public/upload-recording/', views.public_recording_upload_view, name='public_recording_upload'),
 
 ]

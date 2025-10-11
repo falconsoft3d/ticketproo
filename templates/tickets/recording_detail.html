@@ -1,0 +1,611 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}{{ recording.title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Información de la grabación -->
+            <div class="card shadow mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="bi bi-mic-fill text-primary"></i> {{ recording.title }}
+                    </h4>
+                    <div class="btn-group" role="group">
+                        <a href="{% url 'recordings_list' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-arrow-left"></i> Volver
+                        </a>
+                        {% if request.user.is_superuser or is_agent %}
+                        <a href="{% url 'recording_delete' recording.id %}" class="btn btn-outline-danger btn-sm">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Descripción:</strong></p>
+                            <p class="text-muted">{{ recording.description|default:"Sin descripción" }}</p>
+                            
+                            <p><strong>Empresa:</strong> 
+                                {% if recording.company %}
+                                    <span class="badge bg-primary">{{ recording.company.name }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Sin empresa</span>
+                                {% endif %}
+                            </p>
+                            
+                            <p><strong>Subido por:</strong> 
+                                {% if recording.uploaded_by %}
+                                    {{ recording.uploaded_by.username }}
+                                {% else %}
+                                    <span class="text-muted">Usuario público</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Fecha de creación:</strong> {{ recording.created_at|date:"d/m/Y H:i" }}</p>
+                            
+                            {% if recording.duration_seconds %}
+                            <p><strong>Duración:</strong> 
+                                {{ recording.duration_seconds|floatformat:0 }} segundos
+                            </p>
+                            {% endif %}
+                            
+                            {% if recording.file_size %}
+                            <p><strong>Tamaño:</strong> 
+                                {% if recording.file_size > 1048576 %}
+                                    {{ recording.file_size|floatformat:0 }} bytes ({{ recording.file_size|filesizeformat }})
+                                {% else %}
+                                    {{ recording.file_size|filesizeformat }}
+                                {% endif %}
+                            </p>
+                            {% endif %}
+                            
+                            <p><strong>Público:</strong>
+                                {% if recording.is_public %}
+                                    <span class="badge bg-success">Sí</span>
+                                {% else %}
+                                    <span class="badge bg-warning">No</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Reproductor de audio -->
+                    {% if recording.audio_file %}
+                    <div class="mt-3">
+                        <h6><i class="bi bi-play-circle"></i> Reproductor</h6>
+                        <audio controls class="w-100">
+                            <source src="{{ recording.audio_file.url }}" type="audio/webm">
+                            <source src="{{ recording.audio_file.url }}" type="audio/mpeg">
+                            Tu navegador no soporta la reproducción de audio.
+                        </audio>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Transcripción -->
+            <div class="card shadow">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-file-text"></i> Transcripción
+                        {% if recording.transcription_status == 'completed' %}
+                            <span class="badge bg-success ms-2">Completada</span>
+                        {% elif recording.transcription_status == 'processing' %}
+                            <span class="badge bg-warning ms-2">
+                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                Procesando
+                            </span>
+                        {% elif recording.transcription_status == 'failed' %}
+                            <span class="badge bg-danger ms-2">Error</span>
+                        {% else %}
+                            <span class="badge bg-secondary ms-2">Pendiente</span>
+                        {% endif %}
+                    </h5>
+                    
+                    {% if recording.transcription_confidence %}
+                    <small class="text-muted">
+                        Confianza: {{ recording.transcription_confidence|floatformat:1 }}%
+                    </small>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <!-- Acciones de IA -->
+                    {% if request.user.is_superuser or is_agent %}
+                    <div class="mb-3">
+                        <form method="post" class="d-inline">
+                            {% csrf_token %}
+                            {% bootstrap_form action_form %}
+                            <button type="submit" name="process_ai" class="btn btn-primary">
+                                <i class="bi bi-robot"></i> Procesar con IA
+                            </button>
+                        </form>
+                        
+                        {% if recording.transcription_status == 'processing' %}
+                        <button type="button" class="btn btn-outline-secondary ms-2" disabled>
+                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                            Procesando...
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Formulario de edición de transcripción -->
+                    <form method="post">
+                        {% csrf_token %}
+                        {% bootstrap_form transcription_form %}
+                        
+                        {% if request.user.is_superuser or is_agent %}
+                        <div class="d-flex justify-content-between mt-3">
+                            <button type="submit" name="save_transcription" class="btn btn-success">
+                                <i class="bi bi-save"></i> Guardar Transcripción
+                            </button>
+                            
+                            <div class="text-muted small">
+                                {% if recording.transcribed_at %}
+                                    Última transcripción: {{ recording.transcribed_at|date:"d/m/Y H:i" }}
+                                {% endif %}
+                                {% if recording.transcription_language %}
+                                    | Idioma: {{ recording.transcription_language|upper }}
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% else %}
+                        <!-- Solo lectura para usuarios no agentes -->
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            Solo los agentes pueden editar la transcripción.
+                        </div>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar con estadísticas -->
+        <div class="col-md-4">
+            <!-- Estadísticas de reproducción -->
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-bar-chart"></i> Estadísticas</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border-end">
+                                <h4 class="text-primary">{{ playback_count }}</h4>
+                                <small class="text-muted">Reproducciones</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-success">
+                                {% if recording.transcription_confidence %}
+                                    {{ recording.transcription_confidence|floatformat:0 }}%
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </h4>
+                            <small class="text-muted">Confianza IA</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Actividad reciente -->
+            {% if recent_playbacks %}
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-clock-history"></i> Actividad Reciente</h6>
+                </div>
+                <div class="card-body">
+                    {% for playback in recent_playbacks %}
+                    <div class="d-flex justify-content-between align-items-center py-2 {% if not forloop.last %}border-bottom{% endif %}">
+                        <div>
+                            <small class="fw-bold">{{ playback.played_by.username }}</small><br>
+                            <small class="text-muted">{{ playback.played_at|date:"d/m H:i" }}</small>
+                        </div>
+                        <i class="bi bi-play-circle text-primary"></i>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Información técnica -->
+            <div class="card shadow mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> Información Técnica</h6>
+                </div>
+                <div class="card-body">
+                    <small>
+                        <strong>Estado de transcripción:</strong><br>
+                        <span class="text-muted">{{ recording.get_transcription_status_display }}</span><br><br>
+                        
+                        <strong>Última actualización:</strong><br>
+                        <span class="text-muted">{{ recording.updated_at|date:"d/m/Y H:i" }}</span><br><br>
+                        
+                        {% if recording.transcription_language %}
+                        <strong>Idioma detectado:</strong><br>
+                        <span class="text-muted">{{ recording.transcription_language|upper }}</span><br><br>
+                        {% endif %}
+                        
+                        <strong>Formato de archivo:</strong><br>
+                        <span class="text-muted">{{ recording.audio_file.name|slice:"-4:"|upper }}</span>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-refresh si está procesando
+    {% if recording.transcription_status == 'processing' %}
+    setTimeout(function() {
+        location.reload();
+    }, 10000); // Recargar cada 10 segundos
+    {% endif %}
+    
+    // Mejorar accesibilidad del reproductor
+    const audioPlayer = document.querySelector('audio');
+    if (audioPlayer) {
+        audioPlayer.addEventListener('play', function() {
+            console.log('Reproduciendo grabación: {{ recording.title }}');
+        });
+        
+        audioPlayer.addEventListener('ended', function() {
+            console.log('Reproducción completada');
+        });
+    }
+    
+    // Validación del formulario de transcripción
+    const transcriptionForm = document.querySelector('form[method="post"]');
+    const transcriptionTextarea = document.querySelector('#id_transcription_text');
+    
+    if (transcriptionForm && transcriptionTextarea) {
+        transcriptionForm.addEventListener('submit', function(e) {
+            const actionType = e.submitter ? e.submitter.name : '';
+            
+            if (actionType === 'save_transcription') {
+                if (!transcriptionTextarea.value.trim()) {
+                    if (!confirm('¿Guardar transcripción vacía?')) {
+                        e.preventDefault();
+                        return;
+                    }
+                }
+            }
+        });
+        
+        // Contador de caracteres
+        const charCounter = document.createElement('small');
+        charCounter.className = 'text-muted float-end';
+        transcriptionTextarea.parentNode.appendChild(charCounter);
+        
+        function updateCharCounter() {
+            const length = transcriptionTextarea.value.length;
+            charCounter.textContent = `${length} caracteres`;
+        }
+        
+        transcriptionTextarea.addEventListener('input', updateCharCounter);
+        updateCharCounter();
+    }
+});
+</script>
+
+<style>
+.card {
+    border: none;
+    border-radius: 10px;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 1px solid #dee2e6;
+    border-radius: 10px 10px 0 0 !important;
+}
+
+audio {
+    border-radius: 5px;
+}
+
+.badge {
+    font-size: 0.8rem;
+}
+
+.spinner-border-sm {
+    width: 0.8rem;
+    height: 0.8rem;
+}
+
+#id_transcription_text {
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.border-end {
+    border-right: 1px solid #dee2e6 !important;
+}
+</style>
+
+                        <div class="col-md-3">
+                            <small class="text-muted d-block">Tamaño</small>
+                            <strong>{{ recording.get_file_size_display }}</strong>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted d-block">Formato</small>
+                            <strong>{{ recording.get_audio_extension }}</strong>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted d-block">Calidad</small>
+                            <strong>
+                                {% if bitrate_kbps %}
+                                    {{ bitrate_kbps }} kbps
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Transcripción -->
+            <div class="card shadow mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-file-text"></i> Transcripción</h5>
+                    <span class="badge 
+                        {% if recording.transcription_status == 'completed' %}bg-success
+                        {% elif recording.transcription_status == 'processing' %}bg-warning
+                        {% elif recording.transcription_status == 'failed' %}bg-danger
+                        {% else %}bg-secondary{% endif %}">
+                        {% if recording.transcription_status == 'completed' %}Completada
+                        {% elif recording.transcription_status == 'processing' %}Procesando
+                        {% elif recording.transcription_status == 'failed' %}Fallida
+                        {% else %}Pendiente{% endif %}
+                    </span>
+                </div>
+                <div class="card-body">
+                    {% if recording.transcription_status == 'completed' and recording.transcription_text %}
+                        <div class="transcription-text" style="max-height: 400px; overflow-y: auto;">
+                            <p>{{ recording.transcription_text|linebreaks }}</p>
+                        </div>
+                        
+                        {% if recording.transcription_confidence %}
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <i class="bi bi-graph-up"></i> 
+                                Confianza de transcripción: {{ recording.transcription_confidence|floatformat:1 }}%
+                            </small>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mt-3">
+                            <button class="btn btn-sm btn-outline-primary" onclick="copyTranscription()">
+                                <i class="bi bi-clipboard"></i> Copiar texto
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="downloadTranscription()">
+                                <i class="bi bi-download"></i> Descargar
+                            </button>
+                        </div>
+                        
+                    {% elif recording.transcription_status == 'processing' %}
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Procesando...</span>
+                            </div>
+                            <p class="mt-3 text-muted">
+                                La transcripción se está procesando. Esto puede tomar varios minutos 
+                                dependiendo de la duración de la grabación.
+                            </p>
+                            <button class="btn btn-outline-primary btn-sm" onclick="location.reload()">
+                                <i class="bi bi-arrow-clockwise"></i> Actualizar estado
+                            </button>
+                        </div>
+                        
+                    {% elif recording.transcription_status == 'failed' %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-exclamation-triangle display-4 text-danger"></i>
+                            <p class="mt-3 text-muted">
+                                La transcripción falló. Esto puede deberse a la calidad del audio 
+                                o a problemas técnicos.
+                            </p>
+                            <button class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-arrow-repeat"></i> Reintentar transcripción
+                            </button>
+                        </div>
+                        
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-clock display-4 text-secondary"></i>
+                            <p class="mt-3 text-muted">
+                                La transcripción está pendiente de procesamiento. 
+                                Se iniciará automáticamente en breve.
+                            </p>
+                            <button class="btn btn-outline-primary btn-sm" onclick="location.reload()">
+                                <i class="bi bi-arrow-clockwise"></i> Actualizar estado
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar con información -->
+        <div class="col-md-4">
+            <!-- Información básica -->
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> Información</h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-5">Empresa:</dt>
+                        <dd class="col-sm-7">
+                            {% if recording.company %}
+                                <i class="bi bi-building text-primary"></i> {{ recording.company.name }}
+                            {% else %}
+                                <span class="text-muted">Sin empresa</span>
+                            {% endif %}
+                        </dd>
+                        
+                        <dt class="col-sm-5">Subido por:</dt>
+                        <dd class="col-sm-7">
+                            {% if recording.uploaded_by %}
+                                <i class="bi bi-person text-primary"></i> 
+                                {{ recording.uploaded_by.get_full_name|default:recording.uploaded_by.username }}
+                            {% else %}
+                                <span class="text-muted">Usuario anónimo</span>
+                            {% endif %}
+                        </dd>
+                        
+                        <dt class="col-sm-5">Fecha:</dt>
+                        <dd class="col-sm-7">
+                            <i class="bi bi-calendar text-primary"></i> 
+                            {{ recording.created_at|date:"d/m/Y H:i" }}
+                        </dd>
+                        
+                        <dt class="col-sm-5">Visibilidad:</dt>
+                        <dd class="col-sm-7">
+                            {% if recording.is_public %}
+                                <i class="bi bi-globe text-success"></i> Público
+                            {% else %}
+                                <i class="bi bi-lock text-warning"></i> Privado
+                            {% endif %}
+                        </dd>
+                        
+                        {% if recording.transcribed_at %}
+                        <dt class="col-sm-5">Transcrito:</dt>
+                        <dd class="col-sm-7">
+                            <i class="bi bi-clock text-primary"></i> 
+                            {{ recording.transcribed_at|date:"d/m/Y H:i" }}
+                        </dd>
+                        {% endif %}
+                        
+                        {% if recording.transcription_language %}
+                        <dt class="col-sm-5">Idioma:</dt>
+                        <dd class="col-sm-7">
+                            <i class="bi bi-translate text-primary"></i> 
+                            {{ recording.transcription_language|upper }}
+                        </dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+            
+            <!-- Descripción -->
+            {% if recording.description %}
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-file-text"></i> Descripción</h6>
+                </div>
+                <div class="card-body">
+                    <p>{{ recording.description|linebreaks }}</p>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Estadísticas de reproducción -->
+            {% if is_agent %}
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-graph-up"></i> Estadísticas</h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-7">Reproducciones:</dt>
+                        <dd class="col-sm-5">{{ recording.playbacks.count }}</dd>
+                        
+                        <dt class="col-sm-7">Última reproducción:</dt>
+                        <dd class="col-sm-5">
+                            {% with recording.playbacks.first as last_playback %}
+                                {% if last_playback %}
+                                    {{ last_playback.played_at|date:"d/m/Y" }}
+                                {% else %}
+                                    Nunca
+                                {% endif %}
+                            {% endwith %}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function copyTranscription() {
+    const transcriptionText = document.querySelector('.transcription-text p').innerText;
+    navigator.clipboard.writeText(transcriptionText).then(function() {
+        // Crear toast de confirmación
+        const toast = document.createElement('div');
+        toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed top-0 end-0 m-3';
+        toast.setAttribute('role', 'alert');
+        toast.style.zIndex = '1050';
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi bi-check-circle me-2"></i>Texto copiado al portapapeles
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+        
+        // Eliminar el toast después de que se oculte
+        toast.addEventListener('hidden.bs.toast', function() {
+            document.body.removeChild(toast);
+        });
+    }).catch(function(err) {
+        alert('Error al copiar el texto: ' + err);
+    });
+}
+
+function downloadTranscription() {
+    const transcriptionText = document.querySelector('.transcription-text p').innerText;
+    const blob = new Blob([transcriptionText], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '{{ recording.title }}_transcripcion.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+// Auto-refresh si está procesando
+{% if recording.transcription_status == 'processing' %}
+setTimeout(function() {
+    location.reload();
+}, 30000); // Refresh cada 30 segundos
+{% endif %}
+</script>
+
+<style>
+.transcription-text {
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    background-color: #f8f9fa;
+    font-family: Georgia, serif;
+    line-height: 1.6;
+}
+
+audio {
+    filter: sepia(20%) saturate(70%) grayscale(1) contrast(99%) invert(12%);
+}
+
+audio::-webkit-media-controls-panel {
+    background-color: #f8f9fa;
+}
+</style>
+{% endblock content %}

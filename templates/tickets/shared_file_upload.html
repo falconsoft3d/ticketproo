@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}Subir Archivo - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="bi bi-cloud-upload"></i> Subir Archivo Compartido
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {% bootstrap_form form %}
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'shared_files_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Volver
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-cloud-upload"></i> Subir Archivo
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Información adicional -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-info-circle"></i> Información sobre archivos
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Tipos de archivo permitidos:</h6>
+                            <ul class="small">
+                                <li><strong>Documentos:</strong> PDF, Word, Excel, PowerPoint</li>
+                                <li><strong>Imágenes:</strong> JPG, PNG, GIF</li>
+                                <li><strong>Archivos comprimidos:</strong> ZIP, RAR, 7Z</li>
+                                <li><strong>Texto:</strong> TXT</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Límites:</h6>
+                            <ul class="small">
+                                <li><strong>Tamaño máximo:</strong> 50 MB por archivo</li>
+                                <li><strong>Acceso:</strong> Usuarios de la empresa seleccionada</li>
+                                <li><strong>Descargas:</strong> Ilimitadas</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-lightbulb"></i>
+                        <strong>Consejo:</strong> Si marcas el archivo como "Público para toda la empresa", 
+                        todos los usuarios de la empresa podrán verlo y descargarlo. Si no lo marcas, 
+                        solo tú y los agentes podrán acceder a él.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Mostrar información del archivo seleccionado
+    const fileInput = document.querySelector('input[type="file"]');
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const fileSize = (file.size / 1024 / 1024).toFixed(2);
+                const fileName = file.name;
+                
+                // Crear o actualizar el elemento de información del archivo
+                let fileInfo = document.getElementById('file-info');
+                if (!fileInfo) {
+                    fileInfo = document.createElement('div');
+                    fileInfo.id = 'file-info';
+                    fileInfo.className = 'alert alert-success mt-2';
+                    fileInput.parentNode.appendChild(fileInfo);
+                }
+                
+                fileInfo.innerHTML = `
+                    <i class="bi bi-file-earmark-check"></i>
+                    <strong>Archivo seleccionado:</strong> ${fileName}<br>
+                    <strong>Tamaño:</strong> ${fileSize} MB
+                `;
+                
+                // Validar tamaño
+                if (file.size > 50 * 1024 * 1024) {
+                    fileInfo.className = 'alert alert-danger mt-2';
+                    fileInfo.innerHTML = `
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Error:</strong> El archivo es demasiado grande (${fileSize} MB). 
+                        El tamaño máximo permitido es 50 MB.
+                    `;
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

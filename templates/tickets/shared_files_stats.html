@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}Estadísticas de Archivos - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-bar-chart"></i> Estadísticas de Archivos Compartidos</h2>
+                <a href="{% url 'shared_files_list' %}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i> Volver a archivos
+                </a>
+            </div>
+
+            <!-- Estadísticas generales -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="bi bi-files display-4 text-primary"></i>
+                            <h3 class="mt-2">{{ total_files }}</h3>
+                            <p class="text-muted">Total de archivos</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="bi bi-download display-4 text-success"></i>
+                            <h3 class="mt-2">{{ total_downloads }}</h3>
+                            <p class="text-muted">Total de descargas</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="bi bi-hdd display-4 text-info"></i>
+                            <h3 class="mt-2">
+                                {% if total_size %}
+                                    {{ total_size|filesizeformat }}
+                                {% else %}
+                                    0 bytes
+                                {% endif %}
+                            </h3>
+                            <p class="text-muted">Espacio utilizado</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="bi bi-graph-up display-4 text-warning"></i>
+                            <h3 class="mt-2">{{ avg_downloads_per_file }}</h3>
+                            <p class="text-muted">Promedio descargas/archivo</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Archivos más descargados -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-trophy"></i> Archivos más descargados</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if top_files %}
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Archivo</th>
+                                            <th>Empresa</th>
+                                            <th class="text-center">Descargas</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for file in top_files %}
+                                        <tr>
+                                            <td>
+                                                <a href="{% url 'shared_file_detail' file.id %}" class="text-decoration-none">
+                                                    <i class="bi bi-file-earmark"></i>
+                                                    {{ file.title|truncatechars:30 }}
+                                                </a>
+                                            </td>
+                                            <td class="small text-muted">{{ file.company.name|truncatechars:20 }}</td>
+                                            <td class="text-center">
+                                                <span class="badge bg-primary">{{ file.download_count }}</span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted text-center">No hay archivos con descargas.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Archivos por empresa -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-building"></i> Archivos por empresa</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if files_by_company %}
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Empresa</th>
+                                            <th class="text-center">Archivos</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in files_by_company %}
+                                        <tr>
+                                            <td>{{ item.company__name|truncatechars:30 }}</td>
+                                            <td class="text-center">
+                                                <span class="badge bg-secondary">{{ item.count }}</span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted text-center">No hay datos disponibles.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <!-- Archivos por tipo -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-file-earmark-text"></i> Archivos por tipo</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if files_by_type %}
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Tipo de archivo</th>
+                                            <th class="text-center">Cantidad</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in files_by_type %}
+                                        <tr>
+                                            <td>
+                                                <i class="bi bi-file-earmark"></i>
+                                                {{ item.file_type|default:"Sin tipo" }}
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-info">{{ item.count }}</span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted text-center">No hay datos disponibles.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actividad reciente -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-clock"></i> Actividad reciente</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-12">
+                                    <h6 class="text-muted">Subidas recientes</h6>
+                                    {% if recent_uploads %}
+                                    <div class="small">
+                                        {% for file in recent_uploads|slice:":5" %}
+                                        <div class="d-flex justify-content-between border-bottom py-1">
+                                            <div>
+                                                <a href="{% url 'shared_file_detail' file.id %}" class="text-decoration-none">
+                                                    {{ file.title|truncatechars:25 }}
+                                                </a>
+                                            </div>
+                                            <div class="text-muted">{{ file.created_at|date:"d/m H:i" }}</div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    {% else %}
+                                    <p class="text-muted small">No hay subidas recientes.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <h6 class="text-muted">Descargas recientes</h6>
+                                    {% if recent_downloads %}
+                                    <div class="small">
+                                        {% for download in recent_downloads|slice:":5" %}
+                                        <div class="d-flex justify-content-between border-bottom py-1">
+                                            <div>
+                                                <a href="{% url 'shared_file_detail' download.shared_file.id %}" class="text-decoration-none">
+                                                    {{ download.shared_file.title|truncatechars:20 }}
+                                                </a>
+                                                <span class="text-muted">por {{ download.downloaded_by.username|default:"Anónimo" }}</span>
+                                            </div>
+                                            <div class="text-muted">{{ download.downloaded_at|date:"d/m H:i" }}</div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    {% else %}
+                                    <p class="text-muted small">No hay descargas recientes.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

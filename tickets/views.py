@@ -32,7 +32,8 @@ from .models import (
     BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, Concept,
     Exam, ExamQuestion, ExamAttempt, ExamAnswer, ContactoWeb, PublicDocumentUpload,
     Employee, JobApplicationToken, EmployeePayroll, Agreement, AgreementSignature,
-    LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry
+    LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry, SharedFile, SharedFileDownload,
+    Recording, RecordingPlayback
 )
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
@@ -43,7 +44,7 @@ from .forms import (
     ChatMessageForm, ChatRoomForm, AIChatSessionForm, AIChatMessageForm, ConceptForm,
     EmployeeHiringOpinionForm, EmployeePayrollForm, AgreementForm, AgreementSignatureForm, AgreementPublicForm,
     LandingPageForm, LandingPageSubmissionForm, PublicCompanyTicketForm, WorkOrderTaskForm, 
-    WorkOrderTaskTimeEntryForm, WorkOrderTaskBulkForm
+    WorkOrderTaskTimeEntryForm, WorkOrderTaskBulkForm, SharedFileForm, PublicSharedFileForm
 )
 from .utils import is_agent, is_regular_user, is_teacher, can_manage_courses, get_user_role, assign_user_to_group
 
@@ -11420,56 +11421,100 @@ def work_order_task_status_update_view(request, work_order_pk, task_pk):
 
 
 def work_order_task_time_start_view(request, work_order_pk, task_pk):
-    """Vista para marcar una tarea como iniciada"""
+    """Vista para iniciar el tiempo de una tarea"""
+    print(f"=== INICIO work_order_task_time_start_view ===")
+    print(f"work_order_pk={work_order_pk}, task_pk={task_pk}, method={request.method}")
+    print(f"User: {request.user}")
+    
     if request.method == 'POST':
-        work_order = get_object_or_404(WorkOrder, pk=work_order_pk)
-        from .models import WorkOrderTask
-        task = get_object_or_404(WorkOrderTask, pk=task_pk, work_order=work_order)
-        
-        # Actualizar estado de la tarea a "en progreso" si está pendiente
-        if task.status == 'pending':
-            task.status = 'in_progress'
-            task.started_at = timezone.now()
-            task.save()
+        try:
+            work_order = get_object_or_404(WorkOrder, pk=work_order_pk)
+            print(f"Work order encontrada: {work_order.order_number}")
             
-            return JsonResponse({
+            from .models import WorkOrderTask, WorkOrderTaskTimeSession
+            task = get_object_or_404(WorkOrderTask, pk=task_pk, work_order=work_order)
+            print(f"Tarea encontrada: {task.title}, Estado: {task.status}")
+            
+            # Verificar si ya hay una sesión activa para este usuario
+            active_session = task.get_active_time_session(request.user)
+            print(f"Sesión activa existente: {active_session}")
+            
+            if active_session:
+                print(f"Ya existe una sesión activa: {active_session}")
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Ya tienes una sesión de tiempo activa para esta tarea'
+                })
+            
+            # Crear nueva sesión de tiempo
+            print("Creando nueva sesión...")
+            session = WorkOrderTaskTimeSession.objects.create(
+                task=task,
+                user=request.user
+            )
+            print(f"Sesión creada exitosamente: {session} (ID: {session.id})")
+            
+            # Actualizar estado de la tarea a "en progreso" si está pendiente
+            if task.status == 'pending':
+                task.status = 'in_progress'
+                task.started_at = timezone.now()
+                task.save()
+                print(f"Tarea actualizada a 'in_progress'")
+            
+            response_data = {
                 'success': True,
-                'message': 'Tarea marcada como iniciada',
-                'status': 'in_progress',
-                'started_at': task.started_at.strftime('%H:%M:%S')
-            })
-        else:
+                'message': 'Tiempo iniciado correctamente',
+                'session_id': session.id,
+                'started_at': session.start_time.strftime('%H:%M:%S')
+            }
+            print(f"Enviando respuesta exitosa: {response_data}")
+            return JsonResponse(response_data)
+            
+        except Exception as e:
+            print(f"ERROR EXCEPCIÓN: {type(e).__name__}: {e}")
+            import traceback
+            traceback.print_exc()
             return JsonResponse({
                 'success': False,
-                'error': 'La tarea ya fue iniciada o está completada'
+                'error': f'Error interno: {str(e)}'
             })
     
+    print("Método no es POST, enviando error")
     return JsonResponse({'success': False, 'error': 'Método no permitido'})
 
 
 def work_order_task_time_stop_view(request, work_order_pk, task_pk):
-    """Vista para marcar una tarea como completada"""
+    """Vista para detener el tiempo de una tarea"""
     if request.method == 'POST':
         work_order = get_object_or_404(WorkOrder, pk=work_order_pk)
         from .models import WorkOrderTask
         task = get_object_or_404(WorkOrderTask, pk=task_pk, work_order=work_order)
         
-        # Marcar tarea como completada
-        if task.status != 'completed':
-            task.status = 'completed'
-            task.completed_at = timezone.now()
-            task.save()
-            
+        # Buscar sesión activa para este usuario
+        active_session = task.get_active_time_session(request.user)
+        if not active_session:
+            return JsonResponse({
+                'success': False,
+                'error': 'No hay una sesión de tiempo activa para esta tarea'
+            })
+        
+        # Obtener descripción opcional del POST
+        description = request.POST.get('description', '')
+        
+        # Detener la sesión
+        time_entry = active_session.stop_session(description)
+        
+        if time_entry:
             return JsonResponse({
                 'success': True,
-                'message': 'Tarea marcada como completada',
-                'status': 'completed',
-                'completed_at': task.completed_at.strftime('%H:%M:%S')
+                'message': f'Tiempo registrado: {time_entry.hours}h',
+                'total_time': task.get_total_time_logged(),
+                'session_duration': active_session.get_duration_hours()
             })
         else:
             return JsonResponse({
                 'success': False,
-                'error': 'La tarea ya está completada'
+                'error': 'Error al registrar el tiempo'
             })
     
     return JsonResponse({'success': False, 'error': 'Método no permitido'})
@@ -11495,14 +11540,40 @@ def work_order_public_task_view(request, token):
                 # Actualizar fechas según el estado
                 if new_status == 'completed':
                     task.completed_at = timezone.now()
+                    
+                    # Si la tarea se marca como completada y no tiene tiempo registrado,
+                    # calcular tiempo basado en started_at y completed_at
+                    if task.get_total_time_logged() == 0 and task.started_at:
+                        from .models import WorkOrderTaskTimeEntry
+                        from decimal import Decimal
+                        
+                        # Calcular duración en horas
+                        duration = task.completed_at - task.started_at
+                        hours = Decimal(str(duration.total_seconds() / 3600))
+                        
+                        # Crear entrada de tiempo automática
+                        WorkOrderTaskTimeEntry.objects.create(
+                            task=task,
+                            hours=round(hours, 2),
+                            description="Tiempo automático calculado al completar la tarea",
+                            date=task.completed_at.date()
+                        )
+                        
+                        # Actualizar horas reales de la tarea
+                        task.update_actual_hours()
+                        
                 elif new_status == 'in_progress':
-                    task.started_at = timezone.now()
+                    if not task.started_at:  # Solo si no se había iniciado antes
+                        task.started_at = timezone.now()
                     task.completed_at = None
                 else:  # pending
                     task.started_at = None
                     task.completed_at = None
                 
                 task.save()
+                
+                # Actualizar las horas del work order después de cualquier cambio de estado
+                work_order.update_actual_hours()
                 
                 new_status_display = task.get_status_display()
                 messages.success(request, f'Tarea "{task.title}" actualizada de "{old_status}" a "{new_status_display}".')
@@ -11522,3 +11593,1153 @@ def work_order_public_task_view(request, token):
     }
     
     return render(request, 'tickets/work_order_public_tasks.html', context)
+
+
+def work_order_public_task_time_start_view(request, token, task_pk):
+    """Vista pública para iniciar el tiempo de una tarea"""
+    if request.method == 'POST':
+        work_order = get_object_or_404(WorkOrder, public_share_token=token, is_public=True)
+        from .models import WorkOrderTask, WorkOrderTaskTimeSession
+        task = get_object_or_404(WorkOrderTask, pk=task_pk, work_order=work_order)
+        
+        # Para vista pública, crear sesión anónima (sin usuario)
+        # Verificar si ya hay una sesión activa para esta tarea
+        active_session = task.active_sessions.filter(is_active=True, user__isnull=True).first()
+        if active_session:
+            return JsonResponse({
+                'success': False,
+                'error': 'Ya hay una sesión de tiempo activa para esta tarea'
+            })
+        
+        # Crear nueva sesión de tiempo sin usuario (pública)
+        session = WorkOrderTaskTimeSession.objects.create(
+            task=task,
+            user=None  # Para sesiones públicas
+        )
+        
+        # Actualizar estado de la tarea a "en progreso" si está pendiente
+        if task.status == 'pending':
+            task.status = 'in_progress'
+            task.started_at = timezone.now()
+            task.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Tiempo iniciado correctamente',
+            'session_id': session.id,
+            'started_at': session.start_time.strftime('%H:%M:%S')
+        })
+    
+    return JsonResponse({'success': False, 'error': 'Método no permitido'})
+
+
+def work_order_public_task_time_stop_view(request, token, task_pk):
+    """Vista pública para detener el tiempo de una tarea"""
+    if request.method == 'POST':
+        work_order = get_object_or_404(WorkOrder, public_share_token=token, is_public=True)
+        from .models import WorkOrderTask
+        task = get_object_or_404(WorkOrderTask, pk=task_pk, work_order=work_order)
+        
+        # Buscar sesión activa pública (sin usuario)
+        active_session = task.active_sessions.filter(is_active=True, user__isnull=True).first()
+        if not active_session:
+            return JsonResponse({
+                'success': False,
+                'error': 'No hay una sesión de tiempo activa para esta tarea'
+            })
+        
+        # Obtener descripción opcional del POST
+        description = request.POST.get('description', '')
+        
+        # Detener la sesión
+        time_entry = active_session.stop_session(description)
+        
+        if time_entry:
+            return JsonResponse({
+                'success': True,
+                'message': f'Tiempo registrado: {time_entry.hours}h',
+                'total_time': task.get_total_time_logged(),
+                'session_duration': active_session.get_duration_hours()
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': 'Error al registrar el tiempo'
+            })
+    
+    return JsonResponse({'success': False, 'error': 'Método no permitido'})
+
+
+# ===========================================
+# VISTAS PARA EVALUACIÓN DE IA DE LANDING PAGES
+# ===========================================
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def landing_submissions_list_view(request):
+    """Vista para listar envíos de landing pages con evaluación de IA"""
+    from .models import LandingPageSubmission
+    
+    # Filtros
+    evaluated_filter = request.GET.get('evaluated', 'all')
+    priority_filter = request.GET.get('priority', 'all')
+    score_filter = request.GET.get('score', 'all')
+    search = request.GET.get('search', '')
+    
+    # Base queryset
+    submissions = LandingPageSubmission.objects.select_related('landing_page').order_by('-created_at')
+    
+    # Aplicar filtros
+    if evaluated_filter == 'yes':
+        submissions = submissions.filter(ai_evaluated=True)
+    elif evaluated_filter == 'no':
+        submissions = submissions.filter(ai_evaluated=False)
+    
+    if priority_filter != 'all':
+        submissions = submissions.filter(ai_priority_level=priority_filter)
+    
+    if score_filter == 'high':
+        submissions = submissions.filter(ai_overall_score__gte=7.0)
+    elif score_filter == 'medium':
+        submissions = submissions.filter(ai_overall_score__gte=4.0, ai_overall_score__lt=7.0)
+    elif score_filter == 'low':
+        submissions = submissions.filter(ai_overall_score__lt=4.0)
+    
+    if search:
+        submissions = submissions.filter(
+            Q(nombre__icontains=search) |
+            Q(apellido__icontains=search) |
+            Q(email__icontains=search) |
+            Q(empresa__icontains=search) |
+            Q(mensaje__icontains=search)
+        )
+    
+    # Paginación
+    paginator = Paginator(submissions, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Estadísticas
+    from .ai_landing_evaluator import get_evaluation_stats
+    try:
+        stats = get_evaluation_stats()
+    except:
+        stats = {}
+    
+    context = {
+        'page_title': 'Evaluación IA - Landing Pages',
+        'page_obj': page_obj,
+        'evaluated_filter': evaluated_filter,
+        'priority_filter': priority_filter,
+        'score_filter': score_filter,
+        'search': search,
+        'stats': stats,
+        'priority_choices': [
+            ('low', 'Baja'),
+            ('medium', 'Media'),
+            ('high', 'Alta'),
+            ('urgent', 'Urgente'),
+        ]
+    }
+    
+    return render(request, 'tickets/landing_submissions_list.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def landing_submission_detail_view(request, submission_id):
+    """Vista detallada de un envío de landing page con evaluación IA"""
+    from .models import LandingPageSubmission
+    
+    submission = get_object_or_404(LandingPageSubmission, id=submission_id)
+    
+    context = {
+        'page_title': f'Evaluación: {submission.nombre} {submission.apellido}',
+        'submission': submission,
+    }
+    
+    return render(request, 'tickets/landing_submission_detail.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def evaluate_submission_ai_view(request, submission_id):
+    """Vista para evaluar un envío específico con IA"""
+    from .models import LandingPageSubmission
+    
+    submission = get_object_or_404(LandingPageSubmission, id=submission_id)
+    
+    if request.method == 'POST':
+        try:
+            success = submission.evaluate_with_ai()
+            if success:
+                messages.success(request, f'Evaluación IA completada. Puntuación: {submission.ai_overall_score}/10')
+            else:
+                messages.error(request, 'Error al evaluar con IA')
+        except Exception as e:
+            messages.error(request, f'Error: {str(e)}')
+    
+    return redirect('landing_submission_detail', submission_id=submission.id)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def batch_evaluate_submissions_view(request):
+    """Vista para evaluación en lote con IA"""
+    if request.method == 'POST':
+        limit = int(request.POST.get('limit', 10))
+        
+        try:
+            from .ai_landing_evaluator import batch_evaluate_submissions
+            results = batch_evaluate_submissions(limit=limit)
+            
+            messages.success(
+                request, 
+                f'Evaluación completada: {results["processed"]} procesados, {results["errors"]} errores'
+            )
+            
+            # Mostrar detalles de errores si los hay
+            if results["errors"] > 0:
+                error_details = [r for r in results["results"] if r["status"] == "error"]
+                for error in error_details[:3]:  # Mostrar máximo 3 errores
+                    messages.warning(request, f'Error en ID {error["id"]}: {error["error"]}')
+                    
+        except Exception as e:
+            messages.error(request, f'Error en evaluación en lote: {str(e)}')
+    
+    return redirect('landing_submissions_list')
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def ai_evaluation_dashboard_view(request):
+    """Dashboard con estadísticas de evaluación IA"""
+    from .ai_landing_evaluator import get_evaluation_stats
+    from .models import LandingPageSubmission
+    from django.db.models import Count
+    from datetime import datetime, timedelta
+    
+    # Estadísticas generales
+    try:
+        stats = get_evaluation_stats()
+    except:
+        stats = {}
+    
+    # Top submissions por puntuación
+    top_submissions = LandingPageSubmission.objects.filter(
+        ai_evaluated=True
+    ).order_by('-ai_overall_score')[:10]
+    
+    # Submissions recientes no evaluados
+    pending_submissions = LandingPageSubmission.objects.filter(
+        ai_evaluated=False
+    ).order_by('-created_at')[:10]
+    
+    # Submissions urgentes
+    urgent_submissions = LandingPageSubmission.objects.filter(
+        ai_priority_level='urgent'
+    ).order_by('-ai_overall_score')[:5]
+    
+    # Estadísticas por mes
+    last_30_days = timezone.now() - timedelta(days=30)
+    monthly_stats = LandingPageSubmission.objects.filter(
+        created_at__gte=last_30_days
+    ).extra(
+        select={'month': 'DATE(created_at)'}
+    ).values('month').annotate(
+        total=Count('id'),
+        evaluated=Count('id', filter=Q(ai_evaluated=True))
+    ).order_by('-month')[:10]
+    
+    context = {
+        'page_title': 'Dashboard Evaluación IA',
+        'stats': stats,
+        'top_submissions': top_submissions,
+        'pending_submissions': pending_submissions,
+        'urgent_submissions': urgent_submissions,
+        'monthly_stats': monthly_stats,
+    }
+    
+    return render(request, 'tickets/ai_evaluation_dashboard.html', context)
+
+
+# ====== VISTAS DE ARCHIVOS COMPARTIDOS ======
+
+@login_required
+def shared_files_list_view(request):
+    """Vista para listar archivos compartidos"""
+    
+    user = request.user
+    user_profile = getattr(user, 'userprofile', None)
+    
+    # Si es agente, puede ver todos los archivos
+    if is_agent(user):
+        files = SharedFile.objects.all()
+    else:
+        # Si no es agente, solo ve archivos de su empresa y los que él subió
+        if user_profile and user_profile.company:
+            files = SharedFile.objects.filter(
+                Q(company=user_profile.company) | Q(uploaded_by=user)
+            )
+        else:
+            # Si no tiene empresa, solo ve los que él subió
+            files = SharedFile.objects.filter(uploaded_by=user)
+    
+    # Filtros
+    search = request.GET.get('search', '')
+    company_id = request.GET.get('company', '')
+    file_type = request.GET.get('file_type', '')
+    
+    if search:
+        files = files.filter(
+            Q(title__icontains=search) | 
+            Q(description__icontains=search)
+        )
+    
+    if company_id:
+        files = files.filter(company_id=company_id)
+    
+    if file_type:
+        files = files.filter(file_type__icontains=file_type)
+    
+    files = files.select_related('company', 'uploaded_by').order_by('-created_at')
+    
+    # Paginación
+    paginator = Paginator(files, 20)
+    page_number = request.GET.get('page')
+    files_page = paginator.get_page(page_number)
+    
+    # Empresas para el filtro
+    companies = Company.objects.filter(is_active=True).order_by('name')
+    
+    # Tipos de archivo únicos para el filtro
+    file_types = SharedFile.objects.values_list('file_type', flat=True).distinct()
+    
+    context = {
+        'page_title': 'Archivos Compartidos',
+        'files': files_page,
+        'companies': companies,
+        'file_types': file_types,
+        'search': search,
+        'selected_company': company_id,
+        'selected_file_type': file_type,
+    }
+    
+    return render(request, 'tickets/shared_files_list.html', context)
+
+
+@login_required
+def shared_file_upload_view(request):
+    """Vista para subir archivos compartidos"""
+    
+    if request.method == 'POST':
+        form = SharedFileForm(request.POST, request.FILES, user=request.user)
+        if form.is_valid():
+            shared_file = form.save(commit=False)
+            shared_file.uploaded_by = request.user
+            
+            # Si el usuario no es agente y no tiene empresa asignada, usar la primera empresa activa
+            if not shared_file.company:
+                user_profile = getattr(request.user, 'userprofile', None)
+                if user_profile and user_profile.company:
+                    shared_file.company = user_profile.company
+                else:
+                    # Usar la primera empresa activa disponible
+                    first_company = Company.objects.filter(is_active=True).first()
+                    if first_company:
+                        shared_file.company = first_company
+            
+            shared_file.save()
+            messages.success(request, 'Archivo subido exitosamente.')
+            return redirect('shared_files_list')
+    else:
+        form = SharedFileForm(user=request.user)
+    
+    context = {
+        'page_title': 'Subir Archivo',
+        'form': form,
+    }
+    
+    return render(request, 'tickets/shared_file_upload.html', context)
+
+
+@login_required
+def shared_file_detail_view(request, file_id):
+    """Vista para ver detalles de un archivo compartido"""
+    
+    shared_file = get_object_or_404(SharedFile, id=file_id)
+    
+    # Verificar permisos
+    user = request.user
+    user_profile = getattr(user, 'userprofile', None)
+    
+    if not is_agent(user):
+        # Si no es agente, verificar que tenga acceso
+        if not (shared_file.uploaded_by == user or 
+                (user_profile and user_profile.company == shared_file.company)):
+            messages.error(request, 'No tienes permisos para ver este archivo.')
+            return redirect('shared_files_list')
+    
+    context = {
+        'page_title': f'Archivo: {shared_file.title}',
+        'shared_file': shared_file,
+    }
+    
+    return render(request, 'tickets/shared_file_detail.html', context)
+
+
+@login_required
+def shared_file_download_view(request, file_id):
+    """Vista para descargar archivos compartidos"""
+    from django.http import FileResponse
+    
+    shared_file = get_object_or_404(SharedFile, id=file_id)
+    
+    # Verificar permisos
+    user = request.user
+    user_profile = getattr(user, 'userprofile', None)
+    
+    if not is_agent(user):
+        # Si no es agente, verificar que tenga acceso
+        if not (shared_file.uploaded_by == user or 
+                (user_profile and user_profile.company == shared_file.company)):
+            messages.error(request, 'No tienes permisos para descargar este archivo.')
+            return redirect('shared_files_list')
+    
+    # Registrar la descarga
+    SharedFileDownload.objects.create(
+        shared_file=shared_file,
+        downloaded_by=user,
+        ip_address=request.META.get('REMOTE_ADDR', ''),
+        user_agent=request.META.get('HTTP_USER_AGENT', '')
+    )
+    
+    # Incrementar contador de descargas
+    shared_file.download_count += 1
+    shared_file.save(update_fields=['download_count'])
+    
+    try:
+        response = FileResponse(
+            shared_file.file.open(),
+            as_attachment=True,
+            filename=os.path.basename(shared_file.file.name)
+        )
+        return response
+    except FileNotFoundError:
+        messages.error(request, 'El archivo no se encontró en el servidor.')
+        return redirect('shared_file_detail', file_id=file_id)
+
+
+def public_file_upload_view(request):
+    """Vista pública para subir archivos"""
+    
+    if request.method == 'POST':
+        form = PublicSharedFileForm(request.POST, request.FILES)
+        if form.is_valid():
+            shared_file = form.save()
+            
+            # Verificar si se encontró una empresa para el usuario
+            uploader_email = form.cleaned_data['uploader_email']
+            try:
+                existing_user = User.objects.get(email=uploader_email)
+                if hasattr(existing_user, 'userprofile') and existing_user.userprofile.company:
+                    messages.success(
+                        request, 
+                        f'Archivo subido exitosamente y asignado automáticamente a la empresa: {existing_user.userprofile.company.name}. Gracias por compartir.'
+                    )
+                else:
+                    messages.success(
+                        request, 
+                        'Archivo subido exitosamente. Tu cuenta no tiene empresa asignada, por lo que el archivo estará disponible para revisión de los agentes.'
+                    )
+            except User.DoesNotExist:
+                messages.success(
+                    request, 
+                    'Archivo subido exitosamente. No se encontró una cuenta con este email, por lo que el archivo estará disponible para revisión de los agentes.'
+                )
+            
+            return redirect('public_file_upload')
+    else:
+        form = PublicSharedFileForm()
+    
+    context = {
+        'page_title': 'Subir Archivo Público',
+        'form': form,
+    }
+    
+    return render(request, 'tickets/public_file_upload.html', context)
+
+
+@login_required 
+@user_passes_test(is_agent)
+def shared_file_delete_view(request, file_id):
+    """Vista para eliminar archivos compartidos (solo agentes)"""
+    
+    shared_file = get_object_or_404(SharedFile, id=file_id)
+    
+    if request.method == 'POST':
+        # Eliminar archivo físico
+        if shared_file.file:
+            try:
+                shared_file.file.delete()
+            except:
+                pass
+        
+        shared_file.delete()
+        messages.success(request, 'Archivo eliminado exitosamente.')
+        return redirect('shared_files_list')
+    
+    context = {
+        'page_title': 'Eliminar Archivo',
+        'shared_file': shared_file,
+    }
+    
+    return render(request, 'tickets/shared_file_delete.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def shared_files_stats_view(request):
+    """Vista de estadísticas de archivos compartidos (solo agentes)"""
+    from django.db.models import Count, Sum
+    
+    # Estadísticas generales
+    total_files = SharedFile.objects.count()
+    total_downloads = SharedFileDownload.objects.count()
+    total_size = SharedFile.objects.aggregate(
+        total=Sum('file_size')
+    )['total'] or 0
+    
+    # Calcular promedio de descargas por archivo
+    avg_downloads_per_file = round(total_downloads / total_files, 1) if total_files > 0 else 0
+    
+    # Archivos más descargados
+    top_files = SharedFile.objects.filter(
+        download_count__gt=0
+    ).order_by('-download_count')[:10]
+    
+    # Archivos por empresa
+    files_by_company = SharedFile.objects.values(
+        'company__name'
+    ).annotate(
+        count=Count('id')
+    ).order_by('-count')[:10]
+    
+    # Archivos por tipo
+    files_by_type = SharedFile.objects.values(
+        'file_type'
+    ).annotate(
+        count=Count('id')
+    ).order_by('-count')[:10]
+    
+    # Actividad reciente
+    recent_uploads = SharedFile.objects.select_related(
+        'company', 'uploaded_by'
+    ).order_by('-created_at')[:10]
+    
+    recent_downloads = SharedFileDownload.objects.select_related(
+        'shared_file', 'downloaded_by'
+    ).order_by('-downloaded_at')[:10]
+    
+    context = {
+        'page_title': 'Estadísticas de Archivos Compartidos',
+        'total_files': total_files,
+        'total_downloads': total_downloads,
+        'total_size': total_size,
+        'avg_downloads_per_file': avg_downloads_per_file,
+        'top_files': top_files,
+        'files_by_company': files_by_company,
+        'files_by_type': files_by_type,
+        'recent_uploads': recent_uploads,
+        'recent_downloads': recent_downloads,
+    }
+    
+    return render(request, 'tickets/shared_files_stats.html', context)
+
+
+# ========================== GRABACIONES VIEWS ==========================
+
+@login_required
+def recordings_list_view(request):
+    """Vista para listar grabaciones"""
+    from .models import Recording
+    from .utils import is_agent
+    
+    # Filtrar grabaciones según el rol del usuario
+    if is_agent(request.user):
+        # Los agentes pueden ver todas las grabaciones
+        recordings = Recording.objects.select_related('company', 'uploaded_by').all()
+    else:
+        # Los usuarios solo ven grabaciones de su empresa o públicas
+        user_company = getattr(request.user.userprofile, 'company', None) if hasattr(request.user, 'userprofile') else None
+        if user_company:
+            recordings = Recording.objects.select_related('company', 'uploaded_by').filter(
+                models.Q(company=user_company) | models.Q(is_public=True, company__isnull=True)
+            )
+        else:
+            recordings = Recording.objects.select_related('company', 'uploaded_by').filter(
+                uploaded_by=request.user
+            )
+    
+    # Paginación
+    paginator = Paginator(recordings, 12)
+    page_number = request.GET.get('page')
+    recordings_page = paginator.get_page(page_number)
+    
+    context = {
+        'page_title': 'Grabaciones',
+        'recordings': recordings_page,
+        'is_agent': is_agent(request.user),
+    }
+    
+    return render(request, 'tickets/recordings_list.html', context)
+
+
+@login_required
+def recording_upload_view(request):
+    """Vista para grabar audio desde el navegador"""
+    from .forms import RecordingForm
+    from .models import Recording
+    import base64
+    import tempfile
+    import os
+    from django.core.files.base import ContentFile
+    
+    if request.method == 'POST':
+        form = RecordingForm(request.POST)
+        if form.is_valid():
+            recording = form.save(commit=False)
+            
+            # Asignar el usuario que sube
+            recording.uploaded_by = request.user
+            
+            # Asignar empresa del usuario si tiene
+            if hasattr(request.user, 'userprofile') and request.user.userprofile.company:
+                recording.company = request.user.userprofile.company
+            
+            # Procesar datos de audio
+            audio_data = form.cleaned_data['audio_data']
+            if audio_data:
+                try:
+                    # Remover el prefijo 'data:audio/webm;codecs=opus;base64,' si existe
+                    if ',' in audio_data:
+                        audio_data = audio_data.split(',')[1]
+                    
+                    # Decodificar base64
+                    audio_binary = base64.b64decode(audio_data)
+                    
+                    # Crear archivo temporal
+                    audio_file = ContentFile(audio_binary, name=f"{recording.title}.webm")
+                    recording.audio_file = audio_file
+                    
+                    recording.save()
+                    
+                    # Iniciar transcripción automática
+                    try:
+                        from .ai_utils import transcribe_recording
+                        import threading
+                        
+                        # Ejecutar transcripción en hilo separado para no bloquear la respuesta
+                        def transcribe_async():
+                            transcribe_recording(recording.id)
+                        
+                        thread = threading.Thread(target=transcribe_async)
+                        thread.daemon = True
+                        thread.start()
+                        
+                        messages.success(request, 'Grabación guardada exitosamente. La transcripción se procesará automáticamente.')
+                    except Exception as e:
+                        messages.success(request, 'Grabación guardada exitosamente. La transcripción se procesará manualmente.')
+                        print(f"Error iniciando transcripción automática: {e}")
+                    
+                    return redirect('recordings_list')
+                    
+                except Exception as e:
+                    messages.error(request, f'Error al procesar la grabación: {str(e)}')
+            else:
+                messages.error(request, 'No se recibieron datos de audio.')
+    else:
+        form = RecordingForm()
+    
+    context = {
+        'page_title': 'Grabar Audio',
+        'form': form,
+    }
+    
+    return render(request, 'tickets/recording_upload.html', context)
+
+
+@login_required
+def recording_detail_view(request, recording_id):
+    """Vista para ver detalles de una grabación"""
+    from .models import Recording, RecordingPlayback
+    from .utils import is_agent
+    
+    recording = get_object_or_404(Recording, id=recording_id)
+    
+    # Verificar permisos
+    user_can_access = False
+    if is_agent(request.user):
+        user_can_access = True
+    elif recording.company and hasattr(request.user, 'userprofile') and request.user.userprofile.company == recording.company:
+        user_can_access = True
+    elif recording.uploaded_by == request.user:
+        user_can_access = True
+    elif recording.is_public:
+        user_can_access = True
+    
+    if not user_can_access:
+        messages.error(request, 'No tienes permisos para ver esta grabación.')
+        return redirect('recordings_list')
+    
+    # Registrar reproducción
+    RecordingPlayback.objects.create(
+        recording=recording,
+        played_by=request.user,
+        ip_address=request.META.get('REMOTE_ADDR'),
+        user_agent=request.META.get('HTTP_USER_AGENT', '')
+    )
+    
+    context = {
+        'page_title': f'Grabación: {recording.title}',
+        'recording': recording,
+        'is_agent': is_agent(request.user),
+    }
+    
+    return render(request, 'tickets/recording_detail.html', context)
+
+
+@login_required
+def recording_play_view(request, recording_id):
+    """Vista para reproducir grabación (streaming)"""
+    from .models import Recording
+    from .utils import is_agent
+    import mimetypes
+    from django.http import HttpResponse, Http404
+    from wsgiref.util import FileWrapper
+    
+    recording = get_object_or_404(Recording, id=recording_id)
+    
+    # Verificar permisos
+    user_can_access = False
+    if is_agent(request.user):
+        user_can_access = True
+    elif recording.company and hasattr(request.user, 'userprofile') and request.user.userprofile.company == recording.company:
+        user_can_access = True
+    elif recording.uploaded_by == request.user:
+        user_can_access = True
+    elif recording.is_public:
+        user_can_access = True
+    
+    if not user_can_access:
+        raise Http404("Grabación no encontrada")
+    
+    # Servir archivo de audio
+    try:
+        audio_file = recording.audio_file.open('rb')
+        content_type, _ = mimetypes.guess_type(recording.audio_file.name)
+        
+        response = HttpResponse(FileWrapper(audio_file), content_type=content_type or 'audio/mpeg')
+        response['Content-Disposition'] = f'inline; filename="{recording.title}.{recording.get_audio_extension().lower()}"'
+        response['Content-Length'] = recording.file_size or recording.audio_file.size
+        
+        return response
+    except Exception as e:
+        raise Http404(f"Error al reproducir grabación: {str(e)}")
+
+
+def public_recording_upload_view(request):
+    """Vista pública para grabar audio desde el navegador"""
+    from .forms import PublicRecordingForm
+    import base64
+    from django.core.files.base import ContentFile
+    
+    if request.method == 'POST':
+        form = PublicRecordingForm(request.POST)
+        if form.is_valid():
+            recording = form.save(commit=False)
+            
+            # Buscar usuario por email para asignar empresa automáticamente
+            uploader_email = form.cleaned_data['uploader_email']
+            try:
+                existing_user = User.objects.get(email=uploader_email)
+                # Si el usuario tiene perfil con empresa, usar esa empresa
+                if hasattr(existing_user, 'userprofile') and existing_user.userprofile.company:
+                    recording.company = existing_user.userprofile.company
+                else:
+                    # Si no tiene empresa asignada, dejarlo sin empresa
+                    recording.company = None
+            except User.DoesNotExist:
+                # Si no existe el usuario, dejarlo sin empresa
+                recording.company = None
+            
+            # Guardar información del uploader en la descripción si no hay descripción
+            uploader_info = f"\nSubido por: {form.cleaned_data['uploader_name']} ({uploader_email})"
+            if recording.description:
+                recording.description += uploader_info
+            else:
+                recording.description = f"Grabación subida públicamente.{uploader_info}"
+            
+            # Marcar como público
+            recording.is_public = True
+            
+            # Procesar datos de audio
+            audio_data = form.cleaned_data['audio_data']
+            if audio_data:
+                try:
+                    # Remover el prefijo 'data:audio/webm;codecs=opus;base64,' si existe
+                    if ',' in audio_data:
+                        audio_data = audio_data.split(',')[1]
+                    
+                    # Decodificar base64
+                    audio_binary = base64.b64decode(audio_data)
+                    
+                    # Crear archivo temporal
+                    audio_file = ContentFile(audio_binary, name=f"{recording.title}.webm")
+                    recording.audio_file = audio_file
+                    
+                    recording.save()
+                    
+                    # Iniciar transcripción automática
+                    try:
+                        from .ai_utils import transcribe_recording
+                        import threading
+                        
+                        # Ejecutar transcripción en hilo separado para no bloquear la respuesta
+                        def transcribe_async():
+                            transcribe_recording(recording.id)
+                        
+                        thread = threading.Thread(target=transcribe_async)
+                        thread.daemon = True
+                        thread.start()
+                    except Exception as e:
+                        print(f"Error iniciando transcripción automática: {e}")
+                    
+                    # Verificar si se encontró una empresa para el usuario
+                    try:
+                        existing_user = User.objects.get(email=uploader_email)
+                        if hasattr(existing_user, 'userprofile') and existing_user.userprofile.company:
+                            messages.success(
+                                request, 
+                                f'Grabación guardada exitosamente y asignada automáticamente a la empresa: {existing_user.userprofile.company.name}. La transcripción se procesará automáticamente.'
+                            )
+                        else:
+                            messages.success(
+                                request, 
+                                'Grabación guardada exitosamente. Tu cuenta no tiene empresa asignada, por lo que la grabación estará disponible para revisión de los agentes.'
+                            )
+                    except User.DoesNotExist:
+                        messages.success(
+                            request, 
+                            'Grabación guardada exitosamente. No se encontró una cuenta con este email, por lo que la grabación estará disponible para revisión de los agentes.'
+                        )
+                    
+                    return redirect('public_recording_upload')
+                    
+                except Exception as e:
+                    messages.error(request, f'Error al procesar la grabación: {str(e)}')
+            else:
+                messages.error(request, 'No se recibieron datos de audio.')
+    else:
+        form = PublicRecordingForm()
+    
+    context = {
+        'page_title': 'Grabar Audio Público',
+        'form': form,
+    }
+    
+    return render(request, 'tickets/public_recording_upload.html', context)
+
+
+@login_required 
+@user_passes_test(is_agent)
+def recording_delete_view(request, recording_id):
+    """Vista para eliminar grabaciones (solo agentes)"""
+    from .models import Recording
+    
+    recording = get_object_or_404(Recording, id=recording_id)
+    
+    if request.method == 'POST':
+        # Eliminar archivo físico
+        if recording.audio_file:
+            try:
+                recording.audio_file.delete()
+            except:
+                pass
+        
+        recording.delete()
+        messages.success(request, 'Grabación eliminada exitosamente.')
+        return redirect('recordings_list')
+    
+    context = {
+        'page_title': 'Eliminar Grabación',
+        'recording': recording,
+    }
+    
+    return render(request, 'tickets/recording_delete.html', context)
+
+
+@login_required 
+@user_passes_test(is_agent)
+def recordings_stats_view(request):
+    """Vista de estadísticas de grabaciones (solo agentes)"""
+    from django.db.models import Count, Sum, Avg
+    from .models import Recording, RecordingPlayback
+    
+    # Estadísticas generales
+    total_recordings = Recording.objects.count()
+    total_playbacks = RecordingPlayback.objects.count()
+    total_size = Recording.objects.aggregate(
+        total=Sum('file_size')
+    )['total'] or 0
+    
+    # Calcular promedio de reproducciones por grabación
+    avg_playbacks_per_recording = round(total_playbacks / total_recordings, 1) if total_recordings > 0 else 0
+    
+    # Grabaciones más reproducidas
+    top_recordings = Recording.objects.annotate(
+        playback_count=Count('playbacks')
+    ).filter(playback_count__gt=0).order_by('-playback_count')[:10]
+    
+    # Grabaciones por empresa
+    recordings_by_company = Recording.objects.values(
+        'company__name'
+    ).annotate(
+        count=Count('id')
+    ).order_by('-count')[:10]
+    
+    # Grabaciones por estado de transcripción
+    recordings_by_status = Recording.objects.values(
+        'transcription_status'
+    ).annotate(
+        count=Count('id')
+    ).order_by('-count')
+    
+    # Actividad reciente
+    recent_uploads = Recording.objects.select_related(
+        'company', 'uploaded_by'
+    ).order_by('-created_at')[:10]
+    
+    recent_playbacks = RecordingPlayback.objects.select_related(
+        'recording', 'played_by'
+    ).order_by('-played_at')[:10]
+    
+    context = {
+        'page_title': 'Estadísticas de Grabaciones',
+        'total_recordings': total_recordings,
+        'total_playbacks': total_playbacks,
+        'total_size': total_size,
+        'avg_playbacks_per_recording': avg_playbacks_per_recording,
+        'top_recordings': top_recordings,
+        'recordings_by_company': recordings_by_company,
+        'recordings_by_status': recordings_by_status,
+        'recent_uploads': recent_uploads,
+        'recent_playbacks': recent_playbacks,
+    }
+    
+    return render(request, 'tickets/recordings_stats.html', context)
+
+
+@login_required
+def recording_detail_view(request, recording_id):
+    """Vista detallada de una grabación con transcripción editable"""
+    from .models import Recording, RecordingPlayback
+    from .forms import TranscriptionEditForm, TranscriptionActionForm
+    from .ai_utils import transcribe_recording, AudioTranscriber
+    
+    recording = get_object_or_404(Recording, id=recording_id)
+    
+    # Verificar permisos usando la función is_agent de utils
+    if not is_agent(request.user):
+        # Si no es agente, verificar que tiene empresa y es la misma que la grabación
+        user_profile = getattr(request.user, 'userprofile', None)
+        if not user_profile:
+            raise PermissionDenied("No tienes perfil de usuario configurado")
+        if recording.company != user_profile.company:
+            raise PermissionDenied("No tienes permiso para ver esta grabación")
+    
+    # Registrar reproducción si es una visualización completa
+    if request.method == 'GET' and 'transcript_only' not in request.GET:
+        RecordingPlayback.objects.create(
+            recording=recording,
+            played_by=request.user,
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            ip_address=request.META.get('REMOTE_ADDR', '')
+        )
+    
+    transcription_form = TranscriptionEditForm(instance=recording)
+    action_form = TranscriptionActionForm(recording=recording)
+    
+    # Procesar formularios
+    if request.method == 'POST':
+        if 'save_transcription' in request.POST:
+            transcription_form = TranscriptionEditForm(request.POST, instance=recording)
+            if transcription_form.is_valid():
+                transcription_form.save()
+                messages.success(request, 'Transcripción guardada exitosamente.')
+                return redirect('recording_detail', recording_id=recording.id)
+        
+        elif 'process_ai' in request.POST:
+            action_form = TranscriptionActionForm(request.POST, recording=recording)
+            if action_form.is_valid():
+                action = action_form.cleaned_data['action']
+                context_hint = action_form.cleaned_data['context_hint']
+                
+                try:
+                    if action == 'generate' or action == 'regenerate':
+                        # Transcribir desde audio
+                        result = transcribe_recording(recording.id)
+                        if result['success']:
+                            messages.success(request, 'Transcripción generada exitosamente con IA.')
+                        else:
+                            messages.error(request, f'Error al generar transcripción: {result["error"]}')
+                    
+                    elif action == 'improve':
+                        # Mejorar transcripción existente
+                        if recording.transcription_text:
+                            transcriber = AudioTranscriber()
+                            context = f"Título: {recording.title}. Descripción: {recording.description}"
+                            if context_hint:
+                                context += f". Contexto adicional: {context_hint}"
+                            
+                            improved_text = transcriber.improve_transcription_with_ai(
+                                recording.transcription_text, 
+                                context
+                            )
+                            
+                            if improved_text != recording.transcription_text:
+                                recording.transcription_text = improved_text
+                                recording.save()
+                                messages.success(request, 'Transcripción mejorada exitosamente con IA.')
+                            else:
+                                messages.info(request, 'La transcripción ya estaba optimizada.')
+                        else:
+                            messages.error(request, 'No hay transcripción para mejorar.')
+                    
+                    return redirect('recording_detail', recording_id=recording.id)
+                    
+                except Exception as e:
+                    messages.error(request, f'Error procesando con IA: {str(e)}')
+    
+    # Obtener estadísticas de reproducción
+    playback_count = recording.playbacks.count()
+    recent_playbacks = recording.playbacks.select_related('played_by').order_by('-played_at')[:5]
+    
+    # Calcular valores estadísticos para el template
+    bitrate_kbps = None
+    if recording.file_size and recording.duration_seconds and recording.duration_seconds > 0:
+        # Bitrate en kbps (file_size en bytes / duration_seconds / 128)
+        bitrate_kbps = round(recording.file_size / recording.duration_seconds / 128, 0)
+    
+    context = {
+        'page_title': f'Grabación: {recording.title}',
+        'recording': recording,
+        'transcription_form': transcription_form,
+        'action_form': action_form,
+        'playback_count': playback_count,
+        'recent_playbacks': recent_playbacks,
+        'bitrate_kbps': bitrate_kbps,
+    }
+    
+    return render(request, 'tickets/recording_detail.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def recording_transcribe_async_view(request, recording_id):
+    """Vista para iniciar transcripción asíncrona (solo agentes)"""
+    from .models import Recording
+    from .ai_utils import transcribe_recording
+    import json
+    from django.http import JsonResponse
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'})
+    
+    try:
+        recording = Recording.objects.get(id=recording_id)
+        
+        # Verificar que no esté ya procesando
+        if recording.transcription_status == 'processing':
+            return JsonResponse({
+                'success': False, 
+                'error': 'La transcripción ya está en proceso'
+            })
+        
+        # Iniciar transcripción
+        result = transcribe_recording(recording_id)
+        
+        return JsonResponse({
+            'success': result['success'],
+            'transcription': result.get('transcription', ''),
+            'confidence': result.get('confidence', 0),
+            'error': result.get('error', '')
+        })
+        
+    except Recording.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Grabación no encontrada'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@login_required
+@user_passes_test(is_agent)
+def recording_bulk_transcribe_view(request):
+    """Vista para transcribir múltiples grabaciones en lote (solo agentes)"""
+    from .models import Recording
+    from .ai_utils import transcribe_recording
+    import json
+    from django.http import JsonResponse
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'})
+    
+    try:
+        data = json.loads(request.body)
+        recording_ids = data.get('recording_ids', [])
+        
+        if not recording_ids:
+            return JsonResponse({'success': False, 'error': 'No se proporcionaron IDs de grabaciones'})
+        
+        results = []
+        for recording_id in recording_ids:
+            try:
+                recording = Recording.objects.get(id=recording_id)
+                
+                # Solo procesar si no está ya transcrito o si hay error previo
+                if recording.transcription_status in ['pending', 'failed']:
+                    result = transcribe_recording(recording_id)
+                    results.append({
+                        'id': recording_id,
+                        'title': recording.title,
+                        'success': result['success'],
+                        'error': result.get('error', '')
+                    })
+                else:
+                    results.append({
+                        'id': recording_id,
+                        'title': recording.title,
+                        'success': True,
+                        'error': 'Ya transcrito'
+                    })
+                    
+            except Recording.DoesNotExist:
+                results.append({
+                    'id': recording_id,
+                    'title': 'Desconocido',
+                    'success': False,
+                    'error': 'Grabación no encontrada'
+                })
+        
+        success_count = sum(1 for r in results if r['success'])
+        
+        return JsonResponse({
+            'success': True,
+            'processed': len(results),
+            'successful': success_count,
+            'failed': len(results) - success_count,
+            'results': results
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})

@@ -1,0 +1,293 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .score-badge {
+        font-weight: bold;
+        border-radius: 20px;
+        padding: 3px 10px;
+        font-size: 0.85em;
+    }
+    .score-high { background-color: #d4edda; color: #155724; }
+    .score-medium { background-color: #fff3cd; color: #856404; }
+    .score-low { background-color: #f8d7da; color: #721c24; }
+    
+    .priority-badge {
+        font-weight: bold;
+        border-radius: 15px;
+        padding: 2px 8px;
+        font-size: 0.75em;
+        text-transform: uppercase;
+    }
+    .priority-urgent { background-color: #dc3545; color: white; }
+    .priority-high { background-color: #fd7e14; color: white; }
+    .priority-medium { background-color: #ffc107; color: #212529; }
+    .priority-low { background-color: #6c757d; color: white; }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-robot text-primary"></i>
+                        {{ page_title }}
+                    </h5>
+                    <div>
+                        <a href="{% url 'ai_evaluation_dashboard' %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-chart-bar"></i> Dashboard
+                        </a>
+                        <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#batchEvaluateModal">
+                            <i class="fas fa-cogs"></i> Evaluar en Lote
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Estadísticas -->
+                {% if stats %}
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="stats-card text-center">
+                                <h4>{{ stats.total_submissions }}</h4>
+                                <small>Total Envíos</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stats-card text-center">
+                                <h4>{{ stats.evaluated_submissions }}</h4>
+                                <small>Evaluados</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stats-card text-center">
+                                <h4>{{ stats.pending_evaluation }}</h4>
+                                <small>Pendientes</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stats-card text-center">
+                                <h4>{% if stats.avg_overall_score %}{{ stats.avg_overall_score|floatformat:1 }}{% else %}N/A{% endif %}</h4>
+                                <small>Puntuación Promedio</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Filtros -->
+                <div class="card-body border-top">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-2">
+                            <label class="form-label">Evaluado</label>
+                            <select name="evaluated" class="form-select form-select-sm">
+                                <option value="all" {% if evaluated_filter == 'all' %}selected{% endif %}>Todos</option>
+                                <option value="yes" {% if evaluated_filter == 'yes' %}selected{% endif %}>Evaluados</option>
+                                <option value="no" {% if evaluated_filter == 'no' %}selected{% endif %}>Sin evaluar</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Prioridad</label>
+                            <select name="priority" class="form-select form-select-sm">
+                                <option value="all" {% if priority_filter == 'all' %}selected{% endif %}>Todas</option>
+                                {% for value, label in priority_choices %}
+                                <option value="{{ value }}" {% if priority_filter == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Puntuación</label>
+                            <select name="score" class="form-select form-select-sm">
+                                <option value="all" {% if score_filter == 'all' %}selected{% endif %}>Todas</option>
+                                <option value="high" {% if score_filter == 'high' %}selected{% endif %}>Alta (7-10)</option>
+                                <option value="medium" {% if score_filter == 'medium' %}selected{% endif %}>Media (4-6)</option>
+                                <option value="low" {% if score_filter == 'low' %}selected{% endif %}>Baja (1-3)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Buscar</label>
+                            <input type="text" name="search" class="form-control form-control-sm" 
+                                   value="{{ search }}" placeholder="Nombre, email, empresa...">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <div>
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-search"></i> Filtrar
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Lista de envíos -->
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Contacto</th>
+                                <th>Empresa</th>
+                                <th>Landing Page</th>
+                                <th>Fecha</th>
+                                <th>Evaluación IA</th>
+                                <th>Puntuación</th>
+                                <th>Prioridad</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for submission in page_obj %}
+                            <tr>
+                                <td>
+                                    <strong>{{ submission.nombre }} {{ submission.apellido }}</strong><br>
+                                    <small class="text-muted">{{ submission.email }}</small>
+                                </td>
+                                <td>{{ submission.empresa|default:"-" }}</td>
+                                <td>{{ submission.landing_page.nombre_producto }}</td>
+                                <td>
+                                    {{ submission.created_at|date:"d/m/Y H:i" }}
+                                </td>
+                                <td>
+                                    {% if submission.ai_evaluated %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check"></i> Evaluado
+                                        </span>
+                                        <br><small class="text-muted">{{ submission.ai_evaluation_date|date:"d/m/Y H:i" }}</small>
+                                    {% else %}
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-clock"></i> Pendiente
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if submission.ai_overall_score %}
+                                        {% if submission.ai_overall_score >= 7 %}
+                                            <span class="score-badge score-high">{{ submission.ai_overall_score|floatformat:1 }}/10</span>
+                                        {% elif submission.ai_overall_score >= 4 %}
+                                            <span class="score-badge score-medium">{{ submission.ai_overall_score|floatformat:1 }}/10</span>
+                                        {% else %}
+                                            <span class="score-badge score-low">{{ submission.ai_overall_score|floatformat:1 }}/10</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if submission.ai_priority_level %}
+                                        <span class="priority-badge priority-{{ submission.ai_priority_level }}">
+                                            {{ submission.get_ai_priority_level_display }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'landing_submission_detail' submission.id %}" 
+                                           class="btn btn-outline-primary" title="Ver detalles">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if not submission.ai_evaluated %}
+                                        <form method="post" action="{% url 'evaluate_submission_ai' submission.id %}" style="display: inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-outline-success" title="Evaluar con IA">
+                                                <i class="fas fa-robot"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center py-4">
+                                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">No hay envíos que coincidan con los filtros</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Paginación -->
+                {% if page_obj.has_other_pages %}
+                <div class="card-footer">
+                    <nav aria-label="Paginación">
+                        <ul class="pagination justify-content-center mb-0">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% if search %}search={{ search }}&{% endif %}{% if evaluated_filter != 'all' %}evaluated={{ evaluated_filter }}&{% endif %}{% if priority_filter != 'all' %}priority={{ priority_filter }}&{% endif %}{% if score_filter != 'all' %}score={{ score_filter }}&{% endif %}page={{ page_obj.previous_page_number }}">Anterior</a>
+                            </li>
+                            {% endif %}
+                            
+                            <li class="page-item active">
+                                <span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                            </li>
+                            
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% if search %}search={{ search }}&{% endif %}{% if evaluated_filter != 'all' %}evaluated={{ evaluated_filter }}&{% endif %}{% if priority_filter != 'all' %}priority={{ priority_filter }}&{% endif %}{% if score_filter != 'all' %}score={{ score_filter }}&{% endif %}page={{ page_obj.next_page_number }}">Siguiente</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para evaluación en lote -->
+<div class="modal fade" id="batchEvaluateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'batch_evaluate_submissions' %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Evaluación en Lote con IA</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>¿Cuántos envíos sin evaluar deseas procesar?</p>
+                    <div class="mb-3">
+                        <label for="limit" class="form-label">Límite de envíos:</label>
+                        <select name="limit" id="limit" class="form-select">
+                            <option value="5">5 envíos</option>
+                            <option value="10" selected>10 envíos</option>
+                            <option value="20">20 envíos</option>
+                            <option value="50">50 envíos</option>
+                        </select>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        La evaluación puede tomar algunos segundos por envío.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-robot"></i> Evaluar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

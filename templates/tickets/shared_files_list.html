@@ -1,0 +1,368 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}Archivos Compartidos - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-folder-symlink"></i> Archivos Compartidos</h2>
+                <div class="d-flex gap-2">
+                    <!-- Controles de vista -->
+                    <div class="btn-group" role="group" aria-label="Vista">
+                        <button type="button" class="btn btn-outline-secondary" id="viewList" title="Vista lista">
+                            <i class="bi bi-list-ul"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="viewCards" title="Vista tarjetas">
+                            <i class="bi bi-grid-3x3-gap"></i>
+                        </button>
+                    </div>
+                    
+                    <a href="{% url 'shared_file_upload' %}" class="btn btn-primary">
+                        <i class="bi bi-cloud-upload"></i> Subir Archivo
+                    </a>
+                    {% if user.groups.all and user.groups.first.name == 'Agentes' %}
+                    <a href="{% url 'shared_files_stats' %}" class="btn btn-outline-info">
+                        <i class="bi bi-bar-chart"></i> Estadísticas
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Filtros -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="search" class="form-label">Buscar</label>
+                            <input type="text" class="form-control" id="search" name="search" 
+                                   value="{{ search }}" placeholder="Buscar por título o descripción...">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="company" class="form-label">Empresa</label>
+                            <select class="form-control" id="company" name="company">
+                                <option value="">Todas las empresas</option>
+                                {% for company in companies %}
+                                <option value="{{ company.id }}" {% if company.id|stringformat:"s" == selected_company %}selected{% endif %}>
+                                    {{ company.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="file_type" class="form-label">Tipo de Archivo</label>
+                            <select class="form-control" id="file_type" name="file_type">
+                                <option value="">Todos los tipos</option>
+                                {% for file_type in file_types %}
+                                <option value="{{ file_type }}" {% if file_type == selected_file_type %}selected{% endif %}>
+                                    {{ file_type }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-outline-primary">
+                                    <i class="bi bi-search"></i> Filtrar
+                                </button>
+                                <a href="{% url 'shared_files_list' %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-circle"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Lista de archivos en formato tabla -->
+            {% if files %}
+            <!-- Vista de Lista -->
+            <div id="listView" class="card">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="5%"><i class="bi bi-file-earmark"></i></th>
+                                    <th width="25%">Archivo</th>
+                                    <th width="15%">Empresa</th>
+                                    <th width="10%">Tipo</th>
+                                    <th width="10%">Tamaño</th>
+                                    <th width="10%">Subido por</th>
+                                    <th width="10%">Fecha</th>
+                                    <th width="8%">Descargas</th>
+                                    <th width="7%">Estado</th>
+                                    <th width="15%" class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for file in files %}
+                                <tr>
+                                    <td class="text-center">
+                                        {% if file.file_type == 'Image' %}
+                                            <i class="bi bi-image text-success"></i>
+                                        {% elif file.file_type == 'PDF Document' %}
+                                            <i class="bi bi-file-pdf text-danger"></i>
+                                        {% elif 'Word' in file.file_type %}
+                                            <i class="bi bi-file-word text-primary"></i>
+                                        {% elif 'Excel' in file.file_type %}
+                                            <i class="bi bi-file-excel text-success"></i>
+                                        {% elif 'PowerPoint' in file.file_type %}
+                                            <i class="bi bi-file-ppt text-warning"></i>
+                                        {% elif 'Archive' in file.file_type %}
+                                            <i class="bi bi-file-zip text-secondary"></i>
+                                        {% else %}
+                                            <i class="bi bi-file-earmark text-muted"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <strong class="text-truncate" style="max-width: 200px;" title="{{ file.title }}">
+                                                {{ file.title }}
+                                            </strong>
+                                            {% if file.description %}
+                                            <small class="text-muted text-truncate" style="max-width: 200px;" title="{{ file.description }}">
+                                                {{ file.description|truncatechars:50 }}
+                                            </small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border">
+                                            {{ file.company.name|truncatechars:15 }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ file.file_type }}</span>
+                                    </td>
+                                    <td class="small">{{ file.get_file_size_display }}</td>
+                                    <td class="small">
+                                        {% if file.uploaded_by %}
+                                            <i class="bi bi-person"></i> {{ file.uploaded_by.username }}
+                                        {% else %}
+                                            <i class="bi bi-person-x"></i> Anónimo
+                                        {% endif %}
+                                    </td>
+                                    <td class="small">
+                                        <div>{{ file.created_at|date:"d/m/Y" }}</div>
+                                        <div class="text-muted">{{ file.created_at|date:"H:i" }}</div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-info">{{ file.download_count }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if file.is_public %}
+                                        <span class="badge bg-success" title="Público para la empresa">
+                                            <i class="bi bi-globe"></i>
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-warning" title="Privado">
+                                            <i class="bi bi-lock"></i>
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{% url 'shared_file_detail' file.id %}" 
+                                               class="btn btn-outline-info btn-sm" 
+                                               title="Ver detalles">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{% url 'shared_file_download' file.id %}" 
+                                               class="btn btn-primary btn-sm" 
+                                               title="Descargar">
+                                                <i class="bi bi-download"></i>
+                                            </a>
+                                            {% if user.groups.all and user.groups.first.name == 'Agentes' %}
+                                            <a href="{% url 'shared_file_delete' file.id %}" 
+                                               class="btn btn-outline-danger btn-sm" 
+                                               title="Eliminar">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Vista de Tarjetas -->
+            <div id="cardsView" class="row" style="display: none;">
+                {% for file in files %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="card-title">
+                                    {% if file.file_type == 'Image' %}
+                                        <i class="bi bi-image text-success"></i>
+                                    {% elif file.file_type == 'PDF Document' %}
+                                        <i class="bi bi-file-pdf text-danger"></i>
+                                    {% elif 'Word' in file.file_type %}
+                                        <i class="bi bi-file-word text-primary"></i>
+                                    {% elif 'Excel' in file.file_type %}
+                                        <i class="bi bi-file-excel text-success"></i>
+                                    {% elif 'PowerPoint' in file.file_type %}
+                                        <i class="bi bi-file-ppt text-warning"></i>
+                                    {% elif 'Archive' in file.file_type %}
+                                        <i class="bi bi-file-zip text-secondary"></i>
+                                    {% else %}
+                                        <i class="bi bi-file-earmark text-muted"></i>
+                                    {% endif %}
+                                    {{ file.title|truncatechars:30 }}
+                                </h6>
+                                <span class="badge bg-secondary">{{ file.file_type }}</span>
+                            </div>
+                            
+                            <p class="card-text text-muted small">
+                                {{ file.description|truncatechars:80|default:"Sin descripción" }}
+                            </p>
+                            
+                            <div class="small text-muted mb-2">
+                                <div><i class="bi bi-building"></i> {{ file.company.name }}</div>
+                                <div><i class="bi bi-person"></i> {{ file.uploaded_by.username|default:"Anónimo" }}</div>
+                                <div><i class="bi bi-calendar"></i> {{ file.created_at|date:"d/m/Y H:i" }}</div>
+                                <div><i class="bi bi-hdd"></i> {{ file.get_file_size_display }}</div>
+                                <div><i class="bi bi-download"></i> {{ file.download_count }} descarga{{ file.download_count|pluralize }}</div>
+                            </div>
+                            
+                            {% if file.is_public %}
+                            <span class="badge bg-success mb-2">
+                                <i class="bi bi-globe"></i> Público
+                            </span>
+                            {% else %}
+                            <span class="badge bg-warning mb-2">
+                                <i class="bi bi-lock"></i> Privado
+                            </span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="card-footer">
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'shared_file_detail' file.id %}" class="btn btn-sm btn-outline-info">
+                                    <i class="bi bi-eye"></i> Ver
+                                </a>
+                                <a href="{% url 'shared_file_download' file.id %}" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-download"></i> Descargar
+                                </a>
+                                {% if user.groups.all and user.groups.first.name == 'Agentes' %}
+                                <a href="{% url 'shared_file_delete' file.id %}" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Paginación -->
+            {% if files.has_other_pages %}
+            <nav aria-label="Paginación de archivos">
+                <ul class="pagination justify-content-center">
+                    {% if files.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if selected_company %}&company={{ selected_company }}{% endif %}{% if selected_file_type %}&file_type={{ selected_file_type }}{% endif %}">
+                                <i class="bi bi-chevron-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ files.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if selected_company %}&company={{ selected_company }}{% endif %}{% if selected_file_type %}&file_type={{ selected_file_type }}{% endif %}">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Página {{ files.number }} de {{ files.paginator.num_pages }}
+                        </span>
+                    </li>
+                    
+                    {% if files.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ files.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if selected_company %}&company={{ selected_company }}{% endif %}{% if selected_file_type %}&file_type={{ selected_file_type }}{% endif %}">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ files.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if selected_company %}&company={{ selected_company }}{% endif %}{% if selected_file_type %}&file_type={{ selected_file_type }}{% endif %}">
+                                <i class="bi bi-chevron-double-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-folder-x display-1 text-muted"></i>
+                <h4 class="text-muted mt-3">No hay archivos compartidos</h4>
+                <p class="text-muted">No se encontraron archivos que coincidan con los filtros aplicados.</p>
+                <a href="{% url 'shared_file_upload' %}" class="btn btn-primary">
+                    <i class="bi bi-cloud-upload"></i> Subir Primer Archivo
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const viewListBtn = document.getElementById('viewList');
+    const viewCardsBtn = document.getElementById('viewCards');
+    const listView = document.getElementById('listView');
+    const cardsView = document.getElementById('cardsView');
+    
+    // Obtener la vista preferida del localStorage o usar lista por defecto
+    const savedView = localStorage.getItem('shared_files_view') || 'list';
+    
+    // Función para cambiar a vista de lista
+    function showListView() {
+        listView.style.display = 'block';
+        cardsView.style.display = 'none';
+        viewListBtn.classList.add('active');
+        viewListBtn.classList.remove('btn-outline-secondary');
+        viewListBtn.classList.add('btn-secondary');
+        viewCardsBtn.classList.remove('active', 'btn-secondary');
+        viewCardsBtn.classList.add('btn-outline-secondary');
+        localStorage.setItem('shared_files_view', 'list');
+    }
+    
+    // Función para cambiar a vista de tarjetas
+    function showCardsView() {
+        listView.style.display = 'none';
+        cardsView.style.display = 'block';
+        cardsView.classList.remove('d-none');
+        cardsView.classList.add('row');
+        viewCardsBtn.classList.add('active');
+        viewCardsBtn.classList.remove('btn-outline-secondary');
+        viewCardsBtn.classList.add('btn-secondary');
+        viewListBtn.classList.remove('active', 'btn-secondary');
+        viewListBtn.classList.add('btn-outline-secondary');
+        localStorage.setItem('shared_files_view', 'cards');
+    }
+    
+    // Configurar vista inicial
+    if (savedView === 'cards') {
+        showCardsView();
+    } else {
+        showListView();
+    }
+    
+    // Event listeners para los botones
+    viewListBtn.addEventListener('click', showListView);
+    viewCardsBtn.addEventListener('click', showCardsView);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,272 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}Estadísticas de Grabaciones - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-graph-up"></i> Estadísticas de Grabaciones</h2>
+                <a href="{% url 'recordings_list' %}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i> Volver a grabaciones
+                </a>
+            </div>
+
+            <!-- Estadísticas generales -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="bi bi-mic display-4 text-primary"></i>
+                            <h3 class="mt-2">{{ total_recordings }}</h3>
+                            <p class="text-muted">Total de grabaciones</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="bi bi-play-circle display-4 text-success"></i>
+                            <h3 class="mt-2">{{ total_playbacks }}</h3>
+                            <p class="text-muted">Total de reproducciones</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="bi bi-hdd display-4 text-info"></i>
+                            <h3 class="mt-2">
+                                {% if total_size %}
+                                    {{ total_size|filesizeformat }}
+                                {% else %}
+                                    0 bytes
+                                {% endif %}
+                            </h3>
+                            <p class="text-muted">Espacio utilizado</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="bi bi-graph-up display-4 text-warning"></i>
+                            <h3 class="mt-2">{{ avg_playbacks_per_recording }}</h3>
+                            <p class="text-muted">Promedio reproducciones/grabación</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Grabaciones más reproducidas -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-trophy"></i> Grabaciones más reproducidas</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if top_recordings %}
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Grabación</th>
+                                            <th>Empresa</th>
+                                            <th class="text-center">Reproducciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for recording in top_recordings %}
+                                        <tr>
+                                            <td>
+                                                <a href="{% url 'recording_detail' recording.id %}" class="text-decoration-none">
+                                                    <i class="bi bi-mic-fill text-primary"></i>
+                                                    {{ recording.title|truncatechars:30 }}
+                                                </a>
+                                            </td>
+                                            <td>
+                                                {% if recording.company %}
+                                                    {{ recording.company.name|truncatechars:20 }}
+                                                {% else %}
+                                                    <span class="text-muted">Sin empresa</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-primary">{{ recording.playback_count }}</span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted text-center py-3">
+                                <i class="bi bi-mic display-4 d-block mb-2"></i>
+                                No hay reproducciones registradas
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grabaciones por empresa -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-building"></i> Grabaciones por empresa</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if recordings_by_company %}
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Empresa</th>
+                                            <th class="text-center">Grabaciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in recordings_by_company %}
+                                        <tr>
+                                            <td>
+                                                <i class="bi bi-building text-primary"></i>
+                                                {% if item.company__name %}
+                                                    {{ item.company__name }}
+                                                {% else %}
+                                                    <span class="text-muted">Sin empresa</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-info">{{ item.count }}</span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted text-center py-3">
+                                <i class="bi bi-building display-4 d-block mb-2"></i>
+                                No hay datos por empresa
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estado de transcripciones -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-file-text"></i> Estado de transcripciones</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if recordings_by_status %}
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Estado</th>
+                                            <th class="text-center">Cantidad</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in recordings_by_status %}
+                                        <tr>
+                                            <td>
+                                                {% if item.transcription_status == 'completed' %}
+                                                    <i class="bi bi-check-circle text-success"></i> Completadas
+                                                {% elif item.transcription_status == 'processing' %}
+                                                    <i class="bi bi-clock text-warning"></i> Procesando
+                                                {% elif item.transcription_status == 'failed' %}
+                                                    <i class="bi bi-x-circle text-danger"></i> Fallidas
+                                                {% else %}
+                                                    <i class="bi bi-pause-circle text-secondary"></i> Pendientes
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge 
+                                                    {% if item.transcription_status == 'completed' %}bg-success
+                                                    {% elif item.transcription_status == 'processing' %}bg-warning
+                                                    {% elif item.transcription_status == 'failed' %}bg-danger
+                                                    {% else %}bg-secondary{% endif %}">
+                                                    {{ item.count }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted text-center py-3">
+                                <i class="bi bi-file-text display-4 d-block mb-2"></i>
+                                No hay datos de transcripción
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actividad reciente -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-clock-history"></i> Actividad reciente</h5>
+                        </div>
+                        <div class="card-body">
+                            <h6 class="text-muted">Subidas recientes</h6>
+                            {% if recent_uploads %}
+                            <div class="mb-3">
+                                {% for recording in recent_uploads|slice:":5" %}
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div>
+                                        <a href="{% url 'recording_detail' recording.id %}" class="text-decoration-none">
+                                            <i class="bi bi-mic-fill text-success"></i>
+                                            {{ recording.title|truncatechars:25 }}
+                                        </a>
+                                        <br>
+                                        <small class="text-muted">{{ recording.created_at|date:"d/m/Y H:i" }}</small>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <p class="text-muted small">No hay subidas recientes</p>
+                            {% endif %}
+
+                            <h6 class="text-muted">Reproducciones recientes</h6>
+                            {% if recent_playbacks %}
+                            <div>
+                                {% for playback in recent_playbacks|slice:":5" %}
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div>
+                                        <a href="{% url 'recording_detail' playback.recording.id %}" class="text-decoration-none">
+                                            <i class="bi bi-play-circle text-primary"></i>
+                                            {{ playback.recording.title|truncatechars:25 }}
+                                        </a>
+                                        <br>
+                                        <small class="text-muted">
+                                            {% if playback.played_by %}
+                                                {{ playback.played_by.username }} - 
+                                            {% endif %}
+                                            {{ playback.played_at|date:"d/m/Y H:i" }}
+                                        </small>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <p class="text-muted small">No hay reproducciones recientes</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

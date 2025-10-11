@@ -138,6 +138,79 @@
                         </ul>
                     </li>
                     {% endif %}
+                    
+                    <!-- Menú de Compartir Archivos -->
+                    {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if 'shared_file' in request.resolver_match.url_name %}active{% endif %}" 
+                           href="#" id="navbarDropdownFiles" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-folder-symlink"></i> Compartir
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li class="dropdown-header">Archivos</li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'shared_files_list' %}active{% endif %}" 
+                                   href="{% url 'shared_files_list' %}">
+                                    <i class="bi bi-files"></i> Mis Archivos
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'shared_file_upload' %}active{% endif %}" 
+                                   href="{% url 'shared_file_upload' %}">
+                                    <i class="bi bi-cloud-upload"></i> Subir Archivo
+                                </a>
+                            </li>
+                            
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Grabaciones</li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'recordings_list' %}active{% endif %}" 
+                                   href="{% url 'recordings_list' %}">
+                                    <i class="bi bi-mic"></i> Mis Grabaciones
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'recording_upload' %}active{% endif %}" 
+                                   href="{% url 'recording_upload' %}">
+                                    <i class="bi bi-mic-fill"></i> Subir Grabación
+                                </a>
+                            </li>
+                            
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Acceso Público</li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'public_file_upload' %}active{% endif %}" 
+                                   href="{% url 'public_file_upload' %}" target="_blank">
+                                    <i class="bi bi-globe"></i> Subir Archivo Público
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'public_recording_upload' %}active{% endif %}" 
+                                   href="{% url 'public_recording_upload' %}" target="_blank">
+                                    <i class="bi bi-broadcast"></i> Subir Grabación Pública
+                                </a>
+                            </li>
+                            
+                            <!-- Opciones adicionales para Agentes -->
+                            {% if user.groups.all and user.groups.first.name == 'Agentes' %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Administración</li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'shared_files_stats' %}active{% endif %}" 
+                                   href="{% url 'shared_files_stats' %}">
+                                    <i class="bi bi-bar-chart"></i> Estadísticas Archivos
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'recordings_stats' %}active{% endif %}" 
+                                   href="{% url 'recordings_stats' %}">
+                                    <i class="bi bi-graph-up"></i> Estadísticas Grabaciones
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </li>
+                    {% endif %}
 
                     
                     <!-- Menú de gestión para agentes -->
@@ -182,6 +255,12 @@
                                 <a class="dropdown-item {% if 'landing_page' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'landing_page_list' %}">
                                     <i class="fas fa-rocket"></i> Landing Pages
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'landing_submissions' in request.resolver_match.url_name or 'ai_evaluation' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'landing_submissions_list' %}">
+                                    <i class="fas fa-robot text-primary"></i> Evaluación IA
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>

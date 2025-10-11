@@ -9,6 +9,7 @@ import urllib.request
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
+from django.utils import timezone
 from .models import SystemConfiguration
 
 logger = logging.getLogger(__name__)
@@ -414,3 +415,210 @@ def test_ai_connection():
         return {"success": True, "message": "Conexión exitosa con IA"}
     except:
         return {"success": False, "message": "Respuesta inválida de la API"}
+
+
+class AudioTranscriber:
+    """Clase para transcribir audio usando IA"""
+    
+    def __init__(self):
+        self.api_key = self._get_openai_api_key()
+        self.whisper_url = "https://api.openai.com/v1/audio/transcriptions"
+    
+    def _get_openai_api_key(self):
+        """Obtener API key de OpenAI desde configuración del sistema"""
+        try:
+            config = SystemConfiguration.get_config()
+            return getattr(config, 'openai_api_key', None)
+        except:
+            return None
+    
+    def transcribe_audio_file(self, audio_file_path, language='es'):
+        """Transcribir archivo de audio usando Whisper API"""
+        if not self.api_key:
+            return {
+                "success": False, 
+                "error": "API key de OpenAI no configurada",
+                "transcription": "",
+                "confidence": 0.0
+            }
+        
+        headers = {
+            "Authorization": f"Bearer {self.api_key}"
+        }
+        
+        try:
+            # Abrir el archivo de audio
+            with open(audio_file_path, 'rb') as audio_file:
+                files = {
+                    'file': audio_file,
+                    'model': (None, 'whisper-1'),
+                    'language': (None, language),
+                    'response_format': (None, 'verbose_json')
+                }
+                
+                response = requests.post(
+                    self.whisper_url, 
+                    headers=headers, 
+                    files=files,
+                    timeout=60
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    return {
+                        "success": True,
+                        "transcription": result.get('text', ''),
+                        "confidence": self._calculate_confidence(result),
+                        "language": result.get('language', language),
+                        "duration": result.get('duration', 0)
+                    }
+                else:
+                    return {
+                        "success": False,
+                        "error": f"Error de API: {response.status_code} - {response.text}",
+                        "transcription": "",
+                        "confidence": 0.0
+                    }
+                    
+        except Exception as e:
+            logger.error(f"Error transcribiendo audio: {str(e)}")
+            return {
+                "success": False,
+                "error": f"Error transcribiendo audio: {str(e)}",
+                "transcription": "",
+                "confidence": 0.0
+            }
+    
+    def _calculate_confidence(self, whisper_result):
+        """Calcular confianza aproximada basada en los segmentos"""
+        try:
+            segments = whisper_result.get('segments', [])
+            if not segments:
+                return 85.0  # Confianza por defecto si no hay segmentos
+            
+            # Promedio de confianza de palabras si está disponible
+            total_confidence = 0
+            word_count = 0
+            
+            for segment in segments:
+                words = segment.get('words', [])
+                for word in words:
+                    if 'probability' in word:
+                        total_confidence += word['probability']
+                        word_count += 1
+            
+            if word_count > 0:
+                return (total_confidence / word_count) * 100
+            else:
+                # Si no hay datos de confianza, usar estimación basada en duración vs texto
+                text_length = len(whisper_result.get('text', ''))
+                duration = whisper_result.get('duration', 1)
+                words_per_second = (text_length / 5) / duration  # Aproximado
+                
+                # Más palabras por segundo generalmente significa mejor transcripción
+                if words_per_second > 2:
+                    return 90.0
+                elif words_per_second > 1:
+                    return 80.0
+                else:
+                    return 70.0
+                    
+        except Exception:
+            return 75.0  # Confianza por defecto en caso de error
+    
+    def improve_transcription_with_ai(self, transcription_text, context_hint=""):
+        """Mejorar transcripción usando GPT para corregir errores"""
+        if not self.api_key or not transcription_text.strip():
+            return transcription_text
+        
+        content_optimizer = AIContentOptimizer()
+        
+        prompt = f"""Por favor, corrige y mejora la siguiente transcripción de audio manteniendo el significado original.
+        
+Corrige errores ortográficos, gramaticales y de puntuación, pero mantén el estilo natural del habla.
+No agregues información que no esté en el texto original.
+
+{f"Contexto: {context_hint}" if context_hint else ""}
+
+Transcripción original:
+{transcription_text}
+
+Transcripción corregida:"""
+
+        messages = [
+            {"role": "system", "content": "Eres un experto en corrección de transcripciones de audio. Tu trabajo es corregir errores manteniendo el significado y estilo original."},
+            {"role": "user", "content": prompt}
+        ]
+        
+        try:
+            response = content_optimizer._make_ai_request(messages, max_tokens=1000, temperature=0.3)
+            
+            if "error" not in response:
+                improved_text = response['choices'][0]['message']['content'].strip()
+                return improved_text
+            else:
+                logger.warning(f"Error mejorando transcripción: {response['error']}")
+                return transcription_text
+                
+        except Exception as e:
+            logger.error(f"Error mejorando transcripción con IA: {str(e)}")
+            return transcription_text
+
+
+def transcribe_recording(recording_id):
+    """Función auxiliar para transcribir una grabación específica"""
+    from .models import Recording
+    
+    try:
+        recording = Recording.objects.get(id=recording_id)
+        
+        # Cambiar estado a procesando
+        recording.transcription_status = 'processing'
+        recording.save()
+        
+        transcriber = AudioTranscriber()
+        
+        # Obtener ruta absoluta del archivo
+        audio_path = recording.audio_file.path
+        
+        # Transcribir
+        result = transcriber.transcribe_audio_file(audio_path, 'es')
+        
+        if result['success']:
+            # Mejorar transcripción con IA
+            context = f"Título: {recording.title}. Descripción: {recording.description}"
+            improved_text = transcriber.improve_transcription_with_ai(
+                result['transcription'], 
+                context
+            )
+            
+            # Actualizar grabación
+            recording.transcription_text = improved_text
+            recording.transcription_confidence = result['confidence']
+            recording.transcription_language = result.get('language', 'es')
+            recording.transcription_status = 'completed'
+            recording.transcribed_at = timezone.now()
+            recording.save()
+            
+            logger.info(f"Transcripción completada para grabación {recording_id}")
+            return {
+                "success": True,
+                "transcription": improved_text,
+                "confidence": result['confidence']
+            }
+        else:
+            # Error en transcripción
+            recording.transcription_status = 'failed'
+            recording.save()
+            
+            logger.error(f"Error transcribiendo grabación {recording_id}: {result['error']}")
+            return {
+                "success": False,
+                "error": result['error']
+            }
+            
+    except Recording.DoesNotExist:
+        return {"success": False, "error": "Grabación no encontrada"}
+    except Exception as e:
+        logger.error(f"Error en transcripción de grabación {recording_id}: {str(e)}")
+        return {"success": False, "error": str(e)}

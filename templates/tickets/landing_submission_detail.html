@@ -1,0 +1,296 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .score-display {
+        font-size: 2rem;
+        font-weight: bold;
+        border-radius: 50%;
+        width: 80px;
+        height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        color: white;
+    }
+    .score-high { background: linear-gradient(135deg, #28a745, #20c997); }
+    .score-medium { background: linear-gradient(135deg, #ffc107, #fd7e14); }
+    .score-low { background: linear-gradient(135deg, #dc3545, #e83e8c); }
+    
+    .priority-banner {
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    .priority-urgent { background: linear-gradient(135deg, #dc3545, #bd2130); color: white; }
+    .priority-high { background: linear-gradient(135deg, #fd7e14, #e8590c); color: white; }
+    .priority-medium { background: linear-gradient(135deg, #ffc107, #e0a800); color: #212529; }
+    .priority-low { background: linear-gradient(135deg, #6c757d, #545b62); color: white; }
+    
+    .evaluation-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 20px;
+    }
+    
+    .info-card {
+        background: #f8f9fa;
+        border-left: 4px solid #007bff;
+        padding: 20px;
+        border-radius: 0 10px 10px 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h4>
+                        <i class="fas fa-user-tie text-primary"></i>
+                        {{ submission.nombre }} {{ submission.apellido }}
+                    </h4>
+                    <p class="text-muted mb-0">{{ submission.empresa }} • {{ submission.created_at|date:"d/m/Y H:i" }}</p>
+                </div>
+                <div>
+                    <a href="{% url 'landing_submissions_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Volver
+                    </a>
+                    {% if not submission.ai_evaluated %}
+                    <form method="post" action="{% url 'evaluate_submission_ai' submission.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-robot"></i> Evaluar con IA
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="row">
+                <!-- Información del contacto -->
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-address-card text-info"></i>
+                                Información del Contacto
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="info-card">
+                                <div class="row">
+                                    <div class="col-sm-4"><strong>Nombre:</strong></div>
+                                    <div class="col-sm-8">{{ submission.nombre }} {{ submission.apellido }}</div>
+                                </div>
+                                <hr>
+                                <div class="row">
+                                    <div class="col-sm-4"><strong>Email:</strong></div>
+                                    <div class="col-sm-8">
+                                        <a href="mailto:{{ submission.email }}">{{ submission.email }}</a>
+                                    </div>
+                                </div>
+                                {% if submission.telefono %}
+                                <hr>
+                                <div class="row">
+                                    <div class="col-sm-4"><strong>Teléfono:</strong></div>
+                                    <div class="col-sm-8">
+                                        <a href="tel:{{ submission.telefono }}">{{ submission.telefono }}</a>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                <hr>
+                                <div class="row">
+                                    <div class="col-sm-4"><strong>Empresa:</strong></div>
+                                    <div class="col-sm-8">{{ submission.empresa }}</div>
+                                </div>
+                                <hr>
+                                <div class="row">
+                                    <div class="col-sm-4"><strong>Landing Page:</strong></div>
+                                    <div class="col-sm-8">{{ submission.landing_page.nombre_producto }}</div>
+                                </div>
+                                {% if submission.ip_address %}
+                                <hr>
+                                <div class="row">
+                                    <div class="col-sm-4"><strong>IP:</strong></div>
+                                    <div class="col-sm-8"><code>{{ submission.ip_address }}</code></div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- UTM Parameters -->
+                            {% if submission.utm_source or submission.utm_medium or submission.utm_campaign %}
+                            <div class="mt-4">
+                                <h6><i class="fas fa-chart-line"></i> Parámetros UTM</h6>
+                                <div class="row">
+                                    {% if submission.utm_source %}
+                                    <div class="col-md-4">
+                                        <small class="text-muted">Source:</small><br>
+                                        <span class="badge bg-info">{{ submission.utm_source }}</span>
+                                    </div>
+                                    {% endif %}
+                                    {% if submission.utm_medium %}
+                                    <div class="col-md-4">
+                                        <small class="text-muted">Medium:</small><br>
+                                        <span class="badge bg-info">{{ submission.utm_medium }}</span>
+                                    </div>
+                                    {% endif %}
+                                    {% if submission.utm_campaign %}
+                                    <div class="col-md-4">
+                                        <small class="text-muted">Campaign:</small><br>
+                                        <span class="badge bg-info">{{ submission.utm_campaign }}</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Mensaje del proyecto -->
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-comment-dots text-success"></i>
+                                Mensaje / Proyecto
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if submission.mensaje %}
+                            <div class="info-card">
+                                <p class="mb-0">{{ submission.mensaje|linebreaks }}</p>
+                            </div>
+                            {% else %}
+                            <p class="text-muted text-center py-4">
+                                <i class="fas fa-comment-slash fa-2x"></i><br>
+                                Sin mensaje
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Evaluación de IA -->
+            {% if submission.ai_evaluated %}
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="evaluation-card">
+                        <div class="row align-items-center">
+                            <div class="col-md-2 text-center">
+                                <div class="score-display 
+                                    {% if submission.ai_overall_score >= 7 %}score-high
+                                    {% elif submission.ai_overall_score >= 4 %}score-medium
+                                    {% else %}score-low{% endif %}">
+                                    {{ submission.ai_overall_score|floatformat:1 }}
+                                </div>
+                                <small>Puntuación General</small>
+                            </div>
+                            <div class="col-md-10">
+                                <h5><i class="fas fa-robot"></i> Evaluación de IA</h5>
+                                <p class="mb-2">
+                                    <small>Evaluado el {{ submission.ai_evaluation_date|date:"d/m/Y H:i" }}</small>
+                                </p>
+                                
+                                <!-- Prioridad -->
+                                {% if submission.ai_priority_level %}
+                                <div class="priority-banner priority-{{ submission.ai_priority_level }}">
+                                    <i class="fas fa-flag"></i>
+                                    Prioridad: {{ submission.get_ai_priority_level_display }}
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Puntuaciones detalladas -->
+                                <div class="row mb-3">
+                                    <div class="col-md-4 text-center">
+                                        <h6>Empresa</h6>
+                                        <span class="badge bg-light text-dark fs-6">{{ submission.ai_company_score }}/10</span>
+                                    </div>
+                                    <div class="col-md-4 text-center">
+                                        <h6>Contacto</h6>
+                                        <span class="badge bg-light text-dark fs-6">{{ submission.ai_contact_score }}/10</span>
+                                    </div>
+                                    <div class="col-md-4 text-center">
+                                        <h6>Proyecto</h6>
+                                        <span class="badge bg-light text-dark fs-6">{{ submission.ai_project_score }}/10</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Resumen y recomendaciones -->
+            <div class="row">
+                {% if submission.ai_evaluation_summary %}
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-clipboard-list text-primary"></i>
+                                Resumen de Evaluación
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-0">{{ submission.ai_evaluation_summary|linebreaks }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if submission.ai_recommendations %}
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-lightbulb text-warning"></i>
+                                Recomendaciones
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-0">{{ submission.ai_recommendations|linebreaks }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            {% else %}
+            
+            <!-- Sin evaluación de IA -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body text-center py-5">
+                            <i class="fas fa-robot fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Sin Evaluación de IA</h5>
+                            <p class="text-muted">Este envío aún no ha sido evaluado por la inteligencia artificial.</p>
+                            <form method="post" action="{% url 'evaluate_submission_ai' submission.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="fas fa-robot"></i> Evaluar Ahora
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

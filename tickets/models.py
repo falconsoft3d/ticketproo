@@ -1907,21 +1907,27 @@ class WorkOrder(models.Model):
     def get_total_hours_logged(self):
         """Retorna el total de horas trabajadas en todas las tareas"""
         from django.db.models import Sum
-        total_duration = 0
+        from decimal import Decimal
+        
+        total_hours = Decimal('0')
+        task_details = []
         
         for task in self.tasks.all():
             task_total = task.time_entries.aggregate(
-                total_seconds=Sum(
-                    models.F('end_time') - models.F('start_time'),
-                    output_field=models.DurationField()
-                )
-            )['total_seconds']
+                total_hours=Sum('hours')
+            )['total_hours']
             
-            if task_total:
-                total_duration += task_total.total_seconds()
+            task_hours = task_total if task_total else Decimal('0')
+            total_hours += task_hours
+            task_details.append(f"Task {task.id} ({task.title}): {task_hours}h")
         
-        # Convertir segundos a horas
-        return round(total_duration / 3600, 2)
+        # Debug: Imprimir detalles para troubleshooting
+        print(f"WorkOrder {self.id} total hours calculation:")
+        for detail in task_details:
+            print(f"  - {detail}")
+        print(f"  Total: {total_hours}h")
+        
+        return float(total_hours)
     
     def get_progress_percentage(self):
         """Retorna el porcentaje de progreso basado en tareas completadas"""
@@ -1930,7 +1936,12 @@ class WorkOrder(models.Model):
             return 0
         
         completed_tasks = self.get_completed_tasks()
-        return round((completed_tasks / total_tasks) * 100, 1)
+        progress = round((completed_tasks / total_tasks) * 100, 1)
+        
+        # Debug: Imprimir los valores para troubleshooting
+        print(f"WorkOrder {self.id}: total_tasks={total_tasks}, completed_tasks={completed_tasks}, progress={progress}")
+        
+        return progress
     
     def get_total_tasks(self):
         """Retorna el número total de tareas"""
@@ -1947,6 +1958,20 @@ class WorkOrder(models.Model):
     def get_completed_tasks(self):
         """Retorna el número de tareas completadas"""
         return self.tasks.filter(status='completed').count()
+    
+    def update_actual_hours(self):
+        """Actualiza las horas reales basándose en las entradas de tiempo de todas las tareas"""
+        from decimal import Decimal
+        
+        total_hours = Decimal('0.00')
+        for task in self.tasks.all():
+            task.update_actual_hours()
+            if task.actual_hours:
+                total_hours += task.actual_hours
+        
+        self.actual_hours = total_hours
+        self.save(update_fields=['actual_hours'])
+        return total_hours
 
 
 def work_order_attachment_upload_path(instance, filename):
@@ -2132,6 +2157,32 @@ class WorkOrderTask(models.Model):
         self.actual_hours = total_hours
         self.save(update_fields=['actual_hours'])
         return total_hours
+    
+    def has_active_time_entry(self):
+        """Verifica si la tarea tiene una sesión de tiempo activa"""
+        return self.active_sessions.filter(is_active=True).exists()
+    
+    def get_active_time_session(self, user=None):
+        """Obtiene la sesión de tiempo activa para un usuario"""
+        if user:
+            return self.active_sessions.filter(is_active=True, user=user).first()
+        return self.active_sessions.filter(is_active=True).first()
+    
+    def get_total_time_logged(self):
+        """Retorna el total de horas registradas en time entries"""
+        total = self.time_entries.aggregate(
+            total=models.Sum('hours')
+        )['total'] or 0
+        return float(total)
+    
+    def get_progress_percentage(self):
+        """Calcula el porcentaje de progreso basado en horas estimadas vs trabajadas"""
+        if not self.estimated_hours or self.estimated_hours == 0:
+            return 0
+        
+        total_logged = self.get_total_time_logged()
+        percentage = (total_logged / float(self.estimated_hours)) * 100
+        return min(percentage, 100)  # No más del 100%
 
 
 class WorkOrderTaskTimeEntry(models.Model):
@@ -2172,6 +2223,89 @@ class WorkOrderTaskTimeEntry(models.Model):
     
     def __str__(self):
         return f"{self.task} - {self.hours}h ({self.date})"
+
+
+class WorkOrderTaskTimeSession(models.Model):
+    """Modelo para gestionar sesiones de tiempo activas"""
+    
+    task = models.ForeignKey(
+        WorkOrderTask,
+        on_delete=models.CASCADE,
+        related_name='active_sessions',
+        verbose_name='Tarea'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name='Usuario',
+        help_text='Usuario que inició la sesión (puede ser vacío para sesiones públicas)'
+    )
+    start_time = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Inicio'
+    )
+    end_time = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fin'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activa'
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción del trabajo realizado'
+    )
+    
+    class Meta:
+        ordering = ['-start_time']
+        verbose_name = 'Sesión de Tiempo de Tarea'
+        verbose_name_plural = 'Sesiones de Tiempo de Tareas'
+        indexes = [
+            models.Index(fields=['task', 'is_active']),
+            models.Index(fields=['user', 'is_active']),
+        ]
+    
+    def __str__(self):
+        status = "Activa" if self.is_active else "Finalizada"
+        username = self.user.username if self.user else "Público"
+        return f"{self.task} - {username} ({status})"
+    
+    def get_duration_hours(self):
+        """Retorna la duración en horas"""
+        if self.end_time:
+            delta = self.end_time - self.start_time
+        else:
+            delta = timezone.now() - self.start_time
+        
+        hours = delta.total_seconds() / 3600
+        return round(hours, 2)
+    
+    def stop_session(self, description=""):
+        """Detiene la sesión y crea una entrada de tiempo"""
+        if self.is_active:
+            self.end_time = timezone.now()
+            self.is_active = False
+            self.description = description
+            self.save()
+            
+            # Crear entrada de tiempo
+            hours = self.get_duration_hours()
+            time_entry = WorkOrderTaskTimeEntry.objects.create(
+                task=self.task,
+                hours=hours,
+                description=description,
+                date=self.start_time.date()
+            )
+            
+            # Actualizar horas reales de la tarea
+            self.task.update_actual_hours()
+            
+            return time_entry
+        return None
 
 
 class Task(models.Model):
@@ -5434,6 +5568,62 @@ class LandingPageSubmission(models.Model):
         verbose_name='Fecha de procesamiento'
     )
     
+    # Evaluación de IA
+    ai_evaluated = models.BooleanField(
+        default=False,
+        verbose_name='Evaluado por IA'
+    )
+    ai_evaluation_date = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Fecha de evaluación IA'
+    )
+    ai_company_score = models.IntegerField(
+        blank=True,
+        null=True,
+        verbose_name='Puntuación Empresa (1-10)',
+        help_text='Evaluación de la calidad/seriedad de la empresa'
+    )
+    ai_contact_score = models.IntegerField(
+        blank=True,
+        null=True,
+        verbose_name='Puntuación Contacto (1-10)',
+        help_text='Evaluación de la calidad del contacto'
+    )
+    ai_project_score = models.IntegerField(
+        blank=True,
+        null=True,
+        verbose_name='Puntuación Proyecto (1-10)',
+        help_text='Evaluación del potencial del proyecto'
+    )
+    ai_overall_score = models.FloatField(
+        blank=True,
+        null=True,
+        verbose_name='Puntuación General',
+        help_text='Puntuación promedio general'
+    )
+    ai_evaluation_summary = models.TextField(
+        blank=True,
+        verbose_name='Resumen de Evaluación IA',
+        help_text='Resumen detallado de la evaluación'
+    )
+    ai_recommendations = models.TextField(
+        blank=True,
+        verbose_name='Recomendaciones IA',
+        help_text='Recomendaciones de seguimiento'
+    )
+    ai_priority_level = models.CharField(
+        max_length=20,
+        choices=[
+            ('low', 'Baja'),
+            ('medium', 'Media'),
+            ('high', 'Alta'),
+            ('urgent', 'Urgente'),
+        ],
+        blank=True,
+        verbose_name='Nivel de Prioridad IA'
+    )
+    
     class Meta:
         verbose_name = 'Envío de Landing Page'
         verbose_name_plural = 'Envíos de Landing Pages'
@@ -5441,3 +5631,365 @@ class LandingPageSubmission(models.Model):
     
     def __str__(self):
         return f"{self.nombre} {self.apellido} - {self.landing_page.nombre_producto}"
+    
+    def evaluate_with_ai(self):
+        """Evalúa el envío usando IA"""
+        from .ai_landing_evaluator import evaluate_landing_submission
+        
+        try:
+            result = evaluate_landing_submission(self)
+            
+            # Guardar resultados
+            self.ai_evaluated = True
+            self.ai_evaluation_date = timezone.now()
+            self.ai_company_score = result.get('company_score')
+            self.ai_contact_score = result.get('contact_score')
+            self.ai_project_score = result.get('project_score')
+            self.ai_overall_score = result.get('overall_score')
+            self.ai_evaluation_summary = result.get('summary')
+            self.ai_recommendations = result.get('recommendations')
+            self.ai_priority_level = result.get('priority_level')
+            
+            self.save()
+            return True
+            
+        except Exception as e:
+            print(f"Error evaluando con IA: {e}")
+            return False
+
+
+class SharedFile(models.Model):
+    """Modelo para gestionar archivos compartidos"""
+    
+    title = models.CharField(
+        max_length=200, 
+        verbose_name='Título del Archivo'
+    )
+    description = models.TextField(
+        blank=True, 
+        verbose_name='Descripción',
+        help_text='Descripción opcional del archivo'
+    )
+    file = models.FileField(
+        upload_to='shared_files/%Y/%m/',
+        verbose_name='Archivo'
+    )
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name='shared_files',
+        verbose_name='Empresa',
+        null=True,
+        blank=True
+    )
+    uploaded_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='uploaded_files',
+        verbose_name='Subido por',
+        null=True,
+        blank=True
+    )
+    is_public = models.BooleanField(
+        default=False,
+        verbose_name='Público',
+        help_text='Si está marcado, todos los usuarios de la empresa pueden ver este archivo'
+    )
+    file_size = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name='Tamaño del archivo (bytes)'
+    )
+    file_type = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name='Tipo de archivo'
+    )
+    download_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Número de descargas'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now, 
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True, 
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Archivo Compartido'
+        verbose_name_plural = 'Archivos Compartidos'
+    
+    def __str__(self):
+        return f"{self.title} - {self.company.name}"
+    
+    def get_file_size_display(self):
+        """Convierte el tamaño del archivo a formato legible"""
+        if not self.file_size:
+            return "Desconocido"
+        
+        size = self.file_size
+        for unit in ['B', 'KB', 'MB', 'GB']:
+            if size < 1024.0:
+                return f"{size:.1f} {unit}"
+            size /= 1024.0
+        return f"{size:.1f} TB"
+    
+    def get_file_extension(self):
+        """Obtiene la extensión del archivo"""
+        if self.file:
+            return os.path.splitext(self.file.name)[1][1:].upper()
+        return ""
+    
+    def save(self, *args, **kwargs):
+        if self.file:
+            # Obtener tamaño del archivo
+            self.file_size = self.file.size
+            
+            # Obtener tipo de archivo basado en la extensión
+            ext = self.get_file_extension().lower()
+            file_type_map = {
+                'pdf': 'PDF Document',
+                'doc': 'Word Document',
+                'docx': 'Word Document',
+                'xls': 'Excel Spreadsheet',
+                'xlsx': 'Excel Spreadsheet',
+                'ppt': 'PowerPoint Presentation',
+                'pptx': 'PowerPoint Presentation',
+                'txt': 'Text File',
+                'jpg': 'Image',
+                'jpeg': 'Image',
+                'png': 'Image',
+                'gif': 'Image',
+                'zip': 'Archive',
+                'rar': 'Archive',
+                '7z': 'Archive',
+            }
+            self.file_type = file_type_map.get(ext, 'Archivo')
+        
+        super().save(*args, **kwargs)
+
+
+class SharedFileDownload(models.Model):
+    """Modelo para rastrear descargas de archivos compartidos"""
+    
+    shared_file = models.ForeignKey(
+        SharedFile,
+        on_delete=models.CASCADE,
+        related_name='downloads',
+        verbose_name='Archivo Compartido'
+    )
+    downloaded_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='file_downloads',
+        verbose_name='Descargado por',
+        null=True,
+        blank=True
+    )
+    ip_address = models.GenericIPAddressField(
+        verbose_name='Dirección IP'
+    )
+    user_agent = models.TextField(
+        blank=True,
+        verbose_name='User Agent'
+    )
+    downloaded_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de descarga'
+    )
+    
+    class Meta:
+        ordering = ['-downloaded_at']
+        verbose_name = 'Descarga de Archivo'
+        verbose_name_plural = 'Descargas de Archivos'
+    
+    def __str__(self):
+        user = self.downloaded_by.username if self.downloaded_by else 'Anónimo'
+        return f"{self.shared_file.title} - {user} - {self.downloaded_at}"
+
+
+class Recording(models.Model):
+    """Modelo para gestionar grabaciones de audio con transcripción IA"""
+    
+    TRANSCRIPTION_STATUS_CHOICES = [
+        ('pending', 'Pendiente'),
+        ('processing', 'Procesando'),
+        ('completed', 'Completada'),
+        ('failed', 'Fallida'),
+    ]
+    
+    title = models.CharField(
+        max_length=200, 
+        verbose_name='Título de la grabación'
+    )
+    description = models.TextField(
+        blank=True, 
+        verbose_name='Descripción',
+        help_text='Descripción opcional de la grabación'
+    )
+    audio_file = models.FileField(
+        upload_to='recordings/%Y/%m/',
+        verbose_name='Archivo de audio'
+    )
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name='recordings',
+        verbose_name='Empresa',
+        null=True,
+        blank=True
+    )
+    uploaded_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='uploaded_recordings',
+        verbose_name='Subido por',
+        null=True,
+        blank=True
+    )
+    is_public = models.BooleanField(
+        default=False,
+        verbose_name='Público',
+        help_text='Si está marcado, todos los usuarios de la empresa pueden ver esta grabación'
+    )
+    file_size = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name='Tamaño del archivo (bytes)'
+    )
+    duration_seconds = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name='Duración en segundos'
+    )
+    
+    # Campos de transcripción
+    transcription_status = models.CharField(
+        max_length=20,
+        choices=TRANSCRIPTION_STATUS_CHOICES,
+        default='pending',
+        verbose_name='Estado de transcripción'
+    )
+    transcription_text = models.TextField(
+        blank=True,
+        verbose_name='Texto transcrito'
+    )
+    transcription_confidence = models.FloatField(
+        null=True,
+        blank=True,
+        verbose_name='Confianza de transcripción (%)',
+        help_text='Porcentaje de confianza de la transcripción'
+    )
+    transcription_language = models.CharField(
+        max_length=10,
+        default='es',
+        verbose_name='Idioma detectado'
+    )
+    
+    # Metadatos
+    created_at = models.DateTimeField(
+        default=timezone.now, 
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True, 
+        verbose_name='Última actualización'
+    )
+    transcribed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de transcripción'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Grabación'
+        verbose_name_plural = 'Grabaciones'
+    
+    def __str__(self):
+        company_name = self.company.name if self.company else 'Sin empresa'
+        return f"{self.title} - {company_name}"
+    
+    def get_file_size_display(self):
+        """Convierte el tamaño del archivo a formato legible"""
+        if not self.file_size:
+            return "Desconocido"
+        
+        size = self.file_size
+        for unit in ['B', 'KB', 'MB', 'GB']:
+            if size < 1024.0:
+                return f"{size:.1f} {unit}"
+            size /= 1024.0
+        return f"{size:.1f} TB"
+    
+    def get_duration_display(self):
+        """Convierte la duración a formato legible"""
+        if not self.duration_seconds:
+            return "Desconocida"
+        
+        hours = self.duration_seconds // 3600
+        minutes = (self.duration_seconds % 3600) // 60
+        seconds = self.duration_seconds % 60
+        
+        if hours > 0:
+            return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+        else:
+            return f"{minutes:02d}:{seconds:02d}"
+    
+    def get_audio_extension(self):
+        """Obtiene la extensión del archivo de audio"""
+        if self.audio_file:
+            return os.path.splitext(self.audio_file.name)[1][1:].upper()
+        return ""
+    
+    def save(self, *args, **kwargs):
+        if self.audio_file:
+            # Obtener tamaño del archivo
+            self.file_size = self.audio_file.size
+        
+        super().save(*args, **kwargs)
+
+
+class RecordingPlayback(models.Model):
+    """Modelo para rastrear reproducciones de grabaciones"""
+    
+    recording = models.ForeignKey(
+        Recording,
+        on_delete=models.CASCADE,
+        related_name='playbacks',
+        verbose_name='Grabación'
+    )
+    played_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='recording_playbacks',
+        verbose_name='Reproducido por',
+        null=True,
+        blank=True
+    )
+    played_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de reproducción'
+    )
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name='Dirección IP'
+    )
+    user_agent = models.TextField(
+        blank=True,
+        verbose_name='User Agent'
+    )
+    
+    class Meta:
+        ordering = ['-played_at']
+        verbose_name = 'Reproducción'
+        verbose_name_plural = 'Reproducciones'
+    
+    def __str__(self):
+        user = self.played_by.username if self.played_by else 'Anónimo'
+        return f"{self.recording.title} - {user} - {self.played_at}"

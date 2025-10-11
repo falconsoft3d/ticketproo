@@ -121,15 +121,30 @@
                                         </div>
                                     </div>
                                     <div class="col-md-3">
-                                        <!-- Botones para cambiar estado -->
+                                        <!-- Botones para cambiar estado y tiempo -->
                                         <div class="btn-group-vertical btn-group-sm w-100">
+                                            <!-- Botón de tiempo -->
+                                            {% if task.has_active_time_entry %}
+                                                <button class="btn btn-danger btn-sm mb-1 w-100" onclick="stopTaskTime({{ task.id }})" title="Detener tiempo">
+                                                    <i class="fas fa-stop"></i> Detener Tiempo
+                                                </button>
+                                            {% else %}
+                                                <button class="btn btn-success btn-sm mb-1 w-100" onclick="startTaskTime({{ task.id }})" title="Iniciar tiempo">
+                                                    <i class="fas fa-play"></i> Iniciar Tiempo
+                                                </button>
+                                            {% endif %}
+                                            
+                                            <!-- Separador -->
+                                            <hr class="my-1">
+                                            
+                                            <!-- Botones de estado -->
                                             {% if task.status != 'pending' %}
                                                 <form method="post" style="display: inline;">
                                                     {% csrf_token %}
                                                     <input type="hidden" name="task_id" value="{{ task.id }}">
                                                     <input type="hidden" name="status" value="pending">
                                                     <button type="submit" class="btn btn-outline-secondary btn-sm mb-1 w-100">
-                                                        <i class="fas fa-undo"></i> Marcar Pendiente
+                                                        <i class="fas fa-undo"></i> Pendiente
                                                     </button>
                                                 </form>
                                             {% endif %}
@@ -140,7 +155,7 @@
                                                     <input type="hidden" name="task_id" value="{{ task.id }}">
                                                     <input type="hidden" name="status" value="in_progress">
                                                     <button type="submit" class="btn btn-outline-warning btn-sm mb-1 w-100">
-                                                        <i class="fas fa-play"></i> Iniciar
+                                                        <i class="fas fa-play"></i> En Progreso
                                                     </button>
                                                 </form>
                                             {% endif %}
@@ -222,6 +237,61 @@
         </div>
     </div>
 </div>
+
+<!-- JavaScript para funcionalidad de tiempo -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+function startTaskTime(taskId) {
+    if (confirm('¿Iniciar el conteo de tiempo para esta tarea?')) {
+        $.ajax({
+            url: `/work-order/public/{{ work_order.public_share_token }}/tasks/${taskId}/time/start/`,
+            method: 'POST',
+            data: {
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert('Tiempo iniciado correctamente a las ' + response.started_at);
+                    location.reload();
+                } else {
+                    alert('Error: ' + response.error);
+                }
+            },
+            error: function() {
+                alert('Error al iniciar el tiempo de la tarea');
+            }
+        });
+    }
+}
+
+function stopTaskTime(taskId) {
+    // Preguntar por descripción opcional
+    const description = prompt('Descripción del trabajo realizado (opcional):');
+    
+    $.ajax({
+        url: `/work-order/public/{{ work_order.public_share_token }}/tasks/${taskId}/time/stop/`,
+        method: 'POST',
+        data: {
+            'description': description || '',
+            'csrfmiddlewaretoken': '{{ csrf_token }}'
+        },
+        success: function(response) {
+            if (response.success) {
+                // Mostrar mensaje con el tiempo registrado
+                alert('Tiempo registrado exitosamente: ' + response.session_duration + 'h');
+                
+                // Recargar la página para actualizar todos los datos
+                location.reload();
+            } else {
+                alert('Error: ' + response.error);
+            }
+        },
+        error: function() {
+            alert('Error al detener el tiempo de la tarea');
+        }
+    });
+}
+</script>
 
 <style>
 .badge-lg {

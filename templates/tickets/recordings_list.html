@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}Grabaciones - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-mic"></i> Grabaciones</h2>
+                <div>
+                    {% if is_agent %}
+                    <a href="{% url 'recordings_stats' %}" class="btn btn-outline-info me-2">
+                        <i class="bi bi-graph-up"></i> Estadísticas
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'recording_upload' %}" class="btn btn-primary">
+                        <i class="bi bi-mic-fill"></i> Subir Grabación
+                    </a>
+                </div>
+            </div>
+
+            {% if recordings %}
+            <div class="row">
+                {% for recording in recordings %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="card-title mb-0">{{ recording.title }}</h5>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown">
+                                        <i class="bi bi-three-dots-vertical"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'recording_detail' recording.id %}">
+                                                <i class="bi bi-eye"></i> Ver detalles
+                                            </a>
+                                        </li>
+                                        {% if is_agent %}
+                                        <li>
+                                            <a class="dropdown-item text-danger" href="{% url 'recording_delete' recording.id %}">
+                                                <i class="bi bi-trash"></i> Eliminar
+                                            </a>
+                                        </li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            {% if recording.description %}
+                            <p class="card-text text-muted small">{{ recording.description|truncatechars:100 }}</p>
+                            {% endif %}
+                            
+                            <div class="mb-3">
+                                <small class="text-muted d-block">
+                                    <i class="bi bi-building"></i> 
+                                    {% if recording.company %}
+                                        {{ recording.company.name }}
+                                    {% else %}
+                                        Sin empresa
+                                    {% endif %}
+                                </small>
+                                <small class="text-muted d-block">
+                                    <i class="bi bi-person"></i> 
+                                    {% if recording.uploaded_by %}
+                                        {{ recording.uploaded_by.get_full_name|default:recording.uploaded_by.username }}
+                                    {% else %}
+                                        Usuario anónimo
+                                    {% endif %}
+                                </small>
+                                <small class="text-muted d-block">
+                                    <i class="bi bi-calendar"></i> {{ recording.created_at|date:"d/m/Y H:i" }}
+                                </small>
+                            </div>
+                            
+                            <div class="row text-center mb-3">
+                                <div class="col-4">
+                                    <small class="text-muted d-block">Tamaño</small>
+                                    <strong>{{ recording.get_file_size_display }}</strong>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-muted d-block">Duración</small>
+                                    <strong>{{ recording.get_duration_display }}</strong>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-muted d-block">Transcripción</small>
+                                    {% if recording.transcription_status == 'completed' %}
+                                        <span class="badge bg-success">Completada</span>
+                                    {% elif recording.transcription_status == 'processing' %}
+                                        <span class="badge bg-warning">Procesando</span>
+                                    {% elif recording.transcription_status == 'failed' %}
+                                        <span class="badge bg-danger">Fallida</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Pendiente</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid">
+                                <a href="{% url 'recording_detail' recording.id %}" class="btn btn-primary">
+                                    <i class="bi bi-play-circle"></i> Reproducir
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="card-footer bg-transparent">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    {% if recording.is_public %}
+                                        <i class="bi bi-globe text-success"></i> Público
+                                    {% else %}
+                                        <i class="bi bi-lock text-warning"></i> Privado
+                                    {% endif %}
+                                </small>
+                                <small class="text-muted">
+                                    <i class="bi bi-file-earmark-music"></i> {{ recording.get_audio_extension }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Paginación -->
+            {% if recordings.has_other_pages %}
+            <nav aria-label="Paginación de grabaciones">
+                <ul class="pagination justify-content-center">
+                    {% if recordings.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1">&laquo; Primera</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ recordings.previous_page_number }}">Anterior</a>
+                        </li>
+                    {% endif %}
+
+                    {% for num in recordings.paginator.page_range %}
+                        {% if recordings.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > recordings.number|add:'-3' and num < recordings.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if recordings.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ recordings.next_page_number }}">Siguiente</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ recordings.paginator.num_pages }}">Última &raquo;</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <!-- Estado vacío -->
+            <div class="text-center py-5">
+                <i class="bi bi-mic display-1 text-muted"></i>
+                <h3 class="mt-3">No hay grabaciones</h3>
+                <p class="text-muted">Aún no se han subido grabaciones al sistema.</p>
+                <a href="{% url 'recording_upload' %}" class="btn btn-primary">
+                    <i class="bi bi-mic-fill"></i> Subir primera grabación
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.badge {
+    font-size: 0.75rem;
+}
+</style>
+{% endblock %}

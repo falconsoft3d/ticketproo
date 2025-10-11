@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}Eliminar Grabación - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-4">
+                        ¿Estás seguro de que deseas eliminar la grabación 
+                        <strong>"{{ recording.title }}"</strong>?
+                    </p>
+                    
+                    <div class="alert alert-warning">
+                        <i class="bi bi-warning"></i>
+                        <strong>Advertencia:</strong> Esta acción no se puede deshacer. 
+                        Se eliminará la grabación, su transcripción y todas las estadísticas asociadas.
+                    </div>
+                    
+                    <!-- Información de la grabación -->
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6>Información de la grabación:</h6>
+                            <ul class="list-unstyled mb-0">
+                                <li><strong>Título:</strong> {{ recording.title }}</li>
+                                <li><strong>Empresa:</strong> 
+                                    {% if recording.company %}
+                                        {{ recording.company.name }}
+                                    {% else %}
+                                        Sin empresa
+                                    {% endif %}
+                                </li>
+                                <li><strong>Subido por:</strong> 
+                                    {% if recording.uploaded_by %}
+                                        {{ recording.uploaded_by.get_full_name|default:recording.uploaded_by.username }}
+                                    {% else %}
+                                        Usuario anónimo
+                                    {% endif %}
+                                </li>
+                                <li><strong>Fecha:</strong> {{ recording.created_at|date:"d/m/Y H:i" }}</li>
+                                <li><strong>Tamaño:</strong> {{ recording.get_file_size_display }}</li>
+                                <li><strong>Reproducciones:</strong> {{ recording.playbacks.count }}</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'recording_detail' recording.id %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Eliminar grabación
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

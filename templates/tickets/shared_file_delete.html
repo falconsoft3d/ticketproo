@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}Eliminar Archivo - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-warning"></i>
+                        <strong>¡Atención!</strong> Esta acción no se puede deshacer.
+                    </div>
+                    
+                    <h6>¿Estás seguro de que deseas eliminar este archivo?</h6>
+                    
+                    <div class="border rounded p-3 bg-light mt-3">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-file-earmark me-2"></i>
+                            <strong>{{ shared_file.title }}</strong>
+                        </div>
+                        <div class="small text-muted">
+                            <div><i class="bi bi-building"></i> Empresa: {{ shared_file.company.name }}</div>
+                            <div><i class="bi bi-person"></i> Subido por: {{ shared_file.uploaded_by.username|default:"Anónimo" }}</div>
+                            <div><i class="bi bi-calendar"></i> Fecha: {{ shared_file.created_at|date:"d/m/Y H:i" }}</div>
+                            <div><i class="bi bi-hdd"></i> Tamaño: {{ shared_file.get_file_size_display }}</div>
+                            <div><i class="bi bi-download"></i> Descargas: {{ shared_file.download_count }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h6>Consecuencias de la eliminación:</h6>
+                        <ul class="small text-muted">
+                            <li>El archivo será eliminado permanentemente del servidor</li>
+                            <li>Los usuarios ya no podrán descargarlo</li>
+                            <li>Se perderá el historial de descargas</li>
+                            <li>Los enlaces de descarga dejarán de funcionar</li>
+                        </ul>
+                    </div>
+                    
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'shared_file_detail' shared_file.id %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Sí, eliminar archivo
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

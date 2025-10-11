@@ -1,0 +1,235 @@
+{% extends 'public_base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}Subir Archivo Público - TicketProo{% endblock %}
+
+{% block content %}
+<!-- Toast de confirmación -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1050;">
+    <div id="uploadSuccessToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-success text-white">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <strong class="me-auto">¡Archivo Subido!</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body bg-light">
+            <span id="toastMessage">Archivo subido exitosamente.</span>
+        </div>
+    </div>
+</div>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="text-center mb-4">
+                <h2><i class="bi bi-cloud-upload text-primary"></i></h2>
+                <h3>Subir Archivo Público</h3>
+                <p class="text-muted">Comparte archivos de forma pública con nuestro sistema</p>
+            </div>
+            
+            <div class="card shadow">
+                <div class="card-body">
+                    <!-- Mensajes de Django (ocultos, para JavaScript) -->
+                    {% if messages %}
+                        <div id="django-messages" style="display: none;">
+                            {% for message in messages %}
+                                <div class="message" data-level="{{ message.level }}" data-message="{{ message }}"></div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {% bootstrap_form form %}
+                        
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-cloud-upload"></i> Subir Archivo
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Información sobre el servicio -->
+            <div class="row mt-5">
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <i class="bi bi-shield-check display-4 text-success"></i>
+                        <h5 class="mt-3">Seguro</h5>
+                        <p class="text-muted small">Tus archivos están protegidos y solo son accesibles por la empresa seleccionada.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <i class="bi bi-lightning display-4 text-warning"></i>
+                        <h5 class="mt-3">Rápido</h5>
+                        <p class="text-muted small">Subida inmediata con notificación automática a la empresa.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <i class="bi bi-check-circle display-4 text-info"></i>
+                        <h5 class="mt-3">Fácil</h5>
+                        <p class="text-muted small">Sin necesidad de registro. Solo completa el formulario y sube tu archivo.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Información técnica -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> Información importante</h6>
+                </div>
+                <div class="card-body">
+                        <div class="col-md-6">
+                            <h6>Límites y condiciones:</h6>
+                            <ul class="small">
+                                <li>Tamaño máximo: 50 MB por archivo</li>
+                                <li>Los archivos son revisados por los agentes</li>
+                                <li>Conservamos tu información de contacto para seguimiento</li>
+                                <li>El archivo será visible según tu empresa asignada</li>
+                            </ul>
+                        </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Archivos permitidos:</h6>
+                            <ul class="small">
+                                <li>Documentos: PDF, Word, Excel, PowerPoint</li>
+                                <li>Imágenes: JPG, PNG, GIF</li>
+                                <li>Archivos comprimidos: ZIP, RAR, 7Z</li>
+                                <li>Texto: TXT</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Límites y condiciones:</h6>
+                            <ul class="small">
+                                <li>Tamaño máximo: 50 MB por archivo</li>
+                                <li>Los archivos son revisados por los agentes</li>
+                                <li>Conservamos tu información de contacto para seguimiento</li>
+                                <li>El archivo será visible según tu empresa asignada</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Asignación de empresa:</h6>
+                            <ul class="small">
+                                <li>Si ya tienes cuenta, se asignará a tu empresa automáticamente</li>
+                                <li>Si no tienes cuenta, el archivo quedará sin empresa asignada</li>
+                                <li>Los agentes pueden ver todos los archivos</li>
+                                <li>Se notificará sobre el nuevo archivo</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-primary mt-3">
+                        <i class="bi bi-lightbulb"></i>
+                        <strong>Importante:</strong> Si ya tienes cuenta en el sistema, ingresa el mismo email 
+                        que usas para tu cuenta y el archivo se asignará automáticamente a tu empresa. 
+                        Si no tienes cuenta, el archivo quedará disponible para revisión de los agentes.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Mostrar toast si hay mensajes de éxito
+    const djangoMessages = document.getElementById('django-messages');
+    if (djangoMessages) {
+        const messages = djangoMessages.querySelectorAll('.message');
+        messages.forEach(msg => {
+            const level = msg.getAttribute('data-level');
+            const message = msg.getAttribute('data-message');
+            
+            // Solo mostrar mensajes de éxito (level 25 en Django)
+            if (level === '25') {
+                showSuccessToast(message);
+            }
+        });
+    }
+    
+    // Función para mostrar el toast de éxito
+    function showSuccessToast(message) {
+        const toastElement = document.getElementById('uploadSuccessToast');
+        const messageElement = document.getElementById('toastMessage');
+        
+        if (toastElement && messageElement) {
+            messageElement.textContent = message;
+            
+            const toast = new bootstrap.Toast(toastElement, {
+                delay: 2000 // 2 segundos
+            });
+            
+            toast.show();
+            
+            // Auto-ocultar después de 2 segundos
+            setTimeout(() => {
+                toast.hide();
+            }, 2000);
+        }
+    }
+    
+    // Mostrar información del archivo seleccionado
+    const fileInput = document.querySelector('input[type="file"]');
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const fileSize = (file.size / 1024 / 1024).toFixed(2);
+                const fileName = file.name;
+                
+                // Crear o actualizar el elemento de información del archivo
+                let fileInfo = document.getElementById('file-info');
+                if (!fileInfo) {
+                    fileInfo = document.createElement('div');
+                    fileInfo.id = 'file-info';
+                    fileInfo.className = 'alert alert-success mt-2';
+                    fileInput.parentNode.appendChild(fileInfo);
+                }
+                
+                fileInfo.innerHTML = `
+                    <i class="bi bi-file-earmark-check"></i>
+                    <strong>Archivo seleccionado:</strong> ${fileName}<br>
+                    <strong>Tamaño:</strong> ${fileSize} MB
+                `;
+                
+                // Validar tamaño
+                if (file.size > 50 * 1024 * 1024) {
+                    fileInfo.className = 'alert alert-danger mt-2';
+                    fileInfo.innerHTML = `
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Error:</strong> El archivo es demasiado grande (${fileSize} MB). 
+                        El tamaño máximo permitido es 50 MB.
+                    `;
+                }
+            }
+        });
+    }
+    
+    // Validación del formulario
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const requiredFields = form.querySelectorAll('[required]');
+            let allValid = true;
+            
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    allValid = false;
+                    field.classList.add('is-invalid');
+                } else {
+                    field.classList.remove('is-invalid');
+                }
+            });
+            
+            if (!allValid) {
+                e.preventDefault();
+                alert('Por favor, completa todos los campos requeridos.');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

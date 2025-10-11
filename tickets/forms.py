@@ -1,12 +1,14 @@
 from django import forms
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
+import os
 from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
     UserNote, TimeEntry, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
     ChatRoom, ChatMessage, Command, ContactFormSubmission, Meeting, MeetingAttendee, MeetingQuestion, OpportunityActivity,
     Course, CourseClass, Contact, BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, Concept, ContactoWeb, Employee, EmployeePayroll,
-    Agreement, AgreementSignature, LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry
+    Agreement, AgreementSignature, LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry, SharedFile, SharedFileDownload,
+    Recording, RecordingPlayback
 )
 
 class CategoryForm(forms.ModelForm):
@@ -3948,3 +3950,401 @@ class WorkOrderTaskBulkForm(forms.Form):
             raise forms.ValidationError('No puedes crear más de 50 tareas a la vez.')
         
         return lines
+
+
+class SharedFileForm(forms.ModelForm):
+    """Formulario para subir archivos compartidos"""
+    
+    class Meta:
+        model = SharedFile
+        fields = ['title', 'description', 'file', 'company', 'is_public']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título del archivo'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción del archivo (opcional)'
+            }),
+            'file': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif,.zip,.rar,.7z'
+            }),
+            'company': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'is_public': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'title': 'Título del Archivo',
+            'description': 'Descripción',
+            'file': 'Archivo',
+            'company': 'Empresa',
+            'is_public': 'Público para toda la empresa',
+        }
+        help_texts = {
+            'file': 'Archivos permitidos: PDF, Word, Excel, PowerPoint, imágenes, archivos comprimidos',
+            'is_public': 'Si está marcado, todos los usuarios de la empresa pueden ver este archivo',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        # Filtrar empresas según el usuario
+        if user:
+            user_profile = getattr(user, 'userprofile', None)
+            from .utils import is_agent
+            
+            if is_agent(user):
+                # Los agentes pueden asignar archivos a cualquier empresa
+                self.fields['company'].queryset = Company.objects.filter(is_active=True)
+            else:
+                # Los usuarios regulares solo pueden usar su empresa
+                if user_profile and user_profile.company:
+                    self.fields['company'].queryset = Company.objects.filter(
+                        id=user_profile.company.id
+                    )
+                    self.fields['company'].initial = user_profile.company
+                    self.fields['company'].widget.attrs['readonly'] = True
+                else:
+                    # Si no tiene empresa, usar la primera empresa activa
+                    first_company = Company.objects.filter(is_active=True).first()
+                    if first_company:
+                        self.fields['company'].queryset = Company.objects.filter(
+                            id=first_company.id
+                        )
+                        self.fields['company'].initial = first_company
+                        self.fields['company'].widget.attrs['readonly'] = True
+    
+    def clean_file(self):
+        file = self.cleaned_data.get('file')
+        if file:
+            # Verificar tamaño del archivo (máximo 50MB)
+            if file.size > 50 * 1024 * 1024:
+                raise forms.ValidationError('El archivo no puede ser mayor a 50MB.')
+            
+            # Verificar extensión del archivo
+            allowed_extensions = [
+                '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+                '.txt', '.jpg', '.jpeg', '.png', '.gif', '.zip', '.rar', '.7z'
+            ]
+            
+            file_extension = os.path.splitext(file.name)[1].lower()
+            if file_extension not in allowed_extensions:
+                raise forms.ValidationError(
+                    'Tipo de archivo no permitido. '
+                    'Extensiones permitidas: ' + ', '.join(allowed_extensions)
+                )
+        
+        return file
+
+
+class PublicSharedFileForm(forms.ModelForm):
+    """Formulario público para subir archivos sin autenticación"""
+    
+    uploader_name = forms.CharField(
+        max_length=100,
+        label='Tu Nombre',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Ingresa tu nombre'
+        })
+    )
+    uploader_email = forms.EmailField(
+        label='Tu Email',
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'tu@email.com'
+        }),
+        help_text='Si ya tienes cuenta en el sistema, se asignará automáticamente a tu empresa'
+    )
+    
+    class Meta:
+        model = SharedFile
+        fields = ['title', 'description', 'file']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título del archivo'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción del archivo (opcional)'
+            }),
+            'file': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif,.zip,.rar,.7z'
+            }),
+        }
+        labels = {
+            'title': 'Título del Archivo',
+            'description': 'Descripción',
+            'file': 'Archivo',
+        }
+        help_texts = {
+            'file': 'Archivos permitidos: PDF, Word, Excel, PowerPoint, imágenes, archivos comprimidos (máximo 50MB)',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # No necesitamos inicializar company_selection ya que lo removimos
+    
+    def clean_file(self):
+        file = self.cleaned_data.get('file')
+        if file:
+            # Verificar tamaño del archivo (máximo 50MB)
+            if file.size > 50 * 1024 * 1024:
+                raise forms.ValidationError('El archivo no puede ser mayor a 50MB.')
+            
+            # Verificar extensión del archivo
+            allowed_extensions = [
+                '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+                '.txt', '.jpg', '.jpeg', '.png', '.gif', '.zip', '.rar', '.7z'
+            ]
+            
+            file_extension = os.path.splitext(file.name)[1].lower()
+            if file_extension not in allowed_extensions:
+                raise forms.ValidationError(
+                    'Tipo de archivo no permitido. '
+                    'Extensiones permitidas: ' + ', '.join(allowed_extensions)
+                )
+        
+        return file
+    
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        
+        # Buscar usuario por email para asignar empresa automáticamente
+        uploader_email = self.cleaned_data['uploader_email']
+        try:
+            existing_user = User.objects.get(email=uploader_email)
+            # Si el usuario tiene perfil con empresa, usar esa empresa
+            if hasattr(existing_user, 'userprofile') and existing_user.userprofile.company:
+                instance.company = existing_user.userprofile.company
+            else:
+                # Si no tiene empresa asignada, dejarlo sin empresa
+                instance.company = None
+        except User.DoesNotExist:
+            # Si no existe el usuario, dejarlo sin empresa
+            instance.company = None
+        
+        # Guardar información del uploader en la descripción si no hay descripción
+        uploader_info = f"\nSubido por: {self.cleaned_data['uploader_name']} ({uploader_email})"
+        if instance.description:
+            instance.description += uploader_info
+        else:
+            instance.description = f"Archivo subido públicamente.{uploader_info}"
+        
+        # Marcar como público
+        instance.is_public = True
+        
+        if commit:
+            instance.save()
+        
+        return instance
+
+
+class RecordingForm(forms.ModelForm):
+    """Formulario para grabar audio desde el navegador"""
+    
+    # Campo oculto para almacenar los datos de audio en base64
+    audio_data = forms.CharField(widget=forms.HiddenInput(), required=False)
+    
+    class Meta:
+        model = Recording
+        fields = ['title', 'description', 'is_public']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título de la grabación',
+                'required': True
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción de la grabación (opcional)'
+            }),
+            'is_public': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'title': 'Título de la Grabación',
+            'description': 'Descripción',
+            'is_public': 'Público',
+        }
+        help_texts = {
+            'is_public': 'Si está marcado, todos los usuarios de tu empresa pueden escuchar esta grabación',
+        }
+    
+    def clean_audio_data(self):
+        audio_data = self.cleaned_data.get('audio_data')
+        if not audio_data:
+            raise forms.ValidationError('Debe grabar audio antes de enviar el formulario.')
+        return audio_data
+
+
+class PublicRecordingForm(forms.ModelForm):
+    """Formulario público para grabar audio desde el navegador"""
+    
+    uploader_name = forms.CharField(
+        max_length=100,
+        label='Tu Nombre',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Ingresa tu nombre',
+            'required': True
+        })
+    )
+    uploader_email = forms.EmailField(
+        label='Tu Email',
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'tu@email.com',
+            'required': True
+        }),
+        help_text='Si ya tienes cuenta en el sistema, se asignará automáticamente a tu empresa'
+    )
+    
+    # Campo oculto para almacenar los datos de audio en base64
+    audio_data = forms.CharField(widget=forms.HiddenInput(), required=False)
+    
+    class Meta:
+        model = Recording
+        fields = ['title', 'description']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título de la grabación',
+                'required': True
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción de la grabación (opcional)'
+            }),
+        }
+        labels = {
+            'title': 'Título de la Grabación',
+            'description': 'Descripción',
+        }
+    
+    def clean_audio_data(self):
+        audio_data = self.cleaned_data.get('audio_data')
+        if not audio_data:
+            raise forms.ValidationError('Debe grabar audio antes de enviar el formulario.')
+        return audio_data
+    
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        
+        # Buscar usuario por email para asignar empresa automáticamente
+        uploader_email = self.cleaned_data['uploader_email']
+        try:
+            existing_user = User.objects.get(email=uploader_email)
+            # Si el usuario tiene perfil con empresa, usar esa empresa
+            if hasattr(existing_user, 'userprofile') and existing_user.userprofile.company:
+                instance.company = existing_user.userprofile.company
+            else:
+                # Si no tiene empresa asignada, dejarlo sin empresa
+                instance.company = None
+        except User.DoesNotExist:
+            # Si no existe el usuario, dejarlo sin empresa
+            instance.company = None
+        
+        # Guardar información del uploader en la descripción si no hay descripción
+        uploader_info = f"\nSubido por: {self.cleaned_data['uploader_name']} ({uploader_email})"
+        if instance.description:
+            instance.description += uploader_info
+        else:
+            instance.description = f"Grabación subida públicamente.{uploader_info}"
+        
+        # Marcar como público
+        instance.is_public = True
+        
+        if commit:
+            instance.save()
+        
+        return instance
+
+
+class TranscriptionEditForm(forms.ModelForm):
+    """Formulario para editar la transcripción de una grabación"""
+    
+    class Meta:
+        model = Recording
+        fields = ['transcription_text']
+        widgets = {
+            'transcription_text': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 8,
+                'placeholder': 'La transcripción aparecerá aquí...',
+                'style': 'font-family: monospace; font-size: 14px;'
+            }),
+        }
+        labels = {
+            'transcription_text': 'Transcripción',
+        }
+        help_texts = {
+            'transcription_text': 'Puedes editar manualmente la transcripción o regenerarla con IA',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Si no hay transcripción, mostrar mensaje informativo
+        if self.instance and not self.instance.transcription_text:
+            self.fields['transcription_text'].widget.attrs['placeholder'] = 'Aún no hay transcripción disponible. Puedes generar una automáticamente con IA.'
+
+
+class TranscriptionActionForm(forms.Form):
+    """Formulario para acciones de transcripción (generar, regenerar, etc.)"""
+    
+    ACTION_CHOICES = [
+        ('generate', 'Generar transcripción con IA'),
+        ('regenerate', 'Regenerar transcripción con IA'),
+        ('improve', 'Mejorar transcripción existente'),
+    ]
+    
+    action = forms.ChoiceField(
+        choices=ACTION_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        }),
+        label='Acción'
+    )
+    
+    context_hint = forms.CharField(
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Contexto adicional para mejorar la transcripción (opcional)'
+        }),
+        label='Contexto adicional',
+        help_text='Información adicional que puede ayudar a mejorar la transcripción'
+    )
+    
+    def __init__(self, *args, **kwargs):
+        self.recording = kwargs.pop('recording', None)
+        super().__init__(*args, **kwargs)
+        
+        # Ajustar opciones según el estado de la transcripción
+        if self.recording:
+            if not self.recording.transcription_text:
+                # Solo permitir generar si no hay transcripción
+                self.fields['action'].choices = [('generate', 'Generar transcripción con IA')]
+                self.fields['action'].initial = 'generate'
+            else:
+                # Si ya hay transcripción, permitir regenerar o mejorar
+                self.fields['action'].choices = [
+                    ('regenerate', 'Regenerar transcripción con IA'),
+                    ('improve', 'Mejorar transcripción existente'),
+                ]
+                self.fields['action'].initial = 'improve'
