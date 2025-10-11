@@ -212,6 +212,17 @@
                     </li>
                     {% endif %}
 
+                    <!-- Botón de Comandos de Voz IA -->
+                    {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link btn btn-outline-primary btn-sm mx-2 text-white border-white {% if request.resolver_match.url_name == 'voice_command_interface' %}active{% endif %}" 
+                           href="{% url 'voice_command_interface' %}" 
+                           title="Crear tickets con comandos de voz">
+                            <i class="fas fa-microphone-alt"></i>
+                            <span class="d-none d-lg-inline ms-1">IA</span>
+                        </a>
+                    </li>
+                    {% endif %}
                     
                     <!-- Menú de gestión para agentes -->
                     {% if user.groups.all and user.groups.first.name == 'Agentes' %}

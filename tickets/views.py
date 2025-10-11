@@ -12743,3 +12743,98 @@ def recording_bulk_transcribe_view(request):
         
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
+
+@login_required
+def voice_command_create_ticket_view(request):
+    """Vista para procesar comandos de voz y crear tickets automáticamente"""
+    from .ai_utils import VoiceCommandProcessor
+    import tempfile
+    import os
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'})
+    
+    try:
+        # Verificar que se envió un archivo de audio
+        if 'audio' not in request.FILES:
+            return JsonResponse({'success': False, 'error': 'No se envió archivo de audio'})
+        
+        audio_file = request.FILES['audio']
+        
+        # Validar formato de audio
+        allowed_formats = ['.wav', '.mp3', '.m4a', '.webm', '.ogg']
+        file_extension = os.path.splitext(audio_file.name)[1].lower()
+        
+        if file_extension not in allowed_formats:
+            return JsonResponse({
+                'success': False, 
+                'error': f'Formato de audio no soportado. Use: {", ".join(allowed_formats)}'
+            })
+        
+        # Crear archivo temporal para procesar el audio
+        with tempfile.NamedTemporaryFile(delete=False, suffix=file_extension) as temp_file:
+            # Escribir el contenido del archivo subido al archivo temporal
+            for chunk in audio_file.chunks():
+                temp_file.write(chunk)
+            temp_file_path = temp_file.name
+        
+        try:
+            # Procesar el comando de voz
+            processor = VoiceCommandProcessor()
+            result = processor.process_voice_command(temp_file_path, request.user)
+            
+            if result['success']:
+                # Comando procesado exitosamente
+                ticket_number = result["ticket"].get("ticket_number", result["ticket"].get("ticket_id", "Sin número"))
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Ticket creado exitosamente: #{ticket_number}',
+                    'ticket': result['ticket'],
+                    'transcription': result['transcription'],
+                    'ticket_info': result['ticket_info']
+                })
+            else:
+                # Error procesando el comando
+                return JsonResponse({
+                    'success': False,
+                    'error': result.get('error', 'Error desconocido procesando comando')
+                })
+        
+        finally:
+            # Limpiar archivo temporal
+            try:
+                os.unlink(temp_file_path)
+            except OSError:
+                pass  # Ignorar errores al eliminar archivo temporal
+    
+    except Exception as e:
+        logger.error(f"Error en comando de voz: {str(e)}")
+        return JsonResponse({'success': False, 'error': f'Error interno del servidor: {str(e)}'})
+
+
+@login_required 
+def voice_command_interface_view(request):
+    """Vista para mostrar la interfaz de comandos de voz"""
+    from .models import Ticket
+    
+    # Obtener estadísticas de tickets recientes del usuario
+    recent_tickets = Ticket.objects.filter(
+        created_by=request.user
+    ).order_by('-created_at')[:5]
+    
+    # Obtener estadísticas generales
+    total_tickets = Ticket.objects.filter(created_by=request.user).count()
+    open_tickets = Ticket.objects.filter(created_by=request.user, status='open').count()
+    
+    context = {
+        'page_title': 'Comandos de Voz IA - TicketProo',
+        'recent_tickets': recent_tickets,
+        'total_tickets': total_tickets,
+        'open_tickets': open_tickets,
+    }
+    
+    return render(request, 'tickets/voice_command_interface.html', context)

@@ -483,5 +483,9 @@ urlpatterns = [
     
     # URL pública para subir grabaciones
     path('public/upload-recording/', views.public_recording_upload_view, name='public_recording_upload'),
+    
+    # URLs de comandos de voz IA
+    path('voice-commands/', views.voice_command_interface_view, name='voice_command_interface'),
+    path('voice-commands/create-ticket/', views.voice_command_create_ticket_view, name='voice_command_create_ticket'),
 
 ]

@@ -622,3 +622,266 @@ def transcribe_recording(recording_id):
     except Exception as e:
         logger.error(f"Error en transcripción de grabación {recording_id}: {str(e)}")
         return {"success": False, "error": str(e)}
+
+
+class VoiceCommandProcessor:
+    """Procesador de comandos de voz para crear tickets automáticamente"""
+    
+    def __init__(self):
+        self.transcriber = AudioTranscriber()
+    
+    def process_voice_command(self, audio_file_path, user):
+        """
+        Procesa un comando de voz y extrae información para crear un ticket
+        
+        Args:
+            audio_file_path (str): Ruta al archivo de audio
+            user: Usuario que hace el comando
+            
+        Returns:
+            dict: Resultado del procesamiento con información del ticket
+        """
+        try:
+            # 1. Transcribir el audio
+            transcription_result = self.transcriber.transcribe_audio_file(audio_file_path)
+            
+            if not transcription_result.get('success'):
+                return {
+                    "success": False, 
+                    "error": f"Error en transcripción: {transcription_result.get('error', 'Desconocido')}"
+                }
+            
+            command_text = transcription_result['transcription']
+            
+            # 2. Analizar el comando con IA para extraer información del ticket
+            ticket_info = self._extract_ticket_info_from_command(command_text, user)
+            
+            if not ticket_info.get('success'):
+                return ticket_info
+            
+            # 3. Crear el ticket automáticamente
+            ticket_result = self._create_ticket_from_info(ticket_info['ticket_data'], user)
+            
+            return {
+                "success": True,
+                "transcription": command_text,
+                "ticket_info": ticket_info['ticket_data'],
+                "ticket": ticket_result
+            }
+            
+        except Exception as e:
+            logger.error(f"Error procesando comando de voz: {str(e)}")
+            return {"success": False, "error": str(e)}
+    
+    def _extract_ticket_info_from_command(self, command_text, user):
+        """
+        Usa GPT para extraer información estructurada del comando de voz
+        """
+        try:
+            # Obtener contexto del usuario para mejorar el análisis
+            user_context = self._get_user_context(user)
+            
+            messages = [
+                {
+                    "role": "system",
+                    "content": """Eres un asistente especializado en extraer información de comandos de voz para crear tickets de soporte técnico.
+
+Tu tarea es analizar el comando de voz y extraer la siguiente información en formato JSON:
+{
+    "title": "Título descriptivo del problema",
+    "description": "Descripción detallada del problema",
+    "priority": "baja|media|alta|critica",
+    "category": "categoria_detectada",
+    "urgency": "baja|media|alta",
+    "tags": ["tag1", "tag2", "tag3"],
+    "estimated_time": "tiempo_estimado_en_minutos",
+    "action_required": "accion_sugerida"
+}
+
+Reglas importantes:
+- El título debe ser conciso pero descriptivo (máximo 100 caracteres)
+- La descripción debe incluir todos los detalles mencionados
+- La prioridad debe basarse en la urgencia y impacto descritos
+- Las categorías pueden ser: técnico, soporte, facturación, general, desarrollo, infraestructura
+- Los tags deben ser palabras clave relevantes (máximo 5)
+- El tiempo estimado debe ser realista en minutos
+- La acción sugerida debe ser específica y práctica
+
+Si el comando no es claro o no contiene suficiente información, indica qué información falta."""
+                },
+                {
+                    "role": "user",
+                    "content": f"""Analiza este comando de voz para crear un ticket:
+
+Comando: "{command_text}"
+
+Contexto del usuario:
+{user_context}
+
+Extrae la información del ticket en formato JSON válido."""
+                }
+            ]
+            
+            # Configurar OpenAI client
+            from .models import SystemConfiguration
+            config = SystemConfiguration.get_config()
+            
+            if not config.openai_api_key:
+                return {"success": False, "error": "API key de OpenAI no configurada"}
+            
+            import openai
+            client = openai.OpenAI(api_key=config.openai_api_key)
+            
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=messages,
+                max_tokens=800,
+                temperature=0.3
+            )
+            
+            response_text = response.choices[0].message.content.strip()
+            
+            # Intentar parsear el JSON
+            import json
+            try:
+                # Extraer JSON del texto de respuesta
+                start_idx = response_text.find('{')
+                end_idx = response_text.rfind('}') + 1
+                
+                if start_idx != -1 and end_idx != -1:
+                    json_str = response_text[start_idx:end_idx]
+                    ticket_data = json.loads(json_str)
+                    
+                    # Validar que tiene los campos requeridos
+                    required_fields = ['title', 'description', 'priority']
+                    for field in required_fields:
+                        if field not in ticket_data:
+                            return {
+                                "success": False, 
+                                "error": f"Campo requerido faltante: {field}"
+                            }
+                    
+                    return {"success": True, "ticket_data": ticket_data}
+                else:
+                    return {
+                        "success": False, 
+                        "error": "No se pudo extraer información estructurada del comando"
+                    }
+                    
+            except json.JSONDecodeError as e:
+                return {
+                    "success": False, 
+                    "error": f"Error parseando respuesta de IA: {str(e)}"
+                }
+            
+        except Exception as e:
+            logger.error(f"Error extrayendo información del ticket: {str(e)}")
+            return {"success": False, "error": str(e)}
+    
+    def _get_user_context(self, user):
+        """Obtiene contexto relevante del usuario para mejorar el análisis"""
+        try:
+            context_parts = [
+                f"Usuario: {user.get_full_name() or user.username}",
+                f"Email: {user.email}",
+            ]
+            
+            # Agregar información de perfil si existe
+            if hasattr(user, 'userprofile'):
+                profile = user.userprofile
+                if profile.company:
+                    context_parts.append(f"Empresa: {profile.company.name}")
+                if profile.position:
+                    context_parts.append(f"Cargo: {profile.position}")
+            
+            # Agregar estadísticas de tickets recientes si es posible
+            from .models import Ticket
+            recent_tickets = Ticket.objects.filter(
+                created_by=user
+            ).order_by('-created_at')[:3]
+            
+            if recent_tickets.exists():
+                context_parts.append("Tickets recientes:")
+                for ticket in recent_tickets:
+                    context_parts.append(f"- {ticket.title} ({ticket.category})")
+            
+            return "\n".join(context_parts)
+            
+        except Exception as e:
+            logger.warning(f"Error obteniendo contexto del usuario: {str(e)}")
+            return f"Usuario: {user.username}"
+    
+    def _create_ticket_from_info(self, ticket_data, user):
+        """
+        Crea un ticket real en el sistema usando la información extraída
+        """
+        try:
+            from .models import Ticket, Category, Company
+            
+            # Buscar o crear categoría
+            category_name = ticket_data.get('category', 'general')
+            category, created = Category.objects.get_or_create(
+                name__iexact=category_name,
+                defaults={'name': category_name.title(), 'description': f'Categoría creada automáticamente: {category_name}'}
+            )
+            
+            # Obtener empresa del usuario si existe
+            company = None
+            if hasattr(user, 'userprofile') and user.userprofile.company:
+                company = user.userprofile.company
+            
+            # Mapear prioridad textual a las opciones del modelo
+            priority_map = {
+                'baja': 'low',
+                'media': 'medium', 
+                'alta': 'high',
+                'critica': 'urgent',
+                'crítica': 'urgent'
+            }
+            
+            # Crear el ticket
+            try:
+                # Validar y convertir tiempo estimado
+                estimated_time = ticket_data.get('estimated_time', 60)
+                if isinstance(estimated_time, str):
+                    # Extraer números de la cadena
+                    import re
+                    numbers = re.findall(r'\d+', estimated_time)
+                    estimated_time = int(numbers[0]) if numbers else 60
+                elif not isinstance(estimated_time, (int, float)):
+                    estimated_time = 60
+                
+                hours_estimated = float(estimated_time) / 60.0
+                
+                ticket = Ticket.objects.create(
+                    title=ticket_data['title'][:200],  # Limitar longitud
+                    description=ticket_data['description'],
+                    priority=priority_map.get(ticket_data.get('priority', 'media').lower(), 'medium'),
+                    category=category,
+                    company=company,
+                    created_by=user,
+                    assigned_to=None,  # Se asignará automáticamente según reglas
+                    status='open',
+                    hours=hours_estimated,  # Convertir minutos a horas
+                )
+            except Exception as e:
+                logger.error(f"Error creando ticket: {str(e)}")
+                return {"success": False, "error": f"Error creando ticket: {str(e)}"}
+            
+            # Generar número de ticket si no existe
+            if not ticket.ticket_number:
+                ticket.generate_ticket_number()
+                ticket.save()
+            
+            logger.info(f"Ticket creado automáticamente por comando de voz: {ticket.id}")
+            
+            return {
+                "success": True,
+                "ticket_id": ticket.id,
+                "ticket_number": ticket.ticket_number or f"T-{ticket.id}",
+                "title": ticket.title
+            }
+            
+        except Exception as e:
+            logger.error(f"Error creando ticket: {str(e)}")
+            return {"success": False, "error": str(e)}

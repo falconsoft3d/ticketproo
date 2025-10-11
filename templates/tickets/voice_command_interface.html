@@ -1,0 +1,638 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}Comandos de Voz IA - TicketProo{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <!-- Título principal -->
+            <div class="text-center mb-4">
+                <h1 class="display-6">
+                    <i class="fas fa-microphone-alt text-primary"></i>
+                    Comandos de Voz IA
+                </h1>
+                <p class="lead text-muted">
+                    Graba tu voz para crear tickets automáticamente con inteligencia artificial
+                </p>
+            </div>
+            
+            <!-- Panel principal de grabación -->
+            <div class="card shadow-lg mb-4" id="voiceRecordingPanel">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-robot me-2"></i>
+                        Crear Ticket por Comando de Voz
+                    </h5>
+                </div>
+                <div class="card-body text-center p-5">
+                    <!-- Estado de grabación -->
+                    <div id="recordingStatus" class="mb-4">
+                        <div id="readyState">
+                            <i class="fas fa-microphone fa-3x text-muted mb-3"></i>
+                            <h4>Listo para grabar</h4>
+                            <p class="text-muted">
+                                Presiona el botón y describe el problema o ticket que quieres crear
+                            </p>
+                        </div>
+                        
+                        <div id="recordingState" style="display: none;">
+                            <div class="recording-animation mb-3">
+                                <i class="fas fa-microphone fa-3x text-danger"></i>
+                                <div class="recording-pulse"></div>
+                            </div>
+                            <h4 class="text-danger">Grabando...</h4>
+                            <p class="text-muted">
+                                Habla claramente y describe el problema que necesitas resolver
+                            </p>
+                            <div class="recording-timer">
+                                <span id="recordingTime">00:00</span>
+                            </div>
+                        </div>
+                        
+                        <div id="processingState" style="display: none;">
+                            <div class="spinner-border text-primary mb-3" role="status">
+                                <span class="visually-hidden">Procesando...</span>
+                            </div>
+                            <h4>Procesando con IA...</h4>
+                            <p class="text-muted">
+                                Transcribiendo audio y creando ticket automáticamente
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Botones de control -->
+                    <div id="recordingControls">
+                        <button type="button" class="btn btn-primary btn-lg" id="startRecordingBtn">
+                            <i class="fas fa-microphone me-2"></i>
+                            Comenzar Grabación
+                        </button>
+                        
+                        <button type="button" class="btn btn-danger btn-lg me-3" id="stopRecordingBtn" style="display: none;">
+                            <i class="fas fa-stop me-2"></i>
+                            Detener y Procesar
+                        </button>
+                        
+                        <button type="button" class="btn btn-secondary btn-lg" id="cancelRecordingBtn" style="display: none;">
+                            <i class="fas fa-times me-2"></i>
+                            Cancelar
+                        </button>
+                    </div>
+                    
+                    <!-- Consejos de uso -->
+                    <div class="mt-4">
+                        <small class="text-muted">
+                            <strong>Consejos:</strong> Habla claramente, menciona el tipo de problema, 
+                            la prioridad (alta, media, baja) y cualquier detalle relevante.
+                        </small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Panel de resultados -->
+            <div id="resultPanel" class="card shadow mb-4" style="display: none;">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        Resultado del Procesamiento
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="resultContent">
+                        <!-- El contenido se llenará dinámicamente -->
+                    </div>
+                    
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-primary" id="newCommandBtn">
+                            <i class="fas fa-plus me-2"></i>
+                            Crear Otro Ticket
+                        </button>
+                        <a href="#" class="btn btn-outline-primary" id="viewTicketBtn">
+                            <i class="fas fa-eye me-2"></i>
+                            Ver Ticket Creado
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Panel de error -->
+            <div id="errorPanel" class="alert alert-danger" style="display: none;">
+                <h5>
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Error
+                </h5>
+                <p id="errorMessage"></p>
+                <button type="button" class="btn btn-outline-danger btn-sm" id="retryBtn">
+                    <i class="fas fa-redo me-2"></i>
+                    Intentar de Nuevo
+                </button>
+            </div>
+        </div>
+        
+        <!-- Sidebar con estadísticas -->
+        <div class="col-md-4">
+            <!-- Estadísticas del usuario -->
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Tus Estadísticas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="stat-item">
+                                <h4 class="text-primary">{{ total_tickets }}</h4>
+                                <small class="text-muted">Total Tickets</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-item">
+                                <h4 class="text-warning">{{ open_tickets }}</h4>
+                                <small class="text-muted">Abiertos</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tickets recientes -->
+            {% if recent_tickets %}
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-history me-2"></i>
+                        Tickets Recientes
+                    </h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for ticket in recent_tickets %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto">
+                                    <div class="fw-bold">{{ ticket.title|truncatechars:30 }}</div>
+                                    <small class="text-muted">{{ ticket.created_at|timesince }} ago</small>
+                                </div>
+                                <span class="badge bg-{% if ticket.status == 'open' %}warning{% elif ticket.status == 'closed' %}success{% else %}secondary{% endif %} rounded-pill">
+                                    {{ ticket.get_status_display }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Ejemplos de comandos -->
+            <div class="card shadow mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        Ejemplos de Comandos
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="small">
+                        <div class="mb-2">
+                            <strong>💡 Ejemplo 1:</strong><br>
+                            "Necesito crear un ticket de alta prioridad porque el servidor de correo no está funcionando y los usuarios no pueden recibir emails"
+                        </div>
+                        <div class="mb-2">
+                            <strong>🔧 Ejemplo 2:</strong><br>
+                            "Crear ticket técnico: La aplicación web se carga muy lenta, prioridad media, categoria desarrollo"
+                        </div>
+                        <div>
+                            <strong>📞 Ejemplo 3:</strong><br>
+                            "Ticket de soporte para configurar el nuevo usuario en el sistema, prioridad baja"
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de permisos de micrófono -->
+<div class="modal fade" id="microphonePermissionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-microphone me-2"></i>
+                    Permisos de Micrófono
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Para usar los comandos de voz, necesitamos acceso a tu micrófono.</p>
+                <p>Por favor, permite el acceso cuando tu navegador lo solicite.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="requestMicPermissionBtn">
+                    <i class="fas fa-microphone me-2"></i>
+                    Solicitar Permisos
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+class VoiceCommandRecorder {
+    constructor() {
+        this.mediaRecorder = null;
+        this.audioChunks = [];
+        this.isRecording = false;
+        this.recordingTimer = null;
+        this.recordingStartTime = null;
+        
+        this.initializeElements();
+        this.bindEvents();
+    }
+    
+    initializeElements() {
+        this.startBtn = document.getElementById('startRecordingBtn');
+        this.stopBtn = document.getElementById('stopRecordingBtn');
+        this.cancelBtn = document.getElementById('cancelRecordingBtn');
+        this.retryBtn = document.getElementById('retryBtn');
+        this.newCommandBtn = document.getElementById('newCommandBtn');
+        this.viewTicketBtn = document.getElementById('viewTicketBtn');
+        this.requestMicBtn = document.getElementById('requestMicPermissionBtn');
+        
+        this.readyState = document.getElementById('readyState');
+        this.recordingState = document.getElementById('recordingState');
+        this.processingState = document.getElementById('processingState');
+        this.resultPanel = document.getElementById('resultPanel');
+        this.errorPanel = document.getElementById('errorPanel');
+        this.recordingTime = document.getElementById('recordingTime');
+        this.errorMessage = document.getElementById('errorMessage');
+        this.resultContent = document.getElementById('resultContent');
+    }
+    
+    bindEvents() {
+        this.startBtn.addEventListener('click', () => this.startRecording());
+        this.stopBtn.addEventListener('click', () => this.stopRecording());
+        this.cancelBtn.addEventListener('click', () => this.cancelRecording());
+        this.retryBtn.addEventListener('click', () => this.resetInterface());
+        this.newCommandBtn.addEventListener('click', () => this.resetInterface());
+        this.requestMicBtn.addEventListener('click', () => this.requestMicrophonePermission());
+    }
+    
+    async requestMicrophonePermission() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            stream.getTracks().forEach(track => track.stop());
+            
+            const modal = bootstrap.Modal.getInstance(document.getElementById('microphonePermissionModal'));
+            modal.hide();
+            
+            this.showSuccess('Permisos concedidos. Ya puedes usar los comandos de voz.');
+        } catch (error) {
+            this.showError('No se pudieron obtener permisos del micrófono: ' + error.message);
+        }
+    }
+    
+    async startRecording() {
+        try {
+            // Verificar soporte del navegador
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                throw new Error('Tu navegador no soporta grabación de audio');
+            }
+            
+            // Solicitar permisos del micrófono
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    sampleRate: 44100
+                } 
+            });
+            
+            // Configurar MediaRecorder
+            this.mediaRecorder = new MediaRecorder(stream, {
+                mimeType: 'audio/webm;codecs=opus'
+            });
+            
+            this.audioChunks = [];
+            this.isRecording = true;
+            this.recordingStartTime = Date.now();
+            
+            // Eventos del MediaRecorder
+            this.mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    this.audioChunks.push(event.data);
+                }
+            };
+            
+            this.mediaRecorder.onstop = () => {
+                this.processRecording();
+            };
+            
+            // Iniciar grabación
+            this.mediaRecorder.start(1000); // Recopilar datos cada segundo
+            
+            // Actualizar interfaz
+            this.updateRecordingState(true);
+            this.startTimer();
+            
+            this.hideError();
+            
+        } catch (error) {
+            console.error('Error iniciando grabación:', error);
+            
+            if (error.name === 'NotAllowedError') {
+                this.showMicrophonePermissionModal();
+            } else {
+                this.showError('Error iniciando grabación: ' + error.message);
+            }
+        }
+    }
+    
+    stopRecording() {
+        if (this.mediaRecorder && this.isRecording) {
+            this.mediaRecorder.stop();
+            
+            // Detener todas las pistas de audio
+            this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            
+            this.isRecording = false;
+            this.stopTimer();
+            this.updateProcessingState();
+        }
+    }
+    
+    cancelRecording() {
+        if (this.mediaRecorder && this.isRecording) {
+            this.mediaRecorder.stop();
+            this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            
+            this.isRecording = false;
+            this.stopTimer();
+            this.resetInterface();
+        }
+    }
+    
+    async processRecording() {
+        try {
+            // Crear blob del audio grabado
+            const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+            
+            // Verificar que hay contenido de audio
+            if (audioBlob.size === 0) {
+                throw new Error('No se grabó contenido de audio');
+            }
+            
+            // Crear FormData para enviar
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'voice_command.webm');
+            
+            // Agregar token CSRF
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                             document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
+            if (csrfToken) {
+                formData.append('csrfmiddlewaretoken', csrfToken);
+            }
+            
+            // Enviar al servidor
+            const response = await fetch('{% url "voice_command_create_ticket" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrfToken
+                }
+            });
+            
+            // Verificar si la respuesta es JSON válida
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                // Si no es JSON, probablemente es una página de error HTML
+                const htmlText = await response.text();
+                console.error('Respuesta no es JSON:', htmlText);
+                throw new Error('Error del servidor: respuesta no válida');
+            }
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                this.showResult(result);
+            } else {
+                this.showError(result.error || 'Error procesando comando de voz');
+            }
+            
+        } catch (error) {
+            console.error('Error procesando grabación:', error);
+            this.showError('Error procesando grabación: ' + error.message);
+        }
+    }
+    
+    updateRecordingState(recording) {
+        this.readyState.style.display = recording ? 'none' : 'block';
+        this.recordingState.style.display = recording ? 'block' : 'none';
+        this.processingState.style.display = 'none';
+        
+        this.startBtn.style.display = recording ? 'none' : 'inline-block';
+        this.stopBtn.style.display = recording ? 'inline-block' : 'none';
+        this.cancelBtn.style.display = recording ? 'inline-block' : 'none';
+    }
+    
+    updateProcessingState() {
+        this.readyState.style.display = 'none';
+        this.recordingState.style.display = 'none';
+        this.processingState.style.display = 'block';
+        
+        this.startBtn.style.display = 'none';
+        this.stopBtn.style.display = 'none';
+        this.cancelBtn.style.display = 'none';
+    }
+    
+    startTimer() {
+        this.recordingTimer = setInterval(() => {
+            const elapsed = Math.floor((Date.now() - this.recordingStartTime) / 1000);
+            const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const seconds = (elapsed % 60).toString().padStart(2, '0');
+            this.recordingTime.textContent = `${minutes}:${seconds}`;
+        }, 1000);
+    }
+    
+    stopTimer() {
+        if (this.recordingTimer) {
+            clearInterval(this.recordingTimer);
+            this.recordingTimer = null;
+        }
+    }
+    
+    showResult(result) {
+        this.hideError();
+        this.updateRecordingState(false);
+        
+        // Mostrar panel de resultados
+        this.resultPanel.style.display = 'block';
+        
+        // Configurar enlace del ticket
+        this.viewTicketBtn.href = `/tickets/${result.ticket.ticket_id}/`;
+        
+        // Mostrar contenido del resultado
+        this.resultContent.innerHTML = `
+            <div class="alert alert-success">
+                <h5><i class="fas fa-check-circle me-2"></i>¡Ticket creado exitosamente!</h5>
+                <p><strong>Número:</strong> #${result.ticket.ticket_number || result.ticket.ticket_id}</p>
+                <p><strong>Título:</strong> ${result.ticket.title}</p>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <h6><i class="fas fa-microphone me-2"></i>Transcripción:</h6>
+                    <div class="bg-light p-3 rounded">
+                        <em>"${result.transcription}"</em>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6><i class="fas fa-robot me-2"></i>Información extraída:</h6>
+                    <ul class="list-unstyled">
+                        <li><strong>Prioridad:</strong> ${result.ticket_info.priority || 'No especificada'}</li>
+                        <li><strong>Categoría:</strong> ${result.ticket_info.category || 'General'}</li>
+                        <li><strong>Urgencia:</strong> ${result.ticket_info.urgency || 'Media'}</li>
+                        ${result.ticket_info.tags ? `<li><strong>Tags:</strong> ${result.ticket_info.tags.join(', ')}</li>` : ''}
+                    </ul>
+                </div>
+            </div>
+        `;
+    }
+    
+    showError(message) {
+        this.updateRecordingState(false);
+        this.resultPanel.style.display = 'none';
+        this.errorPanel.style.display = 'block';
+        this.errorMessage.textContent = message;
+    }
+    
+    hideError() {
+        this.errorPanel.style.display = 'none';
+    }
+    
+    showSuccess(message) {
+        // Crear y mostrar toast de éxito
+        const toast = document.createElement('div');
+        toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed top-0 end-0 m-3';
+        toast.style.zIndex = '9999';
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-check-circle me-2"></i>${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+        
+        // Limpiar después de mostrar
+        toast.addEventListener('hidden.bs.toast', () => {
+            document.body.removeChild(toast);
+        });
+    }
+    
+    showMicrophonePermissionModal() {
+        const modal = new bootstrap.Modal(document.getElementById('microphonePermissionModal'));
+        modal.show();
+    }
+    
+    resetInterface() {
+        this.hideError();
+        this.resultPanel.style.display = 'none';
+        this.updateRecordingState(false);
+        this.recordingTime.textContent = '00:00';
+        this.audioChunks = [];
+        
+        // Limpiar any media streams activos
+        if (this.mediaRecorder && this.mediaRecorder.stream) {
+            this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+        }
+        
+        this.mediaRecorder = null;
+        this.isRecording = false;
+        this.stopTimer();
+    }
+}
+
+// Inicializar cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    window.voiceRecorder = new VoiceCommandRecorder();
+});
+</script>
+
+<style>
+.recording-animation {
+    position: relative;
+    display: inline-block;
+}
+
+.recording-pulse {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80px;
+    height: 80px;
+    border: 2px solid #dc3545;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: translate(-50%, -50%) scale(0.8);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(2);
+        opacity: 0;
+    }
+}
+
+.recording-timer {
+    font-family: 'Courier New', monospace;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #dc3545;
+    margin-top: 10px;
+}
+
+.stat-item {
+    padding: 10px;
+}
+
+.card {
+    border: none;
+}
+
+.btn-lg {
+    padding: 12px 30px;
+    font-size: 1.1em;
+}
+
+/* Mejorar apariencia de las listas */
+.list-group-item {
+    border-left: none;
+    border-right: none;
+}
+
+.list-group-item:first-child {
+    border-top: none;
+}
+
+.list-group-item:last-child {
+    border-bottom: none;
+}
+</style>
+{% endblock extra_js %}
