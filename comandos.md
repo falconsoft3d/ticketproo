@@ -1,8 +1,40 @@
 # para el server
 ```
+# CONFIGURACIÓN DEL CRON JOB EN PRODUCCIÓN
+# 1. Editar el crontab del usuario
 crontab -e
-# Añadir esta línea:
-0 10 * * * cd /ruta/a/tu/proyecto && python manage.py run_ai_blog_generators
+
+# 2. Añadir esta línea para ejecutar todos los días a las 10:00 AM:
+0 10 * * * cd /home/urban/ticketproo && source /home/urban/bin/activate && python manage.py run_ai_blog_generators >> /home/urban/logs/ai_blog_cron.log 2>&1
+
+# 3. OPCIONES ADICIONALES DE HORARIOS:
+# Ejecutar cada 6 horas:
+# 0 */6 * * * cd /home/urban/ticketproo && source /home/urban/bin/activate && python manage.py run_ai_blog_generators >> /home/urban/logs/ai_blog_cron.log 2>&1
+
+# Ejecutar todos los días a las 8:00 AM y 6:00 PM:
+# 0 8,18 * * * cd /home/urban/ticketproo && source /home/urban/bin/activate && python manage.py run_ai_blog_generators >> /home/urban/logs/ai_blog_cron.log 2>&1
+
+# Ejecutar solo de lunes a viernes a las 9:00 AM:
+# 0 9 * * 1-5 cd /home/urban/ticketproo && source /home/urban/bin/activate && python manage.py run_ai_blog_generators >> /home/urban/logs/ai_blog_cron.log 2>&1
+
+# 4. Verificar que el cron está configurado:
+crontab -l
+
+# 5. Para revisar los logs del cron:
+tail -f /home/urban/logs/ai_blog_cron.log
+
+# 6. Crear el directorio de logs si no existe:
+mkdir -p /home/urban/logs
+
+# 7. Comandos de monitoreo:
+# Ver errores específicos:
+grep -i error /home/urban/logs/ai_blog_cron.log
+# Ver ejecuciones exitosas:
+grep -i "Ejecución completada" /home/urban/logs/ai_blog_cron.log
+# Ver últimas 50 líneas:
+tail -50 /home/urban/logs/ai_blog_cron.log
+
+# COMANDOS LOCALES DE DESARROLLO:
 source .venv/bin/activate
 python manage.py runserver 8000
 lsof -ti:8000
