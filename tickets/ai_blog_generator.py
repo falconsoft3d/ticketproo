@@ -226,10 +226,11 @@ def generate_blog_post_content(configurator, keyword):
         - Longitud: {length}
         - Estilo: {style}
         - Idioma: Español
-        - Incluir introducción, desarrollo y conclusión
-        - Usar texto plano sin formato Markdown
-        - NO usar símbolos como #, ##, *, -, etc.
-        - Organizar el contenido con saltos de línea y párrafos claros
+        - FORMATO: Solo texto plano, sin ningún tipo de formato
+        - NO usar símbolos de formato: #, ##, ###, *, **, ***, -, _, `, etc.
+        - NO usar markdown, HTML, o cualquier otro formato
+        - Organizar SOLO con saltos de línea dobles entre párrafos
+        - Escribir como si fuera un documento de texto simple
         - Incluir ejemplos prácticos cuando sea relevante
         - Optimizado para SEO
         - Contenido original y útil
@@ -240,9 +241,13 @@ def generate_blog_post_content(configurator, keyword):
         
         Instrucción específica: {topic_prompt}
         
-        IMPORTANTE: Crea contenido completamente original que aporte valor único y se diferencie de los artículos existentes.
+        IMPORTANTE: 
+        1. Crea contenido completamente original que aporte valor único
+        2. NUNCA uses símbolos de formato como *, #, -, etc.
+        3. Solo texto plano con párrafos separados por líneas en blanco
+        4. Escribe como si estuvieras en un editor de texto simple
         
-        Formato del artículo en texto plano con párrafos bien estructurados.
+        Formato: Párrafos de texto plano separados por líneas en blanco.
         """
         
         # Generar contenido
@@ -254,6 +259,9 @@ def generate_blog_post_content(configurator, keyword):
         )
         
         content = content_response.choices[0].message.content.strip()
+        
+        # Limpiar cualquier formato Markdown que pueda haberse colado
+        content = clean_markdown_formatting(content)
         
         # Generar excerpt (resumen)
         excerpt_prompt = f"""
@@ -377,3 +385,45 @@ Conclusión
         'meta_description': f"Guía completa sobre {keyword}: conceptos, beneficios, implementación y mejores prácticas. Todo lo que necesitas saber.",
         'tags': f"{keyword}, guía, tutorial, mejores prácticas, implementación"
     }
+
+
+def clean_markdown_formatting(content):
+    """
+    Elimina cualquier formato Markdown que pueda haberse colado en el contenido
+    """
+    import re
+    
+    # Eliminar headers (# ## ###)
+    content = re.sub(r'^#+\s*', '', content, flags=re.MULTILINE)
+    
+    # Eliminar texto en negrita (**texto** o __texto__)
+    content = re.sub(r'\*\*(.*?)\*\*', r'\1', content)
+    content = re.sub(r'__(.*?)__', r'\1', content)
+    
+    # Eliminar texto en cursiva (*texto* o _texto_)
+    content = re.sub(r'\*(.*?)\*', r'\1', content)
+    content = re.sub(r'_(.*?)_', r'\1', content)
+    
+    # Eliminar listas con guiones o asteriscos
+    content = re.sub(r'^[\s]*[-\*\+]\s+', '', content, flags=re.MULTILINE)
+    
+    # Eliminar listas numeradas
+    content = re.sub(r'^\d+\.\s+', '', content, flags=re.MULTILINE)
+    
+    # Eliminar código en línea (`código`)
+    content = re.sub(r'`(.*?)`', r'\1', content)
+    
+    # Eliminar bloques de código (```código```)
+    content = re.sub(r'```.*?```', '', content, flags=re.DOTALL)
+    
+    # Eliminar enlaces [texto](url)
+    content = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', content)
+    
+    # Eliminar líneas horizontales (--- o ***)
+    content = re.sub(r'^[\s]*[-\*]{3,}[\s]*$', '', content, flags=re.MULTILINE)
+    
+    # Limpiar espacios múltiples y líneas vacías excesivas
+    content = re.sub(r'\n\s*\n\s*\n', '\n\n', content)
+    content = re.sub(r'[ \t]+', ' ', content)
+    
+    return content.strip()

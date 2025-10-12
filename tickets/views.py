@@ -13209,7 +13209,13 @@ def ai_blog_configurators_list_view(request):
         logs = config.generation_logs.all()
         config.successful_runs = logs.filter(generation_status='success').count()
         config.failed_runs = logs.filter(generation_status='error').count()
-        config.posts_generated = config.total_posts_generated or 0
+        
+        # Contar posts realmente generados desde los logs
+        posts_generated = logs.filter(
+            generation_status='success',
+            generated_post__isnull=False
+        ).count()
+        config.posts_generated = posts_generated
     
     context = {
         'page_title': 'Configuradores de IA para Blog',
