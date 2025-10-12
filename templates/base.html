@@ -503,10 +503,10 @@
                         </ul>
                     </li>
                     
-                    <!-- Menú Reportes (Solo para Agentes) -->
+                    <!-- Menú Otros (Solo para Agentes) -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="reportsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-graph-up"></i> Reportes
+                            <i class="bi bi-graph-up"></i> Otros
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="reportsDropdown">
                             <li>
@@ -529,6 +529,16 @@
                                 <a class="dropdown-item {% if 'page_visits_detail' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'page_visits_detail' %}">
                                     <i class="fas fa-list"></i> Detalle de Visitas
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <h6 class="dropdown-header">Inteligencia Artificial</h6>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'ai_blog_configurator' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'ai_blog_configurators_list' %}">
+                                    <i class="fas fa-robot"></i> Configurador de IA Blog
                                 </a>
                             </li>
                         </ul>

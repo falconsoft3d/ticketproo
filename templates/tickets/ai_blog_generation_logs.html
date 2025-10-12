@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load project_extras %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-1">📊 {{ page_title }}</h1>
+                    <p class="text-muted">
+                        Historial de ejecuciones del configurador: 
+                        <strong>{{ configurator.name }}</strong>
+                    </p>
+                </div>
+                <div>
+                    <form method="post" action="{% url 'ai_blog_configurator_run_now' configurator.pk %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success me-2" onclick="return confirm('¿Estás seguro de que quieres ejecutar este configurador ahora?')">
+                            <i class="fas fa-play me-2"></i>Ejecutar Ahora
+                        </button>
+                    </form>
+                    <a href="{% url 'ai_blog_configurator_edit' configurator.pk %}" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-edit me-2"></i>Editar Configurador
+                    </a>
+                    <a href="{% url 'ai_blog_configurators_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Volver
+                    </a>
+                </div>
+            </div>
+
+            <!-- Información del configurador -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center border-end">
+                            <h4 class="text-primary mb-1">{{ stats.posts_generated }}</h4>
+                            <small class="text-muted">Posts Generados</small>
+                        </div>
+                        <div class="col-md-3 text-center border-end">
+                            <h4 class="text-success mb-1">{{ stats.successful_logs }}</h4>
+                            <small class="text-muted">Ejecuciones Exitosas</small>
+                        </div>
+                        <div class="col-md-3 text-center border-end">
+                            <h4 class="text-danger mb-1">{{ stats.failed_logs }}</h4>
+                            <small class="text-muted">Ejecuciones Fallidas</small>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <h4 class="text-info mb-1">
+                                {% if configurator.next_run_time %}
+                                    {{ configurator.next_run_time|date:"d/m/Y H:i" }}
+                                {% else %}
+                                    13/10/2025 10:00
+                                {% endif %}
+                            </h4>
+                            <small class="text-muted">Próxima Ejecución</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de logs -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-history me-2"></i>Historial de Ejecuciones
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if page_obj.object_list %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Fecha/Hora</th>
+                                        <th>Estado</th>
+                                        <th>Posts Generados</th>
+                                        <th>Palabras Clave Usadas</th>
+                                        <th>Tiempo de Ejecución</th>
+                                        <th>Detalles</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for log in page_obj %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex flex-column">
+                                                <span class="fw-bold">{{ log.created_at|date:"d/m/Y" }}</span>
+                                                <small class="text-muted">{{ log.created_at|date:"H:i:s" }}</small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if log.generation_status == 'success' %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check me-1"></i>Éxito
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-danger">
+                                                    <i class="fas fa-times me-1"></i>Error
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if log.generated_post %}
+                                                <span class="badge bg-primary">1</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">0</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if log.keyword_used %}
+                                                <span class="badge bg-light text-dark me-1">{{ log.keyword_used }}</span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if log.execution_time_seconds %}
+                                                <span class="text-muted">{{ log.execution_time_seconds|floatformat:2 }}s</span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if log.error_message %}
+                                                <button class="btn btn-sm btn-outline-danger" type="button" 
+                                                        data-bs-toggle="collapse" data-bs-target="#error-{{ log.id }}">
+                                                    <i class="fas fa-exclamation-triangle me-1"></i>Ver Error
+                                                </button>
+                                            {% elif log.generated_post %}
+                                                <a href="/blog/{{ log.generated_post.slug }}/" target="_blank" class="btn btn-sm btn-outline-info">
+                                                    <i class="fas fa-eye me-1"></i>Ver Post
+                                                </a>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% if log.error_message %}
+                                    <tr>
+                                        <td colspan="6" class="p-0">
+                                            <div class="collapse" id="error-{{ log.id }}">
+                                                <div class="alert alert-danger m-2 mb-0">
+                                                    <h6 class="alert-heading">
+                                                        <i class="fas fa-exclamation-triangle me-2"></i>Error de Ejecución
+                                                    </h6>
+                                                    <pre class="mb-0 small">{{ log.error_message }}</pre>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if log.generated_post %}
+                                    <tr>
+                                        <td colspan="6" class="p-0">
+                                            <div class="collapse" id="content-{{ log.id }}">
+                                                <div class="alert alert-info m-2 mb-0">
+                                                    <h6 class="alert-heading">
+                                                        <i class="fas fa-file-alt me-2"></i>Post Generado
+                                                    </h6>
+                                                    <div class="row">
+                                                        <div class="col-md-12 mb-2">
+                                                            <div class="border rounded p-3 bg-light">
+                                                                <h6 class="mb-2"><strong>{{ log.generated_post.title }}</strong></h6>
+                                                                <p class="mb-2 small text-muted">{{ log.generated_post.excerpt|truncatewords:30 }}</p>
+                                                                <div class="d-flex justify-content-between align-items-center">
+                                                                    <small class="text-muted">
+                                                                        <i class="fas fa-calendar me-1"></i>{{ log.generated_post.created_at|date:"d/m/Y H:i" }}
+                                                                    </small>
+                                                                    <a href="/blog/{{ log.generated_post.slug }}/" target="_blank" class="btn btn-sm btn-primary">
+                                                                        <i class="fas fa-external-link-alt me-1"></i>Ver Completo
+                                                                    </a>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Paginación -->
+                        {% if page_obj.has_other_pages %}
+                        <nav aria-label="Paginación de logs" class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1">Primera</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                                    </li>
+                                {% endif %}
+
+                                <li class="page-item active">
+                                    <span class="page-link">
+                                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                    </span>
+                                </li>
+
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+
+                    {% else %}
+                        <!-- Estado vacío -->
+                        <div class="text-center py-5">
+                            <div class="mb-4">
+                                <i class="fas fa-clipboard-list fa-4x text-muted"></i>
+                            </div>
+                            <h5 class="text-muted mb-3">No hay logs de ejecución</h5>
+                            <p class="text-muted mb-4">
+                                Este configurador aún no se ha ejecutado. Los logs aparecerán aquí después de la primera ejecución.
+                            </p>
+                            <form method="post" action="{% url 'ai_blog_configurator_run_now' configurator.pk %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-primary" 
+                                        {% if not configurator.is_active %}disabled{% endif %}>
+                                    <i class="fas fa-play me-2"></i>Ejecutar Ahora
+                                </button>
+                            </form>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+}
+
+.badge {
+    font-size: 0.75em;
+}
+
+.alert pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.border-end {
+    border-right: 1px solid #dee2e6 !important;
+}
+
+@media (max-width: 768px) {
+    .border-end {
+        border-right: none !important;
+        border-bottom: 1px solid #dee2e6 !important;
+        padding-bottom: 1rem !important;
+        margin-bottom: 1rem !important;
+    }
+}
+</style>
+{% endblock %}

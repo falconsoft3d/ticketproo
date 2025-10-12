@@ -1,10 +1,38 @@
 # para el server
 ```
+crontab -e
+# Añadir esta línea:
+0 10 * * * cd /ruta/a/tu/proyecto && python manage.py run_ai_blog_generators
 source .venv/bin/activate
 python manage.py runserver 8000
 lsof -ti:8000
 kill -9 71529 80202
 lsof -ti:8000 | xargs kill -9
+
+# Comandos del generador de blogs con IA
+python manage.py run_ai_blog_generators --force  # Ejecutar manualmente todos los configuradores
+python manage.py run_ai_blog_generators --configurator-id=1 --force  # Ejecutar configurador específico
+python manage.py run_ai_blog_generators --dry-run  # Ver qué se ejecutaría sin ejecutar
+python manage.py run_ai_blog_generators  # Ejecutar solo los que están programados
+
+# Verificar posts generados y evitar duplicados
+python -c "
+import os, django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ticket_system.settings')
+django.setup()
+from tickets.models import BlogPost
+posts = BlogPost.objects.order_by('-id')[:10]
+print('=== ÚLTIMOS POSTS GENERADOS ===')
+for post in posts:
+    print(f'ID: {post.id} - \"{post.title}\" - {post.created_at.strftime(\"%d/%m/%Y %H:%M\")}')
+"
+
+# Ejecución desde interfaz web:
+# - Ir a /ai-blog-configurators/
+# - Hacer clic en "Ejecutar Ahora" (ignora frecuencia programada)
+# - Ver logs en "Ver Logs" para revisar resultados
+# - También disponible botón "Ejecutar Ahora" en la página de logs
+# - NUEVO: Sistema evita títulos duplicados automáticamente usando IA
 ```
 
 ## 🚀 Proyecto de Código Abierto

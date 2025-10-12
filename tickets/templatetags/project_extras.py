@@ -76,3 +76,33 @@ def div(value, arg):
         return float(value) / float(arg)
     except (ValueError, TypeError):
         return 0
+
+@register.filter
+def split(value, delimiter=','):
+    """Divide un string usando un delimitador"""
+    if not value:
+        return []
+    return str(value).split(delimiter)
+
+@register.filter
+def trim(value):
+    """Elimina espacios en blanco al inicio y final"""
+    if not value:
+        return ''
+    return str(value).strip()
+
+@register.filter
+def pluralize_es(value, singular_plural=''):
+    """Pluralización en español"""
+    try:
+        count = int(value)
+        if not singular_plural:
+            return 's' if count != 1 else ''
+        
+        if ',' in singular_plural:
+            singular, plural = singular_plural.split(',', 1)
+            return plural if count != 1 else singular
+        else:
+            return singular_plural if count != 1 else ''
+    except (ValueError, TypeError):
+        return ''

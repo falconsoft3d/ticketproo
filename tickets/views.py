@@ -13186,3 +13186,206 @@ def page_visits_export_view(request):
         ])
     
     return response
+
+
+# ====================================
+# CONFIGURADOR DE IA PARA BLOG
+# ====================================
+
+@login_required
+@require_http_methods(["GET"])
+def ai_blog_configurators_list_view(request):
+    """Vista lista de configuradores de IA para blog"""
+    from .models import AIBlogConfigurator
+    
+    configurators = AIBlogConfigurator.objects.all().order_by('-created_at')
+    
+    # Agregar información de próxima ejecución y estadísticas
+    for config in configurators:
+        config.next_run_formatted = config.next_run_time.strftime('%d/%m/%Y %H:%M') if config.next_run_time else 'No programado'
+        config.last_run_formatted = config.last_run.strftime('%d/%m/%Y %H:%M') if config.last_run else 'Nunca'
+        
+        # Calcular estadísticas desde los logs
+        logs = config.generation_logs.all()
+        config.successful_runs = logs.filter(generation_status='success').count()
+        config.failed_runs = logs.filter(generation_status='error').count()
+        config.posts_generated = config.total_posts_generated or 0
+    
+    context = {
+        'page_title': 'Configuradores de IA para Blog',
+        'configurators': configurators,
+    }
+    
+    return render(request, 'tickets/ai_blog_configurators_list.html', context)
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def ai_blog_configurator_create_view(request):
+    """Vista para crear configurador de IA"""
+    from .models import AIBlogConfigurator, BlogCategory
+    
+    if request.method == 'POST':
+        try:
+            configurator = AIBlogConfigurator.objects.create(
+                name=request.POST.get('name'),
+                description=request.POST.get('description', ''),
+                keywords=request.POST.get('keywords'),
+                topic_template=request.POST.get('topic_template'),
+                content_length=request.POST.get('content_length'),
+                content_style=request.POST.get('content_style'),
+                is_active=request.POST.get('is_active') == 'on',
+                schedule_time=request.POST.get('schedule_time'),
+                frequency_days=int(request.POST.get('frequency_days', 1)),
+                max_posts_per_run=int(request.POST.get('max_posts_per_run', 1)),
+                default_category_id=request.POST.get('default_category') or None,
+            )
+            
+            messages.success(request, f'Configurador "{configurator.name}" creado exitosamente.')
+            return redirect('ai_blog_configurators_list')
+            
+        except Exception as e:
+            messages.error(request, f'Error creando configurador: {str(e)}')
+    
+    # Para el formulario
+    categories = BlogCategory.objects.filter(is_active=True).order_by('name')
+    
+    context = {
+        'page_title': 'Crear Configurador de IA',
+        'categories': categories,
+    }
+    
+    return render(request, 'tickets/ai_blog_configurator_form.html', context)
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def ai_blog_configurator_edit_view(request, pk):
+    """Vista para editar configurador de IA"""
+    from .models import AIBlogConfigurator, BlogCategory
+    
+    configurator = get_object_or_404(AIBlogConfigurator, pk=pk)
+    
+    if request.method == 'POST':
+        try:
+            configurator.name = request.POST.get('name')
+            configurator.description = request.POST.get('description', '')
+            configurator.keywords = request.POST.get('keywords')
+            configurator.topic_template = request.POST.get('topic_template')
+            configurator.content_length = request.POST.get('content_length')
+            configurator.content_style = request.POST.get('content_style')
+            configurator.is_active = request.POST.get('is_active') == 'on'
+            configurator.schedule_time = request.POST.get('schedule_time')
+            configurator.frequency_days = int(request.POST.get('frequency_days', 1))
+            configurator.max_posts_per_run = int(request.POST.get('max_posts_per_run', 1))
+            configurator.default_category_id = request.POST.get('default_category') or None
+            configurator.save()
+            
+            messages.success(request, f'Configurador "{configurator.name}" actualizado exitosamente.')
+            return redirect('ai_blog_configurators_list')
+            
+        except Exception as e:
+            messages.error(request, f'Error actualizando configurador: {str(e)}')
+    
+    # Para el formulario
+    categories = BlogCategory.objects.filter(is_active=True).order_by('name')
+    
+    context = {
+        'page_title': 'Editar Configurador de IA',
+        'configurator': configurator,
+        'categories': categories,
+    }
+    
+    return render(request, 'tickets/ai_blog_configurator_form.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def ai_blog_configurator_delete_view(request, pk):
+    """Vista para eliminar configurador de IA"""
+    from .models import AIBlogConfigurator
+    
+    configurator = get_object_or_404(AIBlogConfigurator, pk=pk)
+    configurator_name = configurator.name
+    configurator.delete()
+    
+    messages.success(request, f'Configurador "{configurator_name}" eliminado exitosamente.')
+    return redirect('ai_blog_configurators_list')
+
+
+@login_required
+@require_http_methods(["POST"])
+def ai_blog_configurator_toggle_view(request, pk):
+    """Vista para activar/desactivar configurador de IA"""
+    from .models import AIBlogConfigurator
+    
+    configurator = get_object_or_404(AIBlogConfigurator, pk=pk)
+    configurator.is_active = not configurator.is_active
+    configurator.save()
+    
+    status = 'activado' if configurator.is_active else 'desactivado'
+    messages.success(request, f'Configurador "{configurator.name}" {status} exitosamente.')
+    
+    return redirect('ai_blog_configurators_list')
+
+
+@login_required
+@require_http_methods(["POST"])
+def ai_blog_configurator_run_now_view(request, pk):
+    """Vista para ejecutar manualmente un configurador de IA"""
+    from .models import AIBlogConfigurator
+    
+    configurator = get_object_or_404(AIBlogConfigurator, pk=pk)
+    
+    try:
+        # Importar la función de generación
+        from .ai_blog_generator import run_ai_blog_generation
+        
+        # Ejecutar manualmente con force=True para ignorar frecuencia programada
+        result = run_ai_blog_generation(configurator, force=True)
+        
+        if result['success']:
+            messages.success(request, f'✅ Generación exitosa: {result["posts_created"]} post(s) creado(s)')
+        else:
+            messages.error(request, f'❌ Error en generación: {result["error"]}')
+            
+    except Exception as e:
+        messages.error(request, f'Error ejecutando configurador: {str(e)}')
+    
+    return redirect('ai_blog_configurators_list')
+
+
+@login_required
+@require_http_methods(["GET"])
+def ai_blog_generation_logs_view(request, pk):
+    """Vista para ver logs de generación de un configurador"""
+    from .models import AIBlogConfigurator, AIBlogGenerationLog
+    
+    configurator = get_object_or_404(AIBlogConfigurator, pk=pk)
+    logs = AIBlogGenerationLog.objects.filter(configurator=configurator).order_by('-created_at')
+    
+    # Calcular estadísticas
+    total_logs = logs.count()
+    successful_logs = logs.filter(generation_status='success').count()
+    failed_logs = logs.filter(generation_status='error').count()
+    posts_generated = logs.filter(generated_post__isnull=False).count()
+    
+    # Paginación
+    from django.core.paginator import Paginator
+    paginator = Paginator(logs, 50)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_title': f'Logs de Generación - {configurator.name}',
+        'configurator': configurator,
+        'page_obj': page_obj,
+        'stats': {
+            'total_logs': total_logs,
+            'successful_logs': successful_logs,
+            'failed_logs': failed_logs,
+            'posts_generated': posts_generated,
+        }
+    }
+    
+    return render(request, 'tickets/ai_blog_generation_logs.html', context)

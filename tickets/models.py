@@ -6162,3 +6162,228 @@ class PageVisit(models.Model):
         elif self.browser:
             return self.browser
         return 'Desconocido'
+
+
+class AIBlogConfigurator(models.Model):
+    """Configurador de IA para generar contenido de blog automáticamente"""
+    
+    # Información básica
+    name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre del Configurador',
+        help_text='Nombre descriptivo para identificar este configurador'
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción',
+        help_text='Descripción opcional de qué tipo de contenido genera'
+    )
+    
+    # Configuración de palabras clave
+    keywords = models.TextField(
+        verbose_name='Palabras Clave',
+        help_text='Palabras clave separadas por comas para generar contenido (ej: tecnología, desarrollo, python)'
+    )
+    
+    # Configuración de generación
+    topic_template = models.TextField(
+        default='Escribe un artículo completo sobre {keyword} con ejemplos prácticos y consejos útiles.',
+        verbose_name='Plantilla de Tema',
+        help_text='Plantilla para generar el prompt. Usa {keyword} donde quieras insertar la palabra clave'
+    )
+    
+    content_length = models.CharField(
+        max_length=50,
+        choices=[
+            ('short', 'Corto (500-800 palabras)'),
+            ('medium', 'Medio (800-1200 palabras)'),
+            ('long', 'Largo (1200-2000 palabras)'),
+        ],
+        default='medium',
+        verbose_name='Longitud del Contenido'
+    )
+    
+    content_style = models.CharField(
+        max_length=50,
+        choices=[
+            ('professional', 'Profesional'),
+            ('casual', 'Casual'),
+            ('technical', 'Técnico'),
+            ('educational', 'Educativo'),
+            ('news', 'Noticia'),
+        ],
+        default='professional',
+        verbose_name='Estilo del Contenido'
+    )
+    
+    # Configuración de programación
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo',
+        help_text='Si está activo, el configurador puede generar contenido automáticamente'
+    )
+    
+    schedule_time = models.TimeField(
+        default='10:00',
+        verbose_name='Hora de Ejecución',
+        help_text='Hora del día para ejecutar la generación automática (formato 24h)'
+    )
+    
+    frequency_days = models.PositiveIntegerField(
+        default=1,
+        verbose_name='Frecuencia (días)',
+        help_text='Cada cuántos días ejecutar (1 = diario, 7 = semanal, etc.)'
+    )
+    
+    max_posts_per_run = models.PositiveIntegerField(
+        default=1,
+        verbose_name='Máximo Posts por Ejecución',
+        help_text='Número máximo de posts a generar en cada ejecución'
+    )
+    
+    # Configuración de categoría
+    default_category = models.ForeignKey(
+        'BlogCategory',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Categoría por Defecto',
+        help_text='Categoría a asignar a los posts generados'
+    )
+    
+    # Metadatos
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de Creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última Actualización'
+    )
+    last_run = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Última Ejecución'
+    )
+    total_posts_generated = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Total Posts Generados'
+    )
+    
+    class Meta:
+        verbose_name = 'Configurador de IA para Blog'
+        verbose_name_plural = 'Configuradores de IA para Blog'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.name} - {'Activo' if self.is_active else 'Inactivo'}"
+    
+    @property
+    def keywords_list(self):
+        """Devuelve las palabras clave como lista"""
+        return [kw.strip() for kw in self.keywords.split(',') if kw.strip()]
+    
+    @property
+    def next_run_time(self):
+        """Calcula la próxima fecha de ejecución"""
+        from datetime import datetime, timedelta
+        if not self.last_run:
+            # Si nunca se ha ejecutado, usar hoy
+            today = datetime.now().date()
+            return datetime.combine(today, self.schedule_time)
+        
+        # Calcular próxima ejecución basada en frecuencia
+        next_date = self.last_run.date() + timedelta(days=self.frequency_days)
+        return datetime.combine(next_date, self.schedule_time)
+    
+    def should_run(self):
+        """Determina si el configurador debe ejecutarse ahora"""
+        if not self.is_active:
+            return False
+        
+        from datetime import datetime
+        now = datetime.now()
+        
+        # Si nunca se ha ejecutado, puede ejecutarse
+        if not self.last_run:
+            return True
+        
+        # Verificar si ha pasado el tiempo suficiente según la frecuencia
+        next_run = self.next_run_time
+        return now >= next_run
+    
+    def should_run_now(self):
+        """Verifica si debe ejecutarse ahora"""
+        if not self.is_active:
+            return False
+        
+        from django.utils import timezone
+        now = timezone.now()
+        next_run = self.next_run_time
+        
+        # Permitir un margen de 5 minutos
+        return now >= next_run and now <= next_run + timedelta(minutes=5)
+
+
+class AIBlogGenerationLog(models.Model):
+    """Log de generaciones de contenido por IA"""
+    
+    configurator = models.ForeignKey(
+        AIBlogConfigurator,
+        on_delete=models.CASCADE,
+        related_name='generation_logs',
+        verbose_name='Configurador'
+    )
+    
+    keyword_used = models.CharField(
+        max_length=200,
+        verbose_name='Palabra Clave Utilizada'
+    )
+    
+    generated_post = models.ForeignKey(
+        'BlogPost',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Post Generado'
+    )
+    
+    prompt_used = models.TextField(
+        verbose_name='Prompt Utilizado'
+    )
+    
+    generation_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('success', 'Exitoso'),
+            ('error', 'Error'),
+            ('pending', 'Pendiente'),
+        ],
+        default='pending',
+        verbose_name='Estado de Generación'
+    )
+    
+    error_message = models.TextField(
+        blank=True,
+        verbose_name='Mensaje de Error'
+    )
+    
+    execution_time_seconds = models.FloatField(
+        null=True,
+        blank=True,
+        verbose_name='Tiempo de Ejecución (segundos)'
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de Creación'
+    )
+    
+    class Meta:
+        verbose_name = 'Log de Generación IA'
+        verbose_name_plural = 'Logs de Generación IA'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        status_icon = '✅' if self.generation_status == 'success' else '❌' if self.generation_status == 'error' else '⏳'
+        return f"{status_icon} {self.configurator.name} - {self.keyword_used} ({self.created_at.strftime('%d/%m/%Y %H:%M')})"

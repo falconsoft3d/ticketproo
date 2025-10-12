@@ -1,0 +1,264 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12 col-lg-8 offset-lg-2">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-1">🤖 {{ page_title }}</h1>
+                    <p class="text-muted">Configura la generación automática de contenido con IA</p>
+                </div>
+                <a href="{% url 'ai_blog_configurators_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver
+                </a>
+            </div>
+
+            <!-- Formulario -->
+            <div class="card">
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Información Básica -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-info-circle me-2"></i>Información Básica
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label">Nombre del Configurador <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       value="{{ configurator.name|default:'' }}" required>
+                                <div class="form-text">Un nombre descriptivo para identificar este configurador</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="default_category" class="form-label">Categoría por Defecto</label>
+                                <select class="form-select" id="default_category" name="default_category">
+                                    <option value="">Seleccionar categoría...</option>
+                                    {% for category in categories %}
+                                        <option value="{{ category.id }}" 
+                                                {% if configurator.default_category_id == category.id %}selected{% endif %}>
+                                            {{ category.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Categoría que se asignará automáticamente a los posts generados</div>
+                            </div>
+                            
+                            <div class="col-12 mb-3">
+                                <label for="description" class="form-label">Descripción</label>
+                                <textarea class="form-control" id="description" name="description" rows="3">{{ configurator.description|default:'' }}</textarea>
+                                <div class="form-text">Describe el propósito de este configurador</div>
+                            </div>
+                        </div>
+
+                        <!-- Configuración de Contenido -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-edit me-2"></i>Configuración de Contenido
+                                </h5>
+                            </div>
+                            
+                            <div class="col-12 mb-3">
+                                <label for="keywords" class="form-label">Palabras Clave <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="keywords" name="keywords" 
+                                       value="{{ configurator.keywords|default:'' }}" required
+                                       placeholder="tecnología, programación, inteligencia artificial">
+                                <div class="form-text">
+                                    Separa las palabras clave con comas. La IA usará estas palabras para generar temas de posts
+                                </div>
+                            </div>
+                            
+                            <div class="col-12 mb-3">
+                                <label for="topic_template" class="form-label">Template de Temas</label>
+                                <textarea class="form-control" id="topic_template" name="topic_template" 
+                                          rows="3" placeholder="Genera un artículo sobre {keyword} enfocado en...">{{ configurator.topic_template|default:'' }}</textarea>
+                                <div class="form-text">
+                                    Template personalizado para generar temas. Usa {keyword} para insertar la palabra clave.
+                                    Si se deja vacío, se usará un template automático.
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="content_length" class="form-label">Longitud del Contenido</label>
+                                <select class="form-select" id="content_length" name="content_length">
+                                    <option value="short" {% if configurator.content_length == 'short' %}selected{% endif %}>
+                                        Corto (300-500 palabras)
+                                    </option>
+                                    <option value="medium" {% if configurator.content_length == 'medium' or not configurator %}selected{% endif %}>
+                                        Medio (500-800 palabras)
+                                    </option>
+                                    <option value="long" {% if configurator.content_length == 'long' %}selected{% endif %}>
+                                        Largo (800-1200 palabras)
+                                    </option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="content_style" class="form-label">Estilo de Contenido</label>
+                                <select class="form-select" id="content_style" name="content_style">
+                                    <option value="professional" {% if configurator.content_style == 'professional' or not configurator %}selected{% endif %}>
+                                        Profesional
+                                    </option>
+                                    <option value="casual" {% if configurator.content_style == 'casual' %}selected{% endif %}>
+                                        Casual
+                                    </option>
+                                    <option value="technical" {% if configurator.content_style == 'technical' %}selected{% endif %}>
+                                        Técnico
+                                    </option>
+                                    <option value="educational" {% if configurator.content_style == 'educational' %}selected{% endif %}>
+                                        Educativo
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Configuración de Programación -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-clock me-2"></i>Configuración de Programación
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="schedule_time" class="form-label">Hora de Ejecución</label>
+                                <input type="time" class="form-control" id="schedule_time" name="schedule_time" 
+                                       value="{{ configurator.schedule_time|default:'10:00' }}">
+                                <div class="form-text">Hora del día para ejecutar la generación automática</div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="frequency_days" class="form-label">Frecuencia (días)</label>
+                                <input type="number" class="form-control" id="frequency_days" name="frequency_days" 
+                                       value="{{ configurator.frequency_days|default:1 }}" min="1" max="30">
+                                <div class="form-text">Cada cuántos días se ejecutará el configurador</div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="max_posts_per_run" class="form-label">Posts por Ejecución</label>
+                                <input type="number" class="form-control" id="max_posts_per_run" name="max_posts_per_run" 
+                                       value="{{ configurator.max_posts_per_run|default:1 }}" min="1" max="5">
+                                <div class="form-text">Máximo número de posts a generar en cada ejecución</div>
+                            </div>
+                        </div>
+
+                        <!-- Estado -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-toggle-on me-2"></i>Estado
+                                </h5>
+                            </div>
+                            
+                            <div class="col-12">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                                           {% if configurator.is_active or not configurator %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_active">
+                                        <strong>Configurador Activo</strong>
+                                    </label>
+                                    <div class="form-text">
+                                        Solo los configuradores activos se ejecutarán automáticamente según su programación
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="row">
+                            <div class="col-12">
+                                <hr class="mb-4">
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'ai_blog_configurators_list' %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times me-2"></i>Cancelar
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i>
+                                        {% if configurator %}Actualizar Configurador{% else %}Crear Configurador{% endif %}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Ayuda -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-question-circle me-2"></i>Ayuda
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <h6 class="text-primary">Palabras Clave</h6>
+                            <p class="small text-muted">
+                                La IA seleccionará aleatoriamente una palabra clave de la lista para cada post generado. 
+                                Cuantas más palabras clave proporciones, más variado será el contenido.
+                            </p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <h6 class="text-primary">Template de Temas</h6>
+                            <p class="small text-muted">
+                                Si no especificas un template, la IA creará temas automáticamente basados en las palabras clave. 
+                                Usa templates personalizados para mayor control sobre el enfoque de los artículos.
+                            </p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <h6 class="text-primary">Programación</h6>
+                            <p class="small text-muted">
+                                El sistema ejecutará automáticamente los configuradores activos según la frecuencia y hora configuradas. 
+                                Puedes ejecutar manualmente desde la lista de configuradores.
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Límites</h6>
+                            <p class="small text-muted">
+                                Para evitar sobrecarga, cada configurador está limitado a máximo 5 posts por ejecución 
+                                y puede ejecutarse como máximo una vez cada día.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.form-label {
+    font-weight: 600;
+    color: #495057;
+}
+
+.text-primary {
+    color: #0d6efd !important;
+}
+
+.form-text {
+    font-size: 0.875em;
+}
+
+.form-check-input:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+</style>
+{% endblock %}

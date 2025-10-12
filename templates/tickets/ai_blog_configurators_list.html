@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load project_extras %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-1">🤖 Configuradores de IA para Blog</h1>
+                    <p class="text-muted">Gestiona la generación automática de contenido con inteligencia artificial</p>
+                </div>
+                <a href="{% url 'ai_blog_configurator_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Nuevo Configurador
+                </a>
+            </div>
+
+            <!-- Cards de configuradores -->
+            {% if configurators %}
+                <div class="row">
+                    {% for config in configurators %}
+                    <div class="col-12 col-md-6 col-lg-4 mb-4">
+                        <div class="card h-100 {% if not config.is_active %}border-secondary{% else %}border-primary{% endif %}">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">{{ config.name }}</h5>
+                                <div class="d-flex align-items-center">
+                                    <!-- Estado activo/inactivo -->
+                                    <span class="badge {% if config.is_active %}bg-success{% else %}bg-secondary{% endif %} me-2">
+                                        {% if config.is_active %}Activo{% else %}Inactivo{% endif %}
+                                    </span>
+                                    <!-- Menú de acciones -->
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li>
+                                                <a class="dropdown-item" href="{% url 'ai_blog_configurator_edit' config.pk %}">
+                                                    <i class="fas fa-edit me-2"></i>Editar
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <form method="post" action="{% url 'ai_blog_configurator_toggle' config.pk %}" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="dropdown-item">
+                                                        <i class="fas fa-power-off me-2"></i>
+                                                        {% if config.is_active %}Desactivar{% else %}Activar{% endif %}
+                                                    </button>
+                                                </form>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" href="{% url 'ai_blog_generation_logs' config.pk %}">
+                                                    <i class="fas fa-history me-2"></i>Ver Logs
+                                                </a>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <form method="post" action="{% url 'ai_blog_configurator_run_now' config.pk %}" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="dropdown-item text-success" 
+                                                            {% if not config.is_active %}disabled{% endif %}>
+                                                        <i class="fas fa-play me-2"></i>Ejecutar Ahora
+                                                    </button>
+                                                </form>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <form method="post" action="{% url 'ai_blog_configurator_delete' config.pk %}" 
+                                                      onsubmit="return confirm('¿Estás seguro de eliminar este configurador?')">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="dropdown-item text-danger">
+                                                        <i class="fas fa-trash me-2"></i>Eliminar
+                                                    </button>
+                                                </form>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card-body">
+                                {% if config.description %}
+                                    <p class="text-muted small">{{ config.description|truncatewords:15 }}</p>
+                                {% endif %}
+                                
+                                <div class="row text-center mb-3">
+                                    <div class="col-6">
+                                        <div class="border-end">
+                                            <h6 class="text-primary mb-1">{{ config.max_posts_per_run }}</h6>
+                                            <small class="text-muted">Posts por ejecución</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <h6 class="text-info mb-1">{{ config.frequency_days }} día{{ config.frequency_days|pluralize }}</h6>
+                                        <small class="text-muted">Frecuencia</small>
+                                    </div>
+                                </div>
+
+                                <!-- Keywords -->
+                                <div class="mb-3">
+                                    <small class="text-muted d-block mb-1">Palabras clave:</small>
+                                    {% if config.keywords %}
+                                        {% for keyword in config.keywords|split:"," %}
+                                            {% if forloop.counter <= 3 %}
+                                                <span class="badge bg-light text-dark me-1">{{ keyword|trim }}</span>
+                                            {% elif forloop.counter == 4 %}
+                                                <span class="badge bg-secondary">+{{ config.keywords|split:","|length|add:"-3" }}</span>
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% else %}
+                                        <span class="text-muted">Sin palabras clave</span>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Información de ejecución -->
+                                <div class="row text-sm">
+                                    <div class="col-12 mb-2">
+                                        <i class="fas fa-clock text-muted me-1"></i>
+                                        <small class="text-muted">Horario: {{ config.schedule_time|default:"No programado" }}</small>
+                                    </div>
+                                    <div class="col-12 mb-2">
+                                        <i class="fas fa-calendar text-muted me-1"></i>
+                                        <small class="text-muted">Próxima: {{ config.next_run_formatted }}</small>
+                                    </div>
+                                    <div class="col-12">
+                                        <i class="fas fa-history text-muted me-1"></i>
+                                        <small class="text-muted">Última: {{ config.last_run_formatted }}</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Footer con estadísticas rápidas -->
+                            <div class="card-footer bg-light">
+                                <div class="row text-center">
+                                    <div class="col-4">
+                                        <span class="badge bg-primary">{{ config.posts_generated|default:0 }}</span>
+                                        <small class="d-block text-muted">Posts</small>
+                                    </div>
+                                    <div class="col-4">
+                                        <span class="badge bg-success">{{ config.successful_runs|default:0 }}</span>
+                                        <small class="d-block text-muted">Éxitos</small>
+                                    </div>
+                                    <div class="col-4">
+                                        <span class="badge bg-warning">{{ config.failed_runs|default:0 }}</span>
+                                        <small class="d-block text-muted">Fallos</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <!-- Estado vacío -->
+                <div class="text-center py-5">
+                    <div class="mb-4">
+                        <i class="fas fa-robot fa-4x text-muted"></i>
+                    </div>
+                    <h4 class="text-muted mb-3">No hay configuradores de IA</h4>
+                    <p class="text-muted mb-4">
+                        Crea tu primer configurador para comenzar a generar contenido automáticamente con inteligencia artificial.
+                    </p>
+                    <a href="{% url 'ai_blog_configurator_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Crear Primer Configurador
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+}
+
+.badge {
+    font-size: 0.7em;
+}
+
+.text-sm small {
+    font-size: 0.8em;
+}
+</style>
+{% endblock %}

@@ -492,5 +492,14 @@ urlpatterns = [
     path('analytics/page-visits/', views.page_visits_analytics_view, name='page_visits_analytics'),
     path('analytics/page-visits/detail/', views.page_visits_detail_view, name='page_visits_detail'),
     path('analytics/page-visits/export/', views.page_visits_export_view, name='page_visits_export'),
+    
+    # URLs de Configurador de IA para Blog
+    path('ai-blog-configurators/', views.ai_blog_configurators_list_view, name='ai_blog_configurators_list'),
+    path('ai-blog-configurators/create/', views.ai_blog_configurator_create_view, name='ai_blog_configurator_create'),
+    path('ai-blog-configurators/<int:pk>/edit/', views.ai_blog_configurator_edit_view, name='ai_blog_configurator_edit'),
+    path('ai-blog-configurators/<int:pk>/delete/', views.ai_blog_configurator_delete_view, name='ai_blog_configurator_delete'),
+    path('ai-blog-configurators/<int:pk>/toggle/', views.ai_blog_configurator_toggle_view, name='ai_blog_configurator_toggle'),
+    path('ai-blog-configurators/<int:pk>/run-now/', views.ai_blog_configurator_run_now_view, name='ai_blog_configurator_run_now'),
+    path('ai-blog-configurators/<int:pk>/logs/', views.ai_blog_generation_logs_view, name='ai_blog_generation_logs'),
 
 ]
