@@ -11189,6 +11189,38 @@ def ajax_submission_details(request, submission_id):
         })
 
 
+@require_http_methods(["DELETE"])
+@login_required
+def ajax_landing_submission_delete(request, submission_id):
+    """Vista AJAX para eliminar un envío de landing page - Solo para agentes"""
+    if not is_agent(request.user):
+        return JsonResponse({
+            'success': False,
+            'message': 'No tienes permisos para realizar esta acción.'
+        }, status=403)
+    
+    try:
+        from .models import LandingPageSubmission
+        submission = get_object_or_404(LandingPageSubmission, pk=submission_id)
+        
+        # Guardar información para el mensaje de confirmación
+        submission_info = f"{submission.nombre} {submission.apellido} ({submission.email})"
+        
+        # Eliminar el envío
+        submission.delete()
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Envío de {submission_info} eliminado correctamente.'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error al eliminar el envío: {str(e)}'
+        }, status=500)
+
+
 def public_company_ticket_create(request, public_token):
     """Vista pública para crear tickets desde una empresa usando su token público"""
     try:
@@ -11787,6 +11819,31 @@ def evaluate_submission_ai_view(request, submission_id):
             messages.error(request, f'Error: {str(e)}')
     
     return redirect('landing_submission_detail', submission_id=submission.id)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def landing_submission_delete_view(request, submission_id):
+    """Vista para eliminar una submission de landing page"""
+    from .models import LandingPageSubmission
+    
+    submission = get_object_or_404(LandingPageSubmission, id=submission_id)
+    
+    if request.method == 'POST':
+        try:
+            submission.delete()
+            messages.success(request, f'Submission de "{submission.nombre} {submission.apellido}" eliminada correctamente.')
+            return redirect('landing_submissions_list')
+        except Exception as e:
+            messages.error(request, f'Error al eliminar la submission: {str(e)}')
+            return redirect('landing_submission_detail', submission_id=submission.id)
+    
+    context = {
+        'submission': submission,
+        'page_title': f'Eliminar Submission - {submission.nombre} {submission.apellido}',
+    }
+    
+    return render(request, 'tickets/landing_submission_delete.html', context)
 
 
 @login_required

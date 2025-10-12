@@ -290,7 +290,102 @@
                 </div>
             </div>
             {% endif %}
+            
+            <!-- Botones de acción -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <a href="{% url 'landing_submissions_list' %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Volver a la Lista
+                                </a>
+                                
+                                <div class="btn-group">
+                                    {% if not submission.ai_evaluated %}
+                                    <form method="post" action="{% url 'evaluate_submission_ai' submission.id %}" style="display: inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-success me-2">
+                                            <i class="fas fa-robot me-2"></i>Evaluar con IA
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                    
+                                    <a href="{% url 'create_contact_from_submission' submission.id %}" class="btn btn-primary me-2">
+                                        <i class="fas fa-user-plus me-2"></i>Crear Contacto
+                                    </a>
+                                    
+                                    <button type="button" 
+                                            class="btn btn-danger"
+                                            onclick="deleteSubmission({{ submission.id }})">
+                                        <i class="fas fa-trash me-2"></i>Eliminar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<script>
+function deleteSubmission(submissionId) {
+    if (confirm('¿Estás seguro de que quieres eliminar esta submission? Esta acción no se puede deshacer.')) {
+        // Mostrar indicador de carga
+        const deleteBtn = event.target;
+        const originalText = deleteBtn.innerHTML;
+        deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Eliminando...';
+        deleteBtn.disabled = true;
+        
+        // Realizar petición AJAX DELETE
+        fetch(`/ajax/landing-pages/submissions/${submissionId}/delete/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Mostrar mensaje de éxito
+                alert(data.message);
+                // Redirigir a la lista
+                window.location.href = '{% url "landing_submissions_list" %}';
+            } else {
+                // Mostrar mensaje de error
+                alert('Error: ' + data.message);
+                // Restaurar botón
+                deleteBtn.innerHTML = originalText;
+                deleteBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al eliminar la submission. Por favor, inténtalo de nuevo.');
+            // Restaurar botón
+            deleteBtn.innerHTML = originalText;
+            deleteBtn.disabled = false;
+        });
+    }
+}
+
+// Función para obtener cookie CSRF
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
 {% endblock %}

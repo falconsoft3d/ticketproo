@@ -446,10 +446,12 @@ urlpatterns = [
     path('ajax/landing-pages/submissions/<int:submission_id>/create-contact/', views.ajax_create_contact_from_submission, name='ajax_create_contact_from_submission'),
     path('ajax/landing-pages/submissions/create-contacts-batch/', views.ajax_create_contacts_batch, name='ajax_create_contacts_batch'),
     path('ajax/landing-pages/submissions/<int:submission_id>/details/', views.ajax_submission_details, name='ajax_submission_details'),
+    path('ajax/landing-pages/submissions/<int:submission_id>/delete/', views.ajax_landing_submission_delete, name='ajax_landing_submission_delete'),
     
     # URLs para evaluación IA de landing pages
     path('ai/landing-submissions/', views.landing_submissions_list_view, name='landing_submissions_list'),
     path('ai/landing-submissions/<int:submission_id>/', views.landing_submission_detail_view, name='landing_submission_detail'),
+    path('ai/landing-submissions/<int:submission_id>/delete/', views.landing_submission_delete_view, name='landing_submission_delete'),
     path('ai/landing-submissions/<int:submission_id>/evaluate/', views.evaluate_submission_ai_view, name='evaluate_submission_ai'),
     path('ai/landing-submissions/batch-evaluate/', views.batch_evaluate_submissions_view, name='batch_evaluate_submissions'),
     path('ai/dashboard/', views.ai_evaluation_dashboard_view, name='ai_evaluation_dashboard'),

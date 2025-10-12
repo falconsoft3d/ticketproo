@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Confirmar Eliminación
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>¡Atención!</strong> Esta acción no se puede deshacer.
+                    </div>
+                    
+                    <h5 class="mb-4">¿Estás seguro de que quieres eliminar esta submission?</h5>
+                    
+                    <!-- Información de la submission -->
+                    <div class="card bg-light mb-4">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Nombre:</strong><br>
+                                    {{ submission.nombre }} {{ submission.apellido }}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Email:</strong><br>
+                                    {{ submission.email }}
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <strong>Empresa:</strong><br>
+                                    {{ submission.empresa }}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Fecha:</strong><br>
+                                    {{ submission.created_at|date:"d/m/Y H:i" }}
+                                </div>
+                            </div>
+                            {% if submission.mensaje %}
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <strong>Mensaje:</strong><br>
+                                    <em>"{{ submission.mensaje|truncatewords:20 }}"</em>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Botones de acción -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'landing_submission_detail' submission.id %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Cancelar
+                        </a>
+                        
+                        <form method="post" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash me-2"></i>Sí, Eliminar
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card-border-danger {
+    border-color: #dc3545;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
+.alert-warning {
+    border-left: 4px solid #ffc107;
+}
+</style>
+{% endblock %}
