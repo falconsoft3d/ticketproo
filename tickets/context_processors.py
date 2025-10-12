@@ -1,7 +1,8 @@
 """
 Context processors para TicketProo
 """
-from tickets.models import TimeEntry
+from django.db import models
+from tickets.models import TimeEntry, BlogCategory
 from tickets.utils import is_agent
 
 
@@ -28,3 +29,20 @@ def time_status(request):
         })
     
     return context
+
+
+def blog_categories(request):
+    """
+    Context processor que proporciona las categorías del blog
+    en todas las plantillas públicas.
+    """
+    try:
+        categories = BlogCategory.objects.annotate(
+            posts_count=models.Count('posts', filter=models.Q(posts__status='published'))
+        ).filter(posts_count__gt=0).order_by('name')
+    except:
+        categories = []
+    
+    return {
+        'blog_categories': categories,
+    }

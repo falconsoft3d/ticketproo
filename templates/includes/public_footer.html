@@ -13,13 +13,14 @@
                     <a href="https://www.facebook.com/falconsoft.sa" class="text-light">
                         <i class="fab fa-facebook fa-lg"></i>
                     </a>
-                    <!--
-                    <a href="#" class="text-light">
-                        <i class="fab fa-twitter fa-lg"></i>
-                    </a>
-                    -->
+                    
                     <a href="https://www.linkedin.com/in/marlon-falc%C3%B3n-3a2aa9a4/" class="text-light">
                         <i class="fab fa-linkedin fa-lg"></i>
+                    </a>
+
+                    <!-- repo -->
+                    <a href="https://github.com/falconsoft3d/ticketproo" class="text-light">
+                        <i class="fab fa-github fa-lg"></i>
                     </a>
 
 
@@ -39,12 +40,29 @@
                 </ul>
             </div>
             <div class="col-lg-3 col-md-6 mb-4">
-                <h6 class="text-uppercase fw-bold mb-3">Acceso</h6>
+                <h6 class="text-uppercase fw-bold mb-3">
+                    Categorías
+                </h6>
                 <ul class="list-unstyled">
-                    <li><a href="{% url 'login' %}" class="text-light text-decoration-none">Iniciar Sesión</a></li>
-                    <li><a href="{% url 'register' %}" class="text-light text-decoration-none">Registrarse</a></li>
-                    {% if user.is_authenticated %}
-                        <li><a href="{% url 'dashboard' %}" class="text-light text-decoration-none">Dashboard</a></li>
+                    {% if blog_categories %}
+                        {% for category in blog_categories %}
+                        <li class="mb-2">
+                            <a href="{% url 'blog_list' %}?category={{ category.slug }}" 
+                               class="text-light text-decoration-none d-flex justify-content-between align-items-center">
+                                <span>
+                                    <i class="bi bi-tag me-1"></i>{{ category.name }}
+                                </span>
+                                <span class="badge bg-primary rounded-pill">{{ category.posts_count }}</span>
+                            </a>
+                        </li>
+                        {% endfor %}
+                    {% else %}
+                        <li><a href="{% url 'blog_list' %}" class="text-light text-decoration-none">Blog</a></li>
+                        <li><a href="{% url 'login' %}" class="text-light text-decoration-none">Iniciar Sesión</a></li>
+                        <li><a href="{% url 'register' %}" class="text-light text-decoration-none">Registrarse</a></li>
+                        {% if user.is_authenticated %}
+                            <li><a href="{% url 'dashboard' %}" class="text-light text-decoration-none">Dashboard</a></li>
+                        {% endif %}
                     {% endif %}
                 </ul>
             </div>
@@ -52,7 +70,11 @@
                 <h6 class="text-uppercase fw-bold mb-3">Contacto</h6>
                 <ul class="list-unstyled text-white">
                     <li><i class="bi bi-envelope me-2"></i>mfalconsoft@gmail.com</li>
+                    <li><a href="https://www.marlonfalcon.com" class="text-white text-decoration-none"><i class="bi bi-website me-2"></i>www.marlonfalcon.com</a></li>
+                    <li><a href="https://www.bim20.com" class="text-white text-decoration-none"><i class="bi bi-website me-2"></i>www.bim20.com</a></li>
                     <li><i class="bi bi-telephone me-2"></i>+34 662 47 06 45</li>
+                    <!-- https://api.whatsapp.com/send/?phone=34662470645&text&type=phone_number&app_absent=0 -->
+                    <li><a href="https://api.whatsapp.com/send/?phone=34662470645&text&type=phone_number&app_absent=0" class="text-white text-decoration-none"><i class="bi bi-whatsapp me-2"></i>WhatsApp</a></li>
                     <li><i class="bi bi-geo-alt me-2"></i>España</li>
                 </ul>
             </div>
