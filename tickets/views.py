@@ -33,7 +33,8 @@ from .models import (
     Exam, ExamQuestion, ExamAttempt, ExamAnswer, ContactoWeb, PublicDocumentUpload,
     Employee, JobApplicationToken, EmployeePayroll, Agreement, AgreementSignature,
     LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry, SharedFile, SharedFileDownload,
-    Recording, RecordingPlayback, MultipleDocumentation, MultipleDocumentationItem
+    Recording, RecordingPlayback, MultipleDocumentation, MultipleDocumentationItem,
+    TaskSchedule, ScheduleTask, ScheduleComment, SatisfactionSurvey
 )
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
@@ -44,7 +45,8 @@ from .forms import (
     ChatMessageForm, ChatRoomForm, AIChatSessionForm, AIChatMessageForm, ConceptForm,
     EmployeeHiringOpinionForm, EmployeePayrollForm, AgreementForm, AgreementSignatureForm, AgreementPublicForm,
     LandingPageForm, LandingPageSubmissionForm, PublicCompanyTicketForm, WorkOrderTaskForm, 
-    WorkOrderTaskTimeEntryForm, WorkOrderTaskBulkForm, SharedFileForm, PublicSharedFileForm
+    WorkOrderTaskTimeEntryForm, WorkOrderTaskBulkForm, SharedFileForm, PublicSharedFileForm,
+    TaskScheduleForm, ScheduleTaskForm, ScheduleCommentForm
 )
 from .utils import is_agent, is_regular_user, is_teacher, can_manage_courses, get_user_role, assign_user_to_group
 
@@ -1057,13 +1059,360 @@ def public_ticket_view(request, token):
     # Obtener adjuntos del ticket
     attachments = ticket.attachments.all().order_by('-uploaded_at')
     
+    # Verificar si ya tiene aprobación
+    has_approval = hasattr(ticket, 'client_approval')
+    
     context = {
         'ticket': ticket,
         'comments': comments,
         'attachments': attachments,
+        'has_approval': has_approval,
+        'approval': ticket.client_approval if has_approval else None,
+        'token': token,  # Agregar el token al contexto
         'page_title': f'Ticket Público: {ticket.ticket_number}',
     }
     return render(request, 'tickets/public_ticket.html', context)
+
+
+def public_ticket_approve(request, token):
+    """Vista para que los clientes aprueben tickets públicos"""
+    try:
+        ticket = get_object_or_404(Ticket, public_share_token=token, is_public_shareable=True)
+    except:
+        messages.error(request, 'Ticket no encontrado o no es público.')
+        return redirect('ticket_list')
+    
+    # Verificar si ya tiene aprobación
+    if hasattr(ticket, 'client_approval'):
+        messages.warning(request, 'Este ticket ya ha sido aprobado anteriormente.')
+        return redirect('public_ticket', token=token)
+    
+    if request.method == 'POST':
+        try:
+            # Obtener datos del formulario
+            client_name = request.POST.get('client_name', '').strip()
+            client_email = request.POST.get('client_email', '').strip()
+            notes = request.POST.get('notes', '').strip()
+            
+            # Validaciones básicas
+            if not client_name or not client_email:
+                messages.error(request, 'Nombre y correo electrónico son obligatorios.')
+                return redirect('public_ticket', token=token)
+            
+            # Validar formato de email
+            from django.core.validators import validate_email
+            from django.core.exceptions import ValidationError
+            try:
+                validate_email(client_email)
+            except ValidationError:
+                messages.error(request, 'Por favor ingresa un correo electrónico válido.')
+                return redirect('public_ticket', token=token)
+            
+            # Obtener IP del cliente
+            def get_client_ip(request):
+                x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+                if x_forwarded_for:
+                    ip = x_forwarded_for.split(',')[0]
+                else:
+                    ip = request.META.get('REMOTE_ADDR')
+                return ip
+            
+            # Crear la aprobación
+            from .models import TicketApproval
+            approval = TicketApproval.objects.create(
+                ticket=ticket,
+                client_name=client_name,
+                client_email=client_email,
+                notes=notes,
+                ip_address=get_client_ip(request)
+            )
+            
+            # Actualizar el estado de aprobación del ticket
+            ticket.is_approved = True
+            ticket.approved_by = None  # Aprobado por el cliente, no por un usuario del sistema
+            ticket.approved_at = approval.approved_at
+            ticket.save(update_fields=['is_approved', 'approved_by', 'approved_at'])
+            
+            # Agregar un comentario informando de la aprobación
+            TicketComment.objects.create(
+                ticket=ticket,
+                user=ticket.created_by,  # Sistema
+                content=f"✅ TICKET APROBADO POR EL CLIENTE\n\n" +
+                       f"Cliente: {client_name}\n" +
+                       f"Email: {client_email}\n" +
+                       f"Fecha: {approval.approved_at.strftime('%d/%m/%Y %H:%M')}\n" +
+                       (f"Comentarios: {notes}\n" if notes else "") +
+                       f"IP: {approval.ip_address}\n\n" +
+                       f"El cliente ha confirmado su satisfacción con la solución proporcionada."
+            )
+            
+            messages.success(
+                request, 
+                f'¡Gracias {client_name}! Tu aprobación ha sido registrada exitosamente. '
+                f'El equipo ha sido notificado de tu satisfacción con la solución.'
+            )
+            
+            return redirect('public_ticket', token=token)
+            
+        except Exception as e:
+            messages.error(request, f'Error al procesar la aprobación: {str(e)}')
+            return redirect('public_ticket', token=token)
+    
+    # Si es GET, redirigir al ticket público
+    return redirect('public_ticket', token=token)
+    return JsonResponse({'success': False, 'error': 'Método no permitido'})
+
+
+def public_ticket_survey(request, token):
+    """Vista para que los clientes llenen encuesta de satisfacción"""
+    try:
+        ticket = get_object_or_404(Ticket, public_share_token=token, is_public_shareable=True)
+    except:
+        messages.error(request, 'Ticket no encontrado o no es público.')
+        return redirect('ticket_list')
+    
+    # Verificar si ya tiene encuesta de satisfacción
+    if hasattr(ticket, 'satisfaction_survey'):
+        messages.info(request, 'Ya has enviado una encuesta de satisfacción para este ticket.')
+        return redirect('public_ticket', token=token)
+    
+    if request.method == 'POST':
+        try:
+            # Obtener datos del formulario
+            client_name = request.POST.get('client_name', '').strip()
+            client_email = request.POST.get('client_email', '').strip()
+            
+            # Calificaciones (obligatorias)
+            overall_satisfaction = request.POST.get('overall_satisfaction')
+            resolution_quality = request.POST.get('resolution_quality')
+            response_time = request.POST.get('response_time')
+            communication = request.POST.get('communication')
+            
+            # Comentarios (opcionales)
+            what_went_well = request.POST.get('what_went_well', '').strip()
+            what_could_improve = request.POST.get('what_could_improve', '').strip()
+            additional_comments = request.POST.get('additional_comments', '').strip()
+            
+            # Recomendación
+            would_recommend = request.POST.get('would_recommend') == 'true'
+            recommendation_reason = request.POST.get('recommendation_reason', '').strip()
+            
+            # Validaciones básicas
+            if not client_name or not client_email:
+                messages.error(request, 'Nombre y correo electrónico son obligatorios.')
+                return redirect('public_ticket_survey', token=token)
+            
+            if not all([overall_satisfaction, resolution_quality, response_time, communication]):
+                messages.error(request, 'Todas las calificaciones son obligatorias.')
+                return redirect('public_ticket_survey', token=token)
+            
+            # Validar formato de email
+            from django.core.validators import validate_email
+            from django.core.exceptions import ValidationError
+            try:
+                validate_email(client_email)
+            except ValidationError:
+                messages.error(request, 'Por favor ingresa un correo electrónico válido.')
+                return redirect('public_ticket_survey', token=token)
+            
+            # Validar que las calificaciones sean números válidos
+            try:
+                overall_satisfaction = int(overall_satisfaction)
+                resolution_quality = int(resolution_quality)
+                response_time = int(response_time)
+                communication = int(communication)
+                
+                # Validar rango 1-5
+                if not all(1 <= rating <= 5 for rating in [overall_satisfaction, resolution_quality, response_time, communication]):
+                    raise ValueError("Las calificaciones deben estar entre 1 y 5")
+                    
+            except (ValueError, TypeError):
+                messages.error(request, 'Las calificaciones deben ser números válidos entre 1 y 5.')
+                return redirect('public_ticket_survey', token=token)
+            
+            # Obtener IP del cliente
+            def get_client_ip(request):
+                x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+                if x_forwarded_for:
+                    ip = x_forwarded_for.split(',')[0]
+                else:
+                    ip = request.META.get('REMOTE_ADDR')
+                return ip
+            
+            # Crear la encuesta de satisfacción
+            survey = SatisfactionSurvey.objects.create(
+                ticket=ticket,
+                client_name=client_name,
+                client_email=client_email,
+                overall_satisfaction=overall_satisfaction,
+                resolution_quality=resolution_quality,
+                response_time=response_time,
+                communication=communication,
+                what_went_well=what_went_well,
+                what_could_improve=what_could_improve,
+                additional_comments=additional_comments,
+                would_recommend=would_recommend,
+                recommendation_reason=recommendation_reason,
+                ip_address=get_client_ip(request)
+            )
+            
+            # Agregar un comentario informando de la encuesta
+            TicketComment.objects.create(
+                ticket=ticket,
+                user=ticket.created_by,  # Sistema
+                content=f"📊 ENCUESTA DE SATISFACCIÓN COMPLETADA\n\n" +
+                       f"Cliente: {client_name}\n" +
+                       f"Email: {client_email}\n" +
+                       f"Fecha: {survey.submitted_at.strftime('%d/%m/%Y %H:%M')}\n\n" +
+                       f"📈 CALIFICACIONES:\n" +
+                       f"• Satisfacción General: {overall_satisfaction}/5\n" +
+                       f"• Calidad de la Solución: {resolution_quality}/5\n" +
+                       f"• Tiempo de Respuesta: {response_time}/5\n" +
+                       f"• Comunicación: {communication}/5\n" +
+                       f"• Promedio: {survey.average_rating}/5 - {survey.rating_summary}\n\n" +
+                       f"🎯 RECOMENDACIÓN: {'Sí' if would_recommend else 'No'}\n" +
+                       (f"Razón: {recommendation_reason}\n\n" if recommendation_reason else "\n") +
+                       (f"✅ Lo que funcionó bien:\n{what_went_well}\n\n" if what_went_well else "") +
+                       (f"🔧 Qué se podría mejorar:\n{what_could_improve}\n\n" if what_could_improve else "") +
+                       (f"💬 Comentarios adicionales:\n{additional_comments}\n\n" if additional_comments else "") +
+                       f"IP: {survey.ip_address}"
+            )
+            
+            messages.success(
+                request, 
+                f'¡Gracias {client_name}! Tu encuesta de satisfacción ha sido enviada exitosamente. '
+                f'Tu retroalimentación es muy valiosa para nosotros.'
+            )
+            
+            return redirect('public_ticket', token=token)
+            
+        except Exception as e:
+            messages.error(request, f'Error al procesar la encuesta: {str(e)}')
+            return redirect('public_ticket_survey', token=token)
+    
+    # Si es GET, mostrar el formulario de encuesta
+    context = {
+        'ticket': ticket,
+        'token': token,
+        'rating_choices': SatisfactionSurvey.RATING_CHOICES,
+        'resolution_quality_choices': SatisfactionSurvey.RESOLUTION_QUALITY_CHOICES,
+        'response_time_choices': SatisfactionSurvey.RESPONSE_TIME_CHOICES,
+    }
+    
+    return render(request, 'tickets/public_ticket_survey.html', context)
+
+
+def public_ticket_upload(request, token):
+    """Vista para que los clientes suban archivos a tickets públicos"""
+    try:
+        ticket = get_object_or_404(Ticket, public_share_token=token, is_public_shareable=True)
+    except:
+        messages.error(request, 'Ticket no encontrado o no es público.')
+        return redirect('ticket_list')
+    
+    if request.method == 'POST':
+        try:
+            # Obtener datos del formulario
+            client_name = request.POST.get('client_name', '').strip()
+            client_email = request.POST.get('client_email', '').strip()
+            description = request.POST.get('description', '').strip()
+            
+            # Validaciones básicas
+            if not client_name or not client_email:
+                messages.error(request, 'Nombre y correo electrónico son obligatorios.')
+                return redirect('public_ticket_upload', token=token)
+            
+            # Validar formato de email
+            from django.core.validators import validate_email
+            from django.core.exceptions import ValidationError
+            try:
+                validate_email(client_email)
+            except ValidationError:
+                messages.error(request, 'Por favor ingresa un correo electrónico válido.')
+                return redirect('public_ticket_upload', token=token)
+            
+            # Verificar que se haya subido al menos un archivo
+            files = request.FILES.getlist('attachments')
+            if not files:
+                messages.error(request, 'Debes subir al menos un archivo.')
+                return redirect('public_ticket_upload', token=token)
+            
+            # Validar cada archivo
+            max_file_size = 10 * 1024 * 1024  # 10MB
+            allowed_extensions = ['.pdf', '.doc', '.docx', '.txt', '.jpg', '.jpeg', '.png', '.gif', '.zip', '.rar', '.xlsx', '.xls', '.ppt', '.pptx']
+            
+            for file in files:
+                # Validar tamaño
+                if file.size > max_file_size:
+                    messages.error(request, f'El archivo "{file.name}" excede el tamaño máximo permitido (10MB).')
+                    return redirect('public_ticket_upload', token=token)
+                
+                # Validar extensión
+                file_extension = os.path.splitext(file.name.lower())[1]
+                if file_extension not in allowed_extensions:
+                    messages.error(request, f'El archivo "{file.name}" tiene una extensión no permitida. Extensiones permitidas: {", ".join(allowed_extensions)}')
+                    return redirect('public_ticket_upload', token=token)
+            
+            # Obtener IP del cliente
+            def get_client_ip(request):
+                x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+                if x_forwarded_for:
+                    ip = x_forwarded_for.split(',')[0]
+                else:
+                    ip = request.META.get('REMOTE_ADDR')
+                return ip
+            
+            # Crear usuario temporal para los adjuntos (usar el creador del ticket)
+            upload_user = ticket.created_by
+            
+            # Subir cada archivo
+            uploaded_files = []
+            for file in files:
+                attachment = TicketAttachment.objects.create(
+                    ticket=ticket,
+                    file=file,
+                    original_filename=file.name,
+                    uploaded_by=upload_user,
+                    file_size=file.size
+                )
+                uploaded_files.append(attachment)
+            
+            # Crear comentario informativo sobre la subida de archivos
+            files_list = '\n'.join([f"• {att.original_filename} ({att.get_file_size_display()})" for att in uploaded_files])
+            
+            TicketComment.objects.create(
+                ticket=ticket,
+                user=upload_user,
+                content=f"📎 ARCHIVOS SUBIDOS POR EL CLIENTE\n\n" +
+                       f"Cliente: {client_name}\n" +
+                       f"Email: {client_email}\n" +
+                       f"Fecha: {timezone.now().strftime('%d/%m/%Y %H:%M')}\n" +
+                       f"IP: {get_client_ip(request)}\n\n" +
+                       f"Archivos subidos ({len(uploaded_files)}):\n{files_list}\n\n" +
+                       (f"Descripción: {description}\n\n" if description else "") +
+                       f"Los archivos han sido adjuntados al ticket y están disponibles para revisión."
+            )
+            
+            messages.success(
+                request, 
+                f'¡Gracias {client_name}! Se {"ha" if len(uploaded_files) == 1 else "han"} subido {len(uploaded_files)} archivo{"" if len(uploaded_files) == 1 else "s"} exitosamente al ticket.'
+            )
+            
+            return redirect('public_ticket', token=token)
+            
+        except Exception as e:
+            messages.error(request, f'Error al subir los archivos: {str(e)}')
+            return redirect('public_ticket_upload', token=token)
+    
+    # Si es GET, mostrar el formulario de subida
+    context = {
+        'ticket': ticket,
+        'token': token,
+        'max_file_size_mb': 10,
+        'allowed_extensions': ['.pdf', '.doc', '.docx', '.txt', '.jpg', '.jpeg', '.png', '.gif', '.zip', '.rar', '.xlsx', '.xls', '.ppt', '.pptx'],
+    }
+    
+    return render(request, 'tickets/public_ticket_upload.html', context)
 
 
 @login_required
@@ -1797,6 +2146,7 @@ def project_detail(request, project_id):
         'active_workers': active_workers,
         'total_hours': project.get_total_hours(),
         'active_workers_count': project.get_active_workers_count(),
+        'can_edit_project': project.can_edit(request.user) if request.user.is_authenticated else False,
     }
     
     return render(request, 'tickets/project_detail.html', context)
@@ -1856,6 +2206,105 @@ def project_generate_public_token(request, project_id):
             'Ahora puedes compartir este proyecto con información básica sin necesidad de iniciar sesión.')
     
     return redirect('project_detail', project_id=project.id)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='ticket_list')
+def project_duplicate(request, project_id):
+    """Vista para duplicar un proyecto con todas sus tareas"""
+    original_project = get_object_or_404(Project, id=project_id)
+    
+    # Verificar permisos
+    if not original_project.can_edit(request.user):
+        messages.error(request, 'No tienes permisos para duplicar este proyecto.')
+        return redirect('project_detail', project_id=project_id)
+    
+    if request.method == 'POST':
+        try:
+            # Crear el proyecto duplicado
+            duplicated_project = Project.objects.create(
+                name=f"Copia de {original_project.name}",
+                description=original_project.description,
+                company=original_project.company,
+                status=original_project.status,
+                start_date=original_project.start_date,
+                end_date=original_project.end_date,
+                color=original_project.color,
+                is_active=True,  # El proyecto duplicado siempre empieza activo
+                created_by=request.user,
+                # No copiamos el token público por seguridad
+                public_share_token=None,
+                # No copiamos precios ya que son específicos del proyecto original
+                precio_hora=original_project.precio_hora,
+                costo_hora=original_project.costo_hora,
+            )
+            
+            # Duplicar las tareas del cronograma si existen
+            original_schedules = TaskSchedule.objects.filter(project=original_project)
+            
+            for original_schedule in original_schedules:
+                # Crear cronograma duplicado
+                duplicated_schedule = TaskSchedule.objects.create(
+                    title=f"Copia de {original_schedule.title}",
+                    description=original_schedule.description,
+                    project=duplicated_project,
+                    company=original_schedule.company,
+                    start_date=original_schedule.start_date,
+                    end_date=original_schedule.end_date,
+                    is_public=False,  # Por seguridad, no hacer público automáticamente
+                    created_by=request.user,
+                    # No copiamos el token público
+                    public_token=None,
+                )
+                
+                # Duplicar las tareas del cronograma
+                original_tasks = ScheduleTask.objects.filter(schedule=original_schedule)
+                task_map = {}  # Para mapear dependencias
+                
+                # Primer paso: crear todas las tareas sin dependencias
+                for original_task in original_tasks:
+                    duplicated_task = ScheduleTask.objects.create(
+                        schedule=duplicated_schedule,
+                        title=original_task.title,
+                        description=original_task.description,
+                        start_date=original_task.start_date,
+                        end_date=original_task.end_date,
+                        priority=original_task.priority,
+                        assigned_to=original_task.assigned_to,
+                        is_completed=False,  # Las tareas duplicadas empiezan como no completadas
+                        progress_percentage=0,  # Progreso en 0
+                    )
+                    task_map[original_task.id] = duplicated_task
+                
+                # Segundo paso: establecer dependencias
+                for original_task in original_tasks:
+                    duplicated_task = task_map[original_task.id]
+                    for dependency in original_task.dependencies.all():
+                        if dependency.id in task_map:
+                            duplicated_task.dependencies.add(task_map[dependency.id])
+            
+            messages.success(
+                request, 
+                f'Proyecto "{duplicated_project.name}" duplicado exitosamente con todas sus tareas. '
+                f'Se han copiado {TaskSchedule.objects.filter(project=duplicated_project).count()} cronogramas.'
+            )
+            
+            # Redirigir al nuevo proyecto duplicado
+            return redirect('project_detail', project_id=duplicated_project.id)
+            
+        except Exception as e:
+            messages.error(request, f'Error al duplicar el proyecto: {str(e)}')
+            return redirect('project_detail', project_id=project_id)
+    
+    # Si es GET, mostrar confirmación
+    context = {
+        'page_title': f'Duplicar Proyecto: {original_project.name}',
+        'project': original_project,
+        'schedules_count': TaskSchedule.objects.filter(project=original_project).count(),
+        'total_tasks_count': ScheduleTask.objects.filter(schedule__project=original_project).count(),
+    }
+    
+    return render(request, 'tickets/project_duplicate_confirm.html', context)
 
 
 @login_required
@@ -14001,3 +14450,732 @@ def multiple_documentation_stats_view(request, pk):
     }
     
     return render(request, 'tickets/multiple_documentation_stats.html', context)
+
+
+# ====================
+# Task Schedule Views
+# ====================
+
+def get_user_company(user):
+    """Obtiene la empresa del usuario"""
+    if hasattr(user, 'profile') and user.profile.company:
+        return user.profile.company
+    return None
+
+def user_has_company_access(user, company):
+    """Verifica si el usuario tiene acceso a una empresa"""
+    user_company = get_user_company(user)
+    if not user_company:
+        return False
+    return user_company == company
+
+def get_user_companies_queryset(user):
+    """Obtiene el queryset de empresas accesibles por el usuario"""
+    company = get_user_company(user)
+    if company:
+        return Company.objects.filter(id=company.id)
+    return Company.objects.none()
+
+@login_required
+def task_schedule_list(request):
+    """Vista para listar todos los cronogramas"""
+    # Obtener la empresa del usuario
+    user_company = None
+    if hasattr(request.user, 'profile') and request.user.profile.company:
+        user_company = request.user.profile.company
+    
+    if user_company:
+        schedules = TaskSchedule.objects.filter(
+            company=user_company
+        ).select_related('company', 'created_by').annotate(
+            total_tasks=models.Count('tasks'),
+            completed_tasks=models.Count('tasks', filter=models.Q(tasks__is_completed=True))
+        ).order_by('-created_at')
+    else:
+        # Si no tiene empresa, mostrar solo los que creó
+        schedules = TaskSchedule.objects.filter(
+            created_by=request.user
+        ).select_related('company', 'created_by').annotate(
+            total_tasks=models.Count('tasks'),
+            completed_tasks=models.Count('tasks', filter=models.Q(tasks__is_completed=True))
+        ).order_by('-created_at')
+    
+    context = {
+        'page_title': 'Planificación de Tareas',
+        'schedules': schedules,
+    }
+    
+    return render(request, 'tickets/task_schedule_list.html', context)
+
+
+@login_required
+def task_schedule_create(request):
+    """Vista para crear un nuevo cronograma"""
+    if request.method == 'POST':
+        form = TaskScheduleForm(request.POST)
+        if form.is_valid():
+            schedule = form.save(commit=False)
+            schedule.created_by = request.user
+            schedule.save()
+            messages.success(request, 'Cronograma creado exitosamente. Las fechas de inicio y fin se calcularán automáticamente basándose en las tareas que agregues.')
+            return redirect('task_schedule_detail', pk=schedule.pk)
+    else:
+        form = TaskScheduleForm()
+        # Filtrar empresas del usuario
+        form.fields['company'].queryset = get_user_companies_queryset(request.user)
+    
+    context = {
+        'page_title': 'Crear Cronograma',
+        'form': form,
+        'auto_dates_info': True,
+    }
+    
+    return render(request, 'tickets/task_schedule_form.html', context)
+
+
+@login_required
+def task_schedule_detail(request, pk):
+    """Vista para ver los detalles de un cronograma"""
+    schedule = get_object_or_404(
+        TaskSchedule.objects.select_related('company', 'created_by'),
+        pk=pk
+    )
+    
+    # Verificar permisos
+    if not user_has_company_access(request.user, schedule.company):
+        messages.error(request, 'No tienes permiso para ver este cronograma.')
+        return redirect('task_schedule_list')
+    
+    tasks = schedule.tasks.select_related('assigned_to').prefetch_related('dependencies')
+    
+    # Calcular KPIs
+    kpis = {
+        'total_tasks': schedule.get_total_tasks(),
+        'completed_tasks': schedule.get_completed_tasks(),
+        'pending_tasks': schedule.get_pending_tasks(),
+        'overdue_tasks': schedule.get_overdue_tasks(),
+        'progress_percentage': schedule.get_progress_percentage(),
+        'on_time_rate': schedule.get_on_time_completion_rate(),
+        'is_overdue': schedule.is_overdue(),
+    }
+    
+    context = {
+        'page_title': schedule.title,
+        'schedule': schedule,
+        'tasks': tasks,
+        'kpis': kpis,
+    }
+    
+    return render(request, 'tickets/task_schedule_detail.html', context)
+
+
+@login_required
+def task_schedule_export(request, pk):
+    """Vista para exportar tareas de un cronograma a Excel"""
+    schedule = get_object_or_404(
+        TaskSchedule.objects.select_related('company', 'created_by'),
+        pk=pk
+    )
+    
+    # Verificar permisos
+    if not user_has_company_access(request.user, schedule.company):
+        messages.error(request, 'No tienes permiso para exportar este cronograma.')
+        return redirect('task_schedule_list')
+    
+    # Importar pandas y crear DataFrame
+    try:
+        import pandas as pd
+        from django.http import HttpResponse
+        import io
+        from datetime import datetime
+        
+        # Obtener todas las tareas del cronograma
+        tasks = schedule.tasks.select_related('assigned_to').prefetch_related('dependencies').order_by('start_date')
+        
+        # Preparar datos para export
+        data = []
+        for task in tasks:
+            # Obtener dependencias como texto
+            dependencies_text = ', '.join([f"{dep.title}" for dep in task.dependencies.all()])
+            
+            # Calcular días de duración
+            duration_days = 0
+            if task.start_date and task.end_date:
+                duration_days = (task.end_date - task.start_date).days + 1
+            
+            # Calcular estado de progreso
+            progress_status = "A tiempo"
+            if task.is_overdue():
+                progress_status = "Atrasado"
+            elif task.status == 'completed':
+                progress_status = "Completado"
+            
+            data.append({
+                'ID': task.id,
+                'Título': task.title,
+                'Descripción': task.description or '',
+                'Estado': dict(task.STATUS_CHOICES).get(task.status, task.status),
+                'Prioridad': dict(task.PRIORITY_CHOICES).get(task.priority, task.priority),
+                'Asignado a': task.assigned_to.get_full_name() if task.assigned_to else 'Sin asignar',
+                'Fecha de Inicio': task.start_date.strftime('%d/%m/%Y') if task.start_date else '',
+                'Fecha de Fin': task.end_date.strftime('%d/%m/%Y') if task.end_date else '',
+                'Duración (días)': duration_days,
+                'Progreso (%)': task.progress,
+                'Estado de Progreso': progress_status,
+                'Dependencias': dependencies_text,
+                'Notas': task.notes or '',
+                'Fecha de Creación': task.created_at.strftime('%d/%m/%Y %H:%M'),
+                'Fecha de Actualización': task.updated_at.strftime('%d/%m/%Y %H:%M'),
+            })
+        
+        # Crear DataFrame
+        df = pd.DataFrame(data)
+        
+        # Crear respuesta HTTP con archivo Excel
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        filename = f"Cronograma_{schedule.title}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        # Escribir Excel al response
+        with pd.ExcelWriter(response, engine='openpyxl') as writer:
+            # Hoja principal con todas las tareas
+            df.to_excel(writer, sheet_name='Tareas', index=False)
+            
+            # Hoja de resumen del cronograma
+            summary_data = {
+                'Métrica': [
+                    'Nombre del Cronograma',
+                    'Descripción',
+                    'Empresa',
+                    'Creado por',
+                    'Fecha de Creación',
+                    'Fecha de Inicio',
+                    'Fecha de Fin',
+                    'Total de Tareas',
+                    'Tareas Completadas',
+                    'Tareas Pendientes',
+                    'Tareas Atrasadas',
+                    'Porcentaje de Progreso',
+                    'Tasa de Cumplimiento',
+                ],
+                'Valor': [
+                    schedule.title,
+                    schedule.description or '',
+                    schedule.company.name if schedule.company else '',
+                    schedule.created_by.get_full_name(),
+                    schedule.created_at.strftime('%d/%m/%Y %H:%M'),
+                    schedule.start_date.strftime('%d/%m/%Y') if schedule.start_date else '',
+                    schedule.end_date.strftime('%d/%m/%Y') if schedule.end_date else '',
+                    schedule.get_total_tasks(),
+                    schedule.get_completed_tasks(),
+                    schedule.get_pending_tasks(),
+                    schedule.get_overdue_tasks(),
+                    f"{schedule.get_progress_percentage():.1f}%",
+                    f"{schedule.get_on_time_completion_rate():.1f}%",
+                ]
+            }
+            
+            summary_df = pd.DataFrame(summary_data)
+            summary_df.to_excel(writer, sheet_name='Resumen', index=False)
+            
+            # Ajustar ancho de columnas automáticamente
+            for sheet_name in writer.sheets:
+                worksheet = writer.sheets[sheet_name]
+                for column in worksheet.columns:
+                    max_length = 0
+                    column_letter = column[0].column_letter
+                    for cell in column:
+                        try:
+                            if len(str(cell.value)) > max_length:
+                                max_length = len(str(cell.value))
+                        except:
+                            pass
+                    adjusted_width = min(max_length + 2, 50)  # Máximo 50 caracteres
+                    worksheet.column_dimensions[column_letter].width = adjusted_width
+        
+        return response
+        
+    except ImportError:
+        messages.error(request, 'La funcionalidad de exportación requiere la instalación de pandas. Contacta al administrador.')
+        return redirect('task_schedule_detail', pk=pk)
+    except Exception as e:
+        messages.error(request, f'Error al exportar: {str(e)}')
+        return redirect('task_schedule_detail', pk=pk)
+
+
+@login_required
+def task_schedule_edit(request, pk):
+    """Vista para editar un cronograma"""
+    schedule = get_object_or_404(TaskSchedule, pk=pk)
+    
+    # Verificar permisos
+    if not user_has_company_access(request.user, schedule.company):
+        messages.error(request, 'No tienes permiso para editar este cronograma.')
+        return redirect('task_schedule_list')
+    
+    if request.method == 'POST':
+        form = TaskScheduleForm(request.POST, instance=schedule)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Cronograma actualizado exitosamente.')
+            return redirect('task_schedule_detail', pk=schedule.pk)
+    else:
+        form = TaskScheduleForm(instance=schedule)
+        form.fields['company'].queryset = get_user_companies_queryset(request.user)
+    
+    context = {
+        'page_title': f'Editar - {schedule.title}',
+        'form': form,
+        'schedule': schedule,
+        'auto_dates_info': True,
+    }
+    
+    return render(request, 'tickets/task_schedule_form.html', context)
+
+
+@login_required
+def task_schedule_delete(request, pk):
+    """Vista para eliminar un cronograma"""
+    schedule = get_object_or_404(TaskSchedule, pk=pk)
+    
+    # Verificar permisos
+    if not user_has_company_access(request.user, schedule.company):
+        messages.error(request, 'No tienes permiso para eliminar este cronograma.')
+        return redirect('task_schedule_list')
+    
+    if request.method == 'POST':
+        schedule.delete()
+        messages.success(request, 'Cronograma eliminado exitosamente.')
+        return redirect('task_schedule_list')
+    
+    context = {
+        'page_title': f'Eliminar - {schedule.title}',
+        'schedule': schedule,
+    }
+    
+    return render(request, 'tickets/task_schedule_delete.html', context)
+
+
+@login_required
+def task_schedule_duplicate(request, pk):
+    """Vista para duplicar un cronograma con todas sus tareas"""
+    original_schedule = get_object_or_404(TaskSchedule, pk=pk)
+    
+    # Verificar permisos
+    if not user_has_company_access(request.user, original_schedule.company):
+        messages.error(request, 'No tienes permiso para duplicar este cronograma.')
+        return redirect('task_schedule_list')
+    
+    if request.method == 'POST':
+        try:
+            # Crear el cronograma duplicado
+            duplicated_schedule = TaskSchedule.objects.create(
+                title=f"Copia de {original_schedule.title}",
+                description=original_schedule.description,
+                company=original_schedule.company,
+                start_date=original_schedule.start_date,
+                end_date=original_schedule.end_date,
+                is_public=False,  # Por seguridad, no hacer público automáticamente
+                created_by=request.user,
+                # No copiamos el token público - se generará automáticamente
+            )
+            
+            # Duplicar las tareas del cronograma
+            original_tasks = ScheduleTask.objects.filter(schedule=original_schedule)
+            task_map = {}  # Para mapear dependencias
+            
+            # Primer paso: crear todas las tareas sin dependencias
+            for original_task in original_tasks:
+                duplicated_task = ScheduleTask.objects.create(
+                    schedule=duplicated_schedule,
+                    title=original_task.title,
+                    description=original_task.description,
+                    start_date=original_task.start_date,
+                    end_date=original_task.end_date,
+                    priority=original_task.priority,
+                    assigned_to=original_task.assigned_to,
+                    is_completed=False,  # Las tareas duplicadas empiezan como no completadas
+                    progress_percentage=0,  # Progreso en 0
+                )
+                task_map[original_task.id] = duplicated_task
+            
+            # Segundo paso: establecer dependencias
+            for original_task in original_tasks:
+                duplicated_task = task_map[original_task.id]
+                for dependency in original_task.dependencies.all():
+                    if dependency.id in task_map:
+                        duplicated_task.dependencies.add(task_map[dependency.id])
+            
+            messages.success(
+                request, 
+                f'Cronograma "{duplicated_schedule.title}" duplicado exitosamente con {len(task_map)} tareas.'
+            )
+            
+            # Redirigir al nuevo cronograma duplicado
+            return redirect('task_schedule_detail', pk=duplicated_schedule.pk)
+            
+        except Exception as e:
+            messages.error(request, f'Error al duplicar el cronograma: {str(e)}')
+            return redirect('task_schedule_detail', pk=pk)
+    
+    # Si es GET, mostrar confirmación
+    context = {
+        'page_title': f'Duplicar Cronograma: {original_schedule.title}',
+        'schedule': original_schedule,
+        'total_tasks_count': ScheduleTask.objects.filter(schedule=original_schedule).count(),
+    }
+    
+    return render(request, 'tickets/task_schedule_duplicate_confirm.html', context)
+
+
+@login_required
+def task_schedule_reschedule(request, pk):
+    """Vista para reprogramar todas las fechas del cronograma"""
+    schedule = get_object_or_404(TaskSchedule, pk=pk)
+    
+    # Verificar permisos
+    if not user_has_company_access(request.user, schedule.company):
+        messages.error(request, 'No tienes permiso para reprogramar este cronograma.')
+        return redirect('task_schedule_list')
+    
+    if request.method == 'POST':
+        try:
+            from datetime import datetime, timedelta
+            
+            new_start_date_str = request.POST.get('new_start_date')
+            if not new_start_date_str:
+                messages.error(request, 'Debes especificar una nueva fecha de inicio.')
+                return redirect('task_schedule_detail', pk=pk)
+            
+            # Convertir la nueva fecha de inicio
+            new_start_date = datetime.strptime(new_start_date_str, '%Y-%m-%d').date()
+            
+            # Calcular la diferencia de días entre la fecha actual y la nueva
+            current_start_date = schedule.start_date
+            date_difference = (new_start_date - current_start_date).days
+            
+            if date_difference == 0:
+                messages.info(request, 'La nueva fecha de inicio es la misma que la actual.')
+                return redirect('task_schedule_detail', pk=pk)
+            
+            # Reprogramar todas las tareas
+            tasks_updated = 0
+            for task in schedule.tasks.all():
+                # Calcular las nuevas fechas sumando/restando la diferencia
+                task.start_date = task.start_date + timedelta(days=date_difference)
+                task.end_date = task.end_date + timedelta(days=date_difference)
+                task.save()
+                tasks_updated += 1
+            
+            # Actualizar las fechas del cronograma
+            schedule.start_date = new_start_date
+            # Calcular la nueva fecha de fin basándose en las tareas actualizadas
+            if schedule.tasks.exists():
+                schedule.end_date = schedule.tasks.order_by('-end_date').first().end_date
+            schedule.save()
+            
+            messages.success(
+                request, 
+                f'Cronograma reprogramado exitosamente. Se han actualizado {tasks_updated} tareas. '
+                f'{"Adelantado" if date_difference > 0 else "Retrasado"} {abs(date_difference)} días.'
+            )
+            
+        except ValueError:
+            messages.error(request, 'Formato de fecha inválido.')
+        except Exception as e:
+            messages.error(request, f'Error al reprogramar el cronograma: {str(e)}')
+    
+    return redirect('task_schedule_detail', pk=pk)
+
+
+# Vista Gantt deshabilitada - funcionalidad removida temporalmente
+# @login_required
+# def task_schedule_gantt(request, pk):
+#     """Vista Gantt del cronograma"""
+#     schedule = get_object_or_404(
+#         TaskSchedule.objects.select_related('company', 'created_by'),
+#         pk=pk
+#     )
+#     
+#     # Verificar permisos
+#     if not user_has_company_access(request.user, schedule.company):
+#         messages.error(request, 'No tienes permiso para ver este cronograma.')
+#         return redirect('task_schedule_list')
+#     
+#     tasks = schedule.tasks.select_related('assigned_to').prefetch_related('dependencies')
+#     
+#     # Preparar datos para el Gantt
+#     gantt_data = []
+#     for task in tasks:
+#         gantt_data.append({
+#             'id': task.id,
+#             'title': task.title,
+#             'start': task.start_date.isoformat(),
+#             'end': task.end_date.isoformat(),
+#             'progress': task.progress_percentage,
+#             'is_completed': task.is_completed,
+#             'priority': task.priority,
+#             'assigned_to': task.assigned_to.get_full_name() if task.assigned_to else 'Sin asignar',
+#             'dependencies': [dep.id for dep in task.dependencies.all()],
+#             'is_overdue': task.is_overdue(),
+#         })
+#     
+#     # Calcular KPIs
+#     kpis = {
+#         'total_tasks': schedule.get_total_tasks(),
+#         'completed_tasks': schedule.get_completed_tasks(),
+#         'pending_tasks': schedule.get_pending_tasks(),
+#         'overdue_tasks': schedule.get_overdue_tasks(),
+#         'progress_percentage': schedule.get_progress_percentage(),
+#         'on_time_rate': schedule.get_on_time_completion_rate(),
+#     }
+#     
+#     context = {
+#         'page_title': f'Vista Gantt - {schedule.title}',
+#         'schedule': schedule,
+#         'gantt_data': json.dumps(gantt_data),
+#         'kpis': kpis,
+#     }
+#     
+#     return render(request, 'tickets/task_schedule_gantt.html', context)
+
+
+# Task CRUD
+@login_required
+def schedule_task_create(request, schedule_pk):
+    """Vista para crear una nueva tarea"""
+    schedule = get_object_or_404(TaskSchedule, pk=schedule_pk)
+    
+    # Verificar permisos
+    if not user_has_company_access(request.user, schedule.company):
+        messages.error(request, 'No tienes permiso para agregar tareas a este cronograma.')
+        return redirect('task_schedule_list')
+    
+    if request.method == 'POST':
+        form = ScheduleTaskForm(request.POST, schedule=schedule)
+        if form.is_valid():
+            task = form.save(commit=False)
+            task.schedule = schedule
+            task.save()
+            form.save_m2m()  # Guardar relaciones many-to-many
+            messages.success(request, 'Tarea creada exitosamente.')
+            return redirect('task_schedule_detail', pk=schedule.pk)
+    else:
+        # Establecer fechas por defecto del cronograma
+        initial = {
+            'start_date': schedule.start_date,
+            'end_date': schedule.end_date,
+        }
+        form = ScheduleTaskForm(initial=initial, schedule=schedule)
+    
+    context = {
+        'page_title': f'Nueva Tarea - {schedule.title}',
+        'form': form,
+        'schedule': schedule,
+    }
+    
+    return render(request, 'tickets/schedule_task_form.html', context)
+
+
+@login_required
+def schedule_task_edit(request, pk):
+    """Vista para editar una tarea"""
+    task = get_object_or_404(ScheduleTask.objects.select_related('schedule'), pk=pk)
+    schedule = task.schedule
+    
+    # Verificar permisos
+    if not user_has_company_access(request.user, schedule.company):
+        messages.error(request, 'No tienes permiso para editar esta tarea.')
+        return redirect('task_schedule_list')
+    
+    if request.method == 'POST':
+        form = ScheduleTaskForm(request.POST, instance=task, schedule=schedule)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Tarea actualizada exitosamente.')
+            return redirect('task_schedule_detail', pk=schedule.pk)
+    else:
+        form = ScheduleTaskForm(instance=task, schedule=schedule)
+    
+    context = {
+        'page_title': f'Editar Tarea - {task.title}',
+        'form': form,
+        'schedule': schedule,
+        'task': task,
+    }
+    
+    return render(request, 'tickets/schedule_task_form.html', context)
+
+
+@login_required
+def schedule_task_delete(request, pk):
+    """Vista para eliminar una tarea"""
+    task = get_object_or_404(ScheduleTask.objects.select_related('schedule'), pk=pk)
+    schedule = task.schedule
+    
+    # Verificar permisos
+    if not user_has_company_access(request.user, schedule.company):
+        messages.error(request, 'No tienes permiso para eliminar esta tarea.')
+        return redirect('task_schedule_list')
+    
+    if request.method == 'POST':
+        task.delete()
+        messages.success(request, 'Tarea eliminada exitosamente.')
+        return redirect('task_schedule_detail', pk=schedule.pk)
+    
+    context = {
+        'page_title': f'Eliminar Tarea - {task.title}',
+        'task': task,
+        'schedule': schedule,
+    }
+    
+    return render(request, 'tickets/schedule_task_delete.html', context)
+
+
+@login_required
+def schedule_task_toggle(request, pk):
+    """Vista para marcar/desmarcar una tarea como completada (AJAX)"""
+    if request.method == 'POST':
+        task = get_object_or_404(ScheduleTask, pk=pk)
+        
+        # Verificar permisos
+        if not user_has_company_access(request.user, task.schedule.company):
+            return JsonResponse({'success': False, 'error': 'No tienes permiso.'}, status=403)
+        
+        task.is_completed = not task.is_completed
+        # Establecer progreso automáticamente según el estado
+        if task.is_completed:
+            task.progress_percentage = 100
+        else:
+            task.progress_percentage = 0
+        task.save()
+        
+        return JsonResponse({
+            'success': True,
+            'is_completed': task.is_completed,
+            'completed_at': task.completed_at.strftime('%d/%m/%Y %H:%M') if task.completed_at else None,
+            'progress': task.progress_percentage,
+        })
+    
+    return JsonResponse({'success': False}, status=400)
+
+
+# Vista pública del cronograma
+def task_schedule_public(request, token):
+    """Vista pública del cronograma con token"""
+    schedule = get_object_or_404(
+        TaskSchedule.objects.select_related('company', 'created_by'),
+        public_token=token,
+        is_public=True
+    )
+    
+    tasks = schedule.tasks.select_related('assigned_to').prefetch_related('dependencies')
+    
+    # Calcular total de días
+    total_days = sum(task.get_duration_days() for task in tasks)
+    
+    # Calcular KPIs
+    kpis = {
+        'total_tasks': schedule.get_total_tasks(),
+        'completed_tasks': schedule.get_completed_tasks(),
+        'pending_tasks': schedule.get_pending_tasks(),
+        'overdue_tasks': schedule.get_overdue_tasks(),
+        'progress_percentage': schedule.get_progress_percentage(),
+        'on_time_rate': schedule.get_on_time_completion_rate(),
+    }
+    
+    context = {
+        'page_title': schedule.title,
+        'schedule': schedule,
+        'tasks': tasks,
+        'kpis': kpis,
+        'total_days': total_days,
+        'is_public_view': True,
+    }
+    
+    return render(request, 'tickets/task_schedule_public.html', context)
+
+
+def task_schedule_public_gantt(request, token):
+    """Vista Gantt pública del cronograma"""
+    schedule = get_object_or_404(
+        TaskSchedule.objects.select_related('company', 'created_by'),
+        public_token=token,
+        is_public=True
+    )
+    
+    tasks = schedule.tasks.select_related('assigned_to').prefetch_related('dependencies')
+    
+    # Preparar datos para el Gantt
+    gantt_data = []
+    for task in tasks:
+        gantt_data.append({
+            'id': task.id,
+            'title': task.title,
+            'start': task.start_date.isoformat(),
+            'end': task.end_date.isoformat(),
+            'progress': task.progress_percentage,
+            'is_completed': task.is_completed,
+            'priority': task.priority,
+            'assigned_to': task.assigned_to.get_full_name() if task.assigned_to else 'Sin asignar',
+            'dependencies': [dep.id for dep in task.dependencies.all()],
+            'is_overdue': task.is_overdue(),
+        })
+    
+    # Calcular KPIs
+    kpis = {
+        'total_tasks': schedule.get_total_tasks(),
+        'completed_tasks': schedule.get_completed_tasks(),
+        'pending_tasks': schedule.get_pending_tasks(),
+        'overdue_tasks': schedule.get_overdue_tasks(),
+        'progress_percentage': schedule.get_progress_percentage(),
+        'on_time_rate': schedule.get_on_time_completion_rate(),
+    }
+    
+    context = {
+        'page_title': f'Vista Gantt - {schedule.title}',
+        'schedule': schedule,
+        'gantt_data': json.dumps(gantt_data),
+        'kpis': kpis,
+        'is_public_view': True,
+    }
+    
+    return render(request, 'tickets/task_schedule_public_gantt.html', context)
+
+
+def schedule_task_toggle_public(request, pk):
+    """Vista pública para marcar/desmarcar una tarea como completada (AJAX)"""
+    if request.method == 'POST':
+        task = get_object_or_404(ScheduleTask, pk=pk)
+        
+        # Verificar que la tarea pertenece a un cronograma público
+        if not task.schedule.is_public:
+            return JsonResponse({'success': False, 'error': 'Esta tarea no es pública.'}, status=403)
+        
+        # Verificar el token si se proporciona
+        import json
+        try:
+            data = json.loads(request.body)
+            token = data.get('token')
+            if token and str(task.schedule.public_token) != str(token):
+                return JsonResponse({'success': False, 'error': 'Token inválido.'}, status=403)
+        except json.JSONDecodeError:
+            pass
+        
+        task.is_completed = not task.is_completed
+        # Establecer progreso automáticamente según el estado
+        if task.is_completed:
+            task.progress_percentage = 100
+        else:
+            task.progress_percentage = 0
+        task.save()
+        
+        return JsonResponse({
+            'success': True,
+            'is_completed': task.is_completed,
+            'completed_at': task.completed_at.strftime('%d/%m/%Y %H:%M') if task.completed_at else None,
+            'progress': task.progress_percentage,
+        })
+    
+    return JsonResponse({'success': False}, status=400)
+

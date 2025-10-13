@@ -1,0 +1,376 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>
+                <i class="fas fa-tasks"></i> {{ schedule.title }}
+                {% if schedule.is_public %}
+                <span class="badge bg-success" title="Público">
+                    <i class="fas fa-globe"></i> Público
+                </span>
+                {% endif %}
+            </h2>
+            <p class="text-muted mb-0">
+                <i class="fas fa-building"></i> {{ schedule.company.name }} | 
+                <i class="fas fa-user"></i> {{ schedule.created_by.get_full_name|default:schedule.created_by.username }}
+            </p>
+        </div>
+        <div class="btn-group">
+            <a href="{% url 'schedule_task_create' schedule.pk %}" class="btn btn-success">
+                <i class="fas fa-plus"></i> Nueva Tarea
+            </a>
+            <a href="{% url 'task_schedule_edit' schedule.pk %}" class="btn btn-warning">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+            <a href="{% url 'task_schedule_duplicate' schedule.pk %}" class="btn btn-info">
+                <i class="fas fa-copy"></i> Duplicar
+            </a>
+            <a href="{% url 'task_schedule_delete' schedule.pk %}" class="btn btn-danger">
+                <i class="fas fa-trash"></i> Eliminar
+            </a>
+        </div>
+    </div>
+
+    <!-- Descripción -->
+    {% if schedule.description %}
+    <div class="alert alert-info">
+        <strong>Descripción:</strong> {{ schedule.description }}
+    </div>
+    {% endif %}
+
+    <!-- Fechas -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-1"><strong>Fecha de Inicio:</strong> {{ schedule.start_date|date:"d/m/Y" }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p class="mb-1"><strong>Fecha de Fin:</strong> {{ schedule.end_date|date:"d/m/Y" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reprogramación de Fechas -->
+    <div class="card mb-4 border-warning">
+        <div class="card-header bg-warning text-dark">
+            <h6 class="mb-0">
+                <i class="fas fa-calendar-alt"></i> Reprogramar Cronograma
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info">
+                <small>
+                    <i class="fas fa-info-circle"></i> 
+                    <strong>¿Cómo funciona?</strong> Al cambiar la fecha de inicio, todas las tareas se moverán automáticamente 
+                    manteniendo las mismas duraciones y la distancia relativa entre ellas.
+                </small>
+            </div>
+            <form method="post" action="{% url 'task_schedule_reschedule' schedule.pk %}" class="row g-3 align-items-end">
+                {% csrf_token %}
+                <div class="col-md-4">
+                    <label for="new_start_date" class="form-label">
+                        <strong>Nueva Fecha de Inicio</strong>
+                    </label>
+                    <input type="date" class="form-control" id="new_start_date" 
+                           name="new_start_date" value="{{ schedule.start_date|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-4">
+                    <div class="text-muted">
+                        <small><strong>Inicio actual:</strong> {{ schedule.start_date|date:"d/m/Y" }}</small><br>
+                        <small><strong>Fin actual:</strong> {{ schedule.end_date|date:"d/m/Y" }}</small><br>
+                        <small><strong>Total tareas:</strong> {{ kpis.total_tasks }}</small>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-warning btn-lg w-100">
+                        <i class="fas fa-calendar-check"></i> Reprogramar {{ kpis.total_tasks }} Tarea(s)
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="row mb-4">
+        <div class="col-md-2 mb-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h3 class="text-primary mb-0">{{ kpis.total_tasks }}</h3>
+                    <small class="text-muted">Total Tareas</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h3 class="text-success mb-0">{{ kpis.completed_tasks }}</h3>
+                    <small class="text-muted">Completadas</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h3 class="text-warning mb-0">{{ kpis.pending_tasks }}</h3>
+                    <small class="text-muted">Pendientes</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h3 class="text-danger mb-0">{{ kpis.overdue_tasks }}</h3>
+                    <small class="text-muted">Vencidas</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h3 class="text-info mb-0">{{ kpis.progress_percentage|floatformat:0 }}%</h3>
+                    <small class="text-muted">Progreso</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h3 class="text-primary mb-0">{{ kpis.on_time_rate|floatformat:0 }}%</h3>
+                    <small class="text-muted">A Tiempo</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+
+    <!-- Enlace Público -->
+    {% if schedule.is_public %}
+    <div class="alert alert-success">
+        <strong><i class="fas fa-link"></i> Enlace Público:</strong>
+        <div class="input-group mt-2">
+            <input type="text" class="form-control" readonly 
+                   value="{{ request.scheme }}://{{ request.get_host }}{% url 'task_schedule_public' schedule.public_token %}"
+                   id="publicLink">
+            <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard()">
+                <i class="fas fa-copy"></i> Copiar
+            </button>
+        </div>
+        <small class="text-muted">Cualquier persona con este enlace puede ver el cronograma</small>
+    </div>
+    {% endif %}
+
+    <!-- Lista de Tareas -->
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-list"></i> Tareas</h5>
+        </div>
+        <div class="card-body">
+            {% if tasks %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th width="40">
+                                <input type="checkbox" class="form-check-input" disabled>
+                            </th>
+                            <th>Título</th>
+                            <th>Asignado</th>
+                            <th>Prioridad</th>
+                            <th>Inicio</th>
+                            <th>Fin</th>
+                           
+                            <th>Estado</th>
+                            <th width="120">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task in tasks %}
+                        <tr class="{% if task.is_completed %}table-success{% elif task.is_overdue %}table-danger{% endif %}">
+                            <td>
+                                <input type="checkbox" class="form-check-input task-checkbox" 
+                                       data-task-id="{{ task.id }}"
+                                       {% if task.is_completed %}checked{% endif %}>
+                            </td>
+                            <td>
+                                <strong>{{ task.title }}</strong>
+                                {% if task.dependencies.exists %}
+                                <span class="badge bg-secondary ms-1" title="Tiene dependencias">
+                                    <i class="fas fa-link"></i> {{ task.dependencies.count }}
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if task.assigned_to %}
+                                    <i class="fas fa-user"></i> {{ task.assigned_to.get_full_name|default:task.assigned_to.username }}
+                                {% else %}
+                                    <span class="text-muted">Sin asignar</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if task.priority == 'critical' %}
+                                    <span class="badge bg-danger">Crítica</span>
+                                {% elif task.priority == 'high' %}
+                                    <span class="badge bg-warning">Alta</span>
+                                {% elif task.priority == 'medium' %}
+                                    <span class="badge bg-info">Media</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Baja</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ task.start_date|date:"d/m/Y" }}</td>
+                            <td>{{ task.end_date|date:"d/m/Y" }}</td>
+                            
+                            <td>
+                                {% if task.is_completed %}
+                                    <span class="badge bg-success"><i class="fas fa-check"></i> Completada</span>
+                                {% elif task.is_overdue %}
+                                    <span class="badge bg-danger"><i class="fas fa-exclamation-triangle"></i> Vencida</span>
+                                {% else %}
+                                    <span class="badge bg-warning"><i class="fas fa-clock"></i> Pendiente</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'schedule_task_edit' task.pk %}" 
+                                       class="btn btn-warning" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'schedule_task_delete' task.pk %}" 
+                                       class="btn btn-danger" title="Eliminar">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> No hay tareas creadas todavía. 
+                <a href="{% url 'schedule_task_create' schedule.pk %}">Crea la primera tarea</a>.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Función para copiar el enlace público
+function copyToClipboard() {
+    const input = document.getElementById('publicLink');
+    input.select();
+    document.execCommand('copy');
+    alert('Enlace copiado al portapapeles');
+}
+
+// Funcionalidad de reprogramación
+document.addEventListener('DOMContentLoaded', function() {
+    const rescheduleForm = document.querySelector('form[action*="reschedule"]');
+    const newStartDateInput = document.getElementById('new_start_date');
+    const currentStartDate = '{{ schedule.start_date|date:"Y-m-d" }}';
+    
+    if (rescheduleForm && newStartDateInput) {
+        // Agregar indicador de diferencia de días
+        const diffIndicator = document.createElement('small');
+        diffIndicator.className = 'form-text text-muted';
+        diffIndicator.id = 'date-diff-indicator';
+        newStartDateInput.parentNode.appendChild(diffIndicator);
+        
+        // Función para calcular y mostrar la diferencia
+        function updateDateDifference() {
+            const newDate = new Date(newStartDateInput.value);
+            const currentDate = new Date(currentStartDate);
+            
+            if (newStartDateInput.value) {
+                const diffTime = newDate - currentDate;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                if (diffDays === 0) {
+                    diffIndicator.textContent = 'Sin cambios en las fechas';
+                    diffIndicator.className = 'form-text text-muted';
+                } else if (diffDays > 0) {
+                    diffIndicator.textContent = `Las tareas se adelantarán ${diffDays} día(s)`;
+                    diffIndicator.className = 'form-text text-success';
+                } else {
+                    diffIndicator.textContent = `Las tareas se retrasarán ${Math.abs(diffDays)} día(s)`;
+                    diffIndicator.className = 'form-text text-warning';
+                }
+            } else {
+                diffIndicator.textContent = '';
+            }
+        }
+        
+        // Actualizar diferencia cuando cambie la fecha
+        newStartDateInput.addEventListener('change', updateDateDifference);
+        newStartDateInput.addEventListener('input', updateDateDifference);
+        
+        // Mostrar diferencia inicial
+        updateDateDifference();
+        
+        // Confirmación antes de enviar
+        rescheduleForm.addEventListener('submit', function(e) {
+            const newDate = new Date(newStartDateInput.value);
+            const currentDate = new Date(currentStartDate);
+            const diffTime = newDate - currentDate;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays === 0) {
+                e.preventDefault();
+                alert('La nueva fecha de inicio es la misma que la actual.');
+                return;
+            }
+            
+            const action = diffDays > 0 ? 'adelantar' : 'retrasar';
+            const message = `¿Estás seguro de que deseas ${action} todas las tareas ${Math.abs(diffDays)} día(s)?\n\nEsta acción afectará a {{ kpis.total_tasks }} tarea(s) y no se puede deshacer.`;
+            
+            if (!confirm(message)) {
+                e.preventDefault();
+            }
+        });
+    }
+    
+    // Manejo de checkboxes para marcar tareas como completadas
+    const checkboxes = document.querySelectorAll('.task-checkbox');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const taskId = this.dataset.taskId;
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
+            
+            fetch(`/schedule-tasks/${taskId}/toggle/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Recargar la página para actualizar los KPIs
+                    location.reload();
+                } else {
+                    alert('Error al actualizar la tarea');
+                    this.checked = !this.checked;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al actualizar la tarea');
+                this.checked = !this.checked;
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

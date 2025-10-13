@@ -9,7 +9,8 @@ from .models import (
     LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry,
     WorkOrderTaskTimeSession, SharedFile, SharedFileDownload, Recording, RecordingPlayback,
     PageVisit, MultipleDocumentation, MultipleDocumentationItem, MultipleDocumentationStats,
-    MultipleDocumentationItemStats, MultipleDocumentationVisit, MultipleDocumentationDownload
+    MultipleDocumentationItemStats, MultipleDocumentationVisit, MultipleDocumentationDownload,
+    TaskSchedule, ScheduleTask, ScheduleComment, TicketApproval, SatisfactionSurvey
 )
 
 # Configuración del sitio de administración
@@ -1617,4 +1618,383 @@ class PageVisitAdmin(admin.ModelAdmin):
 
 # Temporalmente comentado para crear migración
 # Todo el bloque de administración de documentación múltiple comentado
+
+
+# ==========================================
+# ADMINISTRACIÓN DE PLANIFICACIÓN DE TAREAS
+# ==========================================
+
+class ScheduleTaskInline(admin.TabularInline):
+    """Inline para tareas del cronograma"""
+    model = ScheduleTask
+    extra = 0
+    fields = ('title', 'start_date', 'end_date', 'priority', 'assigned_to', 'is_completed', 'progress_percentage')
+    readonly_fields = ('completed_at',)
+    ordering = ('start_date',)
+
+
+@admin.register(TaskSchedule)
+class TaskScheduleAdmin(admin.ModelAdmin):
+    """Administración de cronogramas de tareas"""
+    
+    list_display = (
+        'title', 
+        'company', 
+        'created_by', 
+        'start_date', 
+        'end_date',
+        'progress_badge',
+        'task_count',
+        'is_public',
+        'is_overdue_badge',
+        'created_at'
+    )
+    
+    list_filter = (
+        'is_public',
+        'company',
+        'created_by',
+        'created_at',
+        'start_date',
+        'end_date'
+    )
+    
+    search_fields = (
+        'title',
+        'description',
+        'company__name',
+        'created_by__username',
+        'created_by__first_name',
+        'created_by__last_name'
+    )
+    
+    readonly_fields = (
+        'public_token',
+        'created_at',
+        'updated_at',
+        'get_progress_percentage',
+        'get_total_tasks',
+        'get_completed_tasks',
+        'get_pending_tasks',
+        'get_overdue_tasks'
+    )
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('title', 'description', 'company', 'created_by')
+        }),
+        ('Fechas', {
+            'fields': ('start_date', 'end_date')
+        }),
+        ('Configuración de Acceso', {
+            'fields': ('is_public', 'public_token')
+        }),
+        ('Estadísticas', {
+            'fields': (
+                'get_progress_percentage',
+                'get_total_tasks',
+                'get_completed_tasks',
+                'get_pending_tasks',
+                'get_overdue_tasks'
+            ),
+            'classes': ('collapse',)
+        }),
+        ('Metadatos', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    inlines = [ScheduleTaskInline]
+    
+    def progress_badge(self, obj):
+        progress = obj.get_progress_percentage()
+        if progress >= 75:
+            color = 'success'
+        elif progress >= 50:
+            color = 'info'
+        elif progress >= 25:
+            color = 'warning'
+        else:
+            color = 'danger'
+        
+        return format_html(
+            '<span class="badge badge-{}">{:.1f}%</span>',
+            color, progress
+        )
+    progress_badge.short_description = 'Progreso'
+    
+    def task_count(self, obj):
+        total = obj.get_total_tasks()
+        completed = obj.get_completed_tasks()
+        return format_html(
+            '<span title="Completadas: {} / Total: {}">{} / {}</span>',
+            completed, total, completed, total
+        )
+    task_count.short_description = 'Tareas'
+    
+    def is_overdue_badge(self, obj):
+        if obj.is_overdue():
+            return format_html('<span class="badge badge-danger">Vencido</span>')
+        return format_html('<span class="badge badge-success">A tiempo</span>')
+    is_overdue_badge.short_description = 'Estado'
+
+
+@admin.register(ScheduleTask)
+class ScheduleTaskAdmin(admin.ModelAdmin):
+    """Administración de tareas del cronograma"""
+    
+    list_display = (
+        'title',
+        'schedule',
+        'start_date',
+        'end_date',
+        'priority_badge',
+        'assigned_to',
+        'progress_badge',
+        'is_completed',
+        'is_overdue_badge',
+        'dependency_count'
+    )
+    
+    list_filter = (
+        'is_completed',
+        'priority',
+        'schedule',
+        'assigned_to',
+        'start_date',
+        'end_date',
+        'created_at'
+    )
+    
+    search_fields = (
+        'title',
+        'description',
+        'schedule__title',
+        'assigned_to__username',
+        'assigned_to__first_name',
+        'assigned_to__last_name'
+    )
+    
+    readonly_fields = (
+        'completed_at',
+        'created_at',
+        'updated_at',
+        'is_overdue',
+        'get_duration_days',
+        'can_start'
+    )
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('schedule', 'title', 'description')
+        }),
+        ('Fechas y Prioridad', {
+            'fields': ('start_date', 'end_date', 'priority')
+        }),
+        ('Asignación y Progreso', {
+            'fields': ('assigned_to', 'progress_percentage', 'is_completed', 'completed_at')
+        }),
+        ('Dependencias', {
+            'fields': ('dependencies',)
+        }),
+        ('Información Adicional', {
+            'fields': ('is_overdue', 'get_duration_days', 'can_start'),
+            'classes': ('collapse',)
+        }),
+        ('Metadatos', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    filter_horizontal = ('dependencies',)
+    
+    def priority_badge(self, obj):
+        colors = {
+            'low': 'secondary',
+            'medium': 'info',
+            'high': 'warning',
+            'critical': 'danger'
+        }
+        return format_html(
+            '<span class="badge badge-{}">{}</span>',
+            colors.get(obj.priority, 'secondary'),
+            obj.get_priority_display()
+        )
+    priority_badge.short_description = 'Prioridad'
+    
+    def progress_badge(self, obj):
+        progress = obj.progress_percentage
+        if progress >= 75:
+            color = 'success'
+        elif progress >= 50:
+            color = 'info'
+        elif progress >= 25:
+            color = 'warning'
+        else:
+            color = 'danger'
+        
+        return format_html(
+            '<span class="badge badge-{}">{:.0f}%</span>',
+            color, progress
+        )
+    progress_badge.short_description = 'Progreso'
+    
+    def is_overdue_badge(self, obj):
+        if obj.is_overdue():
+            return format_html('<span class="badge badge-danger">⚠️ Vencida</span>')
+        return format_html('<span class="badge badge-success">✓ A tiempo</span>')
+    is_overdue_badge.short_description = 'Estado'
+    
+    def dependency_count(self, obj):
+        count = obj.dependencies.count()
+        if count > 0:
+            return format_html('<span class="badge badge-info">{}</span>', count)
+        return '-'
+    dependency_count.short_description = 'Dependencias'
+
+
+@admin.register(ScheduleComment)
+class ScheduleCommentAdmin(admin.ModelAdmin):
+    """Administración de comentarios de tareas"""
+    
+    list_display = (
+        'task',
+        'user',
+        'comment_preview',
+        'created_at'
+    )
+    
+    list_filter = (
+        'created_at',
+        'user',
+        'task__schedule'
+    )
+    
+    search_fields = (
+        'comment',
+        'user__username',
+        'user__first_name',
+        'user__last_name',
+        'task__title',
+        'task__schedule__title'
+    )
+    
+    readonly_fields = ('created_at',)
+    
+    fieldsets = (
+        ('Información del Comentario', {
+            'fields': ('task', 'user', 'comment')
+        }),
+        ('Metadatos', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def comment_preview(self, obj):
+        if len(obj.comment) > 100:
+            return obj.comment[:100] + '...'
+        return obj.comment
+    comment_preview.short_description = 'Comentario'
+
+
+@admin.register(TicketApproval)
+class TicketApprovalAdmin(admin.ModelAdmin):
+    """Administración de aprobaciones de clientes"""
+    
+    list_display = (
+        'ticket',
+        'client_name',
+        'client_email',
+        'approved_at',
+        'ip_address'
+    )
+    
+    list_filter = (
+        'approved_at',
+        'ticket__status',
+        'ticket__priority'
+    )
+    
+    search_fields = (
+        'ticket__ticket_number',
+        'ticket__title',
+        'client_name',
+        'client_email'
+    )
+    
+    readonly_fields = ('approved_at', 'ip_address')
+    
+    fieldsets = (
+        ('Información del Cliente', {
+            'fields': ('client_name', 'client_email', 'notes')
+        }),
+        ('Información del Ticket', {
+            'fields': ('ticket',)
+        }),
+        ('Metadatos', {
+            'fields': ('approved_at', 'ip_address'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_readonly_fields(self, request, obj=None):
+        # Si el objeto ya existe, hacer todos los campos de solo lectura excepto las notas
+        if obj:
+            return self.readonly_fields + ('ticket', 'client_name', 'client_email')
+        return self.readonly_fields
+
+
+@admin.register(SatisfactionSurvey)
+class SatisfactionSurveyAdmin(admin.ModelAdmin):
+    list_display = ('ticket', 'client_name', 'client_email', 'overall_satisfaction', 'average_rating', 'rating_summary', 'submitted_at')
+    list_filter = ('overall_satisfaction', 'resolution_quality', 'response_time', 'communication', 'would_recommend', 'submitted_at')
+    search_fields = ('ticket__ticket_number', 'client_name', 'client_email', 'ticket__title')
+    readonly_fields = ('submitted_at', 'ip_address', 'average_rating', 'rating_summary')
+    date_hierarchy = 'submitted_at'
+    
+    fieldsets = (
+        ('Información del Cliente', {
+            'fields': ('client_name', 'client_email')
+        }),
+        ('Ticket', {
+            'fields': ('ticket',)
+        }),
+        ('Calificaciones', {
+            'fields': ('overall_satisfaction', 'resolution_quality', 'response_time', 'communication')
+        }),
+        ('Comentarios', {
+            'fields': ('what_went_well', 'what_could_improve', 'additional_comments')
+        }),
+        ('Recomendación', {
+            'fields': ('would_recommend', 'recommendation_reason')
+        }),
+        ('Metadatos', {
+            'fields': ('submitted_at', 'ip_address', 'average_rating', 'rating_summary'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_readonly_fields(self, request, obj=None):
+        # Si el objeto ya existe, hacer casi todos los campos de solo lectura
+        if obj:
+            return self.readonly_fields + ('ticket', 'client_name', 'client_email', 
+                                         'overall_satisfaction', 'resolution_quality', 
+                                         'response_time', 'communication', 'would_recommend')
+        return self.readonly_fields
+    
+    def average_rating(self, obj):
+        return f"{obj.average_rating}/5"
+    average_rating.short_description = "Promedio"
+    
+    def rating_summary(self, obj):
+        color = obj.rating_color
+        return format_html(
+            '<span class="badge badge-{}">{}</span>',
+            color,
+            obj.rating_summary
+        )
+    rating_summary.short_description = "Resumen"
 

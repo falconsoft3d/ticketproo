@@ -1,0 +1,100 @@
+{% extends 'public_base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .fa-chart-gantt {
+        opacity: 0.6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="text-center mb-4">
+        <h1 class="display-4"><i class="fas fa-chart-gantt"></i> Diagrama Gantt</h1>
+        <h3>{{ schedule.title }}</h3>
+        <p class="text-muted">
+            <i class="fas fa-building"></i> {{ schedule.company.name }} | 
+            <i class="fas fa-calendar-alt"></i> {{ schedule.start_date|date:"d/m/Y" }} - {{ schedule.end_date|date:"d/m/Y" }}
+        </p>
+    </div>
+
+    <div class="text-center mb-4">
+        <a href="{% url 'task_schedule_public' schedule.public_token %}" class="btn btn-secondary">
+            <i class="fas fa-list"></i> Ver Lista de Tareas
+        </a>
+    </div>
+
+    <!-- KPIs -->
+    <div class="row mb-4">
+        <div class="col-md-2 mb-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body py-2">
+                    <h4 class="text-primary mb-0">{{ kpis.total_tasks }}</h4>
+                    <small class="text-muted">Total</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body py-2">
+                    <h4 class="text-success mb-0">{{ kpis.completed_tasks }}</h4>
+                    <small class="text-muted">Completadas</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body py-2">
+                    <h4 class="text-warning mb-0">{{ kpis.pending_tasks }}</h4>
+                    <small class="text-muted">Pendientes</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body py-2">
+                    <h4 class="text-danger mb-0">{{ kpis.overdue_tasks }}</h4>
+                    <small class="text-muted">Vencidas</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body py-2">
+                    <h4 class="text-info mb-0">{{ kpis.progress_percentage|floatformat:0 }}%</h4>
+                    <small class="text-muted">Progreso</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body py-2">
+                    <h4 class="text-primary mb-0">{{ kpis.on_time_rate|floatformat:0 }}%</h4>
+                    <small class="text-muted">A Tiempo</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mensaje informativo -->
+    <div class="card shadow">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-chart-gantt fa-3x text-muted mb-3"></i>
+            <h4>Vista Gantt</h4>
+            <p class="text-muted">
+                La vista de diagrama Gantt está temporalmente deshabilitada.<br>
+                Puedes ver las tareas en la <a href="{% url 'task_schedule_public' schedule.public_token %}" class="text-decoration-none">vista de lista</a>.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

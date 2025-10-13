@@ -6742,3 +6742,519 @@ class MultipleDocumentationDownload(models.Model):
     
     def __str__(self):
         return f"{self.ip_address} - {self.item.name} - {self.timestamp.strftime('%d/%m/%Y %H:%M')}"
+
+
+class TaskSchedule(models.Model):
+    """Modelo para gestionar cronogramas de tareas con vista Gantt"""
+    
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título del Cronograma'
+    )
+    
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción'
+    )
+    
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name='task_schedules',
+        verbose_name='Empresa'
+    )
+    
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='created_schedules',
+        verbose_name='Creado Por'
+    )
+    
+    start_date = models.DateField(
+        verbose_name='Fecha de Inicio'
+    )
+    
+    end_date = models.DateField(
+        verbose_name='Fecha de Fin'
+    )
+    
+    is_public = models.BooleanField(
+        default=False,
+        verbose_name='Público',
+        help_text='Si está activo, el cronograma será accesible públicamente'
+    )
+    
+    public_token = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+        verbose_name='Token Público'
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de Creación'
+    )
+    
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última Actualización'
+    )
+    
+    class Meta:
+        verbose_name = 'Cronograma de Tareas'
+        verbose_name_plural = 'Cronogramas de Tareas'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return self.title
+    
+    def get_progress_percentage(self):
+        """Calcula el porcentaje de progreso del cronograma"""
+        total_tasks = self.tasks.count()
+        if total_tasks == 0:
+            return 0
+        completed_tasks = self.tasks.filter(is_completed=True).count()
+        return round((completed_tasks / total_tasks) * 100, 2)
+    
+    def get_total_tasks(self):
+        """Retorna el total de tareas"""
+        return self.tasks.count()
+    
+    def get_completed_tasks(self):
+        """Retorna el total de tareas completadas"""
+        return self.tasks.filter(is_completed=True).count()
+    
+    def get_pending_tasks(self):
+        """Retorna el total de tareas pendientes"""
+        return self.tasks.filter(is_completed=False).count()
+    
+    def get_overdue_tasks(self):
+        """Retorna las tareas vencidas"""
+        from django.utils import timezone
+        today = timezone.now().date()
+        return self.tasks.filter(
+            is_completed=False,
+            end_date__lt=today
+        ).count()
+    
+    def get_on_time_completion_rate(self):
+        """Calcula el porcentaje de tareas completadas a tiempo"""
+        completed_tasks = self.tasks.filter(is_completed=True)
+        if completed_tasks.count() == 0:
+            return 0
+        on_time_tasks = completed_tasks.filter(
+            completed_at__lte=models.F('end_date')
+        ).count()
+        return round((on_time_tasks / completed_tasks.count()) * 100, 2)
+    
+    def is_overdue(self):
+        """Verifica si el cronograma está vencido"""
+        from django.utils import timezone
+        today = timezone.now().date()
+        return today > self.end_date and self.get_progress_percentage() < 100
+    
+    def calculate_auto_dates(self):
+        """Calcula automáticamente las fechas de inicio y fin basándose en las tareas"""
+        tasks = self.tasks.all()
+        if tasks.exists():
+            # Fecha de inicio: la fecha más temprana de todas las tareas
+            earliest_start = tasks.order_by('start_date').first().start_date
+            # Fecha de fin: la fecha más tardía de todas las tareas
+            latest_end = tasks.order_by('-end_date').first().end_date
+            return earliest_start, latest_end
+        return None, None
+    
+    def update_auto_dates(self):
+        """Actualiza automáticamente las fechas del cronograma basándose en las tareas"""
+        start_date, end_date = self.calculate_auto_dates()
+        if start_date and end_date:
+            self.start_date = start_date
+            self.end_date = end_date
+            self.save(update_fields=['start_date', 'end_date'])
+    
+    def get_total_days(self):
+        """Calcula la duración total del cronograma en días"""
+        return (self.end_date - self.start_date).days + 1
+    
+    def get_total_task_days(self):
+        """Calcula la suma total de días de todas las tareas"""
+        return sum(task.get_duration_days() for task in self.tasks.all())
+
+
+class ScheduleTask(models.Model):
+    """Modelo para las tareas individuales del cronograma"""
+    
+    PRIORITY_CHOICES = [
+        ('low', 'Baja'),
+        ('medium', 'Media'),
+        ('high', 'Alta'),
+        ('critical', 'Crítica'),
+    ]
+    
+    schedule = models.ForeignKey(
+        TaskSchedule,
+        on_delete=models.CASCADE,
+        related_name='tasks',
+        verbose_name='Cronograma'
+    )
+    
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título de la Tarea'
+    )
+    
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción'
+    )
+    
+    start_date = models.DateField(
+        verbose_name='Fecha de Inicio'
+    )
+    
+    end_date = models.DateField(
+        verbose_name='Fecha de Fin'
+    )
+    
+    priority = models.CharField(
+        max_length=10,
+        choices=PRIORITY_CHOICES,
+        default='medium',
+        verbose_name='Prioridad'
+    )
+    
+    assigned_to = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='schedule_tasks_assigned',
+        verbose_name='Asignado A'
+    )
+    
+    is_completed = models.BooleanField(
+        default=False,
+        verbose_name='Completada'
+    )
+    
+    completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Completada el'
+    )
+    
+    progress_percentage = models.IntegerField(
+        default=0,
+        verbose_name='Porcentaje de Progreso',
+        help_text='Progreso de 0 a 100'
+    )
+    
+    dependencies = models.ManyToManyField(
+        'self',
+        symmetrical=False,
+        blank=True,
+        related_name='dependent_tasks',
+        verbose_name='Dependencias'
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de Creación'
+    )
+    
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última Actualización'
+    )
+    
+    class Meta:
+        verbose_name = 'Tarea del Cronograma'
+        verbose_name_plural = 'Tareas del Cronograma'
+        ordering = ['start_date']
+    
+    def __str__(self):
+        return f"{self.schedule.title} - {self.title}"
+    
+    def save(self, *args, **kwargs):
+        # Si la tarea se marca como completada, establecer la fecha de completado
+        if self.is_completed and not self.completed_at:
+            self.completed_at = timezone.now()
+            self.progress_percentage = 100
+        elif not self.is_completed:
+            self.completed_at = None
+        
+        # Guardar la tarea primero
+        super().save(*args, **kwargs)
+        
+        # Actualizar las fechas del cronograma automáticamente
+        self.schedule.update_auto_dates()
+    
+    def is_overdue(self):
+        """Verifica si la tarea está vencida"""
+        from django.utils import timezone
+        today = timezone.now().date()
+        return not self.is_completed and today > self.end_date
+    
+    def get_duration_days(self):
+        """Calcula la duración de la tarea en días"""
+        return (self.end_date - self.start_date).days + 1
+    
+    def can_start(self):
+        """Verifica si la tarea puede iniciar (todas sus dependencias completadas)"""
+        return all(dep.is_completed for dep in self.dependencies.all())
+
+
+class ScheduleComment(models.Model):
+    """Modelo para comentarios en las tareas"""
+    
+    task = models.ForeignKey(
+        ScheduleTask,
+        on_delete=models.CASCADE,
+        related_name='comments',
+        verbose_name='Tarea'
+    )
+    
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Usuario'
+    )
+    
+    comment = models.TextField(
+        verbose_name='Comentario'
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de Creación'
+    )
+    
+    class Meta:
+        verbose_name = 'Comentario de Tarea'
+        verbose_name_plural = 'Comentarios de Tareas'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.task.title}"
+
+
+class TicketApproval(models.Model):
+    """Modelo para aprobaciones de clientes en tickets públicos"""
+    
+    ticket = models.OneToOneField(
+        Ticket,
+        on_delete=models.CASCADE,
+        related_name='client_approval',
+        verbose_name='Ticket'
+    )
+    
+    client_name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre del Cliente'
+    )
+    
+    client_email = models.EmailField(
+        verbose_name='Correo del Cliente'
+    )
+    
+    approved_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de Aprobación'
+    )
+    
+    notes = models.TextField(
+        blank=True,
+        verbose_name='Notas Adicionales',
+        help_text='Comentarios adicionales del cliente'
+    )
+    
+    ip_address = models.GenericIPAddressField(
+        verbose_name='Dirección IP',
+        help_text='IP desde donde se realizó la aprobación'
+    )
+    
+    class Meta:
+        verbose_name = 'Aprobación de Cliente'
+        verbose_name_plural = 'Aprobaciones de Clientes'
+        ordering = ['-approved_at']
+    
+    def __str__(self):
+        return f"{self.ticket.ticket_number} - Aprobado por {self.client_name}"
+
+
+class SatisfactionSurvey(models.Model):
+    """Modelo para encuestas de satisfacción de clientes"""
+    
+    RATING_CHOICES = [
+        (1, '1 - Muy Insatisfecho'),
+        (2, '2 - Insatisfecho'),
+        (3, '3 - Neutral'),
+        (4, '4 - Satisfecho'),
+        (5, '5 - Muy Satisfecho'),
+    ]
+    
+    RESOLUTION_QUALITY_CHOICES = [
+        (1, '1 - Muy Mala'),
+        (2, '2 - Mala'),
+        (3, '3 - Regular'),
+        (4, '4 - Buena'),
+        (5, '5 - Excelente'),
+    ]
+    
+    RESPONSE_TIME_CHOICES = [
+        (1, '1 - Muy Lento'),
+        (2, '2 - Lento'),
+        (3, '3 - Aceptable'),
+        (4, '4 - Rápido'),
+        (5, '5 - Muy Rápido'),
+    ]
+    
+    ticket = models.OneToOneField(
+        Ticket,
+        on_delete=models.CASCADE,
+        related_name='satisfaction_survey',
+        verbose_name='Ticket'
+    )
+    
+    client_name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre del Cliente'
+    )
+    
+    client_email = models.EmailField(
+        verbose_name='Correo del Cliente'
+    )
+    
+    # Calificaciones
+    overall_satisfaction = models.IntegerField(
+        choices=RATING_CHOICES,
+        verbose_name='Satisfacción General',
+        help_text="¿Qué tan satisfecho está con el servicio general?"
+    )
+    
+    resolution_quality = models.IntegerField(
+        choices=RESOLUTION_QUALITY_CHOICES,
+        verbose_name='Calidad de la Solución',
+        help_text="¿Cómo califica la calidad de la solución proporcionada?"
+    )
+    
+    response_time = models.IntegerField(
+        choices=RESPONSE_TIME_CHOICES,
+        verbose_name='Tiempo de Respuesta',
+        help_text="¿Cómo califica nuestro tiempo de respuesta?"
+    )
+    
+    communication = models.IntegerField(
+        choices=RATING_CHOICES,
+        verbose_name='Calidad de la Comunicación',
+        help_text="¿Cómo califica la comunicación durante el proceso?"
+    )
+    
+    # Comentarios
+    what_went_well = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='¿Qué funcionó bien?',
+        help_text='Describa los aspectos positivos de nuestro servicio'
+    )
+    
+    what_could_improve = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='¿Qué se podría mejorar?',
+        help_text='Sugerencias para mejorar nuestro servicio'
+    )
+    
+    additional_comments = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Comentarios Adicionales',
+        help_text='Cualquier otro comentario que desee compartir'
+    )
+    
+    # Recomendación
+    would_recommend = models.BooleanField(
+        default=True,
+        verbose_name='¿Recomendaría nuestros servicios?',
+        help_text="¿Recomendaría nuestros servicios a otros?"
+    )
+    
+    recommendation_reason = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Razón de recomendación',
+        help_text='¿Por qué sí o por qué no recomendaría nuestros servicios?'
+    )
+    
+    # Metadatos
+    submitted_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de Envío'
+    )
+    
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name='Dirección IP',
+        help_text='IP desde donde se realizó la encuesta'
+    )
+    
+    class Meta:
+        verbose_name = "Encuesta de Satisfacción"
+        verbose_name_plural = "Encuestas de Satisfacción"
+        ordering = ['-submitted_at']
+    
+    def __str__(self):
+        return f"Encuesta de {self.client_name} para ticket #{self.ticket.id} - {self.overall_satisfaction}/5"
+    
+    @property
+    def average_rating(self):
+        """Calcula el promedio de todas las calificaciones"""
+        ratings = [
+            self.overall_satisfaction,
+            self.resolution_quality,
+            self.response_time,
+            self.communication
+        ]
+        return round(sum(ratings) / len(ratings), 1)
+    
+    @property
+    def rating_summary(self):
+        """Devuelve un resumen de las calificaciones"""
+        avg = self.average_rating
+        if avg >= 4.5:
+            return "Excelente"
+        elif avg >= 3.5:
+            return "Bueno"
+        elif avg >= 2.5:
+            return "Regular"
+        else:
+            return "Necesita Mejora"
+    
+    @property
+    def rating_color(self):
+        """Devuelve el color Bootstrap según la calificación"""
+        avg = self.average_rating
+        if avg >= 4.5:
+            return "success"
+        elif avg >= 3.5:
+            return "primary"
+        elif avg >= 2.5:
+            return "warning"
+        else:
+            return "danger"
+
+
+# Señales para actualizar automáticamente las fechas del cronograma
+@receiver(post_save, sender=ScheduleTask)
+def update_schedule_dates_on_task_save(sender, instance, **kwargs):
+    """Actualiza las fechas del cronograma cuando se guarda una tarea"""
+    instance.schedule.update_auto_dates()
+
+
+@receiver(models.signals.post_delete, sender=ScheduleTask)
+def update_schedule_dates_on_task_delete(sender, instance, **kwargs):
+    """Actualiza las fechas del cronograma cuando se elimina una tarea"""
+    instance.schedule.update_auto_dates()

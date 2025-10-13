@@ -216,6 +216,23 @@
                                 </div>
                             </div>
                             <div class="row mb-2">
+                                <div class="col-5"><strong>Estado de Aprobación:</strong></div>
+                                <div class="col-7">
+                                    {% if ticket.is_approved %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle"></i> Aprobado
+                                        </span>
+                                        {% if ticket.approved_at %}
+                                            <br><small class="text-muted">{{ ticket.approved_at|date:"d/m/Y H:i" }}</small>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-warning">
+                                            <i class="bi bi-clock"></i> Pendiente de Aprobación
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="row mb-2">
                                 <div class="col-5"><strong>Prioridad:</strong></div>
                                 <div class="col-7">
                                     <span class="badge {{ ticket.get_priority_badge_class }}">
@@ -252,6 +269,105 @@
                         </div>
                     </div>
 
+                    <!-- Aprobación del Cliente -->
+                    {% if not has_approval and not ticket.is_approved and ticket.status != 'closed' %}
+                    <div class="card mt-3 border-success">
+                        <div class="card-body text-center">
+                            <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i>
+                            <h6 class="mt-2">¿Aprobar este ticket?</h6>
+                            <p class="text-muted small">
+                                Si estás satisfecho con la solución proporcionada,
+                                puedes aprobar este ticket.
+                            </p>
+                            <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#approvalModal">
+                                <i class="bi bi-check-circle"></i> Aprobar Ticket
+                            </button>
+                        </div>
+                    </div>
+                    {% elif has_approval or ticket.is_approved %}
+                    <div class="card mt-3 border-success">
+                        <div class="card-body text-center">
+                            <i class="bi bi-check-circle-fill text-success" style="font-size: 2rem;"></i>
+                            <h6 class="mt-2 text-success">Ticket Aprobado</h6>
+                            {% if has_approval %}
+                                <p class="text-muted small">
+                                    <strong>Aprobado por:</strong> {{ approval.client_name }}<br>
+                                    <strong>Email:</strong> {{ approval.client_email }}<br>
+                                    <strong>Fecha:</strong> {{ approval.approved_at|date:"d/m/Y H:i" }}
+                                </p>
+                                {% if approval.notes %}
+                                <div class="alert alert-light mt-2">
+                                    <small><strong>Comentarios:</strong><br>{{ approval.notes|linebreaks }}</small>
+                                </div>
+                                {% endif %}
+                            {% elif ticket.is_approved %}
+                                <p class="text-muted small">
+                                    <strong>Fecha de aprobación:</strong> {{ ticket.approved_at|date:"d/m/Y H:i" }}<br>
+                                    <small>El cliente ha confirmado su satisfacción con la solución.</small>
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Encuesta de Satisfacción -->
+                    {% if ticket.status == 'resolved' or ticket.status == 'closed' or ticket.is_approved %}
+                        {% if not ticket.satisfaction_survey %}
+                        <div class="card mt-3 border-info">
+                            <div class="card-body text-center">
+                                <i class="bi bi-star text-info" style="font-size: 2rem;"></i>
+                                <h6 class="mt-2 text-info">Encuesta de Satisfacción</h6>
+                                <p class="text-muted small">
+                                    Tu opinión es muy importante para nosotros. 
+                                    Ayúdanos a mejorar nuestro servicio.
+                                </p>
+                                <a href="{% url 'public_ticket_survey' token %}" class="btn btn-info btn-sm">
+                                    <i class="bi bi-star"></i> Llenar Encuesta
+                                </a>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="card mt-3 border-info">
+                            <div class="card-body text-center">
+                                <i class="bi bi-star-fill text-info" style="font-size: 2rem;"></i>
+                                <h6 class="mt-2 text-info">Encuesta Completada</h6>
+                                <p class="text-muted small">
+                                    <strong>Enviada por:</strong> {{ ticket.satisfaction_survey.client_name }}<br>
+                                    <strong>Calificación promedio:</strong> {{ ticket.satisfaction_survey.average_rating }}/5 
+                                    <span class="badge bg-{{ ticket.satisfaction_survey.rating_color }}">{{ ticket.satisfaction_survey.rating_summary }}</span><br>
+                                    <strong>Fecha:</strong> {{ ticket.satisfaction_survey.submitted_at|date:"d/m/Y H:i" }}
+                                </p>
+                                {% if ticket.satisfaction_survey.would_recommend %}
+                                    <div class="alert alert-success alert-sm mt-2">
+                                        <i class="bi bi-hand-thumbs-up"></i> <strong>Recomendaría nuestros servicios</strong>
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-warning alert-sm mt-2">
+                                        <i class="bi bi-hand-thumbs-down"></i> <strong>No recomendaría nuestros servicios</strong>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endif %}
+
+                    <!-- Subir Archivos -->
+                    {% if ticket.status != 'closed' %}
+                    <div class="card mt-3 border-info">
+                        <div class="card-body text-center">
+                            <i class="bi bi-cloud-upload text-info" style="font-size: 2rem;"></i>
+                            <h6 class="mt-2 text-info">Subir Archivos</h6>
+                            <p class="text-muted small">
+                                ¿Tienes archivos adicionales que puedan ayudar con este ticket?
+                                Puedes subirlos aquí para proporcionar más información.
+                            </p>
+                            <a href="{% url 'public_ticket_upload' token %}" class="btn btn-info btn-sm">
+                                <i class="bi bi-cloud-upload"></i> Subir Archivos
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <!-- Mensaje de contacto -->
                     <div class="card mt-3">
                         <div class="card-body text-center">
@@ -283,6 +399,112 @@
         </div>
     </div>
 
+    <!-- Modal de Aprobación -->
+    <div class="modal fade" id="approvalModal" tabindex="-1" aria-labelledby="approvalModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="approvalModalLabel">
+                        <i class="bi bi-check-circle"></i> Aprobar Ticket
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="post" action="{% url 'public_ticket_approve' token %}">
+                    <div class="modal-body">
+                        {% csrf_token %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Confirmación de aprobación</strong><br>
+                            <small>
+                                Al aprobar este ticket, confirmas que estás satisfecho con la solución proporcionada.
+                                Esta acción no se puede deshacer.
+                            </small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="client_name" class="form-label">
+                                <strong>Tu nombre completo *</strong>
+                            </label>
+                            <input type="text" class="form-control" id="client_name" name="client_name" 
+                                   placeholder="Ej: Juan Pérez García" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="client_email" class="form-label">
+                                <strong>Tu correo electrónico *</strong>
+                            </label>
+                            <input type="email" class="form-control" id="client_email" name="client_email" 
+                                   placeholder="Ej: juan@empresa.com" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">
+                                <strong>Comentarios adicionales</strong> <small class="text-muted">(opcional)</small>
+                            </label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3"
+                                      placeholder="Comparte tu experiencia o comentarios sobre la solución..."></textarea>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <small>
+                                <strong>Importante:</strong> Tu información se utilizará únicamente para confirmar
+                                la aprobación y mejorar nuestro servicio. No será compartida con terceros.
+                            </small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Confirmar Aprobación
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     {% bootstrap_javascript %}
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Inicializar tooltips si existen
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+            
+            // Validación del formulario de aprobación
+            const approvalForm = document.querySelector('#approvalModal form');
+            if (approvalForm) {
+                approvalForm.addEventListener('submit', function(e) {
+                    const name = document.getElementById('client_name').value.trim();
+                    const email = document.getElementById('client_email').value.trim();
+                    
+                    if (!name || !email) {
+                        e.preventDefault();
+                        alert('Por favor completa todos los campos obligatorios.');
+                        return false;
+                    }
+                    
+                    // Validación básica de email
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(email)) {
+                        e.preventDefault();
+                        alert('Por favor ingresa un correo electrónico válido.');
+                        return false;
+                    }
+                    
+                    // Confirmación final
+                    if (!confirm('¿Estás seguro de que deseas aprobar este ticket? Esta acción no se puede deshacer.')) {
+                        e.preventDefault();
+                        return false;
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>

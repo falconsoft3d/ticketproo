@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-tasks"></i> {{ page_title }}</h2>
+        <a href="{% url 'task_schedule_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nuevo Cronograma
+        </a>
+    </div>
+
+    {% if schedules %}
+    <div class="row">
+        {% for schedule in schedules %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ schedule.title }}</h5>
+                    {% if schedule.is_public %}
+                    <span class="badge bg-light text-dark" title="Público">
+                        <i class="fas fa-globe"></i>
+                    </span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-2">
+                        <i class="fas fa-building"></i> {{ schedule.company.name }}
+                    </p>
+                    
+                    {% if schedule.description %}
+                    <p class="card-text small">{{ schedule.description|truncatewords:20 }}</p>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            <i class="fas fa-calendar-alt"></i> 
+                            {{ schedule.start_date|date:"d/m/Y" }} - {{ schedule.end_date|date:"d/m/Y" }}
+                        </small>
+                    </div>
+                    
+                    <!-- Duración -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="fas fa-clock"></i> Duración
+                            </small>
+                            <span class="badge bg-info">{{ schedule.get_total_days }} días</span>
+                        </div>
+                    </div>
+                    
+                    <!-- KPIs Rápidos -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <div class="text-center p-2 bg-light rounded">
+                                <div class="fw-bold text-success">{{ schedule.completed_tasks }}</div>
+                                <small class="text-muted">Completadas</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center p-2 bg-light rounded">
+                                <div class="fw-bold text-primary">{{ schedule.total_tasks }}</div>
+                                <small class="text-muted">Total</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center p-2 bg-light rounded">
+                                <div class="fw-bold text-info">{{ schedule.get_total_task_days }}</div>
+                                <small class="text-muted">Días de Trabajo</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center p-2 bg-light rounded">
+                                <div class="fw-bold text-warning">{{ schedule.get_progress_percentage|floatformat:0 }}%</div>
+                                <small class="text-muted">Progreso</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-white">
+                    <div class="btn-group w-100" role="group">
+                        <a href="{% url 'task_schedule_detail' schedule.pk %}" 
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-eye"></i> Ver
+                        </a>
+                        <a href="{% url 'task_schedule_edit' schedule.pk %}" 
+                           class="btn btn-sm btn-outline-warning">
+                            <i class="fas fa-edit"></i> Editar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> No hay cronogramas creados todavía. 
+        <a href="{% url 'task_schedule_create' %}">Crea tu primer cronograma</a>.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

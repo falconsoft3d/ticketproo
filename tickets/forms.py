@@ -2,13 +2,26 @@ from django import forms
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
 import os
+
+
+class DateInput(forms.DateInput):
+    """Widget personalizado para campos de fecha"""
+    input_type = 'date'
+    
+    def format_value(self, value):
+        if value:
+            # Asegurar formato ISO para input type="date"
+            if hasattr(value, 'strftime'):
+                return value.strftime('%Y-%m-%d')
+            return value
+        return ''
 from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
     UserNote, TimeEntry, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
     ChatRoom, ChatMessage, Command, ContactFormSubmission, Meeting, MeetingAttendee, MeetingQuestion, OpportunityActivity,
     Course, CourseClass, Contact, BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, Concept, ContactoWeb, Employee, EmployeePayroll,
     Agreement, AgreementSignature, LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry, SharedFile, SharedFileDownload,
-    Recording, RecordingPlayback, MultipleDocumentation
+    Recording, RecordingPlayback, MultipleDocumentation, TaskSchedule, ScheduleTask, ScheduleComment
 )
 
 class CategoryForm(forms.ModelForm):
@@ -4451,3 +4464,177 @@ class DocumentationPasswordForm(forms.Form):
             raise forms.ValidationError('Contraseña incorrecta.')
         
         return password
+
+
+class TaskScheduleForm(forms.ModelForm):
+    """Formulario para crear y editar cronogramas de tareas"""
+    
+    class Meta:
+        model = TaskSchedule
+        fields = ['title', 'description', 'company', 'is_public']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título del cronograma'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Descripción del cronograma'
+            }),
+            'company': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'is_public': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'title': 'Título',
+            'description': 'Descripción',
+            'company': 'Empresa',
+            'is_public': 'Hacer público',
+        }
+    
+    def save(self, commit=True):
+        """Guarda el cronograma con fechas por defecto si no existen tareas"""
+        instance = super().save(commit=False)
+        
+        # Si es un nuevo cronograma, establecer fechas por defecto
+        if not instance.pk:
+            from django.utils import timezone
+            today = timezone.now().date()
+            instance.start_date = today
+            instance.end_date = today
+        
+        if commit:
+            instance.save()
+            # Actualizar fechas automáticamente si hay tareas
+            instance.update_auto_dates()
+        
+        return instance
+
+
+class ScheduleTaskForm(forms.ModelForm):
+    """Formulario para crear y editar tareas del cronograma"""
+    
+    class Meta:
+        model = ScheduleTask
+        fields = [
+            'title', 'description', 'start_date', 'end_date', 
+            'priority', 'assigned_to', 'is_completed', 'dependencies'
+        ]
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título de la tarea'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción de la tarea'
+            }),
+            'start_date': DateInput(attrs={
+                'class': 'form-control',
+                'required': True
+            }),
+            'end_date': DateInput(attrs={
+                'class': 'form-control',
+                'required': True
+            }),
+            'priority': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'assigned_to': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'is_completed': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'dependencies': forms.SelectMultiple(attrs={
+                'class': 'form-select',
+                'size': '5'
+            }),
+        }
+        labels = {
+            'title': 'Título',
+            'description': 'Descripción',
+            'start_date': 'Fecha de Inicio',
+            'end_date': 'Fecha de Fin',
+            'priority': 'Prioridad',
+            'assigned_to': 'Asignado a',
+            'is_completed': 'Completada',
+            'dependencies': 'Dependencias',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        schedule = kwargs.pop('schedule', None)
+        super().__init__(*args, **kwargs)
+        
+        # Filtrar dependencias para mostrar solo tareas del mismo cronograma
+        if schedule:
+            self.fields['dependencies'].queryset = ScheduleTask.objects.filter(
+                schedule=schedule
+            ).exclude(pk=self.instance.pk if self.instance.pk else None)
+        else:
+            self.fields['dependencies'].queryset = ScheduleTask.objects.none()
+        
+        # Filtrar usuarios activos
+        self.fields['assigned_to'].queryset = User.objects.filter(is_active=True)
+        self.fields['assigned_to'].required = False
+        
+        # Asegurar que las fechas se formateen correctamente para input type="date"
+        if self.instance and self.instance.pk:
+            if self.instance.start_date:
+                # Formatear fecha en formato ISO (YYYY-MM-DD) para input type="date"
+                self.fields['start_date'].initial = self.instance.start_date.strftime('%Y-%m-%d')
+                self.fields['start_date'].widget.attrs['value'] = self.instance.start_date.strftime('%Y-%m-%d')
+            if self.instance.end_date:
+                # Formatear fecha en formato ISO (YYYY-MM-DD) para input type="date"
+                self.fields['end_date'].initial = self.instance.end_date.strftime('%Y-%m-%d')
+                self.fields['end_date'].widget.attrs['value'] = self.instance.end_date.strftime('%Y-%m-%d')
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+        
+        if start_date and end_date and start_date > end_date:
+            raise forms.ValidationError({
+                'end_date': 'La fecha de fin debe ser posterior a la fecha de inicio.'
+            })
+        
+        return cleaned_data
+    
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        
+        # Establecer progreso automáticamente según el estado
+        if instance.is_completed:
+            instance.progress_percentage = 100
+        else:
+            instance.progress_percentage = 0
+        
+        if commit:
+            instance.save()
+        
+        return instance
+
+
+class ScheduleCommentForm(forms.ModelForm):
+    """Formulario para comentarios en tareas"""
+    
+    class Meta:
+        model = ScheduleComment
+        fields = ['comment']
+        widgets = {
+            'comment': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Escribe tu comentario aquí...'
+            }),
+        }
+        labels = {
+            'comment': 'Comentario',
+        }
+

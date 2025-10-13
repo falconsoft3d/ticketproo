@@ -1,0 +1,427 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subir Archivos - Ticket #{{ ticket.ticket_number }}</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .upload-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin: 2rem auto;
+            max-width: 800px;
+            overflow: hidden;
+        }
+        
+        .upload-header {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .upload-body {
+            padding: 2rem;
+        }
+        
+        .file-drop-area {
+            border: 2px dashed #17a2b8;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .file-drop-area:hover {
+            border-color: #138496;
+            background: #e9ecef;
+        }
+        
+        .file-drop-area.dragover {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        
+        .file-input {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        
+        .file-list {
+            margin-top: 1rem;
+        }
+        
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            background: white;
+        }
+        
+        .file-item .file-info {
+            flex: 1;
+            margin-left: 0.5rem;
+        }
+        
+        .file-item .file-size {
+            color: #6c757d;
+            font-size: 0.875rem;
+        }
+        
+        .file-item .remove-file {
+            color: #dc3545;
+            cursor: pointer;
+            padding: 0.25rem;
+        }
+        
+        .file-item .remove-file:hover {
+            color: #bd2130;
+        }
+        
+        .ticket-info {
+            background: #e3f2fd;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .form-floating label {
+            color: #666;
+        }
+        
+        .form-floating .form-control:focus ~ label {
+            color: #17a2b8;
+        }
+        
+        .form-floating .form-control:focus {
+            border-color: #17a2b8;
+            box-shadow: 0 0 0 0.2rem rgba(23, 162, 184, 0.25);
+        }
+        
+        .btn-upload {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+        }
+        
+        .btn-upload:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(23, 162, 184, 0.3);
+        }
+        
+        .required {
+            color: #dc3545;
+        }
+        
+        .file-restrictions {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .progress-container {
+            display: none;
+            margin-top: 1rem;
+        }
+        
+        .progress {
+            height: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="upload-container">
+            <!-- Header -->
+            <div class="upload-header">
+                <h1><i class="bi bi-cloud-upload-fill"></i> Subir Archivos</h1>
+                <p class="mb-0">Adjunta archivos al ticket para proporcionar más información</p>
+            </div>
+            
+            <!-- Body -->
+            <div class="upload-body">
+                <!-- Información del Ticket -->
+                <div class="ticket-info">
+                    <h6><i class="bi bi-ticket-detailed"></i> Información del Ticket</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Número:</strong> {{ ticket.ticket_number }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Título:</strong> {{ ticket.title }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Mensajes -->
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                
+                <!-- Restricciones de archivos -->
+                <div class="file-restrictions">
+                    <h6><i class="bi bi-info-circle"></i> Restricciones de Archivos</h6>
+                    <ul class="mb-0">
+                        <li><strong>Tamaño máximo:</strong> {{ max_file_size_mb }}MB por archivo</li>
+                        <li><strong>Tipos permitidos:</strong> 
+                            {% for ext in allowed_extensions %}
+                                <code>{{ ext }}</code>{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        </li>
+                        <li><strong>Múltiples archivos:</strong> Puedes subir varios archivos a la vez</li>
+                    </ul>
+                </div>
+                
+                <!-- Formulario de Subida -->
+                <form method="post" enctype="multipart/form-data" id="uploadForm">
+                    {% csrf_token %}
+                    
+                    <!-- Información del Cliente -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="client_name" name="client_name" 
+                                       placeholder="Tu nombre completo" required>
+                                <label for="client_name">Nombre Completo <span class="required">*</span></label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="email" class="form-control" id="client_email" name="client_email" 
+                                       placeholder="tu@email.com" required>
+                                <label for="client_email">Correo Electrónico <span class="required">*</span></label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Área de Arrastre de Archivos -->
+                    <div class="file-drop-area" id="fileDropArea">
+                        <input type="file" name="attachments" id="fileInput" class="file-input" multiple accept="{{ allowed_extensions|join:',' }}">
+                        <i class="bi bi-cloud-upload" style="font-size: 3rem; color: #17a2b8;"></i>
+                        <h5 class="mt-2">Arrastra archivos aquí o haz clic para seleccionar</h5>
+                        <p class="text-muted">Puedes subir múltiples archivos a la vez</p>
+                    </div>
+                    
+                    <!-- Lista de Archivos Seleccionados -->
+                    <div class="file-list" id="fileList"></div>
+                    
+                    <!-- Barra de Progreso -->
+                    <div class="progress-container" id="progressContainer">
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <small class="text-muted mt-1">Subiendo archivos...</small>
+                    </div>
+                    
+                    <!-- Descripción Opcional -->
+                    <div class="form-floating mb-4">
+                        <textarea class="form-control" id="description" name="description" 
+                                placeholder="Información adicional sobre los archivos..." style="height: 100px"></textarea>
+                        <label for="description">Descripción de los archivos (Opcional)</label>
+                    </div>
+                    
+                    <!-- Botones -->
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-info btn-upload btn-lg" id="submitBtn" disabled>
+                            <i class="bi bi-cloud-upload"></i> Subir Archivos
+                        </button>
+                        <a href="{% url 'public_ticket' token %}" class="btn btn-outline-secondary btn-lg ms-3">
+                            <i class="bi bi-arrow-left"></i> Volver al Ticket
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Variables globales
+        let selectedFiles = [];
+        const maxFileSize = {{ max_file_size_mb }} * 1024 * 1024; // Convertir MB a bytes
+        const allowedExtensions = [{% for ext in allowed_extensions %}'{{ ext }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
+        
+        // Elementos del DOM
+        const fileDropArea = document.getElementById('fileDropArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const submitBtn = document.getElementById('submitBtn');
+        const uploadForm = document.getElementById('uploadForm');
+        const progressContainer = document.getElementById('progressContainer');
+        
+        // Función para formatear el tamaño de archivo
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        // Función para validar archivo
+        function validateFile(file) {
+            // Validar tamaño
+            if (file.size > maxFileSize) {
+                return `El archivo "${file.name}" excede el tamaño máximo permitido ({{ max_file_size_mb }}MB)`;
+            }
+            
+            // Validar extensión
+            const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+            if (!allowedExtensions.includes(fileExtension)) {
+                return `El archivo "${file.name}" tiene una extensión no permitida`;
+            }
+            
+            return null; // Sin errores
+        }
+        
+        // Función para añadir archivos
+        function addFiles(files) {
+            Array.from(files).forEach(file => {
+                // Validar archivo
+                const error = validateFile(file);
+                if (error) {
+                    alert(error);
+                    return;
+                }
+                
+                // Verificar si el archivo ya está seleccionado
+                if (selectedFiles.some(f => f.name === file.name && f.size === file.size)) {
+                    alert(`El archivo "${file.name}" ya está seleccionado`);
+                    return;
+                }
+                
+                selectedFiles.push(file);
+            });
+            
+            updateFileList();
+            updateSubmitButton();
+        }
+        
+        // Función para actualizar la lista de archivos
+        function updateFileList() {
+            fileList.innerHTML = '';
+            
+            selectedFiles.forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <i class="bi bi-file-earmark text-info"></i>
+                    <div class="file-info">
+                        <div class="file-name">${file.name}</div>
+                        <div class="file-size">${formatFileSize(file.size)}</div>
+                    </div>
+                    <i class="bi bi-x-circle remove-file" onclick="removeFile(${index})"></i>
+                `;
+                fileList.appendChild(fileItem);
+            });
+        }
+        
+        // Función para eliminar archivo
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            updateFileList();
+            updateSubmitButton();
+        }
+        
+        // Función para actualizar el botón de envío
+        function updateSubmitButton() {
+            submitBtn.disabled = selectedFiles.length === 0;
+            if (selectedFiles.length > 0) {
+                submitBtn.innerHTML = `<i class="bi bi-cloud-upload"></i> Subir ${selectedFiles.length} Archivo${selectedFiles.length > 1 ? 's' : ''}`;
+            } else {
+                submitBtn.innerHTML = '<i class="bi bi-cloud-upload"></i> Subir Archivos';
+            }
+        }
+        
+        // Event listeners para drag & drop
+        fileDropArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileDropArea.classList.add('dragover');
+        });
+        
+        fileDropArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            fileDropArea.classList.remove('dragover');
+        });
+        
+        fileDropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileDropArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            addFiles(files);
+        });
+        
+        // Event listener para click en área de drop
+        fileDropArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        // Event listener para selección de archivos
+        fileInput.addEventListener('change', (e) => {
+            addFiles(e.target.files);
+        });
+        
+        // Event listener para envío del formulario
+        uploadForm.addEventListener('submit', (e) => {
+            if (selectedFiles.length === 0) {
+                e.preventDefault();
+                alert('Debes seleccionar al menos un archivo para subir');
+                return;
+            }
+            
+            // Crear un DataTransfer para actualizar el input file
+            const dt = new DataTransfer();
+            selectedFiles.forEach(file => {
+                dt.items.add(file);
+            });
+            fileInput.files = dt.files;
+            
+            // Mostrar progreso
+            progressContainer.style.display = 'block';
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Subiendo...';
+        });
+        
+        // Inicializar estado
+        updateSubmitButton();
+    </script>
+</body>
+</html>

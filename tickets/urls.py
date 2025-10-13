@@ -24,6 +24,9 @@ urlpatterns = [
     
     # URL para vista pública de tickets (sin autenticación requerida)
     path('public/<uuid:token>/', views.public_ticket_view, name='public_ticket'),
+    path('public/<uuid:token>/approve/', views.public_ticket_approve, name='public_ticket_approve'),
+    path('public/<uuid:token>/survey/', views.public_ticket_survey, name='public_ticket_survey'),
+    path('public/<uuid:token>/upload/', views.public_ticket_upload, name='public_ticket_upload'),
     
     # URLs de categorías (solo para agentes)
     path('categories/', views.category_list_view, name='category_list'),
@@ -38,6 +41,7 @@ urlpatterns = [
     path('projects/<int:project_id>/', views.project_detail, name='project_detail'),
     path('projects/<int:project_id>/edit/', views.project_edit, name='project_edit'),
     path('projects/<int:project_id>/delete/', views.project_delete, name='project_delete'),
+    path('projects/<int:project_id>/duplicate/', views.project_duplicate, name='project_duplicate'),
     path('projects/<int:project_id>/generate-public-token/', views.project_generate_public_token, name='project_generate_public_token'),
     
     # URLs de adjuntos
@@ -520,4 +524,26 @@ urlpatterns = [
     path('docs/<uuid:token>/', views.multiple_documentation_public_view, name='multiple_documentation_public'),
     path('docs/<uuid:token>/download/<int:item_id>/', views.multiple_documentation_download_item_view, name='multiple_documentation_download_item'),
 
+    # ============= URLs PLANIFICACIÓN DE TAREAS =============
+    # URLs de gestión de cronogramas (solo para usuarios autenticados)
+    path('task-schedules/', views.task_schedule_list, name='task_schedule_list'),
+    path('task-schedules/create/', views.task_schedule_create, name='task_schedule_create'),
+    path('task-schedules/<int:pk>/', views.task_schedule_detail, name='task_schedule_detail'),
+    path('task-schedules/<int:pk>/edit/', views.task_schedule_edit, name='task_schedule_edit'),
+    path('task-schedules/<int:pk>/duplicate/', views.task_schedule_duplicate, name='task_schedule_duplicate'),
+    path('task-schedules/<int:pk>/reschedule/', views.task_schedule_reschedule, name='task_schedule_reschedule'),
+    path('task-schedules/<int:pk>/delete/', views.task_schedule_delete, name='task_schedule_delete'),
+    path('task-schedules/<int:pk>/export/', views.task_schedule_export, name='task_schedule_export'),
+    
+    # Tareas del cronograma
+    path('task-schedules/<int:schedule_pk>/tasks/create/', views.schedule_task_create, name='schedule_task_create'),
+    path('schedule-tasks/<int:pk>/edit/', views.schedule_task_edit, name='schedule_task_edit'),
+    path('schedule-tasks/<int:pk>/delete/', views.schedule_task_delete, name='schedule_task_delete'),
+    path('schedule-tasks/<int:pk>/toggle/', views.schedule_task_toggle, name='schedule_task_toggle'),
+    
+    # URLs públicas de cronogramas (sin autenticación)
+    path('schedule/<uuid:token>/', views.task_schedule_public, name='task_schedule_public'),
+    path('public/schedule-tasks/<int:pk>/toggle/', views.schedule_task_toggle_public, name='schedule_task_toggle_public'),
+
 ]
+

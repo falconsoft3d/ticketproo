@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Encabezado -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="bi bi-files"></i> Duplicar Proyecto
+                    </h2>
+                    <p class="text-muted">Confirma la duplicación del proyecto y sus tareas</p>
+                </div>
+                <div class="btn-group" role="group">
+                    <a href="{% url 'project_detail' project.id %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Cancelar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información del proyecto a duplicar -->
+    <div class="row mb-4">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle"></i> 
+                        Proyecto Original
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">{{ project.name }}</h6>
+                            {% if project.description %}
+                                <p class="text-muted">{{ project.description|truncatewords:20 }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-6">Estado:</dt>
+                                <dd class="col-sm-6">
+                                    <span class="badge bg-{% if project.status == 'active' %}success{% elif project.status == 'completed' %}primary{% elif project.status == 'on_hold' %}warning{% elif project.status == 'cancelled' %}danger{% else %}secondary{% endif %}">
+                                        {{ project.get_status_display }}
+                                    </span>
+                                </dd>
+                                
+                                <dt class="col-sm-6">Cronogramas:</dt>
+                                <dd class="col-sm-6">{{ schedules_count }}</dd>
+                                
+                                <dt class="col-sm-6">Total Tareas:</dt>
+                                <dd class="col-sm-6">{{ total_tasks_count }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información del proyecto duplicado -->
+    <div class="row mb-4">
+        <div class="col-md-8 mx-auto">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-plus-circle"></i> 
+                        Proyecto que se Creará
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-success">
+                        <h6 class="alert-heading">
+                            <i class="bi bi-check-circle"></i> 
+                            "Copia de {{ project.name }}"
+                        </h6>
+                        <p class="mb-0">
+                            Se creará un nuevo proyecto con todas las características del original, 
+                            incluyendo todos los cronogramas y tareas.
+                        </p>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Lo que se duplicará:</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="bi bi-check text-success"></i> Información básica del proyecto</li>
+                                <li><i class="bi bi-check text-success"></i> {{ schedules_count }} cronograma(s)</li>
+                                <li><i class="bi bi-check text-success"></i> {{ total_tasks_count }} tarea(s)</li>
+                                <li><i class="bi bi-check text-success"></i> Dependencias entre tareas</li>
+                                <li><i class="bi bi-check text-success"></i> Asignaciones de usuarios</li>
+                                <li><i class="bi bi-check text-success"></i> Prioridades y fechas</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Lo que NO se duplicará:</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="bi bi-x text-danger"></i> Progreso de las tareas (empezarán en 0%)</li>
+                                <li><i class="bi bi-x text-danger"></i> Tareas marcadas como completadas</li>
+                                <li><i class="bi bi-x text-danger"></i> Tokens públicos de acceso</li>
+                                <li><i class="bi bi-x text-danger"></i> Registros de tiempo</li>
+                                <li><i class="bi bi-x text-danger"></i> Comentarios en las tareas</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botones de confirmación -->
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="mb-3">¿Estás seguro de que deseas duplicar este proyecto?</h5>
+                    <p class="text-muted mb-4">
+                        Esta operación creará un nuevo proyecto independiente con todos los cronogramas y tareas.
+                    </p>
+                    
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="{% url 'project_detail' project.id %}" class="btn btn-outline-secondary btn-lg">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        
+                        <form method="post" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-files"></i> Duplicar Proyecto
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
