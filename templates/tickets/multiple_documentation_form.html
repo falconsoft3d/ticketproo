@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h4><i class="fas fa-folder-plus text-primary"></i> {{ page_title }}</h4>
+                    <p class="text-muted mb-0">
+                        {% if documentation %}Edita los detalles{% else %}Crea una nueva documentación múltiple{% endif %}
+                    </p>
+                </div>
+                <a href="{% url 'multiple_documentation_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-info-circle text-info"></i>
+                                Información General
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="post">
+                                {% csrf_token %}
+                                
+                                <!-- Título -->
+                                <div class="mb-3">
+                                    <label for="{{ form.title.id_for_label }}" class="form-label">
+                                        <i class="fas fa-heading"></i> {{ form.title.label }} *
+                                    </label>
+                                    {{ form.title }}
+                                    {% if form.title.help_text %}
+                                    <div class="form-text">{{ form.title.help_text }}</div>
+                                    {% endif %}
+                                    {% if form.title.errors %}
+                                        <div class="alert alert-danger mt-2">
+                                            {{ form.title.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Descripción -->
+                                <div class="mb-3">
+                                    <label for="{{ form.description.id_for_label }}" class="form-label">
+                                        <i class="fas fa-align-left"></i> {{ form.description.label }}
+                                    </label>
+                                    {{ form.description }}
+                                    {% if form.description.help_text %}
+                                    <div class="form-text">{{ form.description.help_text }}</div>
+                                    {% endif %}
+                                    {% if form.description.errors %}
+                                        <div class="alert alert-danger mt-2">
+                                            {{ form.description.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Estado activo -->
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        {{ form.is_active }}
+                                        <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                            <i class="fas fa-globe"></i> {{ form.is_active.label }}
+                                        </label>
+                                    </div>
+                                    {% if form.is_active.help_text %}
+                                    <div class="form-text">{{ form.is_active.help_text }}</div>
+                                    {% endif %}
+                                    {% if form.is_active.errors %}
+                                        <div class="alert alert-danger mt-2">
+                                            {{ form.is_active.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Protección con contraseña -->
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        {{ form.password_protected }}
+                                        <label class="form-check-label" for="{{ form.password_protected.id_for_label }}">
+                                            <i class="fas fa-lock"></i> {{ form.password_protected.label }}
+                                        </label>
+                                    </div>
+                                    {% if form.password_protected.help_text %}
+                                    <div class="form-text">{{ form.password_protected.help_text }}</div>
+                                    {% endif %}
+                                    {% if form.password_protected.errors %}
+                                        <div class="alert alert-danger mt-2">
+                                            {{ form.password_protected.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Campo de contraseña -->
+                                <div class="mb-3" id="password_field" style="display: none;">
+                                    <label for="{{ form.access_password.id_for_label }}" class="form-label">
+                                        <i class="fas fa-key"></i> {{ form.access_password.label }}
+                                    </label>
+                                    {{ form.access_password }}
+                                    {% if form.access_password.help_text %}
+                                    <div class="form-text">{{ form.access_password.help_text }}</div>
+                                    {% endif %}
+                                    {% if form.access_password.errors %}
+                                        <div class="alert alert-danger mt-2">
+                                            {{ form.access_password.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Errores generales del formulario -->
+                                {% if form.non_field_errors %}
+                                    <div class="alert alert-danger">
+                                        {{ form.non_field_errors }}
+                                    </div>
+                                {% endif %}
+                                
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'multiple_documentation_list' %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times"></i> Cancelar
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> 
+                                        {% if is_create %}Crear{% else %}Actualizar{% endif %}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-info-circle text-info"></i>
+                                Información
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-lightbulb"></i> ¿Qué es la Documentación Múltiple?</h6>
+                                <p class="mb-2">Es una colección de documentos que se pueden compartir en una sola URL pública.</p>
+                                <p class="mb-0">Ideal para:</p>
+                                <ul class="mb-0">
+                                    <li>Plantillas de datos maestros</li>
+                                    <li>Manuales de usuario</li>
+                                    <li>Documentos de procesos</li>
+                                    <li>Formularios descargables</li>
+                                </ul>
+                            </div>
+                            
+                            {% if documentation %}
+                            <div class="alert alert-success">
+                                <h6><i class="fas fa-link"></i> URL Pública</h6>
+                                <p class="mb-2">Una vez creada, tu documentación será accesible en:</p>
+                                <code class="small">{{ request.get_host }}/docs/{{ documentation.public_token }}/</code>
+                                <br><br>
+                                <button type="button" 
+                                        class="btn btn-sm btn-outline-success"
+                                        onclick="copyToClipboard('{{ request.get_host }}/docs/{{ documentation.public_token }}/')">
+                                    <i class="fas fa-copy"></i> Copiar URL
+                                </button>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-warning">
+                                <h6><i class="fas fa-exclamation-triangle"></i> Siguiente Paso</h6>
+                                <p class="mb-0">Después de crear la documentación, podrás agregar los archivos individuales.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if documentation %}
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText('http://' + text).then(function() {
+        // Mostrar notificación
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification';
+        toast.innerHTML = '<i class="fas fa-check"></i> URL copiada al portapapeles';
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            z-index: 9999;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        `;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            document.body.removeChild(toast);
+        }, 3000);
+    }).catch(function() {
+        alert('Error al copiar la URL');
+    });
+}
+</script>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const passwordProtectedCheckbox = document.getElementById('password_protected_checkbox');
+    const passwordField = document.getElementById('password_field');
+    const passwordInput = document.getElementById('access_password_field');
+    
+    // Función para mostrar/ocultar el campo de contraseña
+    function togglePasswordField() {
+        if (passwordProtectedCheckbox.checked) {
+            passwordField.style.display = 'block';
+            passwordInput.required = true;
+        } else {
+            passwordField.style.display = 'none';
+            passwordInput.required = false;
+            passwordInput.value = '';
+        }
+    }
+    
+    // Configurar estado inicial
+    togglePasswordField();
+    
+    // Agregar evento al checkbox
+    passwordProtectedCheckbox.addEventListener('change', togglePasswordField);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-trash"></i>
+                        {{ page_title }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>¡Atención!</strong> Esta acción no se puede deshacer.
+                    </div>
+                    
+                    <p class="mb-4">
+                        ¿Estás seguro de que quieres eliminar el documento 
+                        <strong>"{{ item.name }}"</strong> de la documentación 
+                        <strong>"{{ documentation.title }}"</strong>?
+                    </p>
+                    
+                    <div class="card bg-light mb-4">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="file-icon me-3">
+                                    <i class="fas fa-file fa-3x text-primary"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-2">
+                                        <span class="badge bg-primary me-2">{{ item.number }}</span>
+                                        {{ item.name }}
+                                    </h6>
+                                    {% if item.description %}
+                                    <p class="text-muted mb-2">{{ item.description }}</p>
+                                    {% endif %}
+                                    <div class="small text-muted">
+                                        <i class="fas fa-file"></i> {{ item.get_file_size }}
+                                        {% if item.get_file_extension %}
+                                        • {{ item.get_file_extension|upper }}
+                                        {% endif %}
+                                        {% if item.file %}
+                                        <br>
+                                        <i class="fas fa-folder"></i> {{ item.file.name|slice:"21:" }}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-danger">
+                        <h6><i class="fas fa-exclamation-circle"></i> Consecuencias:</h6>
+                        <ul class="mb-0">
+                            <li>El archivo se eliminará permanentemente del servidor</li>
+                            <li>Ya no estará disponible para descarga pública</li>
+                            <li>Los números de otros archivos no se reorganizarán automáticamente</li>
+                        </ul>
+                    </div>
+                    
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'multiple_documentation_detail' documentation.pk %}" 
+                               class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Sí, Eliminar Archivo
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

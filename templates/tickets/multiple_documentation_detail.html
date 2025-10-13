@@ -1,0 +1,322 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .documentation-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .item-card {
+        border-left: 4px solid #007bff;
+        transition: transform 0.2s;
+    }
+    .item-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .file-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+    .file-pdf { background: #dc3545; color: white; }
+    .file-doc { background: #2196F3; color: white; }
+    .file-xls { background: #4CAF50; color: white; }
+    .file-img { background: #FF9800; color: white; }
+    .file-zip { background: #795548; color: white; }
+    .file-default { background: #6c757d; color: white; }
+    
+    .public-url-card {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border-radius: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header de documentación -->
+            <div class="documentation-header">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h3 class="mb-2">
+                            <i class="fas fa-folder-open"></i>
+                            {{ documentation.title }}
+                        </h3>
+                        {% if documentation.description %}
+                        <p class="mb-3 opacity-75">{{ documentation.description }}</p>
+                        {% endif %}
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-light text-dark me-3">
+                                <i class="fas fa-file"></i> {{ items.count }} documento{{ items.count|pluralize }}
+                            </span>
+                            <span class="badge bg-light text-dark me-3">
+                                <i class="fas fa-user"></i> {{ documentation.created_by.get_full_name|default:documentation.created_by.username }}
+                            </span>
+                            <span class="badge bg-light text-dark">
+                                <i class="fas fa-calendar"></i> {{ documentation.created_at|date:"d/m/Y" }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        {% if documentation.is_active %}
+                        <span class="badge bg-success fs-6 mb-2">
+                            <i class="fas fa-globe"></i> Público
+                        </span>
+                        {% else %}
+                        <span class="badge bg-secondary fs-6 mb-2">
+                            <i class="fas fa-eye-slash"></i> Inactivo
+                        </span>
+                        {% endif %}
+                        <br>
+                        <div class="btn-group">
+                            <a href="{% url 'multiple_documentation_edit' documentation.pk %}" 
+                               class="btn btn-light btn-sm">
+                                <i class="fas fa-edit"></i> Editar
+                            </a>
+                            <a href="{% url 'multiple_documentation_add_item' documentation.pk %}" 
+                               class="btn btn-light btn-sm">
+                                <i class="fas fa-plus"></i> Agregar Archivo
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <!-- Lista de archivos -->
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-list"></i> Archivos de la Documentación
+                            </h5>
+                            <a href="{% url 'multiple_documentation_add_item' documentation.pk %}" 
+                               class="btn btn-primary btn-sm">
+                                <i class="fas fa-plus"></i> Agregar Archivo
+                            </a>
+                        </div>
+                        <div class="card-body">
+                            {% if items %}
+                            <div class="row">
+                                {% for item in items %}
+                                <div class="col-md-6 mb-3">
+                                    <div class="card item-card h-100">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-start">
+                                                <div class="file-icon me-3 
+                                                    {% if item.get_file_extension == '.pdf' %}file-pdf
+                                                    {% elif item.get_file_extension|slice:':4' == '.doc' %}file-doc
+                                                    {% elif item.get_file_extension|slice:':4' == '.xls' %}file-xls
+                                                    {% elif item.get_file_extension in '.jpg,.jpeg,.png,.gif' %}file-img
+                                                    {% elif item.get_file_extension in '.zip,.rar' %}file-zip
+                                                    {% else %}file-default{% endif %}">
+                                                    <i class="fas fa-file"></i>
+                                                </div>
+                                                <div class="flex-grow-1">
+                                                    <div class="d-flex align-items-center mb-2">
+                                                        <span class="badge bg-primary me-2">{{ item.number }}</span>
+                                                        <h6 class="mb-0">{{ item.name }}</h6>
+                                                    </div>
+                                                    {% if item.description %}
+                                                    <p class="text-muted small mb-2">{{ item.description }}</p>
+                                                    {% endif %}
+                                                    <div class="small text-muted">
+                                                        <i class="fas fa-file"></i> {{ item.get_file_size }}
+                                                        {% if item.get_file_extension %}
+                                                        • {{ item.get_file_extension|upper }}
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="card-footer bg-light">
+                                            <div class="btn-group w-100" role="group">
+                                                <a href="{{ item.file.url }}" 
+                                                   class="btn btn-outline-primary btn-sm"
+                                                   target="_blank">
+                                                    <i class="fas fa-download"></i> Descargar
+                                                </a>
+                                                <a href="{% url 'multiple_documentation_edit_item' documentation.pk item.pk %}" 
+                                                   class="btn btn-outline-secondary btn-sm">
+                                                    <i class="fas fa-edit"></i> Editar
+                                                </a>
+                                                <a href="{% url 'multiple_documentation_delete_item' documentation.pk item.pk %}" 
+                                                   class="btn btn-outline-danger btn-sm"
+                                                   onclick="return confirm('¿Estás seguro de eliminar este archivo?')">
+                                                    <i class="fas fa-trash"></i> Eliminar
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-file-plus fa-3x text-muted mb-3"></i>
+                                <h6 class="text-muted">No hay archivos agregados</h6>
+                                <p class="text-muted">Comienza agregando el primer archivo a esta documentación.</p>
+                                <a href="{% url 'multiple_documentation_add_item' documentation.pk %}" 
+                                   class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Agregar Primer Archivo
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <!-- URL Pública -->
+                    {% if documentation.is_active %}
+                    <div class="card public-url-card mb-4">
+                        <div class="card-body">
+                            <h6 class="mb-3">
+                                <i class="fas fa-globe"></i> URL Pública
+                            </h6>
+                            <p class="mb-3">Comparte esta URL para acceso público:</p>
+                            <div class="input-group mb-3">
+                                <input type="text" 
+                                       class="form-control" 
+                                       value="{{ request.get_host }}{{ documentation.get_public_url }}" 
+                                       readonly
+                                       id="publicUrl">
+                                <button class="btn btn-light" 
+                                        type="button"
+                                        onclick="copyToClipboard('{{ request.get_host }}{{ documentation.get_public_url }}')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <a href="{{ documentation.get_public_url }}" 
+                                   class="btn btn-light btn-sm"
+                                   target="_blank">
+                                    <i class="fas fa-external-link-alt"></i> Ver Página Pública
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Acciones -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-cogs"></i> Acciones
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'multiple_documentation_list' %}" 
+                                   class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left"></i> Volver a la Lista
+                                </a>
+                                <a href="{% url 'multiple_documentation_edit' documentation.pk %}" 
+                                   class="btn btn-outline-primary">
+                                    <i class="fas fa-edit"></i> Editar Documentación
+                                </a>
+                                <a href="{% url 'multiple_documentation_add_item' documentation.pk %}" 
+                                   class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Agregar Archivo
+                                </a>
+                                <a href="{% url 'multiple_documentation_stats' documentation.pk %}" 
+                                   class="btn btn-outline-info">
+                                    <i class="bi bi-bar-chart-line"></i> Ver Estadísticas
+                                </a>
+                                <hr>
+                                <a href="{% url 'multiple_documentation_delete' documentation.pk %}" 
+                                   class="btn btn-outline-danger"
+                                   onclick="return confirm('¿Estás seguro de eliminar toda esta documentación?')">
+                                    <i class="fas fa-trash"></i> Eliminar Documentación
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Información -->
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-info-circle"></i> Información
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>Creado por:</strong></td>
+                                    <td>{{ documentation.created_by.get_full_name|default:documentation.created_by.username }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Creado:</strong></td>
+                                    <td>{{ documentation.created_at|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Actualizado:</strong></td>
+                                    <td>{{ documentation.updated_at|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Estado:</strong></td>
+                                    <td>
+                                        {% if documentation.is_active %}
+                                        <span class="badge bg-success">Activo</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Inactivo</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Archivos:</strong></td>
+                                    <td>{{ items.count }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText('http://' + text).then(function() {
+        // Mostrar notificación
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification';
+        toast.innerHTML = '<i class="fas fa-check"></i> URL copiada al portapapeles';
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            z-index: 9999;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        `;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            document.body.removeChild(toast);
+        }, 3000);
+    }).catch(function() {
+        alert('Error al copiar la URL');
+    });
+}
+</script>
+{% endblock %}

@@ -6387,3 +6387,358 @@ class AIBlogGenerationLog(models.Model):
     def __str__(self):
         status_icon = '✅' if self.generation_status == 'success' else '❌' if self.generation_status == 'error' else '⏳'
         return f"{status_icon} {self.configurator.name} - {self.keyword_used} ({self.created_at.strftime('%d/%m/%Y %H:%M')})"
+
+
+class MultipleDocumentation(models.Model):
+    """Modelo para gestionar documentación múltiple en una sola URL pública"""
+    
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título de la Documentación'
+    )
+    
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción',
+        help_text='Descripción de qué contiene esta documentación'
+    )
+    
+    public_token = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        verbose_name='Token Público',
+        help_text='Token único para acceso público'
+    )
+    
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo',
+        help_text='Si está activo, se puede acceder públicamente'
+    )
+    
+    # Protección con contraseña
+    password_protected = models.BooleanField(
+        default=False,
+        verbose_name='Protegido con contraseña',
+        help_text='Si está marcado, se requerirá una contraseña para acceder'
+    )
+    access_password = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Contraseña de acceso',
+        help_text='Contraseña requerida para acceder a la documentación pública'
+    )
+    
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Creado por'
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de Creación'
+    )
+    
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Fecha de Actualización'
+    )
+    
+    class Meta:
+        verbose_name = 'Documentación Múltiple'
+        verbose_name_plural = 'Documentaciones Múltiples'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return self.title
+    
+    def get_public_url(self):
+        """Obtiene la URL pública para compartir"""
+        from django.urls import reverse
+        return reverse('multiple_documentation_public', kwargs={'token': self.public_token})
+
+
+class MultipleDocumentationItem(models.Model):
+    """Modelo para cada archivo dentro de una documentación múltiple"""
+    
+    documentation = models.ForeignKey(
+        MultipleDocumentation,
+        on_delete=models.CASCADE,
+        related_name='items',
+        verbose_name='Documentación'
+    )
+    
+    number = models.PositiveIntegerField(
+        verbose_name='Número',
+        help_text='Número de orden del documento'
+    )
+    
+    name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre del Documento'
+    )
+    
+    file = models.FileField(
+        upload_to='multiple_documentation/',
+        verbose_name='Archivo',
+        help_text='Archivo a compartir'
+    )
+    
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción',
+        help_text='Descripción del archivo'
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de Creación'
+    )
+    
+    class Meta:
+        verbose_name = 'Item de Documentación'
+        verbose_name_plural = 'Items de Documentación'
+        ordering = ['number']
+        unique_together = ['documentation', 'number']
+    
+    def __str__(self):
+        return f"{self.number}. {self.name}"
+    
+    def get_file_size(self):
+        """Obtiene el tamaño del archivo en formato legible"""
+        try:
+            size = self.file.size
+            for unit in ['bytes', 'KB', 'MB', 'GB']:
+                if size < 1024.0:
+                    return f"{size:.1f} {unit}"
+                size /= 1024.0
+            return f"{size:.1f} TB"
+        except:
+            return "N/A"
+    
+    def get_file_extension(self):
+        """Obtiene la extensión del archivo"""
+        import os
+        return os.path.splitext(self.file.name)[1].lower() if self.file else ""
+
+
+class MultipleDocumentationStats(models.Model):
+    """Modelo para estadísticas de documentación múltiple"""
+    
+    documentation = models.ForeignKey(
+        MultipleDocumentation,
+        on_delete=models.CASCADE,
+        related_name='stats',
+        verbose_name='Documentación'
+    )
+    
+    # Estadísticas de página
+    page_views = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Visualizaciones de Página',
+        help_text='Número total de veces que se ha visitado la página pública'
+    )
+    
+    unique_visitors = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Visitantes Únicos',
+        help_text='Número de visitantes únicos (basado en IP)'
+    )
+    
+    # Estadísticas de descargas
+    total_downloads = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Descargas Totales',
+        help_text='Número total de archivos descargados'
+    )
+    
+    # Fechas de seguimiento
+    first_view_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Primera Visualización'
+    )
+    
+    last_view_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Última Visualización'
+    )
+    
+    last_download_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Última Descarga'
+    )
+    
+    # Timestamps
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de Creación'
+    )
+    
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Fecha de Actualización'
+    )
+    
+    class Meta:
+        verbose_name = 'Estadística de Documentación'
+        verbose_name_plural = 'Estadísticas de Documentación'
+        unique_together = ['documentation']
+    
+    def __str__(self):
+        return f"Stats: {self.documentation.title}"
+    
+    def get_average_downloads_per_day(self):
+        """Calcula el promedio de descargas por día"""
+        if not self.first_view_date or self.total_downloads == 0:
+            return 0
+        
+        days = (timezone.now() - self.first_view_date).days
+        if days == 0:
+            return self.total_downloads
+        return round(self.total_downloads / days, 2)
+    
+    def get_conversion_rate(self):
+        """Calcula la tasa de conversión (descargas/visualizaciones)"""
+        if self.page_views == 0:
+            return 0
+        return round((self.total_downloads / self.page_views) * 100, 2)
+
+
+class MultipleDocumentationItemStats(models.Model):
+    """Modelo para estadísticas de archivos individuales"""
+    
+    item = models.OneToOneField(
+        MultipleDocumentationItem,
+        on_delete=models.CASCADE,
+        related_name='stats',
+        verbose_name='Archivo'
+    )
+    
+    download_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Número de Descargas'
+    )
+    
+    unique_downloaders = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Descargadores Únicos',
+        help_text='Número de IPs únicas que han descargado este archivo'
+    )
+    
+    first_download_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Primera Descarga'
+    )
+    
+    last_download_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Última Descarga'
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de Creación'
+    )
+    
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Fecha de Actualización'
+    )
+    
+    class Meta:
+        verbose_name = 'Estadística de Archivo'
+        verbose_name_plural = 'Estadísticas de Archivos'
+    
+    def __str__(self):
+        return f"Stats: {self.item.name} ({self.download_count} descargas)"
+    
+    def get_popularity_percentage(self):
+        """Calcula el porcentaje de popularidad respecto a otros archivos de la misma documentación"""
+        documentation_stats = self.item.documentation.stats.first()
+        if not documentation_stats or documentation_stats.total_downloads == 0:
+            return 0
+        return round((self.download_count / documentation_stats.total_downloads) * 100, 2)
+
+
+class MultipleDocumentationVisit(models.Model):
+    """Modelo para trackear visitas individuales"""
+    
+    documentation = models.ForeignKey(
+        MultipleDocumentation,
+        on_delete=models.CASCADE,
+        related_name='visits',
+        verbose_name='Documentación'
+    )
+    
+    ip_address = models.GenericIPAddressField(
+        verbose_name='Dirección IP'
+    )
+    
+    user_agent = models.TextField(
+        blank=True,
+        verbose_name='User Agent'
+    )
+    
+    referer = models.URLField(
+        blank=True,
+        null=True,
+        verbose_name='Referente'
+    )
+    
+    timestamp = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha y Hora'
+    )
+    
+    class Meta:
+        verbose_name = 'Visita a Documentación'
+        verbose_name_plural = 'Visitas a Documentación'
+        ordering = ['-timestamp']
+    
+    def __str__(self):
+        return f"{self.ip_address} - {self.documentation.title} - {self.timestamp.strftime('%d/%m/%Y %H:%M')}"
+
+
+class MultipleDocumentationDownload(models.Model):
+    """Modelo para trackear descargas individuales"""
+    
+    item = models.ForeignKey(
+        MultipleDocumentationItem,
+        on_delete=models.CASCADE,
+        related_name='downloads',
+        verbose_name='Archivo'
+    )
+    
+    ip_address = models.GenericIPAddressField(
+        verbose_name='Dirección IP'
+    )
+    
+    user_agent = models.TextField(
+        blank=True,
+        verbose_name='User Agent'
+    )
+    
+    referer = models.URLField(
+        blank=True,
+        null=True,
+        verbose_name='Referente'
+    )
+    
+    timestamp = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha y Hora'
+    )
+    
+    class Meta:
+        verbose_name = 'Descarga de Archivo'
+        verbose_name_plural = 'Descargas de Archivos'
+        ordering = ['-timestamp']
+    
+    def __str__(self):
+        return f"{self.ip_address} - {self.item.name} - {self.timestamp.strftime('%d/%m/%Y %H:%M')}"

@@ -33,7 +33,7 @@ from .models import (
     Exam, ExamQuestion, ExamAttempt, ExamAnswer, ContactoWeb, PublicDocumentUpload,
     Employee, JobApplicationToken, EmployeePayroll, Agreement, AgreementSignature,
     LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry, SharedFile, SharedFileDownload,
-    Recording, RecordingPlayback
+    Recording, RecordingPlayback, MultipleDocumentation, MultipleDocumentationItem
 )
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
@@ -13459,3 +13459,545 @@ def ai_blog_generation_logs_view(request, pk):
     }
     
     return render(request, 'tickets/ai_blog_generation_logs.html', context)
+
+
+# ============= VISTAS DE DOCUMENTACIÓN MÚLTIPLE =============
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def multiple_documentation_list_view(request):
+    """Vista para listar todas las documentaciones múltiples"""
+    documentations = MultipleDocumentation.objects.all().order_by('-created_at')
+    
+    # Búsqueda
+    search = request.GET.get('search')
+    if search:
+        documentations = documentations.filter(
+            models.Q(title__icontains=search) |
+            models.Q(description__icontains=search)
+        )
+    
+    # Paginación
+    from django.core.paginator import Paginator
+    paginator = Paginator(documentations, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_title': 'Documentación Múltiple',
+        'page_obj': page_obj,
+        'search': search,
+    }
+    
+    return render(request, 'tickets/multiple_documentation_list.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def multiple_documentation_create_view(request):
+    """Vista para crear una nueva documentación múltiple"""
+    from .forms import MultipleDocumentationForm
+    
+    if request.method == 'POST':
+        form = MultipleDocumentationForm(request.POST)
+        if form.is_valid():
+            documentation = form.save(commit=False)
+            documentation.created_by = request.user
+            documentation.save()
+            
+            messages.success(request, f'Documentación "{documentation.title}" creada correctamente.')
+            return redirect('multiple_documentation_detail', pk=documentation.pk)
+    else:
+        form = MultipleDocumentationForm()
+    
+    context = {
+        'page_title': 'Crear Documentación Múltiple',
+        'form': form,
+        'is_create': True,
+    }
+    
+    return render(request, 'tickets/multiple_documentation_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def multiple_documentation_detail_view(request, pk):
+    """Vista para ver detalles de una documentación múltiple"""
+    from .models import MultipleDocumentation
+    
+    documentation = get_object_or_404(MultipleDocumentation, pk=pk)
+    items = documentation.items.all().order_by('number')
+    
+    context = {
+        'page_title': f'Documentación: {documentation.title}',
+        'documentation': documentation,
+        'items': items,
+    }
+    
+    return render(request, 'tickets/multiple_documentation_detail.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def multiple_documentation_edit_view(request, pk):
+    """Vista para editar una documentación múltiple"""
+    from .models import MultipleDocumentation
+    from .forms import MultipleDocumentationForm
+    
+    documentation = get_object_or_404(MultipleDocumentation, pk=pk)
+    
+    if request.method == 'POST':
+        form = MultipleDocumentationForm(request.POST, instance=documentation)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Documentación "{documentation.title}" actualizada correctamente.')
+            return redirect('multiple_documentation_detail', pk=documentation.pk)
+    else:
+        form = MultipleDocumentationForm(instance=documentation)
+    
+    context = {
+        'page_title': f'Editar: {documentation.title}',
+        'documentation': documentation,
+        'form': form,
+        'is_create': False,
+    }
+    
+    return render(request, 'tickets/multiple_documentation_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def multiple_documentation_delete_view(request, pk):
+    """Vista para eliminar una documentación múltiple"""
+    from .models import MultipleDocumentation
+    
+    documentation = get_object_or_404(MultipleDocumentation, pk=pk)
+    
+    if request.method == 'POST':
+        try:
+            title = documentation.title
+            documentation.delete()
+            messages.success(request, f'Documentación "{title}" eliminada correctamente.')
+            return redirect('multiple_documentation_list')
+            
+        except Exception as e:
+            messages.error(request, f'Error al eliminar la documentación: {str(e)}')
+            return redirect('multiple_documentation_detail', pk=pk)
+    
+    context = {
+        'page_title': f'Eliminar: {documentation.title}',
+        'documentation': documentation,
+    }
+    
+    return render(request, 'tickets/multiple_documentation_delete.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def multiple_documentation_add_item_view(request, pk):
+    """Vista para agregar un item a la documentación múltiple"""
+    from .models import MultipleDocumentation, MultipleDocumentationItem
+    
+    documentation = get_object_or_404(MultipleDocumentation, pk=pk)
+    
+    if request.method == 'POST':
+        try:
+            # Obtener el siguiente número disponible
+            last_item = documentation.items.order_by('-number').first()
+            next_number = (last_item.number + 1) if last_item else 1
+            
+            # Permitir que el usuario especifique el número
+            number = int(request.POST.get('number', next_number))
+            
+            item = MultipleDocumentationItem.objects.create(
+                documentation=documentation,
+                number=number,
+                name=request.POST['name'],
+                description=request.POST.get('description', ''),
+                file=request.FILES['file']
+            )
+            
+            messages.success(request, f'Documento "{item.name}" agregado correctamente.')
+            return redirect('multiple_documentation_detail', pk=documentation.pk)
+            
+        except Exception as e:
+            messages.error(request, f'Error al agregar el documento: {str(e)}')
+    
+    # Obtener el siguiente número sugerido
+    last_item = documentation.items.order_by('-number').first()
+    suggested_number = (last_item.number + 1) if last_item else 1
+    
+    context = {
+        'page_title': f'Agregar Documento - {documentation.title}',
+        'documentation': documentation,
+        'suggested_number': suggested_number,
+    }
+    
+    return render(request, 'tickets/multiple_documentation_add_item.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def multiple_documentation_edit_item_view(request, pk, item_id):
+    """Vista para editar un item de documentación"""
+    from .models import MultipleDocumentation, MultipleDocumentationItem
+    
+    documentation = get_object_or_404(MultipleDocumentation, pk=pk)
+    item = get_object_or_404(MultipleDocumentationItem, pk=item_id, documentation=documentation)
+    
+    if request.method == 'POST':
+        try:
+            item.number = int(request.POST['number'])
+            item.name = request.POST['name']
+            item.description = request.POST.get('description', '')
+            
+            # Solo actualizar el archivo si se proporciona uno nuevo
+            if 'file' in request.FILES:
+                # Eliminar el archivo anterior
+                if item.file:
+                    item.file.delete(save=False)
+                item.file = request.FILES['file']
+            
+            item.save()
+            
+            messages.success(request, f'Documento "{item.name}" actualizado correctamente.')
+            return redirect('multiple_documentation_detail', pk=documentation.pk)
+            
+        except Exception as e:
+            messages.error(request, f'Error al actualizar el documento: {str(e)}')
+    
+    context = {
+        'page_title': f'Editar Documento - {item.name}',
+        'documentation': documentation,
+        'item': item,
+    }
+    
+    return render(request, 'tickets/multiple_documentation_edit_item.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def multiple_documentation_delete_item_view(request, pk, item_id):
+    """Vista para eliminar un item de documentación"""
+    from .models import MultipleDocumentation, MultipleDocumentationItem
+    
+    documentation = get_object_or_404(MultipleDocumentation, pk=pk)
+    item = get_object_or_404(MultipleDocumentationItem, pk=item_id, documentation=documentation)
+    
+    if request.method == 'POST':
+        try:
+            name = item.name
+            # Eliminar el archivo físico
+            if item.file:
+                item.file.delete(save=False)
+            item.delete()
+            
+            messages.success(request, f'Documento "{name}" eliminado correctamente.')
+            return redirect('multiple_documentation_detail', pk=documentation.pk)
+            
+        except Exception as e:
+            messages.error(request, f'Error al eliminar el documento: {str(e)}')
+    
+    context = {
+        'page_title': f'Eliminar Documento - {item.name}',
+        'documentation': documentation,
+        'item': item,
+    }
+    
+    return render(request, 'tickets/multiple_documentation_delete_item.html', context)
+
+
+def multiple_documentation_public_view(request, token):
+    """Vista pública para ver una documentación múltiple (sin autenticación)"""
+    from .models import (
+        MultipleDocumentation, MultipleDocumentationStats, 
+        MultipleDocumentationVisit
+    )
+    from .forms import DocumentationPasswordForm
+    
+    try:
+        documentation = get_object_or_404(
+            MultipleDocumentation, 
+            public_token=token, 
+            is_active=True
+        )
+        
+        # Verificar si está protegida con contraseña
+        if documentation.password_protected:
+            # Verificar si ya se validó la contraseña en esta sesión
+            session_key = f'doc_access_{token}'
+            if not request.session.get(session_key, False):
+                # Procesar formulario de contraseña
+                if request.method == 'POST':
+                    form = DocumentationPasswordForm(request.POST, documentation=documentation)
+                    if form.is_valid():
+                        # Contraseña correcta, marcar en sesión
+                        request.session[session_key] = True
+                        request.session.set_expiry(3600)  # Expirar en 1 hora
+                        return redirect('multiple_documentation_public', token=token)
+                else:
+                    form = DocumentationPasswordForm(documentation=documentation)
+                
+                # Mostrar formulario de contraseña
+                context = {
+                    'page_title': f'Acceso a {documentation.title}',
+                    'documentation': documentation,
+                    'form': form,
+                }
+                return render(request, 'tickets/multiple_documentation_password.html', context)
+        
+        # Obtener IP del visitante
+        ip_address = request.META.get('REMOTE_ADDR')
+        if request.META.get('HTTP_X_FORWARDED_FOR'):
+            ip_address = request.META.get('HTTP_X_FORWARDED_FOR').split(',')[0]
+        
+        # Registrar la visita
+        visit = MultipleDocumentationVisit.objects.create(
+            documentation=documentation,
+            ip_address=ip_address,
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            referer=request.META.get('HTTP_REFERER')
+        )
+        
+        # Actualizar o crear estadísticas
+        stats, created = MultipleDocumentationStats.objects.get_or_create(
+            documentation=documentation,
+            defaults={
+                'first_view_date': timezone.now(),
+                'last_view_date': timezone.now(),
+                'page_views': 1,
+                'unique_visitors': 1,
+            }
+        )
+        
+        if not created:
+            # Actualizar estadísticas existentes
+            stats.page_views += 1
+            stats.last_view_date = timezone.now()
+            
+            # Verificar si es un visitante único (no ha visitado en las últimas 24 horas)
+            yesterday = timezone.now() - timezone.timedelta(days=1)
+            if not MultipleDocumentationVisit.objects.filter(
+                documentation=documentation,
+                ip_address=ip_address,
+                timestamp__gte=yesterday
+            ).exclude(pk=visit.pk).exists():
+                stats.unique_visitors += 1
+            
+            stats.save()
+        
+        items = documentation.items.all().order_by('number')
+        
+        context = {
+            'documentation': documentation,
+            'items': items,
+            'page_title': documentation.title,
+        }
+        
+        return render(request, 'tickets/multiple_documentation_public.html', context)
+        
+    except Exception as e:
+        from django.http import Http404
+        raise Http404("La documentación solicitada no existe o no está disponible.")
+
+
+def multiple_documentation_download_item_view(request, token, item_id):
+    """Vista para descargar un archivo específico de la documentación pública"""
+    from .models import (
+        MultipleDocumentation, MultipleDocumentationItem, 
+        MultipleDocumentationStats, MultipleDocumentationItemStats,
+        MultipleDocumentationDownload
+    )
+    from django.http import HttpResponse, Http404
+    
+    try:
+        documentation = get_object_or_404(
+            MultipleDocumentation, 
+            public_token=token, 
+            is_active=True
+        )
+        
+        # Verificar acceso con contraseña si es necesario
+        if documentation.password_protected:
+            session_key = f'doc_access_{token}'
+            if not request.session.get(session_key, False):
+                raise Http404("Acceso no autorizado")
+        
+        item = get_object_or_404(
+            MultipleDocumentationItem, 
+            pk=item_id, 
+            documentation=documentation
+        )
+        
+        if not item.file:
+            raise Http404("Archivo no encontrado")
+        
+        # Obtener IP del usuario
+        ip_address = request.META.get('REMOTE_ADDR')
+        if request.META.get('HTTP_X_FORWARDED_FOR'):
+            ip_address = request.META.get('HTTP_X_FORWARDED_FOR').split(',')[0]
+        
+        # Registrar la descarga
+        download = MultipleDocumentationDownload.objects.create(
+            item=item,
+            ip_address=ip_address,
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            referer=request.META.get('HTTP_REFERER')
+        )
+        
+        # Actualizar estadísticas del archivo
+        item_stats, created = MultipleDocumentationItemStats.objects.get_or_create(
+            item=item,
+            defaults={
+                'download_count': 1,
+                'unique_downloaders': 1,
+                'first_download_date': timezone.now(),
+                'last_download_date': timezone.now(),
+            }
+        )
+        
+        if not created:
+            item_stats.download_count += 1
+            item_stats.last_download_date = timezone.now()
+            
+            # Verificar si es un descargador único (no ha descargado este archivo antes)
+            if not MultipleDocumentationDownload.objects.filter(
+                item=item,
+                ip_address=ip_address
+            ).exclude(pk=download.pk).exists():
+                item_stats.unique_downloaders += 1
+            
+            item_stats.save()
+        
+        # Actualizar estadísticas de la documentación
+        doc_stats, doc_created = MultipleDocumentationStats.objects.get_or_create(
+            documentation=documentation,
+            defaults={
+                'total_downloads': 1,
+                'last_download_date': timezone.now(),
+            }
+        )
+        
+        if not doc_created:
+            doc_stats.total_downloads += 1
+            doc_stats.last_download_date = timezone.now()
+            doc_stats.save()
+        
+        # Obtener la respuesta del archivo
+        response = HttpResponse(item.file.read(), content_type='application/octet-stream')
+        response['Content-Disposition'] = f'attachment; filename="{item.file.name.split("/")[-1]}"'
+        
+        return response
+        
+    except Exception:
+        raise Http404("Archivo no encontrado")
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def multiple_documentation_stats_view(request, pk):
+    """Vista para mostrar estadísticas detalladas de una documentación"""
+    from .models import (
+        MultipleDocumentation, MultipleDocumentationStats,
+        MultipleDocumentationVisit, MultipleDocumentationDownload
+    )
+    from django.db.models import Count, Q
+    from django.utils import timezone
+    from datetime import timedelta
+    
+    documentation = get_object_or_404(MultipleDocumentation, pk=pk)
+    
+    # Obtener o crear estadísticas generales
+    stats, created = MultipleDocumentationStats.objects.get_or_create(
+        documentation=documentation,
+        defaults={
+            'page_views': 0,
+            'unique_visitors': 0,
+            'total_downloads': 0,
+        }
+    )
+    
+    # Estadísticas por archivo
+    items_stats = []
+    for item in documentation.items.all().order_by('number'):
+        item_stat = getattr(item, 'stats', None)
+        if not item_stat:
+            from .models import MultipleDocumentationItemStats
+            item_stat, _ = MultipleDocumentationItemStats.objects.get_or_create(
+                item=item,
+                defaults={'download_count': 0, 'unique_downloaders': 0}
+            )
+        
+        items_stats.append({
+            'item': item,
+            'stats': item_stat,
+            'popularity': item_stat.get_popularity_percentage() if item_stat else 0,
+        })
+    
+    # Estadísticas de los últimos 30 días
+    thirty_days_ago = timezone.now() - timedelta(days=30)
+    recent_visits = MultipleDocumentationVisit.objects.filter(
+        documentation=documentation,
+        timestamp__gte=thirty_days_ago
+    ).count()
+    
+    recent_downloads = MultipleDocumentationDownload.objects.filter(
+        item__documentation=documentation,
+        timestamp__gte=thirty_days_ago
+    ).count()
+    
+    # Estadísticas por día (últimos 7 días)
+    daily_stats = []
+    for i in range(7):
+        date = timezone.now().date() - timedelta(days=i)
+        date_start = timezone.make_aware(timezone.datetime.combine(date, timezone.datetime.min.time()))
+        date_end = date_start + timedelta(days=1)
+        
+        visits = MultipleDocumentationVisit.objects.filter(
+            documentation=documentation,
+            timestamp__gte=date_start,
+            timestamp__lt=date_end
+        ).count()
+        
+        downloads = MultipleDocumentationDownload.objects.filter(
+            item__documentation=documentation,
+            timestamp__gte=date_start,
+            timestamp__lt=date_end
+        ).count()
+        
+        daily_stats.append({
+            'date': date,
+            'visits': visits,
+            'downloads': downloads,
+        })
+    
+    daily_stats.reverse()  # Mostrar desde el día más antiguo
+    
+    # Top 5 archivos más descargados
+    top_files = sorted(items_stats, key=lambda x: x['stats'].download_count, reverse=True)[:5]
+    
+    # Últimas visitas y descargas
+    recent_visits_list = MultipleDocumentationVisit.objects.filter(
+        documentation=documentation
+    ).order_by('-timestamp')[:10]
+    
+    recent_downloads_list = MultipleDocumentationDownload.objects.filter(
+        item__documentation=documentation
+    ).select_related('item').order_by('-timestamp')[:10]
+    
+    context = {
+        'page_title': f'Estadísticas - {documentation.title}',
+        'documentation': documentation,
+        'stats': stats,
+        'items_stats': items_stats,
+        'recent_visits': recent_visits,
+        'recent_downloads': recent_downloads,
+        'daily_stats': daily_stats,
+        'top_files': top_files,
+        'recent_visits_list': recent_visits_list,
+        'recent_downloads_list': recent_downloads_list,
+        'conversion_rate': stats.get_conversion_rate(),
+        'avg_downloads_per_day': stats.get_average_downloads_per_day(),
+    }
+    
+    return render(request, 'tickets/multiple_documentation_stats.html', context)

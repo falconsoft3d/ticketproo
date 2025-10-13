@@ -8,7 +8,7 @@ from .models import (
     ChatRoom, ChatMessage, Command, ContactFormSubmission, Meeting, MeetingAttendee, MeetingQuestion, OpportunityActivity,
     Course, CourseClass, Contact, BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, Concept, ContactoWeb, Employee, EmployeePayroll,
     Agreement, AgreementSignature, LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry, SharedFile, SharedFileDownload,
-    Recording, RecordingPlayback
+    Recording, RecordingPlayback, MultipleDocumentation
 )
 
 class CategoryForm(forms.ModelForm):
@@ -4348,3 +4348,106 @@ class TranscriptionActionForm(forms.Form):
                     ('improve', 'Mejorar transcripción existente'),
                 ]
                 self.fields['action'].initial = 'improve'
+
+
+# ============================================
+# FORMULARIOS DE DOCUMENTACIÓN MÚLTIPLE
+# ============================================
+
+class MultipleDocumentationForm(forms.ModelForm):
+    """Formulario para crear y editar documentaciones múltiples"""
+    
+    class Meta:
+        model = MultipleDocumentation
+        fields = ['title', 'description', 'is_active', 'password_protected', 'access_password']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título de la documentación múltiple',
+                'maxlength': '200'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción de qué contiene esta documentación...',
+                'maxlength': '1000'
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'password_protected': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+                'id': 'password_protected_checkbox'
+            }),
+            'access_password': forms.PasswordInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Contraseña de acceso',
+                'maxlength': '100',
+                'id': 'access_password_field'
+            }),
+        }
+        labels = {
+            'title': 'Título',
+            'description': 'Descripción', 
+            'is_active': 'Activo',
+            'password_protected': 'Protegido con contraseña',
+            'access_password': 'Contraseña de acceso',
+        }
+        help_texts = {
+            'title': 'Nombre descriptivo para identificar esta documentación',
+            'description': 'Descripción opcional de qué contiene esta documentación',
+            'is_active': 'Si está activo, se puede acceder públicamente',
+            'password_protected': 'Si está marcado, se requerirá una contraseña para acceder',
+            'access_password': 'Contraseña que los usuarios deberán ingresar para acceder',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Hacer que la contraseña no sea requerida cuando no está protegida
+        if not self.instance.pk or not self.instance.password_protected:
+            self.fields['access_password'].required = False
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        password_protected = cleaned_data.get('password_protected')
+        access_password = cleaned_data.get('access_password')
+        
+        # Si está protegida con contraseña, validar que se haya proporcionado
+        if password_protected and not access_password:
+            raise forms.ValidationError({
+                'access_password': 'La contraseña es requerida cuando la documentación está protegida.'
+            })
+        
+        # Si no está protegida, limpiar la contraseña
+        if not password_protected:
+            cleaned_data['access_password'] = ''
+        
+        return cleaned_data
+
+
+class DocumentationPasswordForm(forms.Form):
+    """Formulario para solicitar contraseña de acceso a documentación"""
+    
+    password = forms.CharField(
+        max_length=100,
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control form-control-lg',
+            'placeholder': 'Ingrese la contraseña',
+            'autofocus': True,
+            'autocomplete': 'off'
+        }),
+        label='Contraseña de acceso'
+    )
+    
+    def __init__(self, *args, **kwargs):
+        self.documentation = kwargs.pop('documentation', None)
+        super().__init__(*args, **kwargs)
+    
+    def clean_password(self):
+        password = self.cleaned_data.get('password')
+        
+        if self.documentation and password != self.documentation.access_password:
+            raise forms.ValidationError('Contraseña incorrecta.')
+        
+        return password

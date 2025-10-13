@@ -504,4 +504,20 @@ urlpatterns = [
     path('ai-blog-configurators/<int:pk>/run-now/', views.ai_blog_configurator_run_now_view, name='ai_blog_configurator_run_now'),
     path('ai-blog-configurators/<int:pk>/logs/', views.ai_blog_generation_logs_view, name='ai_blog_generation_logs'),
 
+    # ============= URLs DOCUMENTACIÓN MÚLTIPLE =============
+    # URLs de gestión de documentación múltiple (solo para agentes)
+    path('multiple-documentation/', views.multiple_documentation_list_view, name='multiple_documentation_list'),
+    path('multiple-documentation/create/', views.multiple_documentation_create_view, name='multiple_documentation_create'),
+    path('multiple-documentation/<int:pk>/', views.multiple_documentation_detail_view, name='multiple_documentation_detail'),
+    path('multiple-documentation/<int:pk>/edit/', views.multiple_documentation_edit_view, name='multiple_documentation_edit'),
+    path('multiple-documentation/<int:pk>/delete/', views.multiple_documentation_delete_view, name='multiple_documentation_delete'),
+    path('multiple-documentation/<int:pk>/add-item/', views.multiple_documentation_add_item_view, name='multiple_documentation_add_item'),
+    path('multiple-documentation/<int:pk>/items/<int:item_id>/edit/', views.multiple_documentation_edit_item_view, name='multiple_documentation_edit_item'),
+    path('multiple-documentation/<int:pk>/items/<int:item_id>/delete/', views.multiple_documentation_delete_item_view, name='multiple_documentation_delete_item'),
+    path('multiple-documentation/<int:pk>/stats/', views.multiple_documentation_stats_view, name='multiple_documentation_stats'),
+    
+    # URLs públicas de documentación múltiple (sin autenticación)
+    path('docs/<uuid:token>/', views.multiple_documentation_public_view, name='multiple_documentation_public'),
+    path('docs/<uuid:token>/download/<int:item_id>/', views.multiple_documentation_download_item_view, name='multiple_documentation_download_item'),
+
 ]

@@ -19,11 +19,14 @@ from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.conf.urls.static import static
+from django.contrib.sitemaps.views import sitemap
+from tickets.sitemaps import sitemaps
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('tickets.urls')),
     path('login/', auth_views.LoginView.as_view(), name='login'),
+    path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
 ]
 
 # Servir archivos media en desarrollo

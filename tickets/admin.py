@@ -8,7 +8,8 @@ from .models import (
     ExamAttempt, ExamAnswer, ContactoWeb, Employee, JobApplicationToken,
     LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry,
     WorkOrderTaskTimeSession, SharedFile, SharedFileDownload, Recording, RecordingPlayback,
-    PageVisit
+    PageVisit, MultipleDocumentation, MultipleDocumentationItem, MultipleDocumentationStats,
+    MultipleDocumentationItemStats, MultipleDocumentationVisit, MultipleDocumentationDownload
 )
 
 # Configuración del sitio de administración
@@ -1600,4 +1601,20 @@ class PageVisitAdmin(admin.ModelAdmin):
     
     def has_change_permission(self, request, obj=None):
         return False  # No permitir editar visitas (son datos de tracking)
+
+
+# ==========================================
+# ADMINISTRACIÓN DE DOCUMENTACIÓN MÚLTIPLE
+# ==========================================
+
+# class MultipleDocumentationItemInline(admin.TabularInline):
+#     """Inline para items de documentación múltiple"""
+#     model = MultipleDocumentationItem
+#     extra = 0
+#     fields = ('number', 'name', 'description', 'file')
+#     ordering = ('number',)
+
+
+# Temporalmente comentado para crear migración
+# Todo el bloque de administración de documentación múltiple comentado
 

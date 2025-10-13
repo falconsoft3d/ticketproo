@@ -1,0 +1,314 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1><i class="bi bi-bar-chart-line"></i> {{ page_title }}</h1>
+            <p class="text-muted mb-0">
+                <i class="bi bi-folder"></i> {{ documentation.title }}
+            </p>
+        </div>
+        <div class="btn-group">
+            <a href="{% url 'multiple_documentation_detail' documentation.pk %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+            <a href="{{ documentation.get_public_url }}" target="_blank" class="btn btn-outline-primary">
+                <i class="bi bi-eye"></i> Ver público
+            </a>
+        </div>
+    </div>
+
+    <!-- Estadísticas principales -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-eye text-primary fs-1"></i>
+                    <h3 class="mt-2">{{ stats.page_views }}</h3>
+                    <p class="text-muted mb-0">Vistas de página</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-people text-info fs-1"></i>
+                    <h3 class="mt-2">{{ stats.unique_visitors }}</h3>
+                    <p class="text-muted mb-0">Visitantes únicos</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-download text-success fs-1"></i>
+                    <h3 class="mt-2">{{ stats.total_downloads }}</h3>
+                    <p class="text-muted mb-0">Descargas totales</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-percent text-warning fs-1"></i>
+                    <h3 class="mt-2">{{ conversion_rate|floatformat:1 }}%</h3>
+                    <p class="text-muted mb-0">Tasa de conversión</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas recientes -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-calendar-month"></i> Últimos 30 días</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h4 class="text-primary">{{ recent_visits }}</h4>
+                            <p class="text-muted mb-0">Visitas</p>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-success">{{ recent_downloads }}</h4>
+                            <p class="text-muted mb-0">Descargas</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-graph-up"></i> Promedio diario</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-12">
+                            <h4 class="text-info">{{ avg_downloads_per_day|floatformat:1 }}</h4>
+                            <p class="text-muted mb-0">Descargas por día</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico de actividad diaria -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-graph-up"></i> Actividad diaria (últimos 7 días)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="dailyChart" width="400" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Estadísticas por archivo -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-files"></i> Estadísticas por archivo</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Archivo</th>
+                                    <th>Descargas</th>
+                                    <th>Únicos</th>
+                                    <th>Popularidad</th>
+                                    <th>Primera descarga</th>
+                                    <th>Última descarga</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item_data in items_stats %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ item_data.item.number }}</span>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>{{ item_data.item.name }}</strong>
+                                            {% if item_data.item.description %}
+                                            <br>
+                                            <small class="text-muted">{{ item_data.item.description|truncatechars:50 }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ item_data.stats.download_count }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ item_data.stats.unique_downloaders }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar" role="progressbar" 
+                                                 style="width: {{ item_data.popularity }}%;" 
+                                                 aria-valuenow="{{ item_data.popularity }}" 
+                                                 aria-valuemin="0" aria-valuemax="100">
+                                                {{ item_data.popularity|floatformat:0 }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if item_data.stats.first_download_date %}
+                                            {{ item_data.stats.first_download_date|date:"d/m/Y H:i" }}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if item_data.stats.last_download_date %}
+                                            {{ item_data.stats.last_download_date|date:"d/m/Y H:i" }}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top archivos y actividad reciente -->
+        <div class="col-lg-4">
+            <!-- Top 5 archivos -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-trophy"></i> Top 5 archivos</h5>
+                </div>
+                <div class="card-body">
+                    {% for item_data in top_files %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <strong>{{ item_data.item.number }}. {{ item_data.item.name|truncatechars:20 }}</strong>
+                        </div>
+                        <span class="badge bg-primary">{{ item_data.stats.download_count }}</span>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted mb-0">No hay descargas aún</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Actividad reciente -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> Actividad reciente</h5>
+                </div>
+                <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                    <h6>Últimas descargas</h6>
+                    {% for download in recent_downloads_list %}
+                    <div class="d-flex justify-content-between align-items-start mb-2 pb-2 border-bottom">
+                        <div class="small">
+                            <strong>{{ download.item.number }}. {{ download.item.name|truncatechars:15 }}</strong>
+                            <br>
+                            <span class="text-muted">{{ download.timestamp|date:"d/m H:i" }}</span>
+                        </div>
+                        <span class="badge bg-success">
+                            <i class="bi bi-download"></i>
+                        </span>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted small">No hay descargas recientes</p>
+                    {% endfor %}
+
+                    <hr>
+
+                    <h6>Últimas visitas</h6>
+                    {% for visit in recent_visits_list %}
+                    <div class="d-flex justify-content-between align-items-start mb-2 pb-2 border-bottom">
+                        <div class="small">
+                            <span class="text-muted">{{ visit.timestamp|date:"d/m H:i" }}</span>
+                        </div>
+                        <span class="badge bg-info">
+                            <i class="bi bi-eye"></i>
+                        </span>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted small">No hay visitas recientes</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Gráfico de actividad diaria
+    const ctx = document.getElementById('dailyChart').getContext('2d');
+    
+    const dailyData = [
+        {% for day in daily_stats %}
+        {
+            date: '{{ day.date|date:"d/m" }}',
+            visits: {{ day.visits }},
+            downloads: {{ day.downloads }}
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dailyData.map(d => d.date),
+            datasets: [
+                {
+                    label: 'Visitas',
+                    data: dailyData.map(d => d.visits),
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                    tension: 0.1
+                },
+                {
+                    label: 'Descargas',
+                    data: dailyData.map(d => d.downloads),
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                    tension: 0.1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

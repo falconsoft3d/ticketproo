@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        {{ page_title }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>¡Atención!</strong> Esta acción no se puede deshacer.
+                    </div>
+                    
+                    <p class="mb-4">
+                        ¿Estás seguro de que quieres eliminar toda la documentación 
+                        <strong>"{{ documentation.title }}"</strong>?
+                    </p>
+                    
+                    <div class="card bg-light mb-4">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="fas fa-folder-open text-primary"></i>
+                                {{ documentation.title }}
+                            </h6>
+                            {% if documentation.description %}
+                            <p class="card-text text-muted">{{ documentation.description }}</p>
+                            {% endif %}
+                            
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <div class="text-primary">
+                                        <i class="fas fa-file fa-2x"></i>
+                                        <div class="mt-2">
+                                            <strong>{{ documentation.items.count }}</strong><br>
+                                            <small>Archivo{{ documentation.items.count|pluralize }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="text-info">
+                                        <i class="fas fa-user fa-2x"></i>
+                                        <div class="mt-2">
+                                            <strong>{{ documentation.created_by.get_full_name|default:documentation.created_by.username }}</strong><br>
+                                            <small>Creador</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="text-success">
+                                        <i class="fas fa-calendar fa-2x"></i>
+                                        <div class="mt-2">
+                                            <strong>{{ documentation.created_at|date:"d/m/Y" }}</strong><br>
+                                            <small>Creado</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if documentation.items.exists %}
+                    <div class="alert alert-danger">
+                        <h6><i class="fas fa-exclamation-circle"></i> Se eliminarán todos los archivos:</h6>
+                        <ul class="mb-0">
+                            {% for item in documentation.items.all|slice:":5" %}
+                            <li>{{ item.number }}. {{ item.name }}</li>
+                            {% endfor %}
+                            {% if documentation.items.count > 5 %}
+                            <li class="text-muted">... y {{ documentation.items.count|add:"-5" }} archivo{{ documentation.items.count|add:"-5"|pluralize }} más</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'multiple_documentation_detail' documentation.pk %}" 
+                               class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Sí, Eliminar Todo
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

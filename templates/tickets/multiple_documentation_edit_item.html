@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h4><i class="fas fa-edit text-primary"></i> {{ page_title }}</h4>
+                    <p class="text-muted mb-0">
+                        Documentación: <strong>{{ documentation.title }}</strong>
+                    </p>
+                </div>
+                <a href="{% url 'multiple_documentation_detail' documentation.pk %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-edit text-info"></i>
+                                Editar Archivo
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                
+                                <div class="mb-3">
+                                    <label for="number" class="form-label">
+                                        <i class="fas fa-sort-numeric-up"></i> Número *
+                                    </label>
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="number" 
+                                           name="number" 
+                                           value="{{ item.number }}" 
+                                           min="1"
+                                           required>
+                                    <div class="form-text">
+                                        Número de orden para organizar los archivos
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">
+                                        <i class="fas fa-tag"></i> Nombre del Documento *
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="name" 
+                                           name="name" 
+                                           value="{{ item.name }}" 
+                                           placeholder="Ej: Plantilla de Productos"
+                                           required>
+                                    <div class="form-text">
+                                        Nombre descriptivo que verán los usuarios
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="description" class="form-label">
+                                        <i class="fas fa-align-left"></i> Descripción
+                                    </label>
+                                    <textarea class="form-control" 
+                                              id="description" 
+                                              name="description" 
+                                              rows="3" 
+                                              placeholder="Descripción del archivo (opcional)...">{{ item.description }}</textarea>
+                                    <div class="form-text">
+                                        Explicación opcional de qué contiene o para qué sirve este archivo
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label for="file" class="form-label">
+                                        <i class="fas fa-file"></i> Archivo
+                                    </label>
+                                    
+                                    {% if item.file %}
+                                    <div class="alert alert-info mb-2">
+                                        <i class="fas fa-info-circle"></i>
+                                        <strong>Archivo actual:</strong> {{ item.file.name|slice:"21:" }}
+                                        <br>
+                                        <small>Solo selecciona un nuevo archivo si quieres reemplazarlo</small>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <input type="file" 
+                                           class="form-control" 
+                                           id="file" 
+                                           name="file" 
+                                           accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar,.jpg,.jpeg,.png,.gif">
+                                    <div class="form-text">
+                                        Formatos soportados: PDF, Word, Excel, PowerPoint, texto, imágenes, archivos comprimidos
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'multiple_documentation_detail' documentation.pk %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times"></i> Cancelar
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Actualizar Archivo
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-info-circle text-info"></i>
+                                Archivo Actual
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <h6>{{ item.number }}. {{ item.name }}</h6>
+                            {% if item.description %}
+                            <p class="text-muted small">{{ item.description }}</p>
+                            {% endif %}
+                            
+                            {% if item.file %}
+                            <div class="alert alert-light">
+                                <div class="d-flex align-items-center">
+                                    <div class="file-icon me-3">
+                                        <i class="fas fa-file fa-2x text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <strong>{{ item.file.name|slice:"21:" }}</strong><br>
+                                        <small class="text-muted">{{ item.get_file_size }}</small><br>
+                                        <a href="{{ item.file.url }}" target="_blank" class="btn btn-sm btn-outline-primary mt-1">
+                                            <i class="fas fa-external-link-alt"></i> Ver archivo
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-exclamation-triangle text-warning"></i>
+                                Importante
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="small mb-0">
+                                <li>Si subes un nuevo archivo, reemplazará al actual completamente</li>
+                                <li>El archivo anterior se eliminará permanentemente</li>
+                                <li>Puedes cambiar el nombre y descripción sin subir un nuevo archivo</li>
+                                <li>El número determina el orden de visualización</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
