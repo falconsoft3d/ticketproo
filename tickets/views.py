@@ -15568,14 +15568,14 @@ def financial_actions_ticker_data_view(request):
             'id': action.id,
             'symbol': action.symbol,
             'name': action.name,
-            'current_price': float(action.current_price),
+            'current_price': float(action.current_price) if action.current_price is not None else 0.0,
             'previous_price': float(action.previous_price) if action.previous_price else None,
             'currency': action.currency,
-            'price_change': float(action.price_change),
-            'price_change_percent': float(action.price_change_percent),
-            'is_positive_change': action.is_positive_change,
-            'is_negative_change': action.is_negative_change,
-            'change_color_class': action.change_color_class,
+            'price_change': float(action.price_change) if hasattr(action, 'price_change') and action.price_change is not None else 0.0,
+            'price_change_percent': float(action.price_change_percent) if hasattr(action, 'price_change_percent') and action.price_change_percent is not None else 0.0,
+            'is_positive_change': action.is_positive_change if hasattr(action, 'is_positive_change') else False,
+            'is_negative_change': action.is_negative_change if hasattr(action, 'is_negative_change') else False,
+            'change_color_class': action.change_color_class if hasattr(action, 'change_color_class') else '',
         })
     
     return JsonResponse({'actions': data})
@@ -16055,7 +16055,7 @@ def generate_spin_methodology_view(request):
         data = json.loads(request.body)
         description = data.get('description', '').strip()
         company_id = data.get('company_id', '')
-        product_ids = data.get('product_ids', [])
+        product_id = data.get('product_id', '')
         
         if not description:
             return JsonResponse({
@@ -16079,25 +16079,23 @@ INFORMACIÓN DE LA EMPRESA:
             except:
                 company_info = ""
         
-        # Obtener información de productos si están disponibles
-        products_info = ""
-        if product_ids:
+        # Obtener información del producto si está disponible
+        product_info = ""
+        if product_id:
             try:
                 from .models import Product
-                products = Product.objects.filter(id__in=product_ids, is_active=True)
-                if products.exists():
-                    products_info = "\nPRODUCTOS A DISCUTIR:\n"
-                    for product in products:
-                        products_info += f"""
+                product = Product.objects.get(id=product_id, is_active=True)
+                product_info = f"""
+PRODUCTO A DISCUTIR:
 - Nombre: {product.name}
 - Precio: {product.get_formatted_price()}
 - Descripción: {product.description}
 """
             except:
-                products_info = ""
+                product_info = ""
         
         # Generar preguntas SPIN usando IA configurada
-        spin_questions = generate_spin_questions_with_ai(description, company_info, products_info)
+        spin_questions = generate_spin_questions_with_ai(description, company_info, product_info)
         
         if spin_questions is None:
             return JsonResponse({
@@ -16123,7 +16121,7 @@ INFORMACIÓN DE LA EMPRESA:
         }, status=500)
 
 
-def generate_spin_questions_with_ai(description, company_info="", products_info=""):
+def generate_spin_questions_with_ai(description, company_info="", product_info=""):
     """
     Genera preguntas SPIN personalizadas usando la IA configurada
     """
@@ -16145,7 +16143,7 @@ CONTEXTO DE LA REUNIÓN:
 
 {company_info}
 
-{products_info}
+{product_info}
 
 INSTRUCCIONES:
 - Analiza el contexto, la información de la empresa y los productos mencionados
@@ -16195,10 +16193,10 @@ Haz que las preguntas sean profesionales, directas y adaptadas específicamente 
     except Exception as e:
         print(f"Error generando contenido SPIN con IA: {e}")
         # Fallback a función original si la IA falla
-        return generate_spin_questions_fallback(description, company_info, products_info)
+        return generate_spin_questions_fallback(description, company_info, product_info)
 
 
-def generate_spin_questions_fallback(description, company_info="", products_info=""):
+def generate_spin_questions_fallback(description, company_info="", product_info=""):
     """
     Función de fallback que genera preguntas SPIN básicas si la IA no está disponible
     """

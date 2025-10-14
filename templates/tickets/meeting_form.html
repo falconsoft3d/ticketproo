@@ -238,19 +238,19 @@
                         <div class="row">
                             <div class="col-md-12">
                                 <div class="form-group">
-                                    <label for="{{ form.products.id_for_label }}" class="form-label">
-                                        <i class="fas fa-box"></i> Productos a Discutir
+                                    <label for="{{ form.product.id_for_label }}" class="form-label">
+                                        <i class="fas fa-box"></i> Producto a Discutir (Opcional)
                                     </label>
-                                    {{ form.products }}
-                                    {% if form.products.errors %}
+                                    {{ form.product }}
+                                    {% if form.product.errors %}
                                         <div class="invalid-feedback d-block">
-                                            {{ form.products.errors }}
+                                            {{ form.product.errors }}
                                         </div>
                                     {% endif %}
                                     <small class="form-text text-muted">
-                                        {{ form.products.help_text }}
+                                        {{ form.product.help_text }}
                                         <br>
-                                        <i class="fas fa-robot"></i> Los productos seleccionados se incluirán en el análisis de IA para generar preguntas SPIN más precisas
+                                        <i class="fas fa-robot"></i> El producto seleccionado se incluirá en el análisis de IA para generar preguntas SPIN más precisas
                                     </small>
                                 </div>
                             </div>
@@ -999,10 +999,12 @@ function generateSpinMethodology() {
     const spinField = document.getElementById('{{ form.spin_methodology.id_for_label }}');
     const descriptionField = document.getElementById('{{ form.description.id_for_label }}');
     const companyField = document.querySelector('select[name="company"]');
+    const productField = document.querySelector('select[name="product"]');
     
     // Obtener contenido
     const description = descriptionField.value.trim();
     const companyId = companyField ? companyField.value : '';
+    const productId = productField ? productField.value : '';
     
     if (!description) {
         showToast('warning', 'Información necesaria', 'Por favor, agrega una descripción para generar la metodología SPIN');
@@ -1025,7 +1027,8 @@ function generateSpinMethodology() {
         },
         body: JSON.stringify({
             description: description,
-            company_id: companyId
+            company_id: companyId,
+            product_id: productId
         })
     })
     .then(response => response.json())

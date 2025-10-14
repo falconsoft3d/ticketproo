@@ -3443,12 +3443,14 @@ class Meeting(models.Model):
         help_text='Empresa relacionada con la reunión (opcional)'
     )
     
-    # Productos relacionados con la reunión
-    products = models.ManyToManyField(
+    # Producto relacionado con la reunión
+    product = models.ForeignKey(
         'Product',
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True,
-        verbose_name='Productos',
-        help_text='Productos que se discutirán en la reunión'
+        verbose_name='Producto',
+        help_text='Producto principal que se discutirá en la reunión'
     )
     
     # Link público único
@@ -7335,8 +7337,10 @@ class FinancialAction(models.Model):
     current_price = models.DecimalField(
         max_digits=12,
         decimal_places=4,
+        null=True,
+        blank=True,
         verbose_name='Precio Actual',
-        help_text='Precio actual de la acción'
+        help_text='Se actualiza automáticamente desde APIs externas'
     )
     
     previous_price = models.DecimalField(
@@ -7345,7 +7349,7 @@ class FinancialAction(models.Model):
         null=True,
         blank=True,
         verbose_name='Precio Anterior',
-        help_text='Precio del día anterior para calcular cambios'
+        help_text='Se actualiza automáticamente desde APIs externas'
     )
     
     currency = models.CharField(
@@ -7383,19 +7387,20 @@ class FinancialAction(models.Model):
         verbose_name_plural = 'Acciones Financieras'
     
     def __str__(self):
-        return f"{self.symbol} - {self.current_price} {self.currency}"
+        price_display = self.current_price if self.current_price is not None else "N/A"
+        return f"{self.symbol} - {price_display} {self.currency}"
     
     @property
     def price_change(self):
         """Calcula el cambio de precio"""
-        if self.previous_price:
+        if self.previous_price and self.current_price is not None:
             return self.current_price - self.previous_price
         return 0
     
     @property
     def price_change_percent(self):
         """Calcula el porcentaje de cambio"""
-        if self.previous_price and self.previous_price != 0:
+        if self.previous_price and self.previous_price != 0 and self.current_price is not None:
             return ((self.current_price - self.previous_price) / self.previous_price) * 100
         return 0
     
@@ -7461,6 +7466,8 @@ class FinancialPriceHistory(models.Model):
     price = models.DecimalField(
         max_digits=12,
         decimal_places=4,
+        null=True,
+        blank=True,
         verbose_name='Precio'
     )
     

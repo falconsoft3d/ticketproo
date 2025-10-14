@@ -2497,7 +2497,7 @@ class MeetingForm(forms.ModelForm):
     
     class Meta:
         model = Meeting
-        fields = ['title', 'description', 'spin_methodology', 'company', 'products', 'duration', 'location', 'status', 'allow_questions', 'require_email']
+        fields = ['title', 'description', 'spin_methodology', 'company', 'product', 'duration', 'location', 'status', 'allow_questions', 'require_email']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -2517,9 +2517,8 @@ class MeetingForm(forms.ModelForm):
             'company': forms.Select(attrs={
                 'class': 'form-control'
             }),
-            'products': forms.SelectMultiple(attrs={
-                'class': 'form-control',
-                'style': 'height: 120px;'
+            'product': forms.Select(attrs={
+                'class': 'form-control'
             }),
             'duration': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -2551,18 +2550,18 @@ class MeetingForm(forms.ModelForm):
         self.fields['allow_questions'].help_text = 'Permitir que los asistentes hagan preguntas'
         self.fields['require_email'].help_text = 'Requerir email para registrarse'
         
-        # Configurar choices de empresa
+        # Configurar producto disponible
         from .models import Company, Product
         companies = Company.objects.all().order_by('name')
         company_choices = [('', '---------')] + [(c.id, c.name) for c in companies]
         self.fields['company'].choices = company_choices
         self.fields['company'].required = False
         
-        # Configurar productos disponibles
         products = Product.objects.filter(is_active=True).order_by('name')
-        self.fields['products'].queryset = products
-        self.fields['products'].help_text = 'Mantén presionado Ctrl (Cmd en Mac) para seleccionar múltiples productos'
-        self.fields['products'].required = False
+        product_choices = [('', '---------')] + [(p.id, f"{p.name} - {p.price_with_currency}") for p in products]
+        self.fields['product'].choices = product_choices
+        self.fields['product'].required = False
+        self.fields['product'].help_text = 'Selecciona el producto principal que se discutirá en la reunión'
         
         # Si estamos editando, llenar los campos de fecha y hora
         if self.instance and self.instance.pk and self.instance.date:
