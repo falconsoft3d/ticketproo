@@ -149,7 +149,41 @@
         </div>
     </div>
 
-    
+    <!-- KPIs Adicionales - Duración -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card text-center shadow-sm border-info">
+                <div class="card-body">
+                    <h3 class="text-info mb-0">{{ schedule.get_total_days }}</h3>
+                    <small class="text-muted">Días Laborables del Cronograma</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card text-center shadow-sm border-secondary">
+                <div class="card-body">
+                    <h3 class="text-secondary mb-0">{{ schedule.get_total_task_days }}</h3>
+                    <small class="text-muted">Total Días Laborables de Tareas</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card text-center shadow-sm border-dark">
+                <div class="card-body">
+                    <h3 class="text-dark mb-0">{{ schedule.get_total_task_hours }}</h3>
+                    <small class="text-muted">Total Horas Laborables</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card text-center shadow-sm border-warning">
+                <div class="card-body">
+                    <h3 class="text-warning mb-0">{{ schedule.get_total_work_weeks }}</h3>
+                    <small class="text-muted">Semanas de Trabajo</small>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Enlace Público -->
     {% if schedule.is_public %}

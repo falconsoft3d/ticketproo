@@ -6875,12 +6875,39 @@ class TaskSchedule(models.Model):
             self.save(update_fields=['start_date', 'end_date'])
     
     def get_total_days(self):
-        """Calcula la duración total del cronograma en días"""
-        return (self.end_date - self.start_date).days + 1
+        """Calcula la duración total del cronograma en días laborables (excluyendo sábados y domingos)"""
+        if not self.start_date or not self.end_date:
+            return 0
+        
+        # Importar datetime para cálculos de días laborables
+        from datetime import timedelta
+        
+        current_date = self.start_date
+        business_days = 0
+        
+        while current_date <= self.end_date:
+            # 0=Lunes, 1=Martes, ..., 6=Domingo
+            # Solo contar lunes a viernes (0-4)
+            if current_date.weekday() < 5:
+                business_days += 1
+            current_date += timedelta(days=1)
+        
+        return business_days
     
     def get_total_task_days(self):
         """Calcula la suma total de días de todas las tareas"""
         return sum(task.get_duration_days() for task in self.tasks.all())
+    
+    def get_total_task_hours(self):
+        """Calcula la suma total de horas de todas las tareas (8 horas por día)"""
+        return self.get_total_task_days() * 8
+    
+    def get_total_work_weeks(self):
+        """Calcula la suma total de semanas de trabajo (40 horas por semana)"""
+        total_hours = self.get_total_task_hours()
+        if total_hours == 0:
+            return 0
+        return round(total_hours / 40, 1)
 
 
 class ScheduleTask(models.Model):
@@ -6998,8 +7025,24 @@ class ScheduleTask(models.Model):
         return not self.is_completed and today > self.end_date
     
     def get_duration_days(self):
-        """Calcula la duración de la tarea en días"""
-        return (self.end_date - self.start_date).days + 1
+        """Calcula la duración de la tarea en días laborables (excluyendo sábados y domingos)"""
+        if not self.start_date or not self.end_date:
+            return 0
+        
+        # Importar datetime para cálculos de días laborables
+        from datetime import timedelta
+        
+        current_date = self.start_date
+        business_days = 0
+        
+        while current_date <= self.end_date:
+            # 0=Lunes, 1=Martes, ..., 6=Domingo
+            # Solo contar lunes a viernes (0-4)
+            if current_date.weekday() < 5:
+                business_days += 1
+            current_date += timedelta(days=1)
+        
+        return business_days
     
     def can_start(self):
         """Verifica si la tarea puede iniciar (todas sus dependencias completadas)"""
@@ -7258,3 +7301,166 @@ def update_schedule_dates_on_task_save(sender, instance, **kwargs):
 def update_schedule_dates_on_task_delete(sender, instance, **kwargs):
     """Actualiza las fechas del cronograma cuando se elimina una tarea"""
     instance.schedule.update_auto_dates()
+
+
+class FinancialAction(models.Model):
+    """Modelo para gestionar acciones financieras que se muestran en el ticker"""
+    
+    symbol = models.CharField(
+        max_length=20,
+        unique=True,
+        verbose_name='Símbolo',
+        help_text='Símbolo de la acción (ej: EUR/USD, AAPL, GOOGL)'
+    )
+    
+    name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre',
+        help_text='Nombre completo de la acción o par de divisas'
+    )
+    
+    current_price = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        verbose_name='Precio Actual',
+        help_text='Precio actual de la acción'
+    )
+    
+    previous_price = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        verbose_name='Precio Anterior',
+        help_text='Precio del día anterior para calcular cambios'
+    )
+    
+    currency = models.CharField(
+        max_length=10,
+        default='USD',
+        verbose_name='Moneda',
+        help_text='Moneda en la que se cotiza (USD, EUR, etc.)'
+    )
+    
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activa',
+        help_text='Si está activa se muestra en el ticker'
+    )
+    
+    order = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Orden',
+        help_text='Orden de aparición en el ticker (menor número = primera)'
+    )
+    
+    last_updated = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última Actualización'
+    )
+    
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de Creación'
+    )
+    
+    class Meta:
+        ordering = ['order', 'symbol']
+        verbose_name = 'Acción Financiera'
+        verbose_name_plural = 'Acciones Financieras'
+    
+    def __str__(self):
+        return f"{self.symbol} - {self.current_price} {self.currency}"
+    
+    @property
+    def price_change(self):
+        """Calcula el cambio de precio"""
+        if self.previous_price:
+            return self.current_price - self.previous_price
+        return 0
+    
+    @property
+    def price_change_percent(self):
+        """Calcula el porcentaje de cambio"""
+        if self.previous_price and self.previous_price != 0:
+            return ((self.current_price - self.previous_price) / self.previous_price) * 100
+        return 0
+    
+    @property
+    def is_positive_change(self):
+        """Determina si el cambio es positivo"""
+        return self.price_change > 0
+    
+    @property
+    def is_negative_change(self):
+        """Determina si el cambio es negativo"""
+        return self.price_change < 0
+    
+    @property
+    def change_color_class(self):
+        """Devuelve la clase CSS según el cambio"""
+        if self.is_positive_change:
+            return 'text-success'
+        elif self.is_negative_change:
+            return 'text-danger'
+        return 'text-muted'
+    
+    def get_price_from_yesterday(self):
+        """Obtiene el precio del día anterior a la misma hora aproximada"""
+        from datetime import datetime, timedelta
+        
+        # Calcular la fecha y hora del día anterior
+        yesterday = timezone.now() - timedelta(days=1)
+        
+        # Buscar el precio más cercano a la misma hora del día anterior
+        # Con una ventana de +/- 2 horas
+        start_time = yesterday - timedelta(hours=2)
+        end_time = yesterday + timedelta(hours=2)
+        
+        history_record = self.price_history.filter(
+            recorded_at__range=[start_time, end_time]
+        ).order_by('recorded_at').first()
+        
+        if history_record:
+            return history_record.price
+        
+        # Si no hay registro del día anterior, usar el previous_price actual
+        return self.previous_price
+    
+    def save_price_history(self):
+        """Guarda el precio actual en el historial"""
+        FinancialPriceHistory.objects.create(
+            financial_action=self,
+            price=self.current_price
+        )
+
+
+class FinancialPriceHistory(models.Model):
+    """Modelo para almacenar el historial de precios de las acciones financieras"""
+    
+    financial_action = models.ForeignKey(
+        FinancialAction,
+        on_delete=models.CASCADE,
+        related_name='price_history',
+        verbose_name='Acción Financiera'
+    )
+    
+    price = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        verbose_name='Precio'
+    )
+    
+    recorded_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de Registro'
+    )
+    
+    class Meta:
+        ordering = ['-recorded_at']
+        verbose_name = 'Historial de Precio'
+        verbose_name_plural = 'Historiales de Precios'
+        unique_together = ['financial_action', 'recorded_at']
+    
+    def __str__(self):
+        return f"{self.financial_action.symbol} - {self.price} - {self.recorded_at}"

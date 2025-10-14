@@ -1,0 +1,374 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: #1a1a1a;
+        color: #ffffff;
+        font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    .world-clock-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 40px 20px;
+        background: #1a1a1a;
+        min-height: 100vh;
+    }
+    
+    .header-section {
+        text-align: center;
+        margin-bottom: 60px;
+        padding: 0;
+        background: transparent;
+        border-radius: 0;
+        color: #ffffff;
+    }
+    
+    .header-title {
+        font-size: 2.5rem;
+        font-weight: 300;
+        margin-bottom: 20px;
+        color: #ffffff;
+        text-shadow: none;
+    }
+    
+    .breadcrumb-nav {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 30px;
+        font-size: 0.9rem;
+        color: #888;
+    }
+    
+    .breadcrumb-nav a {
+        color: #4a9eff;
+        text-decoration: none;
+    }
+    
+    .breadcrumb-nav a:hover {
+        text-decoration: underline;
+    }
+    
+    .timezone-section {
+        margin-bottom: 80px;
+    }
+    
+    .timezone-title {
+        font-size: 1.3rem;
+        font-weight: 400;
+        margin-bottom: 40px;
+        text-align: center;
+        color: #cccccc;
+        padding: 0;
+        background: transparent;
+        border: none;
+        box-shadow: none;
+    }
+    
+    .country-clock {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 40px 30px;
+        margin-bottom: 30px;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        min-height: 240px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        backdrop-filter: blur(10px);
+    }
+    
+    .country-clock:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(74, 158, 255, 0.3);
+        transform: translateY(-4px);
+    }
+    
+    .country-header {
+        margin-bottom: 40px;
+    }
+    
+    .country-name {
+        font-size: 1.4rem;
+        font-weight: 400;
+        margin-bottom: 0;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+    }
+    
+    .country-flag {
+        font-size: 2rem;
+        filter: none;
+    }
+    
+    .digital-time-display {
+        margin: 30px 0;
+    }
+    
+    .current-time {
+        font-size: 5rem;
+        font-weight: 200;
+        font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+        color: #ffffff;
+        margin-bottom: 0;
+        line-height: 1;
+        letter-spacing: -2px;
+        text-shadow: none;
+    }
+    
+    .time-colon {
+        opacity: 1;
+        animation: none;
+    }
+    
+    .current-date {
+        font-size: 1.1rem;
+        color: #888888;
+        font-weight: 300;
+        margin-top: 20px;
+        text-transform: none;
+    }
+    
+    .timezone-info {
+        font-size: 0.95rem;
+        color: #666;
+        font-weight: 300;
+        margin-top: 30px;
+        padding: 0;
+        background: transparent;
+        border-radius: 0;
+    }
+    
+    .refresh-info {
+        text-align: center;
+        margin-top: 60px;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 12px;
+        font-size: 0.9rem;
+        color: #666;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    /* Responsive design */
+    @media (max-width: 1200px) {
+        .current-time {
+            font-size: 4rem;
+        }
+        
+        .country-clock {
+            padding: 50px 30px;
+            min-height: 280px;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .world-clock-container {
+            padding: 20px 15px;
+        }
+        
+        .header-title {
+            font-size: 2rem;
+        }
+        
+        .current-time {
+            font-size: 3.5rem;
+            letter-spacing: -1px;
+        }
+        
+        .country-clock {
+            padding: 40px 20px;
+            min-height: 240px;
+        }
+        
+        .country-name {
+            font-size: 1.2rem;
+        }
+        
+        .clock-toggle {
+            gap: 20px;
+        }
+        
+        .toggle-option {
+            padding: 10px 20px;
+            font-size: 0.9rem;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .current-time {
+            font-size: 2.8rem;
+        }
+        
+        .country-name {
+            font-size: 1.1rem;
+            gap: 10px;
+        }
+        
+        .country-flag {
+            font-size: 1.6rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid world-clock-container">
+    <!-- Navegación breadcrumb -->
+    <div class="breadcrumb-nav">
+        <a href="{% url 'dashboard' %}">Inicio</a>
+        <span>/</span>
+        <a href="#">Hora</a>
+        <span>/</span>
+        <span>Reloj en línea</span>
+    </div>
+    
+    <!-- Encabezado -->
+    <div class="header-section">
+        <h1 class="header-title">
+            Reloj en línea
+        </h1>
+    </div>
+    
+    <!-- Relojes por franja horaria -->
+    {% for timezone_label, countries in countries_by_timezone.items %}
+    <div class="timezone-section">
+        <h2 class="timezone-title">{{ timezone_label }}</h2>
+        
+        <div class="row">
+            {% for country in countries %}
+            <div class="col-xl-4 col-lg-6 col-md-6 col-sm-12">
+                <div class="country-clock" data-timezone="{{ country.timezone }}">
+                    <div class="country-header">
+                        <div class="country-name">
+                            <span class="country-flag">{{ country.flag }}</span>
+                            {{ country.name }}
+                        </div>
+                    </div>
+                    
+                    <div class="digital-time-display">
+                        <div class="current-time" id="time-{{ country.timezone|slugify }}">
+                            <span class="time-hours">10</span><span class="time-colon">:</span><span class="time-minutes">56</span><span class="time-colon">:</span><span class="time-seconds">27</span>
+                        </div>
+                        <div class="current-date" id="date-{{ country.timezone|slugify }}">
+                            Cargando fecha...
+                        </div>
+                    </div>
+                    
+                    <div class="timezone-info">
+                        {{ country.timezone }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+    
+    <!-- Información de actualización -->
+    <div class="refresh-info">
+        Actualización automática cada segundo
+        <br>
+        <small>Última actualización: <span id="last-update">--</span></small>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Configuración de zonas horarias
+    const timezones = {
+        {% for timezone_label, countries in countries_by_timezone.items %}
+            {% for country in countries %}
+                '{{ country.timezone|slugify }}': '{{ country.timezone }}',
+            {% endfor %}
+        {% endfor %}
+    };
+    
+    // Función para actualizar los relojes
+    function updateClocks() {
+        const now = new Date();
+        
+        Object.entries(timezones).forEach(([slugified, timezone]) => {
+            try {
+                // Crear fecha en la zona horaria específica
+                const timeInTimezone = new Date(now.toLocaleString("en-US", {timeZone: timezone}));
+                
+                // Obtener componentes de tiempo
+                const hours = timeInTimezone.getHours().toString().padStart(2, '0');
+                const minutes = timeInTimezone.getMinutes().toString().padStart(2, '0');
+                const seconds = timeInTimezone.getSeconds().toString().padStart(2, '0');
+                
+                // Formatear fecha
+                const dateString = timeInTimezone.toLocaleDateString('es-ES', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                
+                // Actualizar elementos DOM
+                const timeElement = document.getElementById(`time-${slugified}`);
+                const dateElement = document.getElementById(`date-${slugified}`);
+                
+                if (timeElement) {
+                    timeElement.innerHTML = `
+                        <span class="time-hours">${hours}</span><span class="time-colon">:</span><span class="time-minutes">${minutes}</span><span class="time-colon">:</span><span class="time-seconds">${seconds}</span>
+                    `;
+                }
+                
+                if (dateElement) {
+                    dateElement.textContent = dateString;
+                }
+                
+            } catch (error) {
+                console.error(`Error updating clock for ${timezone}:`, error);
+                const timeElement = document.getElementById(`time-${slugified}`);
+                const dateElement = document.getElementById(`date-${slugified}`);
+                
+                if (timeElement) {
+                    timeElement.innerHTML = '<span style="color: #ff6b6b;">Error</span>';
+                }
+                
+                if (dateElement) {
+                    dateElement.textContent = 'No disponible';
+                }
+            }
+        });
+        
+        // Actualizar indicador de última actualización
+        const lastUpdateElement = document.getElementById('last-update');
+        if (lastUpdateElement) {
+            lastUpdateElement.textContent = now.toLocaleTimeString('es-ES');
+        }
+    }
+    
+    // Actualizar inmediatamente
+    updateClocks();
+    
+    // Actualizar cada segundo
+    setInterval(updateClocks, 1000);
+});
+
+// Manejar cambios de visibilidad de la página
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        updateClocks();
+    }
+});
+</script>
+{% endblock %}

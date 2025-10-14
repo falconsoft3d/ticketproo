@@ -10,7 +10,8 @@ from .models import (
     WorkOrderTaskTimeSession, SharedFile, SharedFileDownload, Recording, RecordingPlayback,
     PageVisit, MultipleDocumentation, MultipleDocumentationItem, MultipleDocumentationStats,
     MultipleDocumentationItemStats, MultipleDocumentationVisit, MultipleDocumentationDownload,
-    TaskSchedule, ScheduleTask, ScheduleComment, TicketApproval, SatisfactionSurvey
+    TaskSchedule, ScheduleTask, ScheduleComment, TicketApproval, SatisfactionSurvey, FinancialAction,
+    FinancialPriceHistory
 )
 
 # Configuración del sitio de administración
@@ -1997,4 +1998,74 @@ class SatisfactionSurveyAdmin(admin.ModelAdmin):
             obj.rating_summary
         )
     rating_summary.short_description = "Resumen"
+
+
+@admin.register(FinancialAction)
+class FinancialActionAdmin(admin.ModelAdmin):
+    list_display = ('symbol', 'name', 'current_price', 'currency', 'price_change_display', 'is_active', 'order', 'last_updated')
+    list_filter = ('is_active', 'currency', 'created_at', 'last_updated')
+    search_fields = ('symbol', 'name')
+    list_editable = ('is_active', 'order', 'current_price')
+    ordering = ('order', 'symbol')
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('symbol', 'name', 'currency')
+        }),
+        ('Precios', {
+            'fields': ('current_price', 'previous_price')
+        }),
+        ('Configuración', {
+            'fields': ('is_active', 'order')
+        }),
+        ('Metadatos', {
+            'fields': ('created_at', 'last_updated'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    readonly_fields = ('created_at', 'last_updated')
+    
+    def price_change_display(self, obj):
+        if obj.previous_price is None:
+            return format_html('<span class="text-muted">Sin datos</span>')
+        
+        change = obj.price_change
+        percent = obj.price_change_percent
+        
+        if obj.is_positive_change:
+            icon = '▲'
+            color = 'green'
+        elif obj.is_negative_change:
+            icon = '▼'
+            color = 'red'
+        else:
+            icon = '●'
+            color = 'gray'
+        
+        return format_html(
+            '<span style="color: {};">{} {:+.4f} ({:+.2f}%)</span>',
+            color, icon, change, percent
+        )
+    price_change_display.short_description = 'Cambio de Precio'
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request)
+
+
+@admin.register(FinancialPriceHistory)
+class FinancialPriceHistoryAdmin(admin.ModelAdmin):
+    list_display = ('financial_action', 'price', 'recorded_at', 'get_action_symbol')
+    list_filter = ('financial_action', 'recorded_at')
+    search_fields = ('financial_action__symbol', 'financial_action__name')
+    ordering = ('-recorded_at',)
+    readonly_fields = ('recorded_at',)
+    
+    def get_action_symbol(self, obj):
+        return obj.financial_action.symbol
+    get_action_symbol.short_description = 'Símbolo'
+    
+    def has_add_permission(self, request):
+        # No permitir agregar manualmente, solo desde la API
+        return False
 

@@ -46,7 +46,7 @@
                             <small class="text-muted">
                                 <i class="fas fa-clock"></i> Duración
                             </small>
-                            <span class="badge bg-info">{{ schedule.get_total_days }} días</span>
+                            <span class="badge bg-info">{{ schedule.get_total_days }} días laborables</span>
                         </div>
                     </div>
                     
@@ -61,16 +61,22 @@
                         <div class="col-6">
                             <div class="text-center p-2 bg-light rounded">
                                 <div class="fw-bold text-primary">{{ schedule.total_tasks }}</div>
-                                <small class="text-muted">Total</small>
+                                <small class="text-muted">Total Tareas</small>
                             </div>
                         </div>
                         <div class="col-6">
                             <div class="text-center p-2 bg-light rounded">
                                 <div class="fw-bold text-info">{{ schedule.get_total_task_days }}</div>
-                                <small class="text-muted">Días de Trabajo</small>
+                                <small class="text-muted">Días Laborables</small>
                             </div>
                         </div>
                         <div class="col-6">
+                            <div class="text-center p-2 bg-light rounded">
+                                <div class="fw-bold text-secondary">{{ schedule.get_total_task_hours }}</div>
+                                <small class="text-muted">Horas Laborables</small>
+                            </div>
+                        </div>
+                        <div class="col-12">
                             <div class="text-center p-2 bg-light rounded">
                                 <div class="fw-bold text-warning">{{ schedule.get_progress_percentage|floatformat:0 }}%</div>
                                 <small class="text-muted">Progreso</small>

@@ -257,6 +257,7 @@ urlpatterns = [
     path('meetings/<int:pk>/edit/', views.meeting_edit_view, name='meeting_edit'),
     path('meetings/<int:pk>/delete/', views.meeting_delete_view, name='meeting_delete'),
     path('meetings/<int:pk>/print/', views.meeting_print_view, name='meeting_print'),
+    path('meetings/<int:pk>/pdf/', views.meeting_pdf_download_view, name='meeting_pdf_download'),
     path('meetings/<int:pk>/questions/', views.meeting_questions_view, name='meeting_questions'),
     path('meetings/<int:pk>/attendees/', views.meeting_attendees_view, name='meeting_attendees'),
     
@@ -544,6 +545,27 @@ urlpatterns = [
     # URLs públicas de cronogramas (sin autenticación)
     path('schedule/<uuid:token>/', views.task_schedule_public, name='task_schedule_public'),
     path('public/schedule-tasks/<int:pk>/toggle/', views.schedule_task_toggle_public, name='schedule_task_toggle_public'),
+
+    # URL del reloj mundial
+    path('world-clock/', views.world_clock_view, name='world_clock'),
+
+    # ============= URLs ACCIONES FINANCIERAS =============
+    # URLs de gestión de acciones financieras (solo para agentes)
+    path('financial-actions/', views.financial_actions_list_view, name='financial_actions_list'),
+    path('financial-actions/create/', views.financial_action_create_view, name='financial_action_create'),
+    path('financial-actions/<int:pk>/edit/', views.financial_action_edit_view, name='financial_action_edit'),
+    path('financial-actions/<int:pk>/delete/', views.financial_action_delete_view, name='financial_action_delete'),
+    path('financial-actions/<int:pk>/toggle/', views.financial_action_toggle_view, name='financial_action_toggle'),
+    
+    # API para el ticker
+    path('api/financial-actions/ticker-data/', views.financial_actions_ticker_data_view, name='financial_actions_ticker_data'),
+    
+    # API para actualizar precios desde APIs externas
+    path('api/financial-actions/update-prices/', views.financial_actions_update_prices_view, name='financial_actions_update_prices'),
+    path('api/financial-actions/<int:pk>/update-price/', views.financial_action_update_single_price_view, name='financial_action_update_single_price'),
+    
+    # API para recomendaciones de IA en reuniones
+    path('api/meetings/ai-recommendations/', views.meeting_ai_recommendations_view, name='meeting_ai_recommendations'),
 
 ]
 

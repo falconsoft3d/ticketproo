@@ -1,0 +1,349 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% if is_edit %}Editar Acción Financiera{% else %}Crear Acción Financiera{% endif %} - TicketProo
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'financial_actions_list' %}">Acciones Financieras</a></li>
+                <li class="breadcrumb-item active">
+                    {% if is_edit %}Editar{% else %}Crear{% endif %}
+                </li>
+            </ol>
+        </nav>
+        
+        <h1 class="mb-2">
+            <i class="bi bi-graph-up-arrow"></i> 
+            {% if is_edit %}Editar Acción Financiera{% else %}Nueva Acción Financiera{% endif %}
+        </h1>
+        <p class="text-muted">
+            {% if is_edit %}
+                Modifique los datos de la acción financiera "{{ action.symbol }}"
+            {% else %}
+                Configure una nueva acción para mostrar en el ticker del dashboard
+            {% endif %}
+        </p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-pencil"></i> Datos de la Acción
+                </h5>
+                {% if is_edit and action %}
+                <button type="button" class="btn btn-info btn-sm" onclick="updatePrice({{ action.pk }}, '{{ action.symbol }}')" id="updatePriceBtn">
+                    <i class="bi bi-arrow-clockwise"></i> Actualizar Precio
+                </button>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.symbol.label_tag }}
+                            {{ form.symbol }}
+                            {% if form.symbol.help_text %}
+                                <div class="form-text">{{ form.symbol.help_text }}</div>
+                            {% endif %}
+                            {% if form.symbol.errors %}
+                                <div class="invalid-feedback d-block">{{ form.symbol.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.currency.label_tag }}
+                            {{ form.currency }}
+                            {% if form.currency.help_text %}
+                                <div class="form-text">{{ form.currency.help_text }}</div>
+                            {% endif %}
+                            {% if form.currency.errors %}
+                                <div class="invalid-feedback d-block">{{ form.currency.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.name.label_tag }}
+                        {{ form.name }}
+                        {% if form.name.help_text %}
+                            <div class="form-text">{{ form.name.help_text }}</div>
+                        {% endif %}
+                        {% if form.name.errors %}
+                            <div class="invalid-feedback d-block">{{ form.name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.current_price.label_tag }}
+                            <div class="input-group">
+                                {{ form.current_price }}
+                                {% if is_edit %}
+                                <span class="input-group-text" title="Campo de solo lectura - depende de API">
+                                    <i class="bi bi-lock"></i>
+                                </span>
+                                {% endif %}
+                            </div>
+                            {% if form.current_price.help_text %}
+                                <div class="form-text">{{ form.current_price.help_text }}</div>
+                            {% endif %}
+                            {% if is_edit %}
+                                <div class="form-text text-info">
+                                    <i class="bi bi-info-circle"></i> Precio obtenido automáticamente desde API
+                                </div>
+                            {% endif %}
+                            {% if form.current_price.errors %}
+                                <div class="invalid-feedback d-block">{{ form.current_price.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.previous_price.label_tag }}
+                            <div class="input-group">
+                                {{ form.previous_price }}
+                                {% if is_edit %}
+                                <span class="input-group-text" title="Campo de solo lectura - depende de API">
+                                    <i class="bi bi-lock"></i>
+                                </span>
+                                {% endif %}
+                            </div>
+                            {% if form.previous_price.help_text %}
+                                <div class="form-text">{{ form.previous_price.help_text }}</div>
+                            {% endif %}
+                            {% if is_edit %}
+                                <div class="form-text text-info">
+                                    <i class="bi bi-info-circle"></i> Precio del día anterior a la misma hora
+                                </div>
+                            {% endif %}
+                            {% if form.previous_price.errors %}
+                                <div class="invalid-feedback d-block">{{ form.previous_price.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.order.label_tag }}
+                            {{ form.order }}
+                            {% if form.order.help_text %}
+                                <div class="form-text">{{ form.order.help_text }}</div>
+                            {% endif %}
+                            {% if form.order.errors %}
+                                <div class="invalid-feedback d-block">{{ form.order.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check mt-4">
+                                {{ form.is_active }}
+                                {{ form.is_active.label_tag }}
+                                {% if form.is_active.help_text %}
+                                    <div class="form-text">{{ form.is_active.help_text }}</div>
+                                {% endif %}
+                                {% if form.is_active.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.is_active.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> 
+                            {% if is_edit %}Actualizar{% else %}Crear{% endif %} Acción
+                        </button>
+                        <a href="{% url 'financial_actions_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Panel de información -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-info-circle"></i> Información
+                </h6>
+            </div>
+            <div class="card-body">
+                <h6>Tipos de símbolos soportados:</h6>
+                <ul class="list-unstyled">
+                    <li><strong>Divisas:</strong> EUR/USD, GBP/USD, USD/JPY</li>
+                    <li><strong>Acciones:</strong> AAPL, GOOGL, MSFT, TSLA</li>
+                    <li><strong>Criptomonedas:</strong> BTC/USD, ETH/USD</li>
+                </ul>
+                
+                {% if is_edit %}
+                <div class="mt-4">
+                    <h6>Precios desde API:</h6>
+                    <p class="text-muted small">
+                        Los precios se obtienen automáticamente desde APIs externas.
+                        El precio anterior corresponde al día anterior a la misma hora.
+                    </p>
+                    
+                    {% if action.last_updated %}
+                    <p class="text-muted small">
+                        <strong>Última actualización:</strong><br>
+                        {{ action.last_updated|date:"d/m/Y H:i" }}
+                    </p>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                <div class="mt-4">
+                    <h6>Configuración del ticker:</h6>
+                    <ul class="text-muted small">
+                        <li>Las acciones activas aparecen en el ticker</li>
+                        <li>El orden determina la secuencia de aparición</li>
+                        <li>Los cambios se reflejan inmediatamente</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        {% if is_edit and action %}
+        <!-- Vista previa del ticker -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-eye"></i> Vista Previa
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center p-2 bg-dark text-white rounded">
+                    <span class="fw-bold me-2">{{ action.symbol }}</span>
+                    <span class="me-2">{{ action.current_price }} {{ action.currency }}</span>
+                    {% if action.previous_price %}
+                        <span class="small {{ action.change_color_class }}">
+                            {% if action.is_positive_change %}
+                                ▲ +{{ action.price_change|floatformat:4 }}
+                            {% elif action.is_negative_change %}
+                                ▼ {{ action.price_change|floatformat:4 }}
+                            {% else %}
+                                ● {{ action.price_change|floatformat:4 }}
+                            {% endif %}
+                            ({{ action.price_change_percent|floatformat:2 }}%)
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function updatePrice(actionId, symbol) {
+    const btn = document.getElementById('updatePriceBtn');
+    const originalContent = btn.innerHTML;
+    
+    // Deshabilitar botón y mostrar loading
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass"></i> Actualizando...';
+    
+    fetch(`/api/financial-actions/${actionId}/update-price/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Actualizar los campos del formulario
+            const currentPriceField = document.getElementById('{{ form.current_price.id_for_label }}');
+            const previousPriceField = document.getElementById('{{ form.previous_price.id_for_label }}');
+            
+            if (currentPriceField) {
+                currentPriceField.value = data.new_price.toFixed(4);
+            }
+            if (previousPriceField && data.previous_price) {
+                previousPriceField.value = data.previous_price.toFixed(4);
+            }
+            
+            showAlert('success', data.message);
+            
+            // Recargar la página para actualizar la vista previa
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        } else {
+            showAlert('danger', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('danger', `Error actualizando precio de ${symbol}`);
+    })
+    .finally(() => {
+        // Restaurar botón
+        btn.disabled = false;
+        btn.innerHTML = originalContent;
+    });
+}
+
+function showAlert(type, message) {
+    // Crear alerta Bootstrap
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    // Insertar al inicio del contenido
+    const content = document.querySelector('.container-fluid');
+    if (content) {
+        content.insertAdjacentHTML('afterbegin', alertHtml);
+        
+        // Auto-hide después de 5 segundos
+        setTimeout(() => {
+            const alert = content.querySelector('.alert');
+            if (alert) {
+                alert.remove();
+            }
+        }, 5000);
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Convertir símbolo a mayúsculas automáticamente
+document.addEventListener('DOMContentLoaded', function() {
+    const symbolField = document.getElementById('{{ form.symbol.id_for_label }}');
+    if (symbolField) {
+        symbolField.addEventListener('input', function() {
+            this.value = this.value.toUpperCase();
+        });
+    }
+});
+</script>
+{% endblock %}

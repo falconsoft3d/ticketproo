@@ -21,7 +21,7 @@ from .models import (
     ChatRoom, ChatMessage, Command, ContactFormSubmission, Meeting, MeetingAttendee, MeetingQuestion, OpportunityActivity,
     Course, CourseClass, Contact, BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, Concept, ContactoWeb, Employee, EmployeePayroll,
     Agreement, AgreementSignature, LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry, SharedFile, SharedFileDownload,
-    Recording, RecordingPlayback, MultipleDocumentation, TaskSchedule, ScheduleTask, ScheduleComment
+    Recording, RecordingPlayback, MultipleDocumentation, TaskSchedule, ScheduleTask, ScheduleComment, FinancialAction
 )
 
 class CategoryForm(forms.ModelForm):
@@ -4637,4 +4637,91 @@ class ScheduleCommentForm(forms.ModelForm):
         labels = {
             'comment': 'Comentario',
         }
+
+
+class FinancialActionForm(forms.ModelForm):
+    """Formulario para crear y editar acciones financieras"""
+    
+    class Meta:
+        model = FinancialAction
+        fields = ['symbol', 'name', 'current_price', 'previous_price', 'currency', 'is_active', 'order']
+        widgets = {
+            'symbol': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: EUR/USD, AAPL, BTC/USD'
+            }),
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre descriptivo'
+            }),
+            'current_price': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.0001',
+                'readonly': 'readonly',
+                'style': 'background-color: #f8f9fa;'
+            }),
+            'previous_price': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.0001',
+                'readonly': 'readonly',
+                'style': 'background-color: #f8f9fa;'
+            }),
+            'currency': forms.Select(attrs={
+                'class': 'form-select'
+            }, choices=[
+                ('USD', 'USD - Dólar Estadounidense'),
+                ('EUR', 'EUR - Euro'),
+                ('GBP', 'GBP - Libra Esterlina'),
+                ('JPY', 'JPY - Yen Japonés'),
+                ('CAD', 'CAD - Dólar Canadiense'),
+                ('CHF', 'CHF - Franco Suizo'),
+                ('AUD', 'AUD - Dólar Australiano'),
+            ]),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'order': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '1'
+            }),
+        }
+        labels = {
+            'symbol': 'Símbolo',
+            'name': 'Nombre',
+            'current_price': 'Precio Actual',
+            'previous_price': 'Precio Anterior',
+            'currency': 'Moneda',
+            'is_active': 'Activa',
+            'order': 'Orden',
+        }
+        help_texts = {
+            'symbol': 'Símbolo de la acción (se convertirá a mayúsculas automáticamente)',
+            'current_price': 'Se actualiza automáticamente desde APIs externas',
+            'previous_price': 'Se actualiza automáticamente desde APIs externas',
+            'order': 'Orden de aparición en el ticker (menor número = primera posición)',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Si es una instancia existente, hacer los campos de precio de solo lectura
+        if self.instance and self.instance.pk:
+            self.fields['current_price'].widget.attrs.update({
+                'readonly': 'readonly',
+                'style': 'background-color: #f8f9fa; cursor: not-allowed;'
+            })
+            self.fields['previous_price'].widget.attrs.update({
+                'readonly': 'readonly',
+                'style': 'background-color: #f8f9fa; cursor: not-allowed;'
+            })
+        
+        # Agregar clases Bootstrap a todos los campos
+        for field_name, field in self.fields.items():
+            if field_name not in ['is_active']:
+                field.widget.attrs.update({'class': field.widget.attrs.get('class', '') + ' form-control'})
+    
+    def clean_symbol(self):
+        """Convertir símbolo a mayúsculas"""
+        symbol = self.cleaned_data.get('symbol', '')
+        return symbol.upper()
 

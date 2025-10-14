@@ -3,6 +3,101 @@
 
 {% block title %}{% if form.instance.pk %}Editar Reunión{% else %}Nueva Reunión{% endif %}{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Estilos para el sistema de IA de voz */
+    #voiceAssistantBtn {
+        transition: all 0.3s ease;
+    }
+    
+    #voiceAssistantBtn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    #voiceAssistantBtn.btn-danger {
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+    }
+    
+    #aiRecommendationsPanel {
+        margin-top: 20px;
+        animation: slideDown 0.5s ease-out;
+    }
+    
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+        /* Estilos para las propuestas */
+        .recommendation-card {
+            transition: all 0.3s ease;
+            border-width: 2px;
+        }
+        
+        .recommendation-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .proposal-number {
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        
+        .timeline-simple .timeline-item {
+            padding: 8px 0;
+            border-left: 3px solid #007bff;
+            padding-left: 15px;
+            margin-bottom: 10px;
+            position: relative;
+        }
+        
+        .timeline-simple .timeline-item:before {
+            content: '';
+            position: absolute;
+            left: -6px;
+            top: 15px;
+            width: 9px;
+            height: 9px;
+            background: #007bff;
+            border-radius: 50%;
+        }
+        
+        .toast-container {
+            z-index: 9999;
+        }
+        
+        .proposal-benefits {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        
+        .proposal-timeline {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }    #voiceStatus .spinner-border {
+        animation: spin 1s linear infinite;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
     <div class="row">
@@ -46,6 +141,9 @@
                                 <div class="form-group">
                                     <label for="{{ form.description.id_for_label }}" class="form-label">
                                         <i class="fas fa-align-left"></i> Descripción
+                                        <button type="button" class="btn btn-info btn-sm ms-2" id="voiceAssistantBtn" onclick="toggleVoiceAssistant()">
+                                            <i class="fas fa-microphone" id="micIcon"></i> <span id="voiceButtonText">Activar IA de Voz</span>
+                                        </button>
                                     </label>
                                     {{ form.description }}
                                     {% if form.description.errors %}
@@ -53,7 +151,40 @@
                                             {{ form.description.errors }}
                                         </div>
                                     {% endif %}
-                                    <small class="form-text text-muted">Describe el objetivo y agenda de la reunión</small>
+                                    <small class="form-text text-muted">
+                                        Describe el objetivo y agenda de la reunión. 
+                                        <strong>Tip:</strong> Usa el botón de IA de Voz para dictar y obtener recomendaciones automáticas.
+                                    </small>
+                                    
+                                    <!-- Indicador de estado de voz -->
+                                    <div id="voiceStatus" class="mt-2" style="display: none;">
+                                        <div class="alert alert-info d-flex align-items-center">
+                                            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                                            <span id="voiceStatusText">Iniciando reconocimiento de voz...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Panel de Recomendaciones de IA -->
+                        <div class="row" id="aiRecommendationsPanel" style="display: none;">
+                            <div class="col-md-12">
+                                <div class="card border-primary">
+                                    <div class="card-header bg-primary text-white">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-robot"></i> Recomendaciones de IA
+                                            <small class="float-end">Basado en el contexto detectado</small>
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="aiRecommendations">
+                                            <div class="text-center text-muted">
+                                                <i class="fas fa-brain fa-2x mb-2"></i>
+                                                <p>La IA analizará tu contenido y generará recomendaciones inteligentes...</p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -180,10 +311,37 @@
                                 <a href="{% url 'meeting_list' %}" class="btn btn-secondary">
                                     <i class="fas fa-arrow-left"></i> Cancelar
                                 </a>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-save"></i> 
-                                    {% if form.instance.pk %}Actualizar Reunión{% else %}Crear Reunión{% endif %}
-                                </button>
+                                <div class="d-flex gap-2">
+                                    {% if form.instance.pk %}
+                                    <div class="dropdown">
+                                        <button class="btn btn-outline-danger dropdown-toggle" type="button" 
+                                                data-bs-toggle="dropdown" aria-expanded="false"
+                                                title="Opciones de PDF">
+                                            <i class="fas fa-file-pdf"></i> PDF
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <a class="dropdown-item" 
+                                                   href="{% url 'meeting_pdf_download' form.instance.pk %}" 
+                                                   target="_blank">
+                                                    <i class="fas fa-download"></i> Descargar PDF
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" 
+                                                   href="#" 
+                                                   onclick="previewPDF({{ form.instance.pk }})">
+                                                    <i class="fas fa-eye"></i> Vista Previa
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    {% endif %}
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> 
+                                        {% if form.instance.pk %}Actualizar Reunión{% else %}Crear Reunión{% endif %}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </form>
@@ -221,5 +379,666 @@ function copyToClipboard(elementId) {
         button.classList.add('btn-outline-secondary');
     }, 2000);
 }
+
+// Sistema de IA de Voz
+let recognition = null;
+let isListening = false;
+let accumulatedText = '';
+
+function toggleVoiceAssistant() {
+    if (isListening) {
+        stopVoiceAssistant();
+    } else {
+        startVoiceAssistant();
+    }
+}
+
+function startVoiceAssistant() {
+    // Verificar soporte del navegador
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        alert('Tu navegador no soporta reconocimiento de voz. Usa Chrome o Edge para la mejor experiencia.');
+        return;
+    }
+    
+    // Crear reconocimiento de voz
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    
+    // Configuración
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'es-ES';
+    
+    // UI
+    updateVoiceUI(true);
+    showVoiceStatus('Escuchando... Habla ahora');
+    showAIPanel();
+    
+    // Eventos
+    recognition.onresult = function(event) {
+        let finalTranscript = '';
+        let interimTranscript = '';
+        
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+                finalTranscript += transcript;
+            } else {
+                interimTranscript += transcript;
+            }
+        }
+        
+        if (finalTranscript) {
+            accumulatedText += finalTranscript + ' ';
+            updateDescriptionField();
+            analyzeContentAndGenerateRecommendations(accumulatedText);
+        }
+        
+        // Mostrar transcripción temporal
+        if (interimTranscript) {
+            showVoiceStatus('Escuchando: "' + interimTranscript + '"');
+        }
+    };
+    
+    recognition.onerror = function(event) {
+        console.error('Error de reconocimiento de voz:', event.error);
+        showVoiceStatus('Error: ' + event.error, 'danger');
+        setTimeout(() => {
+            if (isListening) {
+                recognition.start(); // Reintentar
+            }
+        }, 1000);
+    };
+    
+    recognition.onend = function() {
+        if (isListening) {
+            recognition.start(); // Continuar escuchando
+        }
+    };
+    
+    try {
+        recognition.start();
+        isListening = true;
+    } catch (error) {
+        console.error('Error iniciando reconocimiento:', error);
+        showVoiceStatus('Error iniciando el reconocimiento de voz', 'danger');
+    }
+}
+
+function stopVoiceAssistant() {
+    if (recognition) {
+        recognition.stop();
+        recognition = null;
+    }
+    isListening = false;
+    updateVoiceUI(false);
+    hideVoiceStatus();
+}
+
+function updateVoiceUI(listening) {
+    const btn = document.getElementById('voiceAssistantBtn');
+    const icon = document.getElementById('micIcon');
+    const text = document.getElementById('voiceButtonText');
+    
+    if (listening) {
+        btn.classList.remove('btn-info');
+        btn.classList.add('btn-danger');
+        icon.classList.remove('fa-microphone');
+        icon.classList.add('fa-stop');
+        text.textContent = 'Detener IA';
+    } else {
+        btn.classList.remove('btn-danger');
+        btn.classList.add('btn-info');
+        icon.classList.remove('fa-stop');
+        icon.classList.add('fa-microphone');
+        text.textContent = 'Activar IA de Voz';
+    }
+}
+
+function showVoiceStatus(message, type = 'info') {
+    const statusDiv = document.getElementById('voiceStatus');
+    const statusText = document.getElementById('voiceStatusText');
+    const alertDiv = statusDiv.querySelector('.alert');
+    
+    statusText.textContent = message;
+    alertDiv.className = `alert alert-${type} d-flex align-items-center`;
+    statusDiv.style.display = 'block';
+}
+
+function hideVoiceStatus() {
+    document.getElementById('voiceStatus').style.display = 'none';
+}
+
+function showAIPanel() {
+    document.getElementById('aiRecommendationsPanel').style.display = 'block';
+}
+
+function updateDescriptionField() {
+    const descriptionField = document.querySelector('#{{ form.description.id_for_label }}');
+    if (descriptionField) {
+        // Agregar texto manteniendo el contenido existente
+        const currentText = descriptionField.value;
+        if (currentText && !currentText.endsWith(' ') && !currentText.endsWith('\n')) {
+            descriptionField.value = currentText + ' ' + accumulatedText;
+        } else {
+            descriptionField.value = currentText + accumulatedText;
+        }
+    }
+}
+
+function analyzeContentAndGenerateRecommendations(content) {
+    // Mostrar que está analizando
+    const recommendationsDiv = document.getElementById('aiRecommendations');
+    recommendationsDiv.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2">Analizando contenido con IA y generando recomendaciones...</p>
+        </div>
+    `;
+    
+    // Llamar a la API real de recomendaciones
+    fetch('/api/meetings/ai-recommendations/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({ content: content })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            displayRecommendations(data.recommendations);
+            
+            // Mostrar resumen del análisis
+            if (data.analysis_summary) {
+                showVoiceStatus(data.analysis_summary, 'success');
+            }
+        } else {
+            recommendationsDiv.innerHTML = `
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Error generando recomendaciones: ${data.message}
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        recommendationsDiv.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-times-circle"></i>
+                Error de conexión al generar recomendaciones. Intente nuevamente.
+            </div>
+        `;
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function generateSmartRecommendations(content) {
+    const recommendations = [];
+    const lowerContent = content.toLowerCase();
+    
+    // Análisis de contexto y generación de recomendaciones
+    if (lowerContent.includes('precio') || lowerContent.includes('costo') || lowerContent.includes('presupuesto')) {
+        recommendations.push({
+            type: 'pricing',
+            icon: 'fa-dollar-sign',
+            title: 'Estrategia de Precios',
+            suggestion: 'Considere ofrecer un descuento del 10-15% para cerrar hoy, o un plan de pagos fraccionado.',
+            action: 'Aplicar descuento estratégico'
+        });
+    }
+    
+    if (lowerContent.includes('reunión') || lowerContent.includes('cita') || lowerContent.includes('agenda')) {
+        recommendations.push({
+            type: 'meeting',
+            icon: 'fa-calendar-check',
+            title: 'Optimización de Reunión',
+            suggestion: 'Programe una reunión de seguimiento en 3-5 días para mantener el momentum de la negociación.',
+            action: 'Programar seguimiento'
+        });
+    }
+    
+    if (lowerContent.includes('cliente') || lowerContent.includes('empresa') || lowerContent.includes('negocio')) {
+        recommendations.push({
+            type: 'client',
+            icon: 'fa-handshake',
+            title: 'Gestión de Cliente',
+            suggestion: 'Investigue más sobre las necesidades específicas del cliente y personalice la propuesta.',
+            action: 'Crear perfil detallado'
+        });
+    }
+    
+    if (lowerContent.includes('problema') || lowerContent.includes('dificultad') || lowerContent.includes('obstáculo')) {
+        recommendations.push({
+            type: 'solution',
+            icon: 'fa-lightbulb',
+            title: 'Solución Proactiva',
+            suggestion: 'Identifique soluciones alternativas y prepare un plan B para superar las objeciones.',
+            action: 'Desarrollar alternativas'
+        });
+    }
+    
+    if (lowerContent.includes('competencia') || lowerContent.includes('otro proveedor')) {
+        recommendations.push({
+            type: 'competition',
+            icon: 'fa-trophy',
+            title: 'Ventaja Competitiva',
+            suggestion: 'Destaque sus diferenciadores únicos y casos de éxito similares.',
+            action: 'Preparar diferenciadores'
+        });
+    }
+    
+    // Recomendación genérica si no se detecta contexto específico
+    if (recommendations.length === 0) {
+        recommendations.push({
+            type: 'general',
+            icon: 'fa-chart-line',
+            title: 'Optimización General',
+            suggestion: 'Estructure la información de manera clara y defina objetivos específicos para esta reunión.',
+            action: 'Estructurar objetivos'
+        });
+    }
+    
+    return recommendations;
+}
+
+function displayRecommendations(recommendations) {
+    const recommendationsDiv = document.getElementById('aiRecommendations');
+    
+    if (recommendations.length === 0) {
+        recommendationsDiv.innerHTML = `
+            <div class="text-center text-muted">
+                <i class="fas fa-brain fa-2x mb-2"></i>
+                <p>Continúe hablando para obtener propuestas personalizadas para el cliente...</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Ordenar por prioridad
+    const priorityOrder = { 'high': 0, 'medium': 1, 'low': 2 };
+    recommendations.sort((a, b) => {
+        return (priorityOrder[a.priority] || 2) - (priorityOrder[b.priority] || 2);
+    });
+    
+    let html = `
+        <div class="alert alert-info mb-3">
+            <h6><i class="fas fa-lightbulb"></i> 5 Propuestas Específicas para el Cliente</h6>
+            <small>Basadas en el análisis inteligente de la conversación</small>
+        </div>
+        <div class="row">
+    `;
+    
+    recommendations.forEach((rec, index) => {
+        const priorityBadge = rec.priority ? `<span class="badge bg-${getPriorityColor(rec.priority)} ms-1">${rec.priority.toUpperCase()}</span>` : '';
+        const proposalNumber = index + 1;
+        
+        html += `
+            <div class="col-md-6 mb-3">
+                <div class="card h-100 border-${getRecommendationColor(rec.type)} recommendation-card">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <span class="badge bg-${getRecommendationColor(rec.type)} me-2">${proposalNumber}</span>
+                            <i class="fas ${rec.icon} text-${getRecommendationColor(rec.type)}"></i>
+                            ${rec.title}
+                            ${priorityBadge}
+                        </h6>
+                        <p class="card-text small">${rec.suggestion}</p>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-${getRecommendationColor(rec.type)} btn-sm flex-fill" 
+                                    onclick="presentProposal(${proposalNumber}, '${rec.title}', '${rec.suggestion}', '${rec.action}')">
+                                <i class="fas fa-presentation"></i> Presentar
+                            </button>
+                            <button class="btn btn-${getRecommendationColor(rec.type)} btn-sm" 
+                                    onclick="addToDescription('${rec.title}', '${rec.action}')">
+                                <i class="fas fa-plus"></i> Agregar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    
+    // Agregar estadísticas
+    html += `
+        <div class="mt-3 p-3 bg-light rounded">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <small class="text-muted">
+                        <i class="fas fa-chart-bar"></i> 
+                        Se generaron <strong>${recommendations.length} propuestas específicas</strong> para presentar al cliente.
+                    </small>
+                </div>
+                <div class="col-md-4 text-end">
+                    <small class="text-muted">
+                        <i class="fas fa-clock"></i> ${new Date().toLocaleTimeString()}
+                    </small>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    recommendationsDiv.innerHTML = html;
+}
+
+function presentProposal(number, title, description, action) {
+    // Crear una presentación detallada de la propuesta
+    const modal = `
+        <div class="modal fade" id="proposalModal${number}" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">
+                            <i class="fas fa-presentation"></i> Propuesta ${number}: ${title}
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-4">
+                            <h6><i class="fas fa-bullseye"></i> Descripción de la Propuesta:</h6>
+                            <p class="alert alert-info">${description.replace('🎯 Propuesta: ', '')}</p>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-check-circle text-success"></i> Beneficios Clave:</h6>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-arrow-right text-primary"></i> ROI medible y comprobable</li>
+                                    <li><i class="fas fa-arrow-right text-primary"></i> Implementación sin interrupciones</li>
+                                    <li><i class="fas fa-arrow-right text-primary"></i> Soporte especializado incluido</li>
+                                    <li><i class="fas fa-arrow-right text-primary"></i> Escalabilidad garantizada</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-calendar-alt text-info"></i> Timeline de Implementación:</h6>
+                                <div class="timeline-simple">
+                                    <div class="timeline-item">
+                                        <strong>Semana 1-2:</strong> Análisis y planificación
+                                    </div>
+                                    <div class="timeline-item">
+                                        <strong>Semana 3-4:</strong> Desarrollo e integración
+                                    </div>
+                                    <div class="timeline-item">
+                                        <strong>Semana 5-6:</strong> Pruebas y capacitación
+                                    </div>
+                                    <div class="timeline-item">
+                                        <strong>Semana 7+:</strong> Go-live y soporte
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 p-3 bg-light rounded">
+                            <h6><i class="fas fa-handshake text-success"></i> Próximos Pasos Recomendados:</h6>
+                            <ol>
+                                <li>Reunión técnica para validar requerimientos específicos</li>
+                                <li>Presentación de propuesta económica detallada</li>
+                                <li>Definición de cronograma de implementación</li>
+                                <li>Firma de acuerdo y inicio del proyecto</li>
+                            </ol>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="button" class="btn btn-primary" onclick="scheduleFollowUp('${title}')">
+                            <i class="fas fa-calendar-plus"></i> Agendar Seguimiento
+                        </button>
+                        <button type="button" class="btn btn-success" onclick="addToDescription('${title}', '${action}')">
+                            <i class="fas fa-plus"></i> Agregar a Reunión
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Eliminar modal anterior si existe
+    const existingModal = document.getElementById(`proposalModal${number}`);
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Agregar nuevo modal al DOM
+    document.body.insertAdjacentHTML('beforeend', modal);
+    
+    // Mostrar modal
+    const modalElement = new bootstrap.Modal(document.getElementById(`proposalModal${number}`));
+    modalElement.show();
+}
+
+function addToDescription(title, action) {
+    // Agregar la propuesta al campo de descripción
+    const descriptionField = document.getElementById('id_description');
+    if (descriptionField) {
+        const currentText = descriptionField.value;
+        const proposalText = `\n\n🎯 PROPUESTA PRESENTADA: ${title}\n📋 Acción: ${action}\n⏰ Fecha: ${new Date().toLocaleDateString()}\n`;
+        
+        descriptionField.value = currentText + proposalText;
+        descriptionField.dispatchEvent(new Event('input'));
+        
+        // Mostrar confirmación
+        showToast('success', 'Propuesta agregada', 'La propuesta se agregó correctamente a la descripción de la reunión');
+        
+        // Cerrar modal si está abierto
+        const openModal = document.querySelector('.modal.show');
+        if (openModal) {
+            const modal = bootstrap.Modal.getInstance(openModal);
+            if (modal) modal.hide();
+        }
+    }
+}
+
+function scheduleFollowUp(title) {
+    // Función para agendar seguimiento
+    showToast('info', 'Función en desarrollo', `Se programará seguimiento para: ${title}`);
+}
+
+function showToast(type, title, message) {
+    // Crear toast de notificación
+    const toastHtml = `
+        <div class="toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} border-0" role="alert">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <strong>${title}</strong><br>
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    `;
+    
+    // Crear contenedor de toasts si no existe
+    let toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+        toastContainer.style.zIndex = '9999';
+        document.body.appendChild(toastContainer);
+    }
+    
+    // Agregar toast
+    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+    
+    // Mostrar toast
+    const toastElement = toastContainer.lastElementChild;
+    const toast = new bootstrap.Toast(toastElement, { delay: 3000 });
+    toast.show();
+    
+    // Eliminar toast después de que se oculte
+    toastElement.addEventListener('hidden.bs.toast', () => {
+        toastElement.remove();
+    });
+}
+
+function getPriorityColor(priority) {
+    const colors = {
+        'high': 'danger',
+        'medium': 'warning', 
+        'low': 'info'
+    };
+    return colors[priority] || 'secondary';
+}
+
+function getRecommendationColor(type) {
+    const colors = {
+        'pricing': 'success',
+        'objection': 'warning',
+        'competition': 'danger',
+        'urgency': 'info',
+        'decision_maker': 'primary',
+        'budget': 'success',
+        'followup': 'secondary',
+        'meeting': 'primary',
+        'client': 'info',
+        'solution': 'warning',
+        'general': 'secondary'
+    };
+    return colors[type] || 'secondary';
+}
+
+function applyRecommendation(type, action, title) {
+    // Mostrar modal o acción específica según el tipo
+    const actionMap = {
+        'pricing': () => {
+            alert(`💰 ${title}\n\n✅ Acción: ${action}\n\n📋 Sugerencias:\n• Prepare 3 opciones de precios\n• Calcule descuentos por volumen\n• Defina términos de pago flexibles`);
+        },
+        'objection': () => {
+            alert(`🛡️ ${title}\n\n✅ Acción: ${action}\n\n📋 Prepare:\n• Casos de éxito similares\n• Testimonios de clientes\n• Garantías o periodos de prueba`);
+        },
+        'competition': () => {
+            alert(`🏆 ${title}\n\n✅ Acción: ${action}\n\n📋 Enfoque en:\n• Diferenciadores únicos\n• Ventajas competitivas\n• ROI superior demostrable`);
+        },
+        'urgency': () => {
+            alert(`⏰ ${title}\n\n✅ Acción: ${action}\n\n📋 Acciones inmediatas:\n• Acelerar cronograma de propuesta\n• Ofrecer recursos dedicados\n• Definir plan de implementación rápida`);
+        },
+        'followup': () => {
+            alert(`📅 ${title}\n\n✅ Acción: ${action}\n\n📋 Próximos pasos:\n• Agendar reunión en 24-48h\n• Enviar resumen de puntos clave\n• Definir deliverables específicos`);
+        }
+    };
+    
+    const actionFunction = actionMap[type] || (() => {
+        alert(`📝 ${title}\n\n✅ Acción recomendada: ${action}\n\n💡 Esta funcionalidad se puede expandir con acciones automáticas específicas.`);
+    });
+    
+    actionFunction();
+}
+
+// Función para vista previa del PDF
+function previewPDF(meetingId) {
+    // Crear modal para vista previa
+    const modal = `
+        <div class="modal fade" id="pdfPreviewModal" tabindex="-1">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title">
+                            <i class="fas fa-file-pdf"></i> Vista Previa del PDF
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="text-center p-4">
+                            <div class="mb-3">
+                                <i class="fas fa-file-pdf fa-5x text-danger mb-3"></i>
+                                <h4>Reporte de Reunión</h4>
+                                <p class="text-muted">El PDF incluirá toda la información de la reunión:</p>
+                            </div>
+                            
+                            <div class="row text-start">
+                                <div class="col-md-6">
+                                    <div class="card border-success mb-3">
+                                        <div class="card-header bg-success text-white">
+                                            <i class="fas fa-info-circle"></i> Información Básica
+                                        </div>
+                                        <div class="card-body">
+                                            <ul class="list-unstyled mb-0">
+                                                <li><i class="fas fa-check text-success"></i> Título de la reunión</li>
+                                                <li><i class="fas fa-check text-success"></i> Fecha y hora</li>
+                                                <li><i class="fas fa-check text-success"></i> Creador y participantes</li>
+                                                <li><i class="fas fa-check text-success"></i> Empresa y contacto</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card border-info mb-3">
+                                        <div class="card-header bg-info text-white">
+                                            <i class="fas fa-clipboard"></i> Contenido Detallado
+                                        </div>
+                                        <div class="card-body">
+                                            <ul class="list-unstyled mb-0">
+                                                <li><i class="fas fa-check text-info"></i> Descripción completa</li>
+                                                <li><i class="fas fa-check text-info"></i> Propuestas presentadas</li>
+                                                <li><i class="fas fa-check text-info"></i> Acciones acordadas</li>
+                                                <li><i class="fas fa-check text-info"></i> Próximos pasos</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-warning">
+                                <i class="fas fa-lightbulb"></i>
+                                <strong>Tip:</strong> El PDF se genera con la información actual de la reunión. 
+                                Si has hecho cambios, guarda primero para incluirlos en el reporte.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times"></i> Cerrar
+                        </button>
+                        <a href="/meetings/${meetingId}/pdf/" 
+                           class="btn btn-danger" 
+                           target="_blank"
+                           onclick="setTimeout(() => { bootstrap.Modal.getInstance(document.getElementById('pdfPreviewModal')).hide(); }, 1000)">
+                            <i class="fas fa-download"></i> Descargar PDF
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Eliminar modal anterior si existe
+    const existingModal = document.getElementById('pdfPreviewModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Agregar nuevo modal al DOM
+    document.body.insertAdjacentHTML('beforeend', modal);
+    
+    // Mostrar modal
+    const modalElement = new bootstrap.Modal(document.getElementById('pdfPreviewModal'));
+    modalElement.show();
+}
+
+// Limpiar al salir de la página
+window.addEventListener('beforeunload', function() {
+    if (isListening) {
+        stopVoiceAssistant();
+    }
+});
 </script>
 {% endblock %}

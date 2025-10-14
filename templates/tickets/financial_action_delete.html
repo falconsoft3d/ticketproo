@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block title %}Eliminar Acción Financiera - TicketProo{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'financial_actions_list' %}">Acciones Financieras</a></li>
+                <li class="breadcrumb-item active">Eliminar</li>
+            </ol>
+        </nav>
+        
+        <h1 class="mb-2 text-danger">
+            <i class="bi bi-trash"></i> Eliminar Acción Financiera
+        </h1>
+        <p class="text-muted">Confirme la eliminación de la acción financiera</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger">
+                    <h6 class="alert-heading">
+                        <i class="bi bi-exclamation-triangle"></i> ¡Atención!
+                    </h6>
+                    <p class="mb-0">
+                        Esta acción eliminará permanentemente la acción financiera y 
+                        <strong>no se podrá deshacer</strong>. La acción ya no aparecerá en el ticker del dashboard.
+                    </p>
+                </div>
+                
+                <!-- Detalles de la acción a eliminar -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Detalles de la Acción:</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Símbolo:</strong> {{ action.symbol }}</li>
+                            <li><strong>Nombre:</strong> {{ action.name }}</li>
+                            <li><strong>Precio Actual:</strong> {{ action.current_price }} {{ action.currency }}</li>
+                            <li><strong>Estado:</strong> 
+                                {% if action.is_active %}
+                                    <span class="badge bg-success">Activa</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Inactiva</span>
+                                {% endif %}
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Información Adicional:</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Orden:</strong> {{ action.order }}</li>
+                            <li><strong>Creado:</strong> {{ action.created_at|date:"d/m/Y H:i" }}</li>
+                            <li><strong>Última Actualización:</strong> {{ action.last_updated|date:"d/m/Y H:i" }}</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <form method="post" class="d-flex gap-2">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Sí, Eliminar Acción
+                    </button>
+                    <a href="{% url 'financial_actions_list' %}" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Vista previa del ticker que se eliminará -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-eye"></i> Esta información se eliminará
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center p-2 bg-dark text-white rounded opacity-50">
+                    <span class="fw-bold me-2">{{ action.symbol }}</span>
+                    <span class="me-2">{{ action.current_price }} {{ action.currency }}</span>
+                    {% if action.previous_price %}
+                        <span class="small {{ action.change_color_class }}">
+                            {% if action.is_positive_change %}
+                                ▲ +{{ action.price_change|floatformat:4 }}
+                            {% elif action.is_negative_change %}
+                                ▼ {{ action.price_change|floatformat:4 }}
+                            {% else %}
+                                ● {{ action.price_change|floatformat:4 }}
+                            {% endif %}
+                            ({{ action.price_change_percent|floatformat:2 }}%)
+                        </span>
+                    {% endif %}
+                </div>
+                <div class="text-center mt-2">
+                    <small class="text-muted">
+                        <i class="bi bi-trash"></i> Se eliminará del ticker
+                    </small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Información sobre el impacto -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-info-circle"></i> Impacto de la Eliminación
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <i class="bi bi-x-circle text-danger"></i>
+                        <span class="ms-2">Ya no aparecerá en el ticker del dashboard</span>
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-x-circle text-danger"></i>
+                        <span class="ms-2">Se perderá el historial de precios</span>
+                    </li>
+                    <li class="mb-0">
+                        <i class="bi bi-arrow-clockwise text-info"></i>
+                        <span class="ms-2">Puede volver a crearla manualmente</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -14464,6 +14464,10 @@ def get_user_company(user):
 
 def user_has_company_access(user, company):
     """Verifica si el usuario tiene acceso a una empresa"""
+    # Los agentes y superusuarios tienen acceso a todas las empresas
+    if user.is_superuser or is_agent(user):
+        return True
+    
     user_company = get_user_company(user)
     if not user_company:
         return False
@@ -14471,6 +14475,10 @@ def user_has_company_access(user, company):
 
 def get_user_companies_queryset(user):
     """Obtiene el queryset de empresas accesibles por el usuario"""
+    # Los agentes y superusuarios pueden ver todas las empresas
+    if user.is_superuser or is_agent(user):
+        return Company.objects.all()
+    
     company = get_user_company(user)
     if company:
         return Company.objects.filter(id=company.id)
@@ -14479,26 +14487,33 @@ def get_user_companies_queryset(user):
 @login_required
 def task_schedule_list(request):
     """Vista para listar todos los cronogramas"""
-    # Obtener la empresa del usuario
-    user_company = None
-    if hasattr(request.user, 'profile') and request.user.profile.company:
-        user_company = request.user.profile.company
-    
-    if user_company:
-        schedules = TaskSchedule.objects.filter(
-            company=user_company
-        ).select_related('company', 'created_by').annotate(
+    # Los agentes y superusuarios pueden ver todos los cronogramas
+    if request.user.is_superuser or is_agent(request.user):
+        schedules = TaskSchedule.objects.all().select_related('company', 'created_by').annotate(
             total_tasks=models.Count('tasks'),
             completed_tasks=models.Count('tasks', filter=models.Q(tasks__is_completed=True))
         ).order_by('-created_at')
     else:
-        # Si no tiene empresa, mostrar solo los que creó
-        schedules = TaskSchedule.objects.filter(
-            created_by=request.user
-        ).select_related('company', 'created_by').annotate(
-            total_tasks=models.Count('tasks'),
-            completed_tasks=models.Count('tasks', filter=models.Q(tasks__is_completed=True))
-        ).order_by('-created_at')
+        # Obtener la empresa del usuario
+        user_company = None
+        if hasattr(request.user, 'profile') and request.user.profile.company:
+            user_company = request.user.profile.company
+        
+        if user_company:
+            schedules = TaskSchedule.objects.filter(
+                company=user_company
+            ).select_related('company', 'created_by').annotate(
+                total_tasks=models.Count('tasks'),
+                completed_tasks=models.Count('tasks', filter=models.Q(tasks__is_completed=True))
+            ).order_by('-created_at')
+        else:
+            # Si no tiene empresa, mostrar solo los que creó
+            schedules = TaskSchedule.objects.filter(
+                created_by=request.user
+            ).select_related('company', 'created_by').annotate(
+                total_tasks=models.Count('tasks'),
+                completed_tasks=models.Count('tasks', filter=models.Q(tasks__is_completed=True))
+            ).order_by('-created_at')
     
     context = {
         'page_title': 'Planificación de Tareas',
@@ -15178,4 +15193,698 @@ def schedule_task_toggle_public(request, pk):
         })
     
     return JsonResponse({'success': False}, status=400)
+
+
+@login_required
+def world_clock_view(request):
+    """Vista del reloj mundial con países de habla hispana organizados por franjas horarias"""
+    
+    # Países organizados por franjas horarias UTC - España primero
+    countries_by_timezone = {
+        'UTC+1 (España)': [
+            {'name': 'España', 'timezone': 'Europe/Madrid', 'flag': '🇪🇸'},
+        ],
+        'UTC-2 (Atlántico)': [
+            {'name': 'Azores (Portugal)', 'timezone': 'Atlantic/Azores', 'flag': '🇵🇹'},
+            {'name': 'Cabo Verde', 'timezone': 'Atlantic/Cape_Verde', 'flag': '🇨🇻'},
+        ],
+        'UTC-6 (Centro América)': [
+            {'name': 'México', 'timezone': 'America/Mexico_City', 'flag': '🇲🇽'},
+            {'name': 'Guatemala', 'timezone': 'America/Guatemala', 'flag': '🇬🇹'},
+        ],
+        'UTC-5 (Región Andina)': [
+            {'name': 'Ecuador', 'timezone': 'America/Guayaquil', 'flag': '🇪🇨'},
+            {'name': 'Perú', 'timezone': 'America/Lima', 'flag': '🇵🇪'},
+            {'name': 'Cuba', 'timezone': 'America/Havana', 'flag': '🇨🇺'},
+        ],
+        'UTC-4 (Caribe y Venezuela)': [
+            {'name': 'República Dominicana', 'timezone': 'America/Santo_Domingo', 'flag': '🇩🇴'},
+            {'name': 'Venezuela', 'timezone': 'America/Caracas', 'flag': '🇻🇪'},
+            {'name': 'Bolivia', 'timezone': 'America/La_Paz', 'flag': '🇧🇴'},
+        ],
+        'UTC-3 (Cono Sur)': [
+            {'name': 'Argentina', 'timezone': 'America/Argentina/Buenos_Aires', 'flag': '🇦🇷'},
+            {'name': 'Uruguay', 'timezone': 'America/Montevideo', 'flag': '🇺🇾'},
+            {'name': 'Paraguay', 'timezone': 'America/Asuncion', 'flag': '🇵🇾'},
+        ],
+        'UTC-3/-4 (Chile)': [
+            {'name': 'Chile', 'timezone': 'America/Santiago', 'flag': '🇨🇱'},
+        ],
+    }
+    
+    context = {
+        'page_title': 'Reloj Mundial - Países de Habla Hispana',
+        'countries_by_timezone': countries_by_timezone,
+    }
+    
+    return render(request, 'tickets/world_clock.html', context)
+
+
+# ====================================
+# VISTAS DE ACCIONES FINANCIERAS
+# ====================================
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def financial_actions_list_view(request):
+    """Vista para listar todas las acciones financieras"""
+    from .models import FinancialAction
+    
+    actions = FinancialAction.objects.all().order_by('order', 'symbol')
+    
+    # Búsqueda
+    search = request.GET.get('search')
+    if search:
+        actions = actions.filter(
+            models.Q(symbol__icontains=search) |
+            models.Q(name__icontains=search)
+        )
+    
+    # Filtro por estado activo
+    status = request.GET.get('status')
+    if status == 'active':
+        actions = actions.filter(is_active=True)
+    elif status == 'inactive':
+        actions = actions.filter(is_active=False)
+    
+    context = {
+        'page_title': 'Gestión de Acciones Financieras',
+        'actions': actions,
+        'search': search,
+        'status': status,
+    }
+    
+    return render(request, 'tickets/financial_actions_list.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def financial_action_create_view(request):
+    """Vista para crear una nueva acción financiera"""
+    from .models import FinancialAction
+    from .forms import FinancialActionForm
+    
+    if request.method == 'POST':
+        form = FinancialActionForm(request.POST)
+        if form.is_valid():
+            action = form.save()
+            messages.success(request, f'Acción financiera "{action.symbol}" creada exitosamente.')
+            return redirect('financial_actions_list')
+        else:
+            messages.error(request, 'Por favor, corrige los errores en el formulario.')
+    else:
+        # Obtener el siguiente orden sugerido
+        last_action = FinancialAction.objects.order_by('-order').first()
+        suggested_order = (last_action.order + 1) if last_action else 1
+        
+        form = FinancialActionForm(initial={'order': suggested_order})
+    
+    context = {
+        'page_title': 'Crear Acción Financiera',
+        'form': form,
+        'suggested_order': form.initial.get('order', 1),
+        'is_edit': False,
+    }
+    
+    return render(request, 'tickets/financial_action_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def financial_action_edit_view(request, pk):
+    """Vista para editar una acción financiera"""
+    from .models import FinancialAction
+    from .forms import FinancialActionForm
+    
+    action = get_object_or_404(FinancialAction, pk=pk)
+    
+    if request.method == 'POST':
+        form = FinancialActionForm(request.POST, instance=action)
+        if form.is_valid():
+            # No actualizar los campos de precio si vienen en el POST
+            # Ya que deben ser de solo lectura
+            cleaned_data = form.cleaned_data.copy()
+            if action.pk:  # Si es edición, mantener precios existentes
+                cleaned_data.pop('current_price', None)
+                cleaned_data.pop('previous_price', None)
+            
+            # Actualizar solo los campos editables
+            for field, value in cleaned_data.items():
+                if field not in ['current_price', 'previous_price']:
+                    setattr(action, field, value)
+            
+            action.save()
+            messages.success(request, f'Acción financiera "{action.symbol}" actualizada exitosamente.')
+            return redirect('financial_actions_list')
+        else:
+            messages.error(request, 'Por favor, corrige los errores en el formulario.')
+    else:
+        form = FinancialActionForm(instance=action)
+    
+    # Obtener el siguiente orden sugerido por si lo necesita
+    last_action = FinancialAction.objects.order_by('-order').first()
+    suggested_order = (last_action.order + 1) if last_action else 1
+    
+    context = {
+        'page_title': f'Editar - {action.symbol}',
+        'action': action,
+        'form': form,
+        'suggested_order': suggested_order,
+        'is_edit': True,
+    }
+    
+    return render(request, 'tickets/financial_action_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def financial_action_delete_view(request, pk):
+    """Vista para eliminar una acción financiera"""
+    from .models import FinancialAction
+    
+    action = get_object_or_404(FinancialAction, pk=pk)
+    
+    if request.method == 'POST':
+        try:
+            symbol = action.symbol
+            action.delete()
+            messages.success(request, f'Acción financiera "{symbol}" eliminada exitosamente.')
+            return redirect('financial_actions_list')
+            
+        except Exception as e:
+            messages.error(request, f'Error eliminando acción financiera: {str(e)}')
+            return redirect('financial_actions_list')
+    
+    context = {
+        'page_title': f'Eliminar - {action.symbol}',
+        'action': action,
+    }
+    
+    return render(request, 'tickets/financial_action_delete.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def financial_action_toggle_view(request, pk):
+    """Vista para activar/desactivar una acción financiera"""
+    from .models import FinancialAction
+    
+    action = get_object_or_404(FinancialAction, pk=pk)
+    action.is_active = not action.is_active
+    action.save()
+    
+    status = 'activada' if action.is_active else 'desactivada'
+    messages.success(request, f'Acción financiera "{action.symbol}" {status} exitosamente.')
+    
+    return redirect('financial_actions_list')
+
+
+def financial_actions_ticker_data_view(request):
+    """Vista AJAX para obtener datos del ticker de acciones"""
+    from .models import FinancialAction
+    from django.http import JsonResponse
+    
+    actions = FinancialAction.objects.filter(is_active=True).order_by('order', 'symbol')
+    
+    data = []
+    for action in actions:
+        data.append({
+            'id': action.id,
+            'symbol': action.symbol,
+            'name': action.name,
+            'current_price': float(action.current_price),
+            'previous_price': float(action.previous_price) if action.previous_price else None,
+            'currency': action.currency,
+            'price_change': float(action.price_change),
+            'price_change_percent': float(action.price_change_percent),
+            'is_positive_change': action.is_positive_change,
+            'is_negative_change': action.is_negative_change,
+            'change_color_class': action.change_color_class,
+        })
+    
+    return JsonResponse({'actions': data})
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff or hasattr(u, 'role') and u.role in ['agente'])
+def financial_actions_update_prices_view(request):
+    """Vista para actualizar precios de acciones financieras desde APIs externas"""
+    if request.method == 'POST':
+        from .financial_api import update_all_financial_prices
+        
+        try:
+            updated_count = update_all_financial_prices()
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Precios actualizados exitosamente: {updated_count} acciones',
+                'updated_count': updated_count
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Error actualizando precios: {str(e)}'
+            })
+    
+    return JsonResponse({'success': False, 'message': 'Método no permitido'})
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff or hasattr(u, 'role') and u.role in ['agente'])
+def financial_action_update_single_price_view(request, pk):
+    """Vista para actualizar precio de una acción específica"""
+    if request.method == 'POST':
+        from .financial_api import FinancialDataAPI
+        from .models import FinancialAction
+        
+        try:
+            action = get_object_or_404(FinancialAction, pk=pk)
+            api = FinancialDataAPI()
+            
+            if api.update_price(action):
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Precio de {action.symbol} actualizado exitosamente',
+                    'new_price': float(action.current_price),
+                    'previous_price': float(action.previous_price) if action.previous_price else None,
+                    'price_change': float(action.price_change),
+                    'price_change_percent': float(action.price_change_percent),
+                    'last_updated': action.last_updated.strftime('%d/%m/%Y %H:%M'),
+                })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'message': f'No se pudo obtener precio actualizado para {action.symbol}'
+                })
+                
+        except FinancialAction.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'message': 'Acción financiera no encontrada'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Error actualizando precio: {str(e)}'
+            })
+    
+    return JsonResponse({'success': False, 'message': 'Método no permitido'})
+
+
+@login_required
+def meeting_ai_recommendations_view(request):
+    """Vista para generar propuestas específicas para el cliente basadas en el contenido de la reunión"""
+    if request.method == 'POST':
+        try:
+            import json
+            data = json.loads(request.body)
+            content = data.get('content', '').strip()
+            
+            if not content:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'No se proporcionó contenido para analizar'
+                })
+            
+            # Generar propuestas específicas para el cliente
+            proposals = generate_client_proposals(content.lower())
+            
+            return JsonResponse({
+                'success': True,
+                'recommendations': proposals[:5],  # Máximo 5 propuestas
+                'analysis_summary': f'Analicé {len(content.split())} palabras y generé {len(proposals[:5])} propuestas específicas para el cliente.'
+            })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'message': 'Formato de datos inválido'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Error procesando propuestas: {str(e)}'
+            })
+    
+    return JsonResponse({'success': False, 'message': 'Método no permitido'})
+
+
+def generate_client_proposals(content):
+    """
+    Genera propuestas específicas para el cliente basadas en el análisis del contenido
+    """
+    proposals = []
+    
+    # Análisis de industria/sector
+    if any(word in content for word in ['tienda', 'venta', 'producto', 'inventario', 'retail', 'comercio']):
+        proposals.append({
+            'type': 'solution',
+            'icon': 'fa-store',
+            'title': 'Sistema de Gestión de Inventario Inteligente',
+            'suggestion': '🎯 Propuesta: Implementar sistema automatizado que optimice control de stock, reduzca mermas 25% y mejore rotación de productos con alertas inteligentes de restock.',
+            'action': 'Proponer Sistema de Inventario',
+            'priority': 'high'
+        })
+    
+    if any(word in content for word in ['ventas', 'clientes', 'crm', 'marketing', 'leads']):
+        proposals.append({
+            'type': 'crm',
+            'icon': 'fa-users',
+            'title': 'Plataforma CRM con Automatización de Marketing',
+            'suggestion': '🎯 Propuesta: Centralizar gestión de clientes con automatización de campañas, aumento del 40% en conversión de leads y reportes en tiempo real.',
+            'action': 'Implementar CRM Personalizado',
+            'priority': 'high'
+        })
+    
+    if any(word in content for word in ['empleados', 'nómina', 'recursos humanos', 'personal', 'asistencia']):
+        proposals.append({
+            'type': 'hr',
+            'icon': 'fa-user-friends',
+            'title': 'Sistema Integral de Recursos Humanos',
+            'suggestion': '🎯 Propuesta: Digitalizar RR.HH. con control de asistencia biométrico, nóminas automatizadas y evaluaciones de desempeño. Ahorro de 15 horas semanales.',
+            'action': 'Desarrollar Módulo de RR.HH.',
+            'priority': 'medium'
+        })
+    
+    if any(word in content for word in ['finanzas', 'contabilidad', 'facturación', 'impuestos', 'fiscal']):
+        proposals.append({
+            'type': 'finance',
+            'icon': 'fa-calculator',
+            'title': 'Módulo Financiero con Facturación Electrónica',
+            'suggestion': '🎯 Propuesta: Automatizar gestión financiera con facturación electrónica, control de flujo de caja y reportes fiscales automáticos para cumplimiento normativo.',
+            'action': 'Implementar Sistema Financiero',
+            'priority': 'high'
+        })
+    
+    if any(word in content for word in ['sitio web', 'online', 'internet', 'digital', 'e-commerce', 'página']):
+        proposals.append({
+            'type': 'web',
+            'icon': 'fa-globe',
+            'title': 'Presencia Digital Completa con E-commerce',
+            'suggestion': '🎯 Propuesta: Desarrollar plataforma web con tienda online 24/7, múltiples métodos de pago, integración con redes sociales y marketing digital automático.',
+            'action': 'Crear Plataforma Digital',
+            'priority': 'medium'
+        })
+    
+    if any(word in content for word in ['automatización', 'procesos', 'eficiencia', 'optimización', 'workflow']):
+        proposals.append({
+            'type': 'automation',
+            'icon': 'fa-cogs',
+            'title': 'Suite de Automatización de Procesos',
+            'suggestion': '🎯 Propuesta: Automatizar procesos repetitivos con workflows inteligentes, reducir 60% tareas manuales y eliminar errores humanos.',
+            'action': 'Desarrollar Automatización',
+            'priority': 'medium'
+        })
+    
+    if any(word in content for word in ['móvil', 'app', 'aplicación', 'smartphone', 'celular']):
+        proposals.append({
+            'type': 'mobile',
+            'icon': 'fa-mobile-alt',
+            'title': 'Aplicación Móvil Nativa para Clientes',
+            'suggestion': '🎯 Propuesta: Desarrollar app móvil para iOS/Android con autoservicio, notificaciones push personalizadas y mayor engagement 24/7 con clientes.',
+            'action': 'Desarrollar App Móvil',
+            'priority': 'medium'
+        })
+    
+    if any(word in content for word in ['seguridad', 'backup', 'protección', 'datos', 'ciberseguridad']):
+        proposals.append({
+            'type': 'security',
+            'icon': 'fa-shield-alt',
+            'title': 'Solución Integral de Seguridad y Backup',
+            'suggestion': '🎯 Propuesta: Implementar seguridad multicapa con protección 99.9% contra amenazas, backups automáticos diarios y cumplimiento normativo.',
+            'action': 'Implementar Seguridad Avanzada',
+            'priority': 'high'
+        })
+    
+    if any(word in content for word in ['reportes', 'análisis', 'datos', 'métricas', 'dashboard', 'kpi']):
+        proposals.append({
+            'type': 'analytics',
+            'icon': 'fa-chart-line',
+            'title': 'Plataforma de Business Intelligence',
+            'suggestion': '🎯 Propuesta: Implementar dashboards ejecutivos con KPIs en tiempo real, alertas automáticas y análisis predictivo para decisiones basadas en datos.',
+            'action': 'Desarrollar BI Dashboard',
+            'priority': 'medium'
+        })
+    
+    if any(word in content for word in ['capacitación', 'entrenamiento', 'formación', 'aprendizaje', 'educación']):
+        proposals.append({
+            'type': 'training',
+            'icon': 'fa-graduation-cap',
+            'title': 'Plataforma de Capacitación Digital',
+            'suggestion': '🎯 Propuesta: Crear LMS personalizado con cursos interactivos, certificaciones automáticas y seguimiento de progreso para maximizar adopción tecnológica.',
+            'action': 'Diseñar Plataforma Educativa',
+            'priority': 'medium'
+        })
+    
+    # Si no se detecta contenido específico, generar propuestas generales inteligentes
+    if not proposals:
+        proposals = [
+            {
+                'type': 'consultation',
+                'icon': 'fa-lightbulb',
+                'title': 'Consultoría de Transformación Digital Gratuita',
+                'suggestion': '🎯 Propuesta: Análisis completo de procesos actuales con roadmap personalizado de digitalización, diagnóstico gratuito y ROI proyectado.',
+                'action': 'Realizar Consultoría Estratégica',
+                'priority': 'high'
+            },
+            {
+                'type': 'pilot',
+                'icon': 'fa-flask',
+                'title': 'Proyecto Piloto de Automatización',
+                'suggestion': '🎯 Propuesta: Implementar solución piloto en área específica para demostrar valor tangible antes de expansión, con inversión inicial mínima.',
+                'action': 'Iniciar Proyecto Piloto',
+                'priority': 'medium'
+            },
+            {
+                'type': 'integration',
+                'icon': 'fa-link',
+                'title': 'Integración de Sistemas Existentes',
+                'suggestion': '🎯 Propuesta: Conectar sistemas actuales mediante APIs robustas para eliminar silos de información y crear flujo de datos unificado.',
+                'action': 'Integrar Sistemas Actuales',
+                'priority': 'high'
+            },
+            {
+                'type': 'support',
+                'icon': 'fa-headset',
+                'title': 'Mesa de Ayuda Especializada',
+                'suggestion': '🎯 Propuesta: Implementar sistema de tickets con IA para soporte técnico 24/7, categorización automática y resolución proactiva.',
+                'action': 'Crear Mesa de Ayuda',
+                'priority': 'medium'
+            },
+            {
+                'type': 'maintenance',
+                'icon': 'fa-tools',
+                'title': 'Plan de Mantenimiento Preventivo',
+                'suggestion': '🎯 Propuesta: Establecer mantenimiento predictivo con monitoreo continuo, actualizaciones automáticas y garantía de uptime 99.9%.',
+                'action': 'Estructurar Plan de Mantenimiento',
+                'priority': 'medium'
+            }
+        ]
+    
+    return proposals
+
+
+@login_required
+def meeting_pdf_download_view(request, pk):
+    """Vista para descargar reunión en formato PDF"""
+    try:
+        meeting = get_object_or_404(Meeting, pk=pk)
+        
+        # Verificar permisos
+        if not request.user.is_staff and meeting.created_by != request.user:
+            return HttpResponse('No tiene permisos para acceder a esta reunión', status=403)
+        
+        # Importar librerías de PDF
+        from reportlab.lib.pagesizes import letter, A4
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import inch
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+        from reportlab.lib import colors
+        from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+        from io import BytesIO
+        import datetime
+        
+        # Crear buffer en memoria
+        buffer = BytesIO()
+        
+        # Crear documento PDF
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=A4,
+            rightMargin=72,
+            leftMargin=72,
+            topMargin=72,
+            bottomMargin=18
+        )
+        
+        # Obtener estilos
+        styles = getSampleStyleSheet()
+        
+        # Crear estilos personalizados
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=24,
+            textColor=colors.HexColor('#2c3e50'),
+            alignment=TA_CENTER,
+            spaceAfter=30
+        )
+        
+        heading_style = ParagraphStyle(
+            'CustomHeading',
+            parent=styles['Heading2'],
+            fontSize=16,
+            textColor=colors.HexColor('#34495e'),
+            spaceBefore=20,
+            spaceAfter=12
+        )
+        
+        normal_style = ParagraphStyle(
+            'CustomNormal',
+            parent=styles['Normal'],
+            fontSize=11,
+            textColor=colors.HexColor('#2c3e50'),
+            spaceAfter=12
+        )
+        
+        # Lista para almacenar elementos del PDF
+        story = []
+        
+        # Título principal
+        story.append(Paragraph("📋 REPORTE DE REUNIÓN", title_style))
+        story.append(Spacer(1, 20))
+        
+        # Información básica de la reunión
+        info_data = [
+            ['Título:', meeting.title or 'Sin título'],
+            ['Fecha:', meeting.created_at.strftime('%d/%m/%Y %H:%M')],
+            ['Creado por:', f"{meeting.created_by.first_name} {meeting.created_by.last_name}" if meeting.created_by.first_name else meeting.created_by.username],
+            ['Empresa:', meeting.company.name if meeting.company else 'No especificada'],
+            ['Contacto:', meeting.contact.name if meeting.contact else 'No especificado'],
+            ['Estado:', meeting.get_status_display() if hasattr(meeting, 'get_status_display') else 'Activa'],
+        ]
+        
+        # Crear tabla de información
+        info_table = Table(info_data, colWidths=[2*inch, 4*inch])
+        info_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#ecf0f1')),
+            ('TEXTCOLOR', (0, 0), (-1, -1), colors.HexColor('#2c3e50')),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#bdc3c7')),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ]))
+        
+        story.append(info_table)
+        story.append(Spacer(1, 30))
+        
+        # Descripción de la reunión
+        if meeting.description:
+            story.append(Paragraph("📝 DESCRIPCIÓN DE LA REUNIÓN", heading_style))
+            # Dividir la descripción en párrafos
+            description_paragraphs = meeting.description.split('\n')
+            for para in description_paragraphs:
+                if para.strip():
+                    story.append(Paragraph(para.strip(), normal_style))
+            story.append(Spacer(1, 20))
+        
+        # Objetivos (si existen)
+        if hasattr(meeting, 'objectives') and meeting.objectives:
+            story.append(Paragraph("🎯 OBJETIVOS", heading_style))
+            story.append(Paragraph(meeting.objectives, normal_style))
+            story.append(Spacer(1, 20))
+        
+        # Participantes (si existen)
+        if hasattr(meeting, 'attendees') and meeting.attendees.exists():
+            story.append(Paragraph("👥 PARTICIPANTES", heading_style))
+            attendees_list = []
+            for attendee in meeting.attendees.all():
+                attendees_list.append(f"• {attendee.name} ({attendee.email})")
+            attendees_text = "<br/>".join(attendees_list)
+            story.append(Paragraph(attendees_text, normal_style))
+            story.append(Spacer(1, 20))
+        
+        # Temas tratados (extraer de la descripción si contiene estructura)
+        if meeting.description and ('🎯 PROPUESTA' in meeting.description or '📋 Acción:' in meeting.description):
+            story.append(Paragraph("💡 PROPUESTAS Y ACCIONES", heading_style))
+            
+            # Extraer propuestas de la descripción
+            description_lines = meeting.description.split('\n')
+            proposals = []
+            current_proposal = None
+            
+            for line in description_lines:
+                if '🎯 PROPUESTA PRESENTADA:' in line:
+                    if current_proposal:
+                        proposals.append(current_proposal)
+                    current_proposal = {'title': line.replace('🎯 PROPUESTA PRESENTADA:', '').strip()}
+                elif current_proposal and '📋 Acción:' in line:
+                    current_proposal['action'] = line.replace('📋 Acción:', '').strip()
+                elif current_proposal and '⏰ Fecha:' in line:
+                    current_proposal['date'] = line.replace('⏰ Fecha:', '').strip()
+                    proposals.append(current_proposal)
+                    current_proposal = None
+            
+            if current_proposal:
+                proposals.append(current_proposal)
+            
+            if proposals:
+                for i, proposal in enumerate(proposals, 1):
+                    story.append(Paragraph(f"<b>Propuesta {i}:</b> {proposal.get('title', 'Sin título')}", normal_style))
+                    if proposal.get('action'):
+                        story.append(Paragraph(f"<b>Acción:</b> {proposal.get('action')}", normal_style))
+                    if proposal.get('date'):
+                        story.append(Paragraph(f"<b>Fecha:</b> {proposal.get('date')}", normal_style))
+                    story.append(Spacer(1, 10))
+        
+        # Notas adicionales
+        if hasattr(meeting, 'notes') and meeting.notes:
+            story.append(Paragraph("📝 NOTAS ADICIONALES", heading_style))
+            story.append(Paragraph(meeting.notes, normal_style))
+            story.append(Spacer(1, 20))
+        
+        # Próximos pasos
+        story.append(Paragraph("🔜 PRÓXIMOS PASOS", heading_style))
+        next_steps = [
+            "• Revisar puntos acordados en la reunión",
+            "• Programar seguimiento según cronograma definido",
+            "• Implementar acciones específicas discutidas",
+            "• Preparar documentación adicional si es necesaria"
+        ]
+        story.append(Paragraph("<br/>".join(next_steps), normal_style))
+        story.append(Spacer(1, 30))
+        
+        # Pie de página con información del reporte
+        footer_style = ParagraphStyle(
+            'Footer',
+            parent=styles['Normal'],
+            fontSize=9,
+            textColor=colors.HexColor('#7f8c8d'),
+            alignment=TA_CENTER
+        )
+        
+        footer_text = f"Reporte generado el {datetime.datetime.now().strftime('%d/%m/%Y a las %H:%M')} | TicketProo - Sistema de Gestión"
+        story.append(Paragraph(footer_text, footer_style))
+        
+        # Construir PDF
+        doc.build(story)
+        
+        # Obtener valor del buffer
+        pdf = buffer.getvalue()
+        buffer.close()
+        
+        # Crear respuesta HTTP
+        response = HttpResponse(content_type='application/pdf')
+        filename = f"reunion_{meeting.id}_{datetime.datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        response.write(pdf)
+        
+        return response
+        
+    except Exception as e:
+        messages.error(request, f'Error al generar PDF: {str(e)}')
+        return redirect('meeting_edit', pk=pk)
 

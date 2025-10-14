@@ -1,0 +1,408 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestión de Acciones Financieras - TicketProo{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="row mb-4">
+    <div class="col">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="mb-2">
+                    <i class="bi bi-graph-up-arrow"></i> Gestión de Acciones Financieras
+                </h1>
+                <p class="text-muted">
+                    Configure las acciones que aparecerán en el ticker del dashboard
+                    <br>
+                    <small id="lastUpdateInfo" class="text-info">
+                        <i class="bi bi-clock"></i> 
+                        Última actualización masiva: <span id="lastMassUpdate">Cargando...</span>
+                    </small>
+                </p>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-success" onclick="updateAllPrices()" id="updateAllBtn">
+                    <i class="bi bi-arrow-clockwise"></i> Actualizar Todos los Precios
+                </button>
+                <a href="{% url 'financial_action_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Nueva Acción
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros y búsqueda -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="get" class="d-flex gap-3 align-items-end">
+                    <div class="flex-grow-1">
+                        <label for="search" class="form-label">Buscar</label>
+                        <input type="text" class="form-control" id="search" name="search" 
+                               value="{{ search|default:'' }}" placeholder="Buscar por símbolo o nombre...">
+                    </div>
+                    <div>
+                        <label for="status" class="form-label">Estado</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">Todos</option>
+                            <option value="active" {% if status == 'active' %}selected{% endif %}>Activas</option>
+                            <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>Inactivas</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button type="submit" class="btn btn-outline-primary">
+                            <i class="bi bi-search"></i> Buscar
+                        </button>
+                    </div>
+                    {% if search or status %}
+                    <div>
+                        <a href="{% url 'financial_actions_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i> Limpiar
+                        </a>
+                    </div>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de acciones -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-list"></i> Acciones Configuradas
+                    <span class="badge bg-secondary">{{ actions.count }}</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if actions %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped">
+                        <thead class="table-dark">
+                            <tr>
+                                <th width="5%">Orden</th>
+                                <th width="15%">Símbolo</th>
+                                <th width="25%">Nombre</th>
+                                <th width="15%">Precio Actual</th>
+                                <th width="15%">Cambio</th>
+                                <th width="10%">Estado</th>
+                                <th width="10%">Última Act.</th>
+                                <th width="15%">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for action in actions %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-light text-dark">{{ action.order }}</span>
+                                </td>
+                                <td>
+                                    <strong>{{ action.symbol }}</strong>
+                                </td>
+                                <td>{{ action.name }}</td>
+                                <td>
+                                    <span class="fw-bold">{{ action.current_price }} {{ action.currency }}</span>
+                                </td>
+                                <td>
+                                    {% if action.previous_price %}
+                                        <span class="{{ action.change_color_class }}">
+                                            {% if action.is_positive_change %}
+                                                <i class="bi bi-arrow-up"></i> +{{ action.price_change }}
+                                            {% elif action.is_negative_change %}
+                                                <i class="bi bi-arrow-down"></i> {{ action.price_change }}
+                                            {% else %}
+                                                <i class="bi bi-dash"></i> {{ action.price_change }}
+                                            {% endif %}
+                                            ({{ action.price_change_percent|floatformat:2 }}%)
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">Sin datos</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if action.is_active %}
+                                        <span class="badge bg-success">Activa</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Inactiva</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        {{ action.last_updated|date:"d/m/Y" }}<br>
+                                        <strong>{{ action.last_updated|date:"H:i" }}</strong>
+                                        {% now "Y-m-d H:i" as current_time %}
+                                        {% if action.last_updated|timesince < "5 minutes" %}
+                                            <span class="badge bg-success ms-1" style="font-size: 0.6em;">Reciente</span>
+                                        {% elif action.last_updated|timesince < "1 hour" %}
+                                            <span class="badge bg-warning ms-1" style="font-size: 0.6em;">{{ action.last_updated|timesince }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary ms-1" style="font-size: 0.6em;">{{ action.last_updated|timesince }}</span>
+                                        {% endif %}
+                                    </small>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button type="button" class="btn btn-outline-info" 
+                                                onclick="updateSinglePrice({{ action.pk }}, '{{ action.symbol }}')" 
+                                                title="Actualizar Precio">
+                                            <i class="bi bi-arrow-clockwise"></i>
+                                        </button>
+                                        <a href="{% url 'financial_action_edit' action.pk %}" 
+                                           class="btn btn-outline-primary" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="{% url 'financial_action_toggle' action.pk %}" 
+                                           class="btn btn-outline-{% if action.is_active %}warning{% else %}success{% endif %}" 
+                                           title="{% if action.is_active %}Desactivar{% else %}Activar{% endif %}">
+                                            <i class="bi bi-{% if action.is_active %}pause{% else %}play{% endif %}"></i>
+                                        </a>
+                                        <a href="{% url 'financial_action_delete' action.pk %}" 
+                                           class="btn btn-outline-danger" title="Eliminar">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-graph-up-arrow display-1 text-muted"></i>
+                    <h3 class="mt-3 text-muted">No hay acciones configuradas</h3>
+                    <p class="text-muted">Agregue acciones financieras para mostrar en el ticker del dashboard.</p>
+                    <a href="{% url 'financial_action_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Crear Primera Acción
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Información adicional -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <h6 class="alert-heading">
+                <i class="bi bi-info-circle"></i> Información sobre el Ticker
+            </h6>
+            <ul class="mb-0">
+                <li>Las acciones <strong>activas</strong> aparecerán rotando en la parte inferior del dashboard</li>
+                <li>El <strong>orden</strong> determina la secuencia de aparición (menor número = primera posición)</li>
+                <li>El <strong>cambio de precio</strong> se calcula comparando el precio actual con el anterior</li>
+                <li>Los precios se obtienen automáticamente desde APIs financieras externas</li>
+                <li>Use los botones de <strong>actualizar precio</strong> para obtener cotizaciones en tiempo real</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateAllPrices() {
+    const btn = document.getElementById('updateAllBtn');
+    const originalText = btn.innerHTML;
+    
+    // Deshabilitar botón y mostrar loading
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass"></i> Actualizando...';
+    
+    fetch('{% url "financial_actions_update_prices" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Mostrar mensaje de éxito
+            showAlert('success', data.message);
+            
+            // Actualizar info de última actualización masiva
+            updateLastMassUpdateInfo();
+            
+            // Recargar la página para mostrar los nuevos precios
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showAlert('danger', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('danger', 'Error de conexión al actualizar precios');
+    })
+    .finally(() => {
+        // Restaurar botón
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    });
+}
+
+function updateSinglePrice(actionId, symbol) {
+    const btn = event.target.closest('button');
+    const originalContent = btn.innerHTML;
+    
+    // Deshabilitar botón y mostrar loading
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass"></i>';
+    
+    fetch(`/api/financial-actions/${actionId}/update-price/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', data.message);
+            
+            // Actualizar la fila específica en lugar de recargar toda la página
+            const row = btn.closest('tr');
+            if (row) {
+                // Actualizar precio actual
+                const priceCell = row.querySelector('td:nth-child(4)');
+                if (priceCell) {
+                    priceCell.innerHTML = `<span class="fw-bold">${data.new_price.toFixed(4)} USD</span>`;
+                }
+                
+                // Actualizar cambio de precio
+                const changeCell = row.querySelector('td:nth-child(5)');
+                if (changeCell && data.previous_price) {
+                    const changeClass = data.price_change >= 0 ? 'text-success' : 'text-danger';
+                    const icon = data.price_change >= 0 ? 'bi-arrow-up' : 'bi-arrow-down';
+                    const sign = data.price_change >= 0 ? '+' : '';
+                    
+                    changeCell.innerHTML = `
+                        <span class="${changeClass}">
+                            <i class="bi ${icon}"></i> ${sign}${data.price_change.toFixed(4)}
+                            (${data.price_change_percent.toFixed(2)}%)
+                        </span>
+                    `;
+                }
+                
+                // Actualizar fecha de última actualización
+                const dateCell = row.querySelector('td:nth-child(7)');
+                if (dateCell && data.last_updated) {
+                    const now = new Date();
+                    const parts = data.last_updated.split(' ');
+                    dateCell.innerHTML = `
+                        <small class="text-muted">
+                            ${parts[0]}<br>
+                            <strong>${parts[1]}</strong>
+                            <span class="badge bg-success ms-1" style="font-size: 0.6em;">Reciente</span>
+                        </small>
+                    `;
+                }
+            }
+        } else {
+            showAlert('danger', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('danger', `Error actualizando precio de ${symbol}`);
+    })
+    .finally(() => {
+        // Restaurar botón
+        btn.disabled = false;
+        btn.innerHTML = originalContent;
+    });
+}
+
+function showAlert(type, message) {
+    // Crear alerta Bootstrap
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    // Insertar al inicio del contenido
+    const content = document.querySelector('.container-fluid');
+    if (content) {
+        content.insertAdjacentHTML('afterbegin', alertHtml);
+        
+        // Auto-hide después de 5 segundos
+        setTimeout(() => {
+            const alert = content.querySelector('.alert');
+            if (alert) {
+                alert.remove();
+            }
+        }, 5000);
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Función para obtener y mostrar la última actualización masiva
+function updateLastMassUpdateInfo() {
+    fetch('/api/financial-actions/ticker-data/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.actions && data.actions.length > 0) {
+                // Encontrar la fecha más reciente entre todas las acciones
+                let latestDate = null;
+                data.actions.forEach(action => {
+                    if (action.last_updated) {
+                        const actionDate = new Date(action.last_updated);
+                        if (!latestDate || actionDate > latestDate) {
+                            latestDate = actionDate;
+                        }
+                    }
+                });
+                
+                if (latestDate) {
+                    const dateStr = latestDate.toLocaleDateString('es-ES', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    document.getElementById('lastMassUpdate').textContent = dateStr;
+                } else {
+                    document.getElementById('lastMassUpdate').textContent = 'Nunca';
+                }
+            } else {
+                document.getElementById('lastMassUpdate').textContent = 'Sin datos';
+            }
+        })
+        .catch(error => {
+            console.error('Error obteniendo info de actualización:', error);
+            document.getElementById('lastMassUpdate').textContent = 'Error al cargar';
+        });
+}
+
+// Cargar info al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    updateLastMassUpdateInfo();
+});
+</script>
+{% endblock %}

@@ -25,7 +25,7 @@
                 <nav class="navbar navbar-expand-lg navbar-dark bg-success">
             {% else %}
                 <!-- Navbar normal cuando no está trabajando -->
-                <nav class="navbar navbar-expand-lg navbar-dark bg-secondary">
+                <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
             {% endif %}
             <div class="container">
                 <a class="navbar-brand fw-bold" href="{% url 'home' %}">
@@ -559,6 +559,22 @@
                                 <a class="dropdown-item {% if 'task_schedule' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'task_schedule_list' %}">
                                     <i class="fas fa-tasks"></i> Cronogramas de Tareas
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <h6 class="dropdown-header">Herramientas</h6>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'world_clock' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'world_clock' %}">
+                                    <i class="bi bi-globe"></i> Reloj Mundial
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'financial_actions' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'financial_actions_list' %}">
+                                    <i class="bi bi-graph-up-arrow"></i> Acciones Financieras
                                 </a>
                             </li>
                         </ul>
@@ -1329,6 +1345,213 @@
     .ai-floating-btn {
         z-index: 9999;
     }
+    
+    /* Estilos para el ticker financiero */
+    #financial-ticker-global {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        height: 40px;
+        overflow: hidden;
+        background: linear-gradient(90deg, #1a1a1a 0%, #2d2d2d 100%);
+        border-top: 1px solid #444;
+    }
+
+    .ticker-content-global {
+        animation: none;
+        transition: all 0.5s ease-in-out;
+        height: 40px;
+        display: flex;
+        align-items: center;
+    }
+
+    .ticker-item-global {
+        min-width: 100%;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+    }
+
+    /* Animación suave para cambios */
+    .ticker-content-global {
+        opacity: 1;
+        transition: opacity 0.3s ease-in-out;
+    }
+
+    .ticker-fade-global {
+        opacity: 0.7;
+    }
+
+    /* Ajustar el padding bottom del main para que no se superponga con el ticker */
+    main.container {
+        padding-bottom: 60px;
+    }
+
+    /* Responsivo para el ticker */
+    @media (max-width: 768px) {
+        #financial-ticker-global {
+            height: 35px;
+        }
+        
+        .ticker-content-global {
+            height: 35px;
+        }
+        
+        .ticker-item-global {
+            padding: 0 15px;
+            font-size: 0.9rem;
+        }
+        
+        main.container {
+            padding-bottom: 55px;
+        }
+    }
     </style>
+
+    <!-- Ticker de Acciones Financieras Global -->
+    {% if user.is_authenticated %}
+    <div id="financial-ticker-global" class="bg-dark text-white">
+        <div class="d-flex align-items-center h-100">
+            <div class="me-3 ps-3">
+                <i class="bi bi-graph-up-arrow"></i>
+                <small class="fw-bold">MERCADOS:</small>
+            </div>
+            <div class="flex-grow-1">
+                <div id="financial-ticker" class="d-flex align-items-center h-100">
+                    <div class="ticker-content-global d-flex align-items-center">
+                        <!-- Las acciones se cargarán aquí via JavaScript -->
+                        <span class="text-muted">Cargando datos del mercado...</span>
+                    </div>
+                </div>
+            </div>
+            {% if is_agent %}
+            <div class="me-3">
+                <a href="{% url 'financial_actions_list' %}" class="btn btn-sm btn-outline-light" title="Configurar Acciones">
+                    <i class="bi bi-gear"></i>
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+    // Ticker de acciones financieras global - v2.0
+    console.log('Iniciando ticker financiero v2.0...');
+    
+    let tickerDataGlobal = [];
+    let currentTickerIndexGlobal = 0;
+
+    function loadTickerDataGlobal() {
+        console.log('Cargando datos del ticker...');
+        
+        fetch('{% url "financial_actions_ticker_data" %}?t=' + Date.now())
+            .then(response => {
+                console.log('Respuesta API:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Datos recibidos:', data);
+                tickerDataGlobal = data.actions || [];
+                
+                const tickerContent = document.querySelector('#financial-ticker .ticker-content-global');
+                if (!tickerContent) {
+                    console.error('Elemento ticker no encontrado');
+                    return;
+                }
+                
+                if (tickerDataGlobal.length > 0) {
+                    console.log(`${tickerDataGlobal.length} acciones cargadas`);
+                    updateTickerGlobal();
+                } else {
+                    console.log('No hay acciones activas');
+                    tickerContent.innerHTML = '<span class="text-muted">No hay acciones configuradas</span>';
+                }
+            })
+            .catch(error => {
+                console.error('Error del ticker:', error);
+                const tickerContent = document.querySelector('#financial-ticker .ticker-content-global');
+                if (tickerContent) {
+                    tickerContent.innerHTML = '<span class="text-danger">Error cargando datos</span>';
+                }
+            });
+    }
+
+    function updateTickerGlobal() {
+        if (tickerDataGlobal.length === 0) {
+            console.log('No hay datos para mostrar');
+            return;
+        }
+        
+        const action = tickerDataGlobal[currentTickerIndexGlobal];
+        const tickerContent = document.querySelector('#financial-ticker .ticker-content-global');
+        
+        if (!tickerContent) {
+            console.error('Elemento ticker no encontrado en update');
+            return;
+        }
+        
+        let changeIcon = '●';
+        let changeClass = 'text-muted';
+        
+        if (action.is_positive_change) {
+            changeIcon = '▲';
+            changeClass = 'text-success';
+        } else if (action.is_negative_change) {
+            changeIcon = '▼';
+            changeClass = 'text-danger';
+        }
+        
+        let changeText = '';
+        if (action.previous_price !== null) {
+            const priceChange = parseFloat(action.price_change) || 0;
+            const priceChangePercent = parseFloat(action.price_change_percent) || 0;
+            const sign = priceChange >= 0 ? '+' : '';
+            changeText = `<span class="${changeClass} ms-2">
+                ${changeIcon} ${sign}${priceChange.toFixed(4)} (${sign}${priceChangePercent.toFixed(2)}%)
+            </span>`;
+        }
+        
+        const html = `
+            <div class="d-flex align-items-center ticker-item-global">
+                <span class="fw-bold me-2">${action.symbol}</span>
+                <span class="me-2">${parseFloat(action.current_price).toFixed(4)} ${action.currency}</span>
+                ${changeText}
+                <span class="text-muted ms-3 small">${action.name}</span>
+            </div>
+        `;
+        
+        console.log(`Mostrando: ${action.symbol} - ${action.current_price}`);
+        tickerContent.innerHTML = html;
+        
+        // Pasar al siguiente elemento
+        currentTickerIndexGlobal = (currentTickerIndexGlobal + 1) % tickerDataGlobal.length;
+    }
+
+    // Inicializar cuando el DOM esté listo
+    document.addEventListener('DOMContentLoaded', function() {
+        const tickerElement = document.getElementById('financial-ticker-global');
+        if (tickerElement) {
+            console.log('Ticker element encontrado, iniciando...');
+            
+            // Cargar datos iniciales
+            loadTickerDataGlobal();
+            
+            // Rotar ticker cada 5 segundos
+            setInterval(updateTickerGlobal, 5000);
+            
+            // Recargar datos cada 30 segundos
+            setInterval(loadTickerDataGlobal, 30000);
+        } else {
+            console.log('Ticker element no encontrado');
+        }
+    });
+    </script>
+    {% endif %}
 </body>
 </html>

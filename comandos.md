@@ -47,6 +47,35 @@ python manage.py run_ai_blog_generators --configurator-id=1 --force  # Ejecutar 
 python manage.py run_ai_blog_generators --dry-run  # Ver qué se ejecutaría sin ejecutar
 python manage.py run_ai_blog_generators  # Ejecutar solo los que están programados
 
+# COMANDOS DE ACCIONES FINANCIERAS CON API EXTERNA
+# Actualizar todas las acciones financieras desde APIs externas
+python manage.py update_financial_prices
+
+# Actualizar una acción específica
+python manage.py update_financial_prices --symbol EUR/USD
+python manage.py update_financial_prices --symbol AAPL
+python manage.py update_financial_prices --symbol BTC/USD
+
+# Forzar actualización incluso si fue actualizada recientemente
+python manage.py update_financial_prices --force
+
+# AUTOMATIZACIÓN DE ACTUALIZACIONES (CRON):
+# Actualizar precios cada 15 minutos en horario de mercado (9 AM - 6 PM)
+# */15 9-18 * * 1-5 cd /home/urban/ticketproo && source /home/urban/bin/activate && python manage.py update_financial_prices >> /home/urban/logs/financial_updates.log 2>&1
+
+# Actualizar precios cada hora fuera del horario de mercado
+# 0 */1 * * * cd /home/urban/ticketproo && source /home/urban/bin/activate && python manage.py update_financial_prices >> /home/urban/logs/financial_updates.log 2>&1
+
+# TIPOS DE ACTIVOS SOPORTADOS:
+# - Divisas (Forex): EUR/USD, GBP/USD, USD/JPY, etc.
+# - Acciones: AAPL, GOOGL, MSFT, TSLA, etc.
+# - Criptomonedas: BTC/USD, ETH/USD, etc.
+
+# APIS UTILIZADAS:
+# - Divisas: exchangerate-api.com (gratuita)
+# - Acciones: Yahoo Finance API (gratuita)
+# - Criptomonedas: CoinGecko API (gratuita)
+
 # Verificar posts generados y evitar duplicados
 python -c "
 import os, django
