@@ -11,7 +11,7 @@ from .models import (
     PageVisit, MultipleDocumentation, MultipleDocumentationItem, MultipleDocumentationStats,
     MultipleDocumentationItemStats, MultipleDocumentationVisit, MultipleDocumentationDownload,
     TaskSchedule, ScheduleTask, ScheduleComment, TicketApproval, SatisfactionSurvey, FinancialAction,
-    FinancialPriceHistory
+    FinancialPriceHistory, Product
 )
 
 # Configuración del sitio de administración
@@ -2068,4 +2068,34 @@ class FinancialPriceHistoryAdmin(admin.ModelAdmin):
     def has_add_permission(self, request):
         # No permitir agregar manualmente, solo desde la API
         return False
+
+
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    list_display = ('name', 'get_formatted_price_display', 'created_by', 'created_at', 'is_active')
+    list_filter = ('is_active', 'created_at', 'created_by')
+    search_fields = ('name', 'description')
+    readonly_fields = ('created_at', 'updated_at')
+    ordering = ('-created_at',)
+    
+    fieldsets = (
+        ('Información del Producto', {
+            'fields': ('name', 'price', 'description', 'is_active')
+        }),
+        ('Información del Sistema', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_formatted_price_display(self, obj):
+        """Muestra el precio formateado con moneda en el admin"""
+        return obj.get_formatted_price()
+    get_formatted_price_display.short_description = 'Precio'
+    get_formatted_price_display.admin_order_field = 'price'
+    
+    def save_model(self, request, obj, form, change):
+        if not change:  # Si es un nuevo objeto
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
 

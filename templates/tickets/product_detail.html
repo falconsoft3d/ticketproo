@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .product-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .price-display {
+        font-size: 2.5rem;
+        font-weight: bold;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    .info-card {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: none;
+        border-radius: 10px;
+    }
+    .action-btn {
+        transition: all 0.3s ease;
+    }
+    .action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Botón de regreso -->
+    <div class="mb-3">
+        <a href="{% url 'product_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver a Productos
+        </a>
+    </div>
+
+    <!-- Header del producto -->
+    <div class="product-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-2">
+                    <i class="bi bi-box-seam"></i> {{ product.name }}
+                </h1>
+                <div class="mb-3">
+                    {% if product.is_active %}
+                        <span class="badge bg-success fs-6">
+                            <i class="bi bi-check-circle"></i> Producto Activo
+                        </span>
+                    {% else %}
+                        <span class="badge bg-warning fs-6">
+                            <i class="bi bi-pause-circle"></i> Producto Inactivo
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="price-display">
+                    {{ product.price_with_currency }}
+                </div>
+                <small class="opacity-75">Precio del producto</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información principal -->
+        <div class="col-lg-8">
+            <!-- Descripción -->
+            <div class="card info-card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-file-text"></i> Descripción del Producto
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="description-content">
+                        {{ product.description|linebreaks }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="card info-card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-tools"></i> Acciones
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <a href="{% url 'product_edit' product.id %}" class="btn btn-warning action-btn w-100">
+                                <i class="bi bi-pencil"></i>
+                                <br>Editar Producto
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-info action-btn w-100" onclick="shareProduct()">
+                                <i class="bi bi-share"></i>
+                                <br>Compartir
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="{% url 'product_delete' product.id %}" class="btn btn-danger action-btn w-100">
+                                <i class="bi bi-trash"></i>
+                                <br>Eliminar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel lateral -->
+        <div class="col-lg-4">
+            <!-- Información del producto -->
+            <div class="card info-card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle"></i> Información
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless mb-0">
+                        <tr>
+                            <td><strong><i class="bi bi-tag"></i> Nombre:</strong></td>
+                            <td>{{ product.name }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong><i class="bi bi-currency-dollar"></i> Precio:</strong></td>
+                            <td class="text-success fw-bold">{{ product.price_with_currency }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong><i class="bi bi-toggle-on"></i> Estado:</strong></td>
+                            <td>
+                                {% if product.is_active %}
+                                    <span class="text-success"><i class="bi bi-check-circle"></i> Activo</span>
+                                {% else %}
+                                    <span class="text-warning"><i class="bi bi-pause-circle"></i> Inactivo</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong><i class="bi bi-person"></i> Creado por:</strong></td>
+                            <td>{{ product.created_by.get_full_name|default:product.created_by.username }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong><i class="bi bi-calendar"></i> Creado:</strong></td>
+                            <td>{{ product.created_at|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong><i class="bi bi-calendar-check"></i> Actualizado:</strong></td>
+                            <td>{{ product.updated_at|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="card info-card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-graph-up"></i> Estadísticas
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="row">
+                        <div class="col-6">
+                            <h4 class="text-primary">{{ product.created_at|timesince }}</h4>
+                            <small class="text-muted">Días desde creación</small>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-info">{{ product.updated_at|timesince }}</h4>
+                            <small class="text-muted">Última actualización</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para compartir -->
+<div class="modal fade" id="shareModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-share"></i> Compartir Producto
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Comparte este producto copiando el enlace:</p>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="productUrl" readonly>
+                    <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard()">
+                        <i class="bi bi-clipboard"></i> Copiar
+                    </button>
+                </div>
+                <div class="mt-3">
+                    <h6>Información del producto:</h6>
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <strong>{{ product.name }}</strong><br>
+                            <span class="text-success">{{ product.price_with_currency }}</span><br>
+                            <small class="text-muted">{{ product.description|truncatewords:10 }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function shareProduct() {
+    // Establecer la URL del producto
+    document.getElementById('productUrl').value = window.location.href;
+    
+    // Mostrar el modal
+    new bootstrap.Modal(document.getElementById('shareModal')).show();
+}
+
+function copyToClipboard() {
+    const urlInput = document.getElementById('productUrl');
+    urlInput.select();
+    document.execCommand('copy');
+    
+    // Mostrar mensaje de éxito
+    const button = event.target.closest('button');
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="bi bi-check"></i> Copiado';
+    button.classList.remove('btn-outline-secondary');
+    button.classList.add('btn-success');
+    
+    setTimeout(function() {
+        button.innerHTML = originalText;
+        button.classList.remove('btn-success');
+        button.classList.add('btn-outline-secondary');
+    }, 2000);
+}
+</script>
+{% endblock %}

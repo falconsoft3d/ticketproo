@@ -3410,6 +3410,11 @@ class Meeting(models.Model):
     
     title = models.CharField(max_length=200, verbose_name='Título de la reunión')
     description = models.TextField(blank=True, verbose_name='Descripción')
+    spin_methodology = models.TextField(
+        blank=True, 
+        verbose_name='Metodología SPIN',
+        help_text='Preguntas generadas automáticamente usando la metodología SPIN de ventas'
+    )
     date = models.DateTimeField(verbose_name='Fecha y hora')
     duration = models.IntegerField(default=60, verbose_name='Duración (minutos)')
     location = models.CharField(max_length=200, blank=True, verbose_name='Ubicación')
@@ -3436,6 +3441,14 @@ class Meeting(models.Model):
         blank=True,
         verbose_name='Empresa',
         help_text='Empresa relacionada con la reunión (opcional)'
+    )
+    
+    # Productos relacionados con la reunión
+    products = models.ManyToManyField(
+        'Product',
+        blank=True,
+        verbose_name='Productos',
+        help_text='Productos que se discutirán en la reunión'
     )
     
     # Link público único
@@ -7464,3 +7477,93 @@ class FinancialPriceHistory(models.Model):
     
     def __str__(self):
         return f"{self.financial_action.symbol} - {self.price} - {self.recorded_at}"
+
+
+class Product(models.Model):
+    """
+    Modelo para gestionar productos
+    """
+    name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre del Producto'
+    )
+    
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name='Precio',
+        help_text='Precio del producto'
+    )
+    
+    description = models.TextField(
+        verbose_name='Descripción',
+        help_text='Descripción detallada del producto'
+    )
+    
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de Creación'
+    )
+    
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Fecha de Actualización'
+    )
+    
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo',
+        help_text='Si está marcado, el producto estará disponible'
+    )
+    
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='created_products',
+        verbose_name='Creado por'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Producto'
+        verbose_name_plural = 'Productos'
+    
+    def __str__(self):
+        return self.name
+    
+    def get_currency_symbol(self):
+        """Obtiene el símbolo de la moneda configurada en el sistema"""
+        config = SystemConfiguration.objects.first()
+        if not config:
+            return '€'  # Por defecto EUR
+        
+        currency_symbols = {
+            'EUR': '€',
+            'USD': '$',
+            'GBP': '£',
+            'JPY': '¥',
+            'CAD': 'C$',
+            'AUD': 'A$',
+            'CHF': 'CHF',
+            'CNY': '¥',
+            'MXN': '$',
+            'COP': '$',
+        }
+        return currency_symbols.get(config.default_currency, '€')
+    
+    def get_currency_code(self):
+        """Obtiene el código de la moneda configurada en el sistema"""
+        config = SystemConfiguration.objects.first()
+        if not config:
+            return 'EUR'
+        return config.default_currency
+    
+    def get_formatted_price(self):
+        """Obtiene el precio formateado con la moneda del sistema"""
+        symbol = self.get_currency_symbol()
+        return f"{symbol}{self.price:,.2f}"
+    
+    @property
+    def price_with_currency(self):
+        """Propiedad para obtener el precio con moneda fácilmente"""
+        return self.get_formatted_price()

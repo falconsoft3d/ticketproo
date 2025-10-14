@@ -189,6 +189,35 @@
                             </div>
                         </div>
                         
+                        <!-- Campo de Metodología SPIN -->
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="{{ form.spin_methodology.id_for_label }}" class="form-label">
+                                        <i class="fas fa-question-circle"></i> Metodología SPIN
+                                        <button type="button" class="btn btn-success btn-sm ms-2" id="generateSpinBtn" onclick="generateSpinMethodology()">
+                                            <i class="fas fa-robot"></i> Generar con IA
+                                        </button>
+                                    </label>
+                                    {{ form.spin_methodology }}
+                                    {% if form.spin_methodology.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.spin_methodology.errors }}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        <strong>🤖 Metodología SPIN con IA:</strong> 
+                                        <span class="badge bg-info ms-1">S</span> Situación
+                                        <span class="badge bg-warning ms-1">P</span> Problema  
+                                        <span class="badge bg-danger ms-1">I</span> Implicación
+                                        <span class="badge bg-success ms-1">N</span> Necesidad-Beneficio
+                                        <br>
+                                        <i class="fas fa-brain"></i> La inteligencia artificial analizará el contexto y generará preguntas estratégicas personalizadas.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="row">
                             <div class="col-md-12">
                                 <div class="form-group">
@@ -202,6 +231,27 @@
                                         </div>
                                     {% endif %}
                                     <small class="form-text text-muted">Selecciona la empresa relacionada con esta reunión (uso interno)</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="{{ form.products.id_for_label }}" class="form-label">
+                                        <i class="fas fa-box"></i> Productos a Discutir
+                                    </label>
+                                    {{ form.products }}
+                                    {% if form.products.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.products.errors }}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        {{ form.products.help_text }}
+                                        <br>
+                                        <i class="fas fa-robot"></i> Los productos seleccionados se incluirán en el análisis de IA para generar preguntas SPIN más precisas
+                                    </small>
                                 </div>
                             </div>
                         </div>
@@ -941,6 +991,71 @@ function applyRecommendation(type, action, title) {
     });
     
     actionFunction();
+}
+
+// Función para generar metodología SPIN
+function generateSpinMethodology() {
+    const generateBtn = document.getElementById('generateSpinBtn');
+    const spinField = document.getElementById('{{ form.spin_methodology.id_for_label }}');
+    const descriptionField = document.getElementById('{{ form.description.id_for_label }}');
+    const companyField = document.querySelector('select[name="company"]');
+    
+    // Obtener contenido
+    const description = descriptionField.value.trim();
+    const companyId = companyField ? companyField.value : '';
+    
+    if (!description) {
+        showToast('warning', 'Información necesaria', 'Por favor, agrega una descripción para generar la metodología SPIN');
+        return;
+    }
+    
+    // Cambiar estado del botón
+    generateBtn.disabled = true;
+    generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando SPIN con IA...';
+    
+    // Mostrar progreso en el campo
+    spinField.value = '🧠 Conectando con IA y analizando contexto...\n\n📊 Generando preguntas SPIN estratégicas personalizadas...\n\nEsto puede tomar unos segundos...';
+    
+    // Enviar datos al servidor
+    fetch('{% url "generate_spin_methodology" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            description: description,
+            company_id: companyId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            spinField.value = data.spin_questions;
+            if (data.message.includes('IA')) {
+                showToast('success', '🤖 IA SPIN Generada', 'Preguntas estratégicas generadas con inteligencia artificial');
+            } else {
+                showToast('success', 'Metodología SPIN generada', 'Se han generado las preguntas estratégicas basadas en el contexto');
+            }
+        } else {
+            spinField.value = '';
+            if (data.message.includes('IA no está configurada')) {
+                showToast('warning', '⚙️ IA No Configurada', 'Configure la IA en las opciones del sistema para obtener preguntas más personalizadas');
+            } else {
+                showToast('error', 'Error al generar SPIN', data.message || 'Error desconocido');
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        spinField.value = '';
+        showToast('error', 'Error de conexión', 'No se pudo generar la metodología SPIN. Verifique su conexión.');
+    })
+    .finally(() => {
+        // Restaurar estado del botón
+        generateBtn.disabled = false;
+        generateBtn.innerHTML = '<i class="fas fa-robot"></i> Generar con IA';
+    });
 }
 
 // Función para vista previa del PDF

@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .delete-container {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    .warning-icon {
+        font-size: 4rem;
+        color: #dc3545;
+    }
+    .product-info {
+        background: #f8f9fa;
+        border-left: 4px solid #dc3545;
+        padding: 1rem;
+        border-radius: 0.375rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="delete-container">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex align-items-center">
+                    <a href="{% url 'product_detail' product.id %}" class="btn btn-outline-secondary me-3">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
+                    <div>
+                        <h2><i class="bi bi-exclamation-triangle text-danger"></i> {{ page_title }}</h2>
+                        <p class="text-muted mb-0">Esta acción no se puede deshacer</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Advertencia -->
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <div class="warning-icon mb-3">
+                    <i class="bi bi-trash"></i>
+                </div>
+                <h4 class="text-danger mb-4">¿Estás seguro de que deseas eliminar este producto?</h4>
+                
+                <!-- Información del producto -->
+                <div class="product-info text-start mb-4">
+                    <h5 class="mb-3">
+                        <i class="bi bi-box-seam"></i> Información del Producto
+                    </h5>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <strong>Nombre:</strong><br>
+                            <span class="text-muted">{{ product.name }}</span>
+                        </div>
+                        <div class="col-sm-6">
+                            <strong>Precio:</strong><br>
+                            <span class="text-success">${{ product.price }}</span>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <strong>Estado:</strong><br>
+                            {% if product.is_active %}
+                                <span class="badge bg-success">Activo</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inactivo</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-sm-6">
+                            <strong>Creado:</strong><br>
+                            <span class="text-muted">{{ product.created_at|date:"d/m/Y H:i" }}</span>
+                        </div>
+                    </div>
+                    <hr>
+                    <strong>Descripción:</strong><br>
+                    <span class="text-muted">{{ product.description|truncatewords:20 }}</span>
+                </div>
+
+                <!-- Advertencias adicionales -->
+                <div class="alert alert-warning" role="alert">
+                    <h6 class="alert-heading">
+                        <i class="bi bi-exclamation-triangle"></i> Importante:
+                    </h6>
+                    <ul class="mb-0 text-start">
+                        <li>Esta acción eliminará permanentemente el producto</li>
+                        <li>No podrás recuperar la información después de eliminarla</li>
+                        <li>Si hay referencias a este producto en otros lugares, podrían verse afectadas</li>
+                    </ul>
+                </div>
+
+                <!-- Formulario de confirmación -->
+                <form method="post" class="mt-4">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="{% url 'product_detail' product.id %}" class="btn btn-outline-secondary btn-lg">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-danger btn-lg">
+                            <i class="bi bi-trash"></i> Sí, Eliminar Producto
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Información adicional -->
+        <div class="card mt-4 border-info">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="bi bi-lightbulb"></i> Alternativas</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-2">Si no quieres eliminar el producto completamente, considera estas opciones:</p>
+                <ul class="mb-0">
+                    <li>
+                        <strong>Desactivar:</strong> 
+                        <a href="{% url 'product_edit' product.id %}" class="text-decoration-none">
+                            Edita el producto y marca como "Inactivo"
+                        </a>
+                    </li>
+                    <li>
+                        <strong>Archivar:</strong> Cambia el nombre para indicar que está archivado
+                    </li>
+                    <li>
+                        <strong>Modificar:</strong> 
+                        <a href="{% url 'product_edit' product.id %}" class="text-decoration-none">
+                            Actualiza la información del producto
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Confirmación adicional antes de enviar el formulario
+document.querySelector('form').addEventListener('submit', function(e) {
+    if (!confirm('¿Estás completamente seguro? Esta acción no se puede deshacer.')) {
+        e.preventDefault();
+    }
+});
+</script>
+{% endblock %}

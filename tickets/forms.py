@@ -2497,7 +2497,7 @@ class MeetingForm(forms.ModelForm):
     
     class Meta:
         model = Meeting
-        fields = ['title', 'description', 'company', 'duration', 'location', 'status', 'allow_questions', 'require_email']
+        fields = ['title', 'description', 'spin_methodology', 'company', 'products', 'duration', 'location', 'status', 'allow_questions', 'require_email']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -2508,8 +2508,18 @@ class MeetingForm(forms.ModelForm):
                 'rows': 4,
                 'placeholder': 'Descripción de la reunión'
             }),
+            'spin_methodology': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 6,
+                'placeholder': 'Preguntas SPIN se generarán automáticamente aquí...',
+                'readonly': True
+            }),
             'company': forms.Select(attrs={
                 'class': 'form-control'
+            }),
+            'products': forms.SelectMultiple(attrs={
+                'class': 'form-control',
+                'style': 'height: 120px;'
             }),
             'duration': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -2542,11 +2552,17 @@ class MeetingForm(forms.ModelForm):
         self.fields['require_email'].help_text = 'Requerir email para registrarse'
         
         # Configurar choices de empresa
-        from .models import Company
+        from .models import Company, Product
         companies = Company.objects.all().order_by('name')
         company_choices = [('', '---------')] + [(c.id, c.name) for c in companies]
         self.fields['company'].choices = company_choices
         self.fields['company'].required = False
+        
+        # Configurar productos disponibles
+        products = Product.objects.filter(is_active=True).order_by('name')
+        self.fields['products'].queryset = products
+        self.fields['products'].help_text = 'Mantén presionado Ctrl (Cmd en Mac) para seleccionar múltiples productos'
+        self.fields['products'].required = False
         
         # Si estamos editando, llenar los campos de fecha y hora
         if self.instance and self.instance.pk and self.instance.date:
@@ -2565,6 +2581,8 @@ class MeetingForm(forms.ModelForm):
         
         if commit:
             meeting.save()
+            # Guardar relaciones ManyToMany después de guardar el objeto principal
+            self.save_m2m()
         return meeting
 
 
@@ -4724,4 +4742,90 @@ class FinancialActionForm(forms.ModelForm):
         """Convertir símbolo a mayúsculas"""
         symbol = self.cleaned_data.get('symbol', '')
         return symbol.upper()
+
+
+class ProductForm(forms.ModelForm):
+    """
+    Formulario para crear y editar productos
+    """
+    class Meta:
+        from .models import Product
+        model = Product
+        fields = ['name', 'price', 'description', 'is_active']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre del producto'
+            }),
+            'price': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'placeholder': '0.00'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Descripción detallada del producto'
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'name': 'Nombre del Producto',
+            'price': 'Precio',
+            'description': 'Descripción',
+            'is_active': 'Producto Activo',
+        }
+        help_texts = {
+            'name': 'Nombre identificativo del producto',
+            'price': 'Precio del producto en la moneda base',
+            'description': 'Descripción completa del producto, características, beneficios, etc.',
+            'is_active': 'Si está marcado, el producto estará disponible para su uso',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        # Importar el modelo aquí para evitar importaciones circulares
+        from .models import Product, SystemConfiguration
+        self._meta.model = Product
+        
+        super().__init__(*args, **kwargs)
+        
+        # Obtener la moneda configurada en el sistema
+        config = SystemConfiguration.objects.first()
+        currency_symbol = '€'  # Por defecto
+        currency_code = 'EUR'
+        
+        if config:
+            currency_symbols = {
+                'EUR': '€',
+                'USD': '$',
+                'GBP': '£',
+                'JPY': '¥',
+                'CAD': 'C$',
+                'AUD': 'A$',
+                'CHF': 'CHF',
+                'CNY': '¥',
+                'MXN': '$',
+                'COP': '$',
+            }
+            currency_symbol = currency_symbols.get(config.default_currency, '€')
+            currency_code = config.default_currency
+        
+        # Actualizar el placeholder del campo precio con la moneda
+        self.fields['price'].widget.attrs['placeholder'] = f'0.00 ({currency_symbol})'
+        self.fields['price'].help_text = f'Precio del producto en {currency_code}'
+        
+        # Agregar clases Bootstrap a todos los campos
+        for field_name, field in self.fields.items():
+            if field_name not in ['is_active']:
+                field.widget.attrs.update({'class': field.widget.attrs.get('class', '') + ' form-control'})
+    
+    def clean_price(self):
+        """Validar que el precio sea positivo"""
+        price = self.cleaned_data.get('price')
+        if price is not None and price < 0:
+            raise forms.ValidationError('El precio no puede ser negativo')
+        return price
 

@@ -44,6 +44,13 @@ urlpatterns = [
     path('projects/<int:project_id>/duplicate/', views.project_duplicate, name='project_duplicate'),
     path('projects/<int:project_id>/generate-public-token/', views.project_generate_public_token, name='project_generate_public_token'),
     
+    # URLs de productos (solo para agentes)
+    path('products/', views.product_list, name='product_list'),
+    path('products/create/', views.product_create, name='product_create'),
+    path('products/<int:product_id>/', views.product_detail, name='product_detail'),
+    path('products/<int:product_id>/edit/', views.product_edit, name='product_edit'),
+    path('products/<int:product_id>/delete/', views.product_delete, name='product_delete'),
+    
     # URLs de adjuntos
     path('attachments/<int:attachment_id>/download/', views.download_attachment_view, name='download_attachment'),
     path('attachments/<int:attachment_id>/delete/', views.delete_attachment_view, name='delete_attachment'),
@@ -566,6 +573,7 @@ urlpatterns = [
     
     # API para recomendaciones de IA en reuniones
     path('api/meetings/ai-recommendations/', views.meeting_ai_recommendations_view, name='meeting_ai_recommendations'),
+    path('api/meetings/generate-spin/', views.generate_spin_methodology_view, name='generate_spin_methodology'),
 
 ]
 

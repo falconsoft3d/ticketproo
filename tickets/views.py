@@ -2307,6 +2307,162 @@ def project_duplicate(request, project_id):
     return render(request, 'tickets/project_duplicate_confirm.html', context)
 
 
+# ========================
+# GESTIÓN DE PRODUCTOS
+# ========================
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def product_list(request):
+    """Lista todos los productos"""
+    from .models import Product, SystemConfiguration
+    
+    # Obtener configuración del sistema para la moneda
+    config = SystemConfiguration.objects.first()
+    currency_symbol = config.get_currency_symbol() if config else '€'
+    
+    # Filtros
+    search = request.GET.get('search', '')
+    status = request.GET.get('status', 'all')
+    
+    # Base queryset
+    queryset = Product.objects.select_related('created_by').all()
+    
+    # Aplicar filtros
+    if search:
+        queryset = queryset.filter(
+            Q(name__icontains=search) | 
+            Q(description__icontains=search)
+        )
+    
+    if status == 'active':
+        queryset = queryset.filter(is_active=True)
+    elif status == 'inactive':
+        queryset = queryset.filter(is_active=False)
+    
+    # Ordenar por fecha de creación
+    queryset = queryset.order_by('-created_at')
+    
+    # Paginación
+    paginator = Paginator(queryset, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_title': 'Gestión de Productos',
+        'page_obj': page_obj,
+        'search': search,
+        'status': status,
+        'total_products': Product.objects.count(),
+        'active_products': Product.objects.filter(is_active=True).count(),
+        'inactive_products': Product.objects.filter(is_active=False).count(),
+        'currency_symbol': currency_symbol,
+    }
+    return render(request, 'tickets/product_list.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def product_create(request):
+    """Crear un nuevo producto"""
+    from .forms import ProductForm
+    from .models import Product, SystemConfiguration
+    
+    # Obtener configuración del sistema para la moneda
+    config = SystemConfiguration.objects.first()
+    currency_symbol = config.get_currency_symbol() if config else '€'
+    
+    if request.method == 'POST':
+        form = ProductForm(request.POST)
+        if form.is_valid():
+            product = form.save(commit=False)
+            product.created_by = request.user
+            product.save()
+            messages.success(request, f'Producto "{product.name}" creado exitosamente.')
+            return redirect('product_list')
+    else:
+        form = ProductForm()
+    
+    context = {
+        'page_title': 'Crear Producto',
+        'form': form,
+        'currency_symbol': currency_symbol,
+    }
+    return render(request, 'tickets/product_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def product_edit(request, product_id):
+    """Editar un producto existente"""
+    from .forms import ProductForm
+    from .models import Product, SystemConfiguration
+    
+    product = get_object_or_404(Product, pk=product_id)
+    
+    # Obtener configuración del sistema para la moneda
+    config = SystemConfiguration.objects.first()
+    currency_symbol = config.get_currency_symbol() if config else '€'
+    
+    if request.method == 'POST':
+        form = ProductForm(request.POST, instance=product)
+        if form.is_valid():
+            product = form.save()
+            messages.success(request, f'Producto "{product.name}" actualizado exitosamente.')
+            return redirect('product_list')
+    else:
+        form = ProductForm(instance=product)
+    
+    context = {
+        'page_title': f'Editar Producto: {product.name}',
+        'form': form,
+        'product': product,
+        'currency_symbol': currency_symbol,
+    }
+    return render(request, 'tickets/product_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def product_detail(request, product_id):
+    """Ver detalles de un producto"""
+    from .models import Product, SystemConfiguration
+    
+    product = get_object_or_404(Product, pk=product_id)
+    
+    # Obtener configuración del sistema para la moneda
+    config = SystemConfiguration.objects.first()
+    currency_symbol = config.get_currency_symbol() if config else '€'
+    
+    context = {
+        'page_title': f'Producto: {product.name}',
+        'product': product,
+        'currency_symbol': currency_symbol,
+    }
+    return render(request, 'tickets/product_detail.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def product_delete(request, product_id):
+    """Eliminar un producto"""
+    from .models import Product
+    
+    product = get_object_or_404(Product, pk=product_id)
+    
+    if request.method == 'POST':
+        product_name = product.name
+        product.delete()
+        messages.success(request, f'Producto "{product_name}" eliminado exitosamente.')
+        return redirect('product_list')
+    
+    context = {
+        'page_title': f'Eliminar Producto: {product.name}',
+        'product': product,
+    }
+    return render(request, 'tickets/product_delete.html', context)
+
+
 @login_required
 @user_passes_test(is_agent, login_url='dashboard')
 def attendance_overview(request):
@@ -15887,4 +16043,374 @@ def meeting_pdf_download_view(request, pk):
     except Exception as e:
         messages.error(request, f'Error al generar PDF: {str(e)}')
         return redirect('meeting_edit', pk=pk)
+
+
+@require_http_methods(["POST"])
+@login_required
+def generate_spin_methodology_view(request):
+    """
+    Genera preguntas usando la metodología SPIN de ventas basándose en el contexto con IA
+    """
+    try:
+        data = json.loads(request.body)
+        description = data.get('description', '').strip()
+        company_id = data.get('company_id', '')
+        product_ids = data.get('product_ids', [])
+        
+        if not description:
+            return JsonResponse({
+                'success': False,
+                'message': 'Se requiere una descripción para generar la metodología SPIN'
+            })
+        
+        # Obtener información de la empresa si está disponible
+        company_info = ""
+        if company_id:
+            try:
+                from .models import Company
+                company = Company.objects.get(id=company_id)
+                company_info = f"""
+INFORMACIÓN DE LA EMPRESA:
+- Nombre: {company.name}
+- Sector: {getattr(company, 'industry', 'No especificado')}
+- Descripción: {getattr(company, 'description', 'No disponible')}
+- Tamaño: {getattr(company, 'size', 'No especificado')}
+"""
+            except:
+                company_info = ""
+        
+        # Obtener información de productos si están disponibles
+        products_info = ""
+        if product_ids:
+            try:
+                from .models import Product
+                products = Product.objects.filter(id__in=product_ids, is_active=True)
+                if products.exists():
+                    products_info = "\nPRODUCTOS A DISCUTIR:\n"
+                    for product in products:
+                        products_info += f"""
+- Nombre: {product.name}
+- Precio: {product.get_formatted_price()}
+- Descripción: {product.description}
+"""
+            except:
+                products_info = ""
+        
+        # Generar preguntas SPIN usando IA configurada
+        spin_questions = generate_spin_questions_with_ai(description, company_info, products_info)
+        
+        if spin_questions is None:
+            return JsonResponse({
+                'success': False,
+                'message': 'Error: La IA no está configurada o no está disponible'
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'spin_questions': spin_questions,
+            'message': 'Metodología SPIN generada exitosamente con IA'
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'message': 'Datos JSON inválidos'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error generando metodología SPIN: {str(e)}'
+        }, status=500)
+
+
+def generate_spin_questions_with_ai(description, company_info="", products_info=""):
+    """
+    Genera preguntas SPIN personalizadas usando la IA configurada
+    """
+    from .models import SystemConfiguration
+    
+    config = SystemConfiguration.objects.first()
+    if not config or not config.ai_chat_enabled or not config.openai_api_key:
+        return None
+        
+    try:
+        import openai
+        client = openai.OpenAI(api_key=config.openai_api_key)
+        
+        prompt = f"""
+Eres un experto en metodología SPIN de ventas. Basándote en el contexto proporcionado, genera una guía completa de preguntas SPIN (Situation, Problem, Implication, Need-Payoff) personalizada y profesional.
+
+CONTEXTO DE LA REUNIÓN:
+{description}
+
+{company_info}
+
+{products_info}
+
+INSTRUCCIONES:
+- Analiza el contexto, la información de la empresa y los productos mencionados
+- Genera 4-6 preguntas específicas para cada categoría SPIN
+- Las preguntas deben ser relevantes al contexto específico mencionado
+- Si hay productos específicos, incluye preguntas relacionadas con sus características, precio y beneficios
+- Incluye una estrategia de implementación
+- Formato profesional con emojis y estructura clara
+- Adapta las preguntas al sector y situación específica
+
+ESTRUCTURA REQUERIDA:
+🎯 METODOLOGÍA SPIN - PREGUNTAS ESTRATÉGICAS
+
+📊 S - PREGUNTAS DE SITUACIÓN (Understanding Current State)
+[4-6 preguntas específicas al contexto y productos]
+
+⚠️ P - PREGUNTAS DE PROBLEMA (Identifying Pain Points)  
+[4-6 preguntas que identifiquen dolor específico relacionado con la situación y productos]
+
+🔥 I - PREGUNTAS DE IMPLICACIÓN (Consequences & Impact)
+[4-6 preguntas sobre consecuencias de no actuar, considerando los productos ofrecidos]
+
+✅ N - PREGUNTAS DE NECESIDAD-BENEFICIO (Value Proposition)
+[4-6 preguntas sobre valor y beneficios específicos de los productos]
+
+🎯 ESTRATEGIA RECOMENDADA:
+[Estrategia específica basada en el contexto y productos a discutir]
+
+📋 PRÓXIMOS PASOS:
+[Acciones concretas para esta situación]
+
+Haz que las preguntas sean profesionales, directas y adaptadas específicamente al contexto proporcionado.
+"""
+        
+        response = client.chat.completions.create(
+            model=config.openai_model or "gpt-4o",
+            messages=[
+                {"role": "system", "content": "Eres un experto consultor en ventas especializado en la metodología SPIN. Generas preguntas estratégicas personalizadas que ayudan a los vendedores a identificar necesidades reales del cliente y crear urgencia de compra."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=3000,
+            temperature=0.7
+        )
+        
+        return response.choices[0].message.content
+        
+    except Exception as e:
+        print(f"Error generando contenido SPIN con IA: {e}")
+        # Fallback a función original si la IA falla
+        return generate_spin_questions_fallback(description, company_info, products_info)
+
+
+def generate_spin_questions_fallback(description, company_info="", products_info=""):
+    """
+    Función de fallback que genera preguntas SPIN básicas si la IA no está disponible
+    """
+    # Análisis del contexto para generar preguntas específicas
+    context_lower = description.lower()
+    
+    # Detectar industria/sector del contexto
+    industry_keywords = {
+        'tecnología': ['software', 'sistema', 'tecnología', 'digital', 'app', 'web', 'automatización'],
+        'retail': ['tienda', 'venta', 'producto', 'inventario', 'retail', 'comercio'],
+        'servicios': ['servicio', 'consultoría', 'asesoría', 'capacitación', 'formación'],
+        'manufactura': ['producción', 'manufactura', 'fábrica', 'proceso', 'calidad'],
+        'salud': ['salud', 'médico', 'hospital', 'clínica', 'paciente'],
+        'educación': ['educación', 'escuela', 'universidad', 'estudiante', 'curso'],
+        'finanzas': ['banco', 'financiero', 'préstamo', 'inversión', 'contabilidad']
+    }
+    
+    detected_industry = 'general'
+    for industry, keywords in industry_keywords.items():
+        if any(keyword in context_lower for keyword in keywords):
+            detected_industry = industry
+            break
+    
+    # Detectar problemas/necesidades mencionadas
+    pain_points = []
+    if any(word in context_lower for word in ['problema', 'dificultad', 'reto', 'desafío']):
+        pain_points.append('problemas_operacionales')
+    if any(word in context_lower for word in ['costo', 'gasto', 'presupuesto', 'caro']):
+        pain_points.append('costos_elevados')
+    if any(word in context_lower for word in ['tiempo', 'lento', 'demora', 'eficiencia']):
+        pain_points.append('ineficiencia_tiempo')
+    if any(word in context_lower for word in ['competencia', 'mercado', 'ventaja']):
+        pain_points.append('presion_competitiva')
+    
+    # Generar preguntas SPIN
+    spin_content = f"""
+🎯 METODOLOGÍA SPIN - PREGUNTAS ESTRATÉGICAS (Fallback)
+
+{company_info}
+
+CONTEXTO ANALIZADO:
+{description}
+
+═══════════════════════════════════════════════════════════════
+
+📊 S - PREGUNTAS DE SITUACIÓN (Understanding Current State)
+════════════════════════════════════════════════════════════
+
+{generate_situation_questions(detected_industry, context_lower)}
+
+═══════════════════════════════════════════════════════════════
+
+⚠️ P - PREGUNTAS DE PROBLEMA (Identifying Pain Points)
+═══════════════════════════════════════════════════════════
+
+{generate_problem_questions(detected_industry, pain_points, context_lower)}
+
+═══════════════════════════════════════════════════════════════
+
+🔥 I - PREGUNTAS DE IMPLICACIÓN (Consequences & Impact)
+═══════════════════════════════════════════════════════════
+
+{generate_implication_questions(detected_industry, pain_points)}
+
+═══════════════════════════════════════════════════════════════
+
+✅ N - PREGUNTAS DE NECESIDAD-BENEFICIO (Value Proposition)
+═══════════════════════════════════════════════════════════
+
+{generate_need_payoff_questions(detected_industry, context_lower)}
+
+═══════════════════════════════════════════════════════════════
+
+🎯 ESTRATEGIA RECOMENDADA:
+• Comenzar con 2-3 preguntas de Situación para entender el contexto
+• Profundizar con Preguntas de Problema para identificar dolor
+• Amplificar el impacto con preguntas de Implicación
+• Cerrar con Necesidad-Beneficio para crear urgencia de solución
+
+📋 PRÓXIMOS PASOS:
+• Preparar casos de éxito específicos del sector
+• Documentar respuestas del cliente para propuesta personalizada
+• Definir cronograma de implementación basado en urgencia detectada
+
+⚠️ Nota: Generado con sistema de fallback. Configure la IA para preguntas más personalizadas.
+"""
+    
+    return spin_content
+
+
+def generate_situation_questions(industry, context):
+    """Genera preguntas de situación específicas por industria"""
+    
+    base_questions = [
+        "¿Cómo manejan actualmente este proceso en su organización?",
+        "¿Qué herramientas o sistemas utilizan para esto?",
+        "¿Quién es responsable de supervisar esta área?",
+        "¿Con qué frecuencia revisan o evalúan estos procesos?"
+    ]
+    
+    industry_specific = {
+        'tecnología': [
+            "¿Qué stack tecnológico utilizan actualmente?",
+            "¿Cómo gestionan el ciclo de desarrollo de software?",
+            "¿Qué nivel de automatización tienen implementado?",
+            "¿Cómo manejan la seguridad de datos y ciberseguridad?"
+        ],
+        'retail': [
+            "¿Cómo controlan el inventario actualmente?",
+            "¿Qué canales de venta utilizan?",
+            "¿Cómo analizan el comportamiento de compra de sus clientes?",
+            "¿Qué estrategias de marketing digital implementan?"
+        ],
+        'servicios': [
+            "¿Cómo gestionan la relación con sus clientes?",
+            "¿Qué procesos siguen para la entrega de servicios?",
+            "¿Cómo miden la satisfacción del cliente?",
+            "¿Qué herramientas usan para gestionar proyectos?"
+        ],
+        'finanzas': [
+            "¿Cómo gestionan los procesos contables actualmente?",
+            "¿Qué nivel de automatización tienen en facturación?",
+            "¿Cómo realizan el seguimiento de flujo de caja?",
+            "¿Qué reportes financieros generan regularmente?"
+        ]
+    }
+    
+    questions = base_questions + industry_specific.get(industry, [])
+    return '\n'.join([f"• {q}" for q in questions[:6]])
+
+
+def generate_problem_questions(industry, pain_points, context):
+    """Genera preguntas de problema basadas en pain points detectados"""
+    
+    base_questions = [
+        "¿Qué aspectos de este proceso les resultan más desafiantes?",
+        "¿Hay algo que les gustaría que funcionara de manera diferente?",
+        "¿Qué obstáculos enfrentan para lograr sus objetivos?"
+    ]
+    
+    pain_point_questions = {
+        'problemas_operacionales': [
+            "¿Con qué frecuencia experimentan interrupciones en este proceso?",
+            "¿Qué impacto tienen estos problemas en la productividad del equipo?",
+            "¿Cuánto tiempo dedican a resolver problemas operacionales?"
+        ],
+        'costos_elevados': [
+            "¿Sienten que están gastando más de lo necesario en esta área?",
+            "¿Han calculado el costo de oportunidad de mantener el status quo?",
+            "¿Qué porcentaje del presupuesto representa esta área actualmente?"
+        ],
+        'ineficiencia_tiempo': [
+            "¿Cuánto tiempo podrían ahorrar si este proceso fuera más eficiente?",
+            "¿Qué tareas repetitivas consumen más tiempo de su equipo?",
+            "¿Han considerado el costo de las horas perdidas en procesos manuales?"
+        ],
+        'presion_competitiva': [
+            "¿Cómo los afecta la presión competitiva en este aspecto?",
+            "¿Qué ventajas tienen sus competidores que ustedes no?",
+            "¿Qué riesgo ven de no evolucionar en esta área?"
+        ]
+    }
+    
+    questions = base_questions[:]
+    for pain_point in pain_points:
+        questions.extend(pain_point_questions.get(pain_point, []))
+    
+    return '\n'.join([f"• {q}" for q in questions[:6]])
+
+
+def generate_implication_questions(industry, pain_points):
+    """Genera preguntas de implicación para amplificar el dolor"""
+    
+    base_questions = [
+        "¿Qué sucede si estos problemas continúan sin resolverse?",
+        "¿Cómo afecta esto a la moral y productividad del equipo?",
+        "¿Qué impacto tiene en la experiencia de sus clientes?",
+        "¿Cómo podría esto afectar su crecimiento futuro?"
+    ]
+    
+    specific_implications = [
+        "¿Cuál es el costo real de no actuar ahora?",
+        "¿Qué oportunidades podrían estar perdiendo?",
+        "¿Cómo esto los posiciona frente a la competencia?",
+        "¿Qué riesgos ven en el mediano y largo plazo?",
+        "¿Cómo afecta esto la toma de decisiones estratégicas?",
+        "¿Qué impacto tiene en la escalabilidad del negocio?"
+    ]
+    
+    all_questions = base_questions + specific_implications
+    return '\n'.join([f"• {q}" for q in all_questions[:6]])
+
+
+def generate_need_payoff_questions(industry, context):
+    """Genera preguntas de necesidad-beneficio para crear valor"""
+    
+    base_questions = [
+        "¿Qué valor tendría para ustedes resolver este desafío?",
+        "¿Cómo mejoraría su operación si tuvieran una solución eficaz?",
+        "¿Qué beneficios esperarían ver en los primeros 90 días?",
+        "¿Cómo mediría el éxito de una implementación?"
+    ]
+    
+    value_questions = [
+        "¿Cuál sería el impacto en ROI si optimizaran este proceso?",
+        "¿Qué nuevas oportunidades se abrirían con una solución efectiva?",
+        "¿Cómo esto les ayudaría a diferenciarse de la competencia?",
+        "¿Qué valor agregado podrían ofrecer a sus clientes?",
+        "¿Cómo esto contribuiría a sus objetivos estratégicos?",
+        "¿Qué tranquilidad les daría tener esto resuelto?"
+    ]
+    
+    all_questions = base_questions + value_questions
+    return '\n'.join([f"• {q}" for q in all_questions[:6]])
 

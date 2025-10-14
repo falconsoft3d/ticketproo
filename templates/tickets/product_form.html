@@ -1,0 +1,241 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .price-input {
+        position: relative;
+    }
+    .price-input::before {
+        content: '{{ currency_symbol }}';
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        font-weight: bold;
+        z-index: 10;
+    }
+    .price-input input {
+        padding-left: 25px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="form-container">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex align-items-center">
+                    <a href="{% url 'product_list' %}" class="btn btn-outline-secondary me-3">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
+                    <div>
+                        <h2><i class="bi bi-box-seam"></i> {{ page_title }}</h2>
+                        {% if product %}
+                            <p class="text-muted mb-0">Editando producto: <strong>{{ product.name }}</strong></p>
+                        {% else %}
+                            <p class="text-muted mb-0">Agrega un nuevo producto a tu catálogo</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulario -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-{% if product %}pencil{% else %}plus-circle{% endif %}"></i>
+                    {% if product %}Editar Producto{% else %}Nuevo Producto{% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <!-- Nombre del producto -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">
+                                <i class="bi bi-tag"></i> {{ form.name.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.name.errors }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">{{ form.name.help_text }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Precio -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.price.id_for_label }}" class="form-label">
+                                <i class="bi bi-currency-dollar"></i> {{ form.price.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            <div class="price-input">
+                                {{ form.price }}
+                            </div>
+                            {% if form.price.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.price.errors }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">{{ form.price.help_text }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">
+                                <i class="bi bi-info-circle"></i> Vista previa del precio
+                            </label>
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <span class="badge bg-primary" style="font-size: 1.2em;" id="price-preview">{{ currency_symbol }}0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Descripción -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">
+                                <i class="bi bi-file-text"></i> {{ form.description.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.description.errors }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">{{ form.description.help_text }}</div>
+                            <div class="text-muted small mt-1">
+                                <span id="char-count">0</span>/1000 caracteres
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Estado activo -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                {{ form.is_active }}
+                                <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                    <i class="bi bi-toggle-on"></i> {{ form.is_active.label }}
+                                </label>
+                            </div>
+                            {% if form.is_active.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.is_active.errors }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">{{ form.is_active.help_text }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Información adicional para edición -->
+                    {% if product %}
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title"><i class="bi bi-info-circle"></i> Información del Producto</h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <small class="text-muted">
+                                                <strong>Creado por:</strong> {{ product.created_by.get_full_name|default:product.created_by.username }}<br>
+                                                <strong>Fecha de creación:</strong> {{ product.created_at|date:"d/m/Y H:i" }}
+                                            </small>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <small class="text-muted">
+                                                <strong>Última actualización:</strong> {{ product.updated_at|date:"d/m/Y H:i" }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Botones -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'product_list' %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-circle"></i> Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-{% if product %}check-circle{% else %}plus-circle{% endif %}"></i>
+                                    {% if product %}Actualizar Producto{% else %}Crear Producto{% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Información de ayuda -->
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="bi bi-lightbulb"></i> Consejos</h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li><strong>Nombre:</strong> Usa un nombre descriptivo y fácil de recordar</li>
+                    <li><strong>Precio:</strong> Establece un precio competitivo para tu mercado objetivo</li>
+                    <li><strong>Descripción:</strong> Incluye características principales, beneficios y especificaciones</li>
+                    <li><strong>Estado:</strong> Solo productos "Activos" serán visibles para los clientes</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Actualizar vista previa del precio
+    const priceInput = document.querySelector('#{{ form.price.id_for_label }}');
+    const pricePreview = document.getElementById('price-preview');
+    
+    function updatePricePreview() {
+        const price = parseFloat(priceInput.value) || 0;
+        pricePreview.textContent = '{{ currency_symbol }}' + price.toFixed(2);
+    }
+    
+    priceInput.addEventListener('input', updatePricePreview);
+    updatePricePreview(); // Actualizar al cargar
+    
+    // Contador de caracteres para descripción
+    const descriptionTextarea = document.querySelector('#{{ form.description.id_for_label }}');
+    const charCount = document.getElementById('char-count');
+    
+    function updateCharCount() {
+        charCount.textContent = descriptionTextarea.value.length;
+        if (descriptionTextarea.value.length > 1000) {
+            charCount.classList.add('text-danger');
+        } else {
+            charCount.classList.remove('text-danger');
+        }
+    }
+    
+    descriptionTextarea.addEventListener('input', updateCharCount);
+    updateCharCount(); // Actualizar al cargar
+});
+</script>
+{% endblock %}

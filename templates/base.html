@@ -239,6 +239,12 @@
                                 </a>
                             </li>
                             <li>
+                                <a class="dropdown-item {% if 'product' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'product_list' %}">
+                                    <i class="bi bi-box-seam"></i> Productos
+                                </a>
+                            </li>
+                            <li>
                                 <a class="dropdown-item {% if 'company' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'company_list' %}">
                                     <i class="bi bi-building"></i> Empresas
