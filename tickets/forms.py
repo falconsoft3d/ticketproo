@@ -21,7 +21,8 @@ from .models import (
     ChatRoom, ChatMessage, Command, ContactFormSubmission, Meeting, MeetingAttendee, MeetingQuestion, OpportunityActivity,
     Course, CourseClass, Contact, BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, Concept, ContactoWeb, Employee, EmployeePayroll,
     Agreement, AgreementSignature, LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry, SharedFile, SharedFileDownload,
-    Recording, RecordingPlayback, MultipleDocumentation, TaskSchedule, ScheduleTask, ScheduleComment, FinancialAction
+    Recording, RecordingPlayback, MultipleDocumentation, TaskSchedule, ScheduleTask, ScheduleComment, FinancialAction,
+    ClientProjectAccess, ClientTimeEntry
 )
 
 class CategoryForm(forms.ModelForm):
@@ -4827,4 +4828,169 @@ class ProductForm(forms.ModelForm):
         if price is not None and price < 0:
             raise forms.ValidationError('El precio no puede ser negativo')
         return price
+
+
+# ===== FORMULARIOS PARA ASISTENCIA DE CLIENTE =====
+
+class ClientProjectAccessForm(forms.ModelForm):
+    """Formulario para configurar el acceso público a proyectos para clientes"""
+    
+    allowed_categories = forms.MultipleChoiceField(
+        choices=[
+            ('capacitacion', 'Capacitación'),
+            ('pruebas', 'Pruebas'),
+            ('uso', 'Uso'),
+        ],
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label='Categorías Permitidas',
+        help_text='Seleccione las categorías que los clientes podrán elegir'
+    )
+    
+    class Meta:
+        from .models import ClientProjectAccess
+        model = ClientProjectAccess
+        fields = [
+            'project', 'is_active', 'max_entries_per_day', 
+            'requires_phone', 'allowed_categories', 'instructions'
+        ]
+        widgets = {
+            'project': forms.Select(attrs={'class': 'form-select'}),
+            'instructions': forms.Textarea(attrs={'rows': 4, 'class': 'form-control'}),
+            'max_entries_per_day': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Configurar estilos de los campos
+        for field_name, field in self.fields.items():
+            if field_name not in ['is_active', 'requires_phone', 'allowed_categories']:
+                if hasattr(field.widget, 'attrs'):
+                    if 'class' not in field.widget.attrs:
+                        field.widget.attrs['class'] = 'form-control'
+        
+        # Configurar checkboxes
+        self.fields['is_active'].widget.attrs.update({'class': 'form-check-input'})
+        self.fields['requires_phone'].widget.attrs.update({'class': 'form-check-input'})
+        
+        # Configurar placeholder e instrucciones
+        self.fields['instructions'].widget.attrs.update({
+            'placeholder': 'Instrucciones especiales para los clientes...'
+        })
+        
+        # Filtrar solo proyectos activos
+        self.fields['project'].queryset = self.fields['project'].queryset.filter(is_active=True)
+        
+        # Si es edición, cargar las categorías seleccionadas
+        if self.instance and self.instance.pk and self.instance.allowed_categories:
+            self.fields['allowed_categories'].initial = self.instance.allowed_categories
+    
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        
+        # Guardar las categorías seleccionadas
+        if self.cleaned_data['allowed_categories']:
+            instance.allowed_categories = list(self.cleaned_data['allowed_categories'])
+        else:
+            instance.allowed_categories = ['capacitacion', 'pruebas', 'uso']  # default
+        
+        if commit:
+            instance.save()
+        return instance
+
+
+class ClientTimeEntryForm(forms.ModelForm):
+    """Formulario público para que los clientes registren horas"""
+    
+    entry_date = forms.DateField(
+        widget=DateInput(attrs={'class': 'form-control'}),
+        label='Fecha de las Horas',
+        help_text='Fecha cuando realizó el trabajo'
+    )
+    
+    class Meta:
+        from .models import ClientTimeEntry
+        model = ClientTimeEntry
+        fields = ['client_name', 'client_email', 'client_phone', 'hours', 'category', 'description', 'entry_date']
+        widgets = {
+            'client_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Juan Pérez'
+            }),
+            'client_email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'su.email@ejemplo.com'
+            }),
+            'client_phone': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '+1 234 567 8900'
+            }),
+            'hours': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '0.25',
+                'max': '24',
+                'step': '0.25',
+                'placeholder': '2.5'
+            }),
+            'category': forms.Select(attrs={'class': 'form-select'}),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción opcional del trabajo realizado...'
+            }),
+        }
+    
+    def __init__(self, *args, access=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.access = access
+        
+        # Si se requiere teléfono, hacerlo obligatorio
+        if access and access.requires_phone:
+            self.fields['client_phone'].required = True
+        else:
+            self.fields['client_phone'].required = False
+        
+        # Filtrar categorías según la configuración del acceso
+        if access and access.allowed_categories:
+            choices = [(cat, dict(self.fields['category'].choices).get(cat, cat.title())) 
+                      for cat in access.allowed_categories]
+            self.fields['category'].choices = choices
+        
+        # Configurar fecha por defecto (hoy)
+        from django.utils import timezone
+        self.fields['entry_date'].initial = timezone.now().date()
+        
+        # Agregar clases para responsive design
+        for field in self.fields.values():
+            if hasattr(field.widget, 'attrs'):
+                field.widget.attrs.update({'class': field.widget.attrs.get('class', '') + ' mb-2'})
+    
+    def clean_hours(self):
+        """Validar que las horas sean válidas"""
+        hours = self.cleaned_data.get('hours')
+        if hours is not None:
+            if hours <= 0:
+                raise forms.ValidationError('Las horas deben ser mayor a 0')
+            if hours > 24:
+                raise forms.ValidationError('No puede registrar más de 24 horas por día')
+        return hours
+    
+    def clean_entry_date(self):
+        """Validar que la fecha no sea futura ni muy antigua"""
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        entry_date = self.cleaned_data.get('entry_date')
+        if entry_date:
+            today = timezone.now().date()
+            if entry_date > today:
+                raise forms.ValidationError('No puede registrar horas para una fecha futura')
+            
+            # No permitir fechas más antiguas que 30 días
+            thirty_days_ago = today - timedelta(days=30)
+            if entry_date < thirty_days_ago:
+                raise forms.ValidationError('No puede registrar horas para fechas anteriores a 30 días')
+        
+        return entry_date
 

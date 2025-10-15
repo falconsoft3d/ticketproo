@@ -1,0 +1,418 @@
+{% extends 'public_base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - {{ project.name }}{% endblock %}
+
+{% block extra_head %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .stat-card.primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .stat-card.success {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    }
+    
+    .stat-card.warning {
+        background: linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%);
+    }
+    
+    .stat-card.info {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+    
+    .stat-label {
+        font-size: 1rem;
+        opacity: 0.9;
+        margin-bottom: 5px;
+    }
+    
+    .stat-description {
+        font-size: 0.85rem;
+        opacity: 0.7;
+    }
+    
+    .chart-container {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .project-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        text-align: center;
+    }
+    
+    .table-container {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .client-info {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-left: 4px solid #667eea;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header del Proyecto -->
+    <div class="project-header">
+        <h1><i class="fas fa-chart-line"></i> Dashboard del Proyecto</h1>
+        <h2>{{ project.name }}</h2>
+        {% if client_name %}
+        <div class="client-info mt-3">
+            <h5><i class="fas fa-user"></i> Cliente: {{ client_name }}</h5>
+        </div>
+        {% endif %}
+        <p class="mb-0">Dashboard actualizado en tiempo real - {{ today|date:"d/m/Y" }}</p>
+    </div>
+
+    <!-- KPIs Principales Solicitados -->
+    <div class="row">
+        <!-- 1. Total de horas este mes -->
+        <div class="col-xl-3 col-lg-6 col-md-6 col-12">
+            <div class="stat-card primary">
+                <div class="stat-number">{{ total_hours_this_month|floatformat:1 }}</div>
+                <div class="stat-label">Total Horas Este Mes</div>
+                <div class="stat-description">
+                    <i class="fas fa-calendar-month"></i> Horas trabajadas en {{ month_start|date:"F Y" }}
+                </div>
+            </div>
+        </div>
+        
+        <!-- 2. Horas en el proyecto este mes -->
+        <div class="col-xl-3 col-lg-6 col-md-6 col-12">
+            <div class="stat-card success">
+                <div class="stat-number">{{ project_hours_this_month|floatformat:1 }}</div>
+                <div class="stat-label">Proyecto - Este Mes</div>
+                <div class="stat-description">
+                    <i class="fas fa-project-diagram"></i> Horas dedicadas al proyecto actual
+                </div>
+            </div>
+        </div>
+        
+        <!-- 3. Total de horas en el proyecto -->
+        <div class="col-xl-3 col-lg-6 col-md-6 col-12">
+            <div class="stat-card warning">
+                <div class="stat-number">{{ total_project_hours|floatformat:1 }}</div>
+                <div class="stat-label">Total del Proyecto</div>
+                <div class="stat-description">
+                    <i class="fas fa-clock"></i> Total acumulado desde el inicio
+                </div>
+            </div>
+        </div>
+        
+        <!-- 4. Total de horas del equipo -->
+        <div class="col-xl-3 col-lg-6 col-md-6 col-12">
+            <div class="stat-card info">
+                <div class="stat-number">{{ team_total_hours|floatformat:1 }}</div>
+                <div class="stat-label">Total del Equipo</div>
+                <div class="stat-description">
+                    <i class="fas fa-users"></i> Horas de todo el equipo en el proyecto
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPIs Adicionales -->
+    <div class="row">
+        <div class="col-xl-3 col-lg-6 col-md-6 col-12">
+            <div class="stat-card" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);">
+                <div class="stat-number">{{ week_hours|floatformat:1 }}</div>
+                <div class="stat-label">Horas Esta Semana</div>
+                <div class="stat-description">
+                    <i class="fas fa-calendar-week"></i> Desde {{ week_start|date:"d/m" }}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-lg-6 col-md-6 col-12">
+            <div class="stat-card" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
+                <div class="stat-number">{{ avg_daily_hours|floatformat:1 }}</div>
+                <div class="stat-label">Promedio Diario</div>
+                <div class="stat-description">
+                    <i class="fas fa-chart-bar"></i> Horas por día trabajado
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-lg-6 col-md-6 col-12">
+            <div class="stat-card" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);">
+                <div class="stat-number">{{ total_entries }}</div>
+                <div class="stat-label">Total Registros</div>
+                <div class="stat-description">
+                    <i class="fas fa-list"></i> Entradas de tiempo registradas
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-lg-6 col-md-6 col-12">
+            <div class="stat-card" style="background: linear-gradient(135deg, #a8c0ff 0%, #3f2b96 100%);">
+                <div class="stat-number">{{ unique_clients }}</div>
+                <div class="stat-label">Clientes Activos</div>
+                <div class="stat-description">
+                    <i class="fas fa-user-friends"></i> Colaboradores en el proyecto
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico de Tendencia Semanal -->
+    <div class="row">
+        <div class="col-12">
+            <div class="chart-container">
+                <h4 class="mb-4"><i class="fas fa-chart-line"></i> Tendencia de Horas Semanales</h4>
+                <canvas id="weeklyChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Distribución por Categorías y Actividad Diaria -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="chart-container">
+                <h4 class="mb-4"><i class="fas fa-pie-chart"></i> Distribución por Categorías</h4>
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="chart-container">
+                <h4 class="mb-4"><i class="fas fa-chart-bar"></i> Actividad por Día de la Semana</h4>
+                <canvas id="weekdayChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Categorías Detallada -->
+    {% if category_distribution %}
+    <div class="row">
+        <div class="col-12">
+            <div class="table-container">
+                <h4 class="mb-4"><i class="fas fa-table"></i> Detalle por Categorías</h4>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Categoría</th>
+                                <th>Total Horas</th>
+                                <th>Registros</th>
+                                <th>% del Total</th>
+                                <th>Progreso</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for category in category_distribution %}
+                            <tr>
+                                <td>
+                                    <strong>{{ category.category|title }}</strong>
+                                </td>
+                                <td>{{ category.total_hours|floatformat:1 }} hrs</td>
+                                <td>{{ category.total_entries }}</td>
+                                <td>
+                                    {% widthratio category.total_hours total_project_hours 100 %}%
+                                </td>
+                                <td>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-primary" 
+                                             style="width: {% widthratio category.total_hours total_project_hours 100 %}%">
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Top Clientes (solo si no hay filtro específico) -->
+    {% if not client_name and top_clients %}
+    <div class="row">
+        <div class="col-12">
+            <div class="table-container">
+                <h4 class="mb-4"><i class="fas fa-trophy"></i> Top Colaboradores</h4>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Posición</th>
+                                <th>Cliente</th>
+                                <th>Email</th>
+                                <th>Total Horas</th>
+                                <th>Registros</th>
+                                <th>Contribución</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for client in top_clients %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-primary">{{ forloop.counter }}</span>
+                                </td>
+                                <td><strong>{{ client.client_name }}</strong></td>
+                                <td><small class="text-muted">{{ client.client_email }}</small></td>
+                                <td>{{ client.total_hours|floatformat:1 }} hrs</td>
+                                <td>{{ client.total_entries }}</td>
+                                <td>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-success" 
+                                             style="width: {% widthratio client.total_hours team_total_hours 100 %}%">
+                                        </div>
+                                    </div>
+                                    {% widthratio client.total_hours team_total_hours 100 %}%
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Scripts para los gráficos -->
+<script>
+// Datos del backend
+const weeklyData = {{ weekly_chart_data|safe }};
+const categoryData = {{ category_chart_data|safe }};
+const weekdayData = {{ weekday_chart_data|safe }};
+
+// Configuración de colores
+const colors = [
+    '#667eea', '#764ba2', '#11998e', '#38ef7d',
+    '#fc4a1a', '#f7b733', '#ff9a9e', '#fecfef',
+    '#a8edea', '#fed6e3', '#ffecd2', '#fcb69f'
+];
+
+// Gráfico de tendencia semanal
+const weeklyCtx = document.getElementById('weeklyChart').getContext('2d');
+new Chart(weeklyCtx, {
+    type: 'line',
+    data: {
+        labels: weeklyData.labels,
+        datasets: [{
+            label: 'Horas por Semana',
+            data: weeklyData.hours,
+            borderColor: '#667eea',
+            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Horas'
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: true
+            }
+        }
+    }
+});
+
+// Gráfico de categorías
+if (categoryData.labels.length > 0) {
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    new Chart(categoryCtx, {
+        type: 'doughnut',
+        data: {
+            labels: categoryData.labels,
+            datasets: [{
+                data: categoryData.hours,
+                backgroundColor: colors.slice(0, categoryData.labels.length),
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+// Gráfico de actividad por día de la semana
+if (weekdayData.labels.length > 0) {
+    const weekdayCtx = document.getElementById('weekdayChart').getContext('2d');
+    new Chart(weekdayCtx, {
+        type: 'bar',
+        data: {
+            labels: weekdayData.labels,
+            datasets: [{
+                label: 'Horas por Día',
+                data: weekdayData.hours,
+                backgroundColor: colors.slice(0, weekdayData.labels.length),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Horas'
+                    }
+                }
+            }
+        }
+    });
+}
+</script>
+{% endblock %}

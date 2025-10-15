@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header text-center bg-danger text-white">
+                    <h4 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>{{ title }}</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <h5><i class="fas fa-warning me-2"></i>¡Atención!</h5>
+                        <p class="mb-0">
+                            Está a punto de eliminar el acceso público para el proyecto 
+                            <strong>"{{ access.project.name }}"</strong>.
+                        </p>
+                    </div>
+
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6>Información del acceso que se eliminará:</h6>
+                            <ul>
+                                <li><strong>Proyecto:</strong> {{ access.project.name }}</li>
+                                <li><strong>Estado:</strong> 
+                                    {% if access.is_active %}
+                                        <span class="badge bg-success">Activo</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Inactivo</span>
+                                    {% endif %}
+                                </li>
+                                <li><strong>Límite diario:</strong> {{ access.max_entries_per_day }} entradas</li>
+                                <li><strong>Categorías permitidas:</strong> 
+                                    {% for category in access.allowed_categories %}
+                                        <span class="badge bg-secondary me-1">{{ category|capfirst }}</span>
+                                    {% endfor %}
+                                </li>
+                                <li><strong>Entradas registradas:</strong> {{ access.project.client_time_entries.count }} entradas</li>
+                                <li><strong>Creado:</strong> {{ access.created_at|date:"d/m/Y H:i" }}</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning mt-3">
+                        <h6><i class="fas fa-info-circle me-2"></i>Consecuencias de eliminar este acceso:</h6>
+                        <ul class="mb-0">
+                            <li>El enlace público dejará de funcionar inmediatamente</li>
+                            <li>Los clientes no podrán registrar más horas usando este enlace</li>
+                            <li>Las entradas ya registradas <strong>NO se eliminarán</strong></li>
+                            <li>Esta acción <strong>NO se puede deshacer</strong></li>
+                        </ul>
+                    </div>
+
+                    {% if access.project.client_time_entries.count > 0 %}
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-database me-2"></i>Datos existentes:</h6>
+                            <p class="mb-0">
+                                Hay <strong>{{ access.project.client_time_entries.count }} entradas de tiempo</strong> 
+                                registradas para este proyecto. Estas entradas se conservarán y podrá acceder a ellas 
+                                desde la sección de reportes.
+                            </p>
+                        </div>
+                    {% endif %}
+
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="confirmDelete" required>
+                            <label class="form-check-label" for="confirmDelete">
+                                Confirmo que deseo eliminar este acceso público y entiendo las consecuencias
+                            </label>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'client_assistance_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger" id="deleteBtn" disabled>
+                                <i class="fas fa-trash me-2"></i>Eliminar Acceso
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Alternativas -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-lightbulb me-2"></i>¿Consideró estas alternativas?</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="small mb-0">
+                        <li><strong>Desactivar temporalmente:</strong> En lugar de eliminar, puede desactivar el acceso y reactivarlo más tarde</li>
+                        <li><strong>Modificar configuración:</strong> Puede cambiar los límites o categorías sin eliminar el acceso</li>
+                        <li><strong>Crear nuevo enlace:</strong> Puede generar un nuevo token si hay problemas de seguridad</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkbox = document.getElementById('confirmDelete');
+    const deleteBtn = document.getElementById('deleteBtn');
+    
+    checkbox.addEventListener('change', function() {
+        deleteBtn.disabled = !this.checked;
+    });
+    
+    deleteBtn.addEventListener('click', function(e) {
+        if (!confirm('¿Está absolutamente seguro de que desea eliminar este acceso público?')) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

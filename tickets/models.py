@@ -7574,3 +7574,177 @@ class Product(models.Model):
     def price_with_currency(self):
         """Propiedad para obtener el precio con moneda fácilmente"""
         return self.get_formatted_price()
+
+
+class ClientProjectAccess(models.Model):
+    """Modelo para configurar el acceso público a proyectos para imputación de horas por clientes"""
+    
+    project = models.OneToOneField(
+        Project,
+        on_delete=models.CASCADE,
+        related_name='client_access',
+        verbose_name='Proyecto'
+    )
+    public_token = models.CharField(
+        max_length=64,
+        unique=True,
+        verbose_name='Token Público',
+        help_text='Token único para acceso público al formulario de horas'
+    )
+    dashboard_token = models.CharField(
+        max_length=64,
+        unique=True,
+        blank=True,
+        null=True,
+        verbose_name='Token Dashboard Público',
+        help_text='Token único para acceso público al dashboard de estadísticas'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo',
+        help_text='Si está desactivado, el enlace público no funcionará'
+    )
+    max_entries_per_day = models.PositiveIntegerField(
+        default=50,
+        verbose_name='Máximo de entradas por día',
+        help_text='Límite de entradas de tiempo que se pueden crear por día'
+    )
+    requires_phone = models.BooleanField(
+        default=True,
+        verbose_name='Requiere teléfono',
+        help_text='Si es obligatorio que el cliente proporcione su teléfono'
+    )
+    allowed_categories = models.JSONField(
+        default=list,
+        verbose_name='Categorías permitidas',
+        help_text='Lista de categorías que el cliente puede seleccionar'
+    )
+    instructions = models.TextField(
+        blank=True,
+        verbose_name='Instrucciones',
+        help_text='Instrucciones que verá el cliente en el formulario'
+    )
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
+    
+    class Meta:
+        verbose_name = 'Acceso Público de Cliente'
+        verbose_name_plural = 'Accesos Públicos de Clientes'
+    
+    def __str__(self):
+        return f"Acceso público para {self.project.name}"
+    
+    def save(self, *args, **kwargs):
+        if not self.public_token:
+            self.public_token = self.generate_token()
+        if not self.dashboard_token:
+            self.dashboard_token = self.generate_token()
+        if not self.allowed_categories:
+            self.allowed_categories = ['capacitacion', 'pruebas', 'uso']
+        super().save(*args, **kwargs)
+    
+    def generate_token(self):
+        """Genera un token único"""
+        import secrets
+        return secrets.token_urlsafe(32)
+    
+    def get_public_url(self):
+        """Obtiene la URL pública para el formulario"""
+        from django.urls import reverse
+        return reverse('client_time_entry_form', kwargs={'token': self.public_token})
+    
+    def get_dashboard_url(self):
+        """Obtiene la URL pública para el dashboard"""
+        from django.urls import reverse
+        return reverse('client_dashboard_public', kwargs={'token': self.dashboard_token})
+    
+    def can_accept_entries_today(self):
+        """Verifica si se pueden aceptar más entradas hoy"""
+        from django.utils import timezone
+        today = timezone.now().date()
+        today_entries = ClientTimeEntry.objects.filter(
+            project=self.project,
+            created_at__date=today
+        ).count()
+        return today_entries < self.max_entries_per_day
+
+
+class ClientTimeEntry(models.Model):
+    """Modelo para almacenar las entradas de tiempo de clientes"""
+    
+    CATEGORY_CHOICES = [
+        ('capacitacion', 'Capacitación'),
+        ('pruebas', 'Pruebas'),
+        ('uso', 'Uso'),
+    ]
+    
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name='client_time_entries',
+        verbose_name='Proyecto'
+    )
+    client_name = models.CharField(
+        max_length=100,
+        verbose_name='Nombre del Cliente',
+        help_text='Nombre completo del cliente'
+    )
+    client_email = models.EmailField(
+        verbose_name='Correo del Cliente',
+        help_text='Correo electrónico del cliente'
+    )
+    client_phone = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name='Teléfono del Cliente',
+        help_text='Número de teléfono del cliente (opcional)'
+    )
+    hours = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        verbose_name='Horas',
+        help_text='Cantidad de horas a imputar (ej: 2.5)'
+    )
+    category = models.CharField(
+        max_length=20,
+        choices=CATEGORY_CHOICES,
+        verbose_name='Categoría',
+        help_text='Categoría de las horas imputadas'
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción',
+        help_text='Descripción opcional del trabajo realizado'
+    )
+    entry_date = models.DateField(
+        default=timezone.now,
+        verbose_name='Fecha de las horas',
+        help_text='Fecha cuando se realizaron las horas de trabajo'
+    )
+    client_ip = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name='IP del Cliente',
+        help_text='Dirección IP desde donde se registró la entrada'
+    )
+    user_agent = models.TextField(
+        blank=True,
+        verbose_name='User Agent',
+        help_text='Información del navegador del cliente'
+    )
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
+    
+    class Meta:
+        verbose_name = 'Entrada de Tiempo de Cliente'
+        verbose_name_plural = 'Entradas de Tiempo de Clientes'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.client_name} ({self.client_email}) - {self.hours}h en {self.project.name} ({self.get_category_display()})"
+    
+    def get_formatted_hours(self):
+        """Retorna las horas formateadas"""
+        if self.hours == int(self.hours):
+            return f"{int(self.hours)}h"
+        return f"{self.hours}h"

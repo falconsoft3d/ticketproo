@@ -1,0 +1,27 @@
+{% extends 'public_base.html' %}
+
+{% block title %}Error - Dashboard{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="alert alert-danger text-center" role="alert">
+                <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                <h4 class="alert-heading">Acceso No Válido</h4>
+                <p>{{ error_message|default:"El enlace del dashboard no es válido o ha expirado." }}</p>
+                <hr>
+                <p class="mb-0">
+                    <small>Si crees que esto es un error, contacta con el administrador del proyecto.</small>
+                </p>
+            </div>
+            
+            <div class="text-center mt-4">
+                <a href="{% url 'tickets:client_project_form' %}" class="btn btn-primary">
+                    <i class="fas fa-arrow-left"></i> Volver al Formulario
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

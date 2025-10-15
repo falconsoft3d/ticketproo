@@ -1,0 +1,581 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+.kpi-card {
+    transition: all 0.3s ease;
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+.kpi-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+.kpi-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1;
+}
+.kpi-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-top: 0.5rem;
+}
+.growth-positive { color: #28a745; }
+.growth-negative { color: #dc3545; }
+.growth-neutral { color: #6c757d; }
+.chart-container {
+    position: relative;
+    height: 400px;
+    margin: 20px 0;
+}
+.ranking-item {
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-left: 4px solid #007bff;
+    transition: all 0.3s ease;
+}
+.ranking-item:hover {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    transform: translateX(5px);
+}
+.ranking-position {
+    font-weight: bold;
+    color: #007bff;
+    font-size: 1.1rem;
+}
+.filters-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px;
+}
+.btn-filter {
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    border-radius: 8px;
+}
+.btn-filter:hover {
+    background: rgba(255,255,255,0.3);
+    color: white;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-chart-line me-2"></i>{{ title }}</h2>
+                <div>
+                    <a href="{% url 'client_assistance_list' %}" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-cog me-2"></i>Configuración
+                    </a>
+                    <a href="{% url 'client_time_entries_list' %}" class="btn btn-outline-info">
+                        <i class="fas fa-list me-2"></i>Ver Entradas
+                    </a>
+                </div>
+            </div>
+
+            <!-- Filtros -->
+            <div class="card filters-card mb-4">
+                <div class="card-body">
+                    <h5 class="mb-3"><i class="fas fa-filter me-2"></i>Filtros de Análisis</h5>
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="project" class="form-label">Proyecto</label>
+                            <select name="project" id="project" class="form-select btn-filter">
+                                <option value="">Todos los proyectos</option>
+                                {% for project in projects %}
+                                    <option value="{{ project.id }}" {% if selected_project == project.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ project.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="category" class="form-label">Categoría</label>
+                            <select name="category" id="category" class="form-select btn-filter">
+                                <option value="">Todas las categorías</option>
+                                {% for value, label in categories %}
+                                    <option value="{{ value }}" {% if selected_category == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="date_from" class="form-label">Desde</label>
+                            <input type="date" name="date_from" id="date_from" class="form-control btn-filter" 
+                                   value="{{ selected_date_from }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="date_to" class="form-label">Hasta</label>
+                            <input type="date" name="date_to" id="date_to" class="form-control btn-filter" 
+                                   value="{{ selected_date_to }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-filter">
+                                    <i class="fas fa-search"></i> Filtrar
+                                </button>
+                                <a href="{% url 'client_assistance_dashboard' %}" class="btn btn-filter">
+                                    <i class="fas fa-undo"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- KPIs Principales -->
+            <div class="row mb-4">
+                <div class="col-md-2">
+                    <div class="card kpi-card text-center">
+                        <div class="card-body">
+                            <div class="kpi-number text-primary">{{ total_hours|floatformat:1 }}h</div>
+                            <div class="kpi-label">Total Horas</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card kpi-card text-center">
+                        <div class="card-body">
+                            <div class="kpi-number text-success">{{ week_hours|floatformat:1 }}h</div>
+                            <div class="kpi-label">Esta Semana</div>
+                            {% if week_growth != 0 %}
+                                <small class="{% if week_growth > 0 %}growth-positive{% else %}growth-negative{% endif %}">
+                                    <i class="fas fa-{% if week_growth > 0 %}arrow-up{% else %}arrow-down{% endif %}"></i>
+                                    {{ week_growth|floatformat:1 }}%
+                                </small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card kpi-card text-center">
+                        <div class="card-body">
+                            <div class="kpi-number text-info">{{ month_hours|floatformat:1 }}h</div>
+                            <div class="kpi-label">Este Mes</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card kpi-card text-center">
+                        <div class="card-body">
+                            <div class="kpi-number text-warning">{{ avg_daily_hours }}h</div>
+                            <div class="kpi-label">Promedio Diario</div>
+                            <small class="text-muted">(30 días)</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card kpi-card text-center">
+                        <div class="card-body">
+                            <div class="kpi-number text-purple">{{ unique_clients }}</div>
+                            <div class="kpi-label">Clientes Únicos</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card kpi-card text-center">
+                        <div class="card-body">
+                            <div class="kpi-number text-dark">{{ total_entries }}</div>
+                            <div class="kpi-label">Total Entradas</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card kpi-card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-table me-2"></i>Distribución Detallada por Categorías</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if category_distribution %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th>Categoría</th>
+                                                <th>Total Horas</th>
+                                                <th>Registros</th>
+                                                
+                                                <th>Progreso Visual</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for category in category_distribution %}
+                                            <tr>
+                                                <td>
+                                                    <span class="badge bg-primary me-2">
+                                                        {% if category.category == 'capacitacion' %}
+                                                            <i class="fas fa-graduation-cap"></i>
+                                                        {% elif category.category == 'pruebas' %}
+                                                            <i class="fas fa-vial"></i>
+                                                        {% elif category.category == 'uso' %}
+                                                            <i class="fas fa-mouse-pointer"></i>
+                                                        {% endif %}
+                                                    </span>
+                                                    <strong>{{ category.category|title }}</strong>
+                                                </td>
+                                                <td>
+                                                    <span class="text-success fw-bold">{{ category.hours|floatformat:1 }} hrs</span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-info">{{ category.entries_count }}</span>
+                                                </td>
+                                                
+                                                <td>
+                                                    <div class="progress" style="height: 20px;">
+                                                        <div class="progress-bar 
+                                                            {% if category.category == 'capacitacion' %}bg-success
+                                                            {% elif category.category == 'pruebas' %}bg-warning
+                                                            {% elif category.category == 'uso' %}bg-info
+                                                            {% endif %}" 
+                                                             style="width: {% widthratio category.hours total_hours 100 %}%">
+                                                            {{ category.hours|floatformat:1 }}h
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                        <tfoot class="table-light">
+                                            <tr>
+                                                <th>TOTAL</th>
+                                                <th class="text-success">{{ total_hours|floatformat:1 }} hrs</th>
+                                                <th>{{ total_entries }}</th>
+                                                
+                                                <th>
+                                                    <div class="progress" style="height: 20px;">
+                                                        <div class="progress-bar bg-dark" style="width: 100%">
+                                                            Total
+                                                        </div>
+                                                    </div>
+                                                </th>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+                                    <h5 class="text-muted">Sin datos de categorías</h5>
+                                    <p class="text-muted">No hay entradas de tiempo registradas aún.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráficos y Rankings -->
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="card kpi-card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-trophy me-2"></i>Top 10 - Total Horas</h5>
+                        </div>
+                        <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                            {% for user in top_users_total %}
+                                <div class="ranking-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <span class="ranking-position">#{{ forloop.counter }}</span>
+                                            <strong class="ms-2">{{ user.client_name }}</strong>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="fw-bold text-primary">{{ user.total_hours|floatformat:1 }}h</div>
+                                            <small class="text-muted">{{ user.total_entries }} entradas</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <div class="text-center text-muted py-4">
+                                    <i class="fas fa-users fa-2x mb-2"></i>
+                                    <div>No hay datos disponibles</div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="col-lg-6">
+                    <div class="card kpi-card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-star me-2"></i>Top 10 - Esta Semana</h5>
+                        </div>
+                        <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                            {% for user in top_users_week %}
+                                <div class="ranking-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <span class="ranking-position">#{{ forloop.counter }}</span>
+                                            <strong class="ms-2">{{ user.client_name|truncatechars:20 }}</strong>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="fw-bold text-success">{{ user.week_hours|floatformat:1 }}h</div>
+                                            <small class="text-muted">{{ user.week_entries }} entradas</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <div class="text-center text-muted py-4">
+                                    <i class="fas fa-calendar-week fa-2x mb-2"></i>
+                                    <div>Sin actividad esta semana</div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Cuarta fila - Tabla de distribución por categorías -->
+            
+
+            <!-- Información adicional -->
+            <div class="card mt-4 kpi-card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información del Dashboard</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6>Métricas Calculadas:</h6>
+                            <ul class="small">
+                                <li><strong>Promedio Diario:</strong> Basado en los últimos 30 días</li>
+                                <li><strong>Crecimiento Semanal:</strong> Comparado con semana anterior</li>
+                                <li><strong>Rankings:</strong> Ordenados por total de horas</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>Filtros Disponibles:</h6>
+                            <ul class="small">
+                                <li>Por proyecto específico</li>
+                                <li>Por categoría de trabajo</li>
+                                <li>Por rango de fechas personalizado</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>Datos Actualizados:</h6>
+                            <ul class="small">
+                                <li><strong>Última actualización:</strong> {{ today|date:"d/m/Y" }}</li>
+                                <li><strong>Período analizado:</strong> Todos los registros</li>
+                                <li><strong>Zona horaria:</strong> Local del servidor</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chartData = {{ chart_data|safe }};
+    
+    // Configuración común de Chart.js
+    Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+    Chart.defaults.plugins.legend.position = 'bottom';
+    
+    // 1. Gráfico de Tendencia (30 días)
+    const trendCtx = document.getElementById('trendChart').getContext('2d');
+    new Chart(trendCtx, {
+        type: 'line',
+        data: {
+            labels: chartData.labels,
+            datasets: [{
+                label: 'Horas por Día',
+                data: chartData.hours,
+                borderColor: '#007bff',
+                backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#007bff',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    borderColor: '#007bff',
+                    borderWidth: 1
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                    title: { display: true, text: 'Horas' }
+                },
+                x: {
+                    grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                    title: { display: true, text: 'Fecha' }
+                }
+            }
+        }
+    });
+
+    // 2. Gráfico de Categorías (Dona)
+    if (chartData.categories.length > 0) {
+        const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+        new Chart(categoryCtx, {
+            type: 'doughnut',
+            data: {
+                labels: chartData.categories.map(c => c.name.charAt(0).toUpperCase() + c.name.slice(1)),
+                datasets: [{
+                    data: chartData.categories.map(c => c.hours),
+                    backgroundColor: ['#007bff', '#28a745', '#ffc107', '#dc3545', '#6f42c1'],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.label + ': ' + context.parsed + 'h';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // 3. Gráfico de Proyectos (Dona)
+    if (chartData.projects.length > 0) {
+        const projectCtx = document.getElementById('projectChart').getContext('2d');
+        new Chart(projectCtx, {
+            type: 'doughnut',
+            data: {
+                labels: chartData.projects.map(p => p.name),
+                datasets: [{
+                    data: chartData.projects.map(p => p.hours),
+                    backgroundColor: chartData.projects.map(p => p.color || '#007bff'),
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.label + ': ' + context.parsed + 'h';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // 4. Gráfico de Días de la Semana
+    const weekdayCtx = document.getElementById('weekdayChart').getContext('2d');
+    new Chart(weekdayCtx, {
+        type: 'bar',
+        data: {
+            labels: chartData.weekdays.map(w => w.day),
+            datasets: [{
+                label: 'Horas',
+                data: chartData.weekdays.map(w => w.hours),
+                backgroundColor: 'rgba(40, 167, 69, 0.6)',
+                borderColor: '#28a745',
+                borderWidth: 2,
+                borderRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                    title: { display: true, text: 'Horas' }
+                },
+                x: {
+                    grid: { color: 'rgba(0, 0, 0, 0.1)' }
+                }
+            }
+        }
+    });
+
+    // 5. Gráfico Semanal
+    const weeklyCtx = document.getElementById('weeklyChart').getContext('2d');
+    new Chart(weeklyCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ weekly_stats|safe }}.map(w => w.week),
+            datasets: [{
+                label: 'Horas',
+                data: {{ weekly_stats|safe }}.map(w => w.hours),
+                backgroundColor: 'rgba(255, 193, 7, 0.6)',
+                borderColor: '#ffc107',
+                borderWidth: 2,
+                borderRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                    title: { display: true, text: 'Horas' }
+                },
+                x: {
+                    grid: { color: 'rgba(0, 0, 0, 0.1)' }
+                }
+            }
+        }
+    });
+
+    // Auto-refresh cada 5 minutos
+    setTimeout(() => location.reload(), 300000);
+});
+</script>
+
+<style>
+.text-purple { color: #6f42c1 !important; }
+</style>
+{% endblock %}

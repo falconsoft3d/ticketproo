@@ -575,5 +575,24 @@ urlpatterns = [
     path('api/meetings/ai-recommendations/', views.meeting_ai_recommendations_view, name='meeting_ai_recommendations'),
     path('api/meetings/generate-spin/', views.generate_spin_methodology_view, name='generate_spin_methodology'),
 
+    # ============= URLs ASISTENCIA DE CLIENTE =============
+    # URLs de gestión de asistencia de cliente (solo para agentes)
+    path('client-assistance/', views.client_assistance_list, name='client_assistance_list'),
+    path('client-assistance/dashboard/', views.client_assistance_dashboard, name='client_assistance_dashboard'),
+    path('client-assistance/create/', views.client_assistance_create, name='client_assistance_create'),
+    path('client-assistance/<int:pk>/edit/', views.client_assistance_edit, name='client_assistance_edit'),
+    path('client-assistance/<int:pk>/delete/', views.client_assistance_delete, name='client_assistance_delete'),
+    path('client-assistance/<int:pk>/toggle/', views.client_assistance_toggle, name='client_assistance_toggle'),
+    
+    # URLs para ver entradas de tiempo de clientes
+    path('client-time-entries/', views.client_time_entries_list, name='client_time_entries_list'),
+    path('client-time-entries/<int:project_id>/', views.client_time_entries_list, name='client_time_entries_list'),
+    
+    # URL pública para que clientes registren horas (sin autenticación)
+    path('client-hours/<str:token>/', views.client_time_entry_form, name='client_time_entry_form'),
+    
+    # URL pública para que clientes vean su dashboard (sin autenticación)
+    path('client-dashboard/<str:token>/', views.client_dashboard_public, name='client_dashboard_public'),
+
 ]
 

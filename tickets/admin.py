@@ -11,7 +11,7 @@ from .models import (
     PageVisit, MultipleDocumentation, MultipleDocumentationItem, MultipleDocumentationStats,
     MultipleDocumentationItemStats, MultipleDocumentationVisit, MultipleDocumentationDownload,
     TaskSchedule, ScheduleTask, ScheduleComment, TicketApproval, SatisfactionSurvey, FinancialAction,
-    FinancialPriceHistory, Product
+    FinancialPriceHistory, Product, ClientProjectAccess, ClientTimeEntry
 )
 
 # Configuración del sitio de administración
@@ -2098,4 +2098,129 @@ class ProductAdmin(admin.ModelAdmin):
         if not change:  # Si es un nuevo objeto
             obj.created_by = request.user
         super().save_model(request, obj, form, change)
+
+
+# ============= ADMINISTRACIÓN DE ASISTENCIA DE CLIENTE =============
+
+@admin.register(ClientProjectAccess)
+class ClientProjectAccessAdmin(admin.ModelAdmin):
+    list_display = ('project', 'is_active_badge', 'max_entries_per_day', 'categories_list', 'entries_count', 'created_at')
+    list_filter = ('is_active', 'requires_phone', 'created_at')
+    search_fields = ('project__name', 'public_token')
+    ordering = ('-created_at',)
+    readonly_fields = ('public_token', 'created_at', 'updated_at', 'public_url_display')
+    
+    fieldsets = (
+        ('Configuración del Proyecto', {
+            'fields': ('project', 'is_active', 'public_token', 'public_url_display')
+        }),
+        ('Límites y Restricciones', {
+            'fields': ('max_entries_per_day', 'requires_phone', 'allowed_categories')
+        }),
+        ('Información Adicional', {
+            'fields': ('instructions',),
+            'classes': ('wide',)
+        }),
+        ('Información del Sistema', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def is_active_badge(self, obj):
+        """Muestra un badge de estado"""
+        if obj.is_active:
+            return format_html('<span class="badge bg-success">Activo</span>')
+        return format_html('<span class="badge bg-danger">Inactivo</span>')
+    is_active_badge.short_description = 'Estado'
+    
+    def categories_list(self, obj):
+        """Muestra las categorías permitidas"""
+        if obj.allowed_categories:
+            categories = [cat.title() for cat in obj.allowed_categories]
+            return ', '.join(categories)
+        return 'Ninguna'
+    categories_list.short_description = 'Categorías'
+    
+    def entries_count(self, obj):
+        """Muestra el conteo de entradas"""
+        count = obj.project.client_time_entries.count()
+        return format_html('<span class="badge bg-info">{}</span>', count)
+    entries_count.short_description = 'Entradas'
+    
+    def public_url_display(self, obj):
+        """Muestra la URL pública para copiar"""
+        if obj.public_token:
+            from django.urls import reverse
+            from django.contrib.sites.models import Site
+            try:
+                current_site = Site.objects.get_current()
+                url = f"http://{current_site.domain}{reverse('client_time_entry_form', kwargs={'token': obj.public_token})}"
+                return format_html('<a href="{}" target="_blank">{}</a>', url, url)
+            except:
+                return f"/client-hours/{obj.public_token}/"
+        return "Token no generado"
+    public_url_display.short_description = 'URL Pública'
+
+
+@admin.register(ClientTimeEntry)
+class ClientTimeEntryAdmin(admin.ModelAdmin):
+    list_display = ('client_name', 'client_email', 'project', 'hours_badge', 'category_badge', 'entry_date', 'created_at', 'client_location')
+    list_filter = ('category', 'project', 'entry_date', 'created_at')
+    search_fields = ('client_name', 'client_email', 'client_phone', 'project__name', 'description')
+    ordering = ('-created_at',)
+    readonly_fields = ('client_ip', 'user_agent', 'created_at', 'updated_at')
+    date_hierarchy = 'entry_date'
+    
+    fieldsets = (
+        ('Información del Cliente', {
+            'fields': ('client_name', 'client_email', 'client_phone')
+        }),
+        ('Información del Registro', {
+            'fields': ('project', 'hours', 'category', 'entry_date', 'description')
+        }),
+        ('Información Técnica', {
+            'fields': ('client_ip', 'user_agent'),
+            'classes': ('collapse',)
+        }),
+        ('Información del Sistema', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def hours_badge(self, obj):
+        """Muestra las horas como badge"""
+        return format_html('<span class="badge bg-primary">{}</span>', obj.get_formatted_hours())
+    hours_badge.short_description = 'Horas'
+    hours_badge.admin_order_field = 'hours'
+    
+    def category_badge(self, obj):
+        """Muestra la categoría como badge"""
+        colors = {
+            'capacitacion': 'bg-info',
+            'pruebas': 'bg-warning',
+            'uso': 'bg-success'
+        }
+        color = colors.get(obj.category, 'bg-secondary')
+        return format_html('<span class="badge {}">{}</span>', color, obj.get_category_display())
+    category_badge.short_description = 'Categoría'
+    category_badge.admin_order_field = 'category'
+    
+    def client_location(self, obj):
+        """Muestra información de ubicación del cliente"""
+        info = []
+        if obj.client_ip:
+            info.append(f"IP: {obj.client_ip}")
+        if obj.user_agent:
+            if 'Mobile' in obj.user_agent:
+                info.append("📱 Móvil")
+            elif 'Chrome' in obj.user_agent:
+                info.append("🌐 Chrome")
+            elif 'Safari' in obj.user_agent:
+                info.append("🌐 Safari")
+            elif 'Firefox' in obj.user_agent:
+                info.append("🌐 Firefox")
+        return ' | '.join(info) if info else 'No disponible'
+    client_location.short_description = 'Ubicación/Navegador'
 

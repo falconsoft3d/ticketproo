@@ -1,0 +1,99 @@
+{% extends 'public_base.html' %}
+
+{% block title %}Error - Enlace no válido{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8">
+            <div class="card shadow text-center">
+                <div class="card-body py-5">
+                    <div class="text-danger mb-4">
+                        <i class="fas fa-exclamation-triangle fa-5x"></i>
+                    </div>
+                    
+                    <h3 class="text-danger mb-3">Enlace no válido</h3>
+                    
+                    <div class="alert alert-danger">
+                        <p class="mb-0">
+                            <strong>{{ error_message|default:"El enlace que está intentando acceder no es válido o ha expirado." }}</strong>
+                        </p>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h5>Posibles causas:</h5>
+                        <ul class="text-start">
+                            <li>El enlace ha sido desactivado por el administrador</li>
+                            <li>El enlace ha expirado</li>
+                            <li>El enlace fue copiado incorrectamente</li>
+                            <li>Se ha alcanzado el límite de entradas para hoy</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h5>¿Qué puede hacer?</h5>
+                        <ul class="text-start">
+                            <li>Verifique que copió correctamente el enlace completo</li>
+                            <li>Contacte a la persona que le proporcionó el enlace</li>
+                            <li>Si cree que es un error, intente de nuevo más tarde</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <button onclick="history.back()" class="btn btn-secondary me-2">
+                            <i class="fas fa-arrow-left me-2"></i>Volver
+                        </button>
+                        <button onclick="location.reload()" class="btn btn-primary">
+                            <i class="fas fa-redo me-2"></i>Intentar de nuevo
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="card-footer text-muted">
+                    <small>
+                        <i class="fas fa-clock me-1"></i>
+                        {{ request.session.datetime|default:"now"|date:"d/m/Y H:i" }}
+                    </small>
+                </div>
+            </div>
+            
+            <!-- Información de contacto -->
+            <div class="card mt-3">
+                <div class="card-body text-center">
+                    <h6><i class="fas fa-phone me-2"></i>¿Necesita ayuda?</h6>
+                    <p class="small text-muted mb-0">
+                        Si continúa experimentando problemas, contacte al equipo de soporte 
+                        o a la persona que le proporcionó este enlace.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border: none;
+    border-radius: 15px;
+}
+.fa-exclamation-triangle {
+    animation: shake 1s;
+}
+@keyframes shake {
+    0%, 20%, 40%, 60%, 80% {
+        transform: translateX(0);
+    }
+    10%, 30%, 50%, 70%, 90% {
+        transform: translateX(-5px);
+    }
+}
+@media (max-width: 768px) {
+    .container {
+        padding: 0 15px;
+    }
+    .fa-exclamation-triangle {
+        font-size: 3rem !important;
+    }
+}
+</style>
+{% endblock %}

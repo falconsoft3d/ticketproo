@@ -1,0 +1,227 @@
+{% extends 'public_base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8">
+            <div class="card shadow">
+                <div class="card-header text-center" style="background-color: {{ project.color|default:'#28a745' }}; color: white;">
+                    <h4 class="mb-0">
+                        <i class="fas fa-clock me-2"></i>Registrar Horas
+                    </h4>
+                    <h5 class="mb-0 mt-2">{{ project.name }}</h5>
+                </div>
+                <div class="card-body">
+                    {% if access.instructions %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            {{ access.instructions|linebreaks }}
+                        </div>
+                    {% endif %}
+
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post" id="timeEntryForm">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.client_name.id_for_label }}" class="form-label">
+                                <i class="fas fa-user me-1"></i>{{ form.client_name.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.client_name }}
+                            {% if form.client_name.errors %}
+                                <div class="text-danger small mt-1">{{ form.client_name.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.client_email.id_for_label }}" class="form-label">
+                                <i class="fas fa-envelope me-1"></i>{{ form.client_email.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.client_email }}
+                            {% if form.client_email.errors %}
+                                <div class="text-danger small mt-1">{{ form.client_email.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        {% if access.requires_phone %}
+                            <div class="mb-3">
+                                <label for="{{ form.client_phone.id_for_label }}" class="form-label">
+                                    <i class="fas fa-phone me-1"></i>{{ form.client_phone.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.client_phone }}
+                                {% if form.client_phone.errors %}
+                                    <div class="text-danger small mt-1">{{ form.client_phone.errors }}</div>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <div class="mb-3">
+                                <label for="{{ form.client_phone.id_for_label }}" class="form-label">
+                                    <i class="fas fa-phone me-1"></i>{{ form.client_phone.label }} <small class="text-muted">(opcional)</small>
+                                </label>
+                                {{ form.client_phone }}
+                                {% if form.client_phone.errors %}
+                                    <div class="text-danger small mt-1">{{ form.client_phone.errors }}</div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.hours.id_for_label }}" class="form-label">
+                                        <i class="fas fa-hourglass-half me-1"></i>{{ form.hours.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.hours }}
+                                    <small class="form-text text-muted">En decimales (ej: 2.5 para 2 horas y 30 minutos)</small>
+                                    {% if form.hours.errors %}
+                                        <div class="text-danger small mt-1">{{ form.hours.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.entry_date.id_for_label }}" class="form-label">
+                                        <i class="fas fa-calendar me-1"></i>{{ form.entry_date.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.entry_date }}
+                                    {% if form.entry_date.errors %}
+                                        <div class="text-danger small mt-1">{{ form.entry_date.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.category.id_for_label }}" class="form-label">
+                                <i class="fas fa-tag me-1"></i>{{ form.category.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.category }}
+                            {% if form.category.errors %}
+                                <div class="text-danger small mt-1">{{ form.category.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">
+                                <i class="fas fa-comment me-1"></i>{{ form.description.label }} <small class="text-muted">(opcional)</small>
+                            </label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="text-danger small mt-1">{{ form.description.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                                <i class="fas fa-save me-2"></i>Registrar Horas
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-center text-muted">
+                    <small>
+                        <i class="fas fa-shield-alt me-1"></i>
+                        Sus datos están protegidos y solo serán utilizados para el seguimiento del proyecto.
+                    </small>
+                </div>
+            </div>
+
+            <!-- Información adicional -->
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h6><i class="fas fa-info-circle me-2"></i>Información sobre las categorías:</h6>
+                    <div class="row">
+                        <div class="col-12">
+                            <ul class="small mb-0">
+                                {% if 'capacitacion' in access.allowed_categories %}
+                                    <li><strong>Capacitación:</strong> Tiempo invertido en entrenamiento, aprendizaje o formación</li>
+                                {% endif %}
+                                {% if 'pruebas' in access.allowed_categories %}
+                                    <li><strong>Pruebas:</strong> Tiempo dedicado a testing, verificación o validación</li>
+                                {% endif %}
+                                {% if 'uso' in access.allowed_categories %}
+                                    <li><strong>Uso:</strong> Tiempo de uso directo del sistema, producto o servicio</li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('timeEntryForm');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    form.addEventListener('submit', function(e) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Guardando...';
+        
+        // Re-habilitar botón después de 5 segundos por si hay error
+        setTimeout(function() {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-save me-2"></i>Registrar Horas';
+        }, 5000);
+    });
+    
+    // Validación en tiempo real para horas
+    const hoursInput = document.getElementById('{{ form.hours.id_for_label }}');
+    if (hoursInput) {
+        hoursInput.addEventListener('input', function() {
+            const value = parseFloat(this.value);
+            const feedback = this.parentNode.querySelector('.hours-feedback');
+            
+            if (feedback) {
+                feedback.remove();
+            }
+            
+            if (value && value > 0) {
+                const hours = Math.floor(value);
+                const minutes = Math.round((value - hours) * 60);
+                const feedbackDiv = document.createElement('div');
+                feedbackDiv.className = 'small text-muted hours-feedback';
+                feedbackDiv.innerHTML = `<i class="fas fa-clock me-1"></i>${hours}h ${minutes}min`;
+                this.parentNode.appendChild(feedbackDiv);
+            }
+        });
+    }
+});
+</script>
+
+<style>
+.card {
+    border: none;
+    border-radius: 15px;
+}
+.card-header {
+    border-radius: 15px 15px 0 0 !important;
+}
+.form-control, .form-select {
+    border-radius: 8px;
+}
+.btn-primary {
+    border-radius: 8px;
+}
+@media (max-width: 768px) {
+    .container {
+        padding: 0 15px;
+    }
+    .card {
+        margin: 10px 0;
+    }
+}
+</style>
+{% endblock %}

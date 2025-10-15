@@ -583,6 +583,18 @@
                                     <i class="bi bi-graph-up-arrow"></i> Acciones Financieras
                                 </a>
                             </li>
+                            <li>
+                                <a class="dropdown-item {% if 'client_assistance_dashboard' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'client_assistance_dashboard' %}">
+                                    <i class="fas fa-chart-line"></i> Dashboard Clientes
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'client_assistance' in request.resolver_match.url_name or 'client_time_entries' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'client_assistance_list' %}">
+                                    <i class="fas fa-users"></i> Asistencia de Cliente
+                                </a>
+                            </li>
                         </ul>
                     </li>
                     {% endif %}

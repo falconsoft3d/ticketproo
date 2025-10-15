@@ -34,7 +34,7 @@ from .models import (
     Employee, JobApplicationToken, EmployeePayroll, Agreement, AgreementSignature,
     LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry, SharedFile, SharedFileDownload,
     Recording, RecordingPlayback, MultipleDocumentation, MultipleDocumentationItem,
-    TaskSchedule, ScheduleTask, ScheduleComment, SatisfactionSurvey
+    TaskSchedule, ScheduleTask, ScheduleComment, SatisfactionSurvey, ClientProjectAccess, ClientTimeEntry
 )
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
@@ -46,7 +46,7 @@ from .forms import (
     EmployeeHiringOpinionForm, EmployeePayrollForm, AgreementForm, AgreementSignatureForm, AgreementPublicForm,
     LandingPageForm, LandingPageSubmissionForm, PublicCompanyTicketForm, WorkOrderTaskForm, 
     WorkOrderTaskTimeEntryForm, WorkOrderTaskBulkForm, SharedFileForm, PublicSharedFileForm,
-    TaskScheduleForm, ScheduleTaskForm, ScheduleCommentForm
+    TaskScheduleForm, ScheduleTaskForm, ScheduleCommentForm, ClientProjectAccessForm, ClientTimeEntryForm
 )
 from .utils import is_agent, is_regular_user, is_teacher, can_manage_courses, get_user_role, assign_user_to_group
 
@@ -16411,4 +16411,670 @@ def generate_need_payoff_questions(industry, context):
     
     all_questions = base_questions + value_questions
     return '\n'.join([f"• {q}" for q in all_questions[:6]])
+
+
+# ===== VISTAS PARA ASISTENCIA DE CLIENTE =====
+
+@login_required
+@user_passes_test(is_agent)
+def client_assistance_list(request):
+    """Vista para listar los accesos públicos de proyectos para clientes"""
+    from .models import ClientProjectAccess
+    
+    accesses = ClientProjectAccess.objects.select_related('project').order_by('-created_at')
+    
+    context = {
+        'accesses': accesses,
+        'title': 'Asistencia de Cliente - Proyectos Públicos'
+    }
+    return render(request, 'tickets/client_assistance_list.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def client_assistance_create(request):
+    """Vista para crear un nuevo acceso público para un proyecto"""
+    from .models import ClientProjectAccess
+    from .forms import ClientProjectAccessForm
+    
+    if request.method == 'POST':
+        form = ClientProjectAccessForm(request.POST)
+        if form.is_valid():
+            access = form.save()
+            messages.success(request, f'Acceso público creado exitosamente para el proyecto "{access.project.name}"')
+            return redirect('client_assistance_list')
+    else:
+        form = ClientProjectAccessForm()
+    
+    context = {
+        'form': form,
+        'title': 'Crear Acceso Público para Proyecto'
+    }
+    return render(request, 'tickets/client_assistance_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def client_assistance_edit(request, pk):
+    """Vista para editar un acceso público existente"""
+    from .models import ClientProjectAccess
+    from .forms import ClientProjectAccessForm
+    
+    access = get_object_or_404(ClientProjectAccess, pk=pk)
+    
+    if request.method == 'POST':
+        form = ClientProjectAccessForm(request.POST, instance=access)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Acceso público actualizado exitosamente')
+            return redirect('client_assistance_list')
+    else:
+        form = ClientProjectAccessForm(instance=access)
+    
+    context = {
+        'form': form,
+        'access': access,
+        'title': f'Editar Acceso - {access.project.name}'
+    }
+    return render(request, 'tickets/client_assistance_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def client_time_entries_list(request, project_id=None):
+    """Vista para listar las entradas de tiempo de clientes"""
+    from .models import ClientTimeEntry, Project
+    
+    entries = ClientTimeEntry.objects.select_related('project').order_by('-created_at')
+    projects = Project.objects.filter(client_access__isnull=False)
+    
+    # Filtrar por proyecto si se especifica
+    if project_id:
+        project = get_object_or_404(Project, pk=project_id)
+        entries = entries.filter(project=project)
+    else:
+        project = None
+    
+    # Paginación
+    paginator = Paginator(entries, 25)
+    page_number = request.GET.get('page')
+    entries = paginator.get_page(page_number)
+    
+    context = {
+        'entries': entries,
+        'projects': projects,
+        'selected_project': project,
+        'title': 'Entradas de Tiempo de Clientes'
+    }
+    return render(request, 'tickets/client_time_entries_list.html', context)
+
+
+def client_time_entry_form(request, token):
+    """Vista pública para que los clientes imputen horas"""
+    from .models import ClientProjectAccess, ClientTimeEntry
+    from .forms import ClientTimeEntryForm
+    
+    # Buscar el acceso público por token
+    try:
+        access = ClientProjectAccess.objects.select_related('project').get(
+            public_token=token,
+            is_active=True
+        )
+    except ClientProjectAccess.DoesNotExist:
+        messages.error(request, 'El enlace no es válido o ha expirado.')
+        return render(request, 'tickets/client_time_entry_error.html', {
+            'error_message': 'El enlace no es válido o ha expirado.'
+        })
+    
+    # Verificar si se pueden aceptar más entradas hoy
+    if not access.can_accept_entries_today():
+        messages.error(request, 'Se ha alcanzado el límite de entradas para hoy. Intente mañana.')
+        return render(request, 'tickets/client_time_entry_error.html', {
+            'error_message': 'Se ha alcanzado el límite de entradas para hoy.'
+        })
+    
+    if request.method == 'POST':
+        form = ClientTimeEntryForm(request.POST, access=access)
+        if form.is_valid():
+            entry = form.save(commit=False)
+            entry.project = access.project
+            
+            # Capturar información del cliente
+            entry.client_ip = request.META.get('REMOTE_ADDR')
+            entry.user_agent = request.META.get('HTTP_USER_AGENT', '')
+            
+            entry.save()
+            
+            messages.success(request, '¡Sus horas han sido registradas exitosamente!')
+            return render(request, 'tickets/client_time_entry_success.html', {
+                'entry': entry,
+                'project': access.project
+            })
+    else:
+        form = ClientTimeEntryForm(access=access)
+    
+    context = {
+        'form': form,
+        'access': access,
+        'project': access.project,
+        'title': f'Registrar Horas - {access.project.name}'
+    }
+    return render(request, 'tickets/client_time_entry_public.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def client_assistance_toggle(request, pk):
+    """Vista para activar/desactivar un acceso público"""
+    from .models import ClientProjectAccess
+    
+    access = get_object_or_404(ClientProjectAccess, pk=pk)
+    access.is_active = not access.is_active
+    access.save()
+    
+    status = 'activado' if access.is_active else 'desactivado'
+    messages.success(request, f'Acceso público {status} exitosamente')
+    
+    return redirect('client_assistance_list')
+
+
+@login_required
+@user_passes_test(is_agent)
+def client_assistance_delete(request, pk):
+    """Vista para eliminar un acceso público"""
+    from .models import ClientProjectAccess
+    
+    access = get_object_or_404(ClientProjectAccess, pk=pk)
+    
+    if request.method == 'POST':
+        project_name = access.project.name
+        access.delete()
+        messages.success(request, f'Acceso público para "{project_name}" eliminado exitosamente')
+        return redirect('client_assistance_list')
+    
+    context = {
+        'access': access,
+        'title': f'Eliminar Acceso - {access.project.name}'
+    }
+    return render(request, 'tickets/client_assistance_delete.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def client_assistance_dashboard(request):
+    """Dashboard de gerencia con KPIs de horas imputadas por clientes"""
+    from django.db.models import Sum, Count, Avg
+    from django.utils import timezone
+    from datetime import timedelta, datetime
+    from collections import defaultdict
+    import json
+    
+    # Obtener parámetros de filtros
+    project_filter = request.GET.get('project')
+    category_filter = request.GET.get('category')
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    
+    # Query base
+    entries = ClientTimeEntry.objects.select_related('project')
+    
+    # Aplicar filtros
+    if project_filter:
+        entries = entries.filter(project_id=project_filter)
+    if category_filter:
+        entries = entries.filter(category=category_filter)
+    if date_from:
+        entries = entries.filter(entry_date__gte=date_from)
+    if date_to:
+        entries = entries.filter(entry_date__lte=date_to)
+    
+    # Fechas importantes
+    today = timezone.now().date()
+    week_start = today - timedelta(days=today.weekday())
+    month_start = today.replace(day=1)
+    
+    # ============= KPIs PRINCIPALES =============
+    
+    # 1. Total de horas (general)
+    total_hours = entries.aggregate(total=Sum('hours'))['total'] or 0
+    
+    # 2. Horas esta semana
+    week_hours = entries.filter(entry_date__gte=week_start).aggregate(total=Sum('hours'))['total'] or 0
+    
+    # 3. Horas este mes
+    month_hours = entries.filter(entry_date__gte=month_start).aggregate(total=Sum('hours'))['total'] or 0
+    
+    # 4. Promedio diario (últimos 30 días)
+    thirty_days_ago = today - timedelta(days=30)
+    recent_entries = entries.filter(entry_date__gte=thirty_days_ago)
+    total_recent_hours = recent_entries.aggregate(total=Sum('hours'))['total'] or 0
+    avg_daily_hours = total_recent_hours / 30 if total_recent_hours > 0 else 0
+    
+    # 5. Total de clientes únicos
+    unique_clients = entries.values('client_email').distinct().count()
+    
+    # 6. Total de entradas
+    total_entries = entries.count()
+    
+    # ============= RANKINGS =============
+    
+    # Top 10 usuarios más activos (por horas totales) - usando nombre si está disponible
+    top_users_total = (entries.values('client_name', 'client_email')
+                       .annotate(
+                           total_hours=Sum('hours'),
+                           total_entries=Count('id')
+                       )
+                       .order_by('-total_hours')[:10])
+    
+    # Top 10 usuarios esta semana
+    top_users_week = (entries.filter(entry_date__gte=week_start)
+                      .values('client_name', 'client_email')
+                      .annotate(
+                          week_hours=Sum('hours'),
+                          week_entries=Count('id')
+                      )
+                      .order_by('-week_hours')[:10])
+    
+    # ============= DISTRIBUCIONES =============
+    
+    # Distribución por categorías
+    category_distribution_raw = (entries.values('category')
+                           .annotate(
+                               hours=Sum('hours'),
+                               entries_count=Count('id')
+                           )
+                           .order_by('-hours'))
+    
+    # Agregar cálculo de promedio manual para mayor precisión
+    category_distribution = []
+    for cat in category_distribution_raw:
+        total_hours = float(cat['hours'] or 0)
+        entries_count = cat['entries_count']
+        avg_per_entry = total_hours / entries_count if entries_count > 0 else 0
+        
+        category_distribution.append({
+            'category': cat['category'],
+            'hours': total_hours,
+            'entries_count': entries_count,
+            'avg_per_entry': round(avg_per_entry, 1)
+        })
+    
+    # Distribución por proyectos
+    project_distribution = (entries.values('project__name', 'project__color')
+                          .annotate(
+                              hours=Sum('hours'),
+                              entries_count=Count('id')
+                          )
+                          .order_by('-hours'))
+    
+    # ============= TENDENCIAS TEMPORALES =============
+    
+    # Últimos 30 días - datos para gráfico de líneas
+    daily_stats = defaultdict(lambda: {'hours': 0, 'entries': 0})
+    
+    # Generar fechas de los últimos 30 días
+    last_30_days = []
+    for i in range(30):
+        date = today - timedelta(days=29-i)
+        last_30_days.append(date)
+        daily_stats[date.strftime('%Y-%m-%d')] = {'hours': 0, 'entries': 0}
+    
+    # Obtener datos reales
+    daily_data = (recent_entries.extra(select={'date': 'DATE(entry_date)'})
+                  .values('date')
+                  .annotate(
+                      hours=Sum('hours'),
+                      entries_count=Count('id')
+                  ))
+    
+    for day in daily_data:
+        date_str = day['date']  # Ya es un string en formato YYYY-MM-DD
+        if isinstance(date_str, str):
+            daily_stats[date_str] = {
+                'hours': float(day['hours'] or 0),
+                'entries': day['entries_count']
+            }
+        else:
+            # Si por alguna razón es un objeto date, convertir a string
+            date_str = day['date'].strftime('%Y-%m-%d')
+            daily_stats[date_str] = {
+                'hours': float(day['hours'] or 0),
+                'entries': day['entries_count']
+            }
+    
+    # Preparar datos para Chart.js
+    chart_labels = [date.strftime('%d/%m') for date in last_30_days]
+    chart_hours = [daily_stats[date.strftime('%Y-%m-%d')]['hours'] for date in last_30_days]
+    chart_entries = [daily_stats[date.strftime('%Y-%m-%d')]['entries'] for date in last_30_days]
+    
+    # Distribución semanal (últimas 4 semanas)
+    weekly_stats = []
+    for i in range(4):
+        week_start_date = week_start - timedelta(weeks=i)
+        week_end_date = week_start_date + timedelta(days=6)
+        
+        week_data = entries.filter(
+            entry_date__gte=week_start_date,
+            entry_date__lte=week_end_date
+        ).aggregate(
+            hours=Sum('hours'),
+            entries_count=Count('id')
+        )
+        
+        weekly_stats.append({
+            'week': f"Sem {4-i}",
+            'start_date': week_start_date,
+            'end_date': week_end_date,
+            'hours': float(week_data['hours'] or 0),
+            'entries': week_data['entries_count']
+        })
+    
+    weekly_stats.reverse()  # Ordenar cronológicamente
+    
+    # ============= ESTADÍSTICAS ADICIONALES =============
+    
+    # Horario más activo (por día de la semana)
+    weekday_stats = defaultdict(lambda: {'hours': 0, 'entries': 0})
+    weekday_names = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+    
+    for entry in recent_entries:
+        weekday = entry.entry_date.weekday()
+        weekday_stats[weekday]['hours'] += float(entry.hours)
+        weekday_stats[weekday]['entries'] += 1
+    
+    weekday_data = []
+    for i in range(7):
+        weekday_data.append({
+            'day': weekday_names[i],
+            'hours': weekday_stats[i]['hours'],
+            'entries': weekday_stats[i]['entries']
+        })
+    
+    # Comparación con período anterior
+    prev_week_start = week_start - timedelta(days=7)
+    prev_week_hours = entries.filter(
+        entry_date__gte=prev_week_start,
+        entry_date__lt=week_start
+    ).aggregate(total=Sum('hours'))['total'] or 0
+    
+    week_growth = ((week_hours - prev_week_hours) / prev_week_hours * 100) if prev_week_hours > 0 else 0
+    
+    # ============= PREPARAR CONTEXTO =============
+    
+    # Calcular promedio general
+    avg_general = total_hours / total_entries if total_entries > 0 else 0
+    
+    # Obtener listas para filtros
+    projects = Project.objects.filter(client_access__isnull=False).distinct()
+    categories = ClientTimeEntry.CATEGORY_CHOICES
+
+    context = {
+        'title': 'Dashboard de Asistencia de Cliente',
+        
+        # KPIs principales
+        'total_hours': total_hours,
+        'week_hours': week_hours,
+        'month_hours': month_hours,
+        'avg_daily_hours': round(avg_daily_hours, 1),
+        'unique_clients': unique_clients,
+        'total_entries': total_entries,
+        'week_growth': round(week_growth, 1),
+        'avg_general': round(avg_general, 1),        # Rankings
+        'top_users_total': top_users_total,
+        'top_users_week': top_users_week,
+        
+        # Distribuciones
+        'category_distribution': category_distribution,
+        'project_distribution': project_distribution,
+        'weekday_data': weekday_data,
+        'weekly_stats': weekly_stats,
+        
+        # Datos para gráficos (JSON)
+        'chart_data': json.dumps({
+            'labels': chart_labels,
+            'hours': chart_hours,
+            'entries': chart_entries,
+            'categories': [
+                {
+                    'name': cat['category'],
+                    'hours': float(cat['hours'] or 0),
+                    'entries': cat['entries_count']
+                } for cat in category_distribution
+            ],
+            'projects': [
+                {
+                    'name': proj['project__name'],
+                    'color': proj['project__color'],
+                    'hours': float(proj['hours'] or 0),
+                    'entries': proj['entries_count']
+                } for proj in project_distribution
+            ],
+            'weekdays': [
+                {
+                    'day': wd['day'],
+                    'hours': wd['hours'],
+                    'entries': wd['entries']
+                } for wd in weekday_data
+            ]
+        }),
+        
+        # Filtros
+        'projects': projects,
+        'categories': categories,
+        'selected_project': project_filter,
+        'selected_category': category_filter,
+        'selected_date_from': date_from,
+        'selected_date_to': date_to,
+        
+        # Fechas
+        'today': today,
+        'week_start': week_start,
+        'month_start': month_start,
+    }
+    
+    return render(request, 'tickets/client_assistance_dashboard.html', context)
+
+
+def client_dashboard_public(request, token):
+    """Dashboard público para que los clientes vean sus estadísticas"""
+    from .models import ClientProjectAccess, ClientTimeEntry
+    from django.utils import timezone
+    from datetime import timedelta
+    from django.db.models import Sum, Count, Q, Avg
+    from django.db.models.functions import TruncDate, TruncWeek, TruncMonth
+    import json
+    
+    # Buscar el acceso público por dashboard token
+    try:
+        access = ClientProjectAccess.objects.select_related('project').get(
+            dashboard_token=token,
+            is_active=True
+        )
+    except ClientProjectAccess.DoesNotExist:
+        return render(request, 'tickets/client_dashboard_error.html', {
+            'error_message': 'El enlace del dashboard no es válido o ha expirado.'
+        })
+    
+    # Fechas importantes
+    today = timezone.now().date()
+    week_start = today - timedelta(days=today.weekday())
+    month_start = today.replace(day=1)
+    
+    # Filtros opcionales por nombre del cliente
+    client_name = request.GET.get('client_name', '').strip()
+    
+    # Base queryset para las entradas del proyecto
+    entries = ClientTimeEntry.objects.filter(project=access.project)
+    
+    # Aplicar filtro de nombre si se proporciona
+    if client_name:
+        entries = entries.filter(client_name__icontains=client_name)
+    
+    # KPIs Principales solicitados
+    
+    # 1. Total de horas este mes (del cliente específico si hay filtro)
+    total_hours_this_month = entries.filter(
+        entry_date__gte=month_start
+    ).aggregate(total=Sum('hours'))['total'] or 0
+    
+    # 2. Horas en el proyecto este mes (del cliente específico si hay filtro)
+    project_hours_this_month = entries.filter(
+        entry_date__gte=month_start,
+        project=access.project
+    ).aggregate(total=Sum('hours'))['total'] or 0
+    
+    # 3. Total de horas en el proyecto (del cliente específico si hay filtro)
+    total_project_hours = entries.filter(
+        project=access.project
+    ).aggregate(total=Sum('hours'))['total'] or 0
+    
+    # 4. Total de horas del equipo en el proyecto (todos los clientes)
+    team_total_hours = ClientTimeEntry.objects.filter(
+        project=access.project
+    ).aggregate(total=Sum('hours'))['total'] or 0
+    
+    # KPIs adicionales para compatibilidad
+    total_hours = total_project_hours  # Para mantener compatibilidad
+    total_entries = entries.count()
+    
+    # Horas esta semana
+    week_hours = entries.filter(
+        entry_date__gte=week_start
+    ).aggregate(total=Sum('hours'))['total'] or 0
+    
+    # Horas este mes (mantenemos por compatibilidad)
+    month_hours = total_hours_this_month
+    
+    # Promedio diario
+    days_active = entries.values('entry_date').distinct().count()
+    avg_daily_hours = total_hours / max(days_active, 1)
+    
+    # Distribución por categorías
+    category_distribution = entries.values('category').annotate(
+        total_hours=Sum('hours'),
+        total_entries=Count('id')
+    ).order_by('-total_hours')
+    
+    # Clientes únicos (solo si no hay filtro de nombre)
+    if not client_name:
+        unique_clients = entries.values('client_name').distinct().count()
+        
+        # Top 10 clientes más activos
+        top_clients = entries.values('client_name', 'client_email').annotate(
+            total_hours=Sum('hours'),
+            total_entries=Count('id')
+        ).order_by('-total_hours')[:10]
+    else:
+        unique_clients = 1
+        top_clients = []
+    
+    # Tendencia semanal (últimas 8 semanas)
+    eight_weeks_ago = today - timedelta(weeks=8)
+    weekly_trend = entries.filter(
+        entry_date__gte=eight_weeks_ago
+    ).extra(
+        select={'week': 'strftime("%%Y-%%W", entry_date)'}
+    ).values('week').annotate(
+        total_hours=Sum('hours'),
+        total_entries=Count('id')
+    ).order_by('week')
+    
+    # Actividad diaria (últimos 30 días)
+    thirty_days_ago = today - timedelta(days=30)
+    daily_activity = entries.filter(
+        entry_date__gte=thirty_days_ago
+    ).extra(
+        select={'date': 'DATE(entry_date)'}
+    ).values('date').annotate(
+        total_hours=Sum('hours'),
+        total_entries=Count('id')
+    ).order_by('date')
+    
+    # Actividad por día de la semana
+    weekday_activity = entries.extra(
+        select={'weekday': 'strftime("%%w", entry_date)'}
+    ).values('weekday').annotate(
+        total_hours=Sum('hours'),
+        avg_hours=Avg('hours')
+    ).order_by('weekday')
+    
+    # Mapear números de día a nombres
+    weekday_names = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+    for item in weekday_activity:
+        item['weekday_name'] = weekday_names[int(item['weekday'])]
+    
+    # Estadísticas por mes (últimos 6 meses)
+    six_months_ago = today - timedelta(days=180)
+    monthly_stats = entries.filter(
+        entry_date__gte=six_months_ago
+    ).extra(
+        select={'month': 'strftime("%%Y-%%m", entry_date)'}
+    ).values('month').annotate(
+        total_hours=Sum('hours'),
+        total_entries=Count('id'),
+        avg_hours=Avg('hours')
+    ).order_by('month')
+    
+    # Preparar datos para gráficos
+    weekly_chart_data = {
+        'labels': [item['week'] for item in weekly_trend],
+        'hours': [float(item['total_hours']) for item in weekly_trend],
+        'entries': [item['total_entries'] for item in weekly_trend]
+    }
+    
+    daily_chart_data = {
+        'labels': [item['date'] for item in daily_activity],
+        'hours': [float(item['total_hours']) for item in daily_activity]
+    }
+    
+    category_chart_data = {
+        'labels': [item['category'].title() for item in category_distribution],
+        'hours': [float(item['total_hours']) for item in category_distribution],
+        'entries': [item['total_entries'] for item in category_distribution]
+    }
+    
+    weekday_chart_data = {
+        'labels': [item['weekday_name'] for item in weekday_activity],
+        'hours': [float(item['total_hours']) for item in weekday_activity]
+    }
+    
+    context = {
+        'access': access,
+        'project': access.project,
+        'client_name': client_name,
+        'title': f'Dashboard - {access.project.name}',
+        
+        # KPIs principales solicitados
+        'total_hours_this_month': total_hours_this_month,
+        'project_hours_this_month': project_hours_this_month,
+        'total_project_hours': total_project_hours,
+        'team_total_hours': team_total_hours,
+        
+        # KPIs adicionales para compatibilidad
+        'total_hours': total_hours,
+        'week_hours': week_hours,
+        'month_hours': month_hours,
+        'avg_daily_hours': round(avg_daily_hours, 1),
+        'unique_clients': unique_clients,
+        'total_entries': total_entries,
+        
+        # Distribuciones
+        'category_distribution': category_distribution,
+        'top_clients': top_clients,
+        'weekday_activity': weekday_activity,
+        'monthly_stats': monthly_stats,
+        
+        # Datos para gráficos (como JSON)
+        'weekly_chart_data': json.dumps(weekly_chart_data),
+        'daily_chart_data': json.dumps(daily_chart_data),
+        'category_chart_data': json.dumps(category_chart_data),
+        'weekday_chart_data': json.dumps(weekday_chart_data),
+        
+        # Fechas
+        'today': today,
+        'week_start': week_start,
+        'month_start': month_start,
+    }
+    
+    return render(request, 'tickets/client_dashboard_public.html', context)
 
