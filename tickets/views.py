@@ -5416,15 +5416,23 @@ def tetris_view(request):
 
 def public_company_stats(request, token):
     """Vista pública para mostrar estadísticas de una empresa usando su token o ID"""
+    company = None
+    
     try:
         # Intentar primero como UUID token
-        company = Company.objects.get(public_token=token, is_active=True)
-    except (Company.DoesNotExist, ValueError):
+        company = Company.objects.filter(public_token=token, is_active=True).first()
+    except ValueError:
+        pass
+    
+    if not company:
         try:
             # Si falla, intentar como ID numérico
-            company = Company.objects.get(id=int(token), is_active=True)
-        except (Company.DoesNotExist, ValueError):
-            raise Http404("Empresa no encontrada o token inválido")
+            company = Company.objects.filter(id=int(token), is_active=True).first()
+        except (ValueError, TypeError):
+            pass
+    
+    if not company:
+        raise Http404("Empresa no encontrada o token inválido")
     
     # Obtener estadísticas públicas
     stats = company.get_public_stats()

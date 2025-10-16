@@ -397,7 +397,8 @@
                         <i class="bi bi-trash"></i> Eliminar Ticket
                     </a>
                     
-                    <!-- Botones de Aprobación -->
+                    <!-- Botones de Aprobación (solo para agentes y administradores) -->
+                    {% if is_agent or user.is_superuser %}
                     {% if ticket.is_approved %}
                         <form method="POST" action="{% url 'ticket_approve' ticket.pk %}" class="d-inline">
                             {% csrf_token %}
@@ -416,6 +417,7 @@
                                 <i class="bi bi-check-circle"></i> Aprobar Ticket
                             </button>
                         </form>
+                    {% endif %}
                     {% endif %}
                     
                     <hr>
