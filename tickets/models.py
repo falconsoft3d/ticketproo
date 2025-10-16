@@ -5582,6 +5582,14 @@ class LandingPageSubmission(models.Model):
         null=True,
         verbose_name='Fecha de procesamiento'
     )
+    processed_by = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='processed_submissions',
+        verbose_name='Procesado por'
+    )
     
     # Evaluación de IA
     ai_evaluated = models.BooleanField(

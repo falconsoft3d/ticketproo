@@ -451,6 +451,7 @@ urlpatterns = [
     path('landing-pages/<int:pk>/delete/', views.landing_page_delete, name='landing_page_delete'),
     path('landing-pages/<int:pk>/submissions/', views.landing_page_submissions, name='landing_page_submissions'),
     path('landing-pages/submissions/<int:submission_id>/', views.landing_page_submission_detail, name='landing_page_submission_detail'),
+    path('landing-pages/submissions/<int:submission_id>/toggle-processed/', views.toggle_submission_processed, name='toggle_submission_processed'),
     path('landing-pages/contacts/', views.landing_page_contacts, name='landing_page_contacts'),
     path('landing-pages/submissions/<int:submission_id>/create-contact/', views.create_contact_from_submission_view, name='create_contact_from_submission'),
     

@@ -11346,10 +11346,14 @@ def landing_page_create(request):
 
 @login_required
 @user_passes_test(is_agent_or_superuser, login_url='/')
+@login_required
+@login_required
+@user_passes_test(is_agent_or_superuser, login_url='/')
 def landing_page_detail(request, pk):
     """Vista para ver detalles de una landing page"""
     landing_page = get_object_or_404(LandingPage, pk=pk)
-    submissions = landing_page.submissions.all().order_by('-created_at')[:20]
+    # Solo mostrar submissions que no han sido procesadas (pendientes por contactar)
+    submissions = landing_page.submissions.filter(processed=False).order_by('-created_at')[:20]
     
     context = {
         'page_title': f'Landing Page: {landing_page.nombre_producto}',
@@ -11626,6 +11630,67 @@ def create_contact_from_submission_view(request, submission_id):
             messages.error(request, f'Error al crear el contacto: {str(e)}')
     
     return redirect('landing_page_submissions', pk=submission.landing_page.pk)
+
+
+@login_required
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def toggle_submission_processed(request, submission_id):
+    """Vista AJAX para marcar/desmarcar un envío de landing page como procesado/contactado"""
+    # Verificar si es una petición AJAX y si el usuario está autenticado
+    if not request.user.is_authenticated:
+        return JsonResponse({
+            'success': False,
+            'error': 'No autorizado - debe iniciar sesión'
+        }, status=401)
+    
+    if not is_agent_or_superuser(request.user):
+        return JsonResponse({
+            'success': False,
+            'error': 'No tiene permisos para realizar esta acción'
+        }, status=403)
+    
+    if request.method == 'POST':
+        try:
+            submission = get_object_or_404(LandingPageSubmission, pk=submission_id)
+            
+            # Obtener el nuevo estado desde el request y debug
+            processed_value = request.POST.get('processed', 'false')
+            new_processed_state = processed_value.lower() == 'true'
+            
+            print(f"DEBUG toggle_submission_processed:")
+            print(f"  - submission_id: {submission_id}")
+            print(f"  - processed_value recibido: '{processed_value}'")
+            print(f"  - new_processed_state: {new_processed_state}")
+            print(f"  - estado actual: {submission.processed}")
+            
+            # Actualizar el estado
+            submission.processed = new_processed_state
+            if new_processed_state:
+                submission.processed_at = timezone.now()
+                submission.processed_by = request.user
+            else:
+                submission.processed_at = None
+                submission.processed_by = None
+            
+            submission.save()
+            
+            print(f"  - estado después de guardar: {submission.processed}")
+            
+            return JsonResponse({
+                'success': True,
+                'processed': submission.processed,
+                'processed_at': submission.processed_at.isoformat() if submission.processed_at else None,
+                'processed_by': submission.processed_by.get_full_name() if submission.processed_by else None,
+                'message': 'Estado actualizado correctamente'
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=400)
+    
+    return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
 
 
 @login_required

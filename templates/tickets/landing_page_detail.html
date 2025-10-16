@@ -3,6 +3,7 @@
 {% block title %}{{ page_title }}{% endblock %}
 
 {% block content %}
+{% csrf_token %}
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
@@ -90,7 +91,10 @@
                     <!-- Envíos Recientes -->
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5><i class="fas fa-paper-plane"></i> Envíos Recientes</h5>
+                            <div>
+                                <h5><i class="fas fa-clock text-warning"></i> Contactos Pendientes</h5>
+                                <small class="text-muted">Solo se muestran los contactos que aún no han sido contactados</small>
+                            </div>
                             <a href="{% url 'landing_page_submissions' landing_page.pk %}" class="btn btn-sm btn-outline-primary">
                                 Ver Todos
                             </a>
@@ -101,6 +105,7 @@
                                     <table class="table table-hover">
                                         <thead>
                                             <tr>
+                                                <th>Contactado</th>
                                                 <th>Nombre</th>
                                                 <th>Email</th>
                                                 <th>Teléfono</th>
@@ -111,7 +116,15 @@
                                         </thead>
                                         <tbody>
                                             {% for submission in submissions %}
-                                                <tr>
+                                                <tr id="submission-{{ submission.id }}">
+                                                    <td class="text-center">
+                                                        <input 
+                                                            class="form-check-input submission-processed" 
+                                                            type="checkbox" 
+                                                            id="processed-{{ submission.id }}"
+                                                            data-submission-id="{{ submission.id }}"
+                                                            onchange="toggleProcessed(this, {{ submission.id }})">
+                                                    </td>
                                                     <td>{{ submission.nombre }} {{ submission.apellido }}</td>
                                                     <td>
                                                         <a href="mailto:{{ submission.email }}">{{ submission.email }}</a>
@@ -129,7 +142,6 @@
                                                             {{ submission.created_at|timesince }} ago
                                                         </span>
                                                     </td>
-                                                
                                                     <td>
                                                         <a href="{% url 'landing_page_submission_detail' submission.id %}" class="btn btn-outline-primary btn-sm" title="Ver detalle">
                                                             <i class="fas fa-eye"></i>
@@ -142,9 +154,12 @@
                                 </div>
                             {% else %}
                                 <div class="text-center py-4">
-                                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                                    <h5 class="text-muted">No hay envíos aún</h5>
-                                    <p class="text-muted">Los envíos del formulario aparecerán aquí cuando los visitantes completen la landing page.</p>
+                                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                                    <h5 class="text-success">¡Todos los contactos han sido contactados!</h5>
+                                    <p class="text-muted">No hay contactos pendientes por contactar en este momento.</p>
+                                    <a href="{% url 'landing_page_submissions' landing_page.pk %}" class="btn btn-outline-primary">
+                                        Ver Todos los Contactos
+                                    </a>
                                 </div>
                             {% endif %}
                         </div>
@@ -221,19 +236,8 @@
 <script>
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(function() {
-        // Mostrar mensaje de éxito
-        const Toast = Swal.mixin({
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true,
-        });
-        
-        Toast.fire({
-            icon: 'success',
-            title: 'URL copiada al portapapeles'
-        });
+        // Mostrar mensaje de éxito con alert simple
+        alert('URL copiada al portapapeles');
     }, function(err) {
         console.error('Error copiando al portapapeles: ', err);
         // Fallback para navegadores que no soportan navigator.clipboard
@@ -251,5 +255,105 @@ function copyToClipboard(text) {
         document.body.removeChild(textArea);
     });
 }
+
+        function toggleProcessed(checkbox, submissionId) {
+            const isChecked = checkbox.checked;
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            // Mostrar indicador de carga
+            checkbox.disabled = true;
+            
+            fetch(`/landing-pages/submissions/${submissionId}/toggle-processed/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: `processed=${isChecked}`
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => Promise.reject(data));
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    console.log('Estado actualizado:', data);
+                    
+                    const row = checkbox.closest('tr');
+                    if (row) {
+                        if (data.processed) {
+                            // Si se marca como procesado, ocultar la fila con animación
+                            row.style.transition = 'opacity 0.5s ease-out';
+                            row.style.opacity = '0.5';
+                            
+                            setTimeout(() => {
+                                row.style.display = 'none';
+                                // Verificar si quedan filas en la tabla
+                                const tbody = row.parentElement;
+                                const remainingRows = tbody.querySelectorAll('tr:not([style*="display: none"])');
+                                
+                                if (remainingRows.length === 0) {
+                                    // Si no quedan más filas, mostrar mensaje de "todos contactados"
+                                    const tableContainer = tbody.closest('.table-responsive');
+                                    if (tableContainer) {
+                                        tableContainer.innerHTML = `
+                                            <div class="text-center py-4">
+                                                <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                                                <h5 class="text-success">¡Todos los contactos han sido contactados!</h5>
+                                                <p class="text-muted">No hay contactos pendientes por contactar en este momento.</p>
+                                                <a href="/landing-pages/${submissionId.split('/')[0]}/submissions/" class="btn btn-outline-primary">
+                                                    Ver Todos los Contactos
+                                                </a>
+                                            </div>
+                                        `;
+                                    }
+                                }
+                            }, 500);
+                        } else {
+                            // Si se desmarca como procesado, hacer la fila visible de nuevo
+                            row.style.display = '';
+                            row.style.opacity = '1';
+                            row.classList.remove('table-success');
+                        }
+                    }
+                } else {
+                    console.error('Error del servidor:', data.error);
+                    alert('Error: ' + data.error);
+                    checkbox.checked = !isChecked; // Revertir el estado
+                }
+            })
+            .catch(error => {
+                console.error('Error de conexión:', error);
+                
+                if (error.status === 401) {
+                    alert('Error: Debe iniciar sesión para realizar esta acción.');
+                    window.location.href = '/login/';
+                } else if (error.status === 403) {
+                    alert('Error: No tiene permisos para realizar esta acción.');
+                } else if (error.error) {
+                    alert('Error: ' + error.error);
+                } else {
+                    alert('Error de conexión: No se pudo conectar con el servidor');
+                }
+                
+                checkbox.checked = !isChecked; // Revertir el estado
+                
+                // Revertir el color de la fila también
+                const row = checkbox.closest('tr');
+                if (row) {
+                    if (!isChecked) {
+                        row.classList.add('table-success');
+                    } else {
+                        row.classList.remove('table-success');
+                    }
+                }
+            })
+            .finally(() => {
+                checkbox.disabled = false;
+            });
+        }
 </script>
 {% endblock %}

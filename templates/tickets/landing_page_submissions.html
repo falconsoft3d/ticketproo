@@ -92,6 +92,7 @@
                                         <th>
                                             <input type="checkbox" id="selectAll" title="Seleccionar todos">
                                         </th>
+                                        <th>Contactado</th>
                                         <th>Nombre Completo</th>
                                         <th>Email</th>
                                         <th>Teléfono</th>
@@ -104,9 +105,18 @@
                                 </thead>
                                 <tbody>
                                     {% for submission in submissions %}
-                                        <tr data-submission-id="{{ submission.id }}">
+                                        <tr data-submission-id="{{ submission.id }}" class="{% if submission.processed %}table-success{% endif %}">
                                             <td>
                                                 <input type="checkbox" class="submission-checkbox" value="{{ submission.id }}" data-submission-id="{{ submission.id }}">
+                                            </td>
+                                            <td class="text-center">
+                                                <input 
+                                                    class="form-check-input submission-processed" 
+                                                    type="checkbox" 
+                                                    id="processed-{{ submission.id }}"
+                                                    data-submission-id="{{ submission.id }}"
+                                                    {% if submission.processed %}checked{% endif %}
+                                                    onchange="toggleProcessed(this, {{ submission.id }})">
                                             </td>
                                             <td>
                                                 <strong>{{ submission.nombre }} {{ submission.apellido }}</strong>
@@ -159,17 +169,9 @@
                                                 </small>
                                             </td>
                                             <td>
-                                                <div class="btn-group btn-group-sm" role="group">
-                                                    <button class="btn btn-outline-primary create-contact-btn" data-submission-id="{{ submission.id }}" title="Crear Contacto">
-                                                        <i class="fas fa-user-plus"></i>
-                                                    </button>
-                                                    <button class="btn btn-outline-success" onclick="sendEmail('{{ submission.email }}')" title="Enviar Email">
-                                                        <i class="fas fa-envelope"></i>
-                                                    </button>
-                                                    <button class="btn btn-outline-info" onclick="viewDetails({{ submission.id }})" title="Ver Detalles">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
-                                                </div>
+                                                <a href="{% url 'landing_page_submission_detail' submission.id %}" class="btn btn-outline-primary btn-sm" title="Ver detalle">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
                                             </td>
                                         </tr>
                                     {% endfor %}
@@ -594,7 +596,192 @@ document.addEventListener('DOMContentLoaded', function() {
     // Test manual
     console.log('Para probar manualmente, usa: window.createContact(5)');
     console.log('==================');
+    
+    // Función para marcar/desmarcar contacto como procesado - definida dentro del DOMContentLoaded
+    window.toggleProcessed = function(checkbox, submissionId) {
+        const isChecked = checkbox.checked;
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        console.log('toggleProcessed llamada:', {
+            submissionId: submissionId,
+            isChecked: isChecked,
+            valueToSend: isChecked ? 'true' : 'false'
+        });
+        
+        // Mostrar indicador de carga
+        checkbox.disabled = true;
+        
+        const bodyData = `processed=${isChecked ? 'true' : 'false'}`;
+        console.log('Datos a enviar:', bodyData);
+        
+        fetch(`/landing-pages/submissions/${submissionId}/toggle-processed/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: bodyData
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => Promise.reject(data));
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                console.log('Estado actualizado exitosamente:', {
+                    processed: data.processed,
+                    processed_at: data.processed_at,
+                    processed_by: data.processed_by,
+                    message: data.message
+                });
+                
+                // Actualizar el color de la fila
+                const row = checkbox.closest('tr');
+                if (row) {
+                    if (data.processed) {
+                        row.classList.add('table-success');
+                        console.log('Fila marcada como verde (procesada)');
+                    } else {
+                        row.classList.remove('table-success');
+                        console.log('Fila desmarcada (no procesada)');
+                    }
+                }
+            } else {
+                console.error('Error del servidor:', data.error);
+                alert('Error: ' + data.error);
+                checkbox.checked = !isChecked; // Revertir el estado
+            }
+        })
+        .catch(error => {
+            console.error('Error completo:', error);
+            console.error('Error de conexión:', error);
+            
+            if (error.status === 401) {
+                alert('Error: Debe iniciar sesión para realizar esta acción.');
+                window.location.href = '/login/';
+            } else if (error.status === 403) {
+                alert('Error: No tiene permisos para realizar esta acción.');
+            } else if (error.error) {
+                alert('Error: ' + error.error);
+            } else {
+                alert('Error de conexión: No se pudo conectar con el servidor');
+            }
+            
+            console.log('Revirtiendo estado del checkbox de', isChecked, 'a', !isChecked);
+            checkbox.checked = !isChecked; // Revertir el estado
+            
+            // Revertir el color de la fila también
+            const row = checkbox.closest('tr');
+            if (row) {
+                if (!isChecked) {
+                    row.classList.add('table-success');
+                    console.log('Revertiendo: agregando clase table-success');
+                } else {
+                    row.classList.remove('table-success');
+                    console.log('Revertiendo: quitando clase table-success');
+                }
+            }
+        })
+        .finally(() => {
+            checkbox.disabled = false;
+        });
+    };
 });
 
+</script>
+
+<script>
+// Función global para marcar/desmarcar contacto como procesado
+function toggleProcessed(checkbox, submissionId) {
+    const isChecked = checkbox.checked;
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    console.log('toggleProcessed llamada:', {
+        submissionId: submissionId,
+        isChecked: isChecked,
+        valueToSend: isChecked ? 'true' : 'false'
+    });
+    
+    // Mostrar indicador de carga
+    checkbox.disabled = true;
+    
+    const bodyData = `processed=${isChecked ? 'true' : 'false'}`;
+    console.log('Datos a enviar:', bodyData);
+    
+    fetch(`/landing-pages/submissions/${submissionId}/toggle-processed/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: bodyData
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(data => Promise.reject(data));
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            console.log('Estado actualizado exitosamente:', {
+                processed: data.processed,
+                processed_at: data.processed_at,
+                processed_by: data.processed_by,
+                message: data.message
+            });
+            
+            // Actualizar el color de la fila
+            const row = checkbox.closest('tr');
+            if (row) {
+                if (data.processed) {
+                    row.classList.add('table-success');
+                    console.log('Fila marcada como verde (procesada)');
+                } else {
+                    row.classList.remove('table-success');
+                    console.log('Fila desmarcada (no procesada)');
+                }
+            }
+        } else {
+            console.error('Error del servidor:', data.error);
+            alert('Error: ' + data.error);
+            checkbox.checked = !isChecked; // Revertir el estado
+        }
+    })
+    .catch(error => {
+        console.error('Error completo:', error);
+        
+        if (error.status === 401) {
+            alert('Error: Debe iniciar sesión para realizar esta acción.');
+            window.location.href = '/login/';
+        } else if (error.status === 403) {
+            alert('Error: No tiene permisos para realizar esta acción.');
+        } else if (error.error) {
+            alert('Error: ' + error.error);
+        } else {
+            alert('Error de conexión: No se pudo conectar con el servidor');
+        }
+        
+        console.log('Revirtiendo estado del checkbox de', isChecked, 'a', !isChecked);
+        checkbox.checked = !isChecked; // Revertir el estado
+        
+        // Revertir el color de la fila también
+        const row = checkbox.closest('tr');
+        if (row) {
+            if (!isChecked) {
+                row.classList.add('table-success');
+            } else {
+                row.classList.remove('table-success');
+            }
+        }
+    })
+    .finally(() => {
+        checkbox.disabled = false;
+    });
+}
 </script>
 {% endblock %}
