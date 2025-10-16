@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Eliminar Precotizador - {{ precotizador.title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading">
+                            <i class="bi bi-exclamation-triangle-fill"></i> ¡Atención!
+                        </h6>
+                        <p class="mb-0">
+                            Esta acción eliminará permanentemente el precotizador y todos los datos relacionados.
+                            <strong>Esta acción no se puede deshacer.</strong>
+                        </p>
+                    </div>
+
+                    <!-- Información del precotizador -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">Precotizador a eliminar:</h6>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">{{ precotizador.title }}</h5>
+                            <p class="card-text">{{ precotizador.client_description|truncatechars:200 }}</p>
+                            
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <div class="border p-2 rounded">
+                                        <strong class="text-success">{{ precotizador.get_formatted_hourly_rate }}</strong>
+                                        <br><small class="text-muted">Tarifa/hora</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="border p-2 rounded">
+                                        <strong class="text-info">{{ examples.count }}</strong>
+                                        <br><small class="text-muted">Casos ejemplo</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="border p-2 rounded">
+                                        <strong class="text-warning">{{ quotes.count }}</strong>
+                                        <br><small class="text-muted">Cotizaciones</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Información de datos que se eliminarán -->
+                    {% if examples.exists or quotes.exists %}
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0 text-danger">
+                                <i class="bi bi-trash"></i> Se eliminarán también:
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled mb-0">
+                                {% if examples.exists %}
+                                <li class="mb-2">
+                                    <i class="bi bi-list-ol text-info"></i>
+                                    <strong>{{ examples.count }}</strong> caso{{ examples.count|pluralize }} de ejemplo
+                                </li>
+                                {% endif %}
+                                {% if quotes.exists %}
+                                <li class="mb-2">
+                                    <i class="bi bi-file-earmark-text text-warning"></i>
+                                    <strong>{{ quotes.count }}</strong> cotización{{ quotes.count|pluralize:"es" }} generada{{ quotes.count|pluralize }}
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Confirmación -->
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="confirmDelete" required>
+                            <label class="form-check-label fw-bold" for="confirmDelete">
+                                Entiendo que esta acción eliminará permanentemente el precotizador 
+                                "{{ precotizador.title }}" y todos sus datos relacionados.
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Botones de acción -->
+                    <form method="post" id="deleteForm">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'precotizador_detail' precotizador.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger" id="deleteBtn" disabled>
+                                <i class="bi bi-trash"></i> Eliminar Permanentemente
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmCheckbox = document.getElementById('confirmDelete');
+    const deleteBtn = document.getElementById('deleteBtn');
+    const deleteForm = document.getElementById('deleteForm');
+    
+    // Habilitar/deshabilitar botón de eliminar
+    confirmCheckbox.addEventListener('change', function() {
+        deleteBtn.disabled = !this.checked;
+        
+        if (this.checked) {
+            deleteBtn.classList.remove('btn-danger');
+            deleteBtn.classList.add('btn-danger');
+        }
+    });
+    
+    // Confirmación adicional al enviar
+    deleteForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!confirmCheckbox.checked) {
+            alert('Debes confirmar que entiendes las consecuencias de esta acción.');
+            return;
+        }
+        
+        const confirmed = confirm(
+            '¿Estás absolutamente seguro de que quieres eliminar este precotizador?\n\n' +
+            'Esta acción NO SE PUEDE DESHACER y eliminará:\n' +
+            '- El precotizador "{{ precotizador.title }}"\n' +
+            '- Todos los casos de ejemplo ({{ examples.count }})\n' +
+            '- Todas las cotizaciones generadas ({{ quotes.count }})\n\n' +
+            'Escribe "ELIMINAR" para confirmar:'
+        );
+        
+        if (confirmed) {
+            const finalConfirm = prompt('Para confirmar, escribe "ELIMINAR" (en mayúsculas):');
+            if (finalConfirm === 'ELIMINAR') {
+                // Mostrar indicador de procesamiento
+                deleteBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Eliminando...';
+                deleteBtn.disabled = true;
+                
+                // Enviar formulario
+                this.submit();
+            } else {
+                alert('Confirmación incorrecta. La eliminación ha sido cancelada.');
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

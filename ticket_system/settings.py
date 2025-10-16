@@ -70,6 +70,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'tickets.context_processors.system_config',
                 'tickets.context_processors.time_status',
                 'tickets.context_processors.blog_categories',
             ],

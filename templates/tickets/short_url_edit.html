@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Editar URL Corta{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-pencil"></i> Editar URL Corta
+                    </h5>
+                    <a href="{% url 'short_url_list' %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <form method="post">
+                                {% csrf_token %}
+                                
+                                <div class="mb-3">
+                                    <label for="id_original_url" class="form-label">
+                                        <i class="bi bi-link"></i> URL Original
+                                    </label>
+                                    <input type="url" 
+                                           class="form-control {% if form.original_url.errors %}is-invalid{% endif %}" 
+                                           id="id_original_url" 
+                                           name="original_url" 
+                                           value="{{ form.original_url.value|default:'' }}"
+                                           placeholder="https://ejemplo.com/url-muy-larga"
+                                           required>
+                                    {% if form.original_url.errors %}
+                                        <div class="invalid-feedback">
+                                            {{ form.original_url.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        Ingresa la URL completa que quieres acortar.
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="id_short_code" class="form-label">
+                                        <i class="bi bi-scissors"></i> Código Corto
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">{{ request.build_absolute_uri|slice:':-1' }}/s/</span>
+                                        <input type="text" 
+                                               class="form-control {% if form.short_code.errors %}is-invalid{% endif %}" 
+                                               id="id_short_code" 
+                                               name="short_code" 
+                                               value="{{ form.short_code.value|default:'' }}"
+                                               placeholder="ABC123"
+                                               maxlength="10">
+                                        <span class="input-group-text">/</span>
+                                    </div>
+                                    {% if form.short_code.errors %}
+                                        <div class="invalid-feedback">
+                                            {{ form.short_code.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        Déjalo vacío para generar automáticamente. Solo letras, números y guiones.
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="id_expires_at" class="form-label">
+                                        <i class="bi bi-calendar-event"></i> Fecha de Expiración (Opcional)
+                                    </label>
+                                    <input type="datetime-local" 
+                                           class="form-control {% if form.expires_at.errors %}is-invalid{% endif %}" 
+                                           id="id_expires_at" 
+                                           name="expires_at" 
+                                           value="{{ form.expires_at.value|date:'Y-m-d\TH:i'|default:'' }}">
+                                    {% if form.expires_at.errors %}
+                                        <div class="invalid-feedback">
+                                            {{ form.expires_at.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        Si no especificas una fecha, la URL no expirará nunca.
+                                    </div>
+                                </div>
+
+                                {% if form.non_field_errors %}
+                                    <div class="alert alert-danger">
+                                        {% for error in form.non_field_errors %}
+                                            <i class="bi bi-exclamation-triangle"></i> {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'short_url_list' %}" class="btn btn-secondary">
+                                        <i class="bi bi-x-circle"></i> Cancelar
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-check-circle"></i> Actualizar URL
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="bi bi-info-circle"></i> Información Actual
+                                    </h6>
+                                    <table class="table table-sm table-borderless mb-0">
+                                        <tr>
+                                            <td><strong>Creada:</strong></td>
+                                            <td>{{ object.created_at|date:"d/m/Y H:i" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Clics:</strong></td>
+                                            <td>
+                                                <span class="badge bg-info">{{ object.clicks }}</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Último clic:</strong></td>
+                                            <td>
+                                                {% if object.last_accessed %}
+                                                    {{ object.last_accessed|date:"d/m/Y H:i" }}
+                                                {% else %}
+                                                    <span class="text-muted">Nunca</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Estado:</strong></td>
+                                            <td>
+                                                {% if object.is_expired %}
+                                                    <span class="badge bg-danger">Expirada</span>
+                                                {% else %}
+                                                    <span class="badge bg-success">Activa</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            {% if object.click_count > 0 %}
+                            <div class="card bg-light mt-3">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="bi bi-graph-up"></i> URL Actual
+                                    </h6>
+                                    <div class="input-group">
+                                        <input type="text" 
+                                               class="form-control form-control-sm" 
+                                               value="{{ request.build_absolute_uri|slice:':-1' }}{% url 'short_url_redirect' object.short_code %}" 
+                                               readonly 
+                                               id="currentUrl">
+                                        <button class="btn btn-outline-secondary btn-sm" 
+                                                type="button" 
+                                                onclick="copyToClipboard('currentUrl')">
+                                            <i class="bi bi-clipboard"></i>
+                                        </button>
+                                    </div>
+                                    <small class="text-muted">URL corta actual</small>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    element.select();
+    element.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(element.value).then(function() {
+        // Cambiar temporalmente el ícono
+        const button = element.nextElementSibling;
+        const icon = button.querySelector('i');
+        const originalClass = icon.className;
+        icon.className = 'bi bi-check';
+        setTimeout(() => {
+            icon.className = originalClass;
+        }, 2000);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Generar código automáticamente si está vacío
+    const shortCodeInput = document.getElementById('id_short_code');
+    const originalUrlInput = document.getElementById('id_original_url');
+    
+    if (shortCodeInput && originalUrlInput) {
+        originalUrlInput.addEventListener('input', function() {
+            if (!shortCodeInput.value && this.value) {
+                // Solo generar si está vacío (para edición)
+                if (!shortCodeInput.dataset.hasValue) {
+                    generateShortCode();
+                }
+            }
+        });
+    }
+    
+    // Marcar si ya tiene valor
+    if (shortCodeInput && shortCodeInput.value) {
+        shortCodeInput.dataset.hasValue = 'true';
+    }
+});
+
+function generateShortCode() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+}
+</script>
+{% endblock %}

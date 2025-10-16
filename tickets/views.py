@@ -34,7 +34,8 @@ from .models import (
     Employee, JobApplicationToken, EmployeePayroll, Agreement, AgreementSignature,
     LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry, SharedFile, SharedFileDownload,
     Recording, RecordingPlayback, MultipleDocumentation, MultipleDocumentationItem,
-    TaskSchedule, ScheduleTask, ScheduleComment, SatisfactionSurvey, ClientProjectAccess, ClientTimeEntry
+    TaskSchedule, ScheduleTask, ScheduleComment, SatisfactionSurvey, ClientProjectAccess, ClientTimeEntry, ShortUrl,
+    ProductSet, ProductItem, Precotizador, PrecotizadorExample, PrecotizadorQuote
 )
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
@@ -46,7 +47,9 @@ from .forms import (
     EmployeeHiringOpinionForm, EmployeePayrollForm, AgreementForm, AgreementSignatureForm, AgreementPublicForm,
     LandingPageForm, LandingPageSubmissionForm, PublicCompanyTicketForm, WorkOrderTaskForm, 
     WorkOrderTaskTimeEntryForm, WorkOrderTaskBulkForm, SharedFileForm, PublicSharedFileForm,
-    TaskScheduleForm, ScheduleTaskForm, ScheduleCommentForm, ClientProjectAccessForm, ClientTimeEntryForm
+    TaskScheduleForm, ScheduleTaskForm, ScheduleCommentForm, ClientProjectAccessForm, ClientTimeEntryForm,
+    ProductSetForm, ProductItemForm, ProductItemFormSet, PrecotizadorForm, PrecotizadorExampleForm, 
+    PrecotizadorExampleFormSet, PrecotizadorQuoteForm
 )
 from .utils import is_agent, is_regular_user, is_teacher, can_manage_courses, get_user_role, assign_user_to_group
 
@@ -17142,4 +17145,921 @@ def client_dashboard_public(request, token):
     }
     
     return render(request, 'tickets/client_dashboard_public.html', context)
+
+
+# ============= VISTAS ACORTADOR DE URLS =============
+
+@login_required
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def short_url_list(request):
+    """Vista para listar todas las URLs cortas"""
+    short_urls = ShortUrl.objects.filter(created_by=request.user).order_by('-created_at')
+    
+    context = {
+        'page_title': 'Acortador de URLs',
+        'short_urls': short_urls,
+    }
+    
+    return render(request, 'tickets/short_url_list.html', context)
+
+
+@login_required
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def short_url_create(request):
+    """Vista para crear una nueva URL corta"""
+    if request.method == 'POST':
+        original_url = request.POST.get('original_url')
+        title = request.POST.get('title', '')
+        description = request.POST.get('description', '')
+        expires_days = request.POST.get('expires_days')
+        
+        if original_url:
+            # Verificar si ya existe una URL corta para esta URL
+            existing = ShortUrl.objects.filter(
+                original_url=original_url,
+                created_by=request.user,
+                is_active=True
+            ).first()
+            
+            if existing:
+                messages.info(request, f'Ya existe una URL corta para esta dirección: {existing.get_short_url()}')
+                return redirect('short_url_list')
+            
+            # Crear nueva URL corta
+            short_url = ShortUrl(
+                original_url=original_url,
+                title=title,
+                description=description,
+                short_code=ShortUrl.generate_short_code(),
+                created_by=request.user
+            )
+            
+            # Establecer fecha de expiración si se especifica
+            if expires_days:
+                try:
+                    days = int(expires_days)
+                    short_url.expires_at = timezone.now() + timezone.timedelta(days=days)
+                except (ValueError, TypeError):
+                    pass
+            
+            short_url.save()
+            
+            messages.success(request, f'URL corta creada exitosamente: {short_url.get_short_url()}')
+            return redirect('short_url_list')
+        else:
+            messages.error(request, 'La URL es requerida.')
+    
+    context = {
+        'page_title': 'Crear URL Corta',
+    }
+    
+    return render(request, 'tickets/short_url_create.html', context)
+
+
+@login_required
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def short_url_edit(request, pk):
+    """Vista para editar una URL corta"""
+    short_url = get_object_or_404(ShortUrl, pk=pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        short_url.title = request.POST.get('title', '')
+        short_url.description = request.POST.get('description', '')
+        short_url.is_active = request.POST.get('is_active') == 'on'
+        
+        expires_days = request.POST.get('expires_days')
+        if expires_days:
+            try:
+                days = int(expires_days)
+                short_url.expires_at = timezone.now() + timezone.timedelta(days=days)
+            except (ValueError, TypeError):
+                short_url.expires_at = None
+        else:
+            short_url.expires_at = None
+        
+        short_url.save()
+        messages.success(request, 'URL corta actualizada exitosamente.')
+        return redirect('short_url_list')
+    
+    context = {
+        'page_title': 'Editar URL Corta',
+        'short_url': short_url,
+    }
+    
+    return render(request, 'tickets/short_url_edit.html', context)
+
+
+@login_required
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def short_url_delete(request, pk):
+    """Vista para eliminar una URL corta"""
+    short_url = get_object_or_404(ShortUrl, pk=pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        short_url.delete()
+        messages.success(request, 'URL corta eliminada exitosamente.')
+        return redirect('short_url_list')
+    
+    context = {
+        'page_title': 'Eliminar URL Corta',
+        'short_url': short_url,
+    }
+    
+    return render(request, 'tickets/short_url_delete.html', context)
+
+
+def short_url_redirect(request, short_code):
+    """Vista para redireccionar desde URL corta a URL original"""
+    short_url = get_object_or_404(ShortUrl, short_code=short_code, is_active=True)
+    
+    # Verificar si ha expirado
+    if short_url.is_expired():
+        messages.error(request, 'Esta URL corta ha expirado.')
+        return render(request, 'tickets/short_url_expired.html', {'short_url': short_url})
+    
+    # Incrementar contador de clics
+    short_url.increment_clicks()
+    
+    # Redireccionar a la URL original
+    return redirect(short_url.original_url)
+
+
+@login_required
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def short_url_stats(request, pk):
+    """Vista para ver estadísticas de una URL corta"""
+    short_url = get_object_or_404(ShortUrl, pk=pk, created_by=request.user)
+    
+    context = {
+        'page_title': f'Estadísticas - {short_url.short_code}',
+        'short_url': short_url,
+    }
+    
+    return render(request, 'tickets/short_url_stats.html', context)
+
+
+# ==================== VISTAS DE CONJUNTOS DE PRODUCTOS ====================
+
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def product_set_list(request):
+    """Vista para listar conjuntos de productos"""
+    product_sets = ProductSet.objects.filter(created_by=request.user).order_by('-created_at')
+    
+    context = {
+        'page_title': 'Conjuntos de Productos',
+        'product_sets': product_sets,
+    }
+    
+    return render(request, 'tickets/product_set_list.html', context)
+
+
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def product_set_create(request):
+    """Vista para crear un conjunto de productos"""
+    if request.method == 'POST':
+        form = ProductSetForm(request.POST)
+        formset = ProductItemFormSet(request.POST)
+        
+        if form.is_valid() and formset.is_valid():
+            product_set = form.save(commit=False)
+            product_set.created_by = request.user
+            product_set.save()
+            
+            formset.instance = product_set
+            formset.save()
+            
+            messages.success(request, f'Conjunto de productos "{product_set.title}" creado exitosamente.')
+            return redirect('product_set_detail', pk=product_set.pk)
+    else:
+        form = ProductSetForm()
+        # Crear formset vacío para creación
+        formset = ProductItemFormSet(queryset=ProductItem.objects.none())
+    
+    context = {
+        'page_title': 'Crear Conjunto de Productos',
+        'form': form,
+        'formset': formset,
+    }
+    
+    return render(request, 'tickets/product_set_create.html', context)
+
+
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def product_set_detail(request, pk):
+    """Vista para ver detalles de un conjunto de productos"""
+    product_set = get_object_or_404(ProductSet, pk=pk, created_by=request.user)
+    products = product_set.products.all().order_by('order', 'name')
+    
+    context = {
+        'page_title': f'Conjunto: {product_set.title}',
+        'product_set': product_set,
+        'products': products,
+    }
+    
+    return render(request, 'tickets/product_set_detail.html', context)
+
+
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def product_set_edit(request, pk):
+    """Vista para editar un conjunto de productos"""
+    product_set = get_object_or_404(ProductSet, pk=pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        form = ProductSetForm(request.POST, instance=product_set)
+        formset = ProductItemFormSet(request.POST, instance=product_set)
+        
+        if form.is_valid() and formset.is_valid():
+            form.save()
+            formset.save()
+            
+            messages.success(request, f'Conjunto de productos "{product_set.title}" actualizado exitosamente.')
+            return redirect('product_set_detail', pk=product_set.pk)
+    else:
+        form = ProductSetForm(instance=product_set)
+        formset = ProductItemFormSet(instance=product_set)
+    
+    context = {
+        'page_title': f'Editar: {product_set.title}',
+        'form': form,
+        'formset': formset,
+        'product_set': product_set,
+    }
+    
+    return render(request, 'tickets/product_set_edit.html', context)
+
+
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def product_set_delete(request, pk):
+    """Vista para eliminar un conjunto de productos"""
+    product_set = get_object_or_404(ProductSet, pk=pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        product_set.delete()
+        messages.success(request, f'Conjunto de productos "{product_set.title}" eliminado exitosamente.')
+        return redirect('product_set_list')
+    
+    context = {
+        'page_title': f'Eliminar: {product_set.title}',
+        'product_set': product_set,
+    }
+    
+    return render(request, 'tickets/product_set_delete.html', context)
+
+
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def product_set_toggle_public(request, pk):
+    """Vista para cambiar el estado público de un conjunto"""
+    product_set = get_object_or_404(ProductSet, pk=pk, created_by=request.user)
+    
+    product_set.is_public = not product_set.is_public
+    product_set.save()
+    
+    status = "público" if product_set.is_public else "privado"
+    messages.success(request, f'Conjunto "{product_set.title}" marcado como {status}.')
+    
+    return redirect('product_set_detail', pk=product_set.pk)
+
+
+def product_set_public(request, token):
+    """Vista pública para mostrar conjunto de productos sin autenticación"""
+    product_set = get_object_or_404(ProductSet, public_token=token, is_public=True)
+    products = product_set.products.all().order_by('order', 'name')
+    
+    # Incrementar contador de vistas
+    product_set.increment_views()
+    
+    context = {
+        'page_title': product_set.title,
+        'product_set': product_set,
+        'products': products,
+        'is_public_view': True,
+    }
+    
+    return render(request, 'tickets/product_set_public.html', context)
+
+
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def product_set_stats(request, pk):
+    """Vista para mostrar estadísticas de un conjunto de productos"""
+    product_set = get_object_or_404(ProductSet, pk=pk, created_by=request.user)
+    
+    # Calcular estadísticas adicionales
+    from django.utils import timezone
+    from datetime import timedelta
+    
+    days_active = (timezone.now() - product_set.created_at).days
+    if days_active == 0:
+        days_active = 1  # Al menos 1 día para evitar división por cero
+    
+    views_per_day = product_set.view_count / days_active if product_set.view_count > 0 else 0
+    
+    context = {
+        'page_title': f'Estadísticas - {product_set.title}',
+        'product_set': product_set,
+        'days_active': days_active,
+        'views_per_day': views_per_day,
+    }
+    
+    return render(request, 'tickets/product_set_stats.html', context)
+
+
+# ==================== PRECOTIZADOR VIEWS ====================
+
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def precotizador_list(request):
+    """Vista para listar todos los precotizadores"""
+    precotizadores = Precotizador.objects.filter(created_by=request.user)
+    
+    context = {
+        'page_title': 'Precotizadores',
+        'precotizadores': precotizadores,
+    }
+    
+    return render(request, 'tickets/precotizador_list.html', context)
+
+
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def precotizador_create(request):
+    """Vista para crear un nuevo precotizador"""
+    if request.method == 'POST':
+        form = PrecotizadorForm(request.POST)
+        formset = PrecotizadorExampleFormSet(request.POST)
+        
+        if form.is_valid() and formset.is_valid():
+            precotizador = form.save(commit=False)
+            precotizador.created_by = request.user
+            precotizador.save()
+            
+            # Guardar los ejemplos
+            examples = formset.save(commit=False)
+            for i, example in enumerate(examples):
+                example.precotizador = precotizador
+                example.order = i
+                example.save()
+            
+            return redirect('precotizador_detail', pk=precotizador.pk)
+    else:
+        form = PrecotizadorForm()
+        formset = PrecotizadorExampleFormSet()
+    
+    context = {
+        'page_title': 'Crear Precotizador',
+        'form': form,
+        'formset': formset,
+    }
+    
+    return render(request, 'tickets/precotizador_create.html', context)
+
+
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def precotizador_detail(request, pk):
+    """Vista para ver detalles de un precotizador"""
+    precotizador = get_object_or_404(Precotizador, pk=pk, created_by=request.user)
+    examples = precotizador.examples.all()
+    quotes = precotizador.quotes.all()[:10]  # Últimas 10 cotizaciones
+    
+    context = {
+        'page_title': f'Precotizador - {precotizador.title}',
+        'precotizador': precotizador,
+        'examples': examples,
+        'quotes': quotes,
+    }
+    
+    return render(request, 'tickets/precotizador_detail.html', context)
+
+
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def precotizador_edit(request, pk):
+    """Vista para editar un precotizador"""
+    precotizador = get_object_or_404(Precotizador, pk=pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        form = PrecotizadorForm(request.POST, instance=precotizador)
+        formset = PrecotizadorExampleFormSet(request.POST, instance=precotizador)
+        
+        if form.is_valid() and formset.is_valid():
+            form.save()
+            
+            # Guardar los ejemplos
+            examples = formset.save(commit=False)
+            for i, example in enumerate(examples):
+                example.order = i
+                example.save()
+            
+            return redirect('precotizador_detail', pk=precotizador.pk)
+    else:
+        form = PrecotizadorForm(instance=precotizador)
+        formset = PrecotizadorExampleFormSet(instance=precotizador)
+    
+    context = {
+        'page_title': f'Editar - {precotizador.title}',
+        'form': form,
+        'formset': formset,
+        'precotizador': precotizador,
+    }
+    
+    return render(request, 'tickets/precotizador_create.html', context)
+
+
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def precotizador_delete(request, pk):
+    """Vista para eliminar un precotizador"""
+    precotizador = get_object_or_404(Precotizador, pk=pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        precotizador.delete()
+        return redirect('precotizador_list')
+    
+    context = {
+        'page_title': f'Eliminar - {precotizador.title}',
+        'precotizador': precotizador,
+    }
+    
+    return render(request, 'tickets/precotizador_delete.html', context)
+
+
+@login_required
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def precotizador_toggle_public_requests(request, pk):
+    """Vista para activar/desactivar solicitudes públicas"""
+    precotizador = get_object_or_404(Precotizador, pk=pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        is_active = precotizador.toggle_public_requests()
+        
+        if is_active:
+            messages.success(
+                request, 
+                f'✅ Solicitudes públicas activadas para "{precotizador.title}". '
+                f'Los clientes ahora pueden solicitar cotizaciones a través del enlace público.'
+            )
+        else:
+            messages.info(
+                request, 
+                f'🔒 Solicitudes públicas desactivadas para "{precotizador.title}". '
+                f'El enlace público ya no estará disponible.'
+            )
+        
+        return redirect('precotizador_detail', pk=precotizador.pk)
+    
+    # Si no es POST, redirigir al detalle
+    return redirect('precotizador_detail', pk=precotizador.pk)
+
+
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def precotizador_quote(request, pk):
+    """Vista para generar cotización con IA"""
+    precotizador = get_object_or_404(Precotizador, pk=pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        form = PrecotizadorQuoteForm(request.POST)
+        
+        if form.is_valid():
+            try:
+                # Obtener configuración de OpenAI
+                config = SystemConfiguration.objects.get(pk=1)
+                
+                if not config.openai_api_key:
+                    raise Exception("No se ha configurado la API key de OpenAI")
+                
+                # Preparar el contexto para la IA
+                examples_context = "\n".join([
+                    f"- {example.description}: {example.estimated_hours} horas"
+                    for example in precotizador.examples.all()
+                ])
+                
+                # Crear el prompt para la IA
+                prompt = f"""
+Eres un experto en estimación de proyectos de software. 
+
+CONTEXTO DEL CLIENTE:
+{precotizador.client_description}
+
+EJEMPLOS DE TRABAJOS ANTERIORES:
+{examples_context}
+
+SOLICITUD DEL CLIENTE:
+{form.cleaned_data['client_request']}
+
+INSTRUCCIONES:
+Basándote en los ejemplos anteriores y el contexto del cliente, proporciona una estimación detallada.
+
+Tu respuesta debe seguir EXACTAMENTE este formato:
+
+HORAS ESTIMADAS: [número]
+
+DESCRIPCIÓN DEL TRABAJO:
+[Descripción detallada de lo que implica el proyecto, tecnologías a usar, fases del desarrollo, etc.]
+
+RAZONAMIENTO:
+[Explicación de por qué elegiste esa cantidad de horas basándote en los ejemplos y complejidad del proyecto]
+
+DESGLOSE DE TAREAS:
+- [Tarea 1]: X horas
+- [Tarea 2]: Y horas
+- [Tarea 3]: Z horas
+
+Importante: Responde en texto plano, NO uses JSON. Sé específico y detallado.
+"""
+                
+                from openai import OpenAI
+                client = OpenAI(api_key=config.openai_api_key)
+                
+                response = client.chat.completions.create(
+                    model=config.openai_model or "gpt-3.5-turbo",
+                    messages=[
+                        {"role": "system", "content": "Eres un experto en estimación de proyectos de software. Responde en texto plano siguiendo exactamente el formato solicitado."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.7,
+                    max_tokens=1500
+                )
+                
+                ai_content = response.choices[0].message.content.strip()
+                
+                # Extraer las horas estimadas de la respuesta
+                import re
+                hours_match = re.search(r'HORAS ESTIMADAS:\s*(\d+(?:\.\d+)?)', ai_content, re.IGNORECASE)
+                estimated_hours = float(hours_match.group(1)) if hours_match else 10.0
+                
+                # Extraer las secciones de la respuesta
+                description_match = re.search(r'DESCRIPCIÓN DEL TRABAJO:\s*(.*?)(?=\n\nRAZONAMIENTO:|$)', ai_content, re.DOTALL | re.IGNORECASE)
+                reasoning_match = re.search(r'RAZONAMIENTO:\s*(.*?)(?=\n\nDESGLOSE|$)', ai_content, re.DOTALL | re.IGNORECASE)
+                
+                detailed_description = description_match.group(1).strip() if description_match else ai_content
+                reasoning = reasoning_match.group(1).strip() if reasoning_match else ""
+                
+                # Crear la cotización
+                quote = form.save(commit=False)
+                quote.precotizador = precotizador
+                quote.ai_estimated_hours = estimated_hours
+                quote.ai_detailed_description = detailed_description
+                quote.ai_reasoning = reasoning
+                quote.ai_full_response = ai_content  # Guardar respuesta completa
+                quote.save()
+                
+                return redirect('precotizador_quote_detail', pk=quote.pk)
+                
+            except SystemConfiguration.DoesNotExist:
+                form.add_error(None, "No se encontró la configuración del sistema")
+            except Exception as e:
+                import traceback
+                print(f"Error al generar cotización: {str(e)}")
+                print(traceback.format_exc())
+                form.add_error(None, f"Error al generar cotización: {str(e)}")
+    else:
+        form = PrecotizadorQuoteForm()
+    
+    context = {
+        'page_title': f'Generar Cotización - {precotizador.title}',
+        'precotizador': precotizador,
+        'examples': precotizador.examples.all(),
+        'form': form,
+    }
+    
+    return render(request, 'tickets/precotizador_quote.html', context)
+
+
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def precotizador_quote_detail(request, pk):
+    """Vista para ver detalles de una cotización"""
+    quote = get_object_or_404(PrecotizadorQuote, pk=pk, precotizador__created_by=request.user)
+    
+    context = {
+        'page_title': f'Cotización #{quote.id}',
+        'quote': quote,
+    }
+    
+    return render(request, 'tickets/precotizador_quote_detail.html', context)
+
+
+@login_required
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def precotizador_quote_edit(request, pk):
+    """Vista para editar una cotización"""
+    quote = get_object_or_404(PrecotizadorQuote, pk=pk, precotizador__created_by=request.user)
+    
+    if request.method == 'POST':
+        # Obtener los datos del formulario
+        client_request = request.POST.get('client_request', '').strip()
+        ai_detailed_description = request.POST.get('ai_detailed_description', '').strip()
+        ai_reasoning = request.POST.get('ai_reasoning', '').strip()
+        new_status = request.POST.get('status', '').strip()
+        
+        # Validar que los campos obligatorios no estén vacíos
+        if not client_request:
+            messages.error(request, 'La solicitud del cliente es obligatoria.')
+            return render(request, 'tickets/precotizador_quote_edit.html', {'quote': quote})
+        
+        if not ai_detailed_description:
+            messages.error(request, 'La descripción del trabajo es obligatoria.')
+            return render(request, 'tickets/precotizador_quote_edit.html', {'quote': quote})
+        
+        # Validar el estado
+        valid_statuses = ['pending', 'accepted', 'rejected']
+        if new_status not in valid_statuses:
+            messages.error(request, 'Estado no válido.')
+            return render(request, 'tickets/precotizador_quote_edit.html', {'quote': quote})
+        
+        # Obtener el estado anterior para el mensaje
+        old_status = quote.status
+        
+        # Actualizar la cotización
+        quote.client_request = client_request
+        quote.ai_detailed_description = ai_detailed_description
+        quote.ai_reasoning = ai_reasoning
+        quote.status = new_status
+        
+        # Si se cambia de accepted/rejected a pending, limpiar datos de respuesta
+        if old_status in ['accepted', 'rejected'] and new_status == 'pending':
+            quote.client_response_date = None
+            quote.client_comments = ''
+            quote.save(update_fields=['client_request', 'ai_detailed_description', 'ai_reasoning', 'status', 'client_response_date', 'client_comments'])
+            messages.success(request, 'Cotización actualizada y restablecida a estado pendiente. El cliente podrá responder nuevamente.')
+        else:
+            quote.save(update_fields=['client_request', 'ai_detailed_description', 'ai_reasoning', 'status'])
+            if old_status != new_status:
+                status_names = {'pending': 'Pendiente', 'accepted': 'Aceptada', 'rejected': 'Rechazada'}
+                messages.success(request, f'Cotización actualizada. Estado cambiado de "{status_names[old_status]}" a "{status_names[new_status]}".')
+            else:
+                messages.success(request, 'Cotización actualizada exitosamente.')
+        
+        return redirect('precotizador_quote_detail', pk=quote.pk)
+    
+    context = {
+        'page_title': f'Editar Cotización #{quote.id}',
+        'quote': quote,
+    }
+    
+    return render(request, 'tickets/precotizador_quote_edit.html', context)
+
+
+@login_required
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def precotizador_quote_delete(request, pk):
+    """Vista para eliminar una cotización"""
+    quote = get_object_or_404(PrecotizadorQuote, pk=pk, precotizador__created_by=request.user)
+    
+    if request.method == 'POST':
+        quote.delete()
+        messages.success(request, 'Cotización eliminada exitosamente.')
+        return redirect('precotizador_detail', pk=quote.precotizador.pk)
+    
+    context = {
+        'page_title': f'Eliminar Cotización #{quote.id}',
+        'quote': quote,
+    }
+    
+    return render(request, 'tickets/precotizador_quote_delete.html', context)
+
+
+@login_required
+@user_passes_test(is_agent_or_superuser, login_url='/')
+def precotizador_quote_share(request, pk):
+    """Vista para compartir una cotización públicamente"""
+    quote = get_object_or_404(PrecotizadorQuote, pk=pk, precotizador__created_by=request.user)
+    
+    if request.method == 'POST':
+        # Generar token y hacer público
+        quote.generate_public_token()
+        quote.is_public = True
+        quote.save(update_fields=['is_public'])
+        
+        messages.success(request, 'Cotización compartida exitosamente. El enlace público está disponible.')
+        return redirect('precotizador_quote_detail', pk=quote.pk)
+    
+    context = {
+        'page_title': f'Compartir Cotización #{quote.id}',
+        'quote': quote,
+    }
+    
+    return render(request, 'tickets/precotizador_quote_share.html', context)
+
+
+def precotizador_quote_public(request, token):
+    """Vista pública para que el cliente vea y responda la cotización"""
+    quote = get_object_or_404(PrecotizadorQuote, public_share_token=token, is_public=True)
+    
+    if request.method == 'POST':
+        # Solo permitir responder si la cotización está pendiente
+        if quote.status != 'pending':
+            messages.error(request, 'Esta cotización ya fue respondida anteriormente y no puede ser modificada.')
+            return redirect('precotizador_quote_public', token=token)
+        
+        action = request.POST.get('action')
+        client_comments = request.POST.get('client_comments', '')
+        
+        try:
+            if action == 'accept':
+                quote.accept(client_comments)
+                messages.success(request, '¡Cotización aceptada! Nos pondremos en contacto contigo pronto.')
+            elif action == 'reject':
+                quote.reject(client_comments)
+                messages.info(request, 'Cotización rechazada. Gracias por tu tiempo.')
+            else:
+                messages.error(request, 'Acción no válida.')
+        except ValueError as e:
+            messages.error(request, str(e))
+        except Exception as e:
+            messages.error(request, f'Error inesperado: {str(e)}')
+        
+        return redirect('precotizador_quote_public', token=token)
+    
+    context = {
+        'page_title': f'Cotización #{quote.id} - {quote.precotizador.title}',
+        'quote': quote,
+        'can_respond': quote.can_be_responded(),
+    }
+    
+    return render(request, 'tickets/precotizador_quote_public.html', context)
+
+
+def precotizador_public_request(request, token):
+    """Vista pública donde los clientes pueden solicitar cotizaciones"""
+    precotizador = get_object_or_404(
+        Precotizador, 
+        public_request_token=token, 
+        allow_public_requests=True
+    )
+    
+    if request.method == 'POST':
+        # Si es una petición AJAX, procesar la cotización
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return process_public_quote_ajax(request, precotizador)
+        
+        # Si no es AJAX, mostrar página de carga
+        client_request = request.POST.get('client_request', '').strip()
+        client_name = request.POST.get('client_name', '').strip()
+        client_email = request.POST.get('client_email', '').strip()
+        
+        # Validaciones básicas
+        if not client_request or len(client_request) < 50:
+            messages.error(request, 'Por favor, proporciona más detalles sobre tu proyecto (mínimo 50 caracteres).')
+            return render(request, 'tickets/precotizador_public_request.html', {
+                'precotizador': precotizador,
+                'client_request': client_request,
+                'client_name': client_name,
+                'client_email': client_email,
+            })
+        
+        # Mostrar página de carga
+        context = {
+            'page_title': 'Generando tu Cotización...',
+            'precotizador': precotizador,
+            'client_request': client_request,
+            'client_name': client_name,
+            'client_email': client_email,
+        }
+        return render(request, 'tickets/precotizador_loading.html', context)
+    
+    context = {
+        'page_title': f'Solicitar Cotización - {precotizador.title}',
+        'precotizador': precotizador,
+    }
+    
+    return render(request, 'tickets/precotizador_public_request.html', context)
+
+
+def process_public_quote_ajax(request, precotizador):
+    """Procesa la generación de cotización vía AJAX usando la misma lógica que funciona"""
+    import json
+    from django.http import JsonResponse
+    
+    try:
+        client_request = request.POST.get('client_request', '').strip()
+        client_name = request.POST.get('client_name', '').strip()
+        client_email = request.POST.get('client_email', '').strip()
+        
+        print(f"[DEBUG] Procesando cotización para: {client_request[:50]}...")
+        
+        # Validaciones básicas
+        if not client_request or len(client_request) < 50:
+            return JsonResponse({
+                'success': False,
+                'error': 'Por favor, proporciona más detalles sobre tu proyecto (mínimo 50 caracteres).'
+            })
+        
+        # Usar la misma lógica que precotizador_quote (que ya funciona)
+        from tickets.models import SystemConfiguration
+        import openai
+        
+        config = SystemConfiguration.objects.get(pk=1)
+        if not config.openai_api_key:
+            return JsonResponse({
+                'success': False,
+                'error': 'Error de configuración. API key no disponible.'
+            })
+        
+        # Preparar contexto igual que en precotizador_quote
+        examples_context = "\n".join([
+            f"- {example.description}: {example.estimated_hours} horas"
+            for example in precotizador.examples.all()
+        ])
+        
+        # Usar el mismo prompt que funciona
+        prompt = f"""
+Eres un experto en estimación de proyectos de software. 
+
+CONTEXTO DEL CLIENTE:
+{precotizador.client_description}
+
+EJEMPLOS DE TRABAJOS ANTERIORES:
+{examples_context}
+
+SOLICITUD DEL CLIENTE:
+{client_request}
+
+INSTRUCCIONES:
+Basándote en los ejemplos anteriores y el contexto del cliente, proporciona una estimación detallada.
+
+Tu respuesta debe seguir EXACTAMENTE este formato:
+
+HORAS ESTIMADAS: [número]
+
+DESCRIPCIÓN DEL TRABAJO:
+[Descripción detallada y profesional del proyecto]
+
+RAZONAMIENTO:
+[Justificación de la estimación basada en complejidad y ejemplos anteriores]
+
+DESGLOSE DE TAREAS:
+[Lista de las principales tareas y tiempo estimado para cada una]
+"""
+        
+        # Configurar OpenAI igual que en la función que funciona
+        openai.api_key = config.openai_api_key
+        
+        # Hacer la llamada a OpenAI
+        response = openai.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "Eres un experto consultor en desarrollo de software especializado en estimaciones precisas de proyectos."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=1500,
+            temperature=0.7
+        )
+        
+        ai_content = response.choices[0].message.content.strip()
+        
+        # Extraer información igual que en la función original
+        import re
+        from decimal import Decimal
+        
+        hours_match = re.search(r'HORAS ESTIMADAS:\s*(\d+(?:\.\d+)?)', ai_content, re.IGNORECASE)
+        estimated_hours = Decimal(str(hours_match.group(1))) if hours_match else Decimal('10.0')
+        
+        description_match = re.search(r'DESCRIPCIÓN DEL TRABAJO:\s*(.*?)(?=\n\nRAZONAMIENTO:|$)', ai_content, re.DOTALL | re.IGNORECASE)
+        reasoning_match = re.search(r'RAZONAMIENTO:\s*(.*?)(?=\n\nDESGLOSE|$)', ai_content, re.DOTALL | re.IGNORECASE)
+        
+        detailed_description = description_match.group(1).strip() if description_match else ai_content
+        reasoning = reasoning_match.group(1).strip() if reasoning_match else ""
+        
+        # Formatear solicitud con datos del cliente
+        formatted_request = client_request
+        if client_name:
+            formatted_request = f"Solicitado por: {client_name}\n\n{formatted_request}"
+        if client_email:
+            formatted_request = f"{formatted_request}\n\nContacto: {client_email}"
+        
+        # Crear cotización usando el mismo modelo
+        from tickets.models import PrecotizadorQuote
+        quote = PrecotizadorQuote.objects.create(
+            precotizador=precotizador,
+            client_request=formatted_request,
+            ai_estimated_hours=estimated_hours,
+            ai_detailed_description=detailed_description,
+            ai_reasoning=reasoning,
+            ai_full_response=ai_content,
+            is_public=True  # Importante: hacer pública para el enlace
+        )
+        
+        # Generar token público
+        quote.generate_public_token()
+        
+        # Crear URL usando reverse
+        from django.urls import reverse
+        quote_url = request.build_absolute_uri(
+            reverse('precotizador_quote_public', kwargs={'token': quote.public_share_token})
+        )
+        
+        print(f"[DEBUG] Cotización {quote.id} creada exitosamente")
+        
+        return JsonResponse({
+            'success': True,
+            'quote_url': quote_url,
+            'quote_id': quote.id,
+            'estimated_hours': float(estimated_hours),  # Convertir a float para JSON
+            'estimated_cost': quote.get_formatted_cost(),
+            'message': '¡Tu cotización ha sido generada exitosamente!'
+        })
+        
+    except Exception as e:
+        import traceback
+        print(f"[ERROR] Error en process_public_quote_ajax: {str(e)}")
+        print(f"[ERROR] Traceback: {traceback.format_exc()}")
+        return JsonResponse({
+            'success': False,
+            'error': f'Error técnico: {str(e)}'
+        })
 

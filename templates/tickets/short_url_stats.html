@@ -1,0 +1,306 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Estadísticas - {{ short_url.short_code }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-graph-up"></i> Estadísticas - {{ short_url.short_code }}
+                    </h5>
+                    <div>
+                        <a href="{% url 'short_url_edit' short_url.pk %}" class="btn btn-outline-primary btn-sm me-2">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                        <a href="{% url 'short_url_list' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-arrow-left"></i> Volver
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Información principal -->
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Información de la URL</h6>
+                                    <table class="table table-sm table-borderless mb-0">
+                                        <tr>
+                                            <td style="width: 150px;"><strong>URL Original:</strong></td>
+                                            <td>
+                                                <a href="{{ short_url.original_url }}" target="_blank" class="text-break">
+                                                    {{ short_url.original_url }}
+                                                    <i class="bi bi-box-arrow-up-right ms-1"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>URL Corta:</strong></td>
+                                            <td>
+                                                <div class="input-group">
+                                                    <input type="text" 
+                                                           class="form-control form-control-sm" 
+                                                           value="{{ request.build_absolute_uri|slice:':-1' }}{% url 'short_url_redirect' short_url.short_code %}" 
+                                                           readonly 
+                                                           id="shortUrl">
+                                                    <button class="btn btn-outline-secondary btn-sm" 
+                                                            type="button" 
+                                                            onclick="copyToClipboard('shortUrl')"
+                                                            title="Copiar URL">
+                                                        <i class="bi bi-clipboard"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Código:</strong></td>
+                                            <td><code>{{ short_url.short_code }}</code></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Creada:</strong></td>
+                                            <td>{{ short_url.created_at|date:"d/m/Y H:i" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Creada por:</strong></td>
+                                            <td>{{ short_url.created_by.get_full_name|default:short_url.created_by.username }}</td>
+                                        </tr>
+                                        {% if short_url.expires_at %}
+                                        <tr>
+                                            <td><strong>Expira:</strong></td>
+                                            <td>
+                                                {% if short_url.is_expired %}
+                                                    <span class="badge bg-danger">Expirada - {{ short_url.expires_at|date:"d/m/Y H:i" }}</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning">{{ short_url.expires_at|date:"d/m/Y H:i" }}</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <!-- Métricas principales -->
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <div class="card text-center bg-primary text-white">
+                                        <div class="card-body">
+                                            <h3 class="card-title mb-0">{{ short_url.clicks }}</h3>
+                                            <small>Total de Clics</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="card text-center bg-info text-white">
+                                        <div class="card-body">
+                                            <h3 class="card-title mb-0">
+                                                {% if short_url.created_at %}
+                                                    {{ days_active }}
+                                                {% else %}
+                                                    0
+                                                {% endif %}
+                                            </h3>
+                                            <small>Días Activa</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="card text-center bg-success text-white">
+                                        <div class="card-body">
+                                            <h3 class="card-title mb-0">
+                                                {% if short_url.clicks and days_active %}
+                                                    {{ clicks_per_day|floatformat:1 }}
+                                                {% else %}
+                                                    0
+                                                {% endif %}
+                                            </h3>
+                                            <small>Clics/Día</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="card text-center {% if short_url.is_expired %}bg-danger{% else %}bg-warning{% endif %} text-white">
+                                        <div class="card-body">
+                                            <h5 class="card-title mb-0">
+                                                {% if short_url.is_expired %}
+                                                    <i class="bi bi-x-circle"></i>
+                                                {% else %}
+                                                    <i class="bi bi-check-circle"></i>
+                                                {% endif %}
+                                            </h5>
+                                            <small>
+                                                {% if short_url.is_expired %}
+                                                    Expirada
+                                                {% else %}
+                                                    Activa
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Información adicional -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0"><i class="bi bi-clock-history"></i> Actividad Reciente</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if short_url.clicks > 0 %}
+                                        <p class="mb-2">
+                                            <strong>Última actualización:</strong><br>
+                                            {{ short_url.updated_at|date:"d/m/Y H:i:s" }}
+                                        </p>
+                                        <p class="mb-0">
+                                            <strong>Hace:</strong>
+                                            {{ short_url.updated_at|timesince }}
+                                        </p>
+                                    {% else %}
+                                        <p class="text-muted mb-0">
+                                            <i class="bi bi-info-circle"></i> Esta URL nunca ha sido accedida.
+                                        </p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0"><i class="bi bi-gear"></i> Acciones</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="d-grid gap-2">
+                                        <a href="{% url 'short_url_redirect' short_url.short_code %}" 
+                                           target="_blank" 
+                                           class="btn btn-outline-primary btn-sm">
+                                            <i class="bi bi-box-arrow-up-right"></i> Probar URL
+                                        </a>
+                                        <a href="{% url 'short_url_edit' short_url.pk %}" 
+                                           class="btn btn-outline-secondary btn-sm">
+                                            <i class="bi bi-pencil"></i> Editar URL
+                                        </a>
+                                        <a href="{% url 'short_url_delete' short_url.pk %}" 
+                                           class="btn btn-outline-danger btn-sm">
+                                            <i class="bi bi-trash"></i> Eliminar URL
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico simple de actividad (placeholder) -->
+                    {% if short_url.clicks > 0 %}
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0"><i class="bi bi-bar-chart"></i> Resumen de Rendimiento</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row text-center">
+                                        <div class="col-md-3">
+                                            <div class="border rounded p-3">
+                                                <h4 class="text-primary">{{ short_url.clicks }}</h4>
+                                                <small class="text-muted">Clics Totales</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="border rounded p-3">
+                                                <h4 class="text-info">{{ days_active }}</h4>
+                                                <small class="text-muted">Días Activos</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="border rounded p-3">
+                                                <h4 class="text-success">{{ clicks_per_day|floatformat:1 }}</h4>
+                                                <small class="text-muted">Promedio Diario</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="border rounded p-3">
+                                                <h4 class="{% if short_url.is_expired %}text-danger{% else %}text-warning{% endif %}">
+                                                    {% if short_url.expires_at %}
+                                                        {% if short_url.is_expired %}
+                                                            Expirada
+                                                        {% else %}
+                                                            {{ short_url.expires_at|timeuntil }}
+                                                        {% endif %}
+                                                    {% else %}
+                                                        ∞
+                                                    {% endif %}
+                                                </h4>
+                                                <small class="text-muted">
+                                                    {% if short_url.expires_at %}
+                                                        {% if short_url.is_expired %}Estado{% else %}Tiempo Restante{% endif %}
+                                                    {% else %}
+                                                        Sin Expiración
+                                                    {% endif %}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    element.select();
+    element.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(element.value).then(function() {
+        // Cambiar temporalmente el ícono
+        const button = element.nextElementSibling;
+        const icon = button.querySelector('i');
+        const originalClass = icon.className;
+        icon.className = 'bi bi-check';
+        
+        // Mostrar tooltip de confirmación
+        const tooltip = new bootstrap.Tooltip(button, {
+            title: '¡Copiado!',
+            trigger: 'manual'
+        });
+        tooltip.show();
+        
+        setTimeout(() => {
+            icon.className = originalClass;
+            tooltip.hide();
+        }, 2000);
+    }).catch(function(err) {
+        console.error('Error al copiar: ', err);
+    });
+}
+
+// Auto-refrescar cada 30 segundos si hay actividad
+{% if short_url.clicks > 0 %}
+setInterval(function() {
+    // Solo refrescar si la página está visible
+    if (!document.hidden) {
+        // Recargar estadísticas cada 30 segundos
+        location.reload();
+    }
+}, 30000);
+{% endif %}
+</script>
+{% endblock %}

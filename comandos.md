@@ -35,11 +35,13 @@ grep -i "Ejecución completada" /home/urban/logs/ai_blog_cron.log
 tail -50 /home/urban/logs/ai_blog_cron.log
 
 # COMANDOS LOCALES DE DESARROLLO:
+```
 source .venv/bin/activate
 python manage.py runserver 8000
 lsof -ti:8000
 kill -9 71529 80202
 lsof -ti:8000 | xargs kill -9
+```
 
 # Comandos del generador de blogs con IA
 python manage.py run_ai_blog_generators --force  # Ejecutar manualmente todos los configuradores

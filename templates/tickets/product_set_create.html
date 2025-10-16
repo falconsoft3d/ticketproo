@@ -1,0 +1,388 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if product_set %}Editar{% else %}Crear{% endif %} Conjunto de Productos{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-{% if product_set %}pencil{% else %}plus-circle{% endif %}"></i> 
+                        {% if product_set %}Editar{% else %}Crear{% endif %} Conjunto de Productos
+                    </h5>
+                    <a href="{% url 'product_set_list' %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="productSetForm">
+                        {% csrf_token %}
+                        
+                        <!-- Información del conjunto -->
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">Información del Conjunto</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label for="{{ form.title.id_for_label }}" class="form-label">
+                                                <i class="bi bi-tag"></i> {{ form.title.label }}
+                                            </label>
+                                            {{ form.title }}
+                                            {% if form.title.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ form.title.errors.0 }}
+                                                </div>
+                                            {% endif %}
+                                            {% if form.title.help_text %}
+                                                <div class="form-text">{{ form.title.help_text }}</div>
+                                            {% endif %}
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="{{ form.description.id_for_label }}" class="form-label">
+                                                <i class="bi bi-text-paragraph"></i> {{ form.description.label }}
+                                            </label>
+                                            {{ form.description }}
+                                            {% if form.description.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ form.description.errors.0 }}
+                                                </div>
+                                            {% endif %}
+                                            {% if form.description.help_text %}
+                                                <div class="form-text">{{ form.description.help_text }}</div>
+                                            {% endif %}
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                {{ form.is_public }}
+                                                <label class="form-check-label" for="{{ form.is_public.id_for_label }}">
+                                                    <i class="bi bi-globe"></i> {{ form.is_public.label }}
+                                                </label>
+                                            </div>
+                                            {% if form.is_public.help_text %}
+                                                <div class="form-text">{{ form.is_public.help_text }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                {% if product_set %}
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">Información Actual</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <table class="table table-sm table-borderless mb-0">
+                                            <tr>
+                                                <td><strong>Creado:</strong></td>
+                                                <td>{{ product_set.created_at|date:"d/m/Y H:i" }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Productos:</strong></td>
+                                                <td>
+                                                    <span class="badge bg-info">{{ product_set.product_count }}</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Estado:</strong></td>
+                                                <td>
+                                                    {% if product_set.is_public %}
+                                                        <span class="badge bg-success">Público</span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">Privado</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% if product_set.is_public %}
+                                            <tr>
+                                                <td><strong>URL Pública:</strong></td>
+                                                <td>
+                                                    <div class="input-group input-group-sm">
+                                                        <input type="text" 
+                                                               class="form-control form-control-sm" 
+                                                               value="{{ request.get_host }}{{ product_set.get_public_url }}" 
+                                                               readonly 
+                                                               id="publicUrl">
+                                                        <button class="btn btn-outline-secondary" 
+                                                                type="button" 
+                                                                onclick="copyToClipboard('publicUrl')">
+                                                            <i class="bi bi-clipboard"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% endif %}
+                                        </table>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Lista de productos -->
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-list-ul"></i> Productos del Conjunto
+                                </h6>
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="addProductForm()">
+                                    <i class="bi bi-plus"></i> Agregar Producto
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                {{ formset.management_form }}
+                                
+                                <div id="product-forms">
+                                    {% for form in formset %}
+                                        <div class="product-form border rounded p-3 mb-3" data-form-index="{{ forloop.counter0 }}">
+                                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                                <h6 class="mb-0">Producto #{{ forloop.counter }}</h6>
+                                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeProductForm(this)">
+                                                    <i class="bi bi-trash"></i> Eliminar
+                                                </button>
+                                            </div>
+                                            
+                                            {% for hidden in form.hidden_fields %}
+                                                {{ hidden }}
+                                            {% endfor %}
+                                            
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="{{ form.name.id_for_label }}" class="form-label">{{ form.name.label }}</label>
+                                                        {{ form.name }}
+                                                        {% if form.name.errors %}
+                                                            <div class="invalid-feedback d-block">{{ form.name.errors.0 }}</div>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="mb-3">
+                                                        <label for="{{ form.price.id_for_label }}" class="form-label">{{ form.price.label }}</label>
+                                                        <div class="input-group">
+                                                            <span class="input-group-text">{{ system_config.get_currency_symbol }}</span>
+                                                            {{ form.price }}
+                                                        </div>
+                                                        {% if form.price.errors %}
+                                                            <div class="invalid-feedback d-block">{{ form.price.errors.0 }}</div>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="mb-3">
+                                                        <label for="{{ form.order.id_for_label }}" class="form-label">{{ form.order.label }}</label>
+                                                        {{ form.order }}
+                                                        {% if form.order.errors %}
+                                                            <div class="invalid-feedback d-block">{{ form.order.errors.0 }}</div>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
+                                                {{ form.description }}
+                                                {% if form.description.errors %}
+                                                    <div class="invalid-feedback d-block">{{ form.description.errors.0 }}</div>
+                                                {% endif %}
+                                            </div>
+                                            
+                                            <div class="row">
+                                                <div class="col-md-8">
+                                                    <div class="mb-3">
+                                                        <label for="{{ form.video_link.id_for_label }}" class="form-label">{{ form.video_link.label }}</label>
+                                                        {{ form.video_link }}
+                                                        {% if form.video_link.errors %}
+                                                            <div class="invalid-feedback d-block">{{ form.video_link.errors.0 }}</div>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    {% if form.DELETE %}
+                                                        <div class="form-check mt-4">
+                                                            {{ form.DELETE }}
+                                                            <label class="form-check-label text-danger" for="{{ form.DELETE.id_for_label }}">
+                                                                Eliminar
+                                                            </label>
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                
+                                {% if not formset or formset|length == 0 %}
+                                    <div class="text-center text-muted py-3" id="empty-state">
+                                        <i class="bi bi-inbox display-4"></i>
+                                        <p>No hay productos agregados aún.</p>
+                                        <p>Haz clic en "Agregar Producto" para comenzar.</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'product_set_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> 
+                                {% if product_set %}Actualizar{% else %}Crear{% endif %} Conjunto
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Inicializar el índice de formularios basado en los formularios existentes
+let formIndex = {{ formset.forms|length|default:0 }};
+
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    element.select();
+    element.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(element.value).then(function() {
+        const button = element.nextElementSibling;
+        const icon = button.querySelector('i');
+        const originalClass = icon.className;
+        icon.className = 'bi bi-check';
+        setTimeout(() => {
+            icon.className = originalClass;
+        }, 2000);
+    });
+}
+
+function addProductForm() {
+    const container = document.getElementById('product-forms');
+    const totalForms = document.querySelector('#id_products-TOTAL_FORMS');
+    const emptyState = document.getElementById('empty-state');
+    
+    // Ocultar el mensaje de estado vacío si existe
+    if (emptyState) {
+        emptyState.style.display = 'none';
+    }
+    
+    // Crear nuevo formulario basado en el template vacío
+    const emptyForm = `
+        <div class="product-form border rounded p-3 mb-3" data-form-index="${formIndex}">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">Producto #${formIndex + 1}</h6>
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeProductForm(this)">
+                    <i class="bi bi-trash"></i> Eliminar
+                </button>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="id_products-${formIndex}-name" class="form-label">Nombre del Producto</label>
+                        <input type="text" class="form-control" name="products-${formIndex}-name" id="id_products-${formIndex}-name" placeholder="Ej: Sistema de Gestión de Inventario" required>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="mb-3">
+                        <label for="id_products-${formIndex}-price" class="form-label">Precio</label>
+                        <div class="input-group">
+                            <span class="input-group-text">{{ system_config.get_currency_symbol }}</span>
+                            <input type="number" class="form-control" name="products-${formIndex}-price" id="id_products-${formIndex}-price" step="0.01" min="0" value="0.00">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="mb-3">
+                        <label for="id_products-${formIndex}-order" class="form-label">Orden de Aparición</label>
+                        <input type="number" class="form-control" name="products-${formIndex}-order" id="id_products-${formIndex}-order" min="0" value="${formIndex + 1}">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="id_products-${formIndex}-description" class="form-label">Descripción</label>
+                <textarea class="form-control" name="products-${formIndex}-description" id="id_products-${formIndex}-description" rows="3" placeholder="Describe las características del producto..." required></textarea>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="mb-3">
+                        <label for="id_products-${formIndex}-video_link" class="form-label">Link del Video</label>
+                        <input type="url" class="form-control" name="products-${formIndex}-video_link" id="id_products-${formIndex}-video_link" placeholder="https://youtube.com/watch?v=...">
+                    </div>
+                </div>
+            </div>
+            
+            <input type="hidden" name="products-${formIndex}-id" id="id_products-${formIndex}-id">
+        </div>
+    `;
+    
+    container.insertAdjacentHTML('beforeend', emptyForm);
+    
+    // Actualizar el contador de formularios
+    formIndex++;
+    totalForms.value = formIndex;
+}
+
+function removeProductForm(button) {
+    const formDiv = button.closest('.product-form');
+    const deleteCheckbox = formDiv.querySelector('input[name$="-DELETE"]');
+    
+    if (deleteCheckbox) {
+        // Si existe checkbox de eliminación, marcarlo
+        deleteCheckbox.checked = true;
+        formDiv.style.display = 'none';
+    } else {
+        // Si es un formulario nuevo, simplemente eliminarlo
+        formDiv.remove();
+        updateFormIndexes();
+    }
+    
+    // Mostrar el estado vacío si no hay formularios visibles
+    const visibleForms = document.querySelectorAll('.product-form:not([style*="display: none"])');
+    const emptyState = document.getElementById('empty-state');
+    if (visibleForms.length === 0 && emptyState) {
+        emptyState.style.display = 'block';
+    }
+}
+
+function updateFormIndexes() {
+    const forms = document.querySelectorAll('.product-form:not([style*="display: none"])');
+    const totalForms = document.querySelector('#id_products-TOTAL_FORMS');
+    
+    forms.forEach((form, index) => {
+        form.setAttribute('data-form-index', index);
+        form.querySelector('h6').textContent = `Producto #${index + 1}`;
+    });
+    
+    totalForms.value = forms.length;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Mejorar la experiencia del usuario
+    const titleInput = document.querySelector('#id_title');
+    const descriptionTextarea = document.querySelector('#id_description');
+    
+    // Auto-resize textarea
+    if (descriptionTextarea) {
+        descriptionTextarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+    }
+});
+</script>
+{% endblock %}

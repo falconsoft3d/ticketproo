@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Compartir Cotización #{{ quote.pk }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-share"></i> Compartir Cotización Públicamente
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">
+                            <i class="bi bi-info-circle"></i> ¿Qué sucede al compartir públicamente?
+                        </h6>
+                        <ul class="mb-0">
+                            <li>Se genera un <strong>enlace único</strong> para el cliente</li>
+                            <li>El cliente puede <strong>ver la cotización</strong> sin necesidad de registrarse</li>
+                            <li>El cliente puede <strong>aceptar o rechazar</strong> la cotización directamente</li>
+                            <li>Recibirás <strong>notificación automática</strong> de su respuesta</li>
+                            <li>El enlace <strong>permanece activo</strong> hasta que elimines la cotización</li>
+                        </ul>
+                    </div>
+
+                    <!-- Información de la cotización -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">Cotización a compartir:</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-sm-4"><strong>ID:</strong></div>
+                                <div class="col-sm-8">#{{ quote.pk }}</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4"><strong>Precotizador:</strong></div>
+                                <div class="col-sm-8">{{ quote.precotizador.title }}</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4"><strong>Horas Estimadas:</strong></div>
+                                <div class="col-sm-8">{{ quote.ai_estimated_hours }} hrs</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4"><strong>Costo Estimado:</strong></div>
+                                <div class="col-sm-8">{{ quote.get_formatted_cost }}</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4"><strong>Estado Actual:</strong></div>
+                                <div class="col-sm-8">
+                                    <span class="badge bg-{{ quote.get_status_color }}">
+                                        {{ quote.get_status_display }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-4"><strong>Solicitud:</strong></div>
+                                <div class="col-sm-8">{{ quote.client_request|truncatechars:150 }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vista previa del enlace -->
+                    <div class="card mb-4 border-success">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">
+                                <i class="bi bi-eye"></i> Vista previa del enlace público:
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-link-45deg"></i>
+                                </span>
+                                <input type="text" class="form-control" readonly 
+                                       value="{{ request.scheme }}://{{ request.get_host }}/cotizacion-publica/[token-único]">
+                            </div>
+                            <small class="text-muted mt-1 d-block">
+                                El token único se generará al confirmar el compartir.
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Advertencias -->
+                    {% if quote.status != 'pending' %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Nota:</strong> Esta cotización ya fue {{ quote.get_status_display|lower }} por el cliente.
+                        Aún puedes compartirla, pero el cliente verá el estado actual.
+                    </div>
+                    {% endif %}
+
+                    <div class="alert alert-secondary">
+                        <i class="bi bi-shield-check"></i>
+                        <strong>Seguridad:</strong> Solo las personas que tengan el enlace específico podrán acceder a la cotización. 
+                        No aparecerá en buscadores ni directorios públicos.
+                    </div>
+
+                    <!-- Confirmación -->
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="confirmShare" required>
+                            <label class="form-check-label fw-bold" for="confirmShare">
+                                Confirmo que quiero hacer pública esta cotización y generar un enlace 
+                                compartible para el cliente.
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Botones de acción -->
+                    <form method="post" id="shareForm">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'precotizador_quote_detail' quote.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success" id="shareBtn" disabled>
+                                <i class="bi bi-share"></i> Compartir Públicamente
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmCheckbox = document.getElementById('confirmShare');
+    const shareBtn = document.getElementById('shareBtn');
+    const shareForm = document.getElementById('shareForm');
+    
+    // Habilitar/deshabilitar botón de compartir
+    confirmCheckbox.addEventListener('change', function() {
+        shareBtn.disabled = !this.checked;
+    });
+    
+    // Confirmación al enviar
+    shareForm.addEventListener('submit', function(e) {
+        if (!confirmCheckbox.checked) {
+            e.preventDefault();
+            alert('Debes confirmar que quieres compartir la cotización públicamente.');
+            return;
+        }
+        
+        // Mostrar indicador de procesamiento
+        shareBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generando enlace...';
+        shareBtn.disabled = true;
+    });
+});
+</script>
+{% endblock %}

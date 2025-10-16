@@ -2,8 +2,24 @@
 Context processors para TicketProo
 """
 from django.db import models
-from tickets.models import TimeEntry, BlogCategory
+from tickets.models import TimeEntry, BlogCategory, SystemConfiguration
 from tickets.utils import is_agent
+
+
+def system_config(request):
+    """
+    Context processor que proporciona la configuración del sistema
+    en todas las plantillas.
+    """
+    try:
+        config = SystemConfiguration.objects.get(pk=1)
+    except SystemConfiguration.DoesNotExist:
+        # Crear configuración por defecto si no existe
+        config = SystemConfiguration.objects.create()
+    
+    return {
+        'system_config': config,
+    }
 
 
 def time_status(request):

@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Precotizadores{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-calculator"></i> Precotizadores con IA
+                    </h5>
+                    <a href="{% url 'precotizador_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Crear Precotizador
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if precotizadores %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Título</th>
+                                        <th>Cliente</th>
+                                        <th>Tarifa/Hora</th>
+                                        <th>Ejemplos</th>
+                                        <th>Cotizaciones</th>
+                                        <th>Creado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for precotizador in precotizadores %}
+                                    <tr>
+                                        <td>
+                                            <div>
+                                                <strong>{{ precotizador.title }}</strong>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">{{ precotizador.client_description|truncatechars:100 }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="fw-bold text-success">
+                                                {{ precotizador.get_formatted_hourly_rate }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">
+                                                {{ precotizador.examples.count }} casos
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">
+                                                {{ precotizador.quotes.count }} cotizaciones
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <small>{{ precotizador.created_at|date:"d/m/Y H:i" }}</small>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="{% url 'precotizador_detail' precotizador.pk %}" 
+                                                   class="btn btn-outline-primary btn-sm" 
+                                                   title="Ver detalles">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <a href="{% url 'precotizador_quote' precotizador.pk %}" 
+                                                   class="btn btn-outline-success btn-sm" 
+                                                   title="Generar cotización">
+                                                    <i class="bi bi-cpu"></i>
+                                                </a>
+                                                <a href="{% url 'precotizador_edit' precotizador.pk %}" 
+                                                   class="btn btn-outline-secondary btn-sm" 
+                                                   title="Editar">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <a href="{% url 'precotizador_delete' precotizador.pk %}" 
+                                                   class="btn btn-outline-danger btn-sm" 
+                                                   title="Eliminar">
+                                                    <i class="bi bi-trash"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <div class="mb-4">
+                                <i class="bi bi-calculator display-1 text-muted"></i>
+                            </div>
+                            <h3 class="text-muted">No hay precotizadores creados</h3>
+                            <p class="text-muted">Crea tu primer precotizador para comenzar a generar estimaciones con IA.</p>
+                            <a href="{% url 'precotizador_create' %}" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> Crear Primer Precotizador
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

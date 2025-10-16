@@ -1,0 +1,261 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Generar Cotización - {{ precotizador.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .ai-processing {
+        background: linear-gradient(45deg, #007bff, #28a745);
+        background-size: 400% 400%;
+        animation: gradientShift 2s ease infinite;
+    }
+    
+    @keyframes gradientShift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    
+    .spinner-grow-custom {
+        width: 1rem;
+        height: 1rem;
+    }
+    
+    .character-counter {
+        font-size: 0.8rem;
+        transition: color 0.3s ease;
+    }
+    
+    .character-counter.warning {
+        color: #ffc107 !important;
+    }
+    
+    .character-counter.danger {
+        color: #dc3545 !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-cpu"></i> Generar Cotización - {{ precotizador.title }}
+                    </h5>
+                    <a href="{% url 'precotizador_detail' precotizador.pk %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <p class="text-muted mb-0">
+                                <i class="bi bi-info-circle"></i>
+                                Describe el proyecto o trabajo que el cliente necesita y la IA estimará las horas y costos basándose en los casos de ejemplo.
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="d-flex justify-content-end align-items-center">
+                                <span class="me-2">Tarifa:</span>
+                                <span class="fw-bold text-success fs-5">{{ precotizador.get_formatted_hourly_rate }}/hr</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Formulario -->
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="bi bi-chat-dots"></i> Solicitud del Cliente
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" id="quoteForm">
+                                {% csrf_token %}
+                                
+                                <div class="mb-4">
+                                    <label for="{{ form.client_request.id_for_label }}" class="form-label fw-bold">
+                                        {{ form.client_request.label }}
+                                    </label>
+                                    <div class="position-relative">
+                                        {{ form.client_request }}
+                                        <div class="d-flex justify-content-between align-items-center mt-1">
+                                            <small class="text-muted">
+                                                Describe detalladamente el proyecto, funcionalidades, tecnologías y requisitos específicos.
+                                            </small>
+                                            <small class="character-counter text-muted" id="charCounter">
+                                                0 / 2000 caracteres
+                                            </small>
+                                        </div>
+                                    </div>
+                                    {% if form.client_request.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.client_request.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-success btn-lg" id="generateBtn">
+                                        <span class="btn-text">
+                                            <i class="bi bi-cpu"></i> Generar Cotización con IA
+                                        </span>
+                                        <span class="btn-loading d-none">
+                                            <span class="spinner-grow spinner-grow-custom me-2" role="status"></span>
+                                            Procesando con IA...
+                                        </span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Casos de ejemplo de referencia -->
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="bi bi-lightbulb"></i> Casos de Referencia
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="small text-muted mb-3">
+                                La IA usará estos casos como referencia para estimar tu proyecto:
+                            </p>
+                            
+                            {% if examples %}
+                                <div class="example-cases" style="max-height: 400px; overflow-y: auto;">
+                                    {% for example in examples %}
+                                    <div class="card mb-2 border-0 bg-light">
+                                        <div class="card-body p-2">
+                                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                                <span class="badge bg-primary">{{ example.order|add:1 }}</span>
+                                                <div class="text-end">
+                                                    <small class="fw-bold text-success">{{ example.estimated_hours }}h</small>
+                                                </div>
+                                            </div>
+                                            <p class="small mb-0">{{ example.description|truncatechars:80 }}</p>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="text-center py-3">
+                                    <i class="bi bi-exclamation-triangle text-warning"></i>
+                                    <p class="small text-muted mb-0">No hay casos de ejemplo configurados.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Info adicional -->
+                    <div class="card mt-3">
+                        <div class="card-body text-center">
+                            <i class="bi bi-shield-check text-success fs-4"></i>
+                            <h6 class="mt-2">Estimación Inteligente</h6>
+                            <p class="small text-muted mb-0">
+                                Usando ChatGPT para analizar tu solicitud y proporcionar estimaciones precisas basadas en casos similares.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de procesamiento -->
+<div class="modal fade" id="processingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center py-4">
+                <div class="ai-processing rounded-circle mx-auto mb-3" style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center;">
+                    <i class="bi bi-cpu text-white fs-1"></i>
+                </div>
+                <h5>Generando Cotización</h5>
+                <p class="text-muted mb-0">La IA está analizando tu solicitud...</p>
+                <div class="progress mt-3" style="height: 6px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                         role="progressbar" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('quoteForm');
+    const generateBtn = document.getElementById('generateBtn');
+    const btnText = generateBtn.querySelector('.btn-text');
+    const btnLoading = generateBtn.querySelector('.btn-loading');
+    const processingModal = new bootstrap.Modal(document.getElementById('processingModal'));
+    const textarea = document.getElementById('{{ form.client_request.id_for_label }}');
+    const charCounter = document.getElementById('charCounter');
+    
+    // Auto-resize textarea
+    function autoResize(element) {
+        element.style.height = 'auto';
+        element.style.height = (element.scrollHeight) + 'px';
+    }
+    
+    // Character counter
+    function updateCharCounter() {
+        const length = textarea.value.length;
+        const maxLength = 2000;
+        
+        charCounter.textContent = `${length} / ${maxLength} caracteres`;
+        
+        charCounter.classList.remove('warning', 'danger');
+        if (length > maxLength * 0.9) {
+            charCounter.classList.add('danger');
+        } else if (length > maxLength * 0.7) {
+            charCounter.classList.add('warning');
+        }
+    }
+    
+    // Event listeners
+    textarea.addEventListener('input', function() {
+        autoResize(this);
+        updateCharCounter();
+    });
+    
+    // Initialize
+    autoResize(textarea);
+    updateCharCounter();
+    
+    // Form submission
+    form.addEventListener('submit', function(e) {
+        if (textarea.value.trim().length < 10) {
+            e.preventDefault();
+            alert('La descripción debe tener al menos 10 caracteres.');
+            textarea.focus();
+            return;
+        }
+        
+        // Show loading state
+        btnText.classList.add('d-none');
+        btnLoading.classList.remove('d-none');
+        generateBtn.disabled = true;
+        generateBtn.classList.add('ai-processing');
+        
+        // Show processing modal after a short delay
+        setTimeout(() => {
+            processingModal.show();
+        }, 500);
+    });
+});
+</script>
+{% endblock %}

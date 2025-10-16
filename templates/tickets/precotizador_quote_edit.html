@@ -1,0 +1,352 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .edit-form-section {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .section-title {
+        color: #0d6efd;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        border-bottom: 2px solid #0d6efd;
+        padding-bottom: 0.5rem;
+    }
+    
+    .form-control {
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    
+    .form-control:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+    
+    .btn-save {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        border: none;
+        border-radius: 8px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-save:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .character-count {
+        font-size: 0.875rem;
+        color: #6c757d;
+        text-align: right;
+        margin-top: 0.25rem;
+    }
+    
+    .quote-info {
+        background: linear-gradient(135deg, #0d6efd, #6f42c1);
+        color: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .current-status-info {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6 !important;
+    }
+    
+    .form-select {
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    
+    .form-select:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+    
+    .status-warning {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 6px;
+        padding: 0.75rem;
+        margin-top: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Encabezado -->
+    <div class="quote-info">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-2">
+                    <i class="bi bi-pencil-square"></i>
+                    Editar Cotización #{{ quote.id }}
+                </h1>
+                <p class="mb-0 opacity-75">
+                    {{ quote.precotizador.title }}
+                </p>
+                <small class="opacity-75">
+                    Creada el {{ quote.created_at|date:"d/m/Y H:i" }}
+                </small>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="fs-3 fw-bold">
+                    {{ quote.get_formatted_cost }}
+                </div>
+                <small class="opacity-75">
+                    {{ quote.ai_estimated_hours }} horas estimadas
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <form method="post" id="editQuoteForm">
+                {% csrf_token %}
+                
+                <!-- Solicitud del Cliente -->
+                <div class="edit-form-section">
+                    <h4 class="section-title">
+                        <i class="bi bi-chat-dots"></i>
+                        Solicitud del Cliente
+                    </h4>
+                    <div class="mb-3">
+                        <label for="client_request" class="form-label">
+                            Describe detalladamente lo que necesita el cliente:
+                        </label>
+                        <textarea class="form-control" 
+                                  id="client_request" 
+                                  name="client_request" 
+                                  rows="6"
+                                  required
+                                  maxlength="2000"
+                                  placeholder="Ejemplo: El cliente necesita un sistema web para gestionar inventarios, con módulos de productos, proveedores, ventas y reportes...">{{ quote.client_request }}</textarea>
+                        <div class="character-count">
+                            <span id="client_request_count">{{ quote.client_request|length }}</span>/2000 caracteres
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Análisis y Descripción del Trabajo -->
+                <div class="edit-form-section">
+                    <h4 class="section-title">
+                        <i class="bi bi-gear"></i>
+                        Análisis y Descripción del Trabajo
+                    </h4>
+                    <div class="mb-3">
+                        <label for="ai_detailed_description" class="form-label">
+                            Descripción técnica detallada del proyecto:
+                        </label>
+                        <textarea class="form-control" 
+                                  id="ai_detailed_description" 
+                                  name="ai_detailed_description" 
+                                  rows="10"
+                                  required
+                                  maxlength="5000"
+                                  placeholder="Desarrollaremos un sistema web completo utilizando Django como framework backend...">{{ quote.ai_detailed_description }}</textarea>
+                        <div class="character-count">
+                            <span id="ai_detailed_description_count">{{ quote.ai_detailed_description|length }}</span>/5000 caracteres
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Razonamiento -->
+                <div class="edit-form-section">
+                    <h4 class="section-title">
+                        <i class="bi bi-lightbulb"></i>
+                        Razonamiento de la Estimación
+                    </h4>
+                    <div class="mb-3">
+                        <label for="ai_reasoning" class="form-label">
+                            Justificación de las horas estimadas (opcional):
+                        </label>
+                        <textarea class="form-control" 
+                                  id="ai_reasoning" 
+                                  name="ai_reasoning" 
+                                  rows="6"
+                                  maxlength="3000"
+                                  placeholder="La estimación se basa en la complejidad de los módulos requeridos, considerando...">{{ quote.ai_reasoning }}</textarea>
+                        <div class="character-count">
+                            <span id="ai_reasoning_count">{{ quote.ai_reasoning|length }}</span>/3000 caracteres
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estado de Aprobación -->
+                <div class="edit-form-section">
+                    <h4 class="section-title">
+                        <i class="bi bi-gear-fill"></i>
+                        Estado de Aprobación
+                    </h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="status" class="form-label">
+                                Estado actual de la cotización:
+                            </label>
+                            <select class="form-select" id="status" name="status" required>
+                                <option value="pending" {% if quote.status == 'pending' %}selected{% endif %}>
+                                    🕐 Pendiente - El cliente puede responder
+                                </option>
+                                <option value="accepted" {% if quote.status == 'accepted' %}selected{% endif %}>
+                                    ✅ Aceptada - Cliente aprobó la cotización
+                                </option>
+                                <option value="rejected" {% if quote.status == 'rejected' %}selected{% endif %}>
+                                    ❌ Rechazada - Cliente rechazó la cotización
+                                </option>
+                            </select>
+                            <div class="form-text">
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i>
+                                    <strong>Importante:</strong> Si cambias a "Pendiente", el cliente podrá responder nuevamente 
+                                    y se borrarán sus comentarios anteriores.
+                                </small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="current-status-info mt-4 p-3 border rounded">
+                                <strong>Estado Actual:</strong>
+                                {% if quote.status == 'pending' %}
+                                    <span class="badge bg-warning fs-6">🕐 Pendiente</span>
+                                    <p class="small text-muted mt-2 mb-0">
+                                        El cliente puede aceptar o rechazar esta cotización.
+                                    </p>
+                                {% elif quote.status == 'accepted' %}
+                                    <span class="badge bg-success fs-6">✅ Aceptada</span>
+                                    <p class="small text-muted mt-2 mb-0">
+                                        Aceptada el {{ quote.client_response_date|date:"d/m/Y H:i" }}
+                                        {% if quote.client_comments %}
+                                            <br><em>"{{ quote.client_comments|truncatechars:100 }}"</em>
+                                        {% endif %}
+                                    </p>
+                                {% elif quote.status == 'rejected' %}
+                                    <span class="badge bg-danger fs-6">❌ Rechazada</span>
+                                    <p class="small text-muted mt-2 mb-0">
+                                        Rechazada el {{ quote.client_response_date|date:"d/m/Y H:i" }}
+                                        {% if quote.client_comments %}
+                                            <br><em>"{{ quote.client_comments|truncatechars:100 }}"</em>
+                                        {% endif %}
+                                    </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="text-center mb-4">
+                    <button type="submit" class="btn btn-success btn-save me-3">
+                        <i class="bi bi-check-circle"></i>
+                        Guardar Cambios
+                    </button>
+                    <a href="{% url 'precotizador_quote_detail' quote.pk %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i>
+                        Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Función para actualizar contador de caracteres
+    function updateCharacterCount(textareaId, counterId, maxLength) {
+        const textarea = document.getElementById(textareaId);
+        const counter = document.getElementById(counterId);
+        
+        function updateCount() {
+            const currentLength = textarea.value.length;
+            counter.textContent = currentLength;
+            
+            // Cambiar color según proximidad al límite
+            if (currentLength > maxLength * 0.9) {
+                counter.style.color = '#dc3545'; // Rojo
+            } else if (currentLength > maxLength * 0.8) {
+                counter.style.color = '#ffc107'; // Amarillo
+            } else {
+                counter.style.color = '#6c757d'; // Gris normal
+            }
+        }
+        
+        textarea.addEventListener('input', updateCount);
+        updateCount(); // Actualizar al cargar
+    }
+    
+    // Configurar contadores para todos los campos
+    updateCharacterCount('client_request', 'client_request_count', 2000);
+    updateCharacterCount('ai_detailed_description', 'ai_detailed_description_count', 5000);
+    updateCharacterCount('ai_reasoning', 'ai_reasoning_count', 3000);
+    
+    // Confirmar antes de guardar
+    const form = document.getElementById('editQuoteForm');
+    form.addEventListener('submit', function(e) {
+        const statusSelect = document.getElementById('status');
+        const currentStatus = '{{ quote.status }}';
+        const newStatus = statusSelect.value;
+        
+        let confirmMessage = '¿Estás seguro de que quieres guardar los cambios en esta cotización?\n\nLos clientes que tengan acceso al enlace público verán las modificaciones.';
+        
+        // Advertencia especial si se cambia a pendiente desde accepted/rejected
+        if ((currentStatus === 'accepted' || currentStatus === 'rejected') && newStatus === 'pending') {
+            confirmMessage = '⚠️ ATENCIÓN: Vas a cambiar el estado a "PENDIENTE"\n\n' +
+                           'Esto significa que:\n' +
+                           '• El cliente podrá responder nuevamente\n' +
+                           '• Se borrarán sus comentarios anteriores\n' +
+                           '• Se borrará la fecha de respuesta\n\n' +
+                           '¿Estás seguro de que quieres continuar?';
+        }
+        
+        if (!confirm(confirmMessage)) {
+            e.preventDefault();
+        }
+    });
+    
+    // Advertencia al cambiar el selector de estado
+    const statusSelect = document.getElementById('status');
+    const originalStatus = '{{ quote.status }}';
+    
+    statusSelect.addEventListener('change', function() {
+        if ((originalStatus === 'accepted' || originalStatus === 'rejected') && this.value === 'pending') {
+            if (!confirm('⚠️ Al cambiar a "Pendiente", se borrarán los comentarios del cliente y podrá responder nuevamente.\n\n¿Continuar?')) {
+                this.value = originalStatus; // Restaurar valor original
+            }
+        }
+    });
+    
+    // Auto-resize textareas
+    function autoResize(textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
+    }
+    
+    document.querySelectorAll('textarea').forEach(textarea => {
+        // Ajustar tamaño inicial
+        autoResize(textarea);
+        
+        // Ajustar tamaño al escribir
+        textarea.addEventListener('input', function() {
+            autoResize(this);
+        });
+    });
+});
+</script>
+{% endblock %}

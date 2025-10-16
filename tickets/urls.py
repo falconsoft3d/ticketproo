@@ -594,6 +594,49 @@ urlpatterns = [
     
     # URL pública para que clientes vean su dashboard (sin autenticación)
     path('client-dashboard/<str:token>/', views.client_dashboard_public, name='client_dashboard_public'),
+    
+    # ============= URLs ACORTADOR DE URLS =============
+    # URLs de gestión del acortador (solo para agentes)
+    path('short-urls/', views.short_url_list, name='short_url_list'),
+    path('short-urls/create/', views.short_url_create, name='short_url_create'),
+    path('short-urls/<int:pk>/edit/', views.short_url_edit, name='short_url_edit'),
+    path('short-urls/<int:pk>/delete/', views.short_url_delete, name='short_url_delete'),
+    path('short-urls/<int:pk>/stats/', views.short_url_stats, name='short_url_stats'),
 
+]
+
+# URL pública para redirección (debe estar fuera del include de tickets)
+urlpatterns += [
+    path('s/<str:short_code>/', views.short_url_redirect, name='short_url_redirect'),
+    
+    # ============= URLs CONJUNTOS DE PRODUCTOS =============
+    # URLs de gestión de conjuntos de productos (solo para agentes)
+    path('product-sets/', views.product_set_list, name='product_set_list'),
+    path('product-sets/create/', views.product_set_create, name='product_set_create'),
+    path('product-sets/<int:pk>/', views.product_set_detail, name='product_set_detail'),
+    path('product-sets/<int:pk>/edit/', views.product_set_edit, name='product_set_edit'),
+    path('product-sets/<int:pk>/delete/', views.product_set_delete, name='product_set_delete'),
+    path('product-sets/<int:pk>/toggle-public/', views.product_set_toggle_public, name='product_set_toggle_public'),
+    path('product-sets/<int:pk>/stats/', views.product_set_stats, name='product_set_stats'),
+    
+    # URLs para Precotizador
+    path('precotizador/', views.precotizador_list, name='precotizador_list'),
+    path('precotizador/crear/', views.precotizador_create, name='precotizador_create'),
+    path('precotizador/<int:pk>/', views.precotizador_detail, name='precotizador_detail'),
+    path('precotizador/<int:pk>/editar/', views.precotizador_edit, name='precotizador_edit'),
+    path('precotizador/<int:pk>/eliminar/', views.precotizador_delete, name='precotizador_delete'),
+    path('precotizador/<int:pk>/toggle-public/', views.precotizador_toggle_public_requests, name='precotizador_toggle_public_requests'),
+    path('precotizador/<int:pk>/cotizar/', views.precotizador_quote, name='precotizador_quote'),
+    path('cotizacion/<int:pk>/', views.precotizador_quote_detail, name='precotizador_quote_detail'),
+    path('cotizacion/<int:pk>/editar/', views.precotizador_quote_edit, name='precotizador_quote_edit'),
+    path('cotizacion/<int:pk>/eliminar/', views.precotizador_quote_delete, name='precotizador_quote_delete'),
+    path('cotizacion/<int:pk>/compartir/', views.precotizador_quote_share, name='precotizador_quote_share'),
+    
+    # URLs públicas para cotizaciones (sin autenticación)
+    path('cotizacion-publica/<str:token>/', views.precotizador_quote_public, name='precotizador_quote_public'),
+    path('solicitar-cotizacion/<str:token>/', views.precotizador_public_request, name='precotizador_public_request'),
+    
+    # URL pública para conjuntos de productos (sin autenticación)
+    path('products/<str:token>/', views.product_set_public, name='product_set_public'),
 ]
 

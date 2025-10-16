@@ -1,0 +1,249 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if precotizador %}Editar{% else %}Crear{% endif %} Precotizador{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-{% if precotizador %}pencil{% else %}plus-circle{% endif %}"></i> 
+                        {% if precotizador %}Editar{% else %}Crear{% endif %} Precotizador con IA
+                    </h5>
+                    <a href="{% url 'precotizador_list' %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="precotizadorForm">
+                        {% csrf_token %}
+                        
+                        <!-- Información del precotizador -->
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">
+                                            <i class="bi bi-info-circle"></i> Información General
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label for="{{ form.title.id_for_label }}" class="form-label">
+                                                <i class="bi bi-tag"></i> {{ form.title.label }}
+                                            </label>
+                                            {{ form.title }}
+                                            {% if form.title.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ form.title.errors.0 }}
+                                                </div>
+                                            {% endif %}
+                                            {% if form.title.help_text %}
+                                                <div class="form-text">{{ form.title.help_text }}</div>
+                                            {% endif %}
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="{{ form.client_description.id_for_label }}" class="form-label">
+                                                <i class="bi bi-people"></i> {{ form.client_description.label }}
+                                            </label>
+                                            {{ form.client_description }}
+                                            {% if form.client_description.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ form.client_description.errors.0 }}
+                                                </div>
+                                            {% endif %}
+                                            {% if form.client_description.help_text %}
+                                                <div class="form-text">{{ form.client_description.help_text }}</div>
+                                            {% endif %}
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="{{ form.hourly_rate.id_for_label }}" class="form-label">
+                                                <i class="bi bi-currency-dollar"></i> {{ form.hourly_rate.label }}
+                                            </label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">{{ system_config.get_currency_symbol }}</span>
+                                                {{ form.hourly_rate }}
+                                            </div>
+                                            {% if form.hourly_rate.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ form.hourly_rate.errors.0 }}
+                                                </div>
+                                            {% endif %}
+                                            {% if form.hourly_rate.help_text %}
+                                                <div class="form-text">{{ form.hourly_rate.help_text }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                {% if precotizador %}
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">
+                                            <i class="bi bi-graph-up"></i> Información Actual
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <table class="table table-sm table-borderless mb-0">
+                                            <tr>
+                                                <td><strong>Creado:</strong></td>
+                                                <td>{{ precotizador.created_at|date:"d/m/Y H:i" }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Ejemplos:</strong></td>
+                                                <td>
+                                                    <span class="badge bg-info">{{ precotizador.examples.count }}</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Cotizaciones:</strong></td>
+                                                <td>
+                                                    <span class="badge bg-secondary">{{ precotizador.quotes.count }}</span>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="alert alert-info">
+                                    <h6><i class="bi bi-lightbulb"></i> Consejos</h6>
+                                    <ul class="mb-0">
+                                        <li>Describe claramente el tipo de cliente</li>
+                                        <li>Incluye sector, tamaño de empresa, etc.</li>
+                                        <li>Proporciona 10 casos de ejemplo realistas</li>
+                                        <li>La IA usará estos datos para estimaciones futuras</li>
+                                    </ul>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Casos de ejemplo -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-list-ol"></i> Casos de Ejemplo (10 obligatorios)
+                                </h6>
+                                <small class="text-muted">
+                                    Proporciona 10 ejemplos de trabajos típicos con sus horas estimadas
+                                </small>
+                            </div>
+                            <div class="card-body">
+                                {{ formset.management_form }}
+                                
+                                <div id="example-forms">
+                                    {% for form in formset %}
+                                        <div class="example-form border rounded p-3 mb-3" data-form-index="{{ forloop.counter0 }}">
+                                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                                <h6 class="mb-0">
+                                                    <i class="bi bi-file-text"></i> Caso #{{ forloop.counter }}
+                                                </h6>
+                                            </div>
+                                            
+                                            {% for hidden in form.hidden_fields %}
+                                                {{ hidden }}
+                                            {% endfor %}
+                                            
+                                            <div class="row">
+                                                <div class="col-md-8">
+                                                    <div class="mb-3">
+                                                        <label for="{{ form.description.id_for_label }}" class="form-label">
+                                                            {{ form.description.label }}
+                                                        </label>
+                                                        {{ form.description }}
+                                                        {% if form.description.errors %}
+                                                            <div class="invalid-feedback d-block">{{ form.description.errors.0 }}</div>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <div class="mb-3">
+                                                        <label for="{{ form.estimated_hours.id_for_label }}" class="form-label">
+                                                            {{ form.estimated_hours.label }}
+                                                        </label>
+                                                        {{ form.estimated_hours }}
+                                                        {% if form.estimated_hours.errors %}
+                                                            <div class="invalid-feedback d-block">{{ form.estimated_hours.errors.0 }}</div>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <div class="mb-3">
+                                                        <label for="{{ form.order.id_for_label }}" class="form-label">
+                                                            {{ form.order.label }}
+                                                        </label>
+                                                        {{ form.order }}
+                                                        {% if form.order.errors %}
+                                                            <div class="invalid-feedback d-block">{{ form.order.errors.0 }}</div>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'precotizador_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> 
+                                {% if precotizador %}Actualizar{% else %}Crear{% endif %} Precotizador
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-resize textareas
+    const textareas = document.querySelectorAll('textarea');
+    textareas.forEach(function(textarea) {
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+    });
+    
+    // Calcular costo total estimado en tiempo real
+    function calculateTotalCost() {
+        const hourlyRate = parseFloat(document.querySelector('#id_hourly_rate').value) || 0;
+        const estimatedHoursInputs = document.querySelectorAll('input[name$="-estimated_hours"]');
+        
+        let totalHours = 0;
+        estimatedHoursInputs.forEach(function(input) {
+            totalHours += parseFloat(input.value) || 0;
+        });
+        
+        const totalCost = hourlyRate * totalHours;
+        
+        // Mostrar información en consola para debug
+        console.log(`Total estimado: ${totalHours} horas x ${hourlyRate} = ${totalCost}`);
+    }
+    
+    // Escuchar cambios en tarifa por hora y horas estimadas
+    document.querySelector('#id_hourly_rate').addEventListener('input', calculateTotalCost);
+    
+    const estimatedHoursInputs = document.querySelectorAll('input[name$="-estimated_hours"]');
+    estimatedHoursInputs.forEach(function(input) {
+        input.addEventListener('input', calculateTotalCost);
+    });
+});
+</script>
+{% endblock %}

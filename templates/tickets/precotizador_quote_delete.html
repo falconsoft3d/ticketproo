@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Eliminar Cotización #{{ quote.pk }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading">
+                            <i class="bi bi-exclamation-triangle-fill"></i> ¡Atención!
+                        </h6>
+                        <p class="mb-0">
+                            Esta acción eliminará permanentemente la cotización.
+                            <strong>Esta acción no se puede deshacer.</strong>
+                        </p>
+                    </div>
+
+                    <!-- Información de la cotización -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">Cotización a eliminar:</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-sm-4"><strong>ID:</strong></div>
+                                <div class="col-sm-8">#{{ quote.pk }}</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4"><strong>Precotizador:</strong></div>
+                                <div class="col-sm-8">{{ quote.precotizador.title }}</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4"><strong>Horas Estimadas:</strong></div>
+                                <div class="col-sm-8">{{ quote.ai_estimated_hours }} hrs</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4"><strong>Costo Estimado:</strong></div>
+                                <div class="col-sm-8">{{ quote.get_formatted_cost }}</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4"><strong>Estado:</strong></div>
+                                <div class="col-sm-8">
+                                    <span class="badge bg-{{ quote.get_status_color }}">
+                                        {{ quote.get_status_display }}
+                                    </span>
+                                    {% if quote.is_public %}
+                                        <span class="badge bg-info ms-1">Público</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4"><strong>Fecha:</strong></div>
+                                <div class="col-sm-8">{{ quote.created_at|date:"d/m/Y H:i" }}</div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-4"><strong>Solicitud:</strong></div>
+                                <div class="col-sm-8">{{ quote.client_request|truncatechars:150 }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Advertencias adicionales -->
+                    {% if quote.is_public %}
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-octagon"></i>
+                        <strong>Advertencia Especial:</strong> Esta cotización está compartida públicamente. 
+                        Al eliminarla, el enlace público dejará de funcionar y el cliente no podrá acceder a ella.
+                    </div>
+                    {% endif %}
+
+                    {% if quote.status != 'pending' %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Nota:</strong> Esta cotización ya fue {{ quote.get_status_display|lower }} por el cliente.
+                        {% if quote.client_response_date %}
+                            Respuesta recibida el {{ quote.client_response_date|date:"d/m/Y H:i" }}.
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Confirmación -->
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="confirmDelete" required>
+                            <label class="form-check-label fw-bold" for="confirmDelete">
+                                Entiendo que esta acción eliminará permanentemente la cotización #{{ quote.pk }}
+                                y todos sus datos relacionados.
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Botones de acción -->
+                    <form method="post" id="deleteForm">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'precotizador_quote_detail' quote.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger" id="deleteBtn" disabled>
+                                <i class="bi bi-trash"></i> Eliminar Permanentemente
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmCheckbox = document.getElementById('confirmDelete');
+    const deleteBtn = document.getElementById('deleteBtn');
+    const deleteForm = document.getElementById('deleteForm');
+    
+    // Habilitar/deshabilitar botón de eliminar
+    confirmCheckbox.addEventListener('change', function() {
+        deleteBtn.disabled = !this.checked;
+    });
+    
+    // Confirmación adicional al enviar
+    deleteForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!confirmCheckbox.checked) {
+            alert('Debes confirmar que entiendes las consecuencias de esta acción.');
+            return;
+        }
+        
+        const confirmed = confirm(
+            '¿Estás absolutamente seguro de que quieres eliminar esta cotización?\n\n' +
+            'Esta acción NO SE PUEDE DESHACER.\n\n' +
+            'Cotización: #{{ quote.pk }}\n' +
+            'Costo: {{ quote.get_formatted_cost }}\n' +
+            'Estado: {{ quote.get_status_display }}\n\n' +
+            'Haz clic en "Aceptar" para confirmar la eliminación.'
+        );
+        
+        if (confirmed) {
+            // Mostrar indicador de procesamiento
+            deleteBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Eliminando...';
+            deleteBtn.disabled = true;
+            
+            // Enviar formulario
+            this.submit();
+        }
+    });
+});
+</script>
+{% endblock %}

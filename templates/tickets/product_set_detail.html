@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ product_set.title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-box-seam"></i> {{ product_set.title }}
+                    </h5>
+                    <div>
+                        <a href="{% url 'product_set_stats' product_set.pk %}" class="btn btn-outline-info btn-sm me-2">
+                            <i class="bi bi-graph-up"></i> Estadísticas
+                        </a>
+                        <a href="{% url 'product_set_edit' product_set.pk %}" class="btn btn-outline-primary btn-sm me-2">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                        <a href="{% url 'product_set_list' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-arrow-left"></i> Volver
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Información del conjunto -->
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">Descripción</h6>
+                                    <p class="card-text">{{ product_set.description|linebreaks }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">Información</h6>
+                                    <table class="table table-sm table-borderless mb-0">
+                                        <tr>
+                                            <td><strong>Estado:</strong></td>
+                                            <td>
+                                                {% if product_set.is_public %}
+                                                    <span class="badge bg-success">
+                                                        <i class="bi bi-globe"></i> Público
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">
+                                                        <i class="bi bi-lock"></i> Privado
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Productos:</strong></td>
+                                            <td>
+                                                <span class="badge bg-info">{{ products.count }}</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Creado:</strong></td>
+                                            <td>{{ product_set.created_at|date:"d/m/Y H:i" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Actualizado:</strong></td>
+                                            <td>{{ product_set.updated_at|date:"d/m/Y H:i" }}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <!-- Acciones -->
+                            <div class="card mt-3">
+                                <div class="card-body">
+                                    <h6 class="card-title">Acciones</h6>
+                                    <div class="d-grid gap-2">
+                                        <a href="{% url 'product_set_toggle_public' product_set.pk %}" 
+                                           class="btn btn-outline-{% if product_set.is_public %}warning{% else %}success{% endif %} btn-sm">
+                                            <i class="bi bi-{% if product_set.is_public %}eye-slash{% else %}globe{% endif %}"></i>
+                                            {% if product_set.is_public %}Hacer Privado{% else %}Hacer Público{% endif %}
+                                        </a>
+                                        
+                                        {% if product_set.is_public %}
+                                        <a href="{{ product_set.get_public_url }}" 
+                                           class="btn btn-outline-info btn-sm" 
+                                           target="_blank">
+                                            <i class="bi bi-box-arrow-up-right"></i> Ver Vista Pública
+                                        </a>
+                                        
+                                        <div class="input-group input-group-sm">
+                                            <input type="text" 
+                                                   class="form-control form-control-sm" 
+                                                   value="{{ request.get_host }}{{ product_set.get_public_url }}" 
+                                                   readonly 
+                                                   id="publicUrl">
+                                            <button class="btn btn-outline-secondary" 
+                                                    type="button" 
+                                                    onclick="copyToClipboard('publicUrl')"
+                                                    title="Copiar URL">
+                                                <i class="bi bi-clipboard"></i>
+                                            </button>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        <a href="{% url 'product_set_delete' product_set.pk %}" 
+                                           class="btn btn-outline-danger btn-sm">
+                                            <i class="bi bi-trash"></i> Eliminar Conjunto
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lista de productos -->
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">
+                                <i class="bi bi-list-ul"></i> Productos ({{ products.count }})
+                            </h6>
+                            <a href="{% url 'product_set_edit' product_set.pk %}" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-plus"></i> Agregar Producto
+                            </a>
+                        </div>
+                        <div class="card-body">
+                            {% if products %}
+                                <div class="row">
+                                    {% for product in products %}
+                                    <div class="col-md-6 col-lg-4 mb-4">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <div>
+                                                        <h6 class="card-title mb-1">{{ product.name }}</h6>
+                                                        <small class="text-muted fw-bold">{{ product.product_code }}</small>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        {% if product.order %}
+                                                            <span class="badge bg-light text-dark border mb-1">#{{ product.order }}</span>
+                                                        {% endif %}
+                                                        {% if product.get_formatted_price %}
+                                                            <div class="fw-bold text-success">
+                                                                {{ product.get_formatted_price }}
+                                                            </div>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                                <p class="card-text">{{ product.description|truncatechars:150 }}</p>
+                                                
+                                                {% if product.video_link %}
+                                                <div class="mt-auto">
+                                                    <a href="{{ product.video_link }}" 
+                                                       target="_blank" 
+                                                       class="btn btn-outline-primary btn-sm">
+                                                        <i class="bi bi-play-circle"></i> Ver Video
+                                                    </a>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <div class="mb-3">
+                                        <i class="bi bi-inbox display-1 text-muted"></i>
+                                    </div>
+                                    <h5 class="text-muted">No hay productos agregados</h5>
+                                    <p class="text-muted">Agrega productos a este conjunto para comenzar.</p>
+                                    <a href="{% url 'product_set_edit' product_set.pk %}" class="btn btn-primary">
+                                        <i class="bi bi-plus-circle"></i> Agregar Primer Producto
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    element.select();
+    element.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(element.value).then(function() {
+        const button = element.nextElementSibling;
+        const icon = button.querySelector('i');
+        const originalClass = icon.className;
+        icon.className = 'bi bi-check';
+        
+        // Mostrar tooltip de confirmación
+        const tooltip = new bootstrap.Tooltip(button, {
+            title: '¡Copiado!',
+            trigger: 'manual'
+        });
+        tooltip.show();
+        
+        setTimeout(() => {
+            icon.className = originalClass;
+            tooltip.hide();
+        }, 2000);
+    }).catch(function(err) {
+        console.error('Error al copiar: ', err);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Confirmar eliminación
+    const deleteLink = document.querySelector('a[href*="/delete/"]');
+    if (deleteLink) {
+        deleteLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (confirm('¿Estás seguro de que quieres eliminar este conjunto de productos?')) {
+                window.location.href = this.href;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

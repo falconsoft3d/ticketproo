@@ -1,0 +1,269 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Estadísticas - {{ product_set.title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-graph-up"></i> Estadísticas - {{ product_set.title }}
+                    </h5>
+                    <div>
+                        <a href="{% url 'product_set_detail' product_set.pk %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-arrow-left"></i> Volver
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Métricas principales -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card text-center bg-primary text-white">
+                                <div class="card-body">
+                                    <h2 class="card-title mb-0">{{ product_set.view_count }}</h2>
+                                    <small>Total de Vistas</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center bg-info text-white">
+                                <div class="card-body">
+                                    <h2 class="card-title mb-0">{{ days_active }}</h2>
+                                    <small>Días Activo</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center bg-success text-white">
+                                <div class="card-body">
+                                    <h2 class="card-title mb-0">{{ views_per_day|floatformat:1 }}</h2>
+                                    <small>Vistas/Día</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center bg-warning text-white">
+                                <div class="card-body">
+                                    <h2 class="card-title mb-0">{{ product_set.product_count }}</h2>
+                                    <small>Productos</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Información detallada -->
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-info-circle"></i> Información del Conjunto
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-sm table-borderless mb-0">
+                                        <tr>
+                                            <td style="width: 150px;"><strong>Título:</strong></td>
+                                            <td>{{ product_set.title }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Estado:</strong></td>
+                                            <td>
+                                                {% if product_set.is_public %}
+                                                    <span class="badge bg-success">
+                                                        <i class="bi bi-globe"></i> Público
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">
+                                                        <i class="bi bi-lock"></i> Privado
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>URL Pública:</strong></td>
+                                            <td>
+                                                {% if product_set.is_public %}
+                                                    <div class="input-group input-group-sm">
+                                                        <input type="text" 
+                                                               class="form-control" 
+                                                               value="{{ request.get_host }}{{ product_set.get_public_url }}" 
+                                                               readonly 
+                                                               id="publicUrl">
+                                                        <button class="btn btn-outline-secondary" 
+                                                                type="button" 
+                                                                onclick="copyToClipboard('publicUrl')"
+                                                                title="Copiar URL">
+                                                            <i class="bi bi-clipboard"></i>
+                                                        </button>
+                                                    </div>
+                                                {% else %}
+                                                    <span class="text-muted">No disponible (conjunto privado)</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Creado:</strong></td>
+                                            <td>{{ product_set.created_at|date:"d/m/Y H:i" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Última actualización:</strong></td>
+                                            <td>{{ product_set.updated_at|date:"d/m/Y H:i" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Última vista:</strong></td>
+                                            <td>
+                                                {% if product_set.last_viewed_at %}
+                                                    {{ product_set.last_viewed_at|date:"d/m/Y H:i" }}
+                                                    <br>
+                                                    <small class="text-muted">
+                                                        ({{ product_set.last_viewed_at|timesince }} atrás)
+                                                    </small>
+                                                {% else %}
+                                                    <span class="text-muted">Nunca visto</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <!-- Resumen de rendimiento -->
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-bar-chart"></i> Resumen de Rendimiento
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span>Vistas Totales</span>
+                                            <strong class="text-primary">{{ product_set.view_count }}</strong>
+                                        </div>
+                                        <div class="progress mt-1" style="height: 5px;">
+                                            <div class="progress-bar bg-primary" role="progressbar" 
+                                                 style="width: {% if product_set.view_count > 0 %}100{% else %}0{% endif %}%"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span>Promedio Diario</span>
+                                            <strong class="text-success">{{ views_per_day|floatformat:1 }}</strong>
+                                        </div>
+                                        <div class="progress mt-1" style="height: 5px;">
+                                            <div class="progress-bar bg-success" role="progressbar" 
+                                                 style="width: {% if views_per_day > 0 %}{{ views_per_day|floatformat:0 }}{% else %}0{% endif %}%"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span>Días Activo</span>
+                                            <strong class="text-info">{{ days_active }}</strong>
+                                        </div>
+                                        <div class="progress mt-1" style="height: 5px;">
+                                            <div class="progress-bar bg-info" role="progressbar" 
+                                                 style="width: {% if days_active > 0 %}50{% else %}0{% endif %}%"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-0">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span>Productos</span>
+                                            <strong class="text-warning">{{ product_set.product_count }}</strong>
+                                        </div>
+                                        <div class="progress mt-1" style="height: 5px;">
+                                            <div class="progress-bar bg-warning" role="progressbar" 
+                                                 style="width: {% if product_set.product_count > 0 %}{{ product_set.product_count }}0{% else %}0{% endif %}%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Acciones rápidas -->
+                            <div class="card mt-3">
+                                <div class="card-header">
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-gear"></i> Acciones
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="d-grid gap-2">
+                                        {% if product_set.is_public %}
+                                        <a href="{{ product_set.get_public_url }}" 
+                                           target="_blank" 
+                                           class="btn btn-outline-primary btn-sm">
+                                            <i class="bi bi-box-arrow-up-right"></i> Ver Vista Pública
+                                        </a>
+                                        {% endif %}
+                                        
+                                        <a href="{% url 'product_set_edit' product_set.pk %}" 
+                                           class="btn btn-outline-secondary btn-sm">
+                                            <i class="bi bi-pencil"></i> Editar Conjunto
+                                        </a>
+                                        
+                                        <a href="{% url 'product_set_toggle_public' product_set.pk %}" 
+                                           class="btn btn-outline-{% if product_set.is_public %}warning{% else %}success{% endif %} btn-sm">
+                                            <i class="bi bi-{% if product_set.is_public %}eye-slash{% else %}globe{% endif %}"></i>
+                                            {% if product_set.is_public %}Hacer Privado{% else %}Hacer Público{% endif %}
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    element.select();
+    element.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(element.value).then(function() {
+        const button = element.nextElementSibling;
+        const icon = button.querySelector('i');
+        const originalClass = icon.className;
+        icon.className = 'bi bi-check';
+        
+        // Mostrar tooltip de confirmación
+        const tooltip = new bootstrap.Tooltip(button, {
+            title: '¡Copiado!',
+            trigger: 'manual'
+        });
+        tooltip.show();
+        
+        setTimeout(() => {
+            icon.className = originalClass;
+            tooltip.hide();
+        }, 2000);
+    }).catch(function(err) {
+        console.error('Error al copiar: ', err);
+    });
+}
+
+// Auto-refrescar cada 30 segundos si hay actividad
+{% if product_set.view_count > 0 %}
+setInterval(function() {
+    // Solo refrescar si la página está visible
+    if (!document.hidden) {
+        // Recargar estadísticas cada 30 segundos
+        location.reload();
+    }
+}, 30000);
+{% endif %}
+</script>
+{% endblock %}

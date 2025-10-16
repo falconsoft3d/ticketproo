@@ -1,0 +1,369 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ precotizador.title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-calculator"></i> {{ precotizador.title }}
+                    </h5>
+                    <div>
+                        <a href="{% url 'precotizador_quote' precotizador.pk %}" class="btn btn-success btn-sm me-2">
+                            <i class="bi bi-cpu"></i> Generar Cotización
+                        </a>
+                        
+                        <!-- Botón para activar/desactivar solicitudes públicas -->
+                        {% if precotizador.allow_public_requests %}
+                            <form method="post" action="{% url 'precotizador_toggle_public_requests' precotizador.pk %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-warning btn-sm me-2" 
+                                        onclick="return confirm('¿Desactivar solicitudes públicas?\n\nEl enlace público dejará de funcionar.')">
+                                    <i class="bi bi-link-45deg"></i> Desactivar Enlace Público
+                                </button>
+                            </form>
+                            <button onclick="copyPublicRequestUrl()" class="btn btn-info btn-sm me-2">
+                                <i class="bi bi-clipboard"></i> Copiar Enlace Público
+                            </button>
+                        {% else %}
+                            <form method="post" action="{% url 'precotizador_toggle_public_requests' precotizador.pk %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-info btn-sm me-2"
+                                        onclick="return confirm('¿Activar solicitudes públicas?\n\nSe generará un enlace donde los clientes pueden solicitar cotizaciones automáticamente.')">
+                                    <i class="bi bi-globe"></i> Activar Enlace Público
+                                </button>
+                            </form>
+                        {% endif %}
+                        
+                        <a href="{% url 'precotizador_edit' precotizador.pk %}" class="btn btn-outline-primary btn-sm me-2">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                        <a href="{% url 'precotizador_list' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-arrow-left"></i> Volver
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Información del precotizador -->
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="bi bi-people"></i> Descripción del Cliente
+                                    </h6>
+                                    <p class="card-text">{{ precotizador.client_description|linebreaks }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="bi bi-info-circle"></i> Información
+                                    </h6>
+                                    <table class="table table-sm table-borderless mb-0">
+                                        <tr>
+                                            <td><strong>Tarifa/Hora:</strong></td>
+                                            <td>
+                                                <span class="fw-bold text-success fs-5">
+                                                    {{ precotizador.get_formatted_hourly_rate }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Ejemplos:</strong></td>
+                                            <td>
+                                                <span class="badge bg-info">{{ examples.count }}</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Cotizaciones:</strong></td>
+                                            <td>
+                                                <span class="badge bg-secondary">{{ quotes.count }}</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Solicitudes Públicas:</strong></td>
+                                            <td>
+                                                {% if precotizador.allow_public_requests %}
+                                                    <span class="badge bg-success">
+                                                        <i class="bi bi-check-circle"></i> Activas
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">
+                                                        <i class="bi bi-x-circle"></i> Inactivas
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Creado:</strong></td>
+                                            <td>{{ precotizador.created_at|date:"d/m/Y H:i" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Actualizado:</strong></td>
+                                            <td>{{ precotizador.updated_at|date:"d/m/Y H:i" }}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Información de solicitudes públicas -->
+                    {% if precotizador.allow_public_requests %}
+                    <div class="alert alert-success" role="alert">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h6 class="alert-heading mb-2">
+                                    <i class="bi bi-globe"></i> Solicitudes Públicas Activas
+                                </h6>
+                                <p class="mb-0">
+                                    Los clientes pueden solicitar cotizaciones directamente a través del enlace público. 
+                                    Las cotizaciones se generan automáticamente con IA.
+                                </p>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <button onclick="copyPublicRequestUrl()" class="btn btn-outline-success btn-sm">
+                                    <i class="bi bi-link-45deg"></i> Copiar Enlace
+                                </button>
+                            </div>
+                        </div>
+                        <hr>
+                        <small class="text-muted">
+                            <strong>Enlace:</strong> 
+                            <code>{{ request.get_host }}{% url 'precotizador_public_request' precotizador.public_request_token %}</code>
+                        </small>
+                    </div>
+                    {% endif %}
+
+                    <!-- Casos de ejemplo -->
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">
+                                <i class="bi bi-list-ol"></i> Casos de Ejemplo ({{ examples.count }})
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            {% if examples %}
+                                <div class="row">
+                                    {% for example in examples %}
+                                    <div class="col-md-6 col-lg-4 mb-3">
+                                        <div class="card h-100 border-start border-primary border-3">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <h6 class="card-title">
+                                                        <span class="badge bg-primary">#{{ example.order|add:1 }}</span>
+                                                    </h6>
+                                                    <div class="text-end">
+                                                        <div class="fw-bold text-success">
+                                                            {{ example.estimated_hours }} hrs
+                                                        </div>
+                                                        <small class="text-muted">
+                                                            {{ example.get_formatted_cost }}
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                                <p class="card-text">{{ example.description }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                
+                                <!-- Resumen total -->
+                                <div class="alert alert-info mt-3">
+                                    <h6><i class="bi bi-calculator"></i> Resumen de Ejemplos</h6>
+                                    {% with total_hours=examples|length total_cost=0 %}
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <strong>Total de casos:</strong> {{ examples.count }}
+                                        </div>
+                                        <div class="col-md-4">
+                                            <strong>Horas promedio:</strong> 
+                                            {% widthratio examples.count 1 10 as avg_hours %}
+                                            ~{{ avg_hours|floatformat:1 }} hrs/caso
+                                        </div>
+                                        <div class="col-md-4">
+                                            <strong>Rango de horas:</strong> 
+                                            {{ examples.first.estimated_hours }}-{{ examples.last.estimated_hours }} hrs
+                                        </div>
+                                    </div>
+                                    {% endwith %}
+                                </div>
+                            {% else %}
+                                <div class="text-center py-3">
+                                    <i class="bi bi-inbox display-4 text-muted"></i>
+                                    <p class="text-muted">No hay casos de ejemplo agregados aún.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Últimas cotizaciones -->
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">
+                                <i class="bi bi-file-earmark-text"></i> Últimas Cotizaciones
+                            </h6>
+                            <a href="{% url 'precotizador_quote' precotizador.pk %}" class="btn btn-success btn-sm">
+                                <i class="bi bi-plus-circle"></i> Nueva Cotización
+                            </a>
+                        </div>
+                        <div class="card-body">
+                            {% if quotes %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Solicitud</th>
+                                                <th>Horas</th>
+                                                <th>Costo</th>
+                                                <th>Estado</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for quote in quotes %}
+                                            <tr>
+                                                <td>
+                                                    <div>
+                                                        {{ quote.client_request|truncatechars:100 }}
+                                                    </div>
+                                                    {% if quote.status != 'pending' %}
+                                                        <small class="text-muted">
+                                                            <i class="bi bi-clock"></i>
+                                                            Respondida: {{ quote.client_response_date|date:"d/m/Y H:i" }}
+                                                        </small>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <span class="fw-bold text-primary">
+                                                        {{ quote.ai_estimated_hours }} hrs
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="fw-bold text-success">
+                                                        {{ quote.get_formatted_cost }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex flex-column align-items-start">
+                                                        <span class="badge bg-{{ quote.get_status_color }} mb-1">
+                                                            {{ quote.get_status_display }}
+                                                        </span>
+                                                        {% if quote.is_public %}
+                                                            <span class="badge bg-info">
+                                                                <i class="bi bi-globe"></i> Público
+                                                            </span>
+                                                        {% endif %}
+                                                    </div>
+                                                    <small class="text-muted d-block mt-1">{{ quote.created_at|date:"d/m/Y H:i" }}</small>
+                                                </td>
+                                                <td>
+                                                    <div class="btn-group-vertical btn-group-sm">
+                                                        <a href="{% url 'precotizador_quote_detail' quote.pk %}" 
+                                                           class="btn btn-outline-primary btn-sm">
+                                                            <i class="bi bi-eye"></i> Ver
+                                                        </a>
+                                                        {% if quote.is_public %}
+                                                            <button onclick="copyPublicLink('{{ request.scheme }}://{{ request.get_host }}{% url 'precotizador_quote_public' quote.public_share_token %}')" 
+                                                                    class="btn btn-outline-success btn-sm">
+                                                                <i class="bi bi-link"></i> Enlace
+                                                            </button>
+                                                        {% endif %}
+                                                        <a href="{% url 'precotizador_quote_delete' quote.pk %}" 
+                                                           class="btn btn-outline-danger btn-sm">
+                                                            <i class="bi bi-trash"></i> Eliminar
+                                                        </a>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <div class="mb-3">
+                                        <i class="bi bi-file-earmark-text display-1 text-muted"></i>
+                                    </div>
+                                    <h5 class="text-muted">No hay cotizaciones generadas</h5>
+                                    <p class="text-muted">Genera tu primera cotización con IA para comenzar.</p>
+                                    <a href="{% url 'precotizador_quote' precotizador.pk %}" class="btn btn-success">
+                                        <i class="bi bi-cpu"></i> Generar Primera Cotización
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyPublicLink(url) {
+    navigator.clipboard.writeText(url).then(() => {
+        // Mostrar alerta de éxito
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-success alert-dismissible fade show position-fixed';
+        alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        alert.innerHTML = `
+            <i class="bi bi-check-circle"></i>
+            <strong>¡Enlace copiado!</strong> Ya puedes enviárselo al cliente.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alert);
+        
+        // Remover después de 3 segundos
+        setTimeout(() => {
+            if (alert.parentNode) {
+                alert.parentNode.removeChild(alert);
+            }
+        }, 3000);
+    }).catch(err => {
+        console.error('Error:', err);
+        alert('Error al copiar el enlace');
+    });
+}
+
+// Función para copiar enlace público de solicitudes
+function copyPublicRequestUrl() {
+    {% if precotizador.allow_public_requests and precotizador.public_request_token %}
+    const url = window.location.origin + "{% url 'precotizador_public_request' precotizador.public_request_token %}";
+    {% else %}
+    const url = '';
+    {% endif %}
+    
+    if (!url) {
+        alert('El enlace público no está disponible');
+        return;
+    }
+    
+    navigator.clipboard.writeText(url).then(() => {
+        // Mostrar mensaje de éxito
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="bi bi-check"></i> ¡Copiado!';
+        button.classList.remove('btn-info');
+        button.classList.add('btn-success');
+        
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-info');
+        }, 2000);
+    }).catch(err => {
+        console.error('Error:', err);
+        alert('Error al copiar el enlace público');
+    });
+}
+</script>
+{% endblock %}

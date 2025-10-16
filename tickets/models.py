@@ -7756,3 +7756,577 @@ class ClientTimeEntry(models.Model):
         if self.hours == int(self.hours):
             return f"{int(self.hours)}h"
         return f"{self.hours}h"
+
+
+class ShortUrl(models.Model):
+    """Modelo para el acortador de URLs"""
+    
+    original_url = models.URLField(
+        max_length=2000,
+        verbose_name='URL Original',
+        help_text='La URL larga que se quiere acortar'
+    )
+    short_code = models.CharField(
+        max_length=10,
+        unique=True,
+        verbose_name='Código Corto',
+        help_text='Código único para la URL corta'
+    )
+    title = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Título',
+        help_text='Título descriptivo opcional para la URL'
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción',
+        help_text='Descripción opcional de la URL'
+    )
+    clicks = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Clics',
+        help_text='Número de veces que se ha accedido a la URL corta'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activa',
+        help_text='Si la URL corta está activa o deshabilitada'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Creado por',
+        help_text='Usuario que creó la URL corta'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de expiración',
+        help_text='Fecha opcional cuando expira la URL corta'
+    )
+    
+    class Meta:
+        verbose_name = 'URL Corta'
+        verbose_name_plural = 'URLs Cortas'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.short_code} → {self.original_url[:50]}..."
+    
+    def get_short_url(self):
+        """Retorna la URL corta completa"""
+        from django.conf import settings
+        domain = getattr(settings, 'SITE_DOMAIN', 'localhost:8000')
+        return f"http://{domain}/s/{self.short_code}"
+    
+    def is_expired(self):
+        """Verifica si la URL ha expirado"""
+        if self.expires_at:
+            return timezone.now() > self.expires_at
+        return False
+    
+    def increment_clicks(self):
+        """Incrementa el contador de clics"""
+        self.clicks += 1
+        self.save(update_fields=['clicks'])
+    
+    @staticmethod
+    def generate_short_code():
+        """Genera un código corto único"""
+        import random
+        import string
+        
+        chars = string.ascii_letters + string.digits
+        while True:
+            code = ''.join(random.choice(chars) for _ in range(6))
+            if not ShortUrl.objects.filter(short_code=code).exists():
+                return code
+
+
+class ProductSet(models.Model):
+    """Modelo para conjuntos de productos"""
+    
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título',
+        help_text='Nombre del conjunto de productos'
+    )
+    description = models.TextField(
+        verbose_name='Descripción',
+        help_text='Descripción detallada del conjunto de productos'
+    )
+    is_public = models.BooleanField(
+        default=False,
+        verbose_name='Público',
+        help_text='Si está marcado, los clientes podrán ver este conjunto'
+    )
+    public_token = models.CharField(
+        max_length=32,
+        unique=True,
+        blank=True,
+        verbose_name='Token Público',
+        help_text='Token único para acceso público'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Creado por',
+        help_text='Usuario que creó el conjunto'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    # Campos de estadísticas
+    view_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Vistas',
+        help_text='Número de veces que se ha visto el conjunto público'
+    )
+    last_viewed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Última vista',
+        help_text='Fecha y hora de la última vista pública'
+    )
+    
+    class Meta:
+        verbose_name = 'Conjunto de Productos'
+        verbose_name_plural = 'Conjuntos de Productos'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return self.title
+    
+    def save(self, *args, **kwargs):
+        # Generar token público si no existe
+        if not self.public_token:
+            import uuid
+            self.public_token = str(uuid.uuid4()).replace('-', '')[:16]
+        super().save(*args, **kwargs)
+    
+    def get_public_url(self):
+        """Retorna la URL pública del conjunto"""
+        from django.urls import reverse
+        return reverse('product_set_public', kwargs={'token': self.public_token})
+    
+    def increment_views(self):
+        """Incrementa el contador de vistas y actualiza la fecha de última vista"""
+        from django.utils import timezone
+        self.view_count += 1
+        self.last_viewed_at = timezone.now()
+        self.save(update_fields=['view_count', 'last_viewed_at'])
+    
+    @property
+    def product_count(self):
+        """Retorna el número de productos en el conjunto"""
+        return self.products.count()
+
+
+class ProductItem(models.Model):
+    """Modelo para productos individuales dentro de un conjunto"""
+    
+    product_set = models.ForeignKey(
+        ProductSet,
+        on_delete=models.CASCADE,
+        related_name='products',
+        verbose_name='Conjunto de Productos'
+    )
+    name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre del Producto',
+        help_text='Nombre descriptivo del producto'
+    )
+    description = models.TextField(
+        verbose_name='Descripción',
+        help_text='Descripción detallada del producto'
+    )
+    video_link = models.URLField(
+        blank=True,
+        verbose_name='Link del Video',
+        help_text='URL del video demostrativo (opcional)'
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Orden',
+        help_text='Orden de aparición en la lista'
+    )
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.00,
+        verbose_name='Precio',
+        help_text='Precio del producto individual'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    
+    class Meta:
+        verbose_name = 'Producto'
+        verbose_name_plural = 'Productos'
+        ordering = ['order', 'name']
+    
+    def __str__(self):
+        return f"{self.product_set.title} - {self.name}"
+    
+    @property
+    def product_code(self):
+        """Genera el código único del producto"""
+        return f"PRO{str(self.id).zfill(3)}"
+    
+    def get_formatted_price(self):
+        """Retorna el precio formateado con la moneda del sistema"""
+        if self.price > 0:
+            try:
+                config = SystemConfiguration.objects.get(pk=1)
+                return config.format_currency(self.price)
+            except SystemConfiguration.DoesNotExist:
+                return f"€{self.price:,.2f}"  # Fallback
+        return None
+
+
+class Precotizador(models.Model):
+    """Modelo para el sistema de precotizador con IA"""
+    
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título del Precotizador',
+        help_text='Nombre descriptivo del precotizador'
+    )
+    client_description = models.TextField(
+        verbose_name='Descripción del Cliente',
+        help_text='Descripción detallada del tipo de cliente y sus necesidades'
+    )
+    hourly_rate = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name='Precio por Hora',
+        help_text='Tu tarifa por hora para este tipo de trabajo'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Creado por',
+        help_text='Usuario que creó el precotizador'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    # Campos para enlace público de solicitud
+    public_request_token = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        unique=True,
+        verbose_name='Token de Solicitud Pública',
+        help_text='Token único para el enlace público donde clientes pueden solicitar cotizaciones'
+    )
+    allow_public_requests = models.BooleanField(
+        default=False,
+        verbose_name='Permitir Solicitudes Públicas',
+        help_text='Permite que los clientes soliciten cotizaciones a través de un enlace público'
+    )
+    
+    class Meta:
+        verbose_name = 'Precotizador'
+        verbose_name_plural = 'Precotizadores'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return self.title
+    
+    def get_formatted_hourly_rate(self):
+        """Retorna la tarifa por hora formateada con la moneda del sistema"""
+        try:
+            config = SystemConfiguration.objects.get(pk=1)
+            return config.format_currency(self.hourly_rate)
+        except SystemConfiguration.DoesNotExist:
+            return f"€{self.hourly_rate:,.2f}"  # Fallback
+    
+    def generate_public_request_token(self):
+        """Genera un token único para solicitudes públicas"""
+        import uuid
+        if not self.public_request_token:
+            self.public_request_token = str(uuid.uuid4())
+            self.save(update_fields=['public_request_token'])
+        return self.public_request_token
+    
+    def get_public_request_url(self):
+        """Retorna la URL pública para solicitar cotizaciones"""
+        from django.urls import reverse
+        if self.public_request_token:
+            return reverse('precotizador_public_request', kwargs={'token': self.public_request_token})
+        return None
+    
+    def toggle_public_requests(self):
+        """Activa/desactiva las solicitudes públicas"""
+        self.allow_public_requests = not self.allow_public_requests
+        if self.allow_public_requests and not self.public_request_token:
+            self.generate_public_request_token()
+        self.save(update_fields=['allow_public_requests', 'public_request_token'])
+        return self.allow_public_requests
+
+
+class PrecotizadorExample(models.Model):
+    """Modelo para los ejemplos de casos del precotizador"""
+    
+    precotizador = models.ForeignKey(
+        Precotizador,
+        on_delete=models.CASCADE,
+        related_name='examples',
+        verbose_name='Precotizador'
+    )
+    description = models.TextField(
+        verbose_name='Descripción del Caso',
+        help_text='Descripción detallada del trabajo a realizar'
+    )
+    estimated_hours = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        verbose_name='Horas Estimadas',
+        help_text='Número de horas estimadas para completar el trabajo'
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Orden',
+        help_text='Orden de aparición en la lista'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    
+    class Meta:
+        verbose_name = 'Ejemplo de Caso'
+        verbose_name_plural = 'Ejemplos de Casos'
+        ordering = ['order', 'created_at']
+    
+    def __str__(self):
+        return f"{self.precotizador.title} - Caso {self.order + 1}"
+    
+    def get_estimated_cost(self):
+        """Calcula el costo estimado basado en las horas y tarifa del precotizador"""
+        return self.estimated_hours * self.precotizador.hourly_rate
+    
+    def get_formatted_cost(self):
+        """Retorna el costo estimado formateado con la moneda del sistema"""
+        cost = self.get_estimated_cost()
+        try:
+            config = SystemConfiguration.objects.get(pk=1)
+            return config.format_currency(cost)
+        except SystemConfiguration.DoesNotExist:
+            return f"€{cost:,.2f}"  # Fallback
+
+
+class PrecotizadorQuote(models.Model):
+    """Modelo para las cotizaciones generadas por IA"""
+    
+    precotizador = models.ForeignKey(
+        Precotizador,
+        on_delete=models.CASCADE,
+        related_name='quotes',
+        verbose_name='Precotizador'
+    )
+    client_request = models.TextField(
+        verbose_name='Solicitud del Cliente',
+        help_text='Descripción del trabajo solicitado por el cliente'
+    )
+    ai_estimated_hours = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        verbose_name='Horas Estimadas por IA',
+        help_text='Número de horas estimadas por la IA'
+    )
+    ai_detailed_description = models.TextField(
+        verbose_name='Descripción Detallada por IA',
+        help_text='Descripción detallada del trabajo generada por la IA'
+    )
+    ai_reasoning = models.TextField(
+        blank=True,
+        verbose_name='Razonamiento de la IA',
+        help_text='Explicación del razonamiento de la IA para la estimación'
+    )
+    ai_full_response = models.TextField(
+        blank=True,
+        verbose_name='Respuesta Completa de la IA',
+        help_text='Respuesta completa de la IA en formato texto plano'
+    )
+    
+    # Campos para compartir públicamente
+    public_share_token = models.CharField(
+        max_length=100,
+        unique=True,
+        blank=True,
+        null=True,
+        verbose_name='Token de Compartir Público',
+        help_text='Token único para compartir la cotización públicamente'
+    )
+    is_public = models.BooleanField(
+        default=False,
+        verbose_name='Es Público',
+        help_text='Si la cotización puede ser vista públicamente'
+    )
+    
+    # Estado de la cotización
+    STATUS_CHOICES = [
+        ('pending', 'Pendiente'),
+        ('accepted', 'Aceptada por el Cliente'),
+        ('rejected', 'Rechazada por el Cliente'),
+        ('expired', 'Expirada'),
+    ]
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        verbose_name='Estado',
+        help_text='Estado actual de la cotización'
+    )
+    
+    # Información del cliente
+    client_response_date = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Fecha de Respuesta del Cliente',
+        help_text='Fecha en que el cliente respondió'
+    )
+    client_comments = models.TextField(
+        blank=True,
+        verbose_name='Comentarios del Cliente',
+        help_text='Comentarios adicionales del cliente'
+    )
+    
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    
+    class Meta:
+        verbose_name = 'Cotización IA'
+        verbose_name_plural = 'Cotizaciones IA'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Cotización {self.id} - {self.precotizador.title}"
+    
+    def get_formatted_cost(self):
+        """Retorna el costo formateado con la moneda del sistema"""
+        from decimal import Decimal
+        # Convertir a Decimal para evitar errores de tipos
+        hours = Decimal(str(self.ai_estimated_hours))
+        total_cost = hours * self.precotizador.hourly_rate
+        try:
+            config = SystemConfiguration.objects.get(pk=1)
+            return config.format_currency(total_cost)
+        except SystemConfiguration.DoesNotExist:
+            return f"€{total_cost:,.2f}"  # Fallback
+    
+    def generate_public_token(self):
+        """Genera un token único para compartir públicamente"""
+        import uuid
+        if not self.public_share_token:
+            self.public_share_token = str(uuid.uuid4())
+            self.save(update_fields=['public_share_token'])
+        return self.public_share_token
+    
+    def get_public_url(self):
+        """Retorna la URL pública para compartir"""
+        from django.urls import reverse
+        if self.public_share_token:
+            return reverse('precotizador_quote_public', kwargs={'token': self.public_share_token})
+        return None
+    
+    def can_be_responded(self):
+        """Verifica si la cotización puede ser respondida por el cliente"""
+        return self.status == 'pending' and self.is_public
+    
+    def accept(self, client_comments=''):
+        """Acepta la cotización"""
+        if self.status != 'pending':
+            raise ValueError(f"No se puede aceptar una cotización que ya está {self.get_status_display().lower()}")
+        
+        self.status = 'accepted'
+        self.client_comments = client_comments
+        self.client_response_date = timezone.now()
+        self.save(update_fields=['status', 'client_comments', 'client_response_date'])
+    
+    def reject(self, client_comments=''):
+        """Rechaza la cotización"""
+        if self.status != 'pending':
+            raise ValueError(f"No se puede rechazar una cotización que ya está {self.get_status_display().lower()}")
+        
+        self.status = 'rejected'
+        self.client_comments = client_comments
+        self.client_response_date = timezone.now()
+        self.save(update_fields=['status', 'client_comments', 'client_response_date'])
+    
+    def get_status_color(self):
+        """Retorna el color Bootstrap para el estado"""
+        colors = {
+            'pending': 'warning',
+            'accepted': 'success',
+            'rejected': 'danger',
+            'expired': 'secondary',
+        }
+        return colors.get(self.status, 'primary')
+    
+    def get_response_time_info(self):
+        """Retorna información sobre el tiempo de respuesta del cliente"""
+        if not self.client_response_date:
+            return None
+        
+        from django.utils import timezone
+        time_diff = self.client_response_date - self.created_at
+        
+        if time_diff.days > 0:
+            return f"Respondió en {time_diff.days} día{'s' if time_diff.days > 1 else ''}"
+        elif time_diff.seconds > 3600:
+            hours = time_diff.seconds // 3600
+            return f"Respondió en {hours} hora{'s' if hours > 1 else ''}"
+        else:
+            minutes = time_diff.seconds // 60
+            return f"Respondió en {minutes} minuto{'s' if minutes > 1 else ''}"
+    
+    def is_recently_responded(self):
+        """Verifica si el cliente respondió recientemente (últimas 24 horas)"""
+        if not self.client_response_date:
+            return False
+        
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        return timezone.now() - self.client_response_date <= timedelta(hours=24)
+    
+    def get_estimated_cost(self):
+        """Calcula el costo estimado basado en las horas y tarifa del precotizador"""
+        return self.ai_estimated_hours * self.precotizador.hourly_rate
+    
+    def get_formatted_cost(self):
+        """Retorna el costo estimado formateado con la moneda del sistema"""
+        cost = self.get_estimated_cost()
+        try:
+            config = SystemConfiguration.objects.get(pk=1)
+            return config.format_currency(cost)
+        except SystemConfiguration.DoesNotExist:
+            return f"€{cost:,.2f}"  # Fallback

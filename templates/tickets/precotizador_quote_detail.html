@@ -1,0 +1,678 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Cotización #{{ quote.pk }} - {{ quote.precotizador.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .quote-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        color: white;
+    }
+    
+    .stat-card {
+        transition: transform 0.2s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-2px);
+    }
+    
+    .ai-badge {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        border: none;
+    }
+    
+    .description-section {
+        background: #f8f9fa;
+        border-left: 4px solid #667eea;
+    }
+    
+    .cost-highlight {
+        font-size: 2rem;
+        font-weight: bold;
+        background: linear-gradient(45deg, #28a745, #20c997);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    @media print {
+        .no-print { display: none !important; }
+        .card { box-shadow: none !important; border: 1px solid #ddd !important; }
+        .quote-header { background: #667eea !important; print-color-adjust: exact; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header con acciones -->
+            <div class="card mb-4 no-print">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-1">
+                                <i class="bi bi-file-earmark-text"></i> 
+                                Cotización #{{ quote.pk }}
+                            </h5>
+                            <p class="text-muted mb-0">{{ quote.precotizador.title }}</p>
+                        </div>
+                        <div class="btn-group">
+                            {% if not quote.is_public %}
+                            <button onclick="shareQuote()" class="btn btn-outline-success">
+                                <i class="bi bi-share"></i> Compartir Públicamente
+                            </button>
+                            {% else %}
+                            <button onclick="copyPublicUrl()" class="btn btn-success">
+                                <i class="bi bi-link-45deg"></i> Copiar Enlace Público
+                            </button>
+                            {% endif %}
+                            <a href="{% url 'precotizador_quote_edit' quote.pk %}" class="btn btn-warning">
+                                <i class="bi bi-pencil-square"></i> Editar
+                            </a>
+                            <button onclick="window.print()" class="btn btn-outline-primary">
+                                <i class="bi bi-printer"></i> Imprimir
+                            </button>
+                            <a href="{% url 'precotizador_quote_delete' quote.pk %}" class="btn btn-outline-danger">
+                                <i class="bi bi-trash"></i> Eliminar
+                            </a>
+                            <a href="{% url 'precotizador_detail' quote.precotizador.pk %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Volver
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Header principal de la cotización -->
+            <div class="quote-header p-4 mb-4">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-cpu fs-2 me-3"></i>
+                            <div>
+                                <h2 class="mb-1">Cotización Generada por IA</h2>
+                                <p class="mb-0 opacity-75">
+                                    Generada el {{ quote.created_at|date:"d/m/Y" }} a las {{ quote.created_at|date:"H:i" }}
+                                </p>
+                                <div class="mt-2">
+                                    <span class="badge bg-{{ quote.get_status_color }} fs-6">
+                                        {% if quote.status == 'pending' %}
+                                            <i class="bi bi-clock"></i> Pendiente de Respuesta
+                                        {% elif quote.status == 'accepted' %}
+                                            <i class="bi bi-check-circle"></i> 
+                                            {% if quote.is_public %}
+                                                Aprobada Públicamente
+                                            {% else %}
+                                                Aceptada por el Cliente
+                                            {% endif %}
+                                        {% elif quote.status == 'rejected' %}
+                                            <i class="bi bi-x-circle"></i> 
+                                            {% if quote.is_public %}
+                                                Rechazada Públicamente
+                                            {% else %}
+                                                Rechazada por el Cliente
+                                            {% endif %}
+                                        {% else %}
+                                            <i class="bi bi-hourglass"></i> {{ quote.get_status_display }}
+                                        {% endif %}
+                                    </span>
+                                    {% if quote.is_public %}
+                                        <span class="badge bg-info fs-6 ms-2">
+                                            <i class="bi bi-globe"></i> Enlace Público Activo
+                                        </span>
+                                    {% endif %}
+                                    {% if quote.client_response_date %}
+                                        <div class="mt-2">
+                                            <span class="badge bg-light text-dark fs-6">
+                                                <i class="bi bi-calendar-check"></i> 
+                                                Respondida: {{ quote.client_response_date|date:"d/m/Y H:i" }}
+                                            </span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="cost-highlight text-white">
+                            {{ quote.get_formatted_cost }}
+                        </div>
+                        <p class="mb-0 opacity-75">
+                            {{ quote.ai_estimated_hours }} horas estimadas
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Información principal -->
+                <div class="col-lg-8">
+                    <!-- Solicitud del cliente -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="bi bi-chat-dots"></i> Solicitud del Cliente
+                            </h6>
+                        </div>
+                        <div class="card-body description-section">
+                            <p class="mb-0">{{ quote.client_request|linebreaks }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Respuesta de la IA -->
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">
+                                <i class="bi bi-robot"></i> Análisis y Descripción del Trabajo
+                            </h6>
+                            <div>
+                                {% if quote.ai_full_response %}
+                                <button class="btn btn-outline-secondary btn-sm me-2" onclick="copyFullResponse()">
+                                    <i class="bi bi-clipboard"></i> Copiar Respuesta Completa
+                                </button>
+                                {% endif %}
+                                <span class="badge ai-badge">
+                                    <i class="bi bi-stars"></i> Generado por IA
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            {% if quote.ai_detailed_description %}
+                                <div class="ai-response">
+                                    {{ quote.ai_detailed_description|linebreaks }}
+                                </div>
+                                {% if quote.ai_reasoning %}
+                                    <hr>
+                                    <h6><i class="bi bi-lightbulb"></i> Razonamiento:</h6>
+                                    <p class="text-muted">{{ quote.ai_reasoning|linebreaks }}</p>
+                                {% endif %}
+                            {% else %}
+                                <div class="text-center py-3">
+                                    <i class="bi bi-exclamation-triangle text-warning"></i>
+                                    <p class="text-muted mb-0">No se generó una descripción detallada.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Comentarios del cliente si los hay -->
+                    {% if quote.client_comments %}
+                    <div class="card mb-4">
+                        <div class="card-header bg-{{ quote.get_status_color }} text-white">
+                            <h6 class="mb-0">
+                                <i class="bi bi-chat-square-text"></i> 
+                                Comentarios del Cliente
+                                {% if quote.client_response_date %}
+                                    <small class="opacity-75 ms-2">
+                                        ({{ quote.client_response_date|date:"d/m/Y H:i" }})
+                                    </small>
+                                {% endif %}
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-light border-start border-4 border-{{ quote.get_status_color }}">
+                                <p class="mb-0">{{ quote.client_comments|linebreaks }}</p>
+                            </div>
+                            {% if quote.status == 'accepted' %}
+                                <div class="text-success">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    <strong>El cliente aceptó esta cotización</strong>
+                                    {% if quote.is_public %}públicamente{% endif %}
+                                </div>
+                            {% elif quote.status == 'rejected' %}
+                                <div class="text-danger">
+                                    <i class="bi bi-x-circle-fill"></i>
+                                    <strong>El cliente rechazó esta cotización</strong>
+                                    {% if quote.is_public %}públicamente{% endif %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Respuesta completa (oculta para copiar) -->
+                    {% if quote.ai_full_response %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="bi bi-file-text"></i> Respuesta Completa para Copiar
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="position-relative">
+                                <textarea id="fullResponseText" class="form-control" rows="15" readonly style="font-family: monospace; font-size: 0.9rem;">{{ quote.ai_full_response }}</textarea>
+                                <button class="btn btn-success btn-sm position-absolute" 
+                                        style="top: 10px; right: 10px;" 
+                                        onclick="copyFullResponse()">
+                                    <i class="bi bi-clipboard-check"></i> Copiar Todo
+                                </button>
+                            </div>
+                            <small class="text-muted mt-2 d-block">
+                                <i class="bi bi-info-circle"></i>
+                                Esta es la respuesta completa generada por la IA. Puedes copiarla y usarla directamente en tus propuestas.
+                            </small>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Respuesta del Cliente -->
+                    {% if quote.client_response_date %}
+                    <div class="card mb-4">
+                        <div class="card-header {% if quote.status == 'accepted' %}bg-success text-white{% elif quote.status == 'rejected' %}bg-danger text-white{% else %}bg-secondary text-white{% endif %}">
+                            <h6 class="mb-0">
+                                <i class="bi bi-person-check"></i> Respuesta del Cliente
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <strong>Estado:</strong>
+                                    <span class="badge bg-{{ quote.get_status_color }} ms-2">
+                                        {% if quote.status == 'accepted' %}
+                                            <i class="bi bi-check-circle"></i> Cotización Aceptada
+                                        {% elif quote.status == 'rejected' %}
+                                            <i class="bi bi-x-circle"></i> Cotización Rechazada
+                                        {% else %}
+                                            {{ quote.get_status_display }}
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Fecha de Respuesta:</strong>
+                                    <span class="text-primary">
+                                        <i class="bi bi-calendar-check"></i>
+                                        {{ quote.client_response_date|date:"d/m/Y" }} a las {{ quote.client_response_date|date:"H:i" }}
+                                    </span>
+                                    {% if quote.get_response_time_info %}
+                                        <br>
+                                        <small class="text-muted">
+                                            <i class="bi bi-clock-history"></i>
+                                            {{ quote.get_response_time_info }}
+                                        </small>
+                                    {% endif %}
+                                    {% if quote.is_recently_responded %}
+                                        <br>
+                                        <small class="badge bg-info">
+                                            <i class="bi bi-bell"></i> Respuesta reciente
+                                        </small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            {% if quote.client_comments %}
+                                <div class="mt-3">
+                                    <strong>Comentarios del Cliente:</strong>
+                                    <div class="border rounded p-3 mt-2 bg-light">
+                                        <i class="bi bi-quote"></i>
+                                        {{ quote.client_comments|linebreaks }}
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="text-muted fst-italic">
+                                    <i class="bi bi-info-circle"></i>
+                                    El cliente {{ quote.get_status_display|lower }} la cotización sin comentarios adicionales.
+                                </div>
+                            {% endif %}
+                            
+                            {% if quote.status == 'accepted' %}
+                                <div class="alert alert-success mt-3">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    <strong>¡Excelente!</strong> El cliente ha aceptado tu cotización. 
+                                    Es momento de contactarlo para coordinar los próximos pasos del proyecto.
+                                </div>
+                            {% elif quote.status == 'rejected' %}
+                                <div class="alert alert-info mt-3">
+                                    <i class="bi bi-info-circle-fill"></i>
+                                    <strong>Proyecto no aceptado.</strong> Puedes usar esta información 
+                                    para mejorar futuras cotizaciones o contactar al cliente para entender mejor sus necesidades.
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Panel lateral con estadísticas -->
+                <div class="col-lg-4">
+                    <!-- Resumen de costos -->
+                    <div class="card stat-card mb-4">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0">
+                                <i class="bi bi-calculator"></i> Resumen de Costos
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-borderless mb-0">
+                                <tr>
+                                    <td><strong>Horas Estimadas:</strong></td>
+                                    <td class="text-end">
+                                        <span class="fs-5 fw-bold text-primary">
+                                            {{ quote.ai_estimated_hours }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Tarifa por Hora:</strong></td>
+                                    <td class="text-end">
+                                        {{ quote.precotizador.get_formatted_hourly_rate }}
+                                    </td>
+                                </tr>
+                                <tr class="border-top">
+                                    <td><strong>Total Estimado:</strong></td>
+                                    <td class="text-end">
+                                        <span class="fs-4 fw-bold text-success">
+                                            {{ quote.get_formatted_cost }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Información del precotizador -->
+                    <div class="card stat-card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="bi bi-info-circle"></i> Información del Proyecto
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm table-borderless mb-0">
+                                <tr>
+                                    <td><strong>Proyecto:</strong></td>
+                                    <td>{{ quote.precotizador.title }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Estado:</strong></td>
+                                    <td>
+                                        <span class="badge bg-{{ quote.get_status_color }}">
+                                            {% if quote.status == 'accepted' and quote.is_public %}
+                                                Aprobada Públicamente
+                                            {% elif quote.status == 'rejected' and quote.is_public %}
+                                                Rechazada Públicamente
+                                            {% else %}
+                                                {{ quote.get_status_display }}
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Casos Base:</strong></td>
+                                    <td>
+                                        <span class="badge bg-info">
+                                            {{ quote.precotizador.examples.count }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Generado:</strong></td>
+                                    <td>{{ quote.created_at|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                                {% if quote.client_response_date %}
+                                <tr>
+                                    <td><strong>Respondido:</strong></td>
+                                    <td>{{ quote.client_response_date|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if quote.is_public %}
+                                <tr>
+                                    <td><strong>Enlace Público:</strong></td>
+                                    <td>
+                                        <span class="badge bg-info">
+                                            <i class="bi bi-globe"></i> Activo
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% if quote.client_response_date %}
+                                <tr>
+                                    <td><strong>Respondido:</strong></td>
+                                    <td>
+                                        <span class="text-{{ quote.get_status_color }}">
+                                            {{ quote.client_response_date|date:"d/m/Y H:i" }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Estado Final:</strong></td>
+                                    <td>
+                                        <span class="badge bg-{{ quote.get_status_color }}">
+                                            {% if quote.status == 'accepted' %}
+                                                <i class="bi bi-check-circle"></i> Aceptada
+                                            {% elif quote.status == 'rejected' %}
+                                                <i class="bi bi-x-circle"></i> Rechazada
+                                            {% else %}
+                                                {{ quote.get_status_display }}
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Comparación con casos de ejemplo -->
+                    {% if quote.precotizador.examples.exists %}
+                    <div class="card stat-card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="bi bi-graph-up"></i> Comparación
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            {% with examples=quote.precotizador.examples.all %}
+                            {% with min_hours=examples.first.estimated_hours max_hours=examples.last.estimated_hours %}
+                            <div class="mb-3">
+                                <label class="form-label small text-muted">Rango de casos ejemplo:</label>
+                                <div class="d-flex justify-content-between">
+                                    <span class="badge bg-light text-dark">{{ min_hours }}h mín</span>
+                                    <span class="badge bg-light text-dark">{{ max_hours }}h máx</span>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label small text-muted">Esta cotización:</label>
+                                <div class="text-center">
+                                    <span class="badge bg-primary fs-6">{{ quote.ai_estimated_hours }}h</span>
+                                </div>
+                            </div>
+
+                            {% if quote.ai_estimated_hours <= max_hours and quote.ai_estimated_hours >= min_hours %}
+                                <div class="alert alert-success py-2">
+                                    <i class="bi bi-check-circle"></i>
+                                    <small>Dentro del rango esperado</small>
+                                </div>
+                            {% elif quote.ai_estimated_hours > max_hours %}
+                                <div class="alert alert-warning py-2">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    <small>Por encima del rango usual</small>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-info py-2">
+                                    <i class="bi bi-info-circle"></i>
+                                    <small>Por debajo del rango usual</small>
+                                </div>
+                            {% endif %}
+                            {% endwith %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para compartir -->
+<div class="modal fade" id="shareModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-share"></i> Compartir Cotización Públicamente
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>¿Qué sucede al compartir públicamente?</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Se genera un enlace único para el cliente</li>
+                        <li>El cliente puede ver la cotización sin autenticarse</li>
+                        <li>El cliente puede aceptar o rechazar la cotización</li>
+                        <li>Recibirás notificación de su respuesta</li>
+                    </ul>
+                </div>
+                
+                {% if quote.is_public %}
+                <div class="mb-3">
+                    <label class="form-label">Enlace público (ya activo):</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="publicUrl" readonly 
+                               value="{{ request.scheme }}://{{ request.get_host }}{% url 'precotizador_quote_public' quote.public_share_token %}">
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyPublicUrl()">
+                            <i class="bi bi-clipboard"></i> Copiar
+                        </button>
+                    </div>
+                </div>
+                {% else %}
+                <p>¿Estás seguro de que quieres compartir esta cotización públicamente?</p>
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <a href="{% url 'precotizador_quote_share' quote.pk %}" class="btn btn-success">
+                        <i class="bi bi-share"></i> Compartir Públicamente
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function shareQuote() {
+    const shareModal = new bootstrap.Modal(document.getElementById('shareModal'));
+    shareModal.show();
+}
+
+function copyPublicUrl() {
+    const publicUrl = document.getElementById('publicUrl');
+    if (publicUrl) {
+        publicUrl.select();
+        publicUrl.setSelectionRange(0, 99999);
+        
+        navigator.clipboard.writeText(publicUrl.value).then(() => {
+            // Cambiar temporalmente el texto del botón
+            const btn = event.target.closest('button');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check"></i> Copiado';
+            btn.classList.remove('btn-outline-secondary', 'btn-success');
+            btn.classList.add('btn-primary');
+            
+            // Mostrar alerta
+            showAlert('success', '¡Enlace copiado!', 'Ya puedes enviárselo al cliente.');
+            
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-success');
+            }, 2000);
+        });
+    } else {
+        // Copiar desde la URL actual si no hay campo específico
+        const currentUrl = `{{ request.scheme }}://{{ request.get_host }}{% url 'precotizador_quote_public' quote.public_share_token %}`;
+        navigator.clipboard.writeText(currentUrl).then(() => {
+            showAlert('success', '¡Enlace copiado!', 'Ya puedes enviárselo al cliente.');
+        });
+    }
+}
+
+function copyToClipboard() {
+    const shareUrl = document.getElementById('shareUrl');
+    shareUrl.select();
+    shareUrl.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(shareUrl.value).then(() => {
+        // Cambiar temporalmente el texto del botón
+        const btn = event.target.closest('button');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check"></i> Copiado';
+        btn.classList.remove('btn-outline-secondary');
+        btn.classList.add('btn-success');
+        
+        setTimeout(() => {
+            btn.innerHTML = originalHTML;
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline-secondary');
+        }, 2000);
+    });
+}
+
+function copyFullResponse() {
+    const fullResponseText = document.getElementById('fullResponseText');
+    if (fullResponseText) {
+        fullResponseText.select();
+        fullResponseText.setSelectionRange(0, 99999);
+        
+        navigator.clipboard.writeText(fullResponseText.value).then(() => {
+            // Mostrar confirmación
+            const btn = event.target.closest('button');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check-circle"></i> ¡Copiado!';
+            btn.classList.remove('btn-success', 'btn-outline-secondary');
+            btn.classList.add('btn-primary');
+            
+            // Mostrar alerta temporal
+            showAlert('success', '¡Respuesta copiada!', 'Ya puedes pegarla en tu propuesta.');
+            
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-success');
+            }, 2000);
+        }).catch(err => {
+            console.error('Error al copiar:', err);
+            alert('Error al copiar el texto. Por favor, selecciona y copia manualmente.');
+        });
+    }
+}
+
+function showAlert(type, title, message) {
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alert.innerHTML = `
+        <i class="bi bi-${type === 'success' ? 'check-circle' : 'info-circle'}"></i>
+        <strong>${title}</strong> ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alert);
+    
+    // Remover la alerta después de 4 segundos
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.parentNode.removeChild(alert);
+        }
+    }, 4000);
+}
+
+// Auto-scroll hacia el contenido principal en dispositivos móviles
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.innerWidth <= 768) {
+        document.querySelector('.quote-header').scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+        });
+    }
+});
+</script>
+{% endblock %}

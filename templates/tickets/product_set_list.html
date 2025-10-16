@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Conjuntos de Productos{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-box-seam"></i> Conjuntos de Productos
+                    </h5>
+                    <a href="{% url 'product_set_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Crear Conjunto
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if product_sets %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Título</th>
+                                        <th>Productos</th>
+                                        <th>Estado</th>
+                                        <th>Creado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for product_set in product_sets %}
+                                    <tr>
+                                        <td>
+                                            <div>
+                                                <strong>{{ product_set.title }}</strong>
+                                                <br>
+                                                <small class="text-muted">{{ product_set.description|truncatechars:100 }}</small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">
+                                                {{ product_set.product_count }} productos
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if product_set.is_public %}
+                                                <span class="badge bg-success">
+                                                    <i class="bi bi-globe"></i> Público
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">
+                                                    <i class="bi bi-lock"></i> Privado
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <small>{{ product_set.created_at|date:"d/m/Y H:i" }}</small>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="{% url 'product_set_detail' product_set.pk %}" 
+                                                   class="btn btn-outline-primary btn-sm" 
+                                                   title="Ver detalles">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <a href="{% url 'product_set_edit' product_set.pk %}" 
+                                                   class="btn btn-outline-secondary btn-sm" 
+                                                   title="Editar">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <a href="{% url 'product_set_toggle_public' product_set.pk %}" 
+                                                   class="btn btn-outline-{% if product_set.is_public %}warning{% else %}success{% endif %} btn-sm" 
+                                                   title="{% if product_set.is_public %}Hacer privado{% else %}Hacer público{% endif %}">
+                                                    <i class="bi bi-{% if product_set.is_public %}eye-slash{% else %}globe{% endif %}"></i>
+                                                </a>
+                                                {% if product_set.is_public %}
+                                                <a href="{{ product_set.get_public_url }}" 
+                                                   class="btn btn-outline-info btn-sm" 
+                                                   title="Ver vista pública" 
+                                                   target="_blank">
+                                                    <i class="bi bi-box-arrow-up-right"></i>
+                                                </a>
+                                                {% endif %}
+                                                <a href="{% url 'product_set_delete' product_set.pk %}" 
+                                                   class="btn btn-outline-danger btn-sm" 
+                                                   title="Eliminar">
+                                                    <i class="bi bi-trash"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <div class="mb-3">
+                                <i class="bi bi-box-seam display-1 text-muted"></i>
+                            </div>
+                            <h4 class="text-muted">No hay conjuntos de productos</h4>
+                            <p class="text-muted">Crea tu primer conjunto de productos para comenzar.</p>
+                            <a href="{% url 'product_set_create' %}" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> Crear Primer Conjunto
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Confirmar eliminación
+    const deleteLinks = document.querySelectorAll('a[href*="/delete/"]');
+    deleteLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (confirm('¿Estás seguro de que quieres eliminar este conjunto de productos?')) {
+                window.location.href = this.href;
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

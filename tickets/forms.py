@@ -22,7 +22,7 @@ from .models import (
     Course, CourseClass, Contact, BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, Concept, ContactoWeb, Employee, EmployeePayroll,
     Agreement, AgreementSignature, LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry, SharedFile, SharedFileDownload,
     Recording, RecordingPlayback, MultipleDocumentation, TaskSchedule, ScheduleTask, ScheduleComment, FinancialAction,
-    ClientProjectAccess, ClientTimeEntry
+    ClientProjectAccess, ClientTimeEntry, ProductSet, ProductItem, Precotizador, PrecotizadorExample, PrecotizadorQuote
 )
 
 class CategoryForm(forms.ModelForm):
@@ -4993,4 +4993,221 @@ class ClientTimeEntryForm(forms.ModelForm):
                 raise forms.ValidationError('No puede registrar horas para fechas anteriores a 30 días')
         
         return entry_date
+
+
+class ProductSetForm(forms.ModelForm):
+    """Formulario para conjuntos de productos"""
+    
+    class Meta:
+        model = ProductSet
+        fields = ['title', 'description', 'is_public']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Productos de Software 2024'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Describe el conjunto de productos...'
+            }),
+            'is_public': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            })
+        }
+        labels = {
+            'title': 'Título del Conjunto',
+            'description': 'Descripción',
+            'is_public': 'Hacer público'
+        }
+        help_texts = {
+            'title': 'Nombre descriptivo del conjunto de productos',
+            'description': 'Descripción detallada del conjunto',
+            'is_public': 'Si está marcado, los clientes podrán ver este conjunto'
+        }
+    
+    def clean_title(self):
+        title = self.cleaned_data.get('title')
+        if len(title) < 5:
+            raise forms.ValidationError('El título debe tener al menos 5 caracteres')
+        return title
+
+
+class ProductItemForm(forms.ModelForm):
+    """Formulario para productos individuales"""
+    
+    class Meta:
+        model = ProductItem
+        fields = ['name', 'description', 'price', 'video_link', 'order']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Sistema de Gestión de Inventario'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Describe las características del producto...'
+            }),
+            'price': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': '0.00',
+                'step': '0.01',
+                'min': '0'
+            }),
+            'video_link': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://youtube.com/watch?v=...'
+            }),
+            'order': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 0
+            })
+        }
+        labels = {
+            'name': 'Nombre del Producto',
+            'description': 'Descripción',
+            'price': 'Precio',
+            'video_link': 'Link del Video',
+            'order': 'Orden de Aparición'
+        }
+        help_texts = {
+            'name': 'Nombre descriptivo del producto',
+            'description': 'Descripción detallada del producto',
+            'price': 'Precio del producto individual',
+            'video_link': 'URL del video demostrativo (opcional)',
+            'order': 'Número para ordenar la lista (menor número aparece primero)'
+        }
+    
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+        if len(name) < 3:
+            raise forms.ValidationError('El nombre debe tener al menos 3 caracteres')
+        return name
+    
+    def clean_video_link(self):
+        video_link = self.cleaned_data.get('video_link')
+        if video_link:
+            # Validar que sea una URL válida para videos
+            valid_domains = ['youtube.com', 'youtu.be', 'vimeo.com', 'drive.google.com']
+            if not any(domain in video_link.lower() for domain in valid_domains):
+                raise forms.ValidationError('Por favor, use una URL válida de YouTube, Vimeo o Google Drive')
+        return video_link
+
+
+# Formset para manejar múltiples productos
+ProductItemFormSet = forms.inlineformset_factory(
+    ProductSet,
+    ProductItem,
+    form=ProductItemForm,
+    extra=0,  # No mostrar formularios extra por defecto
+    can_delete=True,
+    min_num=0,
+    validate_min=False
+)
+
+
+class PrecotizadorForm(forms.ModelForm):
+    """Formulario para crear/editar precotizadores"""
+    
+    class Meta:
+        model = Precotizador
+        fields = ['title', 'client_description', 'hourly_rate']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Desarrollos de Software para PyMEs'
+            }),
+            'client_description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Describe el tipo de cliente, sector, necesidades típicas...'
+            }),
+            'hourly_rate': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': '0.00',
+                'step': '0.01',
+                'min': '0'
+            })
+        }
+        labels = {
+            'title': 'Título del Precotizador',
+            'client_description': 'Descripción del Cliente',
+            'hourly_rate': 'Precio por Hora'
+        }
+        help_texts = {
+            'title': 'Nombre descriptivo del precotizador',
+            'client_description': 'Descripción detallada del tipo de cliente y sus necesidades',
+            'hourly_rate': 'Tu tarifa por hora para este tipo de trabajo'
+        }
+
+
+class PrecotizadorExampleForm(forms.ModelForm):
+    """Formulario para ejemplos de casos del precotizador"""
+    
+    class Meta:
+        model = PrecotizadorExample
+        fields = ['description', 'estimated_hours', 'order']
+        widgets = {
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Ej: Reporte en Excel de 10 columnas con gráficos'
+            }),
+            'estimated_hours': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': '0.00',
+                'step': '0.25',
+                'min': '0'
+            }),
+            'order': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '0'
+            })
+        }
+        labels = {
+            'description': 'Descripción del Caso',
+            'estimated_hours': 'Horas Estimadas',
+            'order': 'Orden'
+        }
+        help_texts = {
+            'description': 'Descripción detallada del trabajo a realizar',
+            'estimated_hours': 'Número de horas estimadas para completar el trabajo',
+            'order': 'Orden de aparición en la lista'
+        }
+
+
+class PrecotizadorQuoteForm(forms.ModelForm):
+    """Formulario para generar cotizaciones con IA"""
+    
+    class Meta:
+        model = PrecotizadorQuote
+        fields = ['client_request']
+        widgets = {
+            'client_request': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Describe el trabajo que necesita el cliente...'
+            })
+        }
+        labels = {
+            'client_request': 'Solicitud del Cliente'
+        }
+        help_texts = {
+            'client_request': 'Descripción detallada del trabajo solicitado por el cliente'
+        }
+
+
+# Formset para manejar múltiples ejemplos de casos
+PrecotizadorExampleFormSet = forms.inlineformset_factory(
+    Precotizador,
+    PrecotizadorExample,
+    form=PrecotizadorExampleForm,
+    extra=10,  # Exactamente 10 casos como solicitado
+    max_num=10,
+    min_num=10,
+    can_delete=False,
+    validate_min=True,
+    validate_max=True
+)
 

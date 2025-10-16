@@ -1,0 +1,339 @@
+{% extends 'public_base.html' %}
+{% load static %}
+
+{% block title %}{{ quote.precotizador.title }} - Cotización{% endblock %}
+
+{% block extra_css %}
+<style>
+    .quote-public-header {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border-radius: 15px;
+        color: white;
+    }
+    
+    .cost-highlight {
+        font-size: 2.5rem;
+        font-weight: bold;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    
+    .response-section {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 10px;
+    }
+    
+    .status-badge {
+        font-size: 1.1rem;
+        padding: 0.5rem 1rem;
+    }
+    
+    @media print {
+        .no-print { display: none !important; }
+        .response-section { border: 1px solid #000 !important; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header de la cotización pública -->
+            <div class="quote-public-header p-4 mb-4 text-center">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h1 class="mb-2">
+                            <i class="bi bi-file-earmark-text"></i>
+                            {{ quote.precotizador.title }}
+                        </h1>
+                        <p class="mb-0 fs-5 opacity-75">
+                            Cotización preparada especialmente para ti
+                        </p>
+                        <small class="opacity-75">
+                            Generada el {{ quote.created_at|date:"d/m/Y" }}
+                        </small>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="cost-highlight">
+                            {{ quote.get_formatted_cost }}
+                        </div>
+                        <p class="mb-0 opacity-75">
+                            {{ quote.ai_estimated_hours }} horas estimadas
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estado actual -->
+            <div class="text-center mb-4">
+                {% if quote.status == 'pending' %}
+                    <span class="badge bg-warning status-badge">
+                        <i class="bi bi-clock"></i> Esperando tu respuesta
+                    </span>
+                {% elif quote.status == 'accepted' %}
+                    <span class="badge bg-success status-badge">
+                        <i class="bi bi-check-circle"></i> Cotización Aceptada
+                    </span>
+                    <p class="text-success mt-2">
+                        <i class="bi bi-calendar-check"></i>
+                        Aceptada el {{ quote.client_response_date|date:"d/m/Y H:i" }}
+                    </p>
+                {% elif quote.status == 'rejected' %}
+                    <span class="badge bg-danger status-badge">
+                        <i class="bi bi-x-circle"></i> Cotización Rechazada
+                    </span>
+                    <p class="text-muted mt-2">
+                        <i class="bi bi-calendar-x"></i>
+                        Rechazada el {{ quote.client_response_date|date:"d/m/Y H:i" }}
+                    </p>
+                {% endif %}
+            </div>
+
+            <div class="row">
+                <!-- Contenido principal -->
+                <div class="col-lg-8">
+                    <!-- Solicitud original -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-chat-dots"></i> Tu Solicitud
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-0">{{ quote.client_request|linebreaks }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Propuesta detallada -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-gear"></i> Nuestra Propuesta
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if quote.ai_detailed_description %}
+                                <div class="mb-3">
+                                    {{ quote.ai_detailed_description|linebreaks }}
+                                </div>
+                            {% endif %}
+                            
+                            {% if quote.ai_reasoning %}
+                                <hr>
+                                <h6><i class="bi bi-lightbulb"></i> ¿Por qué esta estimación?</h6>
+                                <p class="text-muted">{{ quote.ai_reasoning|linebreaks }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Comentarios del cliente si los hay -->
+                    {% if quote.client_comments %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="bi bi-chat-square-text"></i> Tus Comentarios
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-0">{{ quote.client_comments|linebreaks }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Panel lateral -->
+                <div class="col-lg-4">
+                    <!-- Resumen de costos -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0">
+                                <i class="bi bi-calculator"></i> Resumen de Inversión
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-borderless mb-0">
+                                <tr>
+                                    <td><strong>Horas de Trabajo:</strong></td>
+                                    <td class="text-end">
+                                        <span class="fs-5 fw-bold text-primary">
+                                            {{ quote.ai_estimated_hours }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Tarifa por Hora:</strong></td>
+                                    <td class="text-end">
+                                        {{ quote.precotizador.get_formatted_hourly_rate }}
+                                    </td>
+                                </tr>
+                                <tr class="border-top">
+                                    <td><strong>Total:</strong></td>
+                                    <td class="text-end">
+                                        <span class="fs-4 fw-bold text-success">
+                                            {{ quote.get_formatted_cost }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Acciones del cliente -->
+                    {% if can_respond %}
+                    <div class="card response-section">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="bi bi-hand-thumbs-up"></i> ¿Qué decides?
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted mb-3">
+                                Por favor, revisa nuestra propuesta y déjanos saber tu decisión.
+                            </p>
+                            
+                            <form method="post" id="responseForm">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="client_comments" class="form-label">
+                                        Comentarios adicionales (opcional):
+                                    </label>
+                                    <textarea class="form-control" 
+                                              id="client_comments" 
+                                              name="client_comments" 
+                                              rows="3"
+                                              placeholder="¿Tienes alguna pregunta o comentario sobre la propuesta?"></textarea>
+                                </div>
+                                
+                                <div class="d-grid gap-2">
+                                    <button type="submit" name="action" value="accept" 
+                                            class="btn btn-success btn-lg">
+                                        <i class="bi bi-check-circle"></i> Aceptar Cotización
+                                    </button>
+                                    <button type="submit" name="action" value="reject" 
+                                            class="btn btn-outline-danger">
+                                        <i class="bi bi-x-circle"></i> Rechazar Cotización
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    {% elif quote.status != 'pending' %}
+                    <div class="card">
+                        <div class="card-body text-center">
+                            {% if quote.status == 'accepted' %}
+                                <i class="bi bi-check-circle-fill text-success fs-1"></i>
+                                <h5 class="text-success mt-2">¡Gracias por aceptar!</h5>
+                                <p class="text-muted">
+                                    Recibimos tu aceptación el {{ quote.client_response_date|date:"d/m/Y" }} a las {{ quote.client_response_date|date:"H:i" }}.
+                                    Nos pondremos en contacto contigo pronto para coordinar los próximos pasos.
+                                </p>
+                                {% if quote.client_comments %}
+                                    <div class="alert alert-light mt-3">
+                                        <strong>Tus comentarios:</strong><br>
+                                        <em>"{{ quote.client_comments }}"</em>
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                <i class="bi bi-x-circle-fill text-danger fs-1"></i>
+                                <h5 class="text-danger mt-2">Cotización Rechazada</h5>
+                                <p class="text-muted">
+                                    Rechazaste esta cotización el {{ quote.client_response_date|date:"d/m/Y" }} a las {{ quote.client_response_date|date:"H:i" }}.
+                                    Entendemos que esta propuesta no se ajustaba a tus necesidades. ¡Gracias por tu tiempo!
+                                </p>
+                                {% if quote.client_comments %}
+                                    <div class="alert alert-light mt-3">
+                                        <strong>Tus comentarios:</strong><br>
+                                        <em>"{{ quote.client_comments }}"</em>
+                                    </div>
+                                {% endif %}
+                            {% endif %}
+                            <div class="alert alert-info mt-3">
+                                <i class="bi bi-info-circle"></i>
+                                <strong>Nota:</strong> Esta cotización ya fue respondida y no puede ser modificada.
+                                Si necesitas hacer cambios, por favor contacta directamente con nosotros.
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Información de contacto -->
+                    <div class="card mt-4">
+                        <div class="card-body text-center">
+                            <i class="bi bi-envelope text-primary fs-4"></i>
+                            <h6 class="mt-2">¿Tienes preguntas?</h6>
+                            <p class="small text-muted mb-0">
+                                Contáctanos para aclarar cualquier duda sobre esta cotización.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('responseForm');
+    
+    if (form) {
+        // Variable para evitar doble envío
+        let isSubmitting = false;
+        
+        form.addEventListener('submit', function(e) {
+            // Prevenir doble envío
+            if (isSubmitting) {
+                e.preventDefault();
+                return false;
+            }
+            
+            const action = e.submitter.value;
+            
+            let message = '';
+            if (action === 'accept') {
+                message = '¿Estás seguro de que quieres ACEPTAR esta cotización?\n\nAl aceptarla, confirmas que estás de acuerdo con los términos y costos propuestos.\n\n⚠️ Esta decisión no se puede cambiar después.';
+            } else if (action === 'reject') {
+                message = '¿Estás seguro de que quieres RECHAZAR esta cotización?\n\nEsta acción notificará al proveedor que no estás interesado en continuar.\n\n⚠️ Esta decisión no se puede cambiar después.';
+            }
+            
+            if (!confirm(message)) {
+                e.preventDefault();
+                return false;
+            }
+            
+            // Marcar como enviando
+            isSubmitting = true;
+            
+            // Crear un campo hidden con la acción antes de deshabilitar los botones
+            const actionInput = document.createElement('input');
+            actionInput.type = 'hidden';
+            actionInput.name = 'action';
+            actionInput.value = action;
+            form.appendChild(actionInput);
+            
+            // Deshabilitar todos los botones del formulario
+            const buttons = form.querySelectorAll('button[type="submit"]');
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                if (btn === e.submitter) {
+                    if (action === 'accept') {
+                        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Aceptando...';
+                    } else {
+                        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Rechazando...';
+                    }
+                }
+            });
+            
+            // Deshabilitar el textarea también
+            const textarea = form.querySelector('textarea');
+            if (textarea) {
+                textarea.disabled = true;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

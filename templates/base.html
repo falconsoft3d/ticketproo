@@ -481,6 +481,12 @@
                                 </a>
                             </li>
                             <li>
+                                <a class="dropdown-item {% if 'short_url' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'short_url_list' %}">
+                                    <i class="bi bi-scissors"></i> Acortador de URLs
+                                </a>
+                            </li>
+                            <li>
                                 <a class="dropdown-item {% if 'public_upload' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'public_upload_url_list' %}">
                                     <i class="bi bi-cloud-upload"></i> URLs Públicas de Subida
@@ -593,6 +599,27 @@
                                 <a class="dropdown-item {% if 'client_assistance' in request.resolver_match.url_name or 'client_time_entries' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'client_assistance_list' %}">
                                     <i class="fas fa-users"></i> Asistencia de Cliente
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <h6 class="dropdown-header">Productos</h6>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'product_set' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'product_set_list' %}">
+                                    <i class="bi bi-box-seam"></i> Conjuntos de Productos
+                                </a>
+                            </li>
+                            
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <h6 class="dropdown-header">Estimaciones</h6>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'precotizador' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'precotizador_list' %}">
+                                    <i class="bi bi-calculator"></i> Precotizador
                                 </a>
                             </li>
                         </ul>

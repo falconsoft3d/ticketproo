@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>
+                    <i class="fas fa-link text-primary"></i> 
+                    Acortador de URLs
+                </h1>
+                <a href="{% url 'short_url_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nueva URL Corta
+                </a>
+            </div>
+
+            <!-- Estadísticas Rápidas -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <div class="h3 text-primary">{{ short_urls.count }}</div>
+                            <div class="text-muted">URLs Creadas</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <div class="h3 text-success">
+                                {% for url in short_urls %}{{ url.clicks|add:0 }}{% if not forloop.last %}+{% endif %}{% endfor %}
+                            </div>
+                            <div class="text-muted">Clics Totales</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <div class="h3 text-info">{{ short_urls|length }}</div>
+                            <div class="text-muted">URLs Activas</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <div class="h3 text-warning">
+                                {% if short_urls.exists %}
+                                    {{ short_urls.first.created_at|timesince }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </div>
+                            <div class="text-muted">Última Creada</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de URLs -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-list"></i> Mis URLs Cortas</h5>
+                </div>
+                <div class="card-body">
+                    {% if short_urls %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>URL Corta</th>
+                                        <th>URL Original</th>
+                                        <th>Título</th>
+                                        <th>Clics</th>
+                                        <th>Estado</th>
+                                        <th>Fecha</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for short_url in short_urls %}
+                                        <tr class="{% if not short_url.is_active %}table-secondary{% elif short_url.is_expired %}table-warning{% endif %}">
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <code class="me-2">{{ short_url.get_short_url }}</code>
+                                                    <button class="btn btn-sm btn-outline-secondary" onclick="copyToClipboard('{{ short_url.get_short_url }}')" title="Copiar URL">
+                                                        <i class="fas fa-copy"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="url-preview" title="{{ short_url.original_url }}">
+                                                    {{ short_url.original_url|truncatechars:50 }}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                {% if short_url.title %}
+                                                    {{ short_url.title }}
+                                                {% else %}
+                                                    <span class="text-muted">Sin título</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-primary">{{ short_url.clicks }}</span>
+                                            </td>
+                                            <td>
+                                                {% if not short_url.is_active %}
+                                                    <span class="badge bg-secondary">Inactiva</span>
+                                                {% elif short_url.is_expired %}
+                                                    <span class="badge bg-warning">Expirada</span>
+                                                {% else %}
+                                                    <span class="badge bg-success">Activa</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span title="{{ short_url.created_at }}">
+                                                    {{ short_url.created_at|date:"d/m/Y H:i" }}
+                                                </span>
+                                                <br>
+                                                <small class="text-muted">{{ short_url.created_at|timesince }} ago</small>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <a href="{{ short_url.get_short_url }}" class="btn btn-outline-success" target="_blank" title="Probar URL">
+                                                        <i class="fas fa-external-link-alt"></i>
+                                                    </a>
+                                                    <a href="{% url 'short_url_stats' short_url.pk %}" class="btn btn-outline-info" title="Estadísticas">
+                                                        <i class="fas fa-chart-bar"></i>
+                                                    </a>
+                                                    <a href="{% url 'short_url_edit' short_url.pk %}" class="btn btn-outline-primary" title="Editar">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <a href="{% url 'short_url_delete' short_url.pk %}" class="btn btn-outline-danger" title="Eliminar">
+                                                        <i class="fas fa-trash"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-link fa-4x text-muted mb-3"></i>
+                            <h4 class="text-muted">No hay URLs cortas aún</h4>
+                            <p class="text-muted">
+                                Crea tu primera URL corta para comenzar a acortar enlaces largos.
+                            </p>
+                            <a href="{% url 'short_url_create' %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Crear Primera URL
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        // Crear una notificación temporal
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-success alert-dismissible fade show position-fixed';
+        alert.style.top = '20px';
+        alert.style.right = '20px';
+        alert.style.zIndex = '9999';
+        alert.innerHTML = `
+            <i class="fas fa-check"></i> URL copiada al portapapeles
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alert);
+        
+        // Remover automáticamente después de 3 segundos
+        setTimeout(() => {
+            if (alert.parentNode) {
+                alert.parentNode.removeChild(alert);
+            }
+        }, 3000);
+    }).catch(err => {
+        console.error('Error al copiar al portapapeles: ', err);
+        alert('Error al copiar la URL');
+    });
+}
+</script>
+{% endblock %}
