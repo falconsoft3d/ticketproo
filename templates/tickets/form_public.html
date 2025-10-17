@@ -71,6 +71,43 @@
             font-size: 0.8rem;
             font-weight: 600;
         }
+        .form-control, .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+        }
+        .form-control-lg {
+            padding: 14px 18px;
+            font-size: 1.05rem;
+        }
+        .form-label {
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+        .form-check-input {
+            width: 1.25em;
+            height: 1.25em;
+            border: 2px solid #cbd5e0;
+            margin-top: 0.15em;
+        }
+        .form-check-input:checked {
+            background-color: #667eea;
+            border-color: #667eea;
+        }
+        .form-check-label {
+            margin-left: 8px;
+            color: #4a5568;
+        }
+        textarea.form-control {
+            resize: vertical;
+            min-height: 100px;
+        }
     </style>
 </head>
 <body>
@@ -91,16 +128,27 @@
 
                     <!-- Contenido del formulario -->
                     <div class="p-4">
-                        {% if messages %}
-                            {% for message in messages %}
-                                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                                    {{ message }}
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        {% if form_submitted %}
+                            <!-- Mensaje de éxito después de enviar -->
+                            <div class="text-center py-5">
+                                <div class="mb-4">
+                                    <i class="bi bi-check-circle-fill text-success" style="font-size: 5rem;"></i>
                                 </div>
-                            {% endfor %}
-                        {% endif %}
-
-                        {% if form_obj.questions.all %}
+                                <h2 class="text-success mb-3">¡Formulario Enviado Exitosamente!</h2>
+                                <p class="lead text-muted mb-4">
+                                    Gracias por su participación. Sus respuestas han sido registradas correctamente.
+                                </p>
+                                <div class="alert alert-info d-inline-block">
+                                    <i class="bi bi-info-circle"></i> Para enviar otra respuesta, recargue la página
+                                </div>
+                                <div class="mt-4">
+                                    <button onclick="window.location.reload()" class="btn btn-primary btn-submit">
+                                        <i class="bi bi-arrow-clockwise"></i> Responder Nuevamente
+                                    </button>
+                                </div>
+                            </div>
+                        {% elif form_obj.questions.all %}
+                            <!-- Formulario normal -->
                             <form method="post">
                                 {% csrf_token %}
                                 <!-- Información del encuestado -->
@@ -108,17 +156,23 @@
                                     <h5 class="mb-3"><i class="bi bi-person"></i> Información Personal (Opcional)</h5>
                                     <div class="row">
                                         <div class="col-md-6 mb-3">
-                                            <strong>{{ form.respondent_name.label }}</strong>
-                                            {{ form.respondent_name }}
+                                            <label class="form-label fw-bold">{{ form.respondent_name.label }}</label>
+                                            <input type="text" name="{{ form.respondent_name.name }}" 
+                                                   class="form-control" 
+                                                   value="{{ form.respondent_name.value|default:'' }}"
+                                                   placeholder="Tu nombre completo">
                                             {% if form.respondent_name.errors %}
-                                                <div class="text-danger small">{{ form.respondent_name.errors }}</div>
+                                                <div class="text-danger small mt-1">{{ form.respondent_name.errors }}</div>
                                             {% endif %}
                                         </div>
                                         <div class="col-md-6 mb-3">
-                                            <strong>{{ form.respondent_email.label }}</strong>
-                                            {{ form.respondent_email }}
+                                            <label class="form-label fw-bold">{{ form.respondent_email.label }}</label>
+                                            <input type="email" name="{{ form.respondent_email.name }}" 
+                                                   class="form-control" 
+                                                   value="{{ form.respondent_email.value|default:'' }}"
+                                                   placeholder="tu@email.com">
                                             {% if form.respondent_email.errors %}
-                                                <div class="text-danger small">{{ form.respondent_email.errors }}</div>
+                                                <div class="text-danger small mt-1">{{ form.respondent_email.errors }}</div>
                                             {% endif %}
                                         </div>
                                     </div>
@@ -127,24 +181,57 @@
                                 {% for field in form %}
                                     {% if not field.name|slice:':10' == 'respondent_' %}
                                     <div class="question-card p-4 mb-4">
-                                        <strong>{{ field.label }}</strong>
+                                        <label class="form-label fw-bold">
+                                            <i class="bi bi-question-circle text-primary"></i> {{ field.label }}
+                                            {% if field.field.required %}
+                                                <span class="text-danger">*</span>
+                                            {% endif %}
+                                        </label>
+                                        
                                         {% if field|field_type == 'RadioSelect' %}
-                                            <div class="d-flex gap-4 mt-2">
+                                            <div class="d-flex flex-wrap gap-3 mt-3">
                                                 {% for subwidget in field %}
-                                                    <div class="form-check form-check-inline">
+                                                    <div class="form-check">
                                                         {{ subwidget.tag }}
-                                                        <label class="form-check-label ms-1">{{ subwidget.choice_label }}</label>
+                                                        <label class="form-check-label fw-normal ms-2">
+                                                            {{ subwidget.choice_label }}
+                                                        </label>
                                                     </div>
                                                 {% endfor %}
                                             </div>
+                                        {% elif field.field.widget.input_type == 'number' %}
+                                            <input type="number" 
+                                                   name="{{ field.name }}" 
+                                                   class="form-control form-control-lg mt-2" 
+                                                   value="{{ field.value|default:'' }}"
+                                                   {% if field.field.required %}required{% endif %}
+                                                   placeholder="Ingresa un número">
+                                        {% elif field.field.widget.input_type == 'text' %}
+                                            <input type="text" 
+                                                   name="{{ field.name }}" 
+                                                   class="form-control form-control-lg mt-2" 
+                                                   value="{{ field.value|default:'' }}"
+                                                   {% if field.field.required %}required{% endif %}
+                                                   placeholder="Escribe tu respuesta">
+                                        {% elif field.field.widget.input_type == 'textarea' or 'Textarea' in field|field_type %}
+                                            <textarea name="{{ field.name }}" 
+                                                      class="form-control form-control-lg mt-2" 
+                                                      rows="4"
+                                                      {% if field.field.required %}required{% endif %}
+                                                      placeholder="Escribe tu respuesta aquí...">{{ field.value|default:'' }}</textarea>
                                         {% else %}
-                                            {{ field }}
+                                            {{ field|add_class:"form-control form-control-lg mt-2" }}
                                         {% endif %}
+                                        
                                         {% if field.errors %}
-                                            <div class="text-danger small">{{ field.errors }}</div>
+                                            <div class="alert alert-danger mt-2 py-2">
+                                                <i class="bi bi-exclamation-triangle"></i> {{ field.errors }}
+                                            </div>
                                         {% endif %}
                                         {% if field.help_text %}
-                                            <div class="form-text">{{ field.help_text }}</div>
+                                            <div class="form-text mt-2">
+                                                <i class="bi bi-info-circle"></i> {{ field.help_text }}
+                                            </div>
                                         {% endif %}
                                     </div>
                                     {% endif %}

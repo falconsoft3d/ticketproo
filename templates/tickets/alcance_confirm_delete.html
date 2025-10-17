@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2 class="fw-bold text-danger">
+                <i class="bi bi-exclamation-triangle"></i> Eliminar Alcance
+            </h2>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="bi bi-trash"></i> Confirmación de Eliminación</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-circle"></i>
+                        <strong>¡Atención!</strong> Esta acción no se puede deshacer.
+                    </div>
+                    
+                    <p class="lead">¿Estás seguro de que deseas eliminar el siguiente alcance?</p>
+                    
+                    <div class="card bg-light mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="bi bi-card-heading"></i> {{ alcance.titulo }}</h5>
+                            <p class="card-text">
+                                <strong><i class="bi bi-tag"></i> Categoría:</strong> {{ alcance.categoria }}<br>
+                                <strong><i class="bi bi-eye"></i> Público:</strong> 
+                                {% if alcance.publico %}
+                                    <span class="badge bg-success">Sí</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">No</span>
+                                {% endif %}<br>
+                                <strong><i class="bi bi-calendar"></i> Creado:</strong> {{ alcance.creado_en|date:'d M Y H:i' }}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a href="{% url 'alcance_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Confirmar Eliminación
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-info-circle"></i> Información</h5>
+                    <p class="card-text small">
+                        Al eliminar este alcance:
+                    </p>
+                    <ul class="small">
+                        <li>Se eliminará permanentemente</li>
+                        <li>No aparecerá en el listado público</li>
+                        <li>Esta acción no se puede deshacer</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

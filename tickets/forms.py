@@ -5574,10 +5574,12 @@ class PublicFormResponseForm(forms.Form):
     respondent_name = forms.CharField(
         max_length=100,
         required=False,
+        label='Nombre completo',
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Tu nombre (opcional)'})
     )
     respondent_email = forms.EmailField(
         required=False,
+        label='Correo electrónico',
         widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Tu email (opcional)'})
     )
 

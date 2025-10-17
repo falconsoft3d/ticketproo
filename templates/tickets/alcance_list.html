@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2 class="fw-bold">
+                <i class="bi bi-bullseye"></i> Gestión de Alcances
+            </h2>
+            <p class="text-muted">Administra los alcances que se mostrarán públicamente</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'alcance_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Nuevo Alcance
+            </a>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th><i class="bi bi-card-heading"></i> Título</th>
+                                    <th><i class="bi bi-tag"></i> Categoría</th>
+                                    <th><i class="bi bi-file-text"></i> Descripción</th>
+                                    <th class="text-center"><i class="bi bi-eye"></i> Público</th>
+                                    <th class="text-center"><i class="bi bi-person"></i> Creado por</th>
+                                    <th class="text-center"><i class="bi bi-gear"></i> Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            {% for alcance in alcances %}
+                                <tr>
+                                    <td class="fw-bold">{{ alcance.titulo }}</td>
+                                    <td><span class="badge bg-info">{{ alcance.categoria }}</span></td>
+                                    <td>{{ alcance.descripcion|truncatechars:70 }}</td>
+                                    <td class="text-center">
+                                        {% if alcance.publico %}
+                                            <span class="badge bg-success"><i class="bi bi-check-circle"></i> Sí</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary"><i class="bi bi-x-circle"></i> No</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <small class="text-muted">
+                                            {{ alcance.creado_por.get_full_name|default:alcance.creado_por.username }}
+                                        </small>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{% url 'alcance_edit' alcance.pk %}" class="btn btn-warning" title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <a href="{% url 'alcance_delete' alcance.pk %}" class="btn btn-danger" title="Eliminar">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">
+                                        <i class="bi bi-inbox fs-1"></i>
+                                        <p class="mt-2">No hay alcances registrados. <a href="{% url 'alcance_create' %}">Crear el primero</a></p>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

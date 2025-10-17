@@ -700,5 +700,15 @@ urlpatterns += [
     
     # URLs públicas para responder formularios
     path('form/<uuid:token>/', views.form_public, name='form_public'),
+    
+    # ============= URLs PARA SISTEMA DE ALCANCES =============
+    # URL pública de alcances (sin autenticación)
+    path('alcances/', views.alcance_publico_list, name='alcance_publico_list'),
+    
+    # URLs de gestión de alcances (requieren autenticación)
+    path('alcances/gestion/', views.alcance_list, name='alcance_list'),
+    path('alcances/crear/', views.alcance_create, name='alcance_create'),
+    path('alcances/<int:pk>/editar/', views.alcance_edit, name='alcance_edit'),
+    path('alcances/<int:pk>/eliminar/', views.alcance_delete, name='alcance_delete'),
 ]
 

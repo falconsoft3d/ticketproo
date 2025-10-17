@@ -8836,3 +8836,28 @@ class FormAnswer(models.Model):
         elif self.question.question_type == 'multiple_choice':
             return self.selected_option.option_text if self.selected_option else ''
         return ''
+
+
+# Modelo de Alcance
+class Alcance(models.Model):
+    titulo = models.CharField(max_length=200, verbose_name='Título')
+    categoria = models.CharField(max_length=100, verbose_name='Categoría')
+    descripcion = models.TextField(verbose_name='Descripción')
+    publico = models.BooleanField(default=True, verbose_name='¿Es público?')
+    creado_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Creado por'
+    )
+    creado_en = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')
+    actualizado_en = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
+
+    class Meta:
+        verbose_name = 'Alcance'
+        verbose_name_plural = 'Alcances'
+        ordering = ['-creado_en']
+
+    def __str__(self):
+        return self.titulo

@@ -38,7 +38,7 @@ from .models import (
     ProductSet, ProductItem, Precotizador, PrecotizadorExample, PrecotizadorQuote,
     CompanyDocumentation, CompanyDocumentationURL, ContactGenerator,
     CompanyRequestGenerator, CompanyRequest, CompanyRequestComment,
-    Form, FormQuestion, FormQuestionOption, FormResponse, FormAnswer
+    Form, FormQuestion, FormQuestionOption, FormResponse, FormAnswer, Alcance
 )
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
@@ -18995,6 +18995,9 @@ def form_public(request, token):
     """Vista pública para responder un formulario"""
     form_obj = get_object_or_404(Form, public_token=token, is_active=True)
     
+    # Variable para controlar si se muestra el formulario
+    form_submitted = False
+    
     if request.method == 'POST':
         form = PublicFormResponseForm(request.POST, form=form_obj)
         if form.is_valid():
@@ -19029,15 +19032,17 @@ def form_public(request, token):
             # Calcular puntuación total
             response.calculate_total_score()
             
-            messages.success(request, '¡Formulario enviado exitosamente! Gracias por su participación.')
-            return redirect('form_public', token=token)
+            # Marcar como enviado para mostrar mensaje de éxito
+            form_submitted = True
+            form = None  # Limpiar el formulario
     else:
         form = PublicFormResponseForm(form=form_obj)
     
     context = {
         'form': form,
         'form_obj': form_obj,
-        'page_title': form_obj.title
+        'page_title': form_obj.title,
+        'form_submitted': form_submitted
     }
     return render(request, 'tickets/form_public.html', context)
 
@@ -19168,3 +19173,93 @@ def form_option_create(request, form_pk, question_pk):
         'page_title': 'Agregar Opción'
     }
     return render(request, 'tickets/form_option_create.html', context)
+
+
+# ==================== VISTAS DE ALCANCE ====================
+
+def alcance_publico_list(request):
+    """Vista pública de alcances - accesible sin autenticación"""
+    alcances = Alcance.objects.filter(publico=True).order_by('-creado_en')
+    
+    context = {
+        'alcances': alcances,
+        'page_title': 'Alcances Públicos'
+    }
+    return render(request, 'tickets/alcance_publico_list.html', context)
+
+
+@login_required
+def alcance_list(request):
+    """Vista de gestión de alcances - solo usuarios autenticados"""
+    alcances = Alcance.objects.all().order_by('-creado_en')
+    
+    context = {
+        'alcances': alcances,
+        'page_title': 'Gestión de Alcances'
+    }
+    return render(request, 'tickets/alcance_list.html', context)
+
+
+@login_required
+def alcance_create(request):
+    """Crear nuevo alcance"""
+    if request.method == 'POST':
+        titulo = request.POST.get('titulo')
+        categoria = request.POST.get('categoria')
+        descripcion = request.POST.get('descripcion')
+        publico = request.POST.get('publico') == 'on'
+        
+        alcance = Alcance.objects.create(
+            titulo=titulo,
+            categoria=categoria,
+            descripcion=descripcion,
+            publico=publico,
+            creado_por=request.user
+        )
+        
+        messages.success(request, 'Alcance creado exitosamente')
+        return redirect('alcance_list')
+    
+    context = {
+        'page_title': 'Crear Alcance'
+    }
+    return render(request, 'tickets/alcance_form.html', context)
+
+
+@login_required
+def alcance_edit(request, pk):
+    """Editar alcance existente"""
+    alcance = get_object_or_404(Alcance, pk=pk)
+    
+    if request.method == 'POST':
+        alcance.titulo = request.POST.get('titulo')
+        alcance.categoria = request.POST.get('categoria')
+        alcance.descripcion = request.POST.get('descripcion')
+        alcance.publico = request.POST.get('publico') == 'on'
+        alcance.save()
+        
+        messages.success(request, 'Alcance actualizado exitosamente')
+        return redirect('alcance_list')
+    
+    context = {
+        'alcance': alcance,
+        'page_title': 'Editar Alcance'
+    }
+    return render(request, 'tickets/alcance_form.html', context)
+
+
+@login_required
+def alcance_delete(request, pk):
+    """Eliminar alcance"""
+    alcance = get_object_or_404(Alcance, pk=pk)
+    
+    if request.method == 'POST':
+        alcance.delete()
+        messages.success(request, 'Alcance eliminado exitosamente')
+        return redirect('alcance_list')
+    
+    context = {
+        'alcance': alcance,
+        'page_title': 'Eliminar Alcance'
+    }
+    return render(request, 'tickets/alcance_confirm_delete.html', context)

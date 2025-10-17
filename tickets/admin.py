@@ -13,7 +13,7 @@ from .models import (
     TaskSchedule, ScheduleTask, ScheduleComment, TicketApproval, SatisfactionSurvey, FinancialAction,
     FinancialPriceHistory, Product, ClientProjectAccess, ClientTimeEntry, CompanyDocumentation, CompanyDocumentationURL, ContactGenerator,
     CompanyRequestGenerator, CompanyRequest, CompanyRequestComment,
-    Form, FormQuestion, FormQuestionOption, FormResponse, FormAnswer
+    Form, FormQuestion, FormQuestionOption, FormResponse, FormAnswer, Alcance
 )
 
 # Configuración del sitio de administración
@@ -2525,3 +2525,31 @@ class FormAnswerAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(Alcance)
+class AlcanceAdmin(admin.ModelAdmin):
+    list_display = ['titulo', 'categoria', 'publico', 'creado_por', 'creado_en']
+    list_filter = ['publico', 'categoria', 'creado_en']
+    search_fields = ['titulo', 'categoria', 'descripcion']
+    readonly_fields = ['creado_en', 'actualizado_en', 'creado_por']
+    ordering = ['-creado_en']
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('titulo', 'categoria', 'descripcion')
+        }),
+        ('Configuración', {
+            'fields': ('publico',)
+        }),
+        ('Metadata', {
+            'fields': ('creado_por', 'creado_en', 'actualizado_en'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def save_model(self, request, obj, form, change):
+        if not change:  # Si es un nuevo objeto
+            obj.creado_por = request.user
+        super().save_model(request, obj, form, change)
+

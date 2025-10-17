@@ -189,6 +189,20 @@
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Alcances</li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'alcance_list' %}active{% endif %}" 
+                                   href="{% url 'alcance_list' %}">
+                                    <i class="bi bi-bullseye"></i> Ver Alcances
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'alcance_create' %}active{% endif %}" 
+                                   href="{% url 'alcance_create' %}">
+                                    <i class="bi bi-plus-circle"></i> Crear Alcance
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
                             <li class="dropdown-header">Acceso Público</li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'public_file_upload' %}active{% endif %}" 

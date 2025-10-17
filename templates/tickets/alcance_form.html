@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2 class="fw-bold">
+                <i class="bi bi-{% if alcance %}pencil{% else %}plus-circle{% endif %}"></i> 
+                {% if alcance %}Editar Alcance{% else %}Nuevo Alcance{% endif %}
+            </h2>
+            <p class="text-muted">
+                {% if alcance %}Modifica los datos del alcance{% else %}Completa los datos para crear un nuevo alcance{% endif %}
+            </p>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="titulo" class="form-label fw-bold">
+                                <i class="bi bi-card-heading"></i> Título <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="titulo" name="titulo" 
+                                   value="{% if alcance %}{{ alcance.titulo }}{% endif %}" 
+                                   required maxlength="200" placeholder="Ej: Desarrollo de Aplicaciones Web">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="categoria" class="form-label fw-bold">
+                                <i class="bi bi-tag"></i> Categoría <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="categoria" name="categoria" 
+                                   value="{% if alcance %}{{ alcance.categoria }}{% endif %}" 
+                                   required maxlength="100" placeholder="Ej: Tecnología, Consultoría, Servicios">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="descripcion" class="form-label fw-bold">
+                                <i class="bi bi-file-text"></i> Descripción <span class="text-danger">*</span>
+                            </label>
+                            <textarea class="form-control" id="descripcion" name="descripcion" 
+                                      rows="5" required placeholder="Describe el alcance en detalle...">{% if alcance %}{{ alcance.descripcion }}{% endif %}</textarea>
+                            <small class="text-muted">Explica de forma clara y completa el alcance de este servicio</small>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="publico" name="publico" 
+                                       {% if not alcance or alcance.publico %}checked{% endif %}>
+                                <label class="form-check-label fw-bold" for="publico">
+                                    <i class="bi bi-eye"></i> Visible públicamente
+                                </label>
+                                <small class="d-block text-muted">Si está activado, este alcance se mostrará en la página pública</small>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a href="{% url 'alcance_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-save"></i> Guardar Alcance
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-info-circle"></i> Información</h5>
+                    <p class="card-text small">
+                        Los alcances públicos ayudan a comunicar los servicios y capacidades que ofreces.
+                    </p>
+                    <hr>
+                    <h6 class="fw-bold">Campos requeridos:</h6>
+                    <ul class="small">
+                        <li><strong>Título:</strong> Nombre del alcance</li>
+                        <li><strong>Categoría:</strong> Tipo de servicio</li>
+                        <li><strong>Descripción:</strong> Detalle completo</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

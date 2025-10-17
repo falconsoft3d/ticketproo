@@ -29,6 +29,12 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'alcance_publico_list' %}active{% endif %}" href="{% url 'alcance_publico_list' %}">
+                        <i class="bi bi-bullseye me-1"></i>
+                        Alcance
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link {% if request.resolver_match.url_name == 'contacto_web' %}active{% endif %}" href="{% url 'contacto_web' %}">
                         <i class="bi bi-envelope me-1"></i>
                         Contacto
