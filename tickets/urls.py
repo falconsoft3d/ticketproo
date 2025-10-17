@@ -710,5 +710,15 @@ urlpatterns += [
     path('alcances/crear/', views.alcance_create, name='alcance_create'),
     path('alcances/<int:pk>/editar/', views.alcance_edit, name='alcance_edit'),
     path('alcances/<int:pk>/eliminar/', views.alcance_delete, name='alcance_delete'),
+    
+    # ============= URLs PARA WHATSAPP =============
+    path('whatsapp/', views.whatsapp_dashboard, name='whatsapp_dashboard'),
+    path('whatsapp/connect/', views.whatsapp_connect, name='whatsapp_connect'),
+    path('whatsapp/disconnect/', views.whatsapp_disconnect, name='whatsapp_disconnect'),
+    path('whatsapp/simulate-connection/', views.whatsapp_simulate_connection, name='whatsapp_simulate_connection'),
+    path('whatsapp/keywords/create/', views.whatsapp_keyword_create, name='whatsapp_keyword_create'),
+    path('whatsapp/keywords/<int:pk>/edit/', views.whatsapp_keyword_edit, name='whatsapp_keyword_edit'),
+    path('whatsapp/keywords/<int:pk>/delete/', views.whatsapp_keyword_delete, name='whatsapp_keyword_delete'),
+    path('whatsapp/messages/', views.whatsapp_messages, name='whatsapp_messages'),
 ]
 

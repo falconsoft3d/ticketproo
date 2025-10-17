@@ -8861,3 +8861,181 @@ class Alcance(models.Model):
 
     def __str__(self):
         return self.titulo
+
+
+# ==================== MODELOS DE WHATSAPP ====================
+
+class WhatsAppConnection(models.Model):
+    """Modelo para gestionar la conexión de WhatsApp"""
+    STATUS_CHOICES = [
+        ('disconnected', 'Desconectado'),
+        ('connecting', 'Conectando'),
+        ('connected', 'Conectado'),
+        ('qr_pending', 'QR Pendiente'),
+        ('error', 'Error'),
+    ]
+    
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Usuario'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='disconnected',
+        verbose_name='Estado'
+    )
+    qr_code = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Código QR'
+    )
+    phone_number = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        verbose_name='Número de teléfono'
+    )
+    session_data = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Datos de sesión'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo'
+    )
+    last_connected = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Última conexión'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+
+    class Meta:
+        verbose_name = 'Conexión WhatsApp'
+        verbose_name_plural = 'Conexiones WhatsApp'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.get_status_display()}"
+
+
+class WhatsAppKeyword(models.Model):
+    """Modelo para palabras clave y respuestas automáticas"""
+    connection = models.ForeignKey(
+        WhatsAppConnection,
+        on_delete=models.CASCADE,
+        related_name='keywords',
+        verbose_name='Conexión'
+    )
+    keyword = models.CharField(
+        max_length=200,
+        verbose_name='Palabra clave'
+    )
+    response = models.TextField(
+        verbose_name='Respuesta'
+    )
+    is_exact_match = models.BooleanField(
+        default=False,
+        verbose_name='Coincidencia exacta',
+        help_text='Si es verdadero, debe coincidir exactamente. Si es falso, busca la palabra en el mensaje.'
+    )
+    is_case_sensitive = models.BooleanField(
+        default=False,
+        verbose_name='Sensible a mayúsculas'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo'
+    )
+    priority = models.IntegerField(
+        default=0,
+        verbose_name='Prioridad',
+        help_text='Mayor número = mayor prioridad'
+    )
+    use_count = models.IntegerField(
+        default=0,
+        verbose_name='Veces usado'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+
+    class Meta:
+        verbose_name = 'Palabra Clave WhatsApp'
+        verbose_name_plural = 'Palabras Clave WhatsApp'
+        ordering = ['-priority', 'keyword']
+        unique_together = ['connection', 'keyword']
+
+    def __str__(self):
+        return f"{self.keyword} → {self.response[:50]}..."
+
+    def increment_use_count(self):
+        """Incrementa el contador de uso"""
+        self.use_count += 1
+        self.save(update_fields=['use_count'])
+
+
+class WhatsAppMessage(models.Model):
+    """Modelo para registrar mensajes de WhatsApp"""
+    MESSAGE_TYPE_CHOICES = [
+        ('received', 'Recibido'),
+        ('sent', 'Enviado'),
+        ('auto_reply', 'Respuesta Automática'),
+    ]
+    
+    connection = models.ForeignKey(
+        WhatsAppConnection,
+        on_delete=models.CASCADE,
+        related_name='messages',
+        verbose_name='Conexión'
+    )
+    message_type = models.CharField(
+        max_length=20,
+        choices=MESSAGE_TYPE_CHOICES,
+        verbose_name='Tipo de mensaje'
+    )
+    from_number = models.CharField(
+        max_length=50,
+        verbose_name='De'
+    )
+    to_number = models.CharField(
+        max_length=50,
+        verbose_name='Para'
+    )
+    message_text = models.TextField(
+        verbose_name='Mensaje'
+    )
+    keyword_matched = models.ForeignKey(
+        WhatsAppKeyword,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Palabra clave coincidente'
+    )
+    timestamp = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha y hora'
+    )
+
+    class Meta:
+        verbose_name = 'Mensaje WhatsApp'
+        verbose_name_plural = 'Mensajes WhatsApp'
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f"{self.get_message_type_display()} - {self.from_number} → {self.to_number}"

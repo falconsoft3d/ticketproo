@@ -1,0 +1,310 @@
+{% extends 'base.html' %}
+
+{% block title %}WhatsApp - Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Banner de Demostración -->
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+            <div>
+                <h5 class="alert-heading mb-1">Modo Demostración</h5>
+                <p class="mb-0">
+                    Esta es una interfaz de demostración. Para usar WhatsApp real, necesitas implementar el backend con 
+                    <a href="https://github.com/pedroslopez/whatsapp-web.js" target="_blank" class="alert-link">whatsapp-web.js</a>. 
+                    Lee <code>WHATSAPP_INTEGRATION.md</code> para instrucciones completas.
+                </p>
+            </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="fab fa-whatsapp text-success"></i> WhatsApp Dashboard</h2>
+            <p class="text-muted mb-0">Gestiona tus mensajes automatizados de WhatsApp</p>
+        </div>
+        <div>
+            {% if connection.status == 'connected' %}
+                <span class="badge bg-success fs-6 me-2">
+                    <i class="fas fa-circle"></i> Conectado
+                </span>
+                <a href="{% url 'whatsapp_disconnect' %}" class="btn btn-outline-danger">
+                    <i class="fas fa-unlink"></i> Desconectar
+                </a>
+            {% else %}
+                <span class="badge bg-secondary fs-6 me-2">
+                    <i class="fas fa-circle"></i> Desconectado
+                </span>
+                <a href="{% url 'whatsapp_connect' %}" class="btn btn-success">
+                    <i class="fas fa-qrcode"></i> Conectar
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Estado de Conexión y QR -->
+    {% if connection.status == 'qr_pending' and connection.qr_code %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-qrcode"></i> Código QR de Demostración
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> 
+                        <strong>Modo Demostración:</strong> Este es un QR de prueba para mostrar la interfaz. 
+                        Para conectar WhatsApp real, necesitas implementar el backend con <code>whatsapp-web.js</code>.
+                        <a href="https://github.com/pedroslopez/whatsapp-web.js" target="_blank" class="alert-link">Ver documentación</a>
+                    </div>
+                    
+                    <div class="text-center">
+                        <div class="bg-dark d-inline-block p-4 rounded shadow">
+                            <pre class="text-white mb-0" style="font-family: monospace; font-size: 8px; line-height: 1;">{{ connection.qr_code }}</pre>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 p-3 bg-light rounded">
+                        <h6><i class="fas fa-laptop-code"></i> Pasos para Implementar WhatsApp Real:</h6>
+                        <ol class="mb-0">
+                            <li>Instalar Node.js: <code>brew install node</code> (macOS)</li>
+                            <li>Crear servicio: <code>npm install whatsapp-web.js</code></li>
+                            <li>Conectar con Django vía API REST</li>
+                            <li>Implementar detección de palabras clave</li>
+                            <li>Enviar auto-respuestas</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="text-center mt-3">
+                        <a href="{% url 'whatsapp_disconnect' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                        <a href="{% url 'whatsapp_simulate_connection' %}" class="btn btn-success">
+                            <i class="fas fa-check-circle"></i> Simular Conexión Exitosa (Demo)
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Total Mensajes</h6>
+                            <h3 class="mb-0">{{ total_messages }}</h3>
+                        </div>
+                        <div class="text-primary" style="font-size: 2rem;">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Auto-respuestas</h6>
+                            <h3 class="mb-0">{{ auto_replies }}</h3>
+                        </div>
+                        <div class="text-success" style="font-size: 2rem;">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Palabras Clave</h6>
+                            <h3 class="mb-0">{{ total_keywords }}</h3>
+                        </div>
+                        <div class="text-warning" style="font-size: 2rem;">
+                            <i class="fas fa-key"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Activas</h6>
+                            <h3 class="mb-0">{{ active_keywords }}</h3>
+                        </div>
+                        <div class="text-info" style="font-size: 2rem;">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Palabras Clave y Mensajes Recientes -->
+    <div class="row">
+        <!-- Palabras Clave -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-key"></i> Palabras Clave</h5>
+                    <a href="{% url 'whatsapp_keyword_create' %}" class="btn btn-light btn-sm">
+                        <i class="fas fa-plus"></i> Nueva
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if keywords %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Palabra</th>
+                                        <th>Respuesta</th>
+                                        <th>Usos</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for keyword in keywords|slice:":10" %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ keyword.keyword }}</strong>
+                                            {% if keyword.priority > 0 %}
+                                                <span class="badge bg-warning text-dark" title="Prioridad">{{ keyword.priority }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">{{ keyword.response|truncatewords:8 }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">{{ keyword.use_count }}</span>
+                                        </td>
+                                        <td>
+                                            {% if keyword.is_active %}
+                                                <span class="badge bg-success">Activa</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Inactiva</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'whatsapp_keyword_edit' keyword.pk %}" class="btn btn-sm btn-outline-primary" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'whatsapp_keyword_delete' keyword.pk %}" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% if keywords.count > 10 %}
+                            <div class="text-center">
+                                <small class="text-muted">Mostrando 10 de {{ keywords.count }}</small>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-key text-muted" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-3">No hay palabras clave configuradas</p>
+                            <a href="{% url 'whatsapp_keyword_create' %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Crear Primera Palabra Clave
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Mensajes Recientes -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-comments"></i> Mensajes Recientes</h5>
+                    <a href="{% url 'whatsapp_messages' %}" class="btn btn-light btn-sm">
+                        <i class="fas fa-list"></i> Ver Todos
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if recent_messages %}
+                        <div class="table-responsive">
+                            <table class="table table-hover table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>De</th>
+                                        <th>Mensaje</th>
+                                        <th>Tipo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for msg in recent_messages %}
+                                    <tr>
+                                        <td><small>{{ msg.timestamp|date:"d/m H:i" }}</small></td>
+                                        <td><small>{{ msg.sender_number }}</small></td>
+                                        <td><small class="text-muted">{{ msg.message_text|truncatewords:5 }}</small></td>
+                                        <td>
+                                            {% if msg.message_type == 'received' %}
+                                                <span class="badge bg-primary">Recibido</span>
+                                            {% elif msg.message_type == 'auto_reply' %}
+                                                <span class="badge bg-success">Auto-respuesta</span>
+                                            {% else %}
+                                                <span class="badge bg-info">Enviado</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-inbox text-muted" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-3">No hay mensajes aún</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Guía de Uso -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-question-circle"></i> ¿Cómo usar esta integración?</h5>
+                </div>
+                <div class="card-body">
+                    <ol class="mb-0">
+                        <li><strong>Conecta tu WhatsApp:</strong> Haz clic en "Conectar" y escanea el código QR con tu teléfono</li>
+                        <li><strong>Crea Palabras Clave:</strong> Define palabras o frases que activarán respuestas automáticas</li>
+                        <li><strong>Configura Respuestas:</strong> Establece qué mensaje se enviará cuando alguien escriba una palabra clave</li>
+                        <li><strong>Ajusta Prioridades:</strong> Las palabras con mayor prioridad se evalúan primero</li>
+                        <li><strong>Monitorea Mensajes:</strong> Revisa el historial de mensajes y auto-respuestas enviadas</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -13,7 +13,8 @@ from .models import (
     TaskSchedule, ScheduleTask, ScheduleComment, TicketApproval, SatisfactionSurvey, FinancialAction,
     FinancialPriceHistory, Product, ClientProjectAccess, ClientTimeEntry, CompanyDocumentation, CompanyDocumentationURL, ContactGenerator,
     CompanyRequestGenerator, CompanyRequest, CompanyRequestComment,
-    Form, FormQuestion, FormQuestionOption, FormResponse, FormAnswer, Alcance
+    Form, FormQuestion, FormQuestionOption, FormResponse, FormAnswer, Alcance,
+    WhatsAppConnection, WhatsAppKeyword, WhatsAppMessage
 )
 
 # Configuración del sitio de administración
@@ -2552,4 +2553,105 @@ class AlcanceAdmin(admin.ModelAdmin):
         if not change:  # Si es un nuevo objeto
             obj.creado_por = request.user
         super().save_model(request, obj, form, change)
+
+
+# ==================== ADMIN DE WHATSAPP ====================
+
+@admin.register(WhatsAppConnection)
+class WhatsAppConnectionAdmin(admin.ModelAdmin):
+    list_display = ['user', 'status_badge', 'phone_number', 'is_active', 'last_connected', 'created_at']
+    list_filter = ['status', 'is_active', 'created_at']
+    search_fields = ['user__username', 'phone_number']
+    readonly_fields = ['qr_code', 'session_data', 'last_connected', 'created_at', 'updated_at']
+    
+    fieldsets = (
+        ('Usuario', {
+            'fields': ('user', 'phone_number')
+        }),
+        ('Estado', {
+            'fields': ('status', 'is_active', 'last_connected')
+        }),
+        ('Datos de Sesión', {
+            'fields': ('qr_code', 'session_data'),
+            'classes': ('collapse',)
+        }),
+        ('Fechas', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def status_badge(self, obj):
+        colors = {
+            'connected': 'success',
+            'connecting': 'warning',
+            'disconnected': 'secondary',
+            'qr_pending': 'info',
+            'error': 'danger',
+        }
+        color = colors.get(obj.status, 'secondary')
+        return format_html(
+            '<span class="badge bg-{}">{}</span>',
+            color, obj.get_status_display()
+        )
+    status_badge.short_description = 'Estado'
+
+
+@admin.register(WhatsAppKeyword)
+class WhatsAppKeywordAdmin(admin.ModelAdmin):
+    list_display = ['keyword', 'connection', 'is_active', 'priority', 'use_count', 'is_exact_match', 'created_at']
+    list_filter = ['is_active', 'is_exact_match', 'is_case_sensitive', 'connection']
+    search_fields = ['keyword', 'response']
+    list_editable = ['is_active', 'priority']
+    ordering = ['-priority', 'keyword']
+    
+    fieldsets = (
+        ('Palabra Clave', {
+            'fields': ('connection', 'keyword', 'response')
+        }),
+        ('Configuración', {
+            'fields': ('is_exact_match', 'is_case_sensitive', 'is_active', 'priority')
+        }),
+        ('Estadísticas', {
+            'fields': ('use_count',),
+            'classes': ('collapse',)
+        }),
+        ('Fechas', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    readonly_fields = ['use_count', 'created_at', 'updated_at']
+
+
+@admin.register(WhatsAppMessage)
+class WhatsAppMessageAdmin(admin.ModelAdmin):
+    list_display = ['message_type_badge', 'from_number', 'to_number', 'message_preview', 'keyword_matched', 'timestamp']
+    list_filter = ['message_type', 'connection', 'timestamp']
+    search_fields = ['from_number', 'to_number', 'message_text']
+    readonly_fields = ['connection', 'message_type', 'from_number', 'to_number', 'message_text', 'keyword_matched', 'timestamp']
+    date_hierarchy = 'timestamp'
+    
+    def message_type_badge(self, obj):
+        colors = {
+            'received': 'info',
+            'sent': 'primary',
+            'auto_reply': 'success',
+        }
+        color = colors.get(obj.message_type, 'secondary')
+        return format_html(
+            '<span class="badge bg-{}">{}</span>',
+            color, obj.get_message_type_display()
+        )
+    message_type_badge.short_description = 'Tipo'
+    
+    def message_preview(self, obj):
+        return obj.message_text[:50] + '...' if len(obj.message_text) > 50 else obj.message_text
+    message_preview.short_description = 'Mensaje'
+    
+    def has_add_permission(self, request):
+        return False
+    
+    def has_change_permission(self, request, obj=None):
+        return False
 

@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'whatsapp_dashboard' %}">WhatsApp</a></li>
+            <li class="breadcrumb-item active">{{ page_title }}</li>
+        </ol>
+    </nav>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">
+                <i class="fas fa-comments"></i> Historial de Mensajes
+            </h4>
+            <div>
+                <span class="badge bg-light text-dark">
+                    Estado: 
+                    {% if connection.status == 'connected' %}
+                        <i class="fas fa-circle text-success"></i> Conectado
+                    {% else %}
+                        <i class="fas fa-circle text-secondary"></i> Desconectado
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if page_obj %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 150px;">Fecha/Hora</th>
+                                <th style="width: 150px;">Número</th>
+                                <th>Mensaje</th>
+                                <th style="width: 120px;">Tipo</th>
+                                <th style="width: 200px;">Palabra Clave</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for message in page_obj %}
+                            <tr>
+                                <td>
+                                    <small>
+                                        {{ message.timestamp|date:"d/m/Y" }}<br>
+                                        {{ message.timestamp|date:"H:i:s" }}
+                                    </small>
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ message.sender_number }}</small>
+                                </td>
+                                <td>
+                                    {{ message.message_text|truncatewords:15 }}
+                                </td>
+                                <td>
+                                    {% if message.message_type == 'received' %}
+                                        <span class="badge bg-primary">
+                                            <i class="fas fa-inbox"></i> Recibido
+                                        </span>
+                                    {% elif message.message_type == 'auto_reply' %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-robot"></i> Auto-respuesta
+                                        </span>
+                                    {% elif message.message_type == 'sent' %}
+                                        <span class="badge bg-info">
+                                            <i class="fas fa-paper-plane"></i> Enviado
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">
+                                            {{ message.message_type }}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if message.matched_keyword %}
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="fas fa-key"></i> {{ message.matched_keyword.keyword }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginación -->
+                {% if page_obj.has_other_pages %}
+                <nav aria-label="Paginación de mensajes" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                                    <i class="fas fa-angle-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+
+                        <li class="page-item active">
+                            <span class="page-link">
+                                Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                            </span>
+                        </li>
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                                    <i class="fas fa-angle-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+
+                <!-- Resumen -->
+                <div class="text-center mt-3">
+                    <small class="text-muted">
+                        Mostrando {{ page_obj.start_index }} - {{ page_obj.end_index }} de {{ page_obj.paginator.count }} mensajes
+                    </small>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-inbox text-muted" style="font-size: 4rem;"></i>
+                    <p class="text-muted mt-3 lead">No hay mensajes en el historial</p>
+                    <p class="text-muted">Los mensajes aparecerán aquí cuando tu WhatsApp esté conectado y reciba mensajes</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Leyenda -->
+    <div class="card mt-3 border-info">
+        <div class="card-body">
+            <h6 class="card-title"><i class="fas fa-info-circle"></i> Tipos de Mensaje</h6>
+            <div class="row">
+                <div class="col-md-4">
+                    <span class="badge bg-primary me-2">Recibido</span>
+                    Mensajes que te enviaron
+                </div>
+                <div class="col-md-4">
+                    <span class="badge bg-success me-2">Auto-respuesta</span>
+                    Respuestas automáticas enviadas
+                </div>
+                <div class="col-md-4">
+                    <span class="badge bg-info me-2">Enviado</span>
+                    Mensajes enviados manualmente
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

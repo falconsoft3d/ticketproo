@@ -203,6 +203,26 @@
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">WhatsApp</li>
+                            <li>
+                                <a class="dropdown-item {% if 'whatsapp' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'whatsapp_dashboard' %}">
+                                    <i class="fab fa-whatsapp"></i> Dashboard
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'whatsapp_keyword_create' %}active{% endif %}" 
+                                   href="{% url 'whatsapp_keyword_create' %}">
+                                    <i class="bi bi-plus-circle"></i> Nueva Palabra Clave
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'whatsapp_messages' %}active{% endif %}" 
+                                   href="{% url 'whatsapp_messages' %}">
+                                    <i class="bi bi-chat-dots"></i> Mensajes
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
                             <li class="dropdown-header">Acceso Público</li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'public_file_upload' %}active{% endif %}" 

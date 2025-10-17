@@ -38,7 +38,8 @@ from .models import (
     ProductSet, ProductItem, Precotizador, PrecotizadorExample, PrecotizadorQuote,
     CompanyDocumentation, CompanyDocumentationURL, ContactGenerator,
     CompanyRequestGenerator, CompanyRequest, CompanyRequestComment,
-    Form, FormQuestion, FormQuestionOption, FormResponse, FormAnswer, Alcance
+    Form, FormQuestion, FormQuestionOption, FormResponse, FormAnswer, Alcance,
+    WhatsAppConnection, WhatsAppKeyword, WhatsAppMessage
 )
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
@@ -19263,3 +19264,187 @@ def alcance_delete(request, pk):
         'page_title': 'Eliminar Alcance'
     }
     return render(request, 'tickets/alcance_confirm_delete.html', context)
+
+
+# ==================== VISTAS DE WHATSAPP ====================
+
+@login_required
+def whatsapp_dashboard(request):
+    """Dashboard principal de WhatsApp"""
+    connection, created = WhatsAppConnection.objects.get_or_create(
+        user=request.user,
+        defaults={'status': 'disconnected'}
+    )
+    
+    keywords = WhatsAppKeyword.objects.filter(connection=connection).order_by('-priority', 'keyword')
+    recent_messages = WhatsAppMessage.objects.filter(connection=connection).order_by('-timestamp')[:20]
+    
+    # Estadísticas
+    total_messages = WhatsAppMessage.objects.filter(connection=connection).count()
+    auto_replies = WhatsAppMessage.objects.filter(connection=connection, message_type='auto_reply').count()
+    total_keywords = keywords.count()
+    active_keywords = keywords.filter(is_active=True).count()
+    
+    context = {
+        'connection': connection,
+        'keywords': keywords,
+        'recent_messages': recent_messages,
+        'total_messages': total_messages,
+        'auto_replies': auto_replies,
+        'total_keywords': total_keywords,
+        'active_keywords': active_keywords,
+        'page_title': 'WhatsApp - Dashboard'
+    }
+    return render(request, 'tickets/whatsapp_dashboard.html', context)
+
+
+@login_required
+def whatsapp_keyword_create(request):
+    """Crear nueva palabra clave"""
+    connection = WhatsAppConnection.objects.get_or_create(user=request.user)[0]
+    
+    if request.method == 'POST':
+        keyword = request.POST.get('keyword')
+        response = request.POST.get('response')
+        is_exact_match = request.POST.get('is_exact_match') == 'on'
+        is_case_sensitive = request.POST.get('is_case_sensitive') == 'on'
+        priority = int(request.POST.get('priority', 0))
+        
+        WhatsAppKeyword.objects.create(
+            connection=connection,
+            keyword=keyword,
+            response=response,
+            is_exact_match=is_exact_match,
+            is_case_sensitive=is_case_sensitive,
+            priority=priority
+        )
+        
+        messages.success(request, f'Palabra clave "{keyword}" creada exitosamente')
+        return redirect('whatsapp_dashboard')
+    
+    context = {
+        'connection': connection,
+        'page_title': 'Nueva Palabra Clave'
+    }
+    return render(request, 'tickets/whatsapp_keyword_form.html', context)
+
+
+@login_required
+def whatsapp_keyword_edit(request, pk):
+    """Editar palabra clave"""
+    keyword = get_object_or_404(WhatsAppKeyword, pk=pk, connection__user=request.user)
+    
+    if request.method == 'POST':
+        keyword.keyword = request.POST.get('keyword')
+        keyword.response = request.POST.get('response')
+        keyword.is_exact_match = request.POST.get('is_exact_match') == 'on'
+        keyword.is_case_sensitive = request.POST.get('is_case_sensitive') == 'on'
+        keyword.priority = int(request.POST.get('priority', 0))
+        keyword.is_active = request.POST.get('is_active') == 'on'
+        keyword.save()
+        
+        messages.success(request, 'Palabra clave actualizada exitosamente')
+        return redirect('whatsapp_dashboard')
+    
+    context = {
+        'keyword': keyword,
+        'page_title': 'Editar Palabra Clave'
+    }
+    return render(request, 'tickets/whatsapp_keyword_form.html', context)
+
+
+@login_required
+def whatsapp_keyword_delete(request, pk):
+    """Eliminar palabra clave"""
+    keyword = get_object_or_404(WhatsAppKeyword, pk=pk, connection__user=request.user)
+    
+    if request.method == 'POST':
+        keyword.delete()
+        messages.success(request, 'Palabra clave eliminada exitosamente')
+        return redirect('whatsapp_dashboard')
+    
+    context = {
+        'keyword': keyword,
+        'page_title': 'Eliminar Palabra Clave'
+    }
+    return render(request, 'tickets/whatsapp_keyword_delete.html', context)
+
+
+@login_required
+def whatsapp_connect(request):
+    """Iniciar conexión de WhatsApp y obtener QR"""
+    import qrcode
+    from io import StringIO
+    
+    connection = WhatsAppConnection.objects.get_or_create(user=request.user)[0]
+    connection.status = 'qr_pending'
+    
+    # Generar un código de demostración
+    demo_code = f"WHATSAPP-DEMO-{request.user.id}-{connection.id}"
+    
+    # Generar QR en formato ASCII
+    qr = qrcode.QRCode(border=1)
+    qr.add_data(f"Para conectar WhatsApp Web, necesitas:\n\n1. Instalar whatsapp-web.js (Node.js)\n2. Código de sesión: {demo_code}\n\nEsta es una demostración. Para usar WhatsApp real, implementa el backend con whatsapp-web.js")
+    qr.make(fit=True)
+    
+    # Convertir a ASCII art
+    output = StringIO()
+    qr.print_ascii(out=output, invert=True)
+    ascii_qr = output.getvalue()
+    
+    connection.qr_code = ascii_qr
+    connection.save()
+    
+    messages.info(request, '⚠️ QR de demostración generado. Para conectar WhatsApp real, implementa el backend con whatsapp-web.js')
+    return redirect('whatsapp_dashboard')
+
+
+@login_required
+def whatsapp_disconnect(request):
+    """Desconectar WhatsApp"""
+    connection = WhatsAppConnection.objects.get_or_create(user=request.user)[0]
+    connection.status = 'disconnected'
+    connection.qr_code = None
+    connection.save()
+    
+    messages.success(request, 'Desconectado de WhatsApp')
+    return redirect('whatsapp_dashboard')
+
+
+@login_required
+def whatsapp_simulate_connection(request):
+    """Simular conexión exitosa (solo para demostración)"""
+    connection = WhatsAppConnection.objects.get_or_create(user=request.user)[0]
+    connection.status = 'connected'
+    connection.qr_code = None
+    connection.save()
+    
+    # Crear mensaje de demostración
+    WhatsAppMessage.objects.create(
+        connection=connection,
+        sender_number='+1234567890',
+        message_text='Este es un mensaje de demostración del sistema',
+        message_type='received'
+    )
+    
+    messages.success(request, '✅ Conexión simulada exitosamente (modo demostración)')
+    return redirect('whatsapp_dashboard')
+
+
+@login_required
+def whatsapp_messages(request):
+    """Ver historial de mensajes"""
+    connection = WhatsAppConnection.objects.get_or_create(user=request.user)[0]
+    messages_list = WhatsAppMessage.objects.filter(connection=connection).order_by('-timestamp')
+    
+    # Paginación
+    paginator = Paginator(messages_list, 50)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'connection': connection,
+        'page_obj': page_obj,
+        'page_title': 'Mensajes WhatsApp'
+    }
+    return render(request, 'tickets/whatsapp_messages.html', context)
