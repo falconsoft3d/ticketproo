@@ -181,6 +181,38 @@
     </div>
 </section>
 
+<!-- Alcances Section -->
+{% if alcances %}
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="display-6 fw-bold mb-3">Alcance de TicketProo</h2>
+            <p class="lead text-muted">Conoce que podemos hacer TicketProo</p>
+        </div>
+        
+        <div class="row g-4">
+            {% for alcance in alcances %}
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center">
+                        
+                        <h5 class="card-title text-dark mb-3">{{ alcance.titulo }}</h5>
+                        {% if alcance.categoria %}
+                            <span class="badge bg-primary mb-3">{{ alcance.categoria }}</span>
+                        {% endif %}
+                        <p class="card-text text-muted small">
+                            {{ alcance.descripcion|truncatewords:15 }}
+                        </p>
+                    
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
 <!-- Open Source Section -->
 <section class="py-5" style="background: white">
     <div class="container">

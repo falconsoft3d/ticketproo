@@ -97,6 +97,9 @@ def home_view(request):
     # Obtener conceptos activos para mostrar en el home
     concepts = Concept.objects.filter(is_active=True)[:10]  # Máximo 10 conceptos
     
+    # Obtener alcances públicos
+    alcances = Alcance.objects.filter(publico=True).order_by('-creado_en')[:8]
+    
     # Obtener los últimos 4 artículos del blog
     from .models import BlogPost
     latest_blog_posts = BlogPost.objects.filter(
@@ -111,6 +114,7 @@ def home_view(request):
         'tickets_by_status': tickets_by_status,
         'is_authenticated': request.user.is_authenticated,
         'concepts': concepts,
+        'alcances': alcances,
         'latest_blog_posts': latest_blog_posts,
     }
     return render(request, 'tickets/home.html', context)
