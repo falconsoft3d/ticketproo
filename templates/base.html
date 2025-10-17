@@ -142,7 +142,7 @@
                     <!-- Menú de Compartir Archivos -->
                     {% if user.is_authenticated %}
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if 'shared_file' in request.resolver_match.url_name %}active{% endif %}" 
+                        <a class="nav-link dropdown-toggle {% if 'shared_file' in request.resolver_match.url_name or 'form' in request.resolver_match.url_name %}active{% endif %}" 
                            href="#" id="navbarDropdownFiles" role="button" data-bs-toggle="dropdown">
                             <i class="bi bi-folder-symlink"></i> Compartir
                         </a>
@@ -160,7 +160,6 @@
                                     <i class="bi bi-cloud-upload"></i> Subir Archivo
                                 </a>
                             </li>
-                            
                             <li><hr class="dropdown-divider"></li>
                             <li class="dropdown-header">Grabaciones</li>
                             <li>
@@ -175,7 +174,20 @@
                                     <i class="bi bi-mic-fill"></i> Subir Grabación
                                 </a>
                             </li>
-                            
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Formularios y Encuestas</li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'form_list' %}active{% endif %}" 
+                                   href="{% url 'form_list' %}">
+                                    <i class="bi bi-list-ul"></i> Ver Formularios
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'form_create' %}active{% endif %}" 
+                                   href="{% url 'form_create' %}">
+                                    <i class="bi bi-plus-circle"></i> Crear Formulario
+                                </a>
+                            </li>
                             <li><hr class="dropdown-divider"></li>
                             <li class="dropdown-header">Acceso Público</li>
                             <li>
@@ -190,7 +202,6 @@
                                     <i class="bi bi-broadcast"></i> Subir Grabación Pública
                                 </a>
                             </li>
-                            
                             <!-- Opciones adicionales para Agentes -->
                             {% if user.groups.all and user.groups.first.name == 'Agentes' %}
                             <li><hr class="dropdown-divider"></li>
@@ -211,6 +222,9 @@
                         </ul>
                     </li>
                     {% endif %}
+                    
+                    <!-- Menú de Formularios -->
+                    
                     
                     <!-- Menú de gestión para agentes -->
                     {% if user.groups.all and user.groups.first.name == 'Agentes' %}

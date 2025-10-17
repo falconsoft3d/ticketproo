@@ -8645,3 +8645,194 @@ class CompanyRequestComment(models.Model):
 
     def __str__(self):
         return f"Comentario de {self.user.username} en {self.request.sequence}"
+
+
+# ============= SISTEMA DE FORMULARIOS =============
+
+class Form(models.Model):
+    """Formulario con múltiples preguntas"""
+    
+    title = models.CharField(max_length=200, verbose_name='Título del formulario')
+    description = models.TextField(blank=True, verbose_name='Descripción')
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.CASCADE,
+        related_name='forms',
+        verbose_name='Empresa'
+    )
+    is_active = models.BooleanField(default=True, verbose_name='Activo')
+    public_token = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='forms_created',
+        verbose_name='Creado por'
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Formulario'
+        verbose_name_plural = 'Formularios'
+
+    def __str__(self):
+        return f"{self.title} - {self.company.name}"
+
+    def get_public_url(self):
+        """Retorna la URL pública del formulario"""
+        return f"/form/{self.public_token}/"
+
+    def get_total_responses(self):
+        """Retorna el total de respuestas del formulario"""
+        return self.responses.count()
+
+    def get_average_score(self):
+        """Retorna el promedio de puntuación del formulario"""
+        responses = self.responses.all()
+        if not responses:
+            return 0
+        
+        total_score = sum(response.total_score for response in responses)
+        return round(total_score / len(responses), 2)
+
+
+class FormQuestion(models.Model):
+    """Pregunta de un formulario"""
+    
+    QUESTION_TYPES = [
+        ('number', 'Cantidad (Número)'),
+        ('multiple_choice', 'Selección múltiple'),
+        ('text', 'Texto libre'),
+    ]
+    
+    form = models.ForeignKey(
+        Form,
+        on_delete=models.CASCADE,
+        related_name='questions',
+        verbose_name='Formulario'
+    )
+    question_text = models.TextField(verbose_name='Texto de la pregunta')
+    question_type = models.CharField(
+        max_length=20,
+        choices=QUESTION_TYPES,
+        verbose_name='Tipo de pregunta'
+    )
+    is_required = models.BooleanField(default=True, verbose_name='Obligatoria')
+    order = models.PositiveIntegerField(default=0, verbose_name='Orden')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')
+
+    class Meta:
+        ordering = ['order', 'created_at']
+        verbose_name = 'Pregunta'
+        verbose_name_plural = 'Preguntas'
+
+    def __str__(self):
+        return f"{self.form.title} - {self.question_text[:50]}..."
+
+
+class FormQuestionOption(models.Model):
+    """Opciones para preguntas de selección múltiple"""
+    
+    question = models.ForeignKey(
+        FormQuestion,
+        on_delete=models.CASCADE,
+        related_name='options',
+        verbose_name='Pregunta'
+    )
+    option_text = models.CharField(max_length=200, verbose_name='Texto de la opción')
+    score = models.IntegerField(default=0, verbose_name='Puntuación')
+    order = models.PositiveIntegerField(default=0, verbose_name='Orden')
+
+    class Meta:
+        ordering = ['order']
+        verbose_name = 'Opción de Pregunta'
+        verbose_name_plural = 'Opciones de Preguntas'
+
+    def __str__(self):
+        return f"{self.option_text} ({self.score} pts)"
+
+
+class FormResponse(models.Model):
+    """Respuesta completa a un formulario"""
+    
+    form = models.ForeignKey(
+        Form,
+        on_delete=models.CASCADE,
+        related_name='responses',
+        verbose_name='Formulario'
+    )
+    respondent_name = models.CharField(max_length=100, blank=True, verbose_name='Nombre del encuestado')
+    respondent_email = models.EmailField(blank=True, verbose_name='Email del encuestado')
+    total_score = models.IntegerField(default=0, verbose_name='Puntuación total')
+    response_date = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de respuesta')
+
+    class Meta:
+        ordering = ['-response_date']
+        verbose_name = 'Respuesta al Formulario'
+        verbose_name_plural = 'Respuestas a Formularios'
+
+    def __str__(self):
+        return f"Respuesta de {self.respondent_name or 'Anónimo'} - {self.form.title}"
+
+    def calculate_total_score(self):
+        """Calcula y actualiza la puntuación total"""
+        total = 0
+        for answer in self.answers.all():
+            if answer.selected_option:
+                total += answer.selected_option.score
+        self.total_score = total
+        self.save()
+        return total
+
+
+class FormAnswer(models.Model):
+    """Respuesta individual a una pregunta"""
+    
+    response = models.ForeignKey(
+        FormResponse,
+        on_delete=models.CASCADE,
+        related_name='answers',
+        verbose_name='Respuesta al formulario'
+    )
+    question = models.ForeignKey(
+        FormQuestion,
+        on_delete=models.CASCADE,
+        verbose_name='Pregunta'
+    )
+    # Para preguntas de texto
+    text_answer = models.TextField(blank=True, verbose_name='Respuesta de texto')
+    # Para preguntas de número
+    number_answer = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Respuesta numérica'
+    )
+    # Para preguntas de selección múltiple
+    selected_option = models.ForeignKey(
+        FormQuestionOption,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name='Opción seleccionada'
+    )
+
+    class Meta:
+        unique_together = ('response', 'question')
+        verbose_name = 'Respuesta Individual'
+        verbose_name_plural = 'Respuestas Individuales'
+
+    def __str__(self):
+        return f"Respuesta a: {self.question.question_text[:30]}..."
+
+    def get_answer_display(self):
+        """Retorna la respuesta en formato legible"""
+        if self.question.question_type == 'text':
+            return self.text_answer
+        elif self.question.question_type == 'number':
+            return str(self.number_answer) if self.number_answer is not None else ''
+        elif self.question.question_type == 'multiple_choice':
+            return self.selected_option.option_text if self.selected_option else ''
+        return ''

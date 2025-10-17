@@ -23,8 +23,9 @@ from .models import (
     Agreement, AgreementSignature, LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry, SharedFile, SharedFileDownload,
     Recording, RecordingPlayback, MultipleDocumentation, TaskSchedule, ScheduleTask, ScheduleComment, FinancialAction,
     ClientProjectAccess, ClientTimeEntry, ProductSet, ProductItem, Precotizador, PrecotizadorExample, PrecotizadorQuote,
-    CompanyDocumentation, CompanyDocumentationURL, ContactGenerator
-    , CompanyRequestGenerator, CompanyRequest, CompanyRequestComment
+    CompanyDocumentation, CompanyDocumentationURL, ContactGenerator,
+    CompanyRequestGenerator, CompanyRequest, CompanyRequestComment,
+    Form, FormQuestion, FormQuestionOption, FormResponse, FormAnswer
 )
 
 class CategoryForm(forms.ModelForm):
@@ -5507,3 +5508,103 @@ class PublicCompanyRequestForm(forms.ModelForm):
                 self.fields.pop('text')
             if not generator.collect_url:
                 self.fields.pop('url')
+
+
+# ============= FORMULARIOS PARA SISTEMA DE FORMULARIOS =============
+
+class FormForm(forms.ModelForm):
+    """Formulario para crear/editar formularios"""
+
+    class Meta:
+        model = Form
+        fields = ['title', 'description', 'company', 'is_active']
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'company': forms.Select(attrs={'class': 'form-select'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        if user:
+            if user.is_staff or user.is_superuser:
+                self.fields['company'].queryset = Company.objects.all()
+            else:
+                user_companies = []
+                if hasattr(user, 'company'):
+                    user_companies.append(user.company.id)
+                if hasattr(user, 'additional_companies'):
+                    user_companies.extend(user.additional_companies.values_list('id', flat=True))
+                self.fields['company'].queryset = Company.objects.filter(id__in=user_companies)
+
+
+class FormQuestionForm(forms.ModelForm):
+    """Formulario para crear/editar preguntas"""
+
+    class Meta:
+        model = FormQuestion
+        fields = ['question_text', 'question_type', 'is_required', 'order']
+        widgets = {
+            'question_text': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'question_type': forms.Select(attrs={'class': 'form-select'}),
+            'is_required': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'order': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
+        }
+
+
+class FormQuestionOptionForm(forms.ModelForm):
+    """Formulario para crear/editar opciones de preguntas"""
+
+    class Meta:
+        model = FormQuestionOption
+        fields = ['option_text', 'score', 'order']
+        widgets = {
+            'option_text': forms.TextInput(attrs={'class': 'form-control'}),
+            'score': forms.NumberInput(attrs={'class': 'form-control'}),
+            'order': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
+        }
+
+
+class PublicFormResponseForm(forms.Form):
+    """Formulario público para responder a un formulario"""
+    
+    respondent_name = forms.CharField(
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Tu nombre (opcional)'})
+    )
+    respondent_email = forms.EmailField(
+        required=False,
+        widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Tu email (opcional)'})
+    )
+
+    def __init__(self, *args, **kwargs):
+        form_obj = kwargs.pop('form', None)
+        super().__init__(*args, **kwargs)
+
+        if form_obj:
+            for question in form_obj.questions.all():
+                field_name = f'question_{question.id}'
+                if question.question_type == 'text':
+                    self.fields[field_name] = forms.CharField(
+                        label=question.question_text,
+                        required=question.is_required,
+                        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3})
+                    )
+                elif question.question_type == 'number':
+                    self.fields[field_name] = forms.DecimalField(
+                        label=question.question_text,
+                        required=question.is_required,
+                        widget=forms.NumberInput(attrs={'class': 'form-control'})
+                    )
+                elif question.question_type == 'multiple_choice':
+                    choices = [(option.id, option.option_text) for option in question.options.all()]
+                    self.fields[field_name] = forms.ChoiceField(
+                        label=question.question_text,
+                        required=question.is_required,
+                        choices=choices,
+                        widget=forms.RadioSelect(attrs={'class': 'form-check-input'})
+                    )

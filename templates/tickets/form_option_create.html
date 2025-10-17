@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="bi bi-plus-circle"></i> Agregar Opción</h4>
+                </div>
+                <form method="post">
+                    <div class="card-body">
+                        {% csrf_token %}
+                        
+                        <div class="alert alert-info">
+                            <strong>Pregunta:</strong> {{ question.question_text }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Texto de la opción</label>
+                            <input type="text" name="text" class="form-control" required 
+                                   placeholder="Ej: Excelente, Muy bueno, Regular...">
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Puntuación</label>
+                                    <input type="number" name="score" class="form-control" value="0" min="0" max="10">
+                                    <small class="text-muted">Puntos que otorga esta opción al total del formulario</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Orden</label>
+                                    <input type="number" name="order" class="form-control" 
+                                           value="{{ question.options.count|add:1 }}" min="0">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if question.options.exists %}
+                        <div class="mt-4">
+                            <h6>Opciones existentes:</h6>
+                            <div class="list-group">
+                                {% for option in question.options.all %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>{{ option.order }}. {{ option.option_text }}</span>
+                                    <span class="badge bg-primary rounded-pill">{{ option.score }} pts</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'form_detail' form_obj.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Volver al Formulario
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check"></i> Agregar Opción
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -37,7 +37,8 @@ from .models import (
     TaskSchedule, ScheduleTask, ScheduleComment, SatisfactionSurvey, ClientProjectAccess, ClientTimeEntry, ShortUrl,
     ProductSet, ProductItem, Precotizador, PrecotizadorExample, PrecotizadorQuote,
     CompanyDocumentation, CompanyDocumentationURL, ContactGenerator,
-    CompanyRequestGenerator, CompanyRequest, CompanyRequestComment
+    CompanyRequestGenerator, CompanyRequest, CompanyRequestComment,
+    Form, FormQuestion, FormQuestionOption, FormResponse, FormAnswer
 )
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
@@ -53,7 +54,8 @@ from .forms import (
     ProductSetForm, ProductItemForm, ProductItemFormSet, PrecotizadorForm, PrecotizadorExampleForm, 
     PrecotizadorExampleFormSet, PrecotizadorQuoteForm, CompanyDocumentationForm, CompanyDocumentationURLForm,
     CompanyDocumentationURLFormSet, ContactGeneratorForm, PublicContactForm,
-    CompanyRequestGeneratorForm, PublicCompanyRequestForm
+    CompanyRequestGeneratorForm, PublicCompanyRequestForm, FormForm, FormQuestionForm,
+    FormQuestionOptionForm, PublicFormResponseForm
 )
 from .utils import is_agent, is_regular_user, is_teacher, can_manage_courses, get_user_role, assign_user_to_group
 
@@ -18881,3 +18883,288 @@ def update_company_request_status(request, request_id):
             })
     
     return JsonResponse({'success': False, 'message': 'Método no permitido'})
+
+
+# ============= VISTAS PARA SISTEMA DE FORMULARIOS =============
+
+@login_required
+def form_list(request):
+    """Lista de formularios"""
+    forms = Form.objects.filter(created_by=request.user).order_by('-created_at')
+    
+    # Filtrar por empresa si es necesario
+    if not (request.user.is_staff or request.user.is_superuser):
+        user_companies = []
+        if hasattr(request.user, 'company'):
+            user_companies.append(request.user.company.id)
+        if hasattr(request.user, 'additional_companies'):
+            user_companies.extend(request.user.additional_companies.values_list('id', flat=True))
+        forms = forms.filter(company_id__in=user_companies)
+    
+    context = {
+        'forms': forms,
+        'page_title': 'Mis Formularios'
+    }
+    return render(request, 'tickets/form_list.html', context)
+
+
+@login_required
+def form_create(request):
+    """Crear formulario"""
+    if request.method == 'POST':
+        form = FormForm(request.POST, user=request.user)
+        if form.is_valid():
+            form_obj = form.save(commit=False)
+            form_obj.created_by = request.user
+            form_obj.save()
+            messages.success(request, 'Formulario creado exitosamente')
+            return redirect('form_detail', pk=form_obj.pk)
+    else:
+        form = FormForm(user=request.user)
+    
+    context = {
+        'form': form,
+        'page_title': 'Crear Formulario'
+    }
+    return render(request, 'tickets/form_form.html', context)
+
+
+@login_required
+def form_detail(request, pk):
+    """Detalle del formulario"""
+    form_obj = get_object_or_404(Form, pk=pk, created_by=request.user)
+    
+    # Obtener estadísticas
+    total_responses = form_obj.get_total_responses()
+    average_score = form_obj.get_average_score()
+    recent_responses = form_obj.responses.all()[:10]
+    
+    context = {
+        'form': form_obj,
+        'total_responses': total_responses,
+        'average_score': average_score,
+        'recent_responses': recent_responses,
+        'page_title': f'Formulario: {form_obj.title}'
+    }
+    return render(request, 'tickets/form_detail.html', context)
+
+
+@login_required
+def form_edit(request, pk):
+    """Editar formulario"""
+    form_obj = get_object_or_404(Form, pk=pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        form = FormForm(request.POST, instance=form_obj, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Formulario actualizado exitosamente')
+            return redirect('form_detail', pk=form_obj.pk)
+    else:
+        form = FormForm(instance=form_obj, user=request.user)
+    
+    context = {
+        'form': form,
+        'form_obj': form_obj,
+        'page_title': f'Editar: {form_obj.title}'
+    }
+    return render(request, 'tickets/form_form.html', context)
+
+
+@login_required
+def form_delete(request, pk):
+    """Eliminar formulario"""
+    form_obj = get_object_or_404(Form, pk=pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        form_title = form_obj.title
+        form_obj.delete()
+        messages.success(request, f'Formulario "{form_title}" eliminado exitosamente')
+        return redirect('form_list')
+    
+    context = {
+        'form': form_obj,
+        'page_title': f'Eliminar: {form_obj.title}'
+    }
+    return render(request, 'tickets/form_delete.html', context)
+
+
+# === VISTA PÚBLICA PARA RESPONDER FORMULARIOS ===
+
+def form_public(request, token):
+    """Vista pública para responder un formulario"""
+    form_obj = get_object_or_404(Form, public_token=token, is_active=True)
+    
+    if request.method == 'POST':
+        form = PublicFormResponseForm(request.POST, form=form_obj)
+        if form.is_valid():
+            # Crear la respuesta
+            response = FormResponse.objects.create(
+                form=form_obj,
+                respondent_name=form.cleaned_data.get('respondent_name', ''),
+                respondent_email=form.cleaned_data.get('respondent_email', '')
+            )
+            
+            # Crear las respuestas individuales
+            for question in form_obj.questions.all():
+                field_name = f'question_{question.id}'
+                if field_name in form.cleaned_data:
+                    answer_value = form.cleaned_data[field_name]
+                    
+                    answer = FormAnswer.objects.create(
+                        response=response,
+                        question=question
+                    )
+                    
+                    if question.question_type == 'text':
+                        answer.text_answer = answer_value
+                    elif question.question_type == 'number':
+                        answer.number_answer = answer_value
+                    elif question.question_type == 'multiple_choice':
+                        option = FormQuestionOption.objects.get(id=answer_value)
+                        answer.selected_option = option
+                    
+                    answer.save()
+            
+            # Calcular puntuación total
+            response.calculate_total_score()
+            
+            messages.success(request, '¡Formulario enviado exitosamente! Gracias por su participación.')
+            return redirect('form_public', token=token)
+    else:
+        form = PublicFormResponseForm(form=form_obj)
+    
+    context = {
+        'form': form,
+        'form_obj': form_obj,
+        'page_title': form_obj.title
+    }
+    return render(request, 'tickets/form_public.html', context)
+
+
+# === VISTA PARA RESPUESTAS ===
+
+@login_required
+def form_responses(request, pk):
+    """Ver respuestas del formulario"""
+    form_obj = get_object_or_404(Form, pk=pk, created_by=request.user)
+    responses = form_obj.responses.all().order_by('-response_date')
+    
+    # Paginación
+    paginator = Paginator(responses, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'form': form_obj,
+        'page_obj': page_obj,
+        'total_responses': form_obj.get_total_responses(),
+        'average_score': form_obj.get_average_score(),
+        'page_title': f'Respuestas - {form_obj.title}'
+    }
+    return render(request, 'tickets/form_responses.html', context)
+
+
+@login_required
+def form_question_create(request, form_pk):
+    """Crear pregunta para formulario"""
+    form_obj = get_object_or_404(Form, pk=form_pk)
+    
+    # Verificar permisos
+    if form_obj.created_by != request.user:
+        messages.error(request, 'No tienes permisos para agregar preguntas a este formulario')
+        return redirect('form_detail', pk=form_obj.pk)
+    
+    if request.method == 'POST':
+        question = FormQuestion.objects.create(
+            form=form_obj,
+            question_text=request.POST.get('text'),
+            question_type=request.POST.get('question_type'),
+            order=int(request.POST.get('order', form_obj.questions.count() + 1)),
+            is_required=bool(request.POST.get('is_required'))
+        )
+        messages.success(request, 'Pregunta agregada exitosamente')
+        return redirect('form_detail', pk=form_obj.pk)
+    
+    return redirect('form_detail', pk=form_obj.pk)
+
+
+@login_required
+def form_question_edit(request, form_pk, question_pk):
+    """Editar pregunta de formulario"""
+    form_obj = get_object_or_404(Form, pk=form_pk)
+    question = get_object_or_404(FormQuestion, pk=question_pk, form=form_obj)
+    
+    # Verificar permisos
+    if form_obj.created_by != request.user:
+        messages.error(request, 'No tienes permisos para editar preguntas de este formulario')
+        return redirect('form_detail', pk=form_obj.pk)
+    
+    if request.method == 'POST':
+        question.question_text = request.POST.get('text')
+        question.question_type = request.POST.get('question_type')
+        question.order = int(request.POST.get('order', question.order))
+        question.is_required = bool(request.POST.get('is_required'))
+        question.save()
+        messages.success(request, 'Pregunta actualizada exitosamente')
+        return redirect('form_detail', pk=form_obj.pk)
+    
+    context = {
+        'form_obj': form_obj,
+        'question': question,
+        'page_title': 'Editar Pregunta'
+    }
+    return render(request, 'tickets/form_question_edit.html', context)
+
+
+@login_required
+def form_question_delete(request, form_pk, question_pk):
+    """Eliminar pregunta de formulario"""
+    form_obj = get_object_or_404(Form, pk=form_pk)
+    question = get_object_or_404(FormQuestion, pk=question_pk, form=form_obj)
+    
+    # Verificar permisos
+    if form_obj.created_by != request.user:
+        messages.error(request, 'No tienes permisos para eliminar preguntas de este formulario')
+        return redirect('form_detail', pk=form_obj.pk)
+    
+    if request.method == 'POST':
+        question.delete()
+        messages.success(request, 'Pregunta eliminada exitosamente')
+        return redirect('form_detail', pk=form_obj.pk)
+    
+    context = {
+        'form_obj': form_obj,
+        'question': question,
+        'page_title': 'Eliminar Pregunta'
+    }
+    return render(request, 'tickets/form_question_delete.html', context)
+
+
+@login_required
+def form_option_create(request, form_pk, question_pk):
+    """Agregar opción a pregunta de selección múltiple"""
+    form_obj = get_object_or_404(Form, pk=form_pk)
+    question = get_object_or_404(FormQuestion, pk=question_pk, form=form_obj)
+    
+    # Verificar permisos
+    if form_obj.created_by != request.user:
+        messages.error(request, 'No tienes permisos para agregar opciones a este formulario')
+        return redirect('form_detail', pk=form_obj.pk)
+    
+    if request.method == 'POST':
+        option = FormQuestionOption.objects.create(
+            question=question,
+            option_text=request.POST.get('text'),
+            order=int(request.POST.get('order', question.options.count() + 1)),
+            score=int(request.POST.get('score', 0))
+        )
+        messages.success(request, 'Opción agregada exitosamente')
+        return redirect('form_detail', pk=form_obj.pk)
+    
+    context = {
+        'form_obj': form_obj,
+        'question': question,
+        'page_title': 'Agregar Opción'
+    }
+    return render(request, 'tickets/form_option_create.html', context)

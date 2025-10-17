@@ -12,7 +12,8 @@ from .models import (
     MultipleDocumentationItemStats, MultipleDocumentationVisit, MultipleDocumentationDownload,
     TaskSchedule, ScheduleTask, ScheduleComment, TicketApproval, SatisfactionSurvey, FinancialAction,
     FinancialPriceHistory, Product, ClientProjectAccess, ClientTimeEntry, CompanyDocumentation, CompanyDocumentationURL, ContactGenerator,
-    CompanyRequestGenerator, CompanyRequest, CompanyRequestComment
+    CompanyRequestGenerator, CompanyRequest, CompanyRequestComment,
+    Form, FormQuestion, FormQuestionOption, FormResponse, FormAnswer
 )
 
 # Configuración del sitio de administración
@@ -2386,3 +2387,141 @@ class CompanyRequestAdmin(admin.ModelAdmin):
 class CompanyRequestCommentAdmin(admin.ModelAdmin):
     list_display = ['request', 'user', 'created_at']
     search_fields = ['request__sequence', 'user__username', 'content']
+
+
+# ============= ADMIN PARA SISTEMA DE FORMULARIOS =============
+
+@admin.register(Form)
+class FormAdmin(admin.ModelAdmin):
+    list_display = ['title', 'company', 'is_active', 'questions_count', 'responses_count', 'average_score', 'created_at']
+    list_filter = ['is_active', 'company', 'created_at', 'created_by']
+    search_fields = ['title', 'description', 'company__name']
+    readonly_fields = ['public_token', 'created_by', 'created_at', 'updated_at']
+    ordering = ['-created_at']
+    
+    fieldsets = (
+        ('Información General', {
+            'fields': ('title', 'description', 'company', 'is_active')
+        }),
+        ('Sistema', {
+            'fields': ('public_token', 'created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def questions_count(self, obj):
+        return obj.questions.count()
+    questions_count.short_description = 'Preguntas'
+
+    def responses_count(self, obj):
+        return obj.get_total_responses()
+    responses_count.short_description = 'Respuestas'
+
+    def average_score(self, obj):
+        return obj.get_average_score()
+    average_score.short_description = 'Puntuación Promedio'
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+class FormQuestionOptionInline(admin.TabularInline):
+    model = FormQuestionOption
+    extra = 0
+    fields = ['option_text', 'score', 'order']
+
+
+@admin.register(FormQuestion)
+class FormQuestionAdmin(admin.ModelAdmin):
+    list_display = ['form', 'question_text_short', 'question_type', 'is_required', 'order', 'options_count']
+    list_filter = ['question_type', 'is_required', 'form__company']
+    search_fields = ['question_text', 'form__title']
+    ordering = ['form', 'order']
+    inlines = [FormQuestionOptionInline]
+    
+    fieldsets = (
+        ('Pregunta', {
+            'fields': ('form', 'question_text', 'question_type', 'is_required', 'order')
+        }),
+    )
+
+    def question_text_short(self, obj):
+        return obj.question_text[:50] + '...' if len(obj.question_text) > 50 else obj.question_text
+    question_text_short.short_description = 'Pregunta'
+
+    def options_count(self, obj):
+        return obj.options.count() if obj.question_type == 'multiple_choice' else '-'
+    options_count.short_description = 'Opciones'
+
+
+@admin.register(FormQuestionOption)
+class FormQuestionOptionAdmin(admin.ModelAdmin):
+    list_display = ['question_short', 'option_text', 'score', 'order']
+    list_filter = ['question__question_type', 'question__form__company']
+    search_fields = ['option_text', 'question__question_text', 'question__form__title']
+    ordering = ['question', 'order']
+    
+    def question_short(self, obj):
+        return obj.question.question_text[:30] + '...' if len(obj.question.question_text) > 30 else obj.question.question_text
+    question_short.short_description = 'Pregunta'
+
+
+class FormAnswerInline(admin.TabularInline):
+    model = FormAnswer
+    extra = 0
+    readonly_fields = ['question', 'text_answer', 'number_answer', 'selected_option']
+    can_delete = False
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(FormResponse)
+class FormResponseAdmin(admin.ModelAdmin):
+    list_display = ['form', 'respondent_name', 'respondent_email', 'total_score', 'response_date']
+    list_filter = ['form__company', 'form', 'response_date']
+    search_fields = ['respondent_name', 'respondent_email', 'form__title']
+    readonly_fields = ['form', 'total_score', 'response_date']
+    ordering = ['-response_date']
+    inlines = [FormAnswerInline]
+    
+    fieldsets = (
+        ('Información del Encuestado', {
+            'fields': ('respondent_name', 'respondent_email')
+        }),
+        ('Respuesta', {
+            'fields': ('form', 'total_score', 'response_date')
+        }),
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+
+@admin.register(FormAnswer)
+class FormAnswerAdmin(admin.ModelAdmin):
+    list_display = ['response', 'question_short', 'answer_display', 'score_earned']
+    list_filter = ['question__question_type', 'response__form__company']
+    search_fields = ['response__respondent_name', 'question__question_text', 'text_answer']
+    readonly_fields = ['response', 'question', 'text_answer', 'number_answer', 'selected_option']
+    ordering = ['-response__response_date']
+
+    def question_short(self, obj):
+        return obj.question.question_text[:30] + '...' if len(obj.question.question_text) > 30 else obj.question.question_text
+    question_short.short_description = 'Pregunta'
+
+    def answer_display(self, obj):
+        return obj.get_answer_display()
+    answer_display.short_description = 'Respuesta'
+
+    def score_earned(self, obj):
+        return obj.selected_option.score if obj.selected_option else 0
+    score_earned.short_description = 'Puntos'
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

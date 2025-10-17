@@ -680,5 +680,25 @@ urlpatterns += [
     
     # URL AJAX para actualizar estado de solicitudes
     path('ajax/update-request-status/<int:request_id>/', views.update_company_request_status, name='update_company_request_status'),
+    
+    # ============= URLs PARA SISTEMA DE FORMULARIOS =============
+    # URLs privadas (requieren autenticación)
+    path('formularios/', views.form_list, name='form_list'),
+    path('formularios/crear/', views.form_create, name='form_create'),
+    path('formularios/<int:pk>/', views.form_detail, name='form_detail'),
+    path('formularios/<int:pk>/editar/', views.form_edit, name='form_edit'),
+    path('formularios/<int:pk>/eliminar/', views.form_delete, name='form_delete'),
+    path('formularios/<int:pk>/respuestas/', views.form_responses, name='form_responses'),
+    
+    # URLs para gestión de preguntas
+    path('formularios/<int:form_pk>/preguntas/crear/', views.form_question_create, name='form_question_create'),
+    path('formularios/<int:form_pk>/preguntas/<int:question_pk>/editar/', views.form_question_edit, name='form_question_edit'),
+    path('formularios/<int:form_pk>/preguntas/<int:question_pk>/eliminar/', views.form_question_delete, name='form_question_delete'),
+    
+    # URLs para gestión de opciones
+    path('formularios/<int:form_pk>/preguntas/<int:question_pk>/opciones/crear/', views.form_option_create, name='form_option_create'),
+    
+    # URLs públicas para responder formularios
+    path('form/<uuid:token>/', views.form_public, name='form_public'),
 ]
 

@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-ui-checks"></i> {{ form.title }}</h1>
+        <div>
+            {% if form.is_active %}
+                <span class="badge bg-success me-2">Activo</span>
+            {% else %}
+                <span class="badge bg-secondary me-2">Inactivo</span>
+            {% endif %}
+            <a href="{% url 'form_edit' form.pk %}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-pencil"></i> Editar
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información del formulario -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-info-circle"></i> Información del Formulario</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Descripción:</strong> {{ form.description|default:"Sin descripción" }}</p>
+                    <p><strong>Empresa:</strong> {{ form.company.name }}</p>
+                    <p><strong>Creado:</strong> {{ form.created_at|date:"d/m/Y H:i" }}</p>
+                    {% if form.is_active %}
+                        <p><strong>URL Pública:</strong> 
+                            <a href="{{ form.get_public_url }}" target="_blank" class="btn btn-sm btn-success">
+                                <i class="bi bi-link-45deg"></i> Ver formulario público
+                            </a>
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Preguntas -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5><i class="bi bi-question-circle"></i> Preguntas ({{ form.questions.count }})</h5>
+                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addQuestionModal">
+                        <i class="bi bi-plus-circle"></i> Agregar Pregunta
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if form.questions.all %}
+                        {% for question in form.questions.all %}
+                        <div class="border rounded p-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6>{{ question.order }}. {{ question.question_text }}</h6>
+                                    <small class="text-muted">
+                                        <span class="badge bg-info">{{ question.get_question_type_display }}</span>
+                                        {% if question.is_required %}
+                                            <span class="badge bg-warning">Obligatoria</span>
+                                        {% endif %}
+                                    </small>
+                                    
+                                    {% if question.question_type == 'multiple_choice' %}
+                                        <div class="mt-2">
+                                            <strong>Opciones:</strong>
+                                            <ul class="list-unstyled ms-3">
+                                                {% for option in question.options.all %}
+                                                <li>
+                                                    <span class="badge bg-secondary">{{ option.score }} pts</span>
+                                                    {{ option.option_text }}
+                                                </li>
+                                                {% endfor %}
+                                            </ul>
+                                            {% if question.options.count == 0 %}
+                                                <p class="text-warning"><i class="bi bi-exclamation-triangle"></i> Esta pregunta no tiene opciones</p>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="bi bi-three-dots-vertical"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        {% if question.question_type == 'multiple_choice' %}
+                                        <li>
+                                            <button class="dropdown-item" onclick="addOption({{ question.id }})">
+                                                <i class="bi bi-plus"></i> Agregar Opción
+                                            </button>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        {% endif %}
+                                        <li>
+                                            <button class="dropdown-item" onclick="editQuestion({{ question.id }})">
+                                                <i class="bi bi-pencil"></i> Editar
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button class="dropdown-item text-danger" onclick="deleteQuestion({{ question.id }})">
+                                                <i class="bi bi-trash"></i> Eliminar
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-question-circle display-4 text-muted"></i>
+                            <h5 class="text-muted mt-2">No hay preguntas</h5>
+                            <p class="text-muted">Agrega preguntas para que las personas puedan responder tu formulario.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-bar-chart"></i> Estadísticas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h3 class="text-primary">{{ total_responses }}</h3>
+                            <small class="text-muted">Total Respuestas</small>
+                        </div>
+                        <div class="col-6">
+                            <h3 class="text-success">{{ average_score }}</h3>
+                            <small class="text-muted">Puntuación Promedio</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <a href="{% url 'form_responses' form.pk %}" class="btn btn-info btn-sm w-100">
+                        <i class="bi bi-list-ul"></i> Ver Todas las Respuestas
+                    </a>
+                </div>
+            </div>
+
+            <!-- Respuestas recientes -->
+            <div class="card">
+                <div class="card-header">
+                    <h6><i class="bi bi-clock-history"></i> Respuestas Recientes</h6>
+                </div>
+                <div class="card-body">
+                    {% if recent_responses %}
+                        {% for response in recent_responses %}
+                        <div class="border-bottom pb-2 mb-2">
+                            <div class="d-flex justify-content-between">
+                                <small><strong>{{ response.respondent_name|default:"Anónimo" }}</strong></small>
+                                <small class="text-muted">{{ response.response_date|date:"d/m H:i" }}</small>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <small class="text-muted">{{ response.respondent_email|default:"Sin email" }}</small>
+                                <span class="badge bg-success">{{ response.total_score }} pts</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted text-center">No hay respuestas aún</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para agregar pregunta -->
+<div class="modal fade" id="addQuestionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Agregar Pregunta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'form_question_create' form.pk %}">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Texto de la pregunta</label>
+                        <textarea name="text" class="form-control" rows="2" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tipo de pregunta</label>
+                        <select name="question_type" class="form-select" required>
+                            <option value="text">Texto libre</option>
+                            <option value="number">Cantidad (Número)</option>
+                            <option value="multiple_choice">Selección múltiple</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Orden</label>
+                        <input type="number" name="order" class="form-control" value="{{ form.questions.count|add:1 }}" min="0">
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="is_required" checked>
+                        <label class="form-check-label">Obligatoria</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Agregar Pregunta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function addOption(questionId) {
+    // Redirigir a la página de agregar opción
+    window.location.href = `/formularios/{{ form.pk }}/preguntas/${questionId}/opciones/crear/`;
+}
+
+function editQuestion(questionId) {
+    // Redirigir a la página de editar pregunta
+    window.location.href = `/formularios/{{ form.pk }}/preguntas/${questionId}/editar/`;
+}
+
+function deleteQuestion(questionId) {
+    if (confirm('¿Está seguro de eliminar esta pregunta? Se perderán todas las respuestas asociadas.')) {
+        window.location.href = `/formularios/{{ form.pk }}/preguntas/${questionId}/eliminar/`;
+    }
+}
+</script>
+{% endblock %}
