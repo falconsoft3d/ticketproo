@@ -1,603 +1,198 @@
-{% extends 'public_base.html' %}{% extends 'public_base.html' %}{% extends 'public_base.html' %}
-
-
+{% extends 'public_base.html' %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
-
-
-{% block extra_css %}{% block title %}{{ page_title }}{% endblock %}{% block title %}{{ page_title }}{% endblock %}
-
+{% block extra_css %}
 <style>
-
     .card {
-
         border: none;
-
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);{% block extra_css %}{% block extra_css %}
-
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
-
-    <style><style>
-
-    .gantt-container {
-
-        background: white;    .card {    .card {
-
-        padding: 20px;
-
-        border-radius: 8px;        border: none;        border: none;
-
-        min-height: 500px;
-
-        margin-bottom: 30px;        box-shadow: 0 2px 10px rgba(0,0,0,0.1);        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-
-    }
-
-        }    }
-
-    #gantt_chart {
-
-        width: 100%;        
-
-        height: auto;
-
-        min-height: 400px;    .gantt-container {    .fa-chart-gantt {
-
-    }
-
-            background: white;        opacity: 0.6;
-
-    .legend-item {
-
-        display: inline-flex;        padding: 20px;    }
-
-        align-items: center;
-
-        margin-right: 20px;        border-radius: 8px;</style>
-
-        margin-bottom: 10px;
-
-        font-size: 14px;        min-height: 500px;{% endblock %}
-
-    }
-
-            margin-bottom: 30px;
-
-    .legend-color {
-
-        width: 20px;    }{% block content %}
-
-        height: 20px;
-
-        border-radius: 3px;    <div class="container-fluid">
-
-        margin-right: 8px;
-
-    }    #gantt_chart {    <!-- Header -->
-
     
-
-    .legend-completed { background-color: #28a745; }        width: 100%;    <div class="text-center mb-4">
-
+    .gantt-container {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        min-height: 500px;
+        margin-bottom: 30px;
+    }
+    
+    #gantt_chart {
+        width: 100%;
+        height: auto;
+        min-height: 400px;
+    }
+    
+    .legend-item {
+        display: inline-flex;
+        align-items: center;
+        margin-right: 20px;
+        margin-bottom: 10px;
+        font-size: 14px;
+    }
+    
+    .legend-color {
+        width: 20px;
+        height: 20px;
+        border-radius: 3px;
+        margin-right: 8px;
+    }
+    
+    .legend-completed { background-color: #28a745; }
     .legend-overdue { background-color: #dc3545; }
-
-    .legend-in-progress { background-color: #ffc107; }        height: auto;        <h1 class="display-4"><i class="fas fa-chart-gantt"></i> Diagrama Gantt</h1>
-
+    .legend-in-progress { background-color: #ffc107; }
     .legend-not-started { background-color: #6c757d; }
-
-            min-height: 400px;        <h3>{{ schedule.title }}</h3>
-
+    
     .kpi-card {
-
-        transition: transform 0.2s;    }        <p class="text-muted">
-
+        transition: transform 0.2s;
     }
-
-                    <i class="fas fa-building"></i> {{ schedule.company.name }} | 
-
+    
     .kpi-card:hover {
-
-        transform: translateY(-5px);    .legend-item {            <i class="fas fa-calendar-alt"></i> {{ schedule.start_date|date:"d/m/Y" }} - {{ schedule.end_date|date:"d/m/Y" }}
-
+        transform: translateY(-5px);
     }
-
-</style>        display: inline-flex;        </p>
-
+</style>
 {% endblock %}
-
-        align-items: center;    </div>
 
 {% block content %}
-
-<div class="container-fluid py-4">        margin-right: 20px;
-
-    <!-- Header -->
-
-    <div class="text-center mb-4">        margin-bottom: 10px;    <div class="text-center mb-4">
-
+<div class="container-fluid py-4">
+    <div class="text-center mb-4">
         <h1 class="display-5"><i class="fas fa-chart-gantt"></i> Diagrama Gantt</h1>
-
-        <h3 class="text-primary">{{ schedule.title }}</h3>        font-size: 14px;        <a href="{% url 'task_schedule_public' schedule.public_token %}" class="btn btn-secondary">
-
+        <h3 class="text-primary">{{ schedule.title }}</h3>
         <p class="text-muted">
-
-            <i class="fas fa-building"></i> {{ schedule.company.name }} |     }            <i class="fas fa-list"></i> Ver Lista de Tareas
-
+            <i class="fas fa-building"></i> {{ schedule.company.name }} | 
             <i class="fas fa-calendar-alt"></i> {{ schedule.start_date|date:"d/m/Y" }} - {{ schedule.end_date|date:"d/m/Y" }}
-
-        </p>            </a>
-
+        </p>
     </div>
 
-    .legend-color {    </div>
-
-    <!-- Botones de navegación -->
-
-    <div class="text-center mb-4">        width: 20px;
-
+    <div class="text-center mb-4">
         <a href="{% url 'task_schedule_public' schedule.public_token %}" class="btn btn-secondary">
-
-            <i class="fas fa-list"></i> Vista Lista        height: 20px;    <!-- KPIs -->
-
+            <i class="fas fa-list"></i> Vista Lista
         </a>
-
-    </div>        border-radius: 3px;    <div class="row mb-4">
-
-
-
-    <!-- KPIs -->        margin-right: 8px;        <div class="col-md-2 mb-3">
+    </div>
 
     <div class="row mb-4">
-
-        <div class="col-md-2 mb-3">    }            <div class="card text-center shadow-sm">
-
+        <div class="col-md-2 mb-3">
             <div class="card text-center shadow-sm kpi-card">
-
-                <div class="card-body py-3">                    <div class="card-body py-2">
-
+                <div class="card-body py-3">
                     <h4 class="text-info mb-0">{{ kpis.total_tasks }}</h4>
-
-                    <small class="text-muted">Total Tareas</small>    .legend-completed { background-color: #28a745; }                    <h4 class="text-primary mb-0">{{ kpis.total_tasks }}</h4>
-
+                    <small class="text-muted">Total Tareas</small>
                 </div>
-
-            </div>    .legend-overdue { background-color: #dc3545; }                    <small class="text-muted">Total</small>
-
-        </div>
-
-        <div class="col-md-2 mb-3">    .legend-in-progress { background-color: #ffc107; }                </div>
-
-            <div class="card text-center shadow-sm kpi-card">
-
-                <div class="card-body py-3">    .legend-not-started { background-color: #6c757d; }            </div>
-
-                    <h4 class="text-success mb-0">{{ kpis.completed_tasks }}</h4>
-
-                    <small class="text-muted">Completadas</small>            </div>
-
-                </div>
-
-            </div>    .kpi-card {        <div class="col-md-2 mb-3">
-
-        </div>
-
-        <div class="col-md-2 mb-3">        transition: transform 0.2s;            <div class="card text-center shadow-sm">
-
-            <div class="card text-center shadow-sm kpi-card">
-
-                <div class="card-body py-3">    }                <div class="card-body py-2">
-
-                    <h4 class="text-warning mb-0">{{ kpis.pending_tasks }}</h4>
-
-                    <small class="text-muted">Pendientes</small>                        <h4 class="text-success mb-0">{{ kpis.completed_tasks }}</h4>
-
-                </div>
-
-            </div>    .kpi-card:hover {                    <small class="text-muted">Completadas</small>
-
-        </div>
-
-        <div class="col-md-2 mb-3">        transform: translateY(-5px);                </div>
-
-            <div class="card text-center shadow-sm kpi-card">
-
-                <div class="card-body py-3">    }            </div>
-
-                    <h4 class="text-danger mb-0">{{ kpis.overdue_tasks }}</h4>
-
-                    <small class="text-muted">Vencidas</small></style>        </div>
-
-                </div>
-
-            </div>{% endblock %}        <div class="col-md-2 mb-3">
-
-        </div>
-
-        <div class="col-md-2 mb-3">            <div class="card text-center shadow-sm">
-
-            <div class="card text-center shadow-sm kpi-card">
-
-                <div class="card-body py-3">{% block content %}                <div class="card-body py-2">
-
-                    <h4 class="text-primary mb-0">{{ kpis.progress_percentage|floatformat:0 }}%</h4>
-
-                    <small class="text-muted">Progreso</small><div class="container-fluid py-4">                    <h4 class="text-warning mb-0">{{ kpis.pending_tasks }}</h4>
-
-                </div>
-
-            </div>    <!-- Header -->                    <small class="text-muted">Pendientes</small>
-
-        </div>
-
-        <div class="col-md-2 mb-3">    <div class="text-center mb-4">                </div>
-
-            <div class="card text-center shadow-sm kpi-card">
-
-                <div class="card-body py-3">        <h1 class="display-5"><i class="fas fa-chart-gantt"></i> Diagrama Gantt</h1>            </div>
-
-                    <h4 class="text-primary mb-0">{{ kpis.on_time_rate|floatformat:0 }}%</h4>
-
-                    <small class="text-muted">A Tiempo</small>        <h3 class="text-primary">{{ schedule.title }}</h3>        </div>
-
-                </div>
-
-            </div>        <p class="text-muted">        <div class="col-md-2 mb-3">
-
-        </div>
-
-    </div>            <i class="fas fa-building"></i> {{ schedule.company.name }} |             <div class="card text-center shadow-sm">
-
-
-
-    <!-- Diagrama Gantt -->            <i class="fas fa-calendar-alt"></i> {{ schedule.start_date|date:"d/m/Y" }} - {{ schedule.end_date|date:"d/m/Y" }}                <div class="card-body py-2">
-
-    <div class="card shadow">
-
-        <div class="card-header bg-primary text-white">        </p>                    <h4 class="text-danger mb-0">{{ kpis.overdue_tasks }}</h4>
-
-            <h5 class="mb-0"><i class="fas fa-chart-gantt"></i> Diagrama de Gantt</h5>
-
-        </div>    </div>                    <small class="text-muted">Vencidas</small>
-
-        <div class="card-body gantt-container">
-
-            <div id="gantt_chart"></div>                </div>
-
-        </div>
-
-    </div>    <!-- Botones de navegación -->            </div>
-
-
-
-    <!-- Leyenda -->    <div class="text-center mb-4">        </div>
-
-    <div class="card shadow mt-4">
-
-        <div class="card-body">        <a href="{% url 'task_schedule_public' schedule.public_token %}" class="btn btn-secondary">        <div class="col-md-2 mb-3">
-
-            <h6 class="mb-3"><i class="fas fa-info-circle"></i> Leyenda</h6>
-
-            <div class="d-flex flex-wrap">            <i class="fas fa-list"></i> Vista Lista            <div class="card text-center shadow-sm">
-
-                <div class="legend-item">
-
-                    <div class="legend-color legend-completed"></div>        </a>                <div class="card-body py-2">
-
-                    <span>Completada</span>
-
-                </div>    </div>                    <h4 class="text-info mb-0">{{ kpis.progress_percentage|floatformat:0 }}%</h4>
-
-                <div class="legend-item">
-
-                    <div class="legend-color legend-in-progress"></div>                    <small class="text-muted">Progreso</small>
-
-                    <span>En Progreso</span>
-
-                </div>    <!-- KPIs -->                </div>
-
-                <div class="legend-item">
-
-                    <div class="legend-color legend-overdue"></div>    <div class="row mb-4">            </div>
-
-                    <span>Vencida</span>
-
-                </div>        <div class="col-md-2 mb-3">        </div>
-
-                <div class="legend-item">
-
-                    <div class="legend-color legend-not-started"></div>            <div class="card text-center shadow-sm kpi-card">        <div class="col-md-2 mb-3">
-
-                    <span>No Iniciada</span>
-
-                </div>                <div class="card-body py-3">            <div class="card text-center shadow-sm">
-
             </div>
-
-        </div>                    <h4 class="text-info mb-0">{{ kpis.total_tasks }}</h4>                <div class="card-body py-2">
-
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card text-center shadow-sm kpi-card">
+                <div class="card-body py-3">
+                    <h4 class="text-success mb-0">{{ kpis.completed_tasks }}</h4>
+                    <small class="text-muted">Completadas</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card text-center shadow-sm kpi-card">
+                <div class="card-body py-3">
+                    <h4 class="text-warning mb-0">{{ kpis.pending_tasks }}</h4>
+                    <small class="text-muted">Pendientes</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card text-center shadow-sm kpi-card">
+                <div class="card-body py-3">
+                    <h4 class="text-danger mb-0">{{ kpis.overdue_tasks }}</h4>
+                    <small class="text-muted">Vencidas</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card text-center shadow-sm kpi-card">
+                <div class="card-body py-3">
+                    <h4 class="text-primary mb-0">{{ kpis.progress_percentage|floatformat:0 }}%</h4>
+                    <small class="text-muted">Progreso</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card text-center shadow-sm kpi-card">
+                <div class="card-body py-3">
+                    <h4 class="text-primary mb-0">{{ kpis.on_time_rate|floatformat:0 }}%</h4>
+                    <small class="text-muted">A Tiempo</small>
+                </div>
+            </div>
+        </div>
     </div>
 
-</div>                    <small class="text-muted">Total Tareas</small>                    <h4 class="text-primary mb-0">{{ kpis.on_time_rate|floatformat:0 }}%</h4>
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-chart-gantt"></i> Diagrama de Gantt</h5>
+        </div>
+        <div class="card-body gantt-container">
+            <div id="gantt_chart"></div>
+        </div>
+    </div>
 
+    <div class="card shadow mt-4">
+        <div class="card-body">
+            <h6 class="mb-3"><i class="fas fa-info-circle"></i> Leyenda</h6>
+            <div class="d-flex flex-wrap">
+                <div class="legend-item">
+                    <div class="legend-color legend-completed"></div>
+                    <span>Completada</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color legend-in-progress"></div>
+                    <span>En Progreso</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color legend-overdue"></div>
+                    <span>Vencida</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color legend-not-started"></div>
+                    <span>No Iniciada</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-
-<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>                </div>                    <small class="text-muted">A Tiempo</small>
-
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 <script type="text/javascript">
-
-    google.charts.load('current', {'packages':['gantt']});            </div>                </div>
-
+    google.charts.load('current', {'packages':['gantt']});
     google.charts.setOnLoadCallback(drawChart);
 
-        </div>            </div>
-
     function drawChart() {
-
-        const ganttData = {{ gantt_data|safe }};        <div class="col-md-2 mb-3">        </div>
-
-        
-
-        if (ganttData.length === 0) {            <div class="card text-center shadow-sm kpi-card">    </div>
-
-            document.getElementById('gantt_chart').innerHTML = `
-
-                <div class="alert alert-info text-center">                <div class="card-body py-3">
-
-                    <i class="fas fa-info-circle fa-2x mb-3"></i>
-
-                    <p class="mb-0">No hay tareas para mostrar en el diagrama Gantt.</p>                    <h4 class="text-success mb-0">{{ kpis.completed_tasks }}</h4>    <!-- Mensaje informativo -->
-
-                </div>
-
-            `;                    <small class="text-muted">Completadas</small>    <div class="card shadow">
-
-            return;
-
-        }                </div>        <div class="card-body text-center py-5">
-
-
-
-        const data = new google.visualization.DataTable();            </div>            <i class="fas fa-chart-gantt fa-3x text-muted mb-3"></i>
-
-        data.addColumn('string', 'ID Tarea');
-
-        data.addColumn('string', 'Nombre Tarea');        </div>            <h4>Vista Gantt</h4>
-
-        data.addColumn('string', 'Recurso');
-
-        data.addColumn('date', 'Fecha Inicio');        <div class="col-md-2 mb-3">            <p class="text-muted">
-
-        data.addColumn('date', 'Fecha Fin');
-
-        data.addColumn('number', 'Duración');            <div class="card text-center shadow-sm kpi-card">                La vista de diagrama Gantt está temporalmente deshabilitada.<br>
-
-        data.addColumn('number', 'Progreso');
-
-        data.addColumn('string', 'Dependencias');                <div class="card-body py-3">                Puedes ver las tareas en la <a href="{% url 'task_schedule_public' schedule.public_token %}" class="text-decoration-none">vista de lista</a>.
-
-
-
-        ganttData.forEach(task => {                    <h4 class="text-warning mb-0">{{ kpis.pending_tasks }}</h4>            </p>
-
-            const startDate = new Date(task.start);
-
-            const endDate = new Date(task.end);                    <small class="text-muted">Pendientes</small>        </div>
-
-            const duration = null; // Se calcula automáticamente
-
-            const progress = task.progress;                </div>    </div>
-
-            
-
-            // Formato: ID, Nombre, Recurso, Inicio, Fin, Duración, Progreso, Dependencias            </div></div>
-
-            data.addRow([
-
-                'task-' + task.id,        </div>{% endblock %}
-
-                task.title,
-
-                task.assigned_to,        <div class="col-md-2 mb-3">
-
-                startDate,            <div class="card text-center shadow-sm kpi-card">
-
-                endDate,                <div class="card-body py-3">
-
-                duration,                    <h4 class="text-danger mb-0">{{ kpis.overdue_tasks }}</h4>
-
-                progress,                    <small class="text-muted">Vencidas</small>
-
-                task.dependencies.length > 0 ? 'task-' + task.dependencies[0] : null                </div>
-
-            ]);            </div>
-
-        });        </div>
-
-        <div class="col-md-2 mb-3">
-
-        // Calcular altura dinámica basada en número de tareas            <div class="card text-center shadow-sm kpi-card">
-
-        const chartHeight = Math.max(ganttData.length * 42 + 100, 400);                <div class="card-body py-3">
-
-        document.getElementById('gantt_chart').style.height = chartHeight + 'px';                    <h4 class="text-primary mb-0">{{ kpis.progress_percentage|floatformat:0 }}%</h4>
-
-                    <small class="text-muted">Progreso</small>
-
-        const options = {                </div>
-
-            height: chartHeight,            </div>
-
-            gantt: {        </div>
-
-                criticalPathEnabled: true,        <div class="col-md-2 mb-3">
-
-                criticalPathStyle: {            <div class="card text-center shadow-sm kpi-card">
-
-                    stroke: '#e64a19',                <div class="card-body py-3">
-
-                    strokeWidth: 2                    <h4 class="text-primary mb-0">{{ kpis.on_time_rate|floatformat:0 }}%</h4>
-
-                },                    <small class="text-muted">A Tiempo</small>
-
-                arrow: {                </div>
-
-                    angle: 100,            </div>
-
-                    width: 1.5,        </div>
-
-                    color: '#666',    </div>
-
-                    radius: 0
-
-                },    <!-- Diagrama Gantt -->
-
-                palette: [    <div class="card shadow">
-
-                    {        <div class="card-header bg-primary text-white">
-
-                        "color": "#28a745",  // Completada            <h5 class="mb-0"><i class="fas fa-chart-gantt"></i> Diagrama de Gantt</h5>
-
-                        "dark": "#1e7e34",        </div>
-
-                        "light": "#5cb85c"        <div class="card-body gantt-container">
-
-                    },            <div id="gantt_chart"></div>
-
-                    {        </div>
-
-                        "color": "#ffc107",  // En progreso    </div>
-
-                        "dark": "#d39e00",
-
-                        "light": "#ffd454"    <!-- Leyenda -->
-
-                    },    <div class="card shadow mt-4">
-
-                    {        <div class="card-body">
-
-                        "color": "#6c757d",  // No iniciada            <h6 class="mb-3"><i class="fas fa-info-circle"></i> Leyenda</h6>
-
-                        "dark": "#545b62",            <div class="d-flex flex-wrap">
-
-                        "light": "#868e96"                <div class="legend-item">
-
-                    },                    <div class="legend-color legend-completed"></div>
-
-                    {                    <span>Completada</span>
-
-                        "color": "#dc3545",  // Vencida                </div>
-
-                        "dark": "#bd2130",                <div class="legend-item">
-
-                        "light": "#e4606d"                    <div class="legend-color legend-in-progress"></div>
-
-                    }                    <span>En Progreso</span>
-
-                ],                </div>
-
-                labelStyle: {                <div class="legend-item">
-
-                    fontName: 'Arial',                    <div class="legend-color legend-overdue"></div>
-
-                    fontSize: 13,                    <span>Vencida</span>
-
-                    color: '#333'                </div>
-
-                },                <div class="legend-item">
-
-                innerGridHorizLine: {                    <div class="legend-color legend-not-started"></div>
-
-                    stroke: '#e0e0e0',                    <span>No Iniciada</span>
-
-                    strokeWidth: 1                </div>
-
-                },            </div>
-
-                innerGridTrack: {        </div>
-
-                    fill: '#f8f9fa'    </div>
-
-                },</div>
-
-                innerGridDarkTrack: {
-
-                    fill: '#ffffff'<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-
-                }<script type="text/javascript">
-
-            }    google.charts.load('current', {'packages':['gantt']});
-
-        };    google.charts.setOnLoadCallback(drawChart);
-
-
-
-        const chart = new google.visualization.Gantt(document.getElementById('gantt_chart'));    function drawChart() {
-
         const ganttData = {{ gantt_data|safe }};
-
-        // Tooltip personalizado        
-
-        google.visualization.events.addListener(chart, 'select', function() {        if (ganttData.length === 0) {
-
-            const selection = chart.getSelection();            document.getElementById('gantt_chart').innerHTML = `
-
-            if (selection.length > 0) {                <div class="alert alert-info text-center">
-
-                const row = selection[0].row;                    <i class="fas fa-info-circle fa-2x mb-3"></i>
-
-                const taskData = ganttData[row];                    <p class="mb-0">No hay tareas para mostrar en el diagrama Gantt.</p>
-
-                                </div>
-
-                // Mostrar información adicional de la tarea            `;
-
-                console.log('Tarea seleccionada:', taskData.title);            return;
-
-            }        }
-
-        });
+        
+        if (ganttData.length === 0) {
+            document.getElementById('gantt_chart').innerHTML = '<div class="alert alert-info text-center"><i class="fas fa-info-circle fa-2x mb-3"></i><p class="mb-0">No hay tareas para mostrar.</p></div>';
+            return;
+        }
 
         const data = new google.visualization.DataTable();
-
-        chart.draw(data, options);        data.addColumn('string', 'ID Tarea');
-
-                data.addColumn('string', 'Nombre Tarea');
-
-        // Hacer responsive        data.addColumn('string', 'Recurso');
-
-        window.addEventListener('resize', function() {        data.addColumn('date', 'Fecha Inicio');
-
-            chart.draw(data, options);        data.addColumn('date', 'Fecha Fin');
-
-        });        data.addColumn('number', 'Duración');
-
-    }        data.addColumn('number', 'Progreso');
-
-</script>        data.addColumn('string', 'Dependencias');
-
-{% endblock %}
+        data.addColumn('string', 'ID Tarea');
+        data.addColumn('string', 'Nombre Tarea');
+        data.addColumn('string', 'Recurso');
+        data.addColumn('date', 'Fecha Inicio');
+        data.addColumn('date', 'Fecha Fin');
+        data.addColumn('number', 'Duración');
+        data.addColumn('number', 'Progreso');
+        data.addColumn('string', 'Dependencias');
 
         ganttData.forEach(task => {
             const startDate = new Date(task.start);
             const endDate = new Date(task.end);
-            const duration = null; // Se calcula automáticamente
-            const progress = task.progress;
-            
-            // Formato: ID, Nombre, Recurso, Inicio, Fin, Duración, Progreso, Dependencias
             data.addRow([
                 'task-' + task.id,
                 task.title,
                 task.assigned_to,
                 startDate,
                 endDate,
-                duration,
-                progress,
+                null,
+                task.progress,
                 task.dependencies.length > 0 ? 'task-' + task.dependencies[0] : null
             ]);
         });
 
-        // Calcular altura dinámica basada en número de tareas
         const chartHeight = Math.max(ganttData.length * 42 + 100, 400);
         document.getElementById('gantt_chart').style.height = chartHeight + 'px';
 
@@ -616,26 +211,10 @@
                     radius: 0
                 },
                 palette: [
-                    {
-                        "color": "#28a745",  // Completada
-                        "dark": "#1e7e34",
-                        "light": "#5cb85c"
-                    },
-                    {
-                        "color": "#ffc107",  // En progreso
-                        "dark": "#d39e00",
-                        "light": "#ffd454"
-                    },
-                    {
-                        "color": "#6c757d",  // No iniciada
-                        "dark": "#545b62",
-                        "light": "#868e96"
-                    },
-                    {
-                        "color": "#dc3545",  // Vencida
-                        "dark": "#bd2130",
-                        "light": "#e4606d"
-                    }
+                    {"color": "#28a745", "dark": "#1e7e34", "light": "#5cb85c"},
+                    {"color": "#ffc107", "dark": "#d39e00", "light": "#ffd454"},
+                    {"color": "#6c757d", "dark": "#545b62", "light": "#868e96"},
+                    {"color": "#dc3545", "dark": "#bd2130", "light": "#e4606d"}
                 ],
                 labelStyle: {
                     fontName: 'Arial',
@@ -656,22 +235,8 @@
         };
 
         const chart = new google.visualization.Gantt(document.getElementById('gantt_chart'));
-
-        // Tooltip personalizado
-        google.visualization.events.addListener(chart, 'select', function() {
-            const selection = chart.getSelection();
-            if (selection.length > 0) {
-                const row = selection[0].row;
-                const taskData = ganttData[row];
-                
-                // Mostrar información adicional de la tarea
-                console.log('Tarea seleccionada:', taskData.title);
-            }
-        });
-
         chart.draw(data, options);
         
-        // Hacer responsive
         window.addEventListener('resize', function() {
             chart.draw(data, options);
         });
