@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'contact_generator_list' %}">Generadores de Contactos</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'contact_generator_detail' generator.pk %}">{{ generator.title }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Eliminar</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Confirmar Eliminación
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>¡Atención!</strong> Esta acción no se puede deshacer.
+                    </div>
+
+                    <p class="lead">
+                        ¿Estás seguro de que deseas eliminar el siguiente generador de contactos?
+                    </p>
+
+                    <div class="bg-light p-3 rounded mb-3">
+                        <h5 class="mb-2">
+                            <i class="bi bi-person-plus me-2"></i>
+                            {{ generator.title }}
+                        </h5>
+                        <p class="mb-2">
+                            <i class="bi bi-building me-1"></i>
+                            <strong>Empresa:</strong> {{ generator.company.name }}
+                        </p>
+                        <p class="mb-2">
+                            <i class="bi bi-calendar me-1"></i>
+                            <strong>Creado:</strong> {{ generator.created_at|date:"d/m/Y H:i" }}
+                        </p>
+                        <p class="mb-0">
+                            <i class="bi bi-people me-1"></i>
+                            <strong>Contactos generados:</strong> 
+                            <span class="badge bg-primary">{{ contacts_count }}</span>
+                        </p>
+                    </div>
+
+                    {% if generator.description %}
+                        <div class="mb-3">
+                            <h6 class="text-muted">Descripción:</h6>
+                            <p class="small">{{ generator.description }}</p>
+                        </div>
+                    {% endif %}
+
+                    {% if contacts_count > 0 %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Nota:</strong> Al eliminar este generador, los {{ contacts_count }} contacto{{ contacts_count|pluralize }} 
+                            ya generado{{ contacts_count|pluralize }} se mantendrán en el sistema. Solo se eliminará el generador y su configuración.
+                        </div>
+                    {% endif %}
+
+                    <form method="post" class="d-flex gap-2">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger flex-fill">
+                            <i class="bi bi-trash me-1"></i>
+                            Sí, Eliminar Generador
+                        </button>
+                        <a href="{% url 'contact_generator_detail' generator.pk %}" class="btn btn-secondary flex-fill">
+                            <i class="bi bi-arrow-left me-1"></i>
+                            Cancelar
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

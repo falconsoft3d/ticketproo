@@ -1,0 +1,249 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'contact_generator_list' %}">Generadores de Contactos</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ page_title }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4>
+                        <i class="bi bi-person-plus me-2"></i>
+                        {{ form_title }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post" id="contactGeneratorForm">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.title.id_for_label }}" class="form-label">
+                                        <i class="bi bi-card-heading me-1"></i>
+                                        {{ form.title.label }} *
+                                    </label>
+                                    {{ form.title }}
+                                    {% if form.title.errors %}
+                                        <div class="text-danger small">{{ form.title.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.company.id_for_label }}" class="form-label">
+                                        <i class="bi bi-building me-1"></i>
+                                        {{ form.company.label }} *
+                                    </label>
+                                    {{ form.company }}
+                                    {% if form.company.errors %}
+                                        <div class="text-danger small">{{ form.company.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">
+                                <i class="bi bi-card-text me-1"></i>
+                                {{ form.description.label }}
+                            </label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="text-danger small">{{ form.description.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-collection me-1"></i>
+                                    Campos a Recopilar
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-check mb-2">
+                                            {{ form.collect_phone }}
+                                            <label class="form-check-label" for="{{ form.collect_phone.id_for_label }}">
+                                                <i class="bi bi-telephone me-1"></i>
+                                                {{ form.collect_phone.label }}
+                                            </label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            {{ form.collect_company }}
+                                            <label class="form-check-label" for="{{ form.collect_company.id_for_label }}">
+                                                <i class="bi bi-building me-1"></i>
+                                                {{ form.collect_company.label }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check mb-2">
+                                            {{ form.collect_position }}
+                                            <label class="form-check-label" for="{{ form.collect_position.id_for_label }}">
+                                                <i class="bi bi-person-badge me-1"></i>
+                                                {{ form.collect_position.label }}
+                                            </label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            {{ form.collect_notes }}
+                                            <label class="form-check-label" for="{{ form.collect_notes.id_for_label }}">
+                                                <i class="bi bi-chat-text me-1"></i>
+                                                {{ form.collect_notes.label }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Nombre y Email siempre se recopilan. Selecciona campos adicionales según tus necesidades.
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-chat-square-text me-1"></i>
+                                    Mensajes Personalizados
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="{{ form.welcome_message.id_for_label }}" class="form-label">
+                                        <i class="bi bi-hand-thumbs-up me-1"></i>
+                                        {{ form.welcome_message.label }}
+                                    </label>
+                                    {{ form.welcome_message }}
+                                    {% if form.welcome_message.errors %}
+                                        <div class="text-danger small">{{ form.welcome_message.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.success_message.id_for_label }}" class="form-label">
+                                        <i class="bi bi-check-circle me-1"></i>
+                                        {{ form.success_message.label }}
+                                    </label>
+                                    {{ form.success_message }}
+                                    {% if form.success_message.errors %}
+                                        <div class="text-danger small">{{ form.success_message.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.background_color.id_for_label }}" class="form-label">
+                                <i class="bi bi-palette me-1"></i>
+                                {{ form.background_color.label }}
+                            </label>
+                            <div class="input-group">
+                                {{ form.background_color }}
+                                <div class="input-group-text">
+                                    <div id="color-preview" class="rounded" style="width: 20px; height: 20px; background-color: {{ form.background_color.value|default:'#007bff' }};"></div>
+                                </div>
+                            </div>
+                            {% if form.background_color.errors %}
+                                <div class="text-danger small">{{ form.background_color.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-1"></i>
+                                {% if generator %}Actualizar{% else %}Crear{% endif %} Generador
+                            </button>
+                            <a href="{% url 'contact_generator_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>
+                                Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-lightbulb me-1"></i>
+                        Consejos
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="text-primary">
+                            <i class="bi bi-target me-1"></i>
+                            Optimización
+                        </h6>
+                        <ul class="list-unstyled small text-muted">
+                            <li class="mb-1">• Usa títulos claros y atractivos</li>
+                            <li class="mb-1">• Recopila solo datos necesarios</li>
+                            <li class="mb-1">• Mensajes cortos y directos</li>
+                            <li>• Colores acordes a tu marca</li>
+                        </ul>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6 class="text-success">
+                            <i class="bi bi-graph-up me-1"></i>
+                            Mejores Prácticas
+                        </h6>
+                        <ul class="list-unstyled small text-muted">
+                            <li class="mb-1">• Ofrece valor a cambio</li>
+                            <li class="mb-1">• Garantiza privacidad</li>
+                            <li class="mb-1">• Respuesta rápida</li>
+                            <li>• Seguimiento consistente</li>
+                        </ul>
+                    </div>
+
+                    {% if generator and generator.is_active %}
+                        <div class="alert alert-info small">
+                            <i class="bi bi-info-circle me-1"></i>
+                            <strong>URL Pública:</strong><br>
+                            <code class="small">{{ request.build_absolute_uri }}{{ generator.get_public_url }}</code>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Actualizar vista previa del color
+    const colorInput = document.getElementById('{{ form.background_color.id_for_label }}');
+    const colorPreview = document.getElementById('color-preview');
+    
+    if (colorInput && colorPreview) {
+        colorInput.addEventListener('change', function() {
+            colorPreview.style.backgroundColor = this.value;
+        });
+    }
+});
+</script>
+{% endblock %}

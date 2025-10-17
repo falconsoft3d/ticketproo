@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+  <h1>Eliminar Generador</h1>
+  <p>¿Estás seguro de eliminar el generador "{{ generator.title }}"? Se han enviado {{ requests_count }} solicitudes.</p>
+  <form method="post">
+    {% csrf_token %}
+    <button class="btn btn-danger" type="submit">Eliminar</button>
+    <a class="btn btn-secondary" href="{% url 'company_request_generator_detail' generator.pk %}">Cancelar</a>
+  </form>
+</div>
+{% endblock %}

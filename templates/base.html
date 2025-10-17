@@ -563,6 +563,28 @@
                                     <i class="fas fa-folder-open"></i> Documentación Múltiple
                                 </a>
                             </li>
+                            <li>
+                                <a class="dropdown-item {% if 'company_documentation' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'company_documentation_list' %}">
+                                    <i class="bi bi-collection"></i> Documentaciones de Empresas
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <h6 class="dropdown-header">Captura de Leads</h6>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'contact_generator' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'contact_generator_list' %}">
+                                    <i class="bi bi-person-plus"></i> Crear Contactos
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'company_request_generator' in request.resolver_match.url_name %}active{% endif %}"
+                                   href="{% url 'company_request_generator_list' %}">
+                                    <i class="bi bi-file-earmark-text"></i> Crear Solicitudes Empresas
+                                </a>
+                            </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <h6 class="dropdown-header">Planificación</h6>

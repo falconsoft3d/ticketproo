@@ -35,7 +35,9 @@ from .models import (
     LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry, SharedFile, SharedFileDownload,
     Recording, RecordingPlayback, MultipleDocumentation, MultipleDocumentationItem,
     TaskSchedule, ScheduleTask, ScheduleComment, SatisfactionSurvey, ClientProjectAccess, ClientTimeEntry, ShortUrl,
-    ProductSet, ProductItem, Precotizador, PrecotizadorExample, PrecotizadorQuote
+    ProductSet, ProductItem, Precotizador, PrecotizadorExample, PrecotizadorQuote,
+    CompanyDocumentation, CompanyDocumentationURL, ContactGenerator,
+    CompanyRequestGenerator, CompanyRequest, CompanyRequestComment
 )
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
@@ -49,7 +51,9 @@ from .forms import (
     WorkOrderTaskTimeEntryForm, WorkOrderTaskBulkForm, SharedFileForm, PublicSharedFileForm,
     TaskScheduleForm, ScheduleTaskForm, ScheduleCommentForm, ClientProjectAccessForm, ClientTimeEntryForm,
     ProductSetForm, ProductItemForm, ProductItemFormSet, PrecotizadorForm, PrecotizadorExampleForm, 
-    PrecotizadorExampleFormSet, PrecotizadorQuoteForm
+    PrecotizadorExampleFormSet, PrecotizadorQuoteForm, CompanyDocumentationForm, CompanyDocumentationURLForm,
+    CompanyDocumentationURLFormSet, ContactGeneratorForm, PublicContactForm,
+    CompanyRequestGeneratorForm, PublicCompanyRequestForm
 )
 from .utils import is_agent, is_regular_user, is_teacher, can_manage_courses, get_user_role, assign_user_to_group
 
@@ -7207,6 +7211,10 @@ def contact_list(request):
     status = request.GET.get('status')
     if status:
         contacts = contacts.filter(status=status)
+    
+    source = request.GET.get('source')
+    if source:
+        contacts = contacts.filter(source__icontains=f"Generador: {source}")
     
     search = request.GET.get('search')
     if search:
@@ -18071,3 +18079,792 @@ DESGLOSE DE TAREAS:
             'error': f'Error técnico: {str(e)}'
         })
 
+
+
+# ============= VISTAS PARA DOCUMENTACIONES DE EMPRESAS =============
+
+@login_required
+def company_documentation_list(request):
+    """Lista de documentaciones de empresas"""
+    # Filtrar por empresa del usuario si no es administrador
+    if request.user.is_superuser or request.user.groups.filter(name='Administradores').exists():
+        documentations = CompanyDocumentation.objects.all()
+    else:
+        try:
+            user_company = request.user.profile.company
+            if user_company:
+                documentations = CompanyDocumentation.objects.filter(company=user_company)
+            else:
+                documentations = CompanyDocumentation.objects.none()
+        except:
+            documentations = CompanyDocumentation.objects.none()
+    
+    documentations = documentations.order_by('-created_at')
+    
+    # Paginación
+    from django.core.paginator import Paginator
+    paginator = Paginator(documentations, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'page_title': 'Documentaciones de Empresas',
+        'section': 'documentation'
+    }
+    
+    return render(request, 'tickets/company_documentation_list.html', context)
+
+
+@login_required
+def company_documentation_create(request):
+    """Crear nueva documentación de empresa"""
+    if request.method == 'POST':
+        form = CompanyDocumentationForm(request.POST, user=request.user)
+        formset = CompanyDocumentationURLFormSet(request.POST)
+        
+        if form.is_valid() and formset.is_valid():
+            documentation = form.save(commit=False)
+            documentation.created_by = request.user
+            documentation.save()
+            
+            # Guardar URLs
+            formset.instance = documentation
+            formset.save()
+            
+            messages.success(request, 'Documentación creada exitosamente.')
+            return redirect('company_documentation_detail', pk=documentation.pk)
+    else:
+        form = CompanyDocumentationForm(user=request.user)
+        formset = CompanyDocumentationURLFormSet()
+    
+    context = {
+        'form': form,
+        'formset': formset,
+        'page_title': 'Crear Documentación',
+        'section': 'documentation'
+    }
+    
+    return render(request, 'tickets/company_documentation_form.html', context)
+
+
+@login_required
+def company_documentation_detail(request, pk):
+    """Detalle de documentación de empresa"""
+    documentation = get_object_or_404(CompanyDocumentation, pk=pk)
+    
+    # Verificar permisos
+    if not (request.user.is_superuser or 
+            request.user.groups.filter(name='Administradores').exists() or
+            (hasattr(request.user, 'profile') and 
+             request.user.profile.company == documentation.company)):
+        messages.error(request, 'No tienes permisos para ver esta documentación.')
+        return redirect('company_documentation_list')
+    
+    urls = documentation.urls.filter(is_active=True).order_by('order', 'title')
+    
+    context = {
+        'documentation': documentation,
+        'urls': urls,
+        'page_title': f'Documentación - {documentation.title}',
+        'section': 'documentation'
+    }
+    
+    return render(request, 'tickets/company_documentation_detail.html', context)
+
+
+@login_required
+def company_documentation_edit(request, pk):
+    """Editar documentación de empresa"""
+    documentation = get_object_or_404(CompanyDocumentation, pk=pk)
+    
+    # Verificar permisos
+    if not (request.user.is_superuser or 
+            request.user.groups.filter(name='Administradores').exists() or
+            (hasattr(request.user, 'profile') and 
+             request.user.profile.company == documentation.company)):
+        messages.error(request, 'No tienes permisos para editar esta documentación.')
+        return redirect('company_documentation_list')
+    
+    if request.method == 'POST':
+        form = CompanyDocumentationForm(request.POST, instance=documentation, user=request.user)
+        formset = CompanyDocumentationURLFormSet(request.POST, instance=documentation)
+        
+        if form.is_valid() and formset.is_valid():
+            form.save()
+            formset.save()
+            
+            messages.success(request, 'Documentación actualizada exitosamente.')
+            return redirect('company_documentation_detail', pk=documentation.pk)
+    else:
+        form = CompanyDocumentationForm(instance=documentation, user=request.user)
+        formset = CompanyDocumentationURLFormSet(instance=documentation)
+    
+    context = {
+        'form': form,
+        'formset': formset,
+        'documentation': documentation,
+        'page_title': f'Editar - {documentation.title}',
+        'section': 'documentation'
+    }
+    
+    return render(request, 'tickets/company_documentation_form.html', context)
+
+
+@login_required
+def company_documentation_delete(request, pk):
+    """Eliminar documentación de empresa"""
+    documentation = get_object_or_404(CompanyDocumentation, pk=pk)
+    
+    # Verificar permisos
+    if not (request.user.is_superuser or 
+            request.user.groups.filter(name='Administradores').exists() or
+            (hasattr(request.user, 'profile') and 
+             request.user.profile.company == documentation.company)):
+        messages.error(request, 'No tienes permisos para eliminar esta documentación.')
+        return redirect('company_documentation_list')
+    
+    if request.method == 'POST':
+        documentation.delete()
+        messages.success(request, 'Documentación eliminada exitosamente.')
+        return redirect('company_documentation_list')
+    
+    context = {
+        'documentation': documentation,
+        'page_title': f'Eliminar - {documentation.title}',
+        'section': 'documentation'
+    }
+    
+    return render(request, 'tickets/company_documentation_delete.html', context)
+
+
+@login_required
+def company_documentation_toggle_public(request, pk):
+    """Activar/desactivar acceso público a documentación"""
+    documentation = get_object_or_404(CompanyDocumentation, pk=pk)
+    
+    # Verificar permisos
+    if not (request.user.is_superuser or 
+            request.user.groups.filter(name='Administradores').exists() or
+            (hasattr(request.user, 'profile') and 
+             request.user.profile.company == documentation.company)):
+        messages.error(request, 'No tienes permisos para modificar esta documentación.')
+        return redirect('company_documentation_list')
+    
+    if request.method == 'POST':
+        documentation.is_public = not documentation.is_public
+        documentation.save()
+        
+        if documentation.is_public:
+            messages.success(request, 'Documentación ahora es pública. Los clientes pueden acceder con el enlace.')
+        else:
+            messages.warning(request, 'Documentación ya no es pública. El enlace ha sido desactivado.')
+    
+    return redirect('company_documentation_detail', pk=documentation.pk)
+
+
+def company_documentation_public(request, token):
+    """Vista pública para que los clientes vean documentaciones"""
+    documentation = get_object_or_404(
+        CompanyDocumentation, 
+        public_token=token, 
+        is_public=True
+    )
+    
+    urls = documentation.urls.filter(is_active=True).order_by('order', 'title')
+    
+    context = {
+        'documentation': documentation,
+        'urls': urls,
+        'page_title': f'{documentation.title} - {documentation.company.name}',
+        'is_public_view': True
+    }
+    
+    return render(request, 'tickets/company_documentation_public.html', context)
+
+
+# ==========================================
+# VISTAS PARA GENERADORES DE CONTACTOS
+# ==========================================
+
+@login_required
+def contact_generator_list(request):
+    """Lista de generadores de contactos"""
+    if not is_agent(request.user):
+        return redirect('dashboard')
+    
+    # Filtrar por empresa según permisos del usuario
+    if request.user.is_superuser:
+        generators = ContactGenerator.objects.all()
+    else:
+        # Obtener empresas del usuario
+        user_companies = []
+        if hasattr(request.user, 'company'):
+            user_companies.append(request.user.company.id)
+        if hasattr(request.user, 'additional_companies'):
+            user_companies.extend(request.user.additional_companies.values_list('id', flat=True))
+        
+        generators = ContactGenerator.objects.filter(company_id__in=user_companies)
+    
+    generators = generators.order_by('-created_at')
+    
+    context = {
+        'generators': generators,
+        'page_title': 'Generadores de Contactos'
+    }
+    
+    return render(request, 'tickets/contact_generator_list.html', context)
+
+
+@login_required
+def contact_generator_create(request):
+    """Crear nuevo generador de contactos"""
+    if not is_agent(request.user):
+        return redirect('dashboard')
+    
+    if request.method == 'POST':
+        form = ContactGeneratorForm(request.POST, user=request.user)
+        if form.is_valid():
+            generator = form.save(commit=False)
+            generator.created_by = request.user
+            generator.save()
+            
+            messages.success(request, f'Generador de contactos "{generator.title}" creado correctamente.')
+            return redirect('contact_generator_detail', pk=generator.pk)
+    else:
+        form = ContactGeneratorForm(user=request.user)
+    
+    context = {
+        'form': form,
+        'page_title': 'Crear Generador de Contactos',
+        'form_title': 'Nuevo Generador de Contactos'
+    }
+    
+    return render(request, 'tickets/contact_generator_form.html', context)
+
+
+@login_required
+def contact_generator_detail(request, pk):
+    """Detalle de un generador de contactos"""
+    if not is_agent(request.user):
+        return redirect('dashboard')
+    
+    generator = get_object_or_404(ContactGenerator, pk=pk)
+    
+    # Verificar permisos
+    if not request.user.is_superuser:
+        user_companies = []
+        if hasattr(request.user, 'company'):
+            user_companies.append(request.user.company.id)
+        if hasattr(request.user, 'additional_companies'):
+            user_companies.extend(request.user.additional_companies.values_list('id', flat=True))
+        
+        if generator.company.id not in user_companies:
+            messages.error(request, 'No tienes permisos para ver este generador.')
+            return redirect('contact_generator_list')
+    
+    # Obtener estadísticas de contactos generados
+    recent_contacts = Contact.objects.filter(
+        source=f"Generador: {generator.title}",
+        created_by=generator.created_by
+    ).order_by('-created_at')[:10]
+    
+    context = {
+        'generator': generator,
+        'recent_contacts': recent_contacts,
+        'contacts_count': generator.get_contacts_count(),
+        'page_title': f'Generador: {generator.title}'
+    }
+    
+    return render(request, 'tickets/contact_generator_detail.html', context)
+
+
+@login_required
+def contact_generator_edit(request, pk):
+    """Editar generador de contactos"""
+    if not is_agent(request.user):
+        return redirect('dashboard')
+    
+    generator = get_object_or_404(ContactGenerator, pk=pk)
+    
+    # Verificar permisos
+    if not request.user.is_superuser:
+        user_companies = []
+        if hasattr(request.user, 'company'):
+            user_companies.append(request.user.company.id)
+        if hasattr(request.user, 'additional_companies'):
+            user_companies.extend(request.user.additional_companies.values_list('id', flat=True))
+        
+        if generator.company.id not in user_companies:
+            messages.error(request, 'No tienes permisos para editar este generador.')
+            return redirect('contact_generator_list')
+    
+    if request.method == 'POST':
+        form = ContactGeneratorForm(request.POST, instance=generator, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Generador "{generator.title}" actualizado correctamente.')
+            return redirect('contact_generator_detail', pk=generator.pk)
+    else:
+        form = ContactGeneratorForm(instance=generator, user=request.user)
+    
+    context = {
+        'form': form,
+        'generator': generator,
+        'page_title': f'Editar: {generator.title}',
+        'form_title': f'Editar Generador: {generator.title}'
+    }
+    
+    return render(request, 'tickets/contact_generator_form.html', context)
+
+
+@login_required
+def contact_generator_delete(request, pk):
+    """Eliminar generador de contactos"""
+    if not is_agent(request.user):
+        return redirect('dashboard')
+    
+    generator = get_object_or_404(ContactGenerator, pk=pk)
+    
+    # Verificar permisos
+    if not request.user.is_superuser:
+        user_companies = []
+        if hasattr(request.user, 'company'):
+            user_companies.append(request.user.company.id)
+        if hasattr(request.user, 'additional_companies'):
+            user_companies.extend(request.user.additional_companies.values_list('id', flat=True))
+        
+        if generator.company.id not in user_companies:
+            messages.error(request, 'No tienes permisos para eliminar este generador.')
+            return redirect('contact_generator_list')
+    
+    if request.method == 'POST':
+        generator_title = generator.title
+        generator.delete()
+        messages.success(request, f'Generador "{generator_title}" eliminado correctamente.')
+        return redirect('contact_generator_list')
+    
+    context = {
+        'generator': generator,
+        'page_title': f'Eliminar: {generator.title}',
+        'contacts_count': generator.get_contacts_count()
+    }
+    
+    return render(request, 'tickets/contact_generator_delete.html', context)
+
+
+@login_required
+def contact_generator_toggle_active(request, pk):
+    """Activar/desactivar generador de contactos"""
+    if not is_agent(request.user):
+        return redirect('dashboard')
+    
+    generator = get_object_or_404(ContactGenerator, pk=pk)
+    
+    # Verificar permisos
+    if not request.user.is_superuser:
+        user_companies = []
+        if hasattr(request.user, 'company'):
+            user_companies.append(request.user.company.id)
+        if hasattr(request.user, 'additional_companies'):
+            user_companies.extend(request.user.additional_companies.values_list('id', flat=True))
+        
+        if generator.company.id not in user_companies:
+            messages.error(request, 'No tienes permisos para modificar este generador.')
+            return redirect('contact_generator_list')
+    
+    generator.is_active = not generator.is_active
+    generator.save()
+    
+    if generator.is_active:
+        messages.success(request, f'Generador "{generator.title}" activado. El formulario público está disponible.')
+    else:
+        messages.warning(request, f'Generador "{generator.title}" desactivado. El formulario público no está disponible.')
+    
+    return redirect('contact_generator_detail', pk=generator.pk)
+
+
+def contact_generator_public(request, token):
+    """Vista pública para que los usuarios llenen el formulario de contacto"""
+    generator = get_object_or_404(ContactGenerator, public_token=token, is_active=True)
+    
+    if request.method == 'POST':
+        form = PublicContactForm(request.POST, generator=generator)
+        if form.is_valid():
+            contact = form.save(commit=False)
+            contact.source = f"Generador: {generator.title}"
+            contact.status = 'positive'  # Por defecto positivo
+            contact.created_by = generator.created_by  # El usuario que creó el generador
+            
+            # Si no se proporcionó empresa o está vacía, usar la empresa del generador
+            if not contact.company or contact.company.strip() == '':
+                contact.company = generator.company.name
+            
+            contact.save()
+            
+            # Mostrar mensaje de éxito
+            context = {
+                'generator': generator,
+                'success': True,
+                'success_message': generator.success_message,
+                'page_title': f'{generator.title} - {generator.company.name}',
+                'is_public_view': True
+            }
+            return render(request, 'tickets/contact_generator_public.html', context)
+    else:
+        form = PublicContactForm(generator=generator)
+    
+    context = {
+        'generator': generator,
+        'form': form,
+        'page_title': f'{generator.title} - {generator.company.name}',
+        'is_public_view': True
+    }
+    
+    return render(request, 'tickets/contact_generator_public.html', context)
+
+
+@login_required
+def company_request_generator_list(request):
+    """Lista de generadores de solicitudes de empresa"""
+    if not is_agent(request.user):
+        return redirect('dashboard')
+
+    if request.user.is_superuser:
+        generators = CompanyRequestGenerator.objects.all()
+    else:
+        user_companies = []
+        if hasattr(request.user, 'company'):
+            user_companies.append(request.user.company.id)
+        if hasattr(request.user, 'additional_companies'):
+            user_companies.extend(request.user.additional_companies.values_list('id', flat=True))
+
+        generators = CompanyRequestGenerator.objects.filter(company_id__in=user_companies)
+
+    generators = generators.order_by('-created_at')
+
+    context = {
+        'generators': generators,
+        'page_title': 'Generadores de Solicitudes Empresas'
+    }
+    return render(request, 'tickets/company_request_generator_list.html', context)
+
+
+@login_required
+def company_request_generator_create(request):
+    if not is_agent(request.user):
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        form = CompanyRequestGeneratorForm(request.POST, user=request.user)
+        if form.is_valid():
+            generator = form.save(commit=False)
+            generator.created_by = request.user
+            generator.save()
+            messages.success(request, f'Generador "{generator.title}" creado correctamente.')
+            return redirect('company_request_generator_detail', pk=generator.pk)
+    else:
+        form = CompanyRequestGeneratorForm(user=request.user)
+
+    context = {
+        'form': form,
+        'page_title': 'Crear Generador de Solicitudes Empresas',
+        'form_title': 'Nuevo Generador de Solicitudes'
+    }
+    return render(request, 'tickets/company_request_generator_form.html', context)
+
+
+@login_required
+def company_request_generator_detail(request, pk):
+    if not is_agent(request.user):
+        return redirect('dashboard')
+
+    generator = get_object_or_404(CompanyRequestGenerator, pk=pk)
+
+    if not request.user.is_superuser:
+        user_companies = []
+        if hasattr(request.user, 'company'):
+            user_companies.append(request.user.company.id)
+        if hasattr(request.user, 'additional_companies'):
+            user_companies.extend(request.user.additional_companies.values_list('id', flat=True))
+
+        if generator.company.id not in user_companies:
+            messages.error(request, 'No tienes permisos para ver este generador.')
+            return redirect('company_request_generator_list')
+
+    recent_requests = generator.get_recent_requests()
+
+    context = {
+        'generator': generator,
+        'recent_requests': recent_requests,
+        'requests_count': generator.get_requests_count(),
+        'page_title': f'Generador: {generator.title}'
+    }
+    return render(request, 'tickets/company_request_generator_detail.html', context)
+
+
+@login_required
+def company_request_generator_edit(request, pk):
+    if not is_agent(request.user):
+        return redirect('dashboard')
+
+    generator = get_object_or_404(CompanyRequestGenerator, pk=pk)
+
+    if not request.user.is_superuser:
+        user_companies = []
+        if hasattr(request.user, 'company'):
+            user_companies.append(request.user.company.id)
+        if hasattr(request.user, 'additional_companies'):
+            user_companies.extend(request.user.additional_companies.values_list('id', flat=True))
+
+        if generator.company.id not in user_companies:
+            messages.error(request, 'No tienes permisos para editar este generador.')
+            return redirect('company_request_generator_list')
+
+    if request.method == 'POST':
+        form = CompanyRequestGeneratorForm(request.POST, instance=generator, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Generador "{generator.title}" actualizado correctamente.')
+            return redirect('company_request_generator_detail', pk=generator.pk)
+    else:
+        form = CompanyRequestGeneratorForm(instance=generator, user=request.user)
+
+    context = {
+        'form': form,
+        'generator': generator,
+        'page_title': f'Editar: {generator.title}',
+        'form_title': f'Editar Generador: {generator.title}'
+    }
+    return render(request, 'tickets/company_request_generator_form.html', context)
+
+
+@login_required
+def company_request_generator_delete(request, pk):
+    if not is_agent(request.user):
+        return redirect('dashboard')
+
+    generator = get_object_or_404(CompanyRequestGenerator, pk=pk)
+
+    if not request.user.is_superuser:
+        user_companies = []
+        if hasattr(request.user, 'company'):
+            user_companies.append(request.user.company.id)
+        if hasattr(request.user, 'additional_companies'):
+            user_companies.extend(request.user.additional_companies.values_list('id', flat=True))
+
+        if generator.company.id not in user_companies:
+            messages.error(request, 'No tienes permisos para eliminar este generador.')
+            return redirect('company_request_generator_list')
+
+    if request.method == 'POST':
+        title = generator.title
+        generator.delete()
+        messages.success(request, f'Generador "{title}" eliminado correctamente.')
+        return redirect('company_request_generator_list')
+
+    context = {
+        'generator': generator,
+        'page_title': f'Eliminar: {generator.title}',
+        'requests_count': generator.get_requests_count()
+    }
+    return render(request, 'tickets/company_request_generator_delete.html', context)
+
+
+@login_required
+def company_request_generator_toggle_active(request, pk):
+    if not is_agent(request.user):
+        return redirect('dashboard')
+
+    generator = get_object_or_404(CompanyRequestGenerator, pk=pk)
+
+    if not request.user.is_superuser:
+        user_companies = []
+        if hasattr(request.user, 'company'):
+            user_companies.append(request.user.company.id)
+        if hasattr(request.user, 'additional_companies'):
+            user_companies.extend(request.user.additional_companies.values_list('id', flat=True))
+
+        if generator.company.id not in user_companies:
+            messages.error(request, 'No tienes permisos para modificar este generador.')
+            return redirect('company_request_generator_list')
+
+    generator.is_active = not generator.is_active
+    generator.save()
+    if generator.is_active:
+        messages.success(request, f'Generador "{generator.title}" activado.')
+    else:
+        messages.warning(request, f'Generador "{generator.title}" desactivado.')
+
+    return redirect('company_request_generator_detail', pk=generator.pk)
+
+
+def company_request_public(request, token):
+    """Vista pública para enviar solicitudes de empresas"""
+    generator = get_object_or_404(CompanyRequestGenerator, public_token=token, is_active=True)
+
+    if request.method == 'POST':
+        form = PublicCompanyRequestForm(request.POST, generator=generator)
+        if form.is_valid():
+            req = form.save(commit=False)
+            # generar secuencia
+            req.sequence = generator.generate_sequence()
+            req.generator = generator
+            req.created_by = None  # público, no user asociado
+            req.save()
+
+            context = {
+                'generator': generator,
+                'success': True,
+                'success_message': generator.success_message,
+                'page_title': f'{generator.title} - {generator.company.name}',
+                'is_public_view': True,
+                'request_obj': req
+            }
+            return render(request, 'tickets/company_request_public.html', context)
+    else:
+        form = PublicCompanyRequestForm(generator=generator)
+
+    context = {
+        'generator': generator,
+        'form': form,
+        'page_title': f'{generator.title} - {generator.company.name}',
+        'is_public_view': True
+    }
+    return render(request, 'tickets/company_request_public.html', context)
+
+
+@login_required
+def company_request_list(request, generator_pk):
+    """Lista todas las solicitudes de un generador específico"""
+    if not is_agent(request.user):
+        return redirect('dashboard')
+    
+    generator = get_object_or_404(CompanyRequestGenerator, pk=generator_pk)
+    
+    # Verificar permisos
+    if not request.user.is_superuser:
+        user_companies = []
+        if hasattr(request.user, 'company'):
+            user_companies.append(request.user.company.id)
+        if hasattr(request.user, 'additional_companies'):
+            user_companies.extend(request.user.additional_companies.values_list('id', flat=True))
+        
+        if generator.company.id not in user_companies:
+            messages.error(request, 'No tienes permisos para ver estas solicitudes.')
+            return redirect('company_request_generator_list')
+    
+    # Filtros
+    status_filter = request.GET.get('status', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    
+    requests = CompanyRequest.objects.filter(generator=generator)
+    
+    if status_filter:
+        requests = requests.filter(status=status_filter)
+    
+    if date_from:
+        from datetime import datetime
+        try:
+            date_from_obj = datetime.strptime(date_from, '%Y-%m-%d').date()
+            requests = requests.filter(request_date__gte=date_from_obj)
+        except ValueError:
+            pass
+    
+    if date_to:
+        from datetime import datetime
+        try:
+            date_to_obj = datetime.strptime(date_to, '%Y-%m-%d').date()
+            requests = requests.filter(request_date__lte=date_to_obj)
+        except ValueError:
+            pass
+    
+    requests = requests.order_by('-created_at')
+    
+    # KPIs
+    total_requests = generator.get_requests_count()
+    status_stats = {}
+    for status_choice in CompanyRequest.STATUS_CHOICES:
+        status_key = status_choice[0]
+        status_stats[status_key] = CompanyRequest.objects.filter(
+            generator=generator, status=status_key
+        ).count()
+    
+    context = {
+        'generator': generator,
+        'requests': requests,
+        'total_requests': total_requests,
+        'status_stats': status_stats,
+        'status_filter': status_filter,
+        'date_from': date_from,
+        'date_to': date_to,
+        'page_title': f'Solicitudes de {generator.title}'
+    }
+    
+    return render(request, 'tickets/company_request_list.html', context)
+
+
+def public_tickets_and_requests_view(request):
+    """Vista pública que muestra la última solicitud de empresa y listado de solicitudes"""
+    
+    # Obtener la última solicitud de empresa
+    latest_request = CompanyRequest.objects.select_related(
+        'generator', 'generator__company'
+    ).order_by('-created_at').first()
+    
+    # Obtener todas las solicitudes de empresa (últimas 20)
+    recent_requests = CompanyRequest.objects.select_related(
+        'generator', 'generator__company'
+    ).order_by('-created_at')[:20]
+    
+    # Estadísticas generales
+    total_requests = CompanyRequest.objects.count()
+    
+    # Estadísticas por estado de solicitudes
+    status_stats = {}
+    for status_choice in CompanyRequest.STATUS_CHOICES:
+        status_key = status_choice[0]
+        status_stats[status_key] = CompanyRequest.objects.filter(status=status_key).count()
+    
+    context = {
+        'latest_request': latest_request,
+        'recent_requests': recent_requests,
+        'total_requests': total_requests,
+        'status_stats': status_stats,
+        'page_title': 'Dashboard Público - Solicitudes de Empresa'
+    }
+    
+    return render(request, 'tickets/public_tickets_and_requests.html', context)
+
+
+@login_required
+def update_company_request_status(request, request_id):
+    """Vista AJAX para actualizar el estado de una solicitud de empresa"""
+    if request.method == 'POST':
+        try:
+            company_request = get_object_or_404(CompanyRequest, id=request_id)
+            new_status = request.POST.get('status')
+            
+            if new_status in dict(CompanyRequest.STATUS_CHOICES):
+                company_request.status = new_status
+                company_request.save()
+                
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Estado actualizado a {company_request.get_status_display()}',
+                    'new_status': company_request.status,
+                    'status_display': company_request.get_status_display()
+                })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Estado no válido'
+                })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': str(e)
+            })
+    
+    return JsonResponse({'success': False, 'message': 'Método no permitido'})

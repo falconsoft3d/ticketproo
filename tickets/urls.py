@@ -398,6 +398,18 @@ urlpatterns = [
     path('public-uploads/create/', views.public_upload_url_create, name='public_upload_url_create'),
     path('public-uploads/<int:pk>/', views.public_upload_url_detail, name='public_upload_url_detail'),
     path('public-uploads/<int:pk>/toggle/', views.public_upload_url_toggle, name='public_upload_url_toggle'),
+
+    # ============= Generadores de Solicitudes de Empresas =============
+    path('generadores-solicitudes/', views.company_request_generator_list, name='company_request_generator_list'),
+    path('generadores-solicitudes/create/', views.company_request_generator_create, name='company_request_generator_create'),
+    path('generadores-solicitudes/<int:pk>/', views.company_request_generator_detail, name='company_request_generator_detail'),
+    path('generadores-solicitudes/<int:pk>/edit/', views.company_request_generator_edit, name='company_request_generator_edit'),
+    path('generadores-solicitudes/<int:pk>/delete/', views.company_request_generator_delete, name='company_request_generator_delete'),
+    path('generadores-solicitudes/<int:pk>/toggle/', views.company_request_generator_toggle_active, name='company_request_generator_toggle_active'),
+    path('generadores-solicitudes/<int:generator_pk>/requests/', views.company_request_list, name='company_request_list'),
+
+    # Ruta pública para enviar solicitudes
+    path('company-request/<uuid:token>/', views.company_request_public, name='company_request_public'),
     
     # URL pública para subir documentos (sin autenticación)
     path('upload/<uuid:token>/', views.public_document_upload, name='public_document_upload'),
@@ -638,5 +650,35 @@ urlpatterns += [
     
     # URL pública para conjuntos de productos (sin autenticación)
     path('products/<str:token>/', views.product_set_public, name='product_set_public'),
+    
+    # ============= URLs PARA DOCUMENTACIONES DE EMPRESAS =============
+    # URLs privadas (requieren autenticación)
+    path('documentaciones/', views.company_documentation_list, name='company_documentation_list'),
+    path('documentaciones/crear/', views.company_documentation_create, name='company_documentation_create'),
+    path('documentaciones/<int:pk>/', views.company_documentation_detail, name='company_documentation_detail'),
+    path('documentaciones/<int:pk>/editar/', views.company_documentation_edit, name='company_documentation_edit'),
+    path('documentaciones/<int:pk>/eliminar/', views.company_documentation_delete, name='company_documentation_delete'),
+    path('documentaciones/<int:pk>/toggle-public/', views.company_documentation_toggle_public, name='company_documentation_toggle_public'),
+    
+    # URL pública para documentaciones (sin autenticación)
+    path('documentacion/<str:token>/', views.company_documentation_public, name='company_documentation_public'),
+    
+    # ============= URLs PARA GENERADORES DE CONTACTOS =============
+    # URLs privadas (requieren autenticación)
+    path('generadores-contacto/', views.contact_generator_list, name='contact_generator_list'),
+    path('generadores-contacto/crear/', views.contact_generator_create, name='contact_generator_create'),
+    path('generadores-contacto/<int:pk>/', views.contact_generator_detail, name='contact_generator_detail'),
+    path('generadores-contacto/<int:pk>/editar/', views.contact_generator_edit, name='contact_generator_edit'),
+    path('generadores-contacto/<int:pk>/eliminar/', views.contact_generator_delete, name='contact_generator_delete'),
+    path('generadores-contacto/<int:pk>/toggle-active/', views.contact_generator_toggle_active, name='contact_generator_toggle_active'),
+    
+    # URL pública para capturar contactos (sin autenticación)
+    path('contacto/<str:token>/', views.contact_generator_public, name='contact_generator_public'),
+    
+    # URL pública para mostrar último ticket y solicitudes
+    path('public/dashboard/', views.public_tickets_and_requests_view, name='public_tickets_and_requests'),
+    
+    # URL AJAX para actualizar estado de solicitudes
+    path('ajax/update-request-status/<int:request_id>/', views.update_company_request_status, name='update_company_request_status'),
 ]
 

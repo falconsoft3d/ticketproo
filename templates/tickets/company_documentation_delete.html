@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Encabezado -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'company_documentation_list' %}">Documentaciones</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'company_documentation_detail' documentation.pk %}">{{ documentation.title }}</a>
+                    </li>
+                    <li class="breadcrumb-item active">Eliminar</li>
+                </ol>
+            </nav>
+            <h2 class="text-danger">
+                <i class="bi bi-trash"></i> {{ page_title }}
+            </h2>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Confirmación de eliminación -->
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <h5 class="alert-heading">
+                            <i class="bi bi-exclamation-triangle"></i> ¡Atención!
+                        </h5>
+                        <p class="mb-0">
+                            Estás a punto de eliminar permanentemente la documentación 
+                            <strong>"{{ documentation.title }}"</strong> de la empresa 
+                            <strong>{{ documentation.company.name }}</strong>.
+                        </p>
+                    </div>
+                    
+                    <!-- Información de la documentación -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6>Información de la documentación:</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Título:</strong> {{ documentation.title }}</li>
+                                <li><strong>Empresa:</strong> {{ documentation.company.name }}</li>
+                                <li><strong>Estado:</strong> 
+                                    {% if documentation.is_public %}
+                                        <span class="badge bg-success">Público</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Privado</span>
+                                    {% endif %}
+                                </li>
+                                <li><strong>Enlaces:</strong> {{ documentation.urls.count }}</li>
+                                <li><strong>Creado:</strong> {{ documentation.created_at|date:"d/m/Y H:i" }}</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Consecuencias de la eliminación:</h6>
+                            <ul class="text-danger">
+                                <li>Se eliminará la documentación permanentemente</li>
+                                <li>Se eliminarán todos los enlaces asociados ({{ documentation.urls.count }})</li>
+                                {% if documentation.is_public %}
+                                <li>El enlace público dejará de funcionar</li>
+                                {% endif %}
+                                <li>Esta acción <strong>NO se puede deshacer</strong></li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    {% if documentation.urls.exists %}
+                    <!-- Lista de enlaces que se eliminarán -->
+                    <div class="mb-4">
+                        <h6>Enlaces que se eliminarán:</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Título</th>
+                                        <th>URL</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for url in documentation.urls.all %}
+                                    <tr>
+                                        <td>{{ url.title }}</td>
+                                        <td class="text-truncate" style="max-width: 200px;">{{ url.url }}</td>
+                                        <td>
+                                            {% if url.is_active %}
+                                                <span class="badge bg-success">Activo</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Inactivo</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Formulario de confirmación -->
+                    <form method="post" class="d-flex gap-3 justify-content-end">
+                        {% csrf_token %}
+                        <a href="{% url 'company_documentation_detail' documentation.pk %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Sí, eliminar documentación
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

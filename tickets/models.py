@@ -8330,3 +8330,309 @@ class PrecotizadorQuote(models.Model):
             return config.format_currency(cost)
         except SystemConfiguration.DoesNotExist:
             return f"€{cost:,.2f}"  # Fallback
+
+
+class CompanyDocumentation(models.Model):
+    """Documentación múltiple para empresas con URLs y contraseñas"""
+    
+    title = models.CharField(max_length=200, verbose_name="Título")
+    description = models.TextField(blank=True, verbose_name="Descripción")
+    company = models.ForeignKey(
+        Company, 
+        on_delete=models.CASCADE,
+        related_name='documentations',
+        verbose_name="Empresa"
+    )
+    is_public = models.BooleanField(default=False, verbose_name="Es público")
+    public_token = models.UUIDField(
+        default=uuid.uuid4, 
+        editable=False, 
+        unique=True,
+        verbose_name="Token público"
+    )
+    created_by = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE,
+        verbose_name="Creado por"
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de creación")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de actualización")
+    
+    class Meta:
+        verbose_name = "Documentación de Empresa"
+        verbose_name_plural = "Documentaciones de Empresas"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.title} - {self.company.name}"
+    
+    def get_absolute_url(self):
+        from django.urls import reverse
+        return reverse('company_documentation_detail', kwargs={'pk': self.pk})
+    
+    def get_public_url(self):
+        from django.urls import reverse
+        return reverse('company_documentation_public', kwargs={'token': self.public_token})
+
+
+class CompanyDocumentationURL(models.Model):
+    """URLs asociadas a documentaciones de empresas"""
+    
+    documentation = models.ForeignKey(
+        CompanyDocumentation,
+        on_delete=models.CASCADE,
+        related_name='urls',
+        verbose_name="Documentación"
+    )
+    title = models.CharField(max_length=200, verbose_name="Título del enlace")
+    url = models.URLField(verbose_name="URL")
+    description = models.TextField(blank=True, verbose_name="Descripción")
+    username = models.CharField(max_length=100, blank=True, verbose_name="Usuario")
+    password = models.CharField(max_length=200, blank=True, verbose_name="Contraseña")
+    notes = models.TextField(blank=True, verbose_name="Notas adicionales")
+    is_active = models.BooleanField(default=True, verbose_name="Está activo")
+    order = models.PositiveIntegerField(default=0, verbose_name="Orden")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de creación")
+    
+    class Meta:
+        verbose_name = "URL de Documentación"
+        verbose_name_plural = "URLs de Documentación"
+        ordering = ['order', 'title']
+    
+    def __str__(self):
+        return f"{self.title} - {self.documentation.title}"
+    
+    def has_credentials(self):
+        """Verifica si tiene credenciales (usuario y/o contraseña)"""
+        return bool(self.username or self.password)
+
+
+class ContactGenerator(models.Model):
+    """Generador de contactos con URL pública"""
+    
+    title = models.CharField(max_length=200, verbose_name="Título")
+    description = models.TextField(blank=True, verbose_name="Descripción")
+    company = models.ForeignKey(
+        Company, 
+        on_delete=models.CASCADE,
+        related_name='contact_generators',
+        verbose_name="Empresa"
+    )
+    is_active = models.BooleanField(default=True, verbose_name="Está activo")
+    public_token = models.UUIDField(
+        default=uuid.uuid4, 
+        editable=False, 
+        unique=True,
+        verbose_name="Token público"
+    )
+    
+    # Campos personalizables del formulario
+    collect_phone = models.BooleanField(default=False, verbose_name="Recopilar teléfono")
+    collect_company = models.BooleanField(default=True, verbose_name="Recopilar empresa")
+    collect_position = models.BooleanField(default=True, verbose_name="Recopilar cargo")
+    collect_notes = models.BooleanField(default=False, verbose_name="Recopilar notas")
+    
+    # Mensajes personalizables
+    welcome_message = models.TextField(
+        default="¡Gracias por tu interés! Por favor, completa la siguiente información para que podamos contactarte.",
+        verbose_name="Mensaje de bienvenida"
+    )
+    success_message = models.TextField(
+        default="¡Gracias! Hemos recibido tu información y nos pondremos en contacto contigo pronto.",
+        verbose_name="Mensaje de éxito"
+    )
+    
+    # Configuración de diseño
+    background_color = models.CharField(
+        max_length=7, 
+        default="#007bff", 
+        verbose_name="Color de fondo",
+        help_text="Color en formato hexadecimal (ej: #007bff)"
+    )
+    
+    created_by = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE,
+        verbose_name="Creado por"
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de creación")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de actualización")
+    
+    class Meta:
+        verbose_name = "Generador de Contactos"
+        verbose_name_plural = "Generadores de Contactos"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.title} - {self.company.name}"
+    
+    def get_absolute_url(self):
+        from django.urls import reverse
+        return reverse('contact_generator_detail', kwargs={'pk': self.pk})
+    
+    def get_public_url(self):
+        from django.urls import reverse
+        return reverse('contact_generator_public', kwargs={'token': self.public_token})
+    
+    def get_contacts_count(self):
+        """Retorna el número de contactos generados por este generador"""
+        return Contact.objects.filter(
+            source=f"Generador: {self.title}",
+            created_by=self.created_by
+        ).count()
+
+
+class CompanyRequestGenerator(models.Model):
+    """Generador de formularios de Solicitudes de Empresas"""
+
+    title = models.CharField(max_length=200, verbose_name="Título")
+    description = models.TextField(blank=True, verbose_name="Descripción")
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name='company_request_generators',
+        verbose_name="Empresa"
+    )
+    is_active = models.BooleanField(default=True, verbose_name="Está activo")
+    public_token = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        unique=True,
+        verbose_name="Token público"
+    )
+
+    # Secuencia y prefijo
+    sequence_prefix = models.CharField(
+        max_length=20,
+        blank=True,
+        default='',
+        verbose_name='Prefijo de Secuencia',
+        help_text='Prefijo que se antepone al número de solicitud (ej: SR-)'
+    )
+    next_sequence = models.PositiveIntegerField(
+        default=1,
+        verbose_name='Siguiente secuencia',
+        help_text='Número secuencial que se incrementa por cada solicitud'
+    )
+
+    # Campos personalizables del formulario
+    collect_date = models.BooleanField(default=True, verbose_name="Incluir fecha")
+    collect_text = models.BooleanField(default=True, verbose_name="Incluir texto de solicitud")
+    collect_url = models.BooleanField(default=False, verbose_name="Incluir URL relacionada")
+
+    # Mensajes personalizables
+    welcome_message = models.TextField(
+        default="Por favor, envía tu solicitud y nuestro equipo la revisará.",
+        verbose_name="Mensaje de bienvenida"
+    )
+    success_message = models.TextField(
+        default="Solicitud recibida. Te contactaremos pronto.",
+        verbose_name="Mensaje de éxito"
+    )
+
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name="Creado por"
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de creación")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de actualización")
+
+    class Meta:
+        verbose_name = "Generador de Solicitudes Empresa"
+        verbose_name_plural = "Generadores de Solicitudes Empresas"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.title} - {self.company.name}"
+
+    def get_absolute_url(self):
+        from django.urls import reverse
+        return reverse('company_request_generator_detail', kwargs={'pk': self.pk})
+
+    def get_public_url(self):
+        from django.urls import reverse
+        return reverse('company_request_public', kwargs={'token': self.public_token})
+
+    def generate_sequence(self):
+        """Retorna la secuencia completa y la incrementa de forma atómica"""
+        from django.db import transaction
+        with transaction.atomic():
+            seq = self.next_sequence
+            full = f"{self.sequence_prefix}{seq:04d}" if self.sequence_prefix else f"{seq:04d}"
+            self.next_sequence = seq + 1
+            self.save(update_fields=['next_sequence'])
+            return full
+
+    def get_requests_count(self):
+        return CompanyRequest.objects.filter(generator=self).count()
+
+    def get_recent_requests(self, limit=10):
+        return CompanyRequest.objects.filter(generator=self).order_by('-created_at')[:limit]
+
+
+class CompanyRequest(models.Model):
+    """Registro de una solicitud enviada mediante un generador"""
+
+    STATUS_CHOICES = [
+        ('new', 'Nueva'),
+        ('review', 'En revisión'),
+        ('accepted', 'Aceptada'),
+        ('executed', 'Ejecutada'),
+        ('rejected', 'Rechazada'),
+        ('closed', 'Cerrada'),
+    ]
+
+    sequence = models.CharField(max_length=50, verbose_name='Número de solicitud', unique=True)
+    generator = models.ForeignKey(
+        CompanyRequestGenerator,
+        on_delete=models.CASCADE,
+        related_name='requests',
+        verbose_name='Generador'
+    )
+    request_date = models.DateTimeField(default=timezone.now, verbose_name='Fecha de solicitud')
+    text = models.TextField(blank=True, verbose_name='Texto de la solicitud')
+    url = models.URLField(blank=True, verbose_name='URL relacionada')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new', verbose_name='Estado')
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Creado por'
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Solicitud de Empresa'
+        verbose_name_plural = 'Solicitudes de Empresas'
+
+    def __str__(self):
+        return f"{self.sequence} - {self.generator.title}"
+
+    def get_identifier(self):
+        return self.sequence
+
+
+class CompanyRequestComment(models.Model):
+    """Comentarios internos para una CompanyRequest"""
+
+    request = models.ForeignKey(
+        CompanyRequest,
+        on_delete=models.CASCADE,
+        related_name='comments',
+        verbose_name='Solicitud'
+    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Usuario')
+    content = models.TextField(verbose_name='Comentario')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de creación')
+
+    class Meta:
+        ordering = ['created_at']
+        verbose_name = 'Comentario de Solicitud'
+        verbose_name_plural = 'Comentarios de Solicitudes'
+
+    def __str__(self):
+        return f"Comentario de {self.user.username} en {self.request.sequence}"

@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+  <div class="row">
+    <div class="col-md-8">
+      <h1>{{ page_title }}</h1>
+      <p class="text-muted">Generador: <strong>{{ generator.title }}</strong> | Empresa: {{ generator.company.name }}</p>
+    </div>
+    <div class="col-md-4 text-end">
+      <a class="btn btn-secondary" href="{% url 'company_request_generator_detail' generator.pk %}">
+        <i class="bi bi-arrow-left"></i> Volver al generador
+      </a>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="row mb-4">
+    <div class="col-md-2">
+      <div class="card text-center">
+        <div class="card-body">
+          <h4 class="text-primary">{{ total_requests }}</h4>
+          <small class="text-muted">Total</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card text-center">
+        <div class="card-body">
+          <h4 class="text-primary">{{ status_stats.new|default:0 }}</h4>
+          <small class="text-muted">Nuevas</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card text-center">
+        <div class="card-body">
+          <h4 class="text-warning">{{ status_stats.review|default:0 }}</h4>
+          <small class="text-muted">En revisión</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card text-center">
+        <div class="card-body">
+          <h4 class="text-success">{{ status_stats.accepted|default:0 }}</h4>
+          <small class="text-muted">Aceptadas</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card text-center">
+        <div class="card-body">
+          <h4 class="text-danger">{{ status_stats.rejected|default:0 }}</h4>
+          <small class="text-muted">Rechazadas</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card text-center">
+        <div class="card-body">
+          <h4 class="text-secondary">{{ status_stats.closed|default:0 }}</h4>
+          <small class="text-muted">Cerradas</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="card-title mb-0"><i class="bi bi-funnel"></i> Filtros</h5>
+    </div>
+    <div class="card-body">
+      <form method="get" class="row g-3">
+        <div class="col-md-3">
+          <label for="status" class="form-label">Estado</label>
+          <select name="status" id="status" class="form-select">
+            <option value="">Todos</option>
+            <option value="new" {% if status_filter == 'new' %}selected{% endif %}>Nueva</option>
+            <option value="review" {% if status_filter == 'review' %}selected{% endif %}>En revisión</option>
+            <option value="accepted" {% if status_filter == 'accepted' %}selected{% endif %}>Aceptada</option>
+            <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rechazada</option>
+            <option value="closed" {% if status_filter == 'closed' %}selected{% endif %}>Cerrada</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label for="date_from" class="form-label">Desde</label>
+          <input type="date" name="date_from" id="date_from" class="form-control" value="{{ date_from }}">
+        </div>
+        <div class="col-md-3">
+          <label for="date_to" class="form-label">Hasta</label>
+          <input type="date" name="date_to" id="date_to" class="form-control" value="{{ date_to }}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">&nbsp;</label>
+          <div>
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-search"></i> Filtrar
+            </button>
+            <a href="{% url 'company_request_list' generator.pk %}" class="btn btn-outline-secondary">
+              <i class="bi bi-x-circle"></i> Limpiar
+            </a>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Lista de solicitudes -->
+  {% if requests %}
+    <div class="table-responsive">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Secuencia</th>
+            <th>Fecha de solicitud</th>
+            <th>Estado</th>
+            <th>Texto de solicitud</th>
+            <th>URL relacionada</th>
+            <th>Fecha de creación</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for request in requests %}
+          <tr>
+            <td><strong>{{ request.sequence }}</strong></td>
+            <td>{{ request.request_date|date:"d/m/Y H:i" }}</td>
+            <td>
+              {% if request.status == 'new' %}
+                <span class="badge bg-primary">Nueva</span>
+              {% elif request.status == 'review' %}
+                <span class="badge bg-warning">En revisión</span>
+              {% elif request.status == 'accepted' %}
+                <span class="badge bg-success">Aceptada</span>
+              {% elif request.status == 'rejected' %}
+                <span class="badge bg-danger">Rechazada</span>
+              {% elif request.status == 'closed' %}
+                <span class="badge bg-secondary">Cerrada</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if request.text %}
+                {{ request.text|truncatewords:20 }}
+              {% else %}
+                <span class="text-muted">Sin texto</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if request.url %}
+                <a href="{{ request.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                  <i class="bi bi-link-45deg"></i> Ver
+                </a>
+              {% else %}
+                <span class="text-muted">Sin URL</span>
+              {% endif %}
+            </td>
+            <td>{{ request.created_at|date:"d/m/Y H:i" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="alert alert-info">
+      <i class="bi bi-info-circle"></i> No hay solicitudes que coincidan con los filtros aplicados.
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

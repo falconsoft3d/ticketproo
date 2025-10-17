@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container text-center mt-4">
+  <h1>{{ generator.title }}</h1>
+  <p>{{ generator.welcome_message }}</p>
+
+  {% if success %}
+    <div class="alert alert-success">{{ success_message }}</div>
+    <p>Tu solicitud: <strong>{{ request_obj.sequence }}</strong></p>
+    <p>Fecha: {{ request_obj.request_date }}</p>
+  {% else %}
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button class="btn btn-primary" type="submit">Enviar Solicitud</button>
+    </form>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -22,7 +22,9 @@ from .models import (
     Course, CourseClass, Contact, BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, Concept, ContactoWeb, Employee, EmployeePayroll,
     Agreement, AgreementSignature, LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry, SharedFile, SharedFileDownload,
     Recording, RecordingPlayback, MultipleDocumentation, TaskSchedule, ScheduleTask, ScheduleComment, FinancialAction,
-    ClientProjectAccess, ClientTimeEntry, ProductSet, ProductItem, Precotizador, PrecotizadorExample, PrecotizadorQuote
+    ClientProjectAccess, ClientTimeEntry, ProductSet, ProductItem, Precotizador, PrecotizadorExample, PrecotizadorQuote,
+    CompanyDocumentation, CompanyDocumentationURL, ContactGenerator
+    , CompanyRequestGenerator, CompanyRequest, CompanyRequestComment
 )
 
 class CategoryForm(forms.ModelForm):
@@ -5211,3 +5213,297 @@ PrecotizadorExampleFormSet = forms.inlineformset_factory(
     validate_max=True
 )
 
+
+
+# ============= FORMULARIOS PARA DOCUMENTACIONES DE EMPRESAS =============
+
+class CompanyDocumentationForm(forms.ModelForm):
+    """Formulario para crear/editar documentaciones de empresas"""
+    
+    class Meta:
+        model = CompanyDocumentation
+        fields = ['title', 'description', 'company', 'is_public']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título de la documentación'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Descripción opcional de la documentación'
+            }),
+            'company': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'is_public': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            })
+        }
+        labels = {
+            'title': 'Título',
+            'description': 'Descripción',
+            'company': 'Empresa',
+            'is_public': 'Hacer público'
+        }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        if user:
+            # Filtrar empresas según el usuario
+            if user.is_superuser or user.groups.filter(name='Administradores').exists():
+                # Administradores ven todas las empresas
+                self.fields['company'].queryset = Company.objects.filter(is_active=True)
+            else:
+                # Otros usuarios solo ven su empresa
+                try:
+                    user_company = user.profile.company
+                    if user_company:
+                        self.fields['company'].queryset = Company.objects.filter(id=user_company.id)
+                    else:
+                        self.fields['company'].queryset = Company.objects.none()
+                except:
+                    self.fields['company'].queryset = Company.objects.none()
+
+
+class CompanyDocumentationURLForm(forms.ModelForm):
+    """Formulario para crear/editar URLs de documentaciones"""
+    
+    class Meta:
+        model = CompanyDocumentationURL
+        fields = ['title', 'url', 'description', 'username', 'password', 'notes', 'is_active', 'order']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título del enlace'
+            }),
+            'url': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://ejemplo.com'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción del enlace'
+            }),
+            'username': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Usuario (opcional)'
+            }),
+            'password': forms.PasswordInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Contraseña (opcional)'
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'Notas adicionales'
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'order': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '0'
+            })
+        }
+        labels = {
+            'title': 'Título del enlace',
+            'url': 'URL',
+            'description': 'Descripción',
+            'username': 'Usuario',
+            'password': 'Contraseña',
+            'notes': 'Notas adicionales',
+            'is_active': 'Está activo',
+            'order': 'Orden'
+        }
+
+
+# Formset para manejar múltiples URLs
+CompanyDocumentationURLFormSet = forms.inlineformset_factory(
+    CompanyDocumentation,
+    CompanyDocumentationURL,
+    form=CompanyDocumentationURLForm,
+    extra=3,
+    can_delete=True
+)
+
+
+class ContactGeneratorForm(forms.ModelForm):
+    """Formulario para crear y editar generadores de contactos"""
+    
+    class Meta:
+        model = ContactGenerator
+        fields = [
+            'title', 'description', 'company', 
+            'collect_phone', 'collect_company', 'collect_position', 'collect_notes',
+            'welcome_message', 'success_message', 'background_color'
+        ]
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Formulario de Contacto Principal'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción del generador de contactos'
+            }),
+            'company': forms.Select(attrs={'class': 'form-select'}),
+            'collect_phone': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'collect_company': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'collect_position': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'collect_notes': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'welcome_message': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3
+            }),
+            'success_message': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3
+            }),
+            'background_color': forms.TextInput(attrs={
+                'class': 'form-control',
+                'type': 'color'
+            })
+        }
+    
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        # Filtrar empresas según el usuario
+        if user:
+            if user.is_superuser:
+                self.fields['company'].queryset = Company.objects.all()
+            else:
+                # Obtener las empresas del usuario
+                user_companies = []
+                if hasattr(user, 'company'):
+                    user_companies.append(user.company.id)
+                if hasattr(user, 'additional_companies'):
+                    user_companies.extend(user.additional_companies.values_list('id', flat=True))
+                
+                self.fields['company'].queryset = Company.objects.filter(id__in=user_companies)
+
+
+class PublicContactForm(forms.ModelForm):
+    """Formulario público para capturar contactos"""
+    
+    class Meta:
+        model = Contact
+        fields = ['name', 'email', 'phone', 'position', 'company', 'notes']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control form-control-lg',
+                'placeholder': 'Tu nombre completo',
+                'required': True
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control form-control-lg',
+                'placeholder': 'tu@email.com',
+                'required': True
+            }),
+            'phone': forms.TextInput(attrs={
+                'class': 'form-control form-control-lg',
+                'placeholder': 'Tu número de teléfono'
+            }),
+            'position': forms.TextInput(attrs={
+                'class': 'form-control form-control-lg',
+                'placeholder': 'Tu cargo o posición'
+            }),
+            'company': forms.TextInput(attrs={
+                'class': 'form-control form-control-lg',
+                'placeholder': 'Nombre de tu empresa (donde trabajas)'
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Comentarios adicionales (opcional)'
+            })
+        }
+    
+    def __init__(self, *args, **kwargs):
+        generator = kwargs.pop('generator', None)
+        super().__init__(*args, **kwargs)
+        
+        # Configurar campos según la configuración del generador
+        if generator:
+            # Si no debe recopilar teléfono, ocultar el campo
+            if not generator.collect_phone:
+                self.fields.pop('phone')
+            
+            # Si no debe recopilar empresa, ocultar el campo
+            if not generator.collect_company:
+                self.fields.pop('company')
+            
+            # Si no debe recopilar cargo, ocultar el campo
+            if not generator.collect_position:
+                self.fields.pop('position')
+            
+            # Si no debe recopilar notas, ocultar el campo
+            if not generator.collect_notes:
+                self.fields.pop('notes')
+
+
+class CompanyRequestGeneratorForm(forms.ModelForm):
+    """Formulario para crear y editar generadores de Solicitudes de Empresas"""
+
+    class Meta:
+        model = CompanyRequestGenerator
+        fields = [
+            'title', 'description', 'company',
+            'sequence_prefix', 'next_sequence',
+            'collect_date', 'collect_text', 'collect_url',
+            'welcome_message', 'success_message'
+        ]
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'company': forms.Select(attrs={'class': 'form-select'}),
+            'sequence_prefix': forms.TextInput(attrs={'class': 'form-control'}),
+            'next_sequence': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+            'collect_date': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'collect_text': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'collect_url': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'welcome_message': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'success_message': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if user:
+            if user.is_superuser:
+                self.fields['company'].queryset = Company.objects.all()
+            else:
+                user_companies = []
+                if hasattr(user, 'company'):
+                    user_companies.append(user.company.id)
+                if hasattr(user, 'additional_companies'):
+                    user_companies.extend(user.additional_companies.values_list('id', flat=True))
+                self.fields['company'].queryset = Company.objects.filter(id__in=user_companies)
+
+
+class PublicCompanyRequestForm(forms.ModelForm):
+    """Formulario público para enviar una CompanyRequest"""
+
+    class Meta:
+        model = CompanyRequest
+        fields = ['text', 'url']
+        widgets = {
+            'text': forms.Textarea(attrs={'class': 'form-control', 'rows': 6, 'placeholder': 'Describe tu solicitud...'}),
+            'url': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'Enlace relacionado (opcional)'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        generator = kwargs.pop('generator', None)
+        super().__init__(*args, **kwargs)
+        # Ajustar campos según el generador
+        if generator:
+            if not generator.collect_text:
+                self.fields.pop('text')
+            if not generator.collect_url:
+                self.fields.pop('url')

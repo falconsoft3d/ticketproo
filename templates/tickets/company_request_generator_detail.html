@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+  <div class="row">
+    <div class="col-md-8">
+      <h1>{{ generator.title }}</h1>
+      <p class="text-muted">{{ generator.description }}</p>
+      <p><strong>Empresa:</strong> {{ generator.company.name }}</p>
+      <p><strong>Estado:</strong> 
+        {% if generator.is_active %}
+          <span class="badge bg-success">Activo</span>
+        {% else %}
+          <span class="badge bg-secondary">Inactivo</span>
+        {% endif %}
+      </p>
+      <p><strong>Prefijo de secuencia:</strong> {{ generator.sequence_prefix|default:"Sin prefijo" }}</p>
+      <p><strong>Siguiente número:</strong> {{ generator.next_sequence }}</p>
+      <p><strong>Enlace público:</strong> 
+        {% if generator.is_active %}
+          <a href="{{ generator.get_public_url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-link-45deg"></i> Ver formulario público
+          </a>
+        {% else %}
+          <span class="text-muted">Generador inactivo</span>
+        {% endif %}
+      </p>
+    </div>
+    
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0"><i class="bi bi-graph-up"></i> Estadísticas</h5>
+        </div>
+        <div class="card-body">
+          <div class="row text-center">
+            <div class="col-6">
+              <h3 class="text-primary">{{ requests_count }}</h3>
+              <small class="text-muted">Total solicitudes</small>
+            </div>
+            <div class="col-6">
+              <h3 class="text-success">{{ generator.next_sequence|add:'-1' }}</h3>
+              <small class="text-muted">Último número</small>
+            </div>
+          </div>
+          <hr>
+          <a href="{% url 'company_request_list' generator.pk %}" class="btn btn-primary btn-sm w-100 mb-2">
+            <i class="bi bi-list-ul"></i> Ver todas las solicitudes
+          </a>
+          <a href="{% url 'public_tickets_and_requests' %}" target="_blank" class="btn btn-success btn-sm w-100">
+            <i class="bi bi-graph-up-arrow"></i> Dashboard Público
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mt-4">
+    <div class="col-12">
+      <h3>Solicitudes recientes</h3>
+      {% if recent_requests %}
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Secuencia</th>
+                <th>Fecha</th>
+                <th>Estado</th>
+                <th>Texto</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in recent_requests %}
+              <tr>
+                <td><strong>{{ r.sequence }}</strong></td>
+                <td>{{ r.request_date|date:"d/m/Y H:i" }}</td>
+                <td>
+                  {% if r.status == 'new' %}
+                    <span class="badge bg-primary">Nueva</span>
+                  {% elif r.status == 'review' %}
+                    <span class="badge bg-warning">En revisión</span>
+                  {% elif r.status == 'accepted' %}
+                    <span class="badge bg-success">Aceptada</span>
+                  {% elif r.status == 'rejected' %}
+                    <span class="badge bg-danger">Rechazada</span>
+                  {% elif r.status == 'closed' %}
+                    <span class="badge bg-secondary">Cerrada</span>
+                  {% endif %}
+                </td>
+                <td>{{ r.text|truncatewords:15 }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle"></i> No hay solicitudes recientes.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="row mt-3">
+    <div class="col-12">
+      <a class="btn btn-secondary" href="{% url 'company_request_generator_edit' generator.pk %}">
+        <i class="bi bi-pencil"></i> Editar
+      </a>
+      <a class="btn btn-danger" href="{% url 'company_request_generator_delete' generator.pk %}">
+        <i class="bi bi-trash"></i> Eliminar
+      </a>
+      {% if generator.is_active %}
+        <a class="btn btn-warning" href="{% url 'company_request_generator_toggle_active' generator.pk %}">
+          <i class="bi bi-pause"></i> Desactivar
+        </a>
+      {% else %}
+        <a class="btn btn-success" href="{% url 'company_request_generator_toggle_active' generator.pk %}">
+          <i class="bi bi-play"></i> Activar
+        </a>
+      {% endif %}
+      <a class="btn btn-link" href="{% url 'company_request_generator_list' %}">
+        <i class="bi bi-arrow-left"></i> Volver
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

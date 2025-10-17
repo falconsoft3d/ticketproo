@@ -11,7 +11,8 @@ from .models import (
     PageVisit, MultipleDocumentation, MultipleDocumentationItem, MultipleDocumentationStats,
     MultipleDocumentationItemStats, MultipleDocumentationVisit, MultipleDocumentationDownload,
     TaskSchedule, ScheduleTask, ScheduleComment, TicketApproval, SatisfactionSurvey, FinancialAction,
-    FinancialPriceHistory, Product, ClientProjectAccess, ClientTimeEntry
+    FinancialPriceHistory, Product, ClientProjectAccess, ClientTimeEntry, CompanyDocumentation, CompanyDocumentationURL, ContactGenerator,
+    CompanyRequestGenerator, CompanyRequest, CompanyRequestComment
 )
 
 # Configuración del sitio de administración
@@ -2224,3 +2225,146 @@ class ClientTimeEntryAdmin(admin.ModelAdmin):
         return ' | '.join(info) if info else 'No disponible'
     client_location.short_description = 'Ubicación/Navegador'
 
+
+
+# ============= ADMIN PARA DOCUMENTACIONES DE EMPRESAS =============
+
+class CompanyDocumentationURLInline(admin.TabularInline):
+    model = CompanyDocumentationURL
+    extra = 1
+    fields = ['title', 'url', 'description', 'username', 'password', 'is_active', 'order']
+
+@admin.register(CompanyDocumentation)
+class CompanyDocumentationAdmin(admin.ModelAdmin):
+    list_display = ['title', 'company', 'is_public', 'created_by', 'created_at', 'url_count']
+    list_filter = ['is_public', 'company', 'created_at']
+    search_fields = ['title', 'description', 'company__name']
+    inlines = [CompanyDocumentationURLInline]
+    readonly_fields = ['public_token', 'created_at', 'updated_at']
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('title', 'description', 'company', 'created_by')
+        }),
+        ('Configuración', {
+            'fields': ('is_public', 'public_token')
+        }),
+        ('Fechas', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def url_count(self, obj):
+        return obj.urls.count()
+    url_count.short_description = 'URLs'
+    
+    def get_public_url(self, obj):
+        if obj.is_public:
+            return format_html('<a href="{}" target="_blank">Ver público</a>', obj.get_public_url())
+        return "No público"
+    get_public_url.short_description = 'Enlace público'
+
+@admin.register(CompanyDocumentationURL)
+class CompanyDocumentationURLAdmin(admin.ModelAdmin):
+    list_display = ['title', 'documentation', 'url', 'has_credentials', 'is_active', 'order']
+    list_filter = ['is_active', 'documentation__company']
+    search_fields = ['title', 'url', 'description', 'documentation__title']
+    list_editable = ['is_active', 'order']
+    
+    def has_credentials(self, obj):
+        return obj.has_credentials()
+    has_credentials.boolean = True
+    has_credentials.short_description = 'Tiene credenciales'
+
+
+@admin.register(ContactGenerator)
+class ContactGeneratorAdmin(admin.ModelAdmin):
+    list_display = ['title', 'company', 'is_active', 'contacts_count', 'created_by', 'created_at']
+    list_filter = ['is_active', 'company', 'collect_phone', 'collect_company', 'collect_position', 'collect_notes']
+    search_fields = ['title', 'description', 'company__name']
+    list_editable = ['is_active']
+    ordering = ['-created_at']
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('title', 'description', 'company', 'is_active')
+        }),
+        ('Configuración de Campos', {
+            'fields': ('collect_phone', 'collect_company', 'collect_position', 'collect_notes')
+        }),
+        ('Mensajes', {
+            'fields': ('welcome_message', 'success_message')
+        }),
+        ('Diseño', {
+            'fields': ('background_color',)
+        }),
+        ('Sistema', {
+            'fields': ('public_token', 'created_by'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    readonly_fields = ['public_token', 'created_by']
+    
+    def contacts_count(self, obj):
+        return obj.get_contacts_count()
+    contacts_count.short_description = 'Contactos Generados'
+    
+    def save_model(self, request, obj, form, change):
+        if not change:  # Si es un objeto nuevo
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(CompanyRequestGenerator)
+class CompanyRequestGeneratorAdmin(admin.ModelAdmin):
+    list_display = ['title', 'company', 'is_active', 'requests_count', 'created_by', 'created_at']
+    list_filter = ['is_active', 'company']
+    search_fields = ['title', 'description', 'company__name']
+    list_editable = ['is_active']
+    ordering = ['-created_at']
+
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('title', 'description', 'company', 'is_active')
+        }),
+        ('Secuencia', {
+            'fields': ('sequence_prefix', 'next_sequence')
+        }),
+        ('Configuración de Campos', {
+            'fields': ('collect_date', 'collect_text', 'collect_url')
+        }),
+        ('Mensajes', {
+            'fields': ('welcome_message', 'success_message')
+        }),
+        ('Sistema', {
+            'fields': ('public_token', 'created_by'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    readonly_fields = ['public_token', 'created_by']
+
+    def requests_count(self, obj):
+        return obj.get_requests_count()
+    requests_count.short_description = 'Solicitudes Enviadas'
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(CompanyRequest)
+class CompanyRequestAdmin(admin.ModelAdmin):
+    list_display = ['sequence', 'generator', 'status', 'request_date', 'created_at']
+    list_filter = ['status', 'generator__company']
+    search_fields = ['sequence', 'text', 'generator__title']
+    ordering = ['-created_at']
+
+
+@admin.register(CompanyRequestComment)
+class CompanyRequestCommentAdmin(admin.ModelAdmin):
+    list_display = ['request', 'user', 'created_at']
+    search_fields = ['request__sequence', 'user__username', 'content']

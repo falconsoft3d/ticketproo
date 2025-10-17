@@ -1,0 +1,292 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Encabezado -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'company_documentation_list' %}">Documentaciones</a>
+                    </li>
+                    <li class="breadcrumb-item active">{{ documentation.title }}</li>
+                </ol>
+            </nav>
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h2>
+                        <i class="bi bi-collection"></i> {{ documentation.title }}
+                    </h2>
+                    <p class="text-muted">
+                        <i class="bi bi-building"></i> {{ documentation.company.name }}
+                    </p>
+                </div>
+                <div class="btn-group">
+                    <a href="{% url 'company_documentation_edit' documentation.pk %}" class="btn btn-warning">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a>
+                    <a href="{% url 'company_documentation_delete' documentation.pk %}" 
+                       class="btn btn-danger"
+                       onclick="return confirm('¿Estás seguro de que quieres eliminar esta documentación?')">
+                        <i class="bi bi-trash"></i> Eliminar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Información general -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle"></i> Información General
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if documentation.description %}
+                    <div class="mb-3">
+                        <strong>Descripción:</strong>
+                        <p class="mt-2">{{ documentation.description|linebreaks }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Estado:</strong>
+                            {% if documentation.is_public %}
+                                <span class="badge bg-success ms-2">Público</span>
+                            {% else %}
+                                <span class="badge bg-secondary ms-2">Privado</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Total de enlaces:</strong> {{ urls.count }}
+                        </div>
+                        <div class="col-md-6 mt-2">
+                            <strong>Creado por:</strong> {{ documentation.created_by.get_full_name|default:documentation.created_by.username }}
+                        </div>
+                        <div class="col-md-6 mt-2">
+                            <strong>Fecha de creación:</strong> {{ documentation.created_at|date:"d/m/Y H:i" }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enlaces y URLs -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-link-45deg"></i> Enlaces y URLs
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if urls %}
+                    <div class="row">
+                        {% for url in urls %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="card-title mb-0">{{ url.title }}</h6>
+                                        {% if url.has_credentials %}
+                                            <span class="badge bg-warning">Con credenciales</span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <p class="card-text">
+                                        <a href="{{ url.url }}" target="_blank" class="text-decoration-none">
+                                            {{ url.url|truncatechars:50 }}
+                                            <i class="bi bi-box-arrow-up-right ms-1"></i>
+                                        </a>
+                                    </p>
+                                    
+                                    {% if url.description %}
+                                    <p class="card-text small text-muted">
+                                        {{ url.description|truncatewords:15 }}
+                                    </p>
+                                    {% endif %}
+                                    
+                                    {% if url.username or url.password %}
+                                    <div class="mt-2 p-2 bg-light rounded">
+                                        <small>
+                                            {% if url.username %}
+                                            <strong>Usuario:</strong> {{ url.username }}<br>
+                                            {% endif %}
+                                            {% if url.password %}
+                                            <strong>Contraseña:</strong> 
+                                            <span class="password-field" data-password="{{ url.password }}">
+                                                ••••••••
+                                                <button type="button" class="btn btn-sm btn-outline-secondary ms-1 toggle-password" 
+                                                        title="Mostrar/Ocultar contraseña">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                            </span>
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if url.notes %}
+                                    <div class="mt-2">
+                                        <small class="text-muted">
+                                            <strong>Notas:</strong> {{ url.notes|truncatewords:10 }}
+                                        </small>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <div class="mt-2">
+                                        <small class="text-muted">
+                                            Orden: {{ url.order }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-link-45deg display-4 text-muted"></i>
+                        <h5 class="mt-3">No hay enlaces</h5>
+                        <p class="text-muted">Esta documentación aún no tiene enlaces configurados.</p>
+                        <a href="{% url 'company_documentation_edit' documentation.pk %}" class="btn btn-primary">
+                            <i class="bi bi-plus"></i> Agregar enlaces
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Panel de acciones -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-gear"></i> Acciones
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2 mb-3">
+                        <a href="{% url 'company_documentation_edit' documentation.pk %}" class="btn btn-warning">
+                            <i class="bi bi-pencil"></i> Editar Documentación
+                        </a>
+                        
+                        <!-- Toggle público/privado -->
+                        <form method="post" action="{% url 'company_documentation_toggle_public' documentation.pk %}">
+                            {% csrf_token %}
+                            {% if documentation.is_public %}
+                                <button type="submit" class="btn btn-outline-danger w-100"
+                                        onclick="return confirm('¿Desactivar el acceso público? El enlace dejará de funcionar.')">
+                                    <i class="bi bi-eye-slash"></i> Hacer Privado
+                                </button>
+                            {% else %}
+                                <button type="submit" class="btn btn-outline-success w-100">
+                                    <i class="bi bi-globe"></i> Hacer Público
+                                </button>
+                            {% endif %}
+                        </form>
+                    </div>
+                    
+                    <hr>
+                    
+                    <a href="{% url 'company_documentation_list' %}" class="btn btn-outline-secondary w-100">
+                        <i class="bi bi-arrow-left"></i> Volver a la lista
+                    </a>
+                </div>
+            </div>
+
+            <!-- Información del enlace público -->
+            {% if documentation.is_public %}
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0">
+                        <i class="bi bi-globe"></i> Enlace Público
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted mb-2">
+                        Los clientes pueden acceder a esta documentación con el siguiente enlace:
+                    </p>
+                    
+                    <div class="input-group mb-3">
+                        <input type="text" 
+                               class="form-control form-control-sm" 
+                               value="{{ request.scheme }}://{{ request.get_host }}{{ documentation.get_public_url }}"
+                               id="publicUrl"
+                               readonly>
+                        <button class="btn btn-outline-secondary btn-sm" 
+                                type="button" 
+                                onclick="copyPublicUrl()"
+                                title="Copiar enlace">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+                    
+                    <a href="{{ documentation.get_public_url }}" 
+                       class="btn btn-success btn-sm w-100" 
+                       target="_blank">
+                        <i class="bi bi-eye"></i> Ver página pública
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyPublicUrl() {
+    const urlInput = document.getElementById('publicUrl');
+    urlInput.select();
+    urlInput.setSelectionRange(0, 99999);
+    
+    try {
+        document.execCommand('copy');
+        // Cambiar el ícono temporalmente
+        const button = event.target.closest('button');
+        const icon = button.querySelector('i');
+        icon.className = 'bi bi-check';
+        
+        setTimeout(() => {
+            icon.className = 'bi bi-clipboard';
+        }, 2000);
+    } catch (err) {
+        console.error('Error al copiar:', err);
+    }
+}
+
+// Manejar mostrar/ocultar contraseñas
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleButtons = document.querySelectorAll('.toggle-password');
+    
+    toggleButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const passwordField = this.closest('.password-field');
+            const passwordText = passwordField.getAttribute('data-password');
+            const isHidden = this.querySelector('i').classList.contains('bi-eye');
+            
+            if (isHidden) {
+                // Mostrar contraseña
+                passwordField.firstChild.textContent = passwordText + ' ';
+                this.querySelector('i').className = 'bi bi-eye-slash';
+                this.title = 'Ocultar contraseña';
+            } else {
+                // Ocultar contraseña
+                passwordField.firstChild.textContent = '•••••••• ';
+                this.querySelector('i').className = 'bi bi-eye';
+                this.title = 'Mostrar contraseña';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
