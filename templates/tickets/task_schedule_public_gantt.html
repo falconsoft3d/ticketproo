@@ -1,83 +1,222 @@
-{% extends 'public_base.html' %}
+{% extends 'public_base.html' %}{% extends 'public_base.html' %}
 
-{% block title %}{{ page_title }}{% endblock %}
 
-{% block extra_css %}
-<style>
-    .card {
-        border: none;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    
-    .fa-chart-gantt {
-        opacity: 0.6;
-    }
-</style>
-{% endblock %}
 
-{% block content %}
-<div class="container-fluid">
-    <!-- Header -->
-    <div class="text-center mb-4">
-        <h1 class="display-4"><i class="fas fa-chart-gantt"></i> Diagrama Gantt</h1>
-        <h3>{{ schedule.title }}</h3>
-        <p class="text-muted">
-            <i class="fas fa-building"></i> {{ schedule.company.name }} | 
-            <i class="fas fa-calendar-alt"></i> {{ schedule.start_date|date:"d/m/Y" }} - {{ schedule.end_date|date:"d/m/Y" }}
-        </p>
-    </div>
+{% block title %}{{ page_title }}{% endblock %}{% block title %}{{ page_title }}{% endblock %}
 
-    <div class="text-center mb-4">
-        <a href="{% url 'task_schedule_public' schedule.public_token %}" class="btn btn-secondary">
-            <i class="fas fa-list"></i> Ver Lista de Tareas
-        </a>
-    </div>
 
-    <!-- KPIs -->
-    <div class="row mb-4">
-        <div class="col-md-2 mb-3">
-            <div class="card text-center shadow-sm">
-                <div class="card-body py-2">
-                    <h4 class="text-primary mb-0">{{ kpis.total_tasks }}</h4>
-                    <small class="text-muted">Total</small>
-                </div>
+
+{% block extra_css %}{% block extra_css %}
+
+<style><style>
+
+    .card {    .card {
+
+        border: none;        border: none;
+
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+
+    }    }
+
+        
+
+    .gantt-container {    .fa-chart-gantt {
+
+        background: white;        opacity: 0.6;
+
+        padding: 20px;    }
+
+        border-radius: 8px;</style>
+
+        min-height: 500px;{% endblock %}
+
+        margin-bottom: 30px;
+
+    }{% block content %}
+
+    <div class="container-fluid">
+
+    #gantt_chart {    <!-- Header -->
+
+        width: 100%;    <div class="text-center mb-4">
+
+        height: auto;        <h1 class="display-4"><i class="fas fa-chart-gantt"></i> Diagrama Gantt</h1>
+
+        min-height: 400px;        <h3>{{ schedule.title }}</h3>
+
+    }        <p class="text-muted">
+
+                <i class="fas fa-building"></i> {{ schedule.company.name }} | 
+
+    .legend-item {            <i class="fas fa-calendar-alt"></i> {{ schedule.start_date|date:"d/m/Y" }} - {{ schedule.end_date|date:"d/m/Y" }}
+
+        display: inline-flex;        </p>
+
+        align-items: center;    </div>
+
+        margin-right: 20px;
+
+        margin-bottom: 10px;    <div class="text-center mb-4">
+
+        font-size: 14px;        <a href="{% url 'task_schedule_public' schedule.public_token %}" class="btn btn-secondary">
+
+    }            <i class="fas fa-list"></i> Ver Lista de Tareas
+
+            </a>
+
+    .legend-color {    </div>
+
+        width: 20px;
+
+        height: 20px;    <!-- KPIs -->
+
+        border-radius: 3px;    <div class="row mb-4">
+
+        margin-right: 8px;        <div class="col-md-2 mb-3">
+
+    }            <div class="card text-center shadow-sm">
+
+                    <div class="card-body py-2">
+
+    .legend-completed { background-color: #28a745; }                    <h4 class="text-primary mb-0">{{ kpis.total_tasks }}</h4>
+
+    .legend-overdue { background-color: #dc3545; }                    <small class="text-muted">Total</small>
+
+    .legend-in-progress { background-color: #ffc107; }                </div>
+
+    .legend-not-started { background-color: #6c757d; }            </div>
+
             </div>
-        </div>
-        <div class="col-md-2 mb-3">
+
+    .kpi-card {        <div class="col-md-2 mb-3">
+
+        transition: transform 0.2s;            <div class="card text-center shadow-sm">
+
+    }                <div class="card-body py-2">
+
+                        <h4 class="text-success mb-0">{{ kpis.completed_tasks }}</h4>
+
+    .kpi-card:hover {                    <small class="text-muted">Completadas</small>
+
+        transform: translateY(-5px);                </div>
+
+    }            </div>
+
+</style>        </div>
+
+{% endblock %}        <div class="col-md-2 mb-3">
+
             <div class="card text-center shadow-sm">
-                <div class="card-body py-2">
-                    <h4 class="text-success mb-0">{{ kpis.completed_tasks }}</h4>
-                    <small class="text-muted">Completadas</small>
+
+{% block content %}                <div class="card-body py-2">
+
+<div class="container-fluid py-4">                    <h4 class="text-warning mb-0">{{ kpis.pending_tasks }}</h4>
+
+    <!-- Header -->                    <small class="text-muted">Pendientes</small>
+
+    <div class="text-center mb-4">                </div>
+
+        <h1 class="display-5"><i class="fas fa-chart-gantt"></i> Diagrama Gantt</h1>            </div>
+
+        <h3 class="text-primary">{{ schedule.title }}</h3>        </div>
+
+        <p class="text-muted">        <div class="col-md-2 mb-3">
+
+            <i class="fas fa-building"></i> {{ schedule.company.name }} |             <div class="card text-center shadow-sm">
+
+            <i class="fas fa-calendar-alt"></i> {{ schedule.start_date|date:"d/m/Y" }} - {{ schedule.end_date|date:"d/m/Y" }}                <div class="card-body py-2">
+
+        </p>                    <h4 class="text-danger mb-0">{{ kpis.overdue_tasks }}</h4>
+
+    </div>                    <small class="text-muted">Vencidas</small>
+
                 </div>
-            </div>
-        </div>
+
+    <!-- Botones de navegación -->            </div>
+
+    <div class="text-center mb-4">        </div>
+
+        <a href="{% url 'task_schedule_public' schedule.public_token %}" class="btn btn-secondary">        <div class="col-md-2 mb-3">
+
+            <i class="fas fa-list"></i> Vista Lista            <div class="card text-center shadow-sm">
+
+        </a>                <div class="card-body py-2">
+
+    </div>                    <h4 class="text-info mb-0">{{ kpis.progress_percentage|floatformat:0 }}%</h4>
+
+                    <small class="text-muted">Progreso</small>
+
+    <!-- KPIs -->                </div>
+
+    <div class="row mb-4">            </div>
+
+        <div class="col-md-2 mb-3">        </div>
+
+            <div class="card text-center shadow-sm kpi-card">        <div class="col-md-2 mb-3">
+
+                <div class="card-body py-3">            <div class="card text-center shadow-sm">
+
+                    <h4 class="text-info mb-0">{{ kpis.total_tasks }}</h4>                <div class="card-body py-2">
+
+                    <small class="text-muted">Total Tareas</small>                    <h4 class="text-primary mb-0">{{ kpis.on_time_rate|floatformat:0 }}%</h4>
+
+                </div>                    <small class="text-muted">A Tiempo</small>
+
+            </div>                </div>
+
+        </div>            </div>
+
+        <div class="col-md-2 mb-3">        </div>
+
+            <div class="card text-center shadow-sm kpi-card">    </div>
+
+                <div class="card-body py-3">
+
+                    <h4 class="text-success mb-0">{{ kpis.completed_tasks }}</h4>    <!-- Mensaje informativo -->
+
+                    <small class="text-muted">Completadas</small>    <div class="card shadow">
+
+                </div>        <div class="card-body text-center py-5">
+
+            </div>            <i class="fas fa-chart-gantt fa-3x text-muted mb-3"></i>
+
+        </div>            <h4>Vista Gantt</h4>
+
+        <div class="col-md-2 mb-3">            <p class="text-muted">
+
+            <div class="card text-center shadow-sm kpi-card">                La vista de diagrama Gantt está temporalmente deshabilitada.<br>
+
+                <div class="card-body py-3">                Puedes ver las tareas en la <a href="{% url 'task_schedule_public' schedule.public_token %}" class="text-decoration-none">vista de lista</a>.
+
+                    <h4 class="text-warning mb-0">{{ kpis.pending_tasks }}</h4>            </p>
+
+                    <small class="text-muted">Pendientes</small>        </div>
+
+                </div>    </div>
+
+            </div></div>
+
+        </div>{% endblock %}
+
         <div class="col-md-2 mb-3">
-            <div class="card text-center shadow-sm">
-                <div class="card-body py-2">
-                    <h4 class="text-warning mb-0">{{ kpis.pending_tasks }}</h4>
-                    <small class="text-muted">Pendientes</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-2 mb-3">
-            <div class="card text-center shadow-sm">
-                <div class="card-body py-2">
+            <div class="card text-center shadow-sm kpi-card">
+                <div class="card-body py-3">
                     <h4 class="text-danger mb-0">{{ kpis.overdue_tasks }}</h4>
                     <small class="text-muted">Vencidas</small>
                 </div>
             </div>
         </div>
         <div class="col-md-2 mb-3">
-            <div class="card text-center shadow-sm">
-                <div class="card-body py-2">
-                    <h4 class="text-info mb-0">{{ kpis.progress_percentage|floatformat:0 }}%</h4>
+            <div class="card text-center shadow-sm kpi-card">
+                <div class="card-body py-3">
+                    <h4 class="text-primary mb-0">{{ kpis.progress_percentage|floatformat:0 }}%</h4>
                     <small class="text-muted">Progreso</small>
                 </div>
             </div>
         </div>
         <div class="col-md-2 mb-3">
-            <div class="card text-center shadow-sm">
-                <div class="card-body py-2">
+            <div class="card text-center shadow-sm kpi-card">
+                <div class="card-body py-3">
                     <h4 class="text-primary mb-0">{{ kpis.on_time_rate|floatformat:0 }}%</h4>
                     <small class="text-muted">A Tiempo</small>
                 </div>
@@ -85,16 +224,167 @@
         </div>
     </div>
 
-    <!-- Mensaje informativo -->
+    <!-- Diagrama Gantt -->
     <div class="card shadow">
-        <div class="card-body text-center py-5">
-            <i class="fas fa-chart-gantt fa-3x text-muted mb-3"></i>
-            <h4>Vista Gantt</h4>
-            <p class="text-muted">
-                La vista de diagrama Gantt está temporalmente deshabilitada.<br>
-                Puedes ver las tareas en la <a href="{% url 'task_schedule_public' schedule.public_token %}" class="text-decoration-none">vista de lista</a>.
-            </p>
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-chart-gantt"></i> Diagrama de Gantt</h5>
+        </div>
+        <div class="card-body gantt-container">
+            <div id="gantt_chart"></div>
+        </div>
+    </div>
+
+    <!-- Leyenda -->
+    <div class="card shadow mt-4">
+        <div class="card-body">
+            <h6 class="mb-3"><i class="fas fa-info-circle"></i> Leyenda</h6>
+            <div class="d-flex flex-wrap">
+                <div class="legend-item">
+                    <div class="legend-color legend-completed"></div>
+                    <span>Completada</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color legend-in-progress"></div>
+                    <span>En Progreso</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color legend-overdue"></div>
+                    <span>Vencida</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color legend-not-started"></div>
+                    <span>No Iniciada</span>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script type="text/javascript">
+    google.charts.load('current', {'packages':['gantt']});
+    google.charts.setOnLoadCallback(drawChart);
+
+    function drawChart() {
+        const ganttData = {{ gantt_data|safe }};
+        
+        if (ganttData.length === 0) {
+            document.getElementById('gantt_chart').innerHTML = `
+                <div class="alert alert-info text-center">
+                    <i class="fas fa-info-circle fa-2x mb-3"></i>
+                    <p class="mb-0">No hay tareas para mostrar en el diagrama Gantt.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const data = new google.visualization.DataTable();
+        data.addColumn('string', 'ID Tarea');
+        data.addColumn('string', 'Nombre Tarea');
+        data.addColumn('string', 'Recurso');
+        data.addColumn('date', 'Fecha Inicio');
+        data.addColumn('date', 'Fecha Fin');
+        data.addColumn('number', 'Duración');
+        data.addColumn('number', 'Progreso');
+        data.addColumn('string', 'Dependencias');
+
+        ganttData.forEach(task => {
+            const startDate = new Date(task.start);
+            const endDate = new Date(task.end);
+            const duration = null; // Se calcula automáticamente
+            const progress = task.progress;
+            
+            // Formato: ID, Nombre, Recurso, Inicio, Fin, Duración, Progreso, Dependencias
+            data.addRow([
+                'task-' + task.id,
+                task.title,
+                task.assigned_to,
+                startDate,
+                endDate,
+                duration,
+                progress,
+                task.dependencies.length > 0 ? 'task-' + task.dependencies[0] : null
+            ]);
+        });
+
+        // Calcular altura dinámica basada en número de tareas
+        const chartHeight = Math.max(ganttData.length * 42 + 100, 400);
+        document.getElementById('gantt_chart').style.height = chartHeight + 'px';
+
+        const options = {
+            height: chartHeight,
+            gantt: {
+                criticalPathEnabled: true,
+                criticalPathStyle: {
+                    stroke: '#e64a19',
+                    strokeWidth: 2
+                },
+                arrow: {
+                    angle: 100,
+                    width: 1.5,
+                    color: '#666',
+                    radius: 0
+                },
+                palette: [
+                    {
+                        "color": "#28a745",  // Completada
+                        "dark": "#1e7e34",
+                        "light": "#5cb85c"
+                    },
+                    {
+                        "color": "#ffc107",  // En progreso
+                        "dark": "#d39e00",
+                        "light": "#ffd454"
+                    },
+                    {
+                        "color": "#6c757d",  // No iniciada
+                        "dark": "#545b62",
+                        "light": "#868e96"
+                    },
+                    {
+                        "color": "#dc3545",  // Vencida
+                        "dark": "#bd2130",
+                        "light": "#e4606d"
+                    }
+                ],
+                labelStyle: {
+                    fontName: 'Arial',
+                    fontSize: 13,
+                    color: '#333'
+                },
+                innerGridHorizLine: {
+                    stroke: '#e0e0e0',
+                    strokeWidth: 1
+                },
+                innerGridTrack: {
+                    fill: '#f8f9fa'
+                },
+                innerGridDarkTrack: {
+                    fill: '#ffffff'
+                }
+            }
+        };
+
+        const chart = new google.visualization.Gantt(document.getElementById('gantt_chart'));
+
+        // Tooltip personalizado
+        google.visualization.events.addListener(chart, 'select', function() {
+            const selection = chart.getSelection();
+            if (selection.length > 0) {
+                const row = selection[0].row;
+                const taskData = ganttData[row];
+                
+                // Mostrar información adicional de la tarea
+                console.log('Tarea seleccionada:', taskData.title);
+            }
+        });
+
+        chart.draw(data, options);
+        
+        // Hacer responsive
+        window.addEventListener('resize', function() {
+            chart.draw(data, options);
+        });
+    }
+</script>
 {% endblock %}

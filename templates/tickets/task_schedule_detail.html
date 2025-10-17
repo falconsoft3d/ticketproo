@@ -21,6 +21,11 @@
             </p>
         </div>
         <div class="btn-group">
+            {% if schedule.is_public %}
+            <a href="{% url 'task_schedule_public_gantt' schedule.public_token %}" class="btn btn-primary" target="_blank">
+                <i class="fas fa-chart-gantt"></i> Vista Gantt Pública
+            </a>
+            {% endif %}
             <a href="{% url 'schedule_task_create' schedule.pk %}" class="btn btn-success">
                 <i class="fas fa-plus"></i> Nueva Tarea
             </a>

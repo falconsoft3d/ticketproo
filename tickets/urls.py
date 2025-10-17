@@ -564,6 +564,7 @@ urlpatterns = [
     
     # URLs públicas de cronogramas (sin autenticación)
     path('schedule/<uuid:token>/', views.task_schedule_public, name='task_schedule_public'),
+    path('schedule/<uuid:token>/gantt/', views.task_schedule_public_gantt, name='task_schedule_public_gantt'),
     path('public/schedule-tasks/<int:pk>/toggle/', views.schedule_task_toggle_public, name='schedule_task_toggle_public'),
 
     # URL del reloj mundial
