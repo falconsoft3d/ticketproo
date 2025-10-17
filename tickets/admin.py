@@ -2358,10 +2358,28 @@ class CompanyRequestGeneratorAdmin(admin.ModelAdmin):
 
 @admin.register(CompanyRequest)
 class CompanyRequestAdmin(admin.ModelAdmin):
-    list_display = ['sequence', 'generator', 'status', 'request_date', 'created_at']
-    list_filter = ['status', 'generator__company']
+    list_display = ['sequence', 'generator', 'status', 'request_date', 'executed_at', 'executed_by', 'created_at']
+    list_filter = ['status', 'generator__company', 'executed_by']
     search_fields = ['sequence', 'text', 'generator__title']
+    readonly_fields = ['executed_at', 'executed_by']
     ordering = ['-created_at']
+    
+    fieldsets = (
+        ('Información General', {
+            'fields': ('sequence', 'generator', 'text', 'url', 'status')
+        }),
+        ('Fechas', {
+            'fields': ('request_date', 'created_at', 'updated_at')
+        }),
+        ('Ejecución', {
+            'fields': ('executed_at', 'executed_by'),
+            'classes': ('collapse',)
+        }),
+        ('Auditoría', {
+            'fields': ('created_by',),
+            'classes': ('collapse',)
+        })
+    )
 
 
 @admin.register(CompanyRequestComment)

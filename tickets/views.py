@@ -18848,14 +18848,27 @@ def update_company_request_status(request, request_id):
             
             if new_status in dict(CompanyRequest.STATUS_CHOICES):
                 company_request.status = new_status
+                
+                # Si se marca como ejecutada, registrar fecha y usuario
+                if new_status == 'executed':
+                    company_request.executed_at = timezone.now()
+                    company_request.executed_by = request.user
+                
                 company_request.save()
                 
-                return JsonResponse({
+                response_data = {
                     'success': True,
                     'message': f'Estado actualizado a {company_request.get_status_display()}',
                     'new_status': company_request.status,
                     'status_display': company_request.get_status_display()
-                })
+                }
+                
+                # Agregar información de ejecución si está disponible
+                if company_request.executed_at:
+                    response_data['executed_at'] = company_request.executed_at.strftime('%d/%m/%Y %H:%M:%S')
+                    response_data['executed_by'] = company_request.executed_by.get_full_name() or company_request.executed_by.username if company_request.executed_by else ''
+                
+                return JsonResponse(response_data)
             else:
                 return JsonResponse({
                     'success': False,

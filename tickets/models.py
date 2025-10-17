@@ -8594,6 +8594,15 @@ class CompanyRequest(models.Model):
     text = models.TextField(blank=True, verbose_name='Texto de la solicitud')
     url = models.URLField(blank=True, verbose_name='URL relacionada')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new', verbose_name='Estado')
+    executed_at = models.DateTimeField(null=True, blank=True, verbose_name='Fecha de ejecución')
+    executed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='executed_company_requests',
+        verbose_name='Ejecutado por'
+    )
     created_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,

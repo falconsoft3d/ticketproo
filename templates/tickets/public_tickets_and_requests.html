@@ -263,9 +263,24 @@
                                         </div>
                                     {% elif request.status == 'executed' %}
                                         <div class="mt-2">
-                                            <small class="text-success">
-                                                <i class="bi bi-check-circle-fill"></i> ¡Ejecutada!
-                                            </small>
+                                            <div class="alert alert-success py-2 px-3 mb-0">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="bi bi-check-circle-fill me-2"></i>
+                                                    <div>
+                                                        <strong>¡Ejecutada!</strong>
+                                                        {% if request.executed_at %}
+                                                            <br>
+                                                            <small class="text-muted">
+                                                                <i class="bi bi-clock"></i> {{ request.executed_at|date:"d/m/Y H:i:s" }}
+                                                                {% if request.executed_by %}
+                                                                    <br>
+                                                                    <i class="bi bi-person"></i> {{ request.executed_by.get_full_name|default:request.executed_by.username }}
+                                                                {% endif %}
+                                                            </small>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     {% endif %}
                                 </div>
@@ -331,13 +346,31 @@
                     badge.className = 'badge bg-info status-badge';
                     badge.textContent = 'Ejecutada';
                     
-                    // Reemplazar checkbox con mensaje de éxito
+                    // Reemplazar checkbox con mensaje de éxito completo
                     const checkbox = document.getElementById('execute-' + requestId);
                     const container = checkbox.closest('.mt-2');
+                    
+                    let executionInfo = '';
+                    if (data.executed_at) {
+                        executionInfo = `
+                            <br>
+                            <small class="text-muted">
+                                <i class="bi bi-clock"></i> ${data.executed_at}
+                                ${data.executed_by ? `<br><i class="bi bi-person"></i> ${data.executed_by}` : ''}
+                            </small>
+                        `;
+                    }
+                    
                     container.innerHTML = `
-                        <small class="text-success">
-                            <i class="bi bi-check-circle-fill"></i> ¡Ejecutada!
-                        </small>
+                        <div class="alert alert-success py-2 px-3 mb-0">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-check-circle-fill me-2"></i>
+                                <div>
+                                    <strong>¡Ejecutada!</strong>
+                                    ${executionInfo}
+                                </div>
+                            </div>
+                        </div>
                     `;
                     
                     // Mostrar mensaje de éxito temporal
