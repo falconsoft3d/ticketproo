@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  whatsapp-server:
+    build: .
+    container_name: ticketproo-whatsapp
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      # Persistir datos de sesión de WhatsApp
+      - ./wwebjs_auth:/app/.wwebjs_auth
+      # Persistir logs
+      - ./logs:/app/logs
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      # Cambiar según tu configuración
+      - DJANGO_API_URL=http://host.docker.internal:8000
+    networks:
+      - ticketproo-network
+    # Agregar capacidades necesarias para Chrome
+    cap_add:
+      - SYS_ADMIN
+    # Límites de recursos (opcional)
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+networks:
+  ticketproo-network:
+    driver: bridge
+
+volumes:
+  wwebjs_auth:
+    driver: local
