@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Libro - {{ book.title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'ai_book_list' %}">Libros</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'ai_book_detail' book.pk %}">{{ book.title|truncatechars:30 }}</a></li>
+            <li class="breadcrumb-item active">Editar</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-pencil-square"></i> Editar Libro
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label for="title" class="form-label">
+                                <i class="bi bi-book"></i> Título del Libro <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="title" 
+                                   name="title" 
+                                   maxlength="500"
+                                   value="{{ book.title }}"
+                                   required>
+                            <div class="form-text">
+                                Título descriptivo del libro (máximo 500 caracteres)
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="author" class="form-label">
+                                <i class="bi bi-person"></i> Autor (Opcional)
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="author" 
+                                   name="author" 
+                                   maxlength="200"
+                                   value="{{ book.author }}"
+                                   placeholder="Ej: Juan Pérez">
+                            <div class="form-text">
+                                Nombre del autor que aparecerá en las exportaciones (Word, PDF, HTML)
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="topic" class="form-label">
+                                <i class="bi bi-lightbulb"></i> Tema/Descripción del Libro <span class="text-danger">*</span>
+                            </label>
+                            <textarea class="form-control" 
+                                      id="topic" 
+                                      name="topic" 
+                                      rows="5"
+                                      required>{{ book.topic }}</textarea>
+                            <div class="form-text">
+                                Describe de qué tratará el libro. Esta información se usa para generar los capítulos.
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="company" class="form-label">
+                                <i class="bi bi-building"></i> Empresa (Opcional)
+                            </label>
+                            <select class="form-select" id="company" name="company">
+                                <option value="">-- Sin empresa --</option>
+                                {% for c in companies %}
+                                <option value="{{ c.id }}" {% if book.company and book.company.id == c.id %}selected{% endif %}>
+                                    {{ c.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">
+                                Asocia el libro a una empresa específica si es necesario.
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> 
+                            <strong>Nota:</strong> Los capítulos ya creados no se modificarán al cambiar el título o tema. 
+                            Solo se actualiza la información general del libro.
+                        </div>
+
+                        <div class="mb-3">
+                            <p class="text-muted small mb-1">
+                                <i class="bi bi-person"></i> <strong>Creador:</strong> {{ book.created_by.get_full_name|default:book.created_by.username }}
+                            </p>
+                            <p class="text-muted small mb-1">
+                                <i class="bi bi-calendar"></i> <strong>Creado:</strong> {{ book.created_at|date:"d/m/Y H:i" }}
+                            </p>
+                            <p class="text-muted small mb-0">
+                                <i class="bi bi-clock"></i> <strong>Última actualización:</strong> {{ book.updated_at|date:"d/m/Y H:i" }}
+                            </p>
+                        </div>
+
+                        <hr>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'ai_book_detail' book.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información de capítulos -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-ol"></i> Resumen del Libro
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <h3 class="text-primary">{{ book.get_total_chapters }}</h3>
+                            <p class="text-muted small mb-0">Capítulos</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h3 class="text-success">{{ book.get_completed_chapters }}</h3>
+                            <p class="text-muted small mb-0">Completados</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h3 class="text-info">{{ book.get_progress_percentage }}%</h3>
+                            <p class="text-muted small mb-0">Progreso</p>
+                        </div>
+                        <div class="col-md-3">
+                            <span class="badge {{ book.get_status_badge_class }} fs-5">
+                                {{ book.get_status_display }}
+                            </span>
+                            <p class="text-muted small mb-0 mt-1">Estado</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

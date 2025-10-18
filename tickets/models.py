@@ -1410,6 +1410,15 @@ class SystemConfiguration(models.Model):
         help_text='ID del webhook configurado en PayPal para recibir notificaciones de pagos'
     )
     
+    # Token público para catálogo de productos
+    products_catalog_token = models.UUIDField(
+        null=True,
+        blank=True,
+        unique=True,
+        verbose_name='Token del Catálogo Público',
+        help_text='Token único para acceso público al catálogo de productos'
+    )
+    
     # Metadatos
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
@@ -10633,6 +10642,428 @@ class PayPalOrder(models.Model):
             'refunded': '<span class="badge bg-secondary">Reembolsado</span>',
         }
         return badges.get(self.status, '<span class="badge bg-secondary">Desconocido</span>')
+
+
+class TodoItem(models.Model):
+    """Modelo para items de TODO list en tickets"""
+    ticket = models.ForeignKey(
+        Ticket,
+        on_delete=models.CASCADE,
+        related_name='todo_items',
+        verbose_name='Ticket'
+    )
+    text = models.CharField(
+        max_length=500,
+        verbose_name='Tarea'
+    )
+    is_completed = models.BooleanField(
+        default=False,
+        verbose_name='Completada'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='todo_items_created',
+        verbose_name='Creado por'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de completado'
+    )
+    order = models.IntegerField(
+        default=0,
+        verbose_name='Orden'
+    )
+    
+    class Meta:
+        ordering = ['order', 'created_at']
+        verbose_name = 'Item de TODO'
+        verbose_name_plural = 'Items de TODO'
+    
+    def __str__(self):
+        status = "✓" if self.is_completed else "○"
+        return f"{status} {self.text[:50]}"
+    
+    def toggle_completed(self):
+        """Alterna el estado de completado"""
+        self.is_completed = not self.is_completed
+        if self.is_completed:
+            self.completed_at = timezone.now()
+        else:
+            self.completed_at = None
+        self.save()
+
+
+class AIBook(models.Model):
+    """Modelo para libros generados con IA"""
+    
+    STATUS_CHOICES = [
+        ('draft', 'Borrador'),
+        ('chapters_proposed', 'Capítulos Propuestos'),
+        ('in_progress', 'En Progreso'),
+        ('completed', 'Completado'),
+    ]
+    
+    title = models.CharField(
+        max_length=500,
+        verbose_name='Título del Libro'
+    )
+    author = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Autor',
+        help_text='Nombre del autor del libro'
+    )
+    topic = models.TextField(
+        verbose_name='Tema/Descripción',
+        help_text='Describe de qué quieres que trate el libro'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='draft',
+        verbose_name='Estado'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='ai_books',
+        verbose_name='Creado por'
+    )
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='ai_books',
+        verbose_name='Empresa'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Libro IA'
+        verbose_name_plural = 'Libros IA'
+    
+    def __str__(self):
+        return self.title
+    
+    def get_status_badge_class(self):
+        """Retorna la clase Bootstrap del badge según el estado"""
+        badges = {
+            'draft': 'bg-secondary',
+            'chapters_proposed': 'bg-info',
+            'in_progress': 'bg-warning',
+            'completed': 'bg-success',
+        }
+        return badges.get(self.status, 'bg-secondary')
+    
+    def get_total_chapters(self):
+        """Retorna el total de capítulos"""
+        return self.chapters.count()
+    
+    def get_completed_chapters(self):
+        """Retorna el número de capítulos completados (con contenido generado)"""
+        return self.chapters.filter(status__in=['content_generated', 'completed']).count()
+    
+    def get_progress_percentage(self):
+        """Retorna el porcentaje de progreso"""
+        total = self.get_total_chapters()
+        if total == 0:
+            return 0
+        completed = self.get_completed_chapters()
+        return int((completed / total) * 100)
+    
+    def get_total_words(self):
+        """Retorna el total de palabras de todos los capítulos"""
+        from django.db.models import Sum
+        result = self.chapters.aggregate(total=Sum('word_count'))
+        return result['total'] or 0
+
+
+class AIBookChapter(models.Model):
+    """Modelo para capítulos de libros generados con IA"""
+    
+    STATUS_CHOICES = [
+        ('proposed', 'Propuesto'),
+        ('summary_created', 'Resumen Creado'),
+        ('content_generated', 'Contenido Generado'),
+        ('completed', 'Completado'),
+    ]
+    
+    book = models.ForeignKey(
+        AIBook,
+        on_delete=models.CASCADE,
+        related_name='chapters',
+        verbose_name='Libro'
+    )
+    title = models.CharField(
+        max_length=500,
+        verbose_name='Título del Capítulo'
+    )
+    order = models.IntegerField(
+        default=0,
+        verbose_name='Orden'
+    )
+    summary = models.TextField(
+        blank=True,
+        verbose_name='Resumen del Capítulo',
+        help_text='Resumen breve de lo que tratará el capítulo'
+    )
+    content = models.TextField(
+        blank=True,
+        verbose_name='Contenido del Capítulo',
+        help_text='Contenido completo en texto plano (sin formato Markdown)'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='proposed',
+        verbose_name='Estado'
+    )
+    word_count = models.IntegerField(
+        default=0,
+        verbose_name='Conteo de Palabras'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        ordering = ['book', 'order']
+        verbose_name = 'Capítulo de Libro IA'
+        verbose_name_plural = 'Capítulos de Libros IA'
+    
+    def __str__(self):
+        return f"{self.book.title} - Cap. {self.order}: {self.title}"
+    
+    def get_status_badge_class(self):
+        """Retorna la clase Bootstrap del badge según el estado"""
+        badges = {
+            'proposed': 'bg-secondary',
+            'summary_created': 'bg-info',
+            'content_generated': 'bg-primary',
+            'completed': 'bg-success',
+        }
+        return badges.get(self.status, 'bg-secondary')
+    
+    def update_word_count(self):
+        """Actualiza el conteo de palabras del contenido"""
+        if self.content:
+            self.word_count = len(self.content.split())
+        else:
+            self.word_count = 0
+        self.save(update_fields=['word_count'])
+    
+    def save(self, *args, **kwargs):
+        """Override save para actualizar automáticamente el conteo de palabras"""
+        if self.content:
+            self.word_count = len(self.content.split())
+        super().save(*args, **kwargs)
+
+
+class AIArticleProject(models.Model):
+    """Modelo para proyectos de generación de artículos con IA"""
+    
+    STATUS_CHOICES = [
+        ('draft', 'Borrador'),
+        ('articles_proposed', 'Artículos Propuestos'),
+        ('in_progress', 'En Progreso'),
+        ('completed', 'Completado'),
+    ]
+    
+    FORMAT_CHOICES = [
+        ('plain', 'Texto Plano'),
+        ('markdown', 'Markdown'),
+    ]
+    
+    title = models.CharField(
+        max_length=500,
+        verbose_name='Título del Proyecto'
+    )
+    main_topic = models.TextField(
+        verbose_name='Tema Principal',
+        help_text='Describe el tema principal sobre el cual quieres generar artículos'
+    )
+    content_format = models.CharField(
+        max_length=20,
+        choices=FORMAT_CHOICES,
+        default='plain',
+        verbose_name='Formato de Contenido',
+        help_text='Formato en el que se generará el contenido de los artículos'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='draft',
+        verbose_name='Estado'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='ai_article_projects',
+        verbose_name='Creado por'
+    )
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='ai_article_projects',
+        verbose_name='Empresa'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Proyecto de Artículos IA'
+        verbose_name_plural = 'Proyectos de Artículos IA'
+    
+    def __str__(self):
+        return self.title
+    
+    def get_status_badge_class(self):
+        """Retorna la clase Bootstrap del badge según el estado"""
+        badges = {
+            'draft': 'bg-secondary',
+            'articles_proposed': 'bg-info',
+            'in_progress': 'bg-warning',
+            'completed': 'bg-success',
+        }
+        return badges.get(self.status, 'bg-secondary')
+    
+    def get_total_articles(self):
+        """Retorna el total de artículos"""
+        return self.articles.count()
+    
+    def get_completed_articles(self):
+        """Retorna el número de artículos completados (con contenido generado)"""
+        return self.articles.filter(status__in=['content_generated', 'completed']).count()
+    
+    def get_progress_percentage(self):
+        """Retorna el porcentaje de progreso"""
+        total = self.get_total_articles()
+        if total == 0:
+            return 0
+        completed = self.get_completed_articles()
+        return int((completed / total) * 100)
+    
+    def get_total_words(self):
+        """Retorna el total de palabras de todos los artículos"""
+        from django.db.models import Sum
+        result = self.articles.aggregate(total=Sum('word_count'))
+        return result['total'] or 0
+
+
+class AIArticle(models.Model):
+    """Modelo para artículos individuales generados con IA"""
+    
+    STATUS_CHOICES = [
+        ('proposed', 'Propuesto'),
+        ('content_generated', 'Contenido Generado'),
+        ('completed', 'Completado'),
+    ]
+    
+    project = models.ForeignKey(
+        AIArticleProject,
+        on_delete=models.CASCADE,
+        related_name='articles',
+        verbose_name='Proyecto'
+    )
+    title = models.CharField(
+        max_length=500,
+        verbose_name='Título del Artículo'
+    )
+    keywords = models.CharField(
+        max_length=1000,
+        blank=True,
+        verbose_name='Palabras Clave',
+        help_text='Palabras clave separadas por comas'
+    )
+    content = models.TextField(
+        blank=True,
+        verbose_name='Contenido del Artículo',
+        help_text='Contenido completo en texto plano'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='proposed',
+        verbose_name='Estado'
+    )
+    word_count = models.IntegerField(
+        default=0,
+        verbose_name='Conteo de Palabras'
+    )
+    order = models.IntegerField(
+        default=0,
+        verbose_name='Orden'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        ordering = ['project', 'order']
+        verbose_name = 'Artículo IA'
+        verbose_name_plural = 'Artículos IA'
+    
+    def __str__(self):
+        return f"{self.project.title} - {self.title}"
+    
+    def get_status_badge_class(self):
+        """Retorna la clase Bootstrap del badge según el estado"""
+        badges = {
+            'proposed': 'bg-secondary',
+            'content_generated': 'bg-primary',
+            'completed': 'bg-success',
+        }
+        return badges.get(self.status, 'bg-secondary')
+    
+    def get_keywords_list(self):
+        """Retorna las palabras clave como lista"""
+        if self.keywords:
+            return [k.strip() for k in self.keywords.split(',') if k.strip()]
+        return []
+    
+    def save(self, *args, **kwargs):
+        """Override save para actualizar automáticamente el conteo de palabras"""
+        if self.content:
+            self.word_count = len(self.content.split())
+        super().save(*args, **kwargs)
+
+
+
+
 
 
 

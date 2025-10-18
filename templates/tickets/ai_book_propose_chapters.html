@@ -1,0 +1,277 @@
+{% extends 'base.html' %}
+
+{% block title %}Generar Capítulos - {{ book.title }} - TicketProo{% endblock %}
+
+{% block content %}
+<style>
+    .chapter-item {
+        transition: all 0.3s ease;
+    }
+    .chapter-item:hover {
+        background-color: #f8f9fa;
+    }
+    .btn-gradient-ai {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+    }
+    .btn-gradient-ai:hover {
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        color: white;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .loading i {
+        animation: spin 1s linear infinite;
+    }
+</style>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header">
+                    <h3>
+                        <i class="bi bi-book"></i> {{ book.title }}
+                    </h3>
+                    <p class="text-muted mb-0">Paso 2 de 3: Generar y editar capítulos</p>
+                </div>
+                <div class="card-body">
+                    <!-- Información del libro -->
+                    <div class="alert alert-primary">
+                        <strong><i class="bi bi-info-circle"></i> Tema del libro:</strong><br>
+                        {{ book.topic }}
+                    </div>
+                    
+                    <!-- Botón para generar capítulos con IA -->
+                    <div class="text-center mb-4" id="generateSection">
+                        <button type="button" 
+                                id="generateChaptersBtn" 
+                                class="btn btn-gradient-ai btn-lg">
+                            <i class="bi bi-stars"></i> Generar Capítulos con IA
+                        </button>
+                        <p class="text-muted mt-2">La IA analizará el tema y propondrá una estructura de capítulos</p>
+                    </div>
+                    
+                    <!-- Lista de capítulos generados -->
+                    <div id="chaptersSection" style="display: none;">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5>
+                                <i class="bi bi-list-ol"></i> Capítulos Propuestos
+                            </h5>
+                            <span class="badge bg-primary" id="chapterCount">0</span>
+                        </div>
+                        
+                        <p class="text-muted small mb-3">
+                            <i class="bi bi-pencil"></i> Puedes editar los títulos haciendo clic en ellos, o eliminar capítulos que no necesites.
+                        </p>
+                        
+                        <div id="chaptersList" class="list-group mb-4">
+                            <!-- Los capítulos se agregarán aquí dinámicamente -->
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'ai_book_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Volver a la Lista
+                            </a>
+                            <a href="{% url 'ai_book_detail' book.pk %}" class="btn btn-success">
+                                Continuar al Libro <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const generateBtn = document.getElementById('generateChaptersBtn');
+    const generateSection = document.getElementById('generateSection');
+    const chaptersSection = document.getElementById('chaptersSection');
+    const chaptersList = document.getElementById('chaptersList');
+    const chapterCount = document.getElementById('chapterCount');
+    const bookId = {{ book.pk }};
+    
+    generateBtn.addEventListener('click', function() {
+        if (!confirm('¿Generar capítulos automáticamente con IA?\n\nEsto creará una estructura de capítulos basada en el tema del libro.')) {
+            return;
+        }
+        
+        // Mostrar estado de carga
+        const originalHTML = generateBtn.innerHTML;
+        generateBtn.disabled = true;
+        generateBtn.classList.add('loading');
+        generateBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Generando capítulos...';
+        
+        fetch(`/ai-books/${bookId}/generate-chapters/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Ocultar sección de generación
+                generateSection.style.display = 'none';
+                
+                // Mostrar sección de capítulos
+                chaptersSection.style.display = 'block';
+                
+                // Agregar capítulos
+                data.chapters.forEach(chapter => {
+                    addChapterToList(chapter);
+                });
+                
+                // Actualizar contador
+                updateChapterCount();
+                
+                // Mostrar mensaje de éxito
+                showToast('¡Éxito!', `Se generaron ${data.count} capítulos`, 'success');
+            } else {
+                alert(data.error || 'Error al generar capítulos');
+                generateBtn.disabled = false;
+                generateBtn.classList.remove('loading');
+                generateBtn.innerHTML = originalHTML;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al generar capítulos. Verifica tu configuración de OpenAI.');
+            generateBtn.disabled = false;
+            generateBtn.classList.remove('loading');
+            generateBtn.innerHTML = originalHTML;
+        });
+    });
+    
+    function addChapterToList(chapter) {
+        const chapterHtml = `
+            <div class="list-group-item chapter-item" data-id="${chapter.id}">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="flex-grow-1">
+                        <strong class="me-2">Capítulo ${chapter.order}:</strong>
+                        <span class="chapter-title" contenteditable="true" style="outline: none;" data-id="${chapter.id}">
+                            ${chapter.title}
+                        </span>
+                    </div>
+                    <button class="btn btn-sm btn-outline-danger delete-chapter" data-id="${chapter.id}">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        chaptersList.insertAdjacentHTML('beforeend', chapterHtml);
+    }
+    
+    // Delegar eventos
+    chaptersList.addEventListener('blur', function(e) {
+        if (e.target.classList.contains('chapter-title')) {
+            const chapterId = e.target.dataset.id;
+            const newTitle = e.target.textContent.trim();
+            
+            if (newTitle) {
+                saveChapterTitle(chapterId, newTitle);
+            }
+        }
+    }, true);
+    
+    chaptersList.addEventListener('click', function(e) {
+        if (e.target.closest('.delete-chapter')) {
+            const button = e.target.closest('.delete-chapter');
+            const chapterId = button.dataset.id;
+            deleteChapter(chapterId, button);
+        }
+    });
+    
+    function saveChapterTitle(chapterId, title) {
+        const formData = new FormData();
+        formData.append('title', title);
+        
+        fetch(`/ai-books/${bookId}/chapters/${chapterId}/edit-title/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                alert(data.error || 'Error al guardar título');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+    
+    function deleteChapter(chapterId, button) {
+        if (!confirm('¿Eliminar este capítulo?')) {
+            return;
+        }
+        
+        fetch(`/ai-books/${bookId}/chapters/${chapterId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const item = button.closest('.chapter-item');
+                item.style.transition = 'opacity 0.3s';
+                item.style.opacity = '0';
+                setTimeout(() => {
+                    item.remove();
+                    updateChapterCount();
+                }, 300);
+            } else {
+                alert(data.error || 'Error al eliminar capítulo');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al eliminar capítulo');
+        });
+    }
+    
+    function updateChapterCount() {
+        const count = chaptersList.querySelectorAll('.chapter-item').length;
+        chapterCount.textContent = count;
+    }
+    
+    function showToast(title, message, type = 'info') {
+        const bgClass = type === 'success' ? 'bg-success' : type === 'error' ? 'bg-danger' : 'bg-info';
+        const iconClass = type === 'success' ? 'bi-check-circle-fill' : type === 'error' ? 'bi-x-circle-fill' : 'bi-info-circle-fill';
+        
+        if (typeof bootstrap !== 'undefined' && bootstrap.Toast) {
+            const toastEl = document.createElement('div');
+            toastEl.className = 'toast position-fixed top-0 end-0 m-3';
+            toastEl.innerHTML = `
+                <div class="toast-header ${bgClass} text-white">
+                    <i class="${iconClass} me-2"></i>
+                    <strong class="me-auto">${title}</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">${message}</div>
+            `;
+            document.body.appendChild(toastEl);
+            
+            const toast = new bootstrap.Toast(toastEl, { autohide: true, delay: 5000 });
+            toast.show();
+            
+            toastEl.addEventListener('hidden.bs.toast', () => {
+                toastEl.remove();
+            });
+        } else {
+            alert(`${title}: ${message}`);
+        }
+    }
+});
+</script>
+{% endblock %}

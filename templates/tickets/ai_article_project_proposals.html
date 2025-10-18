@@ -1,0 +1,342 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ project.title }} - Artículos - {{ block.super }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .article-card {
+        transition: transform 0.2s;
+    }
+    .article-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .keywords-badge {
+        font-size: 0.75rem;
+        margin: 2px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'ai_article_project_list' %}">Proyectos</a></li>
+                    <li class="breadcrumb-item active">{{ project.title }}</li>
+                </ol>
+            </nav>
+            <h2><i class="fas fa-newspaper"></i> {{ project.title }}</h2>
+            <p class="text-muted">{{ project.main_topic }}</p>
+            <div class="mt-2">
+                <span class="badge bg-{% if project.content_format == 'markdown' %}info{% else %}secondary{% endif %}">
+                    <i class="fas fa-{% if project.content_format == 'markdown' %}code{% else %}align-left{% endif %}"></i>
+                    {% if project.content_format == 'markdown' %}Formato: Markdown{% else %}Formato: Texto Plano{% endif %}
+                </span>
+                {% if project.company %}
+                    <span class="badge" style="background-color: {{ project.company.color }};">
+                        <i class="fas fa-building"></i> {{ project.company.name }}
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'ai_article_project_edit' project.pk %}" class="btn btn-warning">
+                <i class="fas fa-edit"></i> Editar Proyecto
+            </a>
+            <button type="button" class="btn btn-success" id="btn-generate-proposals">
+                <i class="fas fa-magic"></i> Proponer 10 Artículos
+            </button>
+            <a href="{% url 'ai_article_project_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <h5 class="text-muted">Total Artículos</h5>
+                            <h2 class="mb-0" id="total-articles">{{ project.get_total_articles }}</h2>
+                        </div>
+                        <div class="col-md-4">
+                            <h5 class="text-muted">Artículos Generados</h5>
+                            <h2 class="mb-0 text-success">{{ project.get_completed_articles }}</h2>
+                        </div>
+                        <div class="col-md-4">
+                            <h5 class="text-muted">Progreso</h5>
+                            <h2 class="mb-0 text-primary">{{ project.get_progress_percentage }}%</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="articles-container" class="row">
+        {% for article in articles %}
+            <div class="col-md-6 col-lg-4 mb-3 article-item">
+                <div class="card article-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="badge bg-secondary">#{{ article.order }}</span>
+                            <span class="badge {{ article.get_status_badge_class }}">
+                                {{ article.get_status_display }}
+                            </span>
+                        </div>
+                        <h5 class="card-title">{{ article.title }}</h5>
+                        
+                        <div class="mb-3">
+                            <small class="text-muted d-block mb-1">Palabras Clave:</small>
+                            <div class="keywords-container" data-article-id="{{ article.id }}">
+                                {% if article.keywords %}
+                                    {% for keyword in article.get_keywords_list %}
+                                        <span class="badge bg-info keywords-badge">{{ keyword }}</span>
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="text-muted small">Sin palabras clave</span>
+                                {% endif %}
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary mt-2 btn-edit-keywords" 
+                                    data-article-id="{{ article.id }}" data-keywords="{{ article.keywords }}">
+                                <i class="fas fa-edit"></i> Editar Palabras Clave
+                            </button>
+                        </div>
+
+                        {% if article.content %}
+                            <div class="alert alert-success small mb-2">
+                                <i class="fas fa-check-circle"></i> Contenido generado ({{ article.word_count }} palabras)
+                            </div>
+                        {% endif %}
+
+                        <div class="d-flex gap-2">
+                            {% if not article.content %}
+                                <button type="button" class="btn btn-sm btn-primary flex-fill btn-generate-content" 
+                                        data-article-id="{{ article.id }}">
+                                    <i class="fas fa-wand-magic-sparkles"></i> Generar Contenido
+                                </button>
+                            {% else %}
+                                <a href="{% url 'ai_article_detail' project.pk article.id %}" 
+                                   class="btn btn-sm btn-success flex-fill">
+                                    <i class="fas fa-eye"></i> Ver Contenido
+                                </a>
+                            {% endif %}
+                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete-article" 
+                                    data-article-id="{{ article.id }}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> No hay artículos propuestos aún. 
+                    Pulsa el botón <strong>"Proponer 10 Artículos"</strong> para que la IA genere propuestas.
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Loading spinner -->
+    <div id="loading-spinner" class="text-center py-5" style="display: none;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Generando...</span>
+        </div>
+        <p class="mt-2 text-muted">La IA está trabajando...</p>
+    </div>
+</div>
+
+<!-- Modal para editar palabras clave -->
+<div class="modal fade" id="editKeywordsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Editar Palabras Clave</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <textarea class="form-control" id="keywords-input" rows="3" 
+                          placeholder="palabra1, palabra2, palabra3"></textarea>
+                <small class="text-muted">Separa las palabras clave con comas</small>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btn-save-keywords">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const projectId = {{ project.pk }};
+let currentEditingArticleId = null;
+
+// Función para obtener el CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+const csrftoken = getCookie('csrftoken');
+
+// Generar propuestas
+document.getElementById('btn-generate-proposals').addEventListener('click', function() {
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando...';
+    
+    fetch(`/ai-articles/${projectId}/generate-proposals/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response:', data);
+        if (data.success) {
+            showToast('¡Éxito!', `Se generaron ${data.articles.length} nuevas propuestas`, 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast('Error', data.error || 'Error al generar propuestas', 'danger');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-magic"></i> Proponer 10 Artículos';
+        }
+    })
+    .catch(error => {
+        console.error('Error completo:', error);
+        showToast('Error', `Error de conexión: ${error.message}`, 'danger');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-magic"></i> Proponer 10 Artículos';
+    });
+});
+
+// Editar palabras clave
+document.querySelectorAll('.btn-edit-keywords').forEach(btn => {
+    btn.addEventListener('click', function() {
+        currentEditingArticleId = this.dataset.articleId;
+        document.getElementById('keywords-input').value = this.dataset.keywords || '';
+        new bootstrap.Modal(document.getElementById('editKeywordsModal')).show();
+    });
+});
+
+document.getElementById('btn-save-keywords').addEventListener('click', function() {
+    const keywords = document.getElementById('keywords-input').value.trim();
+    
+    fetch(`/ai-articles/${projectId}/${currentEditingArticleId}/edit-keywords/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ keywords: keywords })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('¡Guardado!', 'Palabras clave actualizadas', 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast('Error', data.error || 'Error al guardar', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Error', `Error: ${error.message}`, 'danger');
+    });
+});
+
+// Generar contenido
+document.querySelectorAll('.btn-generate-content').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const articleId = this.dataset.articleId;
+        const btnOriginal = this;
+        btnOriginal.disabled = true;
+        btnOriginal.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando...';
+        
+        fetch(`/ai-articles/${projectId}/${articleId}/generate-content/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('¡Éxito!', `Contenido generado (${data.word_count} palabras)`, 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showToast('Error', data.error || 'Error al generar contenido', 'danger');
+                btnOriginal.disabled = false;
+                btnOriginal.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Generar Contenido';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error', `Error: ${error.message}`, 'danger');
+            btnOriginal.disabled = false;
+            btnOriginal.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Generar Contenido';
+        });
+    });
+});
+
+// Eliminar artículo
+document.querySelectorAll('.btn-delete-article').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const articleId = this.dataset.articleId;
+        if (confirm('¿Estás seguro de eliminar este artículo?')) {
+            window.location.href = `/ai-articles/${projectId}/${articleId}/delete/`;
+        }
+    });
+});
+
+function showToast(title, message, type) {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        <strong>${title}</strong> ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 5000);
+}
+</script>
+{% endblock %}

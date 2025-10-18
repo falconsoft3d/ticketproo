@@ -3,6 +3,27 @@
 {% block title %}Ticket #{{ ticket.id }} - TicketProo{% endblock %}
 
 {% block content %}
+<style>
+    .btn-gradient-ai:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4) !important;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-gradient-ai:active {
+        transform: translateY(0);
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    .btn-gradient-ai.loading i {
+        animation: spin 1s linear infinite;
+    }
+</style>
+
 <div class="row">
     <div class="col-md-8">
         <div class="card">
@@ -434,6 +455,89 @@
             </div>
         </div>
         
+        <!-- Tarjeta de TODO List -->
+        <div class="card mt-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="bi bi-list-check"></i> Lista de Tareas
+                </h6>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" 
+                            id="generateAIBtn" 
+                            class="btn btn-sm btn-gradient-ai"
+                            title="Generar checklist automático con IA"
+                            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);">
+                        <i class="bi bi-stars"></i> Generar con IA
+                    </button>
+                    <span class="badge bg-primary">{{ todo_items|length }}</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Formulario para agregar tarea -->
+                <form id="todoAddForm" class="mb-3">
+                    <div class="input-group input-group-sm">
+                        <input type="text" 
+                               id="todoInput" 
+                               class="form-control" 
+                               placeholder="Nueva tarea..."
+                               maxlength="500">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="bi bi-plus-lg"></i> Agregar
+                        </button>
+                    </div>
+                    <small class="text-muted">Máximo 500 caracteres</small>
+                </form>
+                
+                <!-- Lista de tareas -->
+                <div id="todoList">
+                    {% if todo_items %}
+                        {% for item in todo_items %}
+                        <div class="todo-item d-flex align-items-center mb-2 p-2 border rounded" 
+                             data-id="{{ item.id }}"
+                             style="{% if item.is_completed %}background-color: #f8f9fa; opacity: 0.7;{% endif %}">
+                            <div class="form-check flex-grow-1">
+                                <input class="form-check-input todo-checkbox" 
+                                       type="checkbox" 
+                                       {% if item.is_completed %}checked{% endif %}
+                                       data-id="{{ item.id }}">
+                                <label class="form-check-label {% if item.is_completed %}text-decoration-line-through text-muted{% endif %}"
+                                       style="cursor: pointer;">
+                                    {{ item.text }}
+                                </label>
+                            </div>
+                            <button class="btn btn-sm btn-outline-danger todo-delete ms-2" 
+                                    data-id="{{ item.id }}"
+                                    title="Eliminar tarea">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted py-3" id="emptyTodoMessage">
+                            <i class="bi bi-list-check display-4"></i>
+                            <p class="mt-2 small">No hay tareas aún. ¡Agrega la primera!</p>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Contador de tareas completadas -->
+                <div class="mt-3 pt-2 border-top">
+                    <small class="text-muted">
+                        <i class="bi bi-check-circle"></i>
+                        <span id="completedCount">
+                            {% if todo_items %}
+                                {{ todo_items|length }}
+                                {% comment %}Calculado por JavaScript{% endcomment %}
+                            {% else %}
+                                0
+                            {% endif %}
+                        </span> de 
+                        <span id="totalCount">{{ todo_items|length }}</span> completadas
+                    </small>
+                </div>
+            </div>
+        </div>
+        
         <!-- Información adicional -->
         <div class="card mt-3">
             <div class="card-header">
@@ -517,5 +621,285 @@ function copyPublicUrl() {
         alert('No se pudo copiar el enlace. Por favor, selecciónalo manualmente.');
     }
 }
+
+// ============================================
+// JAVASCRIPT PARA TODO LIST
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    const todoForm = document.getElementById('todoAddForm');
+    const todoInput = document.getElementById('todoInput');
+    const todoList = document.getElementById('todoList');
+    const emptyMessage = document.getElementById('emptyTodoMessage');
+    const generateAIBtn = document.getElementById('generateAIBtn');
+    const ticketId = {{ ticket.pk }};
+    
+    // Generar checklist con IA
+    if (generateAIBtn) {
+        generateAIBtn.addEventListener('click', function() {
+            if (!confirm('¿Generar un checklist automático con IA basado en la descripción del ticket?\n\nEsto puede agregar varias tareas a la lista.')) {
+                return;
+            }
+            
+            // Deshabilitar botón y mostrar loading
+            const originalHTML = generateAIBtn.innerHTML;
+            generateAIBtn.disabled = true;
+            generateAIBtn.classList.add('loading');
+            generateAIBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Generando...';
+            
+            fetch(`/tickets/${ticketId}/todo/generate-ai/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Ocultar mensaje vacío si existe
+                    if (emptyMessage) {
+                        emptyMessage.remove();
+                    }
+                    
+                    // Agregar cada tarea generada con una pequeña animación
+                    data.items.forEach((item, index) => {
+                        setTimeout(() => {
+                            addTodoItemToDOM(item);
+                            updateCounters();
+                        }, index * 100); // Agregar con delay para efecto visual
+                    });
+                    
+                    // Mostrar mensaje de éxito después de agregar todas las tareas
+                    setTimeout(() => {
+                        if (typeof bootstrap !== 'undefined' && bootstrap.Toast) {
+                            showToast('¡Éxito!', data.message || `Se generaron ${data.count} tareas con IA`, 'success');
+                        } else {
+                            alert(data.message || `Se generaron ${data.count} tareas con IA`);
+                        }
+                    }, data.items.length * 100);
+                } else {
+                    alert(data.error || 'Error al generar checklist con IA');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al generar checklist con IA. Por favor, verifica que OpenAI esté configurado correctamente.');
+            })
+            .finally(() => {
+                generateAIBtn.disabled = false;
+                generateAIBtn.classList.remove('loading');
+                generateAIBtn.innerHTML = originalHTML;
+            });
+        });
+    }
+    
+    // Agregar nueva tarea
+    todoForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const text = todoInput.value.trim();
+        if (!text) return;
+        
+        // Deshabilitar el formulario mientras se procesa
+        todoInput.disabled = true;
+        
+        fetch(`/tickets/${ticketId}/todo/add/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: `text=${encodeURIComponent(text)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Crear elemento de tarea
+                addTodoItemToDOM(data.item);
+                
+                // Limpiar input
+                todoInput.value = '';
+                
+                // Ocultar mensaje vacío si existe
+                if (emptyMessage) {
+                    emptyMessage.remove();
+                }
+                
+                // Actualizar contador
+                updateCounters();
+            } else {
+                alert(data.error || 'Error al agregar tarea');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al agregar tarea');
+        })
+        .finally(() => {
+            todoInput.disabled = false;
+            todoInput.focus();
+        });
+    });
+    
+    // Delegar eventos para checkboxes y botones delete
+    todoList.addEventListener('click', function(e) {
+        // Toggle completado
+        if (e.target.classList.contains('todo-checkbox')) {
+            const itemId = e.target.dataset.id;
+            toggleTodoItem(itemId, e.target);
+        }
+        
+        // Eliminar tarea
+        if (e.target.closest('.todo-delete')) {
+            const button = e.target.closest('.todo-delete');
+            const itemId = button.dataset.id;
+            deleteTodoItem(itemId, button);
+        }
+    });
+    
+    function addTodoItemToDOM(item) {
+        const itemHtml = `
+            <div class="todo-item d-flex align-items-center mb-2 p-2 border rounded" 
+                 data-id="${item.id}">
+                <div class="form-check flex-grow-1">
+                    <input class="form-check-input todo-checkbox" 
+                           type="checkbox" 
+                           data-id="${item.id}">
+                    <label class="form-check-label" style="cursor: pointer;">
+                        ${item.text}
+                    </label>
+                </div>
+                <button class="btn btn-sm btn-outline-danger todo-delete ms-2" 
+                        data-id="${item.id}"
+                        title="Eliminar tarea">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        `;
+        
+        todoList.insertAdjacentHTML('beforeend', itemHtml);
+    }
+    
+    function toggleTodoItem(itemId, checkbox) {
+        fetch(`/tickets/${ticketId}/todo/${itemId}/toggle/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const todoItem = checkbox.closest('.todo-item');
+                const label = todoItem.querySelector('.form-check-label');
+                
+                if (data.is_completed) {
+                    label.classList.add('text-decoration-line-through', 'text-muted');
+                    todoItem.style.backgroundColor = '#f8f9fa';
+                    todoItem.style.opacity = '0.7';
+                } else {
+                    label.classList.remove('text-decoration-line-through', 'text-muted');
+                    todoItem.style.backgroundColor = '';
+                    todoItem.style.opacity = '';
+                }
+                
+                // Actualizar contador
+                updateCounters();
+            } else {
+                // Revertir checkbox si falló
+                checkbox.checked = !checkbox.checked;
+                alert(data.error || 'Error al actualizar tarea');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            checkbox.checked = !checkbox.checked;
+            alert('Error al actualizar tarea');
+        });
+    }
+    
+    function deleteTodoItem(itemId, button) {
+        if (!confirm('¿Estás seguro de eliminar esta tarea?')) {
+            return;
+        }
+        
+        fetch(`/tickets/${ticketId}/todo/${itemId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const todoItem = button.closest('.todo-item');
+                todoItem.style.transition = 'opacity 0.3s';
+                todoItem.style.opacity = '0';
+                
+                setTimeout(() => {
+                    todoItem.remove();
+                    
+                    // Si no quedan tareas, mostrar mensaje vacío
+                    if (todoList.querySelectorAll('.todo-item').length === 0) {
+                        todoList.innerHTML = `
+                            <div class="text-center text-muted py-3" id="emptyTodoMessage">
+                                <i class="bi bi-list-check display-4"></i>
+                                <p class="mt-2 small">No hay tareas aún. ¡Agrega la primera!</p>
+                            </div>
+                        `;
+                    }
+                    
+                    // Actualizar contador
+                    updateCounters();
+                }, 300);
+            } else {
+                alert(data.error || 'Error al eliminar tarea');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al eliminar tarea');
+        });
+    }
+    
+    function updateCounters() {
+        const total = todoList.querySelectorAll('.todo-item').length;
+        const completed = todoList.querySelectorAll('.todo-checkbox:checked').length;
+        
+        document.getElementById('totalCount').textContent = total;
+        document.getElementById('completedCount').textContent = completed;
+    }
+    
+    function showToast(title, message, type = 'info') {
+        const bgClass = type === 'success' ? 'bg-success' : type === 'error' ? 'bg-danger' : 'bg-info';
+        const iconClass = type === 'success' ? 'bi-check-circle-fill' : type === 'error' ? 'bi-x-circle-fill' : 'bi-info-circle-fill';
+        
+        const toastEl = document.createElement('div');
+        toastEl.className = 'toast position-fixed top-0 end-0 m-3';
+        toastEl.setAttribute('role', 'alert');
+        toastEl.setAttribute('aria-live', 'assertive');
+        toastEl.setAttribute('aria-atomic', 'true');
+        toastEl.innerHTML = `
+            <div class="toast-header ${bgClass} text-white">
+                <i class="${iconClass} me-2"></i>
+                <strong class="me-auto">${title}</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        `;
+        document.body.appendChild(toastEl);
+        
+        const toast = new bootstrap.Toast(toastEl, { autohide: true, delay: 5000 });
+        toast.show();
+        
+        toastEl.addEventListener('hidden.bs.toast', () => {
+            toastEl.remove();
+        });
+    }
+    
+    // Actualizar contadores al cargar la página
+    updateCounters();
+});
 </script>
 {% endblock %}

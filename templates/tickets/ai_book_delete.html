@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}Eliminar Libro - {{ book.title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-exclamation-triangle-fill"></i> 
+                        Confirmar Eliminación
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger mb-4">
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                        <strong>¡Atención!</strong> Esta acción es permanente y no se puede deshacer.
+                    </div>
+                    
+                    <h5 class="mb-3">¿Estás seguro que deseas eliminar este libro?</h5>
+                    
+                    <div class="card bg-light mb-4">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="bi bi-book"></i> {{ book.title }}
+                            </h6>
+                            <p class="card-text text-muted small mb-2">
+                                <i class="bi bi-lightbulb"></i> <strong>Tema:</strong> {{ book.topic|truncatechars:100 }}
+                            </p>
+                            <p class="card-text mb-2">
+                                <span class="badge {{ book.get_status_badge_class }}">
+                                    {{ book.get_status_display }}
+                                </span>
+                                <span class="badge bg-secondary ms-2">
+                                    <i class="bi bi-list-ol"></i> {{ book.get_total_chapters }} capítulo{{ book.get_total_chapters|pluralize }}
+                                </span>
+                                {% if book.get_completed_chapters > 0 %}
+                                <span class="badge bg-success ms-2">
+                                    <i class="bi bi-check-circle"></i> {{ book.get_completed_chapters }} completado{{ book.get_completed_chapters|pluralize }}
+                                </span>
+                                {% endif %}
+                            </p>
+                            <p class="card-text small text-muted mb-0">
+                                <i class="bi bi-calendar3"></i> Creado: {{ book.created_at|date:"d/m/Y H:i" }}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6>Se eliminará:</h6>
+                        <ul>
+                            <li>El libro y toda su información</li>
+                            <li>Todos los capítulos ({{ book.get_total_chapters }})</li>
+                            <li>Todo el contenido generado</li>
+                            <li>Resúmenes y contenido de todos los capítulos</li>
+                        </ul>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'ai_book_detail' book.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash-fill"></i> Sí, eliminar permanentemente
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

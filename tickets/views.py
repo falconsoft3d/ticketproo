@@ -560,6 +560,9 @@ def ticket_detail_view(request, pk):
     # Obtener comentarios del ticket
     comments = ticket.comments.all().order_by('created_at')
     
+    # Obtener items TODO del ticket
+    todo_items = ticket.todo_items.all()
+    
     context = {
         'ticket': ticket,
         'comments': comments,
@@ -567,6 +570,7 @@ def ticket_detail_view(request, pk):
         'attachment_form': attachment_form,
         'is_agent': is_agent(request.user),
         'user_role': get_user_role(request.user),
+        'todo_items': todo_items,
     }
     return render(request, 'tickets/ticket_detail.html', context)
 
@@ -22653,6 +22657,97 @@ def paypal_link_cancel(request, pk):
     return redirect('paypal_link_detail', pk=link.pk)
 
 
+@login_required
+def paypal_generate_public_catalog_token(request):
+    """Generar o regenerar token público para catálogo de productos"""
+    import uuid
+    from .models import SystemConfiguration
+    
+    if request.method == 'POST':
+        config = SystemConfiguration.get_config()
+        
+        # Generar nuevo token
+        new_token = uuid.uuid4()
+        config.products_catalog_token = new_token
+        config.save()
+        
+        # Construir URL pública
+        public_url = request.build_absolute_uri(
+            f'/public/products/{new_token}/'
+        )
+        
+        messages.success(request, f'Token público generado exitosamente. URL: {public_url}')
+        return JsonResponse({
+            'success': True,
+            'token': str(new_token),
+            'url': public_url
+        })
+    
+    return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+
+
+def public_products_catalog(request, token):
+    """Vista pública para mostrar catálogo de productos"""
+    from .models import Product, SystemConfiguration
+    
+    # Verificar token
+    config = SystemConfiguration.get_config()
+    
+    if not config.products_catalog_token or str(config.products_catalog_token) != str(token):
+        messages.error(request, 'Token inválido o catálogo no disponible')
+        return render(request, 'tickets/public_products_error.html', status=404)
+    
+    # Obtener productos activos
+    products = Product.objects.filter(is_active=True).order_by('name')
+    
+    # Información de configuración para el catálogo
+    catalog_info = {
+        'company_name': config.company_name if hasattr(config, 'company_name') else 'Nuestra Empresa',
+        'currency_symbol': '€',  # Puedes obtenerlo de config
+    }
+    
+    context = {
+        'products': products,
+        'catalog_info': catalog_info,
+        'token': token,
+    }
+    return render(request, 'tickets/public_products_catalog.html', context)
+
+
+def create_payment_from_product(request, token, product_id):
+    """Crear enlace de pago desde producto del catálogo público"""
+    from .models import Product, SystemConfiguration, PayPalPaymentLink
+    
+    # Verificar token
+    config = SystemConfiguration.get_config()
+    
+    if not config.products_catalog_token or str(config.products_catalog_token) != str(token):
+        messages.error(request, 'Token inválido')
+        return redirect('home')
+    
+    # Obtener producto
+    product = get_object_or_404(Product, id=product_id, is_active=True)
+    
+    # Crear enlace de pago automáticamente
+    payment_link = PayPalPaymentLink.objects.create(
+        product_name=product.name,
+        description=product.description,
+        amount=product.price,
+        status='active',
+        user=product.created_by,  # Usar el creador del producto
+        company=None  # O puedes asociarlo a una empresa si el producto tiene
+    )
+    
+    # Construir URL pública del enlace de pago
+    payment_link.public_url = request.build_absolute_uri(
+        f'/paypal-payment/{payment_link.public_token}/'
+    )
+    payment_link.save()
+    
+    # Redirigir a la página de pago
+    return redirect('paypal_payment_page', token=payment_link.public_token)
+
+
 # Vista de debug para PayPal (solo para admins)
 @login_required
 def paypal_debug_config(request):
@@ -23121,5 +23216,1702 @@ def paypal_file_download(request, token):
     return redirect('paypal_payment_page', token=token)
 
 
+# ============================================
+# VISTAS PARA TODO LIST EN TICKETS
+# ============================================
 
+@login_required
+def ticket_todo_add(request, pk):
+    """Agregar un item TODO al ticket"""
+    from .models import TodoItem
+    
+    ticket = get_object_or_404(Ticket, pk=pk)
+    
+    # Verificar permisos de acceso al ticket
+    if not is_agent(request.user):
+        user_projects = request.user.assigned_projects.all()
+        user_company = getattr(request.user, 'profile', None) and request.user.profile.company
+        
+        query_conditions = Q(created_by=request.user)
+        if user_projects.exists():
+            query_conditions |= Q(project__in=user_projects)
+        if user_company:
+            query_conditions |= Q(company=user_company)
+        
+        if not Ticket.objects.filter(pk=pk).filter(query_conditions).exists():
+            return JsonResponse({'success': False, 'error': 'No tienes permisos'}, status=403)
+    
+    if request.method == 'POST':
+        text = request.POST.get('text', '').strip()
+        
+        if not text:
+            return JsonResponse({'success': False, 'error': 'El texto no puede estar vacío'})
+        
+        if len(text) > 500:
+            return JsonResponse({'success': False, 'error': 'El texto no puede exceder 500 caracteres'})
+        
+        # Calcular el siguiente orden
+        max_order = ticket.todo_items.aggregate(models.Max('order'))['order__max'] or 0
+        
+        # Crear el item
+        todo_item = TodoItem.objects.create(
+            ticket=ticket,
+            text=text,
+            created_by=request.user,
+            order=max_order + 1
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'item': {
+                'id': todo_item.id,
+                'text': todo_item.text,
+                'is_completed': todo_item.is_completed,
+                'created_at': todo_item.created_at.strftime('%d/%m/%Y %H:%M'),
+                'created_by': todo_item.created_by.get_full_name() or todo_item.created_by.username
+            }
+        })
+    
+    return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+
+
+@login_required
+def ticket_todo_toggle(request, pk, item_id):
+    """Marcar/desmarcar un item TODO como completado"""
+    from .models import TodoItem
+    
+    ticket = get_object_or_404(Ticket, pk=pk)
+    todo_item = get_object_or_404(TodoItem, pk=item_id, ticket=ticket)
+    
+    # Verificar permisos de acceso al ticket
+    if not is_agent(request.user):
+        user_projects = request.user.assigned_projects.all()
+        user_company = getattr(request.user, 'profile', None) and request.user.profile.company
+        
+        query_conditions = Q(created_by=request.user)
+        if user_projects.exists():
+            query_conditions |= Q(project__in=user_projects)
+        if user_company:
+            query_conditions |= Q(company=user_company)
+        
+        if not Ticket.objects.filter(pk=pk).filter(query_conditions).exists():
+            return JsonResponse({'success': False, 'error': 'No tienes permisos'}, status=403)
+    
+    if request.method == 'POST':
+        todo_item.toggle_completed()
+        
+        return JsonResponse({
+            'success': True,
+            'is_completed': todo_item.is_completed,
+            'completed_at': todo_item.completed_at.strftime('%d/%m/%Y %H:%M') if todo_item.completed_at else None
+        })
+    
+    return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+
+
+@login_required
+def ticket_todo_delete(request, pk, item_id):
+    """Eliminar un item TODO"""
+    from .models import TodoItem
+    
+    ticket = get_object_or_404(Ticket, pk=pk)
+    todo_item = get_object_or_404(TodoItem, pk=item_id, ticket=ticket)
+    
+    # Verificar permisos de acceso al ticket
+    if not is_agent(request.user):
+        user_projects = request.user.assigned_projects.all()
+        user_company = getattr(request.user, 'profile', None) and request.user.profile.company
+        
+        query_conditions = Q(created_by=request.user)
+        if user_projects.exists():
+            query_conditions |= Q(project__in=user_projects)
+        if user_company:
+            query_conditions |= Q(company=user_company)
+        
+        if not Ticket.objects.filter(pk=pk).filter(query_conditions).exists():
+            return JsonResponse({'success': False, 'error': 'No tienes permisos'}, status=403)
+    
+    if request.method == 'POST':
+        todo_item.delete()
+        return JsonResponse({'success': True})
+    
+    return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+
+
+@login_required
+def ticket_todo_generate_ai(request, pk):
+    """Generar checklist automáticamente usando IA basado en la descripción del ticket"""
+    from .models import TodoItem
+    
+    ticket = get_object_or_404(Ticket, pk=pk)
+    
+    # Verificar permisos de acceso al ticket
+    if not is_agent(request.user):
+        user_projects = request.user.assigned_projects.all()
+        user_company = getattr(request.user, 'profile', None) and request.user.profile.company
+        
+        query_conditions = Q(created_by=request.user)
+        if user_projects.exists():
+            query_conditions |= Q(project__in=user_projects)
+        if user_company:
+            query_conditions |= Q(company=user_company)
+        
+        if not Ticket.objects.filter(pk=pk).filter(query_conditions).exists():
+            return JsonResponse({'success': False, 'error': 'No tienes permisos'}, status=403)
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+    
+    # Verificar que OpenAI esté disponible
+    if not OPENAI_AVAILABLE:
+        return JsonResponse({
+            'success': False, 
+            'error': 'OpenAI no está disponible. Por favor, instala la librería.'
+        })
+    
+    # Obtener configuración de OpenAI
+    try:
+        config = SystemConfiguration.objects.first()
+        if not config or not config.openai_api_key:
+            return JsonResponse({
+                'success': False,
+                'error': 'API Key de OpenAI no configurada en el sistema.'
+            })
+        
+        client = OpenAI(api_key=config.openai_api_key)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Error al conectar con OpenAI: {str(e)}'
+        })
+    
+    try:
+        # Construir el prompt para la IA
+        prompt = f"""Analiza el siguiente ticket de soporte/desarrollo y genera una lista de tareas (checklist) específicas y accionables para completarlo.
+
+TÍTULO DEL TICKET:
+{ticket.title}
+
+DESCRIPCIÓN DEL TICKET:
+{ticket.description}
+
+TIPO: {ticket.get_ticket_type_display()}
+PRIORIDAD: {ticket.get_priority_display()}
+CATEGORÍA: {ticket.category.name if ticket.category else 'Sin categoría'}
+
+INSTRUCCIONES:
+1. Genera entre 3 y 8 tareas concretas y accionables
+2. Cada tarea debe ser clara, específica y verificable
+3. Ordena las tareas de forma lógica (primero lo primero)
+4. Usa lenguaje profesional pero conciso
+5. Máximo 100 caracteres por tarea
+6. NO uses numeración, solo describe la tarea
+7. Enfócate en acciones técnicas y específicas del ticket
+
+Responde SOLO con las tareas, una por línea, sin numeración, sin explicaciones adicionales."""
+
+        # Llamar a la API de OpenAI
+        response = client.chat.completions.create(
+            model=config.openai_model or "gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Eres un asistente experto en gestión de proyectos y desarrollo de software que ayuda a crear checklists detallados y accionables."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            temperature=0.7,
+            max_tokens=500
+        )
+        
+        # Procesar la respuesta
+        ai_response = response.choices[0].message.content.strip()
+        
+        # Dividir en líneas y limpiar
+        tasks = [line.strip() for line in ai_response.split('\n') if line.strip()]
+        
+        # Filtrar líneas vacías o muy cortas
+        tasks = [task for task in tasks if len(task) > 5]
+        
+        # Limpiar numeración si existe (1., -, *, etc.)
+        import re
+        tasks = [re.sub(r'^[\d\.\-\*\•]+\s*', '', task) for task in tasks]
+        
+        # Limitar a 500 caracteres cada tarea
+        tasks = [task[:500] for task in tasks]
+        
+        # Obtener el máximo orden actual
+        max_order = ticket.todo_items.aggregate(models.Max('order'))['order__max'] or 0
+        
+        # Crear los items TODO
+        created_items = []
+        for i, task_text in enumerate(tasks, start=1):
+            todo_item = TodoItem.objects.create(
+                ticket=ticket,
+                text=task_text,
+                created_by=request.user,
+                order=max_order + i,
+                is_completed=False
+            )
+            created_items.append({
+                'id': todo_item.id,
+                'text': todo_item.text,
+                'is_completed': False,
+                'created_at': todo_item.created_at.strftime('%d/%m/%Y %H:%M'),
+                'created_by': request.user.get_full_name() or request.user.username
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'items': created_items,
+            'count': len(created_items),
+            'message': f'Se generaron {len(created_items)} tareas con IA'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Error al generar checklist: {str(e)}'
+        })
+
+
+# ============================================
+# VISTAS PARA GENERADOR DE LIBROS CON IA
+# ============================================
+
+@login_required
+@user_passes_test(is_agent)
+def ai_book_list(request):
+    """Lista de libros generados con IA"""
+    from .models import AIBook, AIBookChapter
+    from django.db.models import Count, Sum, Q, Avg
+    
+    books = AIBook.objects.all().select_related('created_by', 'company').prefetch_related('chapters')
+    
+    # Filtros
+    status_filter = request.GET.get('status')
+    if status_filter:
+        books = books.filter(status=status_filter)
+    
+    # Calcular estadísticas generales
+    stats = AIBookChapter.objects.all().aggregate(
+        total_chapters=Count('id'),
+        completed_chapters=Count('id', filter=Q(status__in=['content_generated', 'completed'])),
+        total_words=Sum('word_count'),
+        avg_words=Avg('word_count', filter=Q(status__in=['content_generated', 'completed']))
+    )
+    
+    total_chapters = stats['total_chapters'] or 0
+    completed_chapters = stats['completed_chapters'] or 0
+    total_words = (stats['total_words'] or 0) / 1000  # Convertir a miles
+    avg_words_per_chapter = stats['avg_words'] or 0
+    
+    completion_percentage = int((completed_chapters / total_chapters * 100)) if total_chapters > 0 else 0
+    
+    # Paginación
+    paginator = Paginator(books, 20)
+    page_number = request.GET.get('page')
+    books_page = paginator.get_page(page_number)
+    
+    context = {
+        'books': books_page,
+        'status_filter': status_filter,
+        'total_books': books.count(),
+        'total_chapters': total_chapters,
+        'completed_chapters': completed_chapters,
+        'completion_percentage': completion_percentage,
+        'total_words': total_words,
+        'avg_words_per_chapter': avg_words_per_chapter,
+    }
+    return render(request, 'tickets/ai_book_list.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def ai_book_create(request):
+    """Crear nuevo libro con IA - Paso 1: Título y tema"""
+    from .models import AIBook
+    
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        author = request.POST.get('author', '').strip()
+        topic = request.POST.get('topic', '').strip()
+        company_id = request.POST.get('company')
+        
+        if not title or not topic:
+            messages.error(request, 'El título y el tema son obligatorios')
+            return redirect('ai_book_create')
+        
+        # Crear el libro
+        book = AIBook.objects.create(
+            title=title,
+            author=author,
+            topic=topic,
+            created_by=request.user,
+            company_id=company_id if company_id else None,
+            status='draft'
+        )
+        
+        messages.success(request, f'Libro "{book.title}" creado exitosamente')
+        return redirect('ai_book_propose_chapters', pk=book.pk)
+    
+    companies = Company.objects.filter(is_active=True)
+    context = {
+        'companies': companies,
+    }
+    return render(request, 'tickets/ai_book_create.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def ai_book_propose_chapters(request, pk):
+    """Paso 2: Proponer capítulos con IA"""
+    from .models import AIBook
+    
+    book = get_object_or_404(AIBook, pk=pk)
+    
+    context = {
+        'book': book,
+    }
+    return render(request, 'tickets/ai_book_propose_chapters.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def ai_book_generate_chapters_ai(request, pk):
+    """AJAX: Generar propuesta de capítulos con IA"""
+    from .models import AIBook, AIBookChapter
+    
+    book = get_object_or_404(AIBook, pk=pk)
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+    
+    # Verificar que OpenAI esté disponible
+    if not OPENAI_AVAILABLE:
+        return JsonResponse({
+            'success': False,
+            'error': 'OpenAI no está disponible'
+        })
+    
+    try:
+        config = SystemConfiguration.objects.first()
+        if not config or not config.openai_api_key:
+            return JsonResponse({
+                'success': False,
+                'error': 'API Key de OpenAI no configurada'
+            })
+        
+        client = OpenAI(api_key=config.openai_api_key)
+        
+        # Prompt para generar capítulos
+        prompt = f"""Eres un experto en estructura de libros y contenido editorial.
+
+Genera una estructura de capítulos para un libro con las siguientes características:
+
+TÍTULO: {book.title}
+TEMA/DESCRIPCIÓN: {book.topic}
+
+INSTRUCCIONES:
+1. Genera entre 8 y 15 capítulos lógicamente estructurados
+2. Cada título de capítulo debe ser claro, específico y atractivo
+3. Los capítulos deben seguir una progresión lógica del conocimiento
+4. Usa títulos profesionales y descriptivos
+5. Máximo 100 caracteres por título
+6. NO uses numeración, solo los títulos
+7. Cubre todos los aspectos importantes del tema
+
+Responde SOLO con los títulos de los capítulos, uno por línea, sin numeración, sin explicaciones adicionales."""
+
+        response = client.chat.completions.create(
+            model=config.openai_model or "gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Eres un experto editor y estructurador de libros que crea índices de contenido profesionales y bien organizados."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            temperature=0.8,
+            max_tokens=1000
+        )
+        
+        ai_response = response.choices[0].message.content.strip()
+        
+        # Procesar capítulos
+        chapter_titles = [line.strip() for line in ai_response.split('\n') if line.strip()]
+        chapter_titles = [title for title in chapter_titles if len(title) > 5]
+        
+        # Limpiar numeración
+        import re
+        chapter_titles = [re.sub(r'^[\d\.\-\*\•\)]+\s*', '', title) for title in chapter_titles]
+        chapter_titles = [title[:100] for title in chapter_titles]
+        
+        # Crear capítulos
+        chapters_data = []
+        for i, title in enumerate(chapter_titles, start=1):
+            chapter = AIBookChapter.objects.create(
+                book=book,
+                title=title,
+                order=i,
+                status='proposed'
+            )
+            chapters_data.append({
+                'id': chapter.id,
+                'order': chapter.order,
+                'title': chapter.title,
+                'status': chapter.status
+            })
+        
+        # Actualizar estado del libro
+        book.status = 'chapters_proposed'
+        book.save()
+        
+        return JsonResponse({
+            'success': True,
+            'chapters': chapters_data,
+            'count': len(chapters_data),
+            'message': f'Se generaron {len(chapters_data)} capítulos'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Error: {str(e)}'
+        })
+
+
+@login_required
+@user_passes_test(is_agent)
+def ai_book_chapter_edit_title(request, pk, chapter_id):
+    """AJAX: Editar título de capítulo"""
+    from .models import AIBook, AIBookChapter
+    
+    book = get_object_or_404(AIBook, pk=pk)
+    chapter = get_object_or_404(AIBookChapter, pk=chapter_id, book=book)
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+    
+    new_title = request.POST.get('title', '').strip()
+    
+    if not new_title:
+        return JsonResponse({'success': False, 'error': 'El título no puede estar vacío'})
+    
+    if len(new_title) > 100:
+        return JsonResponse({'success': False, 'error': 'El título no puede exceder 100 caracteres'})
+    
+    chapter.title = new_title
+    chapter.save()
+    
+    return JsonResponse({
+        'success': True,
+        'title': chapter.title
+    })
+
+
+@login_required
+@user_passes_test(is_agent)
+def ai_book_chapter_delete(request, pk, chapter_id):
+    """AJAX: Eliminar capítulo"""
+    from .models import AIBook, AIBookChapter
+    
+    book = get_object_or_404(AIBook, pk=pk)
+    chapter = get_object_or_404(AIBookChapter, pk=chapter_id, book=book)
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+    
+    chapter.delete()
+    
+    # Reordenar capítulos restantes
+    remaining_chapters = book.chapters.order_by('order')
+    for i, ch in enumerate(remaining_chapters, start=1):
+        if ch.order != i:
+            ch.order = i
+            ch.save()
+    
+    return JsonResponse({'success': True})
+
+
+@login_required
+@user_passes_test(is_agent)
+def ai_book_detail(request, pk):
+    """Vista detallada del libro con todos sus capítulos"""
+    from .models import AIBook
+    
+    book = get_object_or_404(AIBook, pk=pk)
+    chapters = book.chapters.all().order_by('order')
+    
+    context = {
+        'book': book,
+        'chapters': chapters,
+    }
+    return render(request, 'tickets/ai_book_detail.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def ai_book_edit(request, pk):
+    """Editar información del libro"""
+    from .models import AIBook, Company
+    
+    book = get_object_or_404(AIBook, pk=pk)
+    
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        author = request.POST.get('author', '').strip()
+        topic = request.POST.get('topic', '').strip()
+        company_id = request.POST.get('company', None)
+        
+        if not title:
+            messages.error(request, 'El título es obligatorio')
+        elif not topic:
+            messages.error(request, 'El tema/descripción es obligatorio')
+        else:
+            book.title = title
+            book.author = author
+            book.topic = topic
+            
+            if company_id:
+                try:
+                    book.company = Company.objects.get(pk=company_id)
+                except Company.DoesNotExist:
+                    book.company = None
+            else:
+                book.company = None
+            
+            book.save()
+            messages.success(request, f'Libro "{book.title}" actualizado exitosamente')
+            return redirect('ai_book_detail', pk=book.pk)
+    
+    companies = Company.objects.all().order_by('name')
+    
+    context = {
+        'book': book,
+        'companies': companies,
+    }
+    return render(request, 'tickets/ai_book_edit.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def ai_book_chapter_detail(request, pk, chapter_id):
+    """Vista detallada de un capítulo - Editar resumen y generar contenido"""
+    from .models import AIBook, AIBookChapter
+    
+    book = get_object_or_404(AIBook, pk=pk)
+    chapter = get_object_or_404(AIBookChapter, pk=chapter_id, book=book)
+    
+    if request.method == 'POST':
+        # Guardar resumen editado
+        summary = request.POST.get('summary', '').strip()
+        chapter.summary = summary
+        if summary:
+            chapter.status = 'summary_created'
+        chapter.save()
+        messages.success(request, 'Resumen guardado exitosamente')
+        return redirect('ai_book_chapter_detail', pk=pk, chapter_id=chapter_id)
+    
+    context = {
+        'book': book,
+        'chapter': chapter,
+    }
+    return render(request, 'tickets/ai_book_chapter_detail.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def ai_book_chapter_generate_summary(request, pk, chapter_id):
+    """AJAX: Generar resumen del capítulo con IA"""
+    from .models import AIBook, AIBookChapter
+    
+    book = get_object_or_404(AIBook, pk=pk)
+    chapter = get_object_or_404(AIBookChapter, pk=chapter_id, book=book)
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+    
+    if not OPENAI_AVAILABLE:
+        return JsonResponse({'success': False, 'error': 'OpenAI no está disponible'})
+    
+    try:
+        config = SystemConfiguration.objects.first()
+        if not config or not config.openai_api_key:
+            return JsonResponse({'success': False, 'error': 'API Key no configurada'})
+        
+        client = OpenAI(api_key=config.openai_api_key)
+        
+        # Obtener contexto de otros capítulos
+        all_chapters = book.chapters.order_by('order')
+        chapters_context = "\n".join([f"{ch.order}. {ch.title}" for ch in all_chapters])
+        
+        prompt = f"""Genera un resumen detallado para el siguiente capítulo de un libro.
+
+LIBRO: {book.title}
+TEMA DEL LIBRO: {book.topic}
+
+ESTRUCTURA COMPLETA DEL LIBRO:
+{chapters_context}
+
+CAPÍTULO A RESUMIR: Capítulo {chapter.order} - {chapter.title}
+
+INSTRUCCIONES:
+1. Genera un resumen de 200-300 palabras describiendo lo que tratará este capítulo
+2. El resumen debe ser detallado y específico
+3. Debe conectar con el flujo lógico del libro
+4. Menciona los subtemas principales que se cubrirán
+5. Usa un tono profesional pero accesible
+6. Enfócate en el valor y aprendizaje que aportará el capítulo
+
+Responde SOLO con el resumen, sin títulos ni encabezados adicionales."""
+
+        response = client.chat.completions.create(
+            model=config.openai_model or "gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Eres un experto escritor y editor de libros que crea resúmenes de capítulos detallados y bien estructurados."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            temperature=0.7,
+            max_tokens=500
+        )
+        
+        summary = response.choices[0].message.content.strip()
+        
+        chapter.summary = summary
+        chapter.status = 'summary_created'
+        chapter.save()
+        
+        return JsonResponse({
+            'success': True,
+            'summary': summary
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Error: {str(e)}'})
+
+
+@login_required
+@user_passes_test(is_agent)
+def ai_book_chapter_generate_content(request, pk, chapter_id):
+    """AJAX: Generar contenido completo del capítulo basado en el resumen"""
+    from .models import AIBook, AIBookChapter
+    
+    book = get_object_or_404(AIBook, pk=pk)
+    chapter = get_object_or_404(AIBookChapter, pk=chapter_id, book=book)
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+    
+    if not chapter.summary:
+        return JsonResponse({'success': False, 'error': 'Primero debes crear un resumen'})
+    
+    if not OPENAI_AVAILABLE:
+        return JsonResponse({'success': False, 'error': 'OpenAI no está disponible'})
+    
+    try:
+        config = SystemConfiguration.objects.first()
+        if not config or not config.openai_api_key:
+            return JsonResponse({'success': False, 'error': 'API Key no configurada'})
+        
+        client = OpenAI(api_key=config.openai_api_key)
+        
+        # Obtener contexto
+        all_chapters = book.chapters.order_by('order')
+        chapters_context = "\n".join([f"{ch.order}. {ch.title}" for ch in all_chapters])
+        
+        prompt = f"""Escribe el contenido completo y detallado para el siguiente capítulo de un libro.
+
+LIBRO: {book.title}
+TEMA DEL LIBRO: {book.topic}
+
+ESTRUCTURA DEL LIBRO:
+{chapters_context}
+
+CAPÍTULO ACTUAL: Capítulo {chapter.order} - {chapter.title}
+
+RESUMEN DEL CAPÍTULO:
+{chapter.summary}
+
+INSTRUCCIONES:
+1. Escribe un capítulo completo y bien estructurado de aproximadamente 1500-2500 palabras
+2. Incluye una introducción atractiva que enganche al lector
+3. Desarrolla el contenido en secciones lógicas con subtítulos claros
+4. Incluye ejemplos prácticos, casos de uso o analogías cuando sea apropiado
+5. Mantén un tono profesional pero accesible y claro
+6. Incluye una conclusión que resuma los puntos clave
+7. USA TEXTO PLANO sin formato Markdown (sin **, ##, -, etc.)
+8. Separa párrafos con doble salto de línea
+9. Los subtítulos deben ir en MAYÚSCULAS en su propia línea
+10. Asegúrate de que el contenido fluya naturalmente y sea educativo
+
+Responde SOLO con el contenido del capítulo en texto plano."""
+
+        response = client.chat.completions.create(
+            model=config.openai_model or "gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Eres un escritor profesional experto en crear contenido educativo de alta calidad, bien estructurado y fácil de entender."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            temperature=0.7,
+            max_tokens=4000
+        )
+        
+        content = response.choices[0].message.content.strip()
+        
+        chapter.content = content
+        chapter.status = 'content_generated'
+        chapter.save()  # Esto actualizará automáticamente el word_count
+        
+        # Actualizar el estado del libro si hay capítulos completados
+        if book.get_completed_chapters() > 0 and book.status == 'chapters_proposed':
+            book.status = 'in_progress'
+            book.save()
+        
+        return JsonResponse({
+            'success': True,
+            'content': content,
+            'word_count': chapter.word_count
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Error: {str(e)}'})
+
+
+@login_required
+@user_passes_test(is_agent)
+def ai_book_chapter_save_content(request, pk, chapter_id):
+    """AJAX: Guardar contenido editado del capítulo"""
+    import json
+    from .models import AIBook, AIBookChapter
+    
+    book = get_object_or_404(AIBook, pk=pk)
+    chapter = get_object_or_404(AIBookChapter, pk=chapter_id, book=book)
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        content = data.get('content', '').strip()
+        
+        if not content:
+            return JsonResponse({'success': False, 'error': 'El contenido no puede estar vacío'})
+        
+        chapter.content = content
+        if chapter.status == 'proposed':
+            chapter.status = 'content_generated'
+        chapter.save()  # Esto actualizará automáticamente el word_count
+        
+        return JsonResponse({
+            'success': True,
+            'word_count': chapter.word_count,
+            'message': 'Contenido guardado exitosamente'
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Datos JSON inválidos'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Error: {str(e)}'})
+
+
+@login_required
+@user_passes_test(is_agent)
+def ai_book_chapter_save_summary(request, pk, chapter_id):
+    """AJAX: Guardar resumen editado del capítulo"""
+    import json
+    from .models import AIBook, AIBookChapter
+    
+    book = get_object_or_404(AIBook, pk=pk)
+    chapter = get_object_or_404(AIBookChapter, pk=chapter_id, book=book)
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        summary = data.get('summary', '').strip()
+        
+        if not summary:
+            return JsonResponse({'success': False, 'error': 'El resumen no puede estar vacío'})
+        
+        chapter.summary = summary
+        if chapter.status == 'proposed':
+            chapter.status = 'summary_created'
+        chapter.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Resumen guardado exitosamente'
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Datos JSON inválidos'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Error: {str(e)}'})
+
+
+@login_required
+@user_passes_test(is_agent)
+def ai_book_export(request, pk):
+    """Exportar libro completo en formato Markdown, DOCX o PDF"""
+    from .models import AIBook
+    from docx import Document
+    from docx.shared import Pt, Inches, RGBColor
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.oxml.ns import qn
+    from docx.oxml import OxmlElement
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak, Table, TableStyle
+    from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT
+    from reportlab.lib import colors
+    from io import BytesIO
+    
+    book = get_object_or_404(AIBook, pk=pk)
+    chapters = book.chapters.filter(status__in=['content_generated', 'completed']).order_by('order')
+    
+    if not chapters.exists():
+        messages.error(request, 'No hay capítulos con contenido generado para exportar')
+        return redirect('ai_book_detail', pk=pk)
+    
+    # Formato para exportar
+    export_format = request.GET.get('format', 'docx')
+    
+    if export_format == 'docx':
+        # Crear documento Word
+        doc = Document()
+        
+        # Configurar márgenes
+        sections = doc.sections
+        for section in sections:
+            section.top_margin = Inches(1)
+            section.bottom_margin = Inches(1)
+            section.left_margin = Inches(1.25)
+            section.right_margin = Inches(1.25)
+        
+        # Portada
+        title = doc.add_heading(book.title, 0)
+        title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        for run in title.runs:
+            run.font.size = Pt(28)
+            run.font.color.rgb = RGBColor(44, 62, 80)
+        
+        doc.add_paragraph()  # Espacio
+        
+        # Autor (si existe)
+        if book.author:
+            author_para = doc.add_paragraph(book.author)
+            author_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            author_format = author_para.runs[0].font
+            author_format.size = Pt(16)
+            author_format.bold = True
+            author_format.color.rgb = RGBColor(52, 73, 94)
+            doc.add_paragraph()
+        
+        subtitle = doc.add_paragraph(book.topic)
+        subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        subtitle_format = subtitle.runs[0].font
+        subtitle_format.italic = True
+        subtitle_format.size = Pt(12)
+        subtitle_format.color.rgb = RGBColor(127, 140, 141)
+        
+        doc.add_page_break()
+        
+        # Índice
+        toc_title = doc.add_heading('Índice', 1)
+        for run in toc_title.runs:
+            run.font.color.rgb = RGBColor(41, 128, 185)
+        
+        # Crear tabla para el índice con números de página
+        toc_table_data = []
+        page_num = 3  # Empieza después de portada e índice
+        
+        for chapter in chapters:
+            toc_table_data.append([
+                f'Capítulo {chapter.order}',
+                chapter.title,
+                str(page_num)
+            ])
+            # Estimar páginas por capítulo (aprox. 500 palabras por página)
+            words_in_chapter = len(chapter.content.split()) if chapter.content else 0
+            pages_in_chapter = max(1, words_in_chapter // 500)
+            page_num += pages_in_chapter
+        
+        # Agregar tabla al documento
+        table = doc.add_table(rows=len(toc_table_data), cols=3)
+        table.style = 'Light Grid Accent 1'
+        
+        for i, (num, title, page) in enumerate(toc_table_data):
+            row = table.rows[i]
+            row.cells[0].text = num
+            row.cells[1].text = title
+            row.cells[2].text = page
+            
+            # Formatear celdas
+            for cell in row.cells:
+                for paragraph in cell.paragraphs:
+                    for run in paragraph.runs:
+                        run.font.size = Pt(11)
+        
+        doc.add_page_break()
+        
+        # Contenido de capítulos
+        for chapter in chapters:
+            # Título del capítulo
+            chapter_heading = doc.add_heading(f'Capítulo {chapter.order}', 1)
+            for run in chapter_heading.runs:
+                run.font.color.rgb = RGBColor(41, 128, 185)
+            
+            chapter_title = doc.add_heading(chapter.title, 2)
+            for run in chapter_title.runs:
+                run.font.color.rgb = RGBColor(52, 73, 94)
+            
+            if chapter.content:
+                # Dividir contenido en párrafos
+                paragraphs = chapter.content.split('\n\n')
+                for para in paragraphs:
+                    if para.strip():
+                        # Detectar si es un subtítulo (texto en mayúsculas)
+                        if para.strip().isupper() and len(para.strip()) < 100:
+                            subtitle = doc.add_heading(para.strip(), 3)
+                            for run in subtitle.runs:
+                                run.font.color.rgb = RGBColor(52, 152, 219)
+                        else:
+                            p = doc.add_paragraph(para.strip())
+                            p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+                            for run in p.runs:
+                                run.font.size = Pt(11)
+            
+            doc.add_page_break()
+        
+        # Agregar números de página
+        for section in doc.sections:
+            footer = section.footer
+            footer_para = footer.paragraphs[0]
+            footer_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            run = footer_para.add_run()
+            fldChar1 = OxmlElement('w:fldChar')
+            fldChar1.set(qn('w:fldCharType'), 'begin')
+            
+            instrText = OxmlElement('w:instrText')
+            instrText.set(qn('xml:space'), 'preserve')
+            instrText.text = "PAGE"
+            
+            fldChar2 = OxmlElement('w:fldChar')
+            fldChar2.set(qn('w:fldCharType'), 'end')
+            
+            run._r.append(fldChar1)
+            run._r.append(instrText)
+            run._r.append(fldChar2)
+        
+        # Guardar en memoria
+        buffer = BytesIO()
+        doc.save(buffer)
+        buffer.seek(0)
+        
+        response = HttpResponse(
+            buffer.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        )
+        response['Content-Disposition'] = f'attachment; filename="{book.title}.docx"'
+        return response
+    
+    elif export_format == 'pdf':
+        # Crear PDF con numeración de páginas
+        from reportlab.pdfgen import canvas
+        from reportlab.lib.utils import simpleSplit
+        
+        buffer = BytesIO()
+        
+        # Función para agregar números de página
+        def add_page_number(canvas_obj, doc_obj):
+            canvas_obj.saveState()
+            canvas_obj.setFont('Helvetica', 9)
+            page_num = canvas_obj.getPageNumber()
+            text = f"Página {page_num}"
+            canvas_obj.drawCentredString(letter[0]/2, 0.5*inch, text)
+            canvas_obj.restoreState()
+        
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=letter,
+            rightMargin=72,
+            leftMargin=72,
+            topMargin=72,
+            bottomMargin=50,
+        )
+        
+        # Estilos
+        styles = getSampleStyleSheet()
+        
+        # Estilo personalizado para título
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=28,
+            textColor=colors.HexColor('#2c3e50'),
+            spaceAfter=30,
+            alignment=TA_CENTER,
+            fontName='Helvetica-Bold',
+        )
+        
+        # Estilo para subtítulo
+        subtitle_style = ParagraphStyle(
+            'CustomSubtitle',
+            parent=styles['Normal'],
+            fontSize=12,
+            textColor=colors.HexColor('#7f8c8d'),
+            spaceAfter=30,
+            alignment=TA_CENTER,
+            fontName='Helvetica-Oblique',
+        )
+        
+        # Estilo para títulos de capítulos
+        chapter_style = ParagraphStyle(
+            'ChapterTitle',
+            parent=styles['Heading1'],
+            fontSize=20,
+            textColor=colors.HexColor('#2980b9'),
+            spaceAfter=20,
+            spaceBefore=20,
+            fontName='Helvetica-Bold',
+        )
+        
+        # Estilo para subtítulos de capítulos
+        chapter_subtitle_style = ParagraphStyle(
+            'ChapterSubtitle',
+            parent=styles['Heading2'],
+            fontSize=16,
+            textColor=colors.HexColor('#34495e'),
+            spaceAfter=15,
+            fontName='Helvetica-Bold',
+        )
+        
+        # Estilo para secciones
+        section_style = ParagraphStyle(
+            'SectionTitle',
+            parent=styles['Heading2'],
+            fontSize=14,
+            textColor=colors.HexColor('#3498db'),
+            spaceAfter=12,
+            spaceBefore=12,
+            fontName='Helvetica-Bold',
+        )
+        
+        # Estilo para autor
+        author_style = ParagraphStyle(
+            'AuthorStyle',
+            parent=styles['Normal'],
+            fontSize=16,
+            textColor=colors.HexColor('#34495e'),
+            spaceAfter=20,
+            alignment=TA_CENTER,
+            fontName='Helvetica-Bold',
+        )
+        
+        # Estilo para texto normal
+        normal_style = ParagraphStyle(
+            'CustomNormal',
+            parent=styles['Normal'],
+            fontSize=11,
+            alignment=TA_JUSTIFY,
+            spaceAfter=12,
+            leading=14,
+        )
+        
+        # Estilo para índice
+        toc_style = ParagraphStyle(
+            'TOCStyle',
+            parent=styles['Normal'],
+            fontSize=11,
+            spaceAfter=8,
+            leftIndent=0,
+        )
+        
+        toc_title_style = ParagraphStyle(
+            'TOCTitle',
+            parent=styles['Heading1'],
+            fontSize=22,
+            textColor=colors.HexColor('#2980b9'),
+            spaceAfter=20,
+            fontName='Helvetica-Bold',
+        )
+        
+        # Contenido del PDF
+        story = []
+        
+        # Portada
+        story.append(Spacer(1, 2.5*inch))
+        story.append(Paragraph(book.title, title_style))
+        story.append(Spacer(1, 0.3*inch))
+        
+        # Autor (si existe)
+        if book.author:
+            story.append(Paragraph(book.author, author_style))
+            story.append(Spacer(1, 0.3*inch))
+        
+        story.append(Paragraph(book.topic, subtitle_style))
+        story.append(PageBreak())
+        
+        # Índice con números de página
+        story.append(Paragraph('Índice', toc_title_style))
+        story.append(Spacer(1, 0.3*inch))
+        
+        # Crear tabla para índice con dots leaders
+        toc_data = []
+        for chapter in chapters:
+            chapter_text = f'Capítulo {chapter.order}: {chapter.title}'
+            toc_data.append([chapter_text, ''])
+        
+        if toc_data:
+            toc_table = Table(toc_data, colWidths=[5*inch, 0.5*inch])
+            toc_table.setStyle(TableStyle([
+                ('FONT', (0, 0), (-1, -1), 'Helvetica', 11),
+                ('TEXTCOLOR', (0, 0), (-1, -1), colors.HexColor('#34495e')),
+                ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+                ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+                ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ]))
+            story.append(toc_table)
+        
+        story.append(PageBreak())
+        
+        # Contenido de capítulos
+        for chapter in chapters:
+            # Título del capítulo
+            story.append(Paragraph(f'Capítulo {chapter.order}', chapter_style))
+            story.append(Spacer(1, 0.1*inch))
+            story.append(Paragraph(chapter.title, chapter_subtitle_style))
+            story.append(Spacer(1, 0.2*inch))
+            
+            if chapter.content:
+                # Dividir contenido en párrafos
+                paragraphs = chapter.content.split('\n\n')
+                for para in paragraphs:
+                    if para.strip():
+                        # Detectar si es un subtítulo (texto en mayúsculas)
+                        if para.strip().isupper() and len(para.strip()) < 100:
+                            story.append(Paragraph(para.strip(), section_style))
+                        else:
+                            # Escapar caracteres especiales para XML
+                            safe_para = para.strip().replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+                            story.append(Paragraph(safe_para, normal_style))
+            
+            story.append(PageBreak())
+        
+        # Generar PDF con numeración de páginas
+        doc.build(story, onFirstPage=add_page_number, onLaterPages=add_page_number)
+        buffer.seek(0)
+        
+        response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{book.title}.pdf"'
+        return response
+    
+    elif export_format == 'html':
+        # Convertir a HTML (mantenemos esta opción)
+        content = f"<h1>{book.title}</h1>\n"
+        if book.author:
+            content += f"<p class='author'><strong>{book.author}</strong></p>\n"
+        content += f"<p><em>{book.topic}</em></p>\n"
+        content += "<hr>\n"
+        content += "<h2>Índice</h2>\n<ul>\n"
+        
+        for chapter in chapters:
+            content += f'<li><a href="#chapter-{chapter.order}">Capítulo {chapter.order}: {chapter.title}</a></li>\n'
+        
+        content += "</ul>\n<hr>\n"
+        
+        for chapter in chapters:
+            content += f'<h2 id="chapter-{chapter.order}">Capítulo {chapter.order}: {chapter.title}</h2>\n'
+            if chapter.content:
+                # Convertir párrafos a HTML
+                paragraphs = chapter.content.split('\n\n')
+                for para in paragraphs:
+                    if para.strip():
+                        if para.strip().isupper() and len(para.strip()) < 100:
+                            content += f"<h3>{para.strip()}</h3>\n"
+                        else:
+                            content += f"<p>{para.strip()}</p>\n"
+                content += "<hr>\n"
+        
+        # Crear HTML completo
+        html = f"""<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{book.title}</title>
+    <style>
+        body {{
+            font-family: Georgia, serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }}
+        h1 {{ color: #2c3e50; text-align: center; }}
+        .author {{ color: #34495e; text-align: center; font-size: 1.2em; margin: 10px 0; }}
+        h2 {{ color: #34495e; margin-top: 40px; }}
+        h3 {{ color: #34495e; margin-top: 20px; }}
+        p {{ text-align: justify; }}
+        hr {{ margin: 40px 0; border: none; border-top: 2px solid #ecf0f1; }}
+        a {{ color: #3498db; text-decoration: none; }}
+        a:hover {{ text-decoration: underline; }}
+    </style>
+</head>
+<body>
+    {content}
+</body>
+</html>"""
+        
+        response = HttpResponse(html, content_type='text/html')
+        response['Content-Disposition'] = f'attachment; filename="{book.title}.html"'
+        return response
+    
+    messages.error(request, 'Formato de exportación no válido')
+    return redirect('ai_book_detail', pk=pk)
+
+
+@login_required
+@user_passes_test(is_agent)
+def ai_book_delete(request, pk):
+    """Eliminar libro"""
+    from .models import AIBook
+    
+    book = get_object_or_404(AIBook, pk=pk)
+    
+    if request.method == 'POST':
+        book.delete()
+        messages.success(request, f'Libro "{book.title}" eliminado exitosamente')
+        return redirect('ai_book_list')
+    
+    context = {
+        'book': book,
+    }
+    return render(request, 'tickets/ai_book_delete.html', context)
+
+
+# ============================================
+# GENERACIÓN DE ARTÍCULOS CON IA
+# ============================================
+
+@login_required
+@user_passes_test(is_agent)
+def ai_article_project_list(request):
+    """Lista de proyectos de artículos con IA"""
+    from .models import AIArticleProject, AIArticle
+    from django.db.models import Count, Sum, Q, Avg
+    
+    projects = AIArticleProject.objects.filter(
+        created_by=request.user
+    ).select_related('company', 'created_by').prefetch_related('articles')
+    
+    # Calcular estadísticas generales
+    stats = AIArticle.objects.filter(project__created_by=request.user).aggregate(
+        total_articles=Count('id'),
+        generated_articles=Count('id', filter=Q(status__in=['content_generated', 'completed'])),
+        total_words=Sum('word_count'),
+        avg_words=Avg('word_count', filter=Q(status__in=['content_generated', 'completed']))
+    )
+    
+    total_articles = stats['total_articles'] or 0
+    generated_articles = stats['generated_articles'] or 0
+    total_words = (stats['total_words'] or 0) / 1000  # Convertir a miles
+    avg_words_per_article = stats['avg_words'] or 0
+    
+    generation_percentage = int((generated_articles / total_articles * 100)) if total_articles > 0 else 0
+    
+    context = {
+        'projects': projects,
+        'total_articles': total_articles,
+        'generated_articles': generated_articles,
+        'generation_percentage': generation_percentage,
+        'total_words': total_words,
+        'avg_words_per_article': avg_words_per_article,
+    }
+    return render(request, 'tickets/ai_article_project_list.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def ai_article_project_create(request):
+    """Crear nuevo proyecto de artículos (Paso 1)"""
+    from .models import AIArticleProject, Company
+    
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        main_topic = request.POST.get('main_topic')
+        content_format = request.POST.get('content_format', 'plain')
+        company_id = request.POST.get('company')
+        
+        if not title or not main_topic:
+            messages.error(request, 'El título y el tema principal son obligatorios.')
+            return redirect('ai_article_project_create')
+        
+        project = AIArticleProject.objects.create(
+            title=title,
+            main_topic=main_topic,
+            content_format=content_format,
+            created_by=request.user,
+            company_id=company_id if company_id else None,
+            status='draft'
+        )
+        
+        messages.success(request, f'Proyecto "{project.title}" creado exitosamente.')
+        return redirect('ai_article_project_proposals', pk=project.pk)
+    
+    companies = Company.objects.filter(is_active=True).order_by('name')
+    
+    context = {
+        'companies': companies,
+    }
+    return render(request, 'tickets/ai_article_project_create.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def ai_article_project_proposals(request, pk):
+    """Ver propuestas de artículos y generar más (Paso 2)"""
+    from .models import AIArticleProject
+    
+    project = get_object_or_404(AIArticleProject, pk=pk)
+    articles = project.articles.all().order_by('order')
+    
+    context = {
+        'project': project,
+        'articles': articles,
+    }
+    return render(request, 'tickets/ai_article_project_proposals.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def ai_article_generate_proposals(request, pk):
+    """AJAX: Generar 10 propuestas de artículos con IA"""
+    import json
+    import traceback
+    from .models import AIArticleProject, AIArticle, SystemConfiguration
+    
+    project = get_object_or_404(AIArticleProject, pk=pk)
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+    
+    try:
+        config = SystemConfiguration.get_config()
+        
+        if not config.openai_api_key:
+            return JsonResponse({'success': False, 'error': 'No se ha configurado la API Key de OpenAI'})
+        
+        # Obtener el número actual de artículos para continuar la numeración
+        current_count = project.articles.count()
+        
+        prompt = f"""Basándote en el siguiente tema principal, propón 10 títulos de artículos interesantes y relevantes.
+        
+Tema principal: {project.main_topic}
+
+Para cada artículo, proporciona:
+1. Un título atractivo y específico
+2. 3-5 palabras clave relevantes (separadas por comas)
+
+Formato de respuesta (JSON):
+[
+  {{"title": "Título del artículo", "keywords": "palabra1, palabra2, palabra3"}},
+  ...
+]
+
+Responde SOLO con el JSON, sin texto adicional."""
+        
+        from openai import OpenAI
+        client = OpenAI(api_key=config.openai_api_key)
+        
+        response = client.chat.completions.create(
+            model=config.openai_model or "gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Eres un experto en marketing de contenidos y generación de ideas para artículos."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            temperature=0.8,
+            max_tokens=2000
+        )
+        
+        response_text = response.choices[0].message.content.strip()
+        
+        # Limpiar respuesta si viene con markdown
+        if response_text.startswith('```'):
+            lines = response_text.split('\n')
+            # Eliminar primera línea con ```json y última con ```
+            response_text = '\n'.join(lines[1:-1]).strip()
+        
+        proposals = json.loads(response_text)
+        
+        # Crear los artículos propuestos
+        created_articles = []
+        for i, proposal in enumerate(proposals[:10]):  # Limitar a 10
+            article = AIArticle.objects.create(
+                project=project,
+                title=proposal.get('title', ''),
+                keywords=proposal.get('keywords', ''),
+                order=current_count + i + 1,
+                status='proposed'
+            )
+            created_articles.append({
+                'id': article.id,
+                'title': article.title,
+                'keywords': article.keywords,
+                'order': article.order
+            })
+        
+        # Actualizar estado del proyecto
+        if project.status == 'draft':
+            project.status = 'articles_proposed'
+            project.save()
+        
+        return JsonResponse({
+            'success': True,
+            'articles': created_articles,
+            'total_articles': project.articles.count()
+        })
+        
+    except json.JSONDecodeError as e:
+        return JsonResponse({'success': False, 'error': f'Error al procesar JSON de la IA: {str(e)}'})
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        print(f"Error en ai_article_generate_proposals: {error_trace}")
+        return JsonResponse({'success': False, 'error': f'Error: {str(e)}'})
+
+
+@login_required
+@user_passes_test(is_agent)
+def ai_article_edit_keywords(request, pk, article_id):
+    """AJAX: Editar palabras clave de un artículo"""
+    import json
+    from .models import AIArticleProject, AIArticle
+    
+    project = get_object_or_404(AIArticleProject, pk=pk)
+    article = get_object_or_404(AIArticle, pk=article_id, project=project)
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        keywords = data.get('keywords', '').strip()
+        
+        article.keywords = keywords
+        article.save()
+        
+        return JsonResponse({
+            'success': True,
+            'keywords': article.keywords
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Error: {str(e)}'})
+
+
+@login_required
+@user_passes_test(is_agent)
+def ai_article_generate_content(request, pk, article_id):
+    """AJAX: Generar contenido del artículo con IA"""
+    import json
+    import traceback
+    from .models import AIArticleProject, AIArticle, SystemConfiguration
+    
+    project = get_object_or_404(AIArticleProject, pk=pk)
+    article = get_object_or_404(AIArticle, pk=article_id, project=project)
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+    
+    try:
+        config = SystemConfiguration.get_config()
+        
+        if not config.openai_api_key:
+            return JsonResponse({'success': False, 'error': 'No se ha configurado la API Key de OpenAI'})
+        
+        keywords_text = f"\nPalabras clave a incluir: {article.keywords}" if article.keywords else ""
+        
+        # Ajustar el prompt según el formato del proyecto
+        if project.content_format == 'markdown':
+            format_instructions = """1. Usa formato Markdown para estructurar el contenido
+2. Usa # para el título principal, ## para subtítulos, ### para sub-secciones
+3. Usa **texto** para negritas y *texto* para cursivas
+4. Usa listas numeradas o con viñetas donde sea apropiado
+5. Usa bloques de código ```código``` si es necesario"""
+        else:  # plain text
+            format_instructions = """1. Escribe en texto plano (NO uses formato Markdown)
+2. Los subtítulos deben estar EN MAYÚSCULAS
+3. Usa párrafos bien estructurados
+4. No uses símbolos especiales de formato (*, #, etc.)"""
+        
+        prompt = f"""Escribe un artículo completo y detallado sobre el siguiente tema:
+
+Título: {article.title}
+Contexto general: {project.main_topic}{keywords_text}
+
+REQUISITOS IMPORTANTES DE FORMATO:
+{format_instructions}
+
+REQUISITOS DE CONTENIDO:
+- Incluye introduccción, desarrollo y conclusión
+- Longitud: Entre 800-1500 palabras
+- Tono profesional pero accesible
+- Incluye ejemplos prácticos cuando sea posible
+
+El artículo debe ser informativo, bien investigado y de alta calidad."""
+        
+        from openai import OpenAI
+        client = OpenAI(api_key=config.openai_api_key)
+        
+        response = client.chat.completions.create(
+            model=config.openai_model or "gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Eres un redactor profesional experto en crear artículos de alta calidad, bien estructurados y optimizados para SEO."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            temperature=0.7,
+            max_tokens=4000
+        )
+        
+        content = response.choices[0].message.content.strip()
+        
+        article.content = content
+        article.status = 'content_generated'
+        article.save()  # Esto actualizará automáticamente el word_count
+        
+        # Actualizar progreso del proyecto
+        if project.get_completed_articles() > 0 and project.status == 'articles_proposed':
+            project.status = 'in_progress'
+            project.save()
+        
+        return JsonResponse({
+            'success': True,
+            'content': content,
+            'word_count': article.word_count
+        })
+        
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        print(f"Error en ai_article_generate_content: {error_trace}")
+        return JsonResponse({'success': False, 'error': f'Error: {str(e)}'})
+
+
+@login_required
+@user_passes_test(is_agent)
+def ai_article_detail(request, pk, article_id):
+    """Ver detalle de un artículo"""
+    from .models import AIArticleProject, AIArticle
+    
+    project = get_object_or_404(AIArticleProject, pk=pk)
+    article = get_object_or_404(AIArticle, pk=article_id, project=project)
+    
+    context = {
+        'project': project,
+        'article': article,
+    }
+    return render(request, 'tickets/ai_article_detail.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def ai_article_delete(request, pk, article_id):
+    """Eliminar un artículo propuesto"""
+    from .models import AIArticleProject, AIArticle
+    
+    project = get_object_or_404(AIArticleProject, pk=pk)
+    article = get_object_or_404(AIArticle, pk=article_id, project=project)
+    
+    if request.method == 'POST':
+        article.delete()
+        messages.success(request, 'Artículo eliminado exitosamente.')
+        return redirect('ai_article_project_proposals', pk=project.pk)
+    
+    context = {
+        'project': project,
+        'article': article,
+    }
+    return render(request, 'tickets/ai_article_delete.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def ai_article_project_edit(request, pk):
+    """Editar un proyecto de artículos"""
+    from .models import AIArticleProject, Company
+    
+    project = get_object_or_404(AIArticleProject, pk=pk)
+    
+    if request.method == 'POST':
+        project.title = request.POST.get('title')
+        project.main_topic = request.POST.get('main_topic')
+        project.content_format = request.POST.get('content_format', 'plain')
+        company_id = request.POST.get('company')
+        project.company_id = company_id if company_id else None
+        project.save()
+        
+        messages.success(request, f'Proyecto "{project.title}" actualizado exitosamente.')
+        return redirect('ai_article_project_proposals', pk=project.pk)
+    
+    companies = Company.objects.filter(is_active=True).order_by('name')
+    
+    context = {
+        'project': project,
+        'companies': companies,
+    }
+    return render(request, 'tickets/ai_article_project_edit.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def ai_article_project_delete(request, pk):
+    """Eliminar un proyecto completo"""
+    from .models import AIArticleProject
+    
+    project = get_object_or_404(AIArticleProject, pk=pk)
+    
+    if request.method == 'POST':
+        title = project.title
+        project.delete()
+        messages.success(request, f'Proyecto "{title}" eliminado exitosamente.')
+        return redirect('ai_article_project_list')
+    
+    context = {
+        'project': project,
+    }
+    return render(request, 'tickets/ai_article_project_delete.html', context)
 

@@ -15,6 +15,12 @@ urlpatterns = [
     path('tickets/<int:pk>/approve/', views.ticket_approve_view, name='ticket_approve'),
     path('tickets/<int:pk>/unassign/', views.unassign_ticket_view, name='unassign_ticket'),
     
+    # URLs de TODO List para tickets
+    path('tickets/<int:pk>/todo/add/', views.ticket_todo_add, name='ticket_todo_add'),
+    path('tickets/<int:pk>/todo/<int:item_id>/toggle/', views.ticket_todo_toggle, name='ticket_todo_toggle'),
+    path('tickets/<int:pk>/todo/<int:item_id>/delete/', views.ticket_todo_delete, name='ticket_todo_delete'),
+    path('tickets/<int:pk>/todo/generate-ai/', views.ticket_todo_generate_ai, name='ticket_todo_generate_ai'),
+    
     # URLs públicas de cursos (sin autenticación) - DEBEN IR ANTES que la ruta genérica de tickets
     path('public/courses/<uuid:token>/', views.course_public, name='course_public'),
     path('public/courses/<uuid:token>/classes/<int:class_id>/', views.course_class_public, name='course_class_public'),
@@ -113,6 +119,35 @@ urlpatterns = [
     path('documents/<int:document_id>/edit/', views.document_edit_view, name='document_edit'),
     path('documents/<int:document_id>/delete/', views.document_delete_view, name='document_delete'),
     path('documents/<int:document_id>/download/', views.document_download_private_view, name='document_download_private'),
+    
+    # URLs de Generador de Libros con IA (solo para agentes)
+    path('ai-books/', views.ai_book_list, name='ai_book_list'),
+    path('ai-books/create/', views.ai_book_create, name='ai_book_create'),
+    path('ai-books/<int:pk>/', views.ai_book_detail, name='ai_book_detail'),
+    path('ai-books/<int:pk>/edit/', views.ai_book_edit, name='ai_book_edit'),
+    path('ai-books/<int:pk>/delete/', views.ai_book_delete, name='ai_book_delete'),
+    path('ai-books/<int:pk>/export/', views.ai_book_export, name='ai_book_export'),
+    path('ai-books/<int:pk>/propose-chapters/', views.ai_book_propose_chapters, name='ai_book_propose_chapters'),
+    path('ai-books/<int:pk>/generate-chapters/', views.ai_book_generate_chapters_ai, name='ai_book_generate_chapters_ai'),
+    path('ai-books/<int:pk>/chapters/<int:chapter_id>/', views.ai_book_chapter_detail, name='ai_book_chapter_detail'),
+    path('ai-books/<int:pk>/chapters/<int:chapter_id>/edit-title/', views.ai_book_chapter_edit_title, name='ai_book_chapter_edit_title'),
+    path('ai-books/<int:pk>/chapters/<int:chapter_id>/delete/', views.ai_book_chapter_delete, name='ai_book_chapter_delete'),
+    path('ai-books/<int:pk>/chapters/<int:chapter_id>/generate-summary/', views.ai_book_chapter_generate_summary, name='ai_book_chapter_generate_summary'),
+    path('ai-books/<int:pk>/chapters/<int:chapter_id>/generate-content/', views.ai_book_chapter_generate_content, name='ai_book_chapter_generate_content'),
+    path('ai-books/<int:pk>/chapters/<int:chapter_id>/save-content/', views.ai_book_chapter_save_content, name='ai_book_chapter_save_content'),
+    path('ai-books/<int:pk>/chapters/<int:chapter_id>/save-summary/', views.ai_book_chapter_save_summary, name='ai_book_chapter_save_summary'),
+    
+    # URLs de Generador de Artículos con IA (solo para agentes)
+    path('ai-articles/', views.ai_article_project_list, name='ai_article_project_list'),
+    path('ai-articles/create/', views.ai_article_project_create, name='ai_article_project_create'),
+    path('ai-articles/<int:pk>/proposals/', views.ai_article_project_proposals, name='ai_article_project_proposals'),
+    path('ai-articles/<int:pk>/edit/', views.ai_article_project_edit, name='ai_article_project_edit'),
+    path('ai-articles/<int:pk>/generate-proposals/', views.ai_article_generate_proposals, name='ai_article_generate_proposals'),
+    path('ai-articles/<int:pk>/delete/', views.ai_article_project_delete, name='ai_article_project_delete'),
+    path('ai-articles/<int:pk>/<int:article_id>/', views.ai_article_detail, name='ai_article_detail'),
+    path('ai-articles/<int:pk>/<int:article_id>/edit-keywords/', views.ai_article_edit_keywords, name='ai_article_edit_keywords'),
+    path('ai-articles/<int:pk>/<int:article_id>/generate-content/', views.ai_article_generate_content, name='ai_article_generate_content'),
+    path('ai-articles/<int:pk>/<int:article_id>/delete/', views.ai_article_delete, name='ai_article_delete'),
     
     # URLs públicas para compartir documentos (sin autenticación)
     path('document/public/<uuid:token>/', views.document_public_view, name='document_public'),
@@ -801,12 +836,15 @@ urlpatterns += [
     path('paypal-links/', views.paypal_link_list, name='paypal_link_list'),
     path('paypal-links/create/', views.paypal_link_create, name='paypal_link_create'),
     path('paypal-links/debug/', views.paypal_debug_config, name='paypal_debug_config'),
+    path('paypal-links/generate-catalog-token/', views.paypal_generate_public_catalog_token, name='paypal_generate_public_catalog_token'),
     path('paypal-links/<int:pk>/', views.paypal_link_detail, name='paypal_link_detail'),
     path('paypal-links/<int:pk>/edit/', views.paypal_link_edit, name='paypal_link_edit'),
     path('paypal-links/<int:pk>/delete/', views.paypal_link_delete, name='paypal_link_delete'),
     path('paypal-links/<int:pk>/cancel/', views.paypal_link_cancel, name='paypal_link_cancel'),
     
     # URLs públicas de PayPal (sin autenticación)
+    path('public/products/<uuid:token>/', views.public_products_catalog, name='public_products_catalog'),
+    path('public/products/<uuid:token>/buy/<int:product_id>/', views.create_payment_from_product, name='create_payment_from_product'),
     path('paypal-payment/<uuid:token>/', views.paypal_payment_page, name='paypal_payment_page'),
     path('paypal-link-orders/<uuid:token>/', views.paypal_link_orders, name='paypal_link_orders'),  # Ver todas las órdenes de un link
     path('paypal-order/<uuid:token>/', views.paypal_order_summary, name='paypal_order_summary'),  # Legacy - redirige a paypal_link_orders

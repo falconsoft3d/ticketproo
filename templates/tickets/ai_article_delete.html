@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Eliminar Artículo - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación</h4>
+                </div>
+                <div class="card-body">
+                    <p class="lead">¿Estás seguro de que deseas eliminar este artículo?</p>
+                    
+                    <div class="alert alert-warning">
+                        <h5>{{ article.title }}</h5>
+                        <p class="mb-0">Proyecto: {{ project.title }}</p>
+                        {% if article.content %}
+                            <p class="mb-0 text-muted small">Este artículo tiene contenido generado ({{ article.word_count }} palabras)</p>
+                        {% endif %}
+                    </div>
+
+                    <p class="text-danger">
+                        <i class="fas fa-exclamation-circle"></i> Esta acción no se puede deshacer.
+                    </p>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'ai_article_project_proposals' project.pk %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Sí, Eliminar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

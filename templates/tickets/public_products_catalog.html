@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo de Productos - {{ catalog_info.company_name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem 0;
+        }
+        .catalog-header {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .product-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            height: 100%;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .product-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+        }
+        .product-icon {
+            font-size: 4rem;
+            color: #667eea;
+            margin: 2rem 0 1rem 0;
+        }
+        .product-price {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #764ba2;
+            margin: 1rem 0;
+        }
+        .product-name {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+        }
+        .product-description {
+            color: #7f8c8d;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .btn-buy {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 0.75rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-buy:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+        .no-products {
+            background: white;
+            border-radius: 15px;
+            padding: 3rem;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="catalog-header text-center">
+            <h1 class="display-4 mb-3">
+                <i class="fas fa-shopping-bag text-primary"></i>
+                {{ catalog_info.company_name }}
+            </h1>
+            <p class="lead text-muted">Catálogo de Productos y Servicios</p>
+        </div>
+
+        {% if products %}
+            <div class="row g-4">
+                {% for product in products %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="product-card text-center">
+                            <div class="product-icon">
+                                <i class="fas fa-box-open"></i>
+                            </div>
+                            <div class="p-4">
+                                <h3 class="product-name">{{ product.name }}</h3>
+                                <div class="product-price">
+                                    {{ catalog_info.currency_symbol }}{{ product.price|floatformat:2 }}
+                                </div>
+                                <p class="product-description">{{ product.description|truncatewords:30 }}</p>
+                                <a href="{% url 'create_payment_from_product' token product.id %}" class="btn btn-buy mt-3">
+                                    <i class="fas fa-shopping-cart me-2"></i>
+                                    Comprar Ahora
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="no-products">
+                <i class="fas fa-box-open fa-5x text-muted mb-4"></i>
+                <h3>No hay productos disponibles</h3>
+                <p class="text-muted">Actualmente no hay productos en el catálogo.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

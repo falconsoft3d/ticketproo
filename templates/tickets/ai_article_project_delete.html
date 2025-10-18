@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Eliminar Proyecto - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación</h4>
+                </div>
+                <div class="card-body">
+                    <p class="lead">¿Estás seguro de que deseas eliminar este proyecto completo?</p>
+                    
+                    <div class="alert alert-warning">
+                        <h5>{{ project.title }}</h5>
+                        <p class="mb-0">Total de artículos: {{ project.get_total_articles }}</p>
+                        <p class="mb-0">Artículos generados: {{ project.get_completed_articles }}</p>
+                    </div>
+
+                    <p class="text-danger">
+                        <i class="fas fa-exclamation-circle"></i> <strong>Esta acción eliminará el proyecto y TODOS sus artículos.</strong> No se puede deshacer.
+                    </p>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'ai_article_project_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Sí, Eliminar Todo
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

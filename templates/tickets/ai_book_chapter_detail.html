@@ -1,0 +1,396 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ chapter.title }} - {{ book.title }} - TicketProo{% endblock %}
+
+{% block content %}
+<style>
+    .btn-ai-generate {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+    }
+    .btn-ai-generate:hover {
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        color: white;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .loading i {
+        animation: spin 1s linear infinite;
+    }
+    .markdown-content {
+        line-height: 1.8;
+        font-size: 1.05rem;
+    }
+    .markdown-content h2 {
+        margin-top: 30px;
+        margin-bottom: 15px;
+        color: #2c3e50;
+    }
+    .markdown-content h3 {
+        margin-top: 25px;
+        margin-bottom: 12px;
+        color: #34495e;
+    }
+    .markdown-content p {
+        margin-bottom: 15px;
+    }
+    .markdown-content ul, .markdown-content ol {
+        margin-bottom: 15px;
+    }
+</style>
+
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'ai_book_list' %}">Libros</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'ai_book_detail' book.pk %}">{{ book.title|truncatechars:30 }}</a></li>
+            <li class="breadcrumb-item active">Capítulo {{ chapter.order }}</li>
+        </ol>
+    </nav>
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2><i class="bi bi-file-text"></i> Capítulo {{ chapter.order }}: {{ chapter.title }}</h2>
+            <span class="badge {{ chapter.get_status_badge_class }} fs-6">
+                {{ chapter.get_status_display }}
+            </span>
+            {% if chapter.word_count > 0 %}
+            <span class="badge bg-info ms-2">
+                <i class="bi bi-file-text"></i> {{ chapter.word_count }} palabras
+            </span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <!-- Sección de Resumen -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-card-text"></i> Resumen del Capítulo</h5>
+                    <button type="button" 
+                            id="generateSummaryBtn" 
+                            class="btn btn-sm btn-ai-generate">
+                        <i class="bi bi-stars"></i> Generar Resumen con IA
+                    </button>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="summaryForm">
+                        {% csrf_token %}
+                        <textarea class="form-control" 
+                                  id="summaryTextarea" 
+                                  name="summary" 
+                                  rows="8"
+                                  placeholder="El resumen describe de qué tratará este capítulo. Puedes generarlo con IA o escribirlo manualmente.">{{ chapter.summary }}</textarea>
+                        <div class="form-text">
+                            Este resumen se usará como base para generar el contenido completo del capítulo.
+                        </div>
+                        <div class="mt-3">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Guardar Resumen
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Sección de Contenido -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-book-half"></i> Contenido Completo</h5>
+                    <button type="button" 
+                            id="generateContentBtn" 
+                            class="btn btn-sm btn-ai-generate"
+                            {% if not chapter.summary %}disabled{% endif %}>
+                        <i class="bi bi-stars"></i> Generar Contenido con IA
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if chapter.content %}
+                    <div id="contentDisplay" class="markdown-content border rounded p-4 bg-light">
+                        <!-- El contenido se mostrará aquí en formato renderizado -->
+                        {{ chapter.content|linebreaks }}
+                    </div>
+                    
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-outline-secondary" id="editContentBtn">
+                            <i class="bi bi-pencil"></i> Editar Contenido
+                        </button>
+                    </div>
+                    
+                    <!-- Editor de contenido (oculto inicialmente) -->
+                    <div id="contentEditor" style="display: none;">
+                        <form id="contentForm">
+                            <textarea class="form-control" 
+                                      id="contentTextarea" 
+                                      rows="25">{{ chapter.content }}</textarea>
+                            <div class="form-text">
+                                Puedes editar el contenido generado. Texto plano sin formato. Subtítulos en MAYÚSCULAS.
+                            </div>
+                            <div class="mt-3">
+                                <button type="button" class="btn btn-primary" id="saveContentBtn">
+                                    <i class="bi bi-save"></i> Guardar Cambios
+                                </button>
+                                <button type="button" class="btn btn-secondary" id="cancelEditBtn">
+                                    Cancelar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-file-text display-1"></i>
+                        <p class="mt-3">No hay contenido generado aún</p>
+                        {% if not chapter.summary %}
+                        <p class="small">Primero debes crear o generar un resumen del capítulo</p>
+                        {% else %}
+                        <p class="small">Haz clic en "Generar Contenido con IA" para crear el contenido basado en el resumen</p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const generateSummaryBtn = document.getElementById('generateSummaryBtn');
+    const generateContentBtn = document.getElementById('generateContentBtn');
+    const summaryTextarea = document.getElementById('summaryTextarea');
+    const contentDisplay = document.getElementById('contentDisplay');
+    const contentEditor = document.getElementById('contentEditor');
+    const editContentBtn = document.getElementById('editContentBtn');
+    const saveContentBtn = document.getElementById('saveContentBtn');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
+    const contentTextarea = document.getElementById('contentTextarea');
+    
+    const bookId = {{ book.pk }};
+    const chapterId = {{ chapter.id }};
+    
+    // Guardar resumen (formulario)
+    const summaryForm = document.getElementById('summaryForm');
+    if (summaryForm) {
+        summaryForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const summary = summaryTextarea.value.trim();
+            if (!summary) {
+                alert('El resumen no puede estar vacío');
+                return;
+            }
+            
+            const submitBtn = summaryForm.querySelector('button[type="submit"]');
+            const originalHTML = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Guardando...';
+            
+            fetch(`/ai-books/${bookId}/chapters/${chapterId}/save-summary/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    summary: summary
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    generateContentBtn.disabled = false;
+                    showToast('¡Éxito!', 'Resumen guardado correctamente', 'success');
+                } else {
+                    alert(data.error || 'Error al guardar resumen');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al guardar resumen');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalHTML;
+            });
+        });
+    }
+    
+    // Generar resumen
+    if (generateSummaryBtn) {
+        generateSummaryBtn.addEventListener('click', function() {
+            if (summaryTextarea.value.trim() && !confirm('¿Sobrescribir el resumen actual con uno nuevo generado por IA?')) {
+                return;
+            }
+            
+            const originalHTML = generateSummaryBtn.innerHTML;
+            generateSummaryBtn.disabled = true;
+            generateSummaryBtn.classList.add('loading');
+            generateSummaryBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Generando...';
+            
+            fetch(`/ai-books/${bookId}/chapters/${chapterId}/generate-summary/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    summaryTextarea.value = data.summary;
+                    generateContentBtn.disabled = false;
+                    showToast('¡Éxito!', 'Resumen generado correctamente', 'success');
+                } else {
+                    alert(data.error || 'Error al generar resumen');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al generar resumen');
+            })
+            .finally(() => {
+                generateSummaryBtn.disabled = false;
+                generateSummaryBtn.classList.remove('loading');
+                generateSummaryBtn.innerHTML = originalHTML;
+            });
+        });
+    }
+    
+    // Generar contenido
+    if (generateContentBtn) {
+        generateContentBtn.addEventListener('click', function() {
+            if (!confirm('¿Generar el contenido completo del capítulo basado en el resumen?\n\nEsto puede tomar 30-60 segundos.')) {
+                return;
+            }
+            
+            const originalHTML = generateContentBtn.innerHTML;
+            generateContentBtn.disabled = true;
+            generateContentBtn.classList.add('loading');
+            generateContentBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Generando contenido...';
+            
+            fetch(`/ai-books/${bookId}/chapters/${chapterId}/generate-content/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('¡Éxito!', `Contenido generado: ${data.word_count} palabras`, 'success');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    alert(data.error || 'Error al generar contenido');
+                    generateContentBtn.disabled = false;
+                    generateContentBtn.classList.remove('loading');
+                    generateContentBtn.innerHTML = originalHTML;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al generar contenido');
+                generateContentBtn.disabled = false;
+                generateContentBtn.classList.remove('loading');
+                generateContentBtn.innerHTML = originalHTML;
+            });
+        });
+    }
+    
+    // Editar contenido
+    if (editContentBtn) {
+        editContentBtn.addEventListener('click', function() {
+            if (contentDisplay) contentDisplay.style.display = 'none';
+            editContentBtn.style.display = 'none';
+            contentEditor.style.display = 'block';
+        });
+    }
+    
+    if (cancelEditBtn) {
+        cancelEditBtn.addEventListener('click', function() {
+            if (contentDisplay) contentDisplay.style.display = 'block';
+            if (editContentBtn) editContentBtn.style.display = 'inline-block';
+            contentEditor.style.display = 'none';
+        });
+    }
+    
+    if (saveContentBtn) {
+        saveContentBtn.addEventListener('click', function() {
+            const newContent = contentTextarea.value.trim();
+            
+            if (!newContent) {
+                alert('El contenido no puede estar vacío');
+                return;
+            }
+            
+            const originalHTML = saveContentBtn.innerHTML;
+            saveContentBtn.disabled = true;
+            saveContentBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Guardando...';
+            
+            fetch(`/ai-books/${bookId}/chapters/${chapterId}/save-content/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    content: newContent
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('¡Éxito!', `Contenido guardado: ${data.word_count} palabras`, 'success');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    alert(data.error || 'Error al guardar contenido');
+                    saveContentBtn.disabled = false;
+                    saveContentBtn.innerHTML = originalHTML;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al guardar contenido');
+                saveContentBtn.disabled = false;
+                saveContentBtn.innerHTML = originalHTML;
+            });
+        });
+    }
+    
+    function showToast(title, message, type = 'info') {
+        const bgClass = type === 'success' ? 'bg-success' : type === 'error' ? 'bg-danger' : 'bg-info';
+        const iconClass = type === 'success' ? 'bi-check-circle-fill' : type === 'error' ? 'bi-x-circle-fill' : 'bi-info-circle-fill';
+        
+        if (typeof bootstrap !== 'undefined' && bootstrap.Toast) {
+            const toastEl = document.createElement('div');
+            toastEl.className = 'toast position-fixed top-0 end-0 m-3';
+            toastEl.innerHTML = `
+                <div class="toast-header ${bgClass} text-white">
+                    <i class="${iconClass} me-2"></i>
+                    <strong class="me-auto">${title}</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">${message}</div>
+            `;
+            document.body.appendChild(toastEl);
+            
+            const toast = new bootstrap.Toast(toastEl, { autohide: true, delay: 5000 });
+            toast.show();
+            
+            toastEl.addEventListener('hidden.bs.toast', () => {
+                toastEl.remove();
+            });
+        } else {
+            alert(`${title}: ${message}`);
+        }
+    }
+});
+</script>
+{% endblock %}

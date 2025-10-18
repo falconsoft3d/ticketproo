@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Crear Proyecto de Artículos - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-plus-circle"></i> Crear Proyecto de Artículos con IA</h4>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">
+                        Define el tema principal y la IA te propondrá 10 artículos relevantes. Podrás generar más propuestas cuando quieras.
+                    </p>
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Título del Proyecto *</label>
+                            <input type="text" class="form-control" id="title" name="title" required maxlength="500" 
+                                   placeholder="Ej: Artículos sobre Marketing Digital 2024">
+                            <small class="text-muted">Un nombre descriptivo para este proyecto</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="main_topic" class="form-label">Tema Principal *</label>
+                            <textarea class="form-control" id="main_topic" name="main_topic" rows="5" required
+                                      placeholder="Describe el tema principal sobre el cual quieres generar artículos. Sé específico.&#10;&#10;Ejemplo: Marketing digital para pequeñas empresas, enfocado en redes sociales, SEO y publicidad online. Los artículos deben ser prácticos y con ejemplos."></textarea>
+                            <small class="text-muted">Describe con detalle el tema principal. Esto ayudará a la IA a generar mejores propuestas.</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="content_format" class="form-label">Formato de Contenido *</label>
+                            <select class="form-select" id="content_format" name="content_format" required>
+                                <option value="plain" selected>Texto Plano (sin formato)</option>
+                                <option value="markdown">Markdown (con formato)</option>
+                            </select>
+                            <small class="text-muted">
+                                <strong>Texto Plano:</strong> Contenido sin formato, subtítulos en MAYÚSCULAS.<br>
+                                <strong>Markdown:</strong> Contenido con formato Markdown (títulos con #, negritas con **, etc.)
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="company" class="form-label">Empresa (Opcional)</label>
+                            <select class="form-select" id="company" name="company">
+                                <option value="">-- Sin empresa --</option>
+                                {% for company in companies %}
+                                    <option value="{{ company.id }}">{{ company.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'ai_article_project_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-arrow-right"></i> Continuar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="alert alert-info mt-3">
+                <i class="fas fa-lightbulb"></i> <strong>Sugerencia:</strong> Sé lo más específico posible en el tema principal. 
+                Incluye información sobre el público objetivo, tono deseado y tipo de contenido que buscas.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ book.title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1><i class="bi bi-book"></i> {{ book.title }}</h1>
+                    <span class="badge {{ book.get_status_badge_class }} fs-6">
+                        {{ book.get_status_display }}
+                    </span>
+                </div>
+                <div>
+                    <a href="{% url 'ai_book_edit' book.pk %}" class="btn btn-outline-primary me-2">
+                        <i class="bi bi-pencil-square"></i> Editar Libro
+                    </a>
+                    {% if chapters %}
+                    <div class="btn-group">
+                        <a href="{% url 'ai_book_export' book.pk %}?format=docx" 
+                           class="btn btn-primary">
+                            <i class="bi bi-file-earmark-word"></i> Exportar Word (.docx)
+                        </a>
+                        <a href="{% url 'ai_book_export' book.pk %}?format=pdf" 
+                           class="btn btn-danger">
+                            <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
+                        </a>
+                        <a href="{% url 'ai_book_export' book.pk %}?format=html" 
+                           class="btn btn-outline-success">
+                            <i class="bi bi-file-earmark-code"></i> HTML
+                        </a>
+                    </div>
+                    {% endif %}
+                    <a href="{% url 'ai_book_list' %}" class="btn btn-secondary ms-2">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información del libro -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-info-circle"></i> Información</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Tema:</strong><br>{{ book.topic }}</p>
+                    <hr>
+                    <p>
+                        <i class="bi bi-person"></i> {{ book.created_by.get_full_name|default:book.created_by.username }}<br>
+                        <i class="bi bi-calendar"></i> {{ book.created_at|date:"d/m/Y H:i" }}
+                    </p>
+                    {% if book.company %}
+                    <p>
+                        <i class="bi bi-building"></i> {{ book.company.name }}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-graph-up"></i> Progreso</h5>
+                </div>
+                <div class="card-body">
+                    <p>
+                        <strong>Capítulos:</strong> {{ book.get_total_chapters }}<br>
+                        <strong>Completados:</strong> {{ book.get_completed_chapters }}
+                    </p>
+                    <div class="progress" style="height: 25px;">
+                        <div class="progress-bar bg-success" 
+                             role="progressbar" 
+                             style="width: {{ book.get_progress_percentage }}%">
+                            {{ book.get_progress_percentage }}%
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de capítulos -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-list-ol"></i> Capítulos</h5>
+                    {% if book.status == 'draft' %}
+                    <a href="{% url 'ai_book_propose_chapters' book.pk %}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-stars"></i> Generar Capítulos
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if chapters %}
+                    <div class="list-group">
+                        {% for chapter in chapters %}
+                        <a href="{% url 'ai_book_chapter_detail' book.pk chapter.id %}" 
+                           class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">
+                                        Capítulo {{ chapter.order }}: {{ chapter.title }}
+                                    </h6>
+                                    {% if chapter.summary %}
+                                    <p class="mb-1 text-muted small">
+                                        {{ chapter.summary|truncatechars:150 }}
+                                    </p>
+                                    {% endif %}
+                                    <small class="text-muted">
+                                        {% if chapter.word_count > 0 %}
+                                            <i class="bi bi-file-text"></i> {{ chapter.word_count }} palabras
+                                        {% else %}
+                                            <i class="bi bi-file-text"></i> Sin contenido
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                <span class="badge {{ chapter.get_status_badge_class }} ms-2">
+                                    {{ chapter.get_status_display }}
+                                </span>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-list-ol display-1"></i>
+                        <p class="mt-3">No hay capítulos generados aún</p>
+                        <a href="{% url 'ai_book_propose_chapters' book.pk %}" class="btn btn-primary">
+                            <i class="bi bi-stars"></i> Generar Capítulos con IA
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

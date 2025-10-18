@@ -16,7 +16,8 @@ from .models import (
     Form, FormQuestion, FormQuestionOption, FormResponse, FormAnswer, Alcance,
     WhatsAppConnection, WhatsAppKeyword, WhatsAppMessage, ImagePrompt,
     AIManager, AIManagerMeeting, AIManagerMeetingAttachment, AIManagerSummary, CompanyAISummary, UserAIPerformanceEvaluation,
-    WebsiteTracker, LegalContract, SupplierContractReview, PayPalPaymentLink, PayPalOrder
+    WebsiteTracker, LegalContract, SupplierContractReview, PayPalPaymentLink, PayPalOrder, TodoItem,
+    AIBook, AIBookChapter
 )
 
 # Configuración del sitio de administración
@@ -3142,6 +3143,139 @@ class PayPalPaymentLinkAdmin(admin.ModelAdmin):
     
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('user', 'company')
+
+
+@admin.register(TodoItem)
+class TodoItemAdmin(admin.ModelAdmin):
+    list_display = ('text_preview', 'ticket_link', 'is_completed', 'created_by', 'created_at', 'completed_at')
+    list_filter = ('is_completed', 'created_at', 'completed_at')
+    search_fields = ('text', 'ticket__title', 'ticket__ticket_number')
+    readonly_fields = ('created_at', 'completed_at')
+    ordering = ('ticket', 'order', 'created_at')
+    
+    fieldsets = (
+        ('Tarea', {
+            'fields': ('ticket', 'text', 'is_completed', 'order')
+        }),
+        ('Información', {
+            'fields': ('created_by', 'created_at', 'completed_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def text_preview(self, obj):
+        status = "✓" if obj.is_completed else "○"
+        return f"{status} {obj.text[:50]}"
+    text_preview.short_description = 'Tarea'
+    
+    def ticket_link(self, obj):
+        return format_html(
+            '<a href="/tickets/{}/">Ticket #{}</a>',
+            obj.ticket.pk,
+            obj.ticket.ticket_number
+        )
+    ticket_link.short_description = 'Ticket'
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('ticket', 'created_by')
+
+
+class AIBookChapterInline(admin.TabularInline):
+    model = AIBookChapter
+    extra = 0
+    fields = ('order', 'title', 'status', 'word_count')
+    readonly_fields = ('word_count',)
+    ordering = ('order',)
+
+
+@admin.register(AIBook)
+class AIBookAdmin(admin.ModelAdmin):
+    list_display = ('title', 'status_badge', 'created_by', 'company', 'total_chapters', 'progress', 'created_at')
+    list_filter = ('status', 'created_at', 'company')
+    search_fields = ('title', 'topic', 'created_by__username')
+    readonly_fields = ('created_at', 'updated_at', 'total_chapters', 'completed_chapters', 'progress')
+    inlines = [AIBookChapterInline]
+    
+    fieldsets = (
+        ('Información del Libro', {
+            'fields': ('title', 'topic', 'status', 'company')
+        }),
+        ('Progreso', {
+            'fields': ('total_chapters', 'completed_chapters', 'progress')
+        }),
+        ('Metadatos', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def status_badge(self, obj):
+        return format_html(
+            '<span class="badge {}">{}</span>',
+            obj.get_status_badge_class(),
+            obj.get_status_display()
+        )
+    status_badge.short_description = 'Estado'
+    
+    def total_chapters(self, obj):
+        return obj.get_total_chapters()
+    total_chapters.short_description = 'Capítulos'
+    
+    def completed_chapters(self, obj):
+        return obj.get_completed_chapters()
+    completed_chapters.short_description = 'Completados'
+    
+    def progress(self, obj):
+        percentage = obj.get_progress_percentage()
+        return format_html(
+            '<div style="width: 100px; background-color: #e9ecef; border-radius: 4px;">'
+            '<div style="width: {}%; background-color: #28a745; color: white; text-align: center; border-radius: 4px; padding: 2px;">{}%</div>'
+            '</div>',
+            percentage, percentage
+        )
+    progress.short_description = 'Progreso'
+    
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(AIBookChapter)
+class AIBookChapterAdmin(admin.ModelAdmin):
+    list_display = ('book_title', 'order', 'title', 'status_badge', 'word_count', 'updated_at')
+    list_filter = ('status', 'book', 'created_at')
+    search_fields = ('title', 'summary', 'content', 'book__title')
+    readonly_fields = ('created_at', 'updated_at', 'word_count')
+    ordering = ('book', 'order')
+    
+    fieldsets = (
+        ('Información del Capítulo', {
+            'fields': ('book', 'order', 'title', 'status')
+        }),
+        ('Contenido', {
+            'fields': ('summary', 'content', 'word_count')
+        }),
+        ('Metadatos', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def book_title(self, obj):
+        return obj.book.title
+    book_title.short_description = 'Libro'
+    
+    def status_badge(self, obj):
+        return format_html(
+            '<span class="badge {}">{}</span>',
+            obj.get_status_badge_class(),
+            obj.get_status_display()
+        )
+    status_badge.short_description = 'Estado'
+
+
+
 
 
 

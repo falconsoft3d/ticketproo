@@ -1,0 +1,266 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Generación de Artículos con IA - {{ block.super }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .stat-card {
+        border-left: 4px solid;
+        transition: transform 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .stat-card.primary { border-left-color: #0d6efd; }
+    .stat-card.success { border-left-color: #198754; }
+    .stat-card.info { border-left-color: #0dcaf0; }
+    .stat-card.warning { border-left-color: #ffc107; }
+    
+    .project-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .project-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    }
+    
+    .metric-icon {
+        font-size: 2rem;
+        opacity: 0.3;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-newspaper"></i> Generación de Artículos con IA</h2>
+            <p class="text-muted">Crea proyectos y genera artículos profesionales con inteligencia artificial</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'ai_article_project_create' %}" class="btn btn-primary btn-lg">
+                <i class="fas fa-plus"></i> Crear Proyecto
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if projects %}
+        <!-- KPIs Dashboard -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card stat-card primary h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-muted mb-1 small">Total Proyectos</p>
+                                <h3 class="mb-0">{{ projects.count }}</h3>
+                            </div>
+                            <i class="fas fa-folder-open metric-icon text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card stat-card success h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-muted mb-1 small">Total Artículos</p>
+                                <h3 class="mb-0">{{ total_articles }}</h3>
+                            </div>
+                            <i class="fas fa-file-alt metric-icon text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card stat-card info h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-muted mb-1 small">Artículos Generados</p>
+                                <h3 class="mb-0 text-success">{{ generated_articles }}</h3>
+                                <small class="text-muted">{{ generation_percentage }}% completado</small>
+                            </div>
+                            <i class="fas fa-check-circle metric-icon text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card stat-card warning h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-muted mb-1 small">Total Palabras</p>
+                                <h3 class="mb-0">{{ total_words|floatformat:0 }}k</h3>
+                                <small class="text-muted">{{ avg_words_per_article|floatformat:0 }} palabras/art.</small>
+                            </div>
+                            <i class="fas fa-chart-line metric-icon text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Proyectos -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0">Mis Proyectos</h4>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-sm btn-outline-secondary active" data-filter="all">
+                    Todos ({{ projects.count }})
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-filter="in_progress">
+                    En Progreso
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-filter="completed">
+                    Completados
+                </button>
+            </div>
+        </div>
+
+        <div class="row" id="projects-container">
+            {% for project in projects %}
+                <div class="col-md-6 col-lg-4 mb-3 project-item" data-status="{{ project.status }}">
+                    <div class="card project-card h-100 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="card-title mb-0">{{ project.title }}</h5>
+                                <span class="badge {{ project.get_status_badge_class }}">
+                                    {{ project.get_status_display }}
+                                </span>
+                            </div>
+                            <p class="card-text text-muted small mb-2">
+                                {{ project.main_topic|truncatewords:20 }}
+                            </p>
+                            <div class="mb-3">
+                                <span class="badge bg-{% if project.content_format == 'markdown' %}info{% else %}secondary{% endif %} me-1">
+                                    <i class="fas fa-{% if project.content_format == 'markdown' %}code{% else %}align-left{% endif %}"></i>
+                                    {% if project.content_format == 'markdown' %}Markdown{% else %}Texto Plano{% endif %}
+                                </span>
+                            </div>
+                            <hr>
+                            <div class="row text-center mb-3">
+                                <div class="col-4">
+                                    <div class="text-muted small">Propuestos</div>
+                                    <div class="h5 mb-0 text-primary">{{ project.get_total_articles }}</div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="text-muted small">Generados</div>
+                                    <div class="h5 mb-0 text-success">{{ project.get_completed_articles }}</div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="text-muted small">Palabras</div>
+                                    <div class="h5 mb-0 text-info">
+                                        {% widthratio project.get_total_words 1000 1 %}k
+                                    </div>
+                                </div>
+                            </div>
+                            {% if project.get_total_articles > 0 %}
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between small text-muted mb-1">
+                                        <span>Progreso</span>
+                                        <span><strong>{{ project.get_progress_percentage }}%</strong></span>
+                                    </div>
+                                    <div class="progress" style="height: 10px;">
+                                        <div class="progress-bar bg-success" role="progressbar" 
+                                             style="width: {{ project.get_progress_percentage }}%"
+                                             aria-valuenow="{{ project.get_progress_percentage }}" 
+                                             aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-light small mb-2">
+                                    <i class="fas fa-lightbulb"></i> Aún no hay artículos propuestos
+                                </div>
+                            {% endif %}
+                            <div class="d-flex gap-2 mt-3">
+                                <a href="{% url 'ai_article_project_proposals' project.pk %}" 
+                                   class="btn btn-sm btn-outline-primary flex-fill">
+                                    <i class="fas fa-eye"></i> Ver Artículos
+                                </a>
+                                <a href="{% url 'ai_article_project_edit' project.pk %}" 
+                                   class="btn btn-sm btn-outline-warning">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'ai_article_project_delete' project.pk %}" 
+                                   class="btn btn-sm btn-outline-danger">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-light text-muted small">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>
+                                    <i class="far fa-calendar"></i> {{ project.created_at|date:"d/m/Y" }}
+                                </span>
+                                {% if project.company %}
+                                    <span class="badge" style="background-color: {{ project.company.color }};">
+                                        {{ project.company.name }}
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-newspaper fa-5x text-muted mb-4"></i>
+                        <h3>No hay proyectos de artículos aún</h3>
+                        <p class="text-muted mb-4">Crea tu primer proyecto y comienza a generar artículos con IA</p>
+                        <a href="{% url 'ai_article_project_create' %}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-plus"></i> Crear Primer Proyecto
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Filtrar proyectos por estado
+document.querySelectorAll('[data-filter]').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const filter = this.dataset.filter;
+        
+        // Actualizar botones activos
+        document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        // Filtrar proyectos
+        document.querySelectorAll('.project-item').forEach(item => {
+            if (filter === 'all') {
+                item.style.display = 'block';
+            } else if (filter === 'in_progress') {
+                item.style.display = item.dataset.status === 'in_progress' || item.dataset.status === 'articles_proposed' ? 'block' : 'none';
+            } else if (filter === 'completed') {
+                item.style.display = item.dataset.status === 'completed' ? 'block' : 'none';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

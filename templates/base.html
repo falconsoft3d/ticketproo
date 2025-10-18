@@ -649,6 +649,18 @@
                                 </a>
                             </li>
                             <li>
+                                <a class="dropdown-item {% if 'ai_book' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'ai_book_list' %}">
+                                    <i class="bi bi-book"></i> Generador de Libros IA
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'ai_article' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'ai_article_project_list' %}">
+                                    <i class="bi bi-newspaper"></i> Generador de Artículos IA
+                                </a>
+                            </li>
+                            <li>
                                 <a class="dropdown-item {% if 'supplier_contract_review' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'supplier_contract_review_list' %}">
                                     <i class="bi bi-shield-check"></i> Revisar Contratos de Proveedores

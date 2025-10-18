@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ article.title }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'ai_article_project_list' %}">Proyectos</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'ai_article_project_proposals' project.pk %}">{{ project.title }}</a></li>
+                    <li class="breadcrumb-item active">{{ article.title }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">{{ article.title }}</h4>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Palabras Clave:</strong>
+                        {% if article.keywords %}
+                            {% for keyword in article.get_keywords_list %}
+                                <span class="badge bg-info">{{ keyword }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="text-muted">Sin palabras clave</span>
+                        {% endif %}
+                    </div>
+
+                    <hr>
+
+                    {% if article.content %}
+                        <div class="content-display" style="white-space: pre-wrap; line-height: 1.8; text-align: justify;">{{ article.content }}</div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> El contenido aún no ha sido generado.
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer text-muted">
+                    <i class="far fa-calendar"></i> {{ article.created_at|date:"d/m/Y H:i" }}
+                    {% if article.word_count > 0 %}
+                        <span class="ms-3"><i class="fas fa-file-word"></i> {{ article.word_count }} palabras</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Información</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Proyecto:</strong><br>{{ project.title }}</p>
+                    <p><strong>Orden:</strong> #{{ article.order }}</p>
+                    <p><strong>Estado:</strong><br>
+                        <span class="badge {{ article.get_status_badge_class }}">
+                            {{ article.get_status_display }}
+                        </span>
+                    </p>
+                    {% if article.word_count > 0 %}
+                        <p><strong>Palabras:</strong> {{ article.word_count }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-tools"></i> Acciones</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if not article.content %}
+                            <button type="button" class="btn btn-primary" id="btn-generate-content">
+                                <i class="fas fa-wand-magic-sparkles"></i> Generar Contenido
+                            </button>
+                        {% endif %}
+                        
+                        <a href="{% url 'ai_article_project_proposals' project.pk %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Volver a Lista
+                        </a>
+                        
+                        <a href="{% url 'ai_article_delete' project.pk article.id %}" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Eliminar Artículo
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const projectId = {{ project.pk }};
+const articleId = {{ article.id }};
+
+// Función para obtener el CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+const csrftoken = getCookie('csrftoken');
+
+{% if not article.content %}
+document.getElementById('btn-generate-content').addEventListener('click', function() {
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando contenido...';
+    
+    fetch(`/ai-articles/${projectId}/${articleId}/generate-content/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response:', data);
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Error al generar contenido'));
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Generar Contenido';
+        }
+    })
+    .catch(error => {
+        console.error('Error completo:', error);
+        alert('Error de conexión: ' + error.message);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Generar Contenido';
+    });
+});
+{% endif %}
+</script>
+{% endblock %}

@@ -7,9 +7,40 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
                 <h2><i class="bi bi-paypal text-primary"></i> Enlaces de Pago PayPal</h2>
-                <a href="{% url 'paypal_link_create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Nuevo Enlace de Pago
-                </a>
+                <div>
+                    <button type="button" class="btn btn-success me-2" id="btnGenerateCatalog">
+                        <i class="bi bi-globe"></i> Generar Catálogo Público
+                    </button>
+                    <a href="{% url 'paypal_link_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Nuevo Enlace de Pago
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para URL pública -->
+    <div class="modal fade" id="catalogModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-globe text-success"></i> Catálogo Público Generado
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Comparte esta URL para que los clientes vean tu catálogo de productos:</p>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="catalogUrl" readonly>
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyUrl()">
+                            <i class="bi bi-clipboard"></i> Copiar
+                        </button>
+                    </div>
+                    <a href="#" id="catalogLink" target="_blank" class="btn btn-sm btn-outline-primary mt-3">
+                        <i class="bi bi-box-arrow-up-right"></i> Abrir catálogo
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -196,19 +227,47 @@
 </div>
 
 <script>
-function copyUrl(elementId) {
-    const input = document.getElementById(elementId);
+// Función para copiar URL
+function copyUrl() {
+    const input = document.getElementById('catalogUrl');
     input.select();
     document.execCommand('copy');
     
-    // Mostrar feedback
-    const button = input.nextElementSibling;
+    const button = event.target;
     const originalHTML = button.innerHTML;
-    button.innerHTML = '<i class="bi bi-check"></i>';
+    button.innerHTML = '<i class="bi bi-check"></i> Copiado';
     setTimeout(() => {
         button.innerHTML = originalHTML;
     }, 2000);
 }
+
+// Generar catálogo público
+document.getElementById('btnGenerateCatalog').addEventListener('click', async function() {
+    try {
+        const response = await fetch("{% url 'paypal_generate_public_catalog_token' %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            document.getElementById('catalogUrl').value = data.url;
+            document.getElementById('catalogLink').href = data.url;
+            
+            const modal = new bootstrap.Modal(document.getElementById('catalogModal'));
+            modal.show();
+        } else {
+            alert('Error: ' + (data.error || 'No se pudo generar el catálogo'));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al generar el catálogo');
+    }
+});
 </script>
 
 <style>
