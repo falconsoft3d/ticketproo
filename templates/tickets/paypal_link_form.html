@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-paypal"></i>
+                        {% if link %}Editar Producto de Pago{% else %}Nuevo Producto de Pago{% endif %}
+                    </h4>
+                    {% if link %}
+                    <small class="text-white-50">Los cambios solo afectarán a las nuevas compras</small>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label for="product_name" class="form-label">Nombre del Producto/Servicio <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="product_name" name="product_name" 
+                                       value="{{ link.product_name }}" required>
+                                <small class="text-muted">Nombre descriptivo del producto o servicio a vender</small>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="amount" class="form-label">Importe (EUR) <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text">€</span>
+                                    <input type="number" class="form-control" id="amount" name="amount" 
+                                           value="{{ link.amount }}" step="0.01" min="0.01" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="description" name="description" rows="4">{{ link.description }}</textarea>
+                            <small class="text-muted">Descripción detallada del producto/servicio (opcional)</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="company" class="form-label">Empresa</label>
+                            <select class="form-select" id="company" name="company">
+                                <option value="">Ninguna</option>
+                                {% for company in companies %}
+                                <option value="{{ company.id }}" {% if link.company_id == company.id %}selected{% endif %}>
+                                    {{ company.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">Empresa asociada (opcional)</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="attachment" class="form-label">
+                                <i class="bi bi-paperclip"></i> Archivo Adjunto
+                            </label>
+                            {% if link.attachment %}
+                            <div class="alert alert-info py-2 mb-2">
+                                <i class="bi bi-file-earmark"></i> Archivo actual: 
+                                <strong>{{ link.attachment_name }}</strong>
+                            </div>
+                            {% endif %}
+                            <input type="file" class="form-control" id="attachment" name="attachment">
+                            <small class="text-muted">
+                                Archivo que el cliente podrá descargar después de realizar el pago
+                                {% if not link %}(opcional){% else %}(dejar vacío para mantener el actual){% endif %}
+                            </small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="attachment_name" class="form-label">Nombre del Archivo</label>
+                            <input type="text" class="form-control" id="attachment_name" name="attachment_name" 
+                                   value="{{ link.attachment_name }}" placeholder="Nombre descriptivo del archivo">
+                            <small class="text-muted">Nombre con el que se descargará el archivo (opcional, se usa el nombre original si está vacío)</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="expires_at" class="form-label">Fecha de Expiración</label>
+                            <input type="date" class="form-control" id="expires_at" name="expires_at" 
+                                   value="{% if link.expires_at %}{{ link.expires_at|date:'Y-m-d' }}{% endif %}" 
+                                   min="{{ today|date:'Y-m-d' }}">
+                            <small class="text-muted">El enlace no estará disponible después de esta fecha (opcional)</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notas Internas</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3">{{ link.notes }}</textarea>
+                            <small class="text-muted">Notas privadas para uso interno (no visibles para el cliente)</small>
+                        </div>
+                        
+                        {% if link %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>Importante:</strong> Este es un producto reutilizable. Los cambios que hagas solo afectarán a las nuevas compras.
+                            Las órdenes ya completadas mantendrán los datos originales del momento de la compra.
+                        </div>
+                        <div class="alert alert-info">
+                            <i class="bi bi-link-45deg"></i>
+                            <strong>URL del Producto:</strong><br>
+                            <code>{{ link.public_url }}</code>
+                            <br><small>Esta URL puede ser usada múltiples veces. Cada pago crea una orden individual.</small>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Nota:</strong> Una vez creado, se generará una URL pública única que podrás compartir con tus clientes.
+                            Esta URL puede ser reutilizada para múltiples ventas. Cada compra crea una orden individual con su propio token de descarga válido por 72 horas.
+                        </div>
+                        {% endif %}
+                        
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a href="{% if link %}{% url 'paypal_link_detail' link.pk %}{% else %}{% url 'paypal_link_list' %}{% endif %}" 
+                               class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i>
+                                {% if link %}Actualizar Producto{% else %}Crear Producto{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Preview del nombre del archivo
+    const fileInput = document.getElementById('attachment');
+    const fileNameInput = document.getElementById('attachment_name');
+    
+    fileInput.addEventListener('change', function(e) {
+        if (this.files && this.files[0]) {
+            if (!fileNameInput.value) {
+                fileNameInput.value = this.files[0].name;
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

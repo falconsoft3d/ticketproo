@@ -1,0 +1,207 @@
+{% extends 'public_base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block hero_section %}
+<!-- Hero section -->
+<section class="hero-section bg-warning">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-12 text-center text-dark">
+                <i class="bi bi-hourglass-bottom" style="font-size: 4rem;"></i>
+                <h1 class="display-5 fw-bold mb-3 mt-3">
+                    Enlace de Descarga Expirado
+                </h1>
+                <p class="lead mb-0">
+                    El período de descarga de 72 horas ha finalizado
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card shadow-lg border-warning">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-exclamation-triangle text-warning" style="font-size: 4rem;"></i>
+                    
+                    <h2 class="mt-4 mb-3">{{ error }}</h2>
+                    
+                    <div class="alert alert-warning text-start mb-4">
+                        <h6 class="mb-2">
+                            <i class="bi bi-info-circle"></i> ¿Qué significa esto?
+                        </h6>
+                        <p class="mb-2">
+                            {{ error_detail }}
+                        </p>
+                        <hr>
+                        <small class="text-muted">
+                            <strong>Orden:</strong> #{{ link.id|stringformat:"05d" }}<br>
+                            <strong>Producto:</strong> {{ link.product_name }}<br>
+                            <strong>Fecha de pago:</strong> {{ link.payment_date|date:"d/m/Y H:i" }}<br>
+                            <strong>Enlace expiró:</strong> {{ link.download_token_expires_at|date:"d/m/Y H:i" }}
+                        </small>
+                    </div>
+
+                    <h5 class="mb-3">¿Qué puedo hacer?</h5>
+                    
+                    <div class="options-list text-start mb-4">
+                        <div class="option-item">
+                            <div class="d-flex align-items-start">
+                                <i class="bi bi-1-circle text-primary fs-4 me-3"></i>
+                                <div>
+                                    <h6 class="mb-1">Contacta con el Vendedor</h6>
+                                    <p class="text-muted mb-0">
+                                        El vendedor puede generar un nuevo enlace de descarga para ti.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="option-item">
+                            <div class="d-flex align-items-start">
+                                <i class="bi bi-2-circle text-primary fs-4 me-3"></i>
+                                <div>
+                                    <h6 class="mb-1">Proporciona tu Información</h6>
+                                    <p class="text-muted mb-0">
+                                        Incluye el número de orden <code>#{{ link.id|stringformat:"05d" }}</code> 
+                                        y el ID de transacción para verificación.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="option-item">
+                            <div class="d-flex align-items-start">
+                                <i class="bi bi-3-circle text-primary fs-4 me-3"></i>
+                                <div>
+                                    <h6 class="mb-1">Recibe Nuevo Enlace</h6>
+                                    <p class="text-muted mb-0">
+                                        El vendedor te enviará un nuevo enlace válido por 72 horas adicionales.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if link.user.email %}
+                    <a href="mailto:{{ link.user.email }}?subject=Solicitud%20de%20nuevo%20enlace%20de%20descarga%20-%20Orden%20%23{{ link.id|stringformat:'05d' }}&body=Hola,%0A%0ASolicito%20un%20nuevo%20enlace%20de%20descarga%20para%20mi%20orden.%0A%0ADetalles:%0AOrden:%20%23{{ link.id|stringformat:'05d' }}%0AProducto:%20{{ link.product_name|urlencode }}%0AID%20de%20transacción:%20{{ link.paypal_order_id }}%0A%0AGracias" 
+                       class="btn btn-primary btn-lg mb-3">
+                        <i class="bi bi-envelope"></i> Contactar al Vendedor
+                    </a>
+                    {% endif %}
+                    
+                    <hr>
+                    
+                    <div class="info-section p-3 bg-light rounded">
+                        <h6 class="mb-2">
+                            <i class="bi bi-shield-check text-success"></i> Tu Pago está Seguro
+                        </h6>
+                        <p class="text-muted mb-0 small">
+                            Tu pago fue procesado correctamente por PayPal. 
+                            El vendedor tiene registro de tu compra y podrá verificarla.
+                        </p>
+                    </div>
+
+                    <hr>
+                    
+                    <div class="transaction-details">
+                        <h6 class="text-muted mb-2">Información de la Transacción</h6>
+                        <div class="d-flex justify-content-between mb-2">
+                            <small class="text-muted">ID de Transacción:</small>
+                            <small><code id="transaction-id">{{ link.paypal_order_id }}</code></small>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <small class="text-muted">Importe Pagado:</small>
+                            <small><strong class="text-success">€{{ link.amount }}</strong></small>
+                        </div>
+                        {% if link.paypal_payer_email %}
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">Email de PayPal:</small>
+                            <small>{{ link.paypal_payer_email }}</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Consejo -->
+            <div class="card border-0 bg-info bg-opacity-10 mt-4">
+                <div class="card-body text-center">
+                    <h6 class="text-info mb-2">
+                        <i class="bi bi-lightbulb"></i> Consejo para el Futuro
+                    </h6>
+                    <p class="text-muted mb-0 small">
+                        Descarga tus archivos dentro de las primeras 72 horas después del pago 
+                        y guárdalos en un lugar seguro para evitar este inconveniente.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.hero-section {
+    background: linear-gradient(135deg, #ffc107 0%, #ffcd38 100%);
+    padding: 3rem 0;
+    margin-bottom: 0;
+}
+
+.card {
+    border-radius: 15px;
+}
+
+.option-item {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 3px solid #0d6efd;
+}
+
+.option-item:last-child {
+    margin-bottom: 0;
+}
+
+.info-section {
+    border-left: 4px solid #28a745;
+}
+
+code {
+    cursor: pointer;
+    user-select: all;
+}
+
+code:hover {
+    background-color: #e9ecef;
+}
+</style>
+
+<script>
+// Copiar ID de transacción
+document.addEventListener('DOMContentLoaded', function() {
+    const transactionId = document.getElementById('transaction-id');
+    if (transactionId) {
+        transactionId.title = 'Click para copiar';
+        transactionId.addEventListener('click', function() {
+            navigator.clipboard.writeText(this.textContent);
+            
+            // Mostrar feedback
+            const originalText = this.textContent;
+            this.textContent = '✓ Copiado!';
+            this.style.backgroundColor = '#d4edda';
+            setTimeout(() => {
+                this.textContent = originalText;
+                this.style.backgroundColor = '';
+            }, 2000);
+        });
+    }
+});
+</script>
+{% endblock %}

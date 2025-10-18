@@ -1372,6 +1372,11 @@ class SystemConfigurationForm(forms.ModelForm):
             'openai_api_key',
             'openai_model',
             'ai_employee_analysis_prompt',
+            'paypal_enabled',
+            'paypal_mode',
+            'paypal_client_id',
+            'paypal_client_secret',
+            'paypal_webhook_id',
             'enable_telegram_notifications',
             'telegram_bot_token',
             'telegram_chat_id',
@@ -1415,6 +1420,26 @@ class SystemConfigurationForm(forms.ModelForm):
                 'class': 'form-control',
                 'rows': 8,
                 'placeholder': 'Prompt personalizado para el análisis de empleados...'
+            }),
+            'paypal_enabled': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'paypal_mode': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'paypal_client_id': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Client ID de PayPal',
+                'type': 'password'
+            }),
+            'paypal_client_secret': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Client Secret de PayPal',
+                'type': 'password'
+            }),
+            'paypal_webhook_id': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Webhook ID (opcional)'
             }),
             'enable_telegram_notifications': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
@@ -1473,6 +1498,11 @@ class SystemConfigurationForm(forms.ModelForm):
             'openai_api_key': 'API Key de OpenAI',
             'openai_model': 'Modelo de IA',
             'ai_employee_analysis_prompt': 'Prompt para análisis de empleados',
+            'paypal_enabled': 'Habilitar PayPal',
+            'paypal_mode': 'Modo de PayPal',
+            'paypal_client_id': 'Client ID de PayPal',
+            'paypal_client_secret': 'Client Secret de PayPal',
+            'paypal_webhook_id': 'Webhook ID de PayPal',
             'enable_telegram_notifications': 'Activar notificaciones de Telegram',
             'telegram_bot_token': 'Token del Bot de Telegram',
             'telegram_chat_id': 'ID del Chat/Grupo de Telegram',
@@ -1495,6 +1525,11 @@ class SystemConfigurationForm(forms.ModelForm):
             'openai_api_key': 'Clave de API de OpenAI para acceder a ChatGPT',
             'openai_model': 'Modelo de IA a utilizar (ej: gpt-4o, gpt-3.5-turbo)',
             'ai_employee_analysis_prompt': 'Plantilla del prompt que se enviará a la IA para analizar candidatos. Usa {datos} donde se insertarán los datos del candidato.',
+            'paypal_enabled': 'Habilita el sistema de pagos con PayPal',
+            'paypal_mode': 'Usa "sandbox" para pruebas o "live" para producción',
+            'paypal_client_id': 'Client ID obtenido desde https://developer.paypal.com',
+            'paypal_client_secret': 'Client Secret obtenido desde https://developer.paypal.com',
+            'paypal_webhook_id': 'ID del webhook para notificaciones avanzadas (opcional)',
             'enable_telegram_notifications': 'Envía notificaciones cuando se crean nuevos tickets',
             'telegram_bot_token': 'Token proporcionado por @BotFather al crear el bot',
             'telegram_chat_id': 'ID del grupo donde enviar notificaciones (ej: -100123456789)',

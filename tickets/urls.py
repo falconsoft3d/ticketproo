@@ -796,5 +796,27 @@ urlpatterns += [
     path('supplier-contracts/<int:pk>/generate/', views.supplier_contract_review_generate, name='supplier_contract_review_generate'),
     path('supplier-contracts/<int:pk>/update-status/', views.supplier_contract_review_update_status, name='supplier_contract_review_update_status'),
     path('supplier-contracts/<int:pk>/download-pdf/', views.supplier_contract_review_download_pdf, name='supplier_contract_review_download_pdf'),
+    
+    # Enlaces de pago PayPal
+    path('paypal-links/', views.paypal_link_list, name='paypal_link_list'),
+    path('paypal-links/create/', views.paypal_link_create, name='paypal_link_create'),
+    path('paypal-links/debug/', views.paypal_debug_config, name='paypal_debug_config'),
+    path('paypal-links/<int:pk>/', views.paypal_link_detail, name='paypal_link_detail'),
+    path('paypal-links/<int:pk>/edit/', views.paypal_link_edit, name='paypal_link_edit'),
+    path('paypal-links/<int:pk>/delete/', views.paypal_link_delete, name='paypal_link_delete'),
+    path('paypal-links/<int:pk>/cancel/', views.paypal_link_cancel, name='paypal_link_cancel'),
+    
+    # URLs públicas de PayPal (sin autenticación)
+    path('paypal-payment/<uuid:token>/', views.paypal_payment_page, name='paypal_payment_page'),
+    path('paypal-link-orders/<uuid:token>/', views.paypal_link_orders, name='paypal_link_orders'),  # Ver todas las órdenes de un link
+    path('paypal-order/<uuid:token>/', views.paypal_order_summary, name='paypal_order_summary'),  # Legacy - redirige a paypal_link_orders
+    path('paypal-download/<uuid:token>/', views.paypal_file_download, name='paypal_file_download'),  # Legacy
+    path('order/<uuid:token>/', views.paypal_order_detail, name='paypal_order_detail'),  # Detalle de orden individual
+    path('order-download/<uuid:token>/', views.paypal_order_download, name='paypal_order_download'),  # Descarga por orden
+    
+    # API/Webhooks de PayPal
+    path('paypal/webhook/', views.paypal_webhook, name='paypal_webhook'),
+    path('paypal/create-order/', views.paypal_create_order, name='paypal_create_order'),
+    path('paypal/capture-order/', views.paypal_capture_order, name='paypal_capture_order'),
 ]
 

@@ -121,6 +121,65 @@
 
                         <hr>
 
+                        <!-- Integración con Telegram -->
+                        <h5 class="mb-3">
+                            <i class="bi bi-telegram text-info"></i> Integración con Telegram
+                        </h5>
+
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" 
+                                       type="checkbox" 
+                                       id="telegram_enabled" 
+                                       name="telegram_enabled"
+                                       {% if manager.telegram_enabled %}checked{% endif %}>
+                                <label class="form-check-label" for="telegram_enabled">
+                                    <strong>Enviar resúmenes por Telegram</strong>
+                                </label>
+                            </div>
+                            <div class="form-text">
+                                Cuando está activo, los resúmenes se enviarán automáticamente por Telegram
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="telegram_bot_token" class="form-label">
+                                Token del Bot de Telegram <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="telegram_bot_token" 
+                                   name="telegram_bot_token" 
+                                   value="{{ manager.telegram_bot_token }}" 
+                                   placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11">
+                            <div class="form-text">
+                                Token único del bot de Telegram. 
+                                <a href="#" data-bs-toggle="modal" data-bs-target="#telegramHelpModal">
+                                    ¿Cómo obtener el Bot Token?
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="telegram_chat_id" class="form-label">
+                                Chat ID de Telegram <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="telegram_chat_id" 
+                                   name="telegram_chat_id" 
+                                   value="{{ manager.telegram_chat_id }}" 
+                                   placeholder="-1001234567890">
+                            <div class="form-text">
+                                ID del chat, grupo o canal donde se enviarán los resúmenes.
+                                <a href="#" data-bs-toggle="modal" data-bs-target="#telegramHelpModal">
+                                    ¿Cómo obtener el Chat ID?
+                                </a>
+                            </div>
+                        </div>
+
+                        <hr>
+
                         <!-- Botones -->
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">
@@ -137,6 +196,34 @@
 
         <!-- Sidebar -->
         <div class="col-lg-4">
+            <!-- Estado de Telegram -->
+            <div class="card shadow-sm border-0 mb-3 {% if manager.telegram_enabled and manager.telegram_bot_token and manager.telegram_chat_id %}border-success{% else %}border-warning{% endif %}">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-telegram"></i> Estado de Telegram
+                    </h6>
+                    {% if manager.telegram_enabled %}
+                        {% if manager.telegram_bot_token and manager.telegram_chat_id %}
+                        <div class="alert alert-success mb-0 py-2">
+                            <i class="bi bi-check-circle"></i> Configurado y activo
+                            <br><small>✓ Bot Token</small>
+                            <br><small>✓ Chat ID</small>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-warning mb-0 py-2">
+                            <i class="bi bi-exclamation-triangle"></i> Configuración incompleta
+                            {% if not manager.telegram_bot_token %}<br><small>✗ Falta Bot Token</small>{% endif %}
+                            {% if not manager.telegram_chat_id %}<br><small>✗ Falta Chat ID</small>{% endif %}
+                        </div>
+                        {% endif %}
+                    {% else %}
+                    <div class="alert alert-secondary mb-0 py-2">
+                        <i class="bi bi-x-circle"></i> Deshabilitado
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
             <!-- Ayuda -->
             <div class="card shadow-sm border-0 bg-light mb-3">
                 <div class="card-body">
@@ -197,6 +284,75 @@
                         </p>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Ayuda para Telegram -->
+<div class="modal fade" id="telegramHelpModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-telegram"></i> ¿Cómo obtener el Chat ID de Telegram?
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Requisito previo:</strong> Antes de usar esta función, debes configurar el <strong>Bot Token de Telegram</strong> en la <strong>Configuración del Sistema</strong>.
+                    <br><br>
+                    El administrador debe ir a: <code>Configuración → Sistema → Telegram Bot Token</code>
+                </div>
+
+                <h6 class="mb-3"><i class="bi bi-1-circle-fill text-primary"></i> Paso 1: Crear o usar un Bot de Telegram</h6>
+                <ol>
+                    <li class="mb-2">
+                        <strong>Habla con BotFather:</strong> Busca <code>@BotFather</code> en Telegram
+                    </li>
+                    <li class="mb-2">
+                        <strong>Crea un bot:</strong> Envía <code>/newbot</code> y sigue las instrucciones
+                    </li>
+                    <li class="mb-2">
+                        <strong>Guarda el token:</strong> BotFather te dará un token como <code>123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11</code>
+                    </li>
+                    <li class="mb-2">
+                        <strong>Configúralo en el sistema:</strong> Pega ese token en la configuración del sistema
+                    </li>
+                </ol>
+
+                <h6 class="mb-3 mt-4"><i class="bi bi-2-circle-fill text-primary"></i> Paso 2: Obtener el Chat ID</h6>
+                <ol>
+                    <li class="mb-2">
+                        <strong>Busca el bot en Telegram:</strong> Busca <code>@userinfobot</code> o <code>@getidsbot</code>
+                    </li>
+                    <li class="mb-2">
+                        <strong>Inicia una conversación:</strong> Envía <code>/start</code> al bot
+                    </li>
+                    <li class="mb-2">
+                        <strong>Obtén tu ID:</strong> El bot te responderá con tu Chat ID
+                    </li>
+                    <li class="mb-2">
+                        <strong>Para grupos:</strong> Agrega el bot al grupo y envía <code>/start@getidsbot</code>
+                    </li>
+                </ol>
+
+                <h6 class="mb-3 mt-4">Formato del Chat ID:</h6>
+                <ul>
+                    <li><strong>Chat personal:</strong> Número positivo (ejemplo: <code>123456789</code>)</li>
+                    <li><strong>Grupo:</strong> Número negativo (ejemplo: <code>-123456789</code>)</li>
+                    <li><strong>SuperGrupo/Canal:</strong> Número con <code>-100</code> (ejemplo: <code>-1001234567890</code>)</li>
+                </ul>
+
+                <div class="alert alert-warning mt-3">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Importante:</strong> Asegúrate de que el bot de tu sistema tenga permisos para enviar mensajes al chat/grupo configurado.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
             </div>
         </div>
     </div>

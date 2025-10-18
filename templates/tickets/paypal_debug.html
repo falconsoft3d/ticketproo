@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-bug"></i> Debug - Configuración PayPal
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <h5 class="mb-3">Estado de la Configuración</h5>
+                    
+                    <table class="table table-bordered">
+                        <tbody>
+                            <tr>
+                                <td><strong>Configuración existe</strong></td>
+                                <td>
+                                    {% if debug_info.config_exists %}
+                                        <span class="badge bg-success">✓ Sí</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">✗ No</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>PayPal habilitado</strong></td>
+                                <td>
+                                    {% if debug_info.paypal_enabled %}
+                                        <span class="badge bg-success">✓ Sí</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">✗ No - <a href="{% url 'system_configuration' %}">Habilitar aquí</a></span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Modo de PayPal</strong></td>
+                                <td>
+                                    <span class="badge {% if debug_info.paypal_mode == 'sandbox' %}bg-warning{% elif debug_info.paypal_mode == 'live' %}bg-success{% else %}bg-secondary{% endif %}">
+                                        {{ debug_info.paypal_mode }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Client ID configurado</strong></td>
+                                <td>
+                                    {% if debug_info.client_id_configured %}
+                                        <span class="badge bg-success">✓ Sí ({{ debug_info.client_id_length }} caracteres)</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">✗ No configurado - <a href="{% url 'system_configuration' %}">Configurar aquí</a></span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Client Secret configurado</strong></td>
+                                <td>
+                                    {% if debug_info.client_secret_configured %}
+                                        <span class="badge bg-success">✓ Sí</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">✗ No configurado - <a href="{% url 'system_configuration' %}">Configurar aquí</a></span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    {% if config and config.paypal_enabled and config.paypal_client_id %}
+                    <div class="alert alert-success mt-4">
+                        <i class="bi bi-check-circle"></i>
+                        <strong>¡Configuración correcta!</strong> PayPal está configurado y listo para usar.
+                    </div>
+                    
+                    <h5 class="mt-4 mb-3">Client ID (para verificar)</h5>
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <code style="word-break: break-all;">{{ config.paypal_client_id }}</code>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3">
+                        <strong>Nota:</strong> Copia este Client ID y verifica que sea correcto en 
+                        <a href="https://developer.paypal.com/dashboard/applications/{% if config.paypal_mode == 'sandbox' %}sandbox{% else %}live{% endif %}" target="_blank" class="alert-link">
+                            PayPal Developer Dashboard ({{ config.paypal_mode }})
+                        </a>
+                    </div>
+                    
+                    {% else %}
+                    <div class="alert alert-warning mt-4">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Configuración incompleta</strong>
+                    </div>
+                    
+                    <div class="card mt-3">
+                        <div class="card-body">
+                            <h6>Pasos para configurar PayPal:</h6>
+                            <ol>
+                                <li>Ve a <a href="{% url 'system_configuration' %}">Configuración del Sistema</a></li>
+                                <li>Busca la sección "Configuración de PayPal"</li>
+                                <li>Marca "Habilitar PayPal"</li>
+                                <li>Selecciona el modo (sandbox para pruebas)</li>
+                                <li>Ingresa tu Client ID y Secret de <a href="https://developer.paypal.com" target="_blank">PayPal Developer</a></li>
+                                <li>Guarda los cambios</li>
+                            </ol>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mt-4">
+                        <a href="{% url 'system_configuration' %}" class="btn btn-primary">
+                            <i class="bi bi-gear"></i> Ir a Configuración
+                        </a>
+                        <a href="{% url 'paypal_link_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Ver Enlaces de Pago
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -258,6 +258,126 @@
                             </div>
                         </div>
 
+                        <!-- Configuración de PayPal -->
+                        <div class="config-section">
+                            <h5>
+                                <i class="bi bi-paypal me-2"></i>
+                                Configuración de PayPal
+                            </h5>
+                            
+                            <div class="form-check mb-3">
+                                {{ form.paypal_enabled }}
+                                <label class="form-check-label" for="{{ form.paypal_enabled.id_for_label }}">
+                                    <i class="bi bi-credit-card me-1"></i>
+                                    {{ form.paypal_enabled.label }}
+                                </label>
+                                {% if form.paypal_enabled.help_text %}
+                                    <div class="form-text">{{ form.paypal_enabled.help_text }}</div>
+                                {% endif %}
+                                {% if form.paypal_enabled.errors %}
+                                    <div class="text-danger mt-1">
+                                        {% for error in form.paypal_enabled.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div id="paypal-config-fields" style="{% if not config.paypal_enabled %}display: none;{% endif %}">
+                                <div class="mb-3">
+                                    <label for="{{ form.paypal_mode.id_for_label }}" class="form-label">
+                                        <i class="bi bi-toggles me-1"></i>
+                                        {{ form.paypal_mode.label }}
+                                    </label>
+                                    {{ form.paypal_mode }}
+                                    {% if form.paypal_mode.help_text %}
+                                        <small class="form-text text-muted">{{ form.paypal_mode.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.paypal_mode.errors %}
+                                        <div class="text-danger mt-1">
+                                            {% for error in form.paypal_mode.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.paypal_client_id.id_for_label }}" class="form-label">
+                                        <i class="bi bi-key me-1"></i>
+                                        {{ form.paypal_client_id.label }}
+                                    </label>
+                                    {{ form.paypal_client_id }}
+                                    {% if form.paypal_client_id.help_text %}
+                                        <small class="form-text text-muted">{{ form.paypal_client_id.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.paypal_client_id.errors %}
+                                        <div class="text-danger mt-1">
+                                            {% for error in form.paypal_client_id.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.paypal_client_secret.id_for_label }}" class="form-label">
+                                        <i class="bi bi-shield-lock me-1"></i>
+                                        {{ form.paypal_client_secret.label }}
+                                    </label>
+                                    {{ form.paypal_client_secret }}
+                                    {% if form.paypal_client_secret.help_text %}
+                                        <small class="form-text text-muted">{{ form.paypal_client_secret.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.paypal_client_secret.errors %}
+                                        <div class="text-danger mt-1">
+                                            {% for error in form.paypal_client_secret.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.paypal_webhook_id.id_for_label }}" class="form-label">
+                                        <i class="bi bi-webhook me-1"></i>
+                                        {{ form.paypal_webhook_id.label }}
+                                        <span class="badge bg-secondary">Opcional</span>
+                                    </label>
+                                    {{ form.paypal_webhook_id }}
+                                    {% if form.paypal_webhook_id.help_text %}
+                                        <small class="form-text text-muted">{{ form.paypal_webhook_id.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.paypal_webhook_id.errors %}
+                                        <div class="text-danger mt-1">
+                                            {% for error in form.paypal_webhook_id.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>Información:</strong> Para habilitar los pagos con PayPal, necesitas crear una aplicación en 
+                                <a href="https://developer.paypal.com" target="_blank" class="alert-link">PayPal Developer</a>.
+                                <br><br>
+                                <strong>Pasos rápidos:</strong>
+                                <ol class="mb-0 mt-2">
+                                    <li>Ve a <a href="https://developer.paypal.com/dashboard/applications/sandbox" target="_blank" class="alert-link">PayPal Developer Dashboard</a></li>
+                                    <li>Crea una nueva App (o usa una existente)</li>
+                                    <li>Copia el <strong>Client ID</strong> y <strong>Secret</strong></li>
+                                    <li>Pégalos en los campos de arriba</li>
+                                    <li>Usa modo <strong>"sandbox"</strong> para pruebas y <strong>"live"</strong> para producción</li>
+                                </ol>
+                                <br>
+                                <a href="/GUIA_PAYPAL.md" target="_blank" class="alert-link">
+                                    <i class="bi bi-book me-1"></i>Ver guía completa de configuración
+                                </a>
+                            </div>
+                        </div>
+
                         <!-- Configuración de Telegram -->
                         <div class="config-section">
                             <h5>
@@ -703,6 +823,23 @@
             
             aiEnabledCheckbox.addEventListener('change', toggleAIFields);
             toggleAIFields(); // Ejecutar al cargar la página
+        }
+
+        // Mostrar/ocultar campos de PayPal según el checkbox
+        const paypalEnabledCheckbox = document.querySelector('#id_paypal_enabled');
+        const paypalConfigFields = document.querySelector('#paypal-config-fields');
+        
+        if (paypalEnabledCheckbox && paypalConfigFields) {
+            function togglePayPalFields() {
+                if (paypalEnabledCheckbox.checked) {
+                    paypalConfigFields.style.display = 'block';
+                } else {
+                    paypalConfigFields.style.display = 'none';
+                }
+            }
+            
+            paypalEnabledCheckbox.addEventListener('change', togglePayPalFields);
+            togglePayPalFields(); // Ejecutar al cargar la página
         }
 
         // Mostrar/ocultar campos de Telegram según el checkbox

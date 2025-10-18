@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Órdenes de {{ link.product_name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-shopping-cart"></i> Órdenes de: {{ link.product_name }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Información del Producto -->
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <h5>{{ link.product_name }}</h5>
+                            <p class="text-muted">{{ link.description }}</p>
+                            <p><strong>Precio:</strong> ${{ link.amount }}</p>
+                            <p><strong>URL Pública:</strong> 
+                                <a href="{{ link.public_url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-external-link-alt"></i> Ver Página de Pago
+                                </a>
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6 class="text-muted">Estadísticas</h6>
+                                    <h2 class="mb-0">{{ total_orders }}</h2>
+                                    <p class="text-muted mb-2">Órdenes Totales</p>
+                                    <h4 class="text-success mb-0">{{ paid_orders }}</h4>
+                                    <p class="text-muted mb-2">Pagadas</p>
+                                    <h3 class="text-primary mb-0">${{ total_revenue|floatformat:2 }}</h3>
+                                    <p class="text-muted mb-0">Revenue Total</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Lista de Órdenes -->
+                    <h5 class="mb-3">Historial de Órdenes</h5>
+                    
+                    {% if orders %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Estado</th>
+                                        <th>Cliente</th>
+                                        <th>Monto</th>
+                                        <th>Fecha de Pago</th>
+                                        <th>Descargas</th>
+                                        <th>Token Descarga</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for order in orders %}
+                                    <tr>
+                                        <td>
+                                            <strong>#{{ order.id|stringformat:"05d" }}</strong>
+                                        </td>
+                                        <td>
+                                            {{ order.get_status_badge|safe }}
+                                        </td>
+                                        <td>
+                                            {% if order.paypal_payer_name %}
+                                                <div>{{ order.paypal_payer_name }}</div>
+                                                <small class="text-muted">{{ order.paypal_payer_email }}</small>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <strong>${{ order.amount|floatformat:2 }}</strong>
+                                        </td>
+                                        <td>
+                                            {% if order.payment_date %}
+                                                {{ order.payment_date|date:"d/m/Y H:i" }}
+                                            {% else %}
+                                                <span class="text-muted">Pendiente</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">{{ order.download_count }}</span>
+                                        </td>
+                                        <td>
+                                            {% if order.status == 'completed' %}
+                                                {% if order.is_download_token_valid %}
+                                                    <span class="badge bg-success">
+                                                        <i class="fas fa-check"></i> Válido ({{ order.get_hours_until_download_expires|floatformat:1 }}h)
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">
+                                                        <i class="fas fa-times"></i> Expirado
+                                                    </span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="badge bg-secondary">No generado</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'paypal_order_detail' order.order_token %}" 
+                                               class="btn btn-sm btn-outline-primary" 
+                                               target="_blank">
+                                                <i class="fas fa-eye"></i> Ver
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> Aún no hay órdenes para este producto.
+                        </div>
+                    {% endif %}
+
+                    <div class="mt-4">
+                        <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Volver al Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

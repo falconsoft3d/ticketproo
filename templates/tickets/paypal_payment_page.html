@@ -1,0 +1,293 @@
+{% extends 'public_base.html' %}
+{% load static %}
+
+{% block title %}{{ link.product_name }} - Pago{% endblock %}
+
+{% block hero_section %}
+<!-- Hero section personalizada para pago -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-12 text-center">
+                <h1 class="display-5 fw-bold mb-3">
+                    <i class="bi bi-credit-card"></i> Pago Seguro
+                </h1>
+                <p class="lead mb-0">
+                    Procesado de forma segura por PayPal
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            {% if error %}
+            <!-- Error -->
+            <div class="card shadow-lg border-danger">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-x-circle text-danger" style="font-size: 4rem;"></i>
+                    <h2 class="mt-3 text-danger">Enlace No Disponible</h2>
+                    <p class="lead text-muted">{{ error }}</p>
+                    <hr>
+                    <p class="text-muted mb-0">
+                        Si crees que esto es un error, contacta con el vendedor.
+                    </p>
+                </div>
+            </div>
+            
+            {% elif success %}
+            <!-- Pago Completado -->
+            <div class="card shadow-lg border-success">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-check-circle text-success" style="font-size: 4rem;"></i>
+                    <h2 class="mt-3 text-success">¡Pago Completado!</h2>
+                    <p class="lead">Gracias por tu compra de <strong>{{ link.product_name }}</strong></p>
+                    
+                    {% if link.attachment %}
+                    <hr class="my-4">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        Ya puedes descargar tu archivo
+                    </div>
+                    <a href="{% url 'paypal_file_download' link.public_token %}" class="btn btn-success btn-lg">
+                        <i class="bi bi-download"></i> Descargar Archivo
+                    </a>
+                    <p class="text-muted mt-3 small">
+                        El enlace de descarga estará disponible permanentemente para ti.
+                    </p>
+                    {% endif %}
+                    
+                    <hr class="my-4">
+                    <div class="text-muted">
+                        <small>
+                            <strong>Fecha de pago:</strong> {{ link.payment_date|date:"d/m/Y H:i" }}<br>
+                            <strong>ID de transacción:</strong> {{ link.paypal_order_id }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+            
+            {% else %}
+            <!-- Página de Pago -->
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white text-center py-4">
+                    <h3 class="mb-0">{{ link.product_name }}</h3>
+                </div>
+                <div class="card-body p-4">
+                    {% if link.description %}
+                    <div class="mb-4">
+                        <h6 class="text-muted">Descripción</h6>
+                        <p>{{ link.description|linebreaks }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if link.attachment %}
+                    <div class="alert alert-success mb-4">
+                        <i class="bi bi-paperclip"></i>
+                        <strong>Incluye archivo digital:</strong> {{ link.attachment_name }}
+                        <br>
+                        <small class="text-muted">Podrás descargarlo después de completar el pago</small>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="text-center my-4">
+                        <h2 class="display-4 text-primary mb-0">€{{ link.amount }}</h2>
+                        <p class="text-muted">Precio total</p>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="text-center mb-4">
+                        <p class="text-muted mb-3">
+                            <i class="bi bi-shield-check text-success"></i>
+                            Pago seguro con PayPal
+                        </p>
+                    </div>
+                    
+                    <!-- Botones de PayPal -->
+                    <div id="paypal-button-container"></div>
+                    
+                    <div id="payment-message" class="mt-3" style="display: none;"></div>
+                    
+                    <!-- Debug info (solo si hay problemas) -->
+                    <div id="debug-info" class="mt-3 text-muted small text-center" style="display: none;">
+                        <p>Si no ves los botones de PayPal, verifica:</p>
+                        <ul class="text-start" style="max-width: 400px; margin: 0 auto;">
+                            <li>PayPal está habilitado en la configuración</li>
+                            <li>Client ID está configurado correctamente</li>
+                            <li>Tu conexión a internet está activa</li>
+                        </ul>
+                    </div>
+                    
+                    <hr class="mt-4">
+                    
+                    <div class="text-center text-muted small">
+                        <i class="bi bi-lock"></i>
+                        Transacción segura cifrada SSL/TLS
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if not error and not success %}
+<!-- PayPal SDK -->
+<script src="https://www.paypal.com/sdk/js?client-id={{ paypal_client_id }}&currency=EUR"></script>
+
+<script>
+console.log('PayPal Client ID:', '{{ paypal_client_id }}');
+console.log('PayPal Mode:', '{{ paypal_mode }}');
+
+// Esperar a que el SDK de PayPal se cargue
+setTimeout(function() {
+    if (typeof paypal !== 'undefined') {
+        console.log('PayPal SDK cargado correctamente');
+        paypal.Buttons({
+    style: {
+        layout: 'vertical',
+        color: 'blue',
+        shape: 'rect',
+        label: 'pay',
+        height: 50
+    },
+    
+    createOrder: function(data, actions) {
+        // Llamar al backend para crear la orden
+        console.log('Creando orden en el backend...');
+        showMessage('Preparando el pago...', 'info');
+        
+        return fetch('{% url "paypal_create_order" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                link_id: {{ link.id }}
+            })
+        })
+        .then(function(response) {
+            if (!response.ok) {
+                throw new Error('Error al crear la orden');
+            }
+            return response.json();
+        })
+        .then(function(orderData) {
+            console.log('Orden creada:', orderData);
+            if (orderData.error) {
+                throw new Error(orderData.error);
+            }
+            // Guardar el ID interno de la orden para el capture
+            window.internalOrderId = orderData.internal_order_id;
+            window.internalOrderToken = orderData.internal_order_token;
+            // Retornar el ID de la orden de PayPal
+            return orderData.id;
+        })
+        .catch(function(error) {
+            console.error('Error creando orden:', error);
+            showMessage('Error al preparar el pago: ' + error.message, 'danger');
+            throw error;
+        });
+    },
+    
+    onApprove: function(data, actions) {
+        console.log('Pago aprobado, capturando...', data);
+        showMessage('Procesando pago...', 'info');
+        
+        // Capturar el pago en el backend
+        return fetch('{% url "paypal_capture_order" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                order_id: data.orderID,
+                internal_order_id: window.internalOrderId,
+                link_id: {{ link.id }}
+            })
+        })
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(captureData) {
+            console.log('Captura completada:', captureData);
+            if (captureData.status === 'success') {
+                showMessage('¡Pago completado! Redirigiendo a tu resumen de orden...', 'success');
+                // Redirigir al resumen de orden
+                setTimeout(function() {
+                    if (captureData.order_summary_url) {
+                        window.location.href = captureData.order_summary_url;
+                    } else {
+                        window.location.reload();
+                    }
+                }, 2000);
+            } else {
+                showMessage('Error al procesar el pago. Por favor, contacta con soporte. Error: ' + (captureData.error || 'Desconocido'), 'danger');
+            }
+        })
+        .catch(function(error) {
+            console.error('Error capturando pago:', error);
+            showMessage('Error al comunicar con el servidor. Por favor, contacta con soporte.', 'danger');
+        });
+    },
+    
+    onError: function(err) {
+        showMessage('Ocurrió un error con el pago. Por favor, intenta de nuevo.', 'danger');
+        console.error('PayPal Error:', err);
+    },
+    
+    onCancel: function(data) {
+        showMessage('Pago cancelado. Puedes intentarlo de nuevo cuando quieras.', 'warning');
+        console.log('Pago cancelado:', data);
+    }
+        }).render('#paypal-button-container').then(function() {
+            console.log('Botones de PayPal renderizados');
+        }).catch(function(err) {
+            console.error('Error al renderizar botones:', err);
+            document.getElementById('debug-info').style.display = 'block';
+            showMessage('Error al cargar los botones de pago. Verifica la configuración.', 'danger');
+        });
+    } else {
+        console.error('PayPal SDK no se cargó correctamente');
+        document.getElementById('debug-info').style.display = 'block';
+        showMessage('Error al cargar el sistema de pagos. Por favor, verifica la configuración de PayPal.', 'danger');
+    }
+}, 1000); // Esperar 1 segundo para que cargue el SDK
+
+function showMessage(message, type) {
+    const messageDiv = document.getElementById('payment-message');
+    messageDiv.className = 'alert alert-' + type;
+    messageDiv.innerHTML = '<i class="bi bi-info-circle"></i> ' + message;
+    messageDiv.style.display = 'block';
+    
+    // Auto-hide after 5 seconds for non-error messages
+    if (type !== 'danger') {
+        setTimeout(() => {
+            messageDiv.style.display = 'none';
+        }, 5000);
+    }
+}
+</script>
+{% endif %}
+
+<style>
+.card {
+    border-radius: 15px;
+}
+
+.card-header {
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+}
+
+#paypal-button-container {
+    max-width: 400px;
+    margin: 0 auto;
+}
+</style>
+{% endblock %}

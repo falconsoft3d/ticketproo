@@ -1375,6 +1375,41 @@ class SystemConfiguration(models.Model):
         help_text='Direcciones de email donde enviar notificaciones (una por línea)'
     )
     
+    # Configuración de PayPal
+    paypal_enabled = models.BooleanField(
+        default=False,
+        verbose_name='PayPal habilitado',
+        help_text='Habilita o deshabilita los pagos con PayPal'
+    )
+    paypal_mode = models.CharField(
+        max_length=20,
+        choices=[
+            ('sandbox', 'Sandbox (Pruebas)'),
+            ('live', 'Live (Producción)')
+        ],
+        default='sandbox',
+        verbose_name='Modo de PayPal',
+        help_text='Modo de operación de PayPal'
+    )
+    paypal_client_id = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='PayPal Client ID',
+        help_text='Client ID de la aplicación PayPal'
+    )
+    paypal_client_secret = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='PayPal Client Secret',
+        help_text='Client Secret de la aplicación PayPal'
+    )
+    paypal_webhook_id = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='PayPal Webhook ID',
+        help_text='ID del webhook configurado en PayPal para recibir notificaciones de pagos'
+    )
+    
     # Metadatos
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
@@ -9171,6 +9206,26 @@ class AIManager(models.Model):
         default=True,
         verbose_name='Activo'
     )
+    
+    # Integración con Telegram
+    telegram_enabled = models.BooleanField(
+        default=False,
+        verbose_name='Telegram Habilitado',
+        help_text='Enviar resúmenes automáticamente por Telegram'
+    )
+    telegram_bot_token = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Token del Bot de Telegram',
+        help_text='Token único del bot de Telegram para este gerente'
+    )
+    telegram_chat_id = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Chat ID de Telegram',
+        help_text='ID del chat o canal donde se enviarán los resúmenes'
+    )
+    
     created_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -10222,5 +10277,362 @@ class SupplierContractReview(models.Model):
             
         except Exception as e:
             raise Exception(f"Error al revisar contrato: {str(e)}")
+
+
+class PayPalPaymentLink(models.Model):
+    """Modelo para enlaces de pago de PayPal"""
+    
+    STATUS_CHOICES = [
+        ('active', 'Activo'),
+        ('paid', 'Pagado'),
+        ('expired', 'Expirado'),
+        ('cancelled', 'Cancelado'),
+    ]
+    
+    # Información básica
+    product_name = models.CharField(max_length=200, verbose_name="Nombre del Producto/Servicio")
+    description = models.TextField(blank=True, verbose_name="Descripción")
+    amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Importe (EUR)")
+    
+    # Archivo adjunto
+    attachment = models.FileField(
+        upload_to='paypal_attachments/%Y/%m/',
+        blank=True,
+        null=True,
+        verbose_name="Archivo Adjunto",
+        help_text="Archivo que el cliente podrá descargar después del pago"
+    )
+    attachment_name = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name="Nombre del archivo",
+        help_text="Nombre descriptivo del archivo adjunto"
+    )
+    
+    # URL y token
+    public_token = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        unique=True,
+        verbose_name="Token Público"
+    )
+    public_url = models.URLField(blank=True, verbose_name="URL Pública")
+    
+    # Información del pago
+    paypal_order_id = models.CharField(max_length=200, blank=True, verbose_name="ID de Orden PayPal")
+    paypal_payer_id = models.CharField(max_length=200, blank=True, verbose_name="ID del Pagador")
+    paypal_payer_email = models.EmailField(blank=True, verbose_name="Email del Pagador")
+    paypal_payer_name = models.CharField(max_length=200, blank=True, verbose_name="Nombre del Pagador")
+    paypal_payment_status = models.CharField(max_length=50, blank=True, verbose_name="Estado del Pago PayPal")
+    payment_date = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de Pago")
+    
+    # Estado y seguimiento
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='active',
+        verbose_name="Estado"
+    )
+    download_count = models.IntegerField(default=0, verbose_name="Número de Descargas")
+    
+    # Token temporal de descarga (válido por 72 horas después del pago)
+    download_token = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        unique=True,
+        verbose_name="Token de Descarga Temporal"
+    )
+    download_token_expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de Expiración del Token de Descarga"
+    )
+    
+    # Metadatos
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Usuario Creador")
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Empresa",
+        help_text="Empresa asociada (opcional)"
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Última Actualización")
+    expires_at = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de Expiración")
+    
+    # Notas internas
+    notes = models.TextField(blank=True, verbose_name="Notas Internas")
+    
+    class Meta:
+        verbose_name = "Enlace de Pago PayPal"
+        verbose_name_plural = "Enlaces de Pago PayPal"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.product_name} - €{self.amount}"
+    
+    def save(self, *args, **kwargs):
+        # Generar URL pública si no existe
+        if not self.public_url:
+            from django.conf import settings
+            base_url = getattr(settings, 'BASE_URL', 'http://localhost:8000')
+            self.public_url = f"{base_url}/paypal-payment/{self.public_token}/"
+        
+        # Establecer nombre del archivo si no existe
+        if self.attachment and not self.attachment_name:
+            self.attachment_name = self.attachment.name.split('/')[-1]
+        
+        super().save(*args, **kwargs)
+    
+    def get_status_badge(self):
+        """Retorna el badge HTML para el estado"""
+        badges = {
+            'active': '<span class="badge bg-primary">Activo</span>',
+            'paid': '<span class="badge bg-success"><i class="bi bi-check-circle"></i> Pagado</span>',
+            'expired': '<span class="badge bg-secondary">Expirado</span>',
+            'cancelled': '<span class="badge bg-danger">Cancelado</span>',
+        }
+        return badges.get(self.status, '<span class="badge bg-secondary">Desconocido</span>')
+    
+    def is_paid(self):
+        """Verifica si el enlace ha sido pagado"""
+        return self.status == 'paid'
+    
+    def is_active(self):
+        """Verifica si el enlace está activo (solo verifica expiración por fecha)"""
+        from django.utils import timezone
+        # Solo verificar expiración por fecha - los enlaces son reutilizables
+        if self.expires_at and self.expires_at < timezone.now():
+            return False
+        return True
+    
+    def mark_as_paid(self, order_id, payer_info):
+        """Marca el enlace como pagado con información del pagador"""
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        self.status = 'paid'
+        self.payment_date = timezone.now()
+        self.paypal_order_id = order_id
+        
+        # Establecer token de descarga válido por 72 horas
+        self.download_token = uuid.uuid4()
+        self.download_token_expires_at = timezone.now() + timedelta(hours=72)
+        
+        if payer_info:
+            self.paypal_payer_id = payer_info.get('payer_id', '')
+            self.paypal_payer_email = payer_info.get('email_address', '')
+            name_info = payer_info.get('name', {})
+            given_name = name_info.get('given_name', '') if isinstance(name_info, dict) else ''
+            surname = name_info.get('surname', '') if isinstance(name_info, dict) else ''
+            self.paypal_payer_name = f"{given_name} {surname}".strip()
+        
+        self.save()
+    
+    def increment_download(self):
+        """Incrementa el contador de descargas"""
+        self.download_count += 1
+        self.save(update_fields=['download_count'])
+    
+    def is_download_token_valid(self):
+        """Verifica si el token de descarga aún es válido (72 horas)"""
+        from django.utils import timezone
+        if not self.is_paid():
+            return False
+        if not self.download_token_expires_at:
+            return False
+        return self.download_token_expires_at > timezone.now()
+    
+    def get_download_url(self):
+        """Retorna la URL de descarga temporal"""
+        if self.is_download_token_valid() and self.attachment:
+            from django.urls import reverse
+            return reverse('paypal_download_with_token', kwargs={'token': self.download_token})
+        return None
+    
+    def get_order_summary_url(self):
+        """Retorna la URL del resumen de orden"""
+        if self.is_paid():
+            from django.urls import reverse
+            return reverse('paypal_order_summary', kwargs={'token': self.public_token})
+        return None
+    
+    def get_hours_until_download_expires(self):
+        """Retorna las horas restantes hasta que expire el token de descarga"""
+        from django.utils import timezone
+        if not self.download_token_expires_at:
+            return 0
+        time_diff = self.download_token_expires_at - timezone.now()
+        hours = time_diff.total_seconds() / 3600
+        return max(0, round(hours, 1))
+    
+    def get_total_orders_count(self):
+        """Retorna el número total de órdenes/pagos completados para este enlace"""
+        return self.orders.filter(status='paid').count()
+    
+    def get_total_revenue(self):
+        """Retorna el total de ingresos generados por este enlace"""
+        from django.db.models import Sum
+        total = self.orders.filter(status='paid').aggregate(total=Sum('amount'))['total']
+        return total or 0
+
+
+class PayPalOrder(models.Model):
+    """Modelo para órdenes individuales de pago (cada compra genera una orden)"""
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pendiente'),
+        ('paid', 'Pagado'),
+        ('failed', 'Fallido'),
+        ('refunded', 'Reembolsado'),
+    ]
+    
+    # Relación con el enlace de pago original (plantilla)
+    payment_link = models.ForeignKey(
+        PayPalPaymentLink,
+        on_delete=models.CASCADE,
+        related_name='orders',
+        verbose_name='Enlace de Pago',
+        help_text='Enlace de pago desde el cual se generó esta orden'
+    )
+    
+    # Token único para esta orden
+    order_token = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        unique=True,
+        verbose_name='Token de Orden',
+        help_text='Token único para acceder a esta orden específica'
+    )
+    
+    # Información del producto (copiada del enlace al momento de la compra)
+    product_name = models.CharField(max_length=200, verbose_name='Producto')
+    description = models.TextField(blank=True, verbose_name='Descripción')
+    amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Importe (EUR)')
+    
+    # Información del pago
+    paypal_order_id = models.CharField(
+        max_length=200,
+        unique=True,
+        verbose_name='ID de Orden PayPal'
+    )
+    paypal_payer_id = models.CharField(max_length=200, blank=True, verbose_name='ID del Pagador')
+    paypal_payer_email = models.EmailField(blank=True, verbose_name='Email del Pagador')
+    paypal_payer_name = models.CharField(max_length=200, blank=True, verbose_name='Nombre del Pagador')
+    payment_date = models.DateTimeField(null=True, blank=True, verbose_name='Fecha de Pago')
+    
+    # Estado
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        verbose_name='Estado'
+    )
+    
+    # Token de descarga temporal (válido 72 horas)
+    download_token = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        unique=True,
+        verbose_name='Token de Descarga'
+    )
+    download_token_expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Expiración Token de Descarga'
+    )
+    download_count = models.IntegerField(default=0, verbose_name='Número de Descargas')
+    
+    # Metadatos
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de Creación')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última Actualización')
+    
+    class Meta:
+        verbose_name = 'Orden de Pago PayPal'
+        verbose_name_plural = 'Órdenes de Pago PayPal'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['paypal_order_id']),
+            models.Index(fields=['order_token']),
+            models.Index(fields=['download_token']),
+            models.Index(fields=['status', 'created_at']),
+        ]
+    
+    def __str__(self):
+        return f"Orden #{self.id:05d} - {self.product_name} - {self.get_status_display()}"
+    
+    def is_paid(self):
+        """Verifica si la orden ha sido pagada"""
+        return self.status == 'paid'
+    
+    def mark_as_paid(self, payer_info):
+        """Marca la orden como pagada"""
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        self.status = 'paid'
+        self.payment_date = timezone.now()
+        
+        # Establecer token de descarga válido por 72 horas
+        self.download_token = uuid.uuid4()
+        self.download_token_expires_at = timezone.now() + timedelta(hours=72)
+        
+        if payer_info:
+            self.paypal_payer_id = payer_info.get('payer_id', '')
+            self.paypal_payer_email = payer_info.get('email_address', '')
+            name_info = payer_info.get('name', {})
+            given_name = name_info.get('given_name', '') if isinstance(name_info, dict) else ''
+            surname = name_info.get('surname', '') if isinstance(name_info, dict) else ''
+            self.paypal_payer_name = f"{given_name} {surname}".strip()
+        
+        self.save()
+    
+    def increment_download(self):
+        """Incrementa el contador de descargas"""
+        self.download_count += 1
+        self.save(update_fields=['download_count'])
+    
+    def is_download_token_valid(self):
+        """Verifica si el token de descarga aún es válido"""
+        from django.utils import timezone
+        if not self.is_paid():
+            return False
+        if not self.download_token_expires_at:
+            return False
+        return self.download_token_expires_at > timezone.now()
+    
+    def get_hours_until_download_expires(self):
+        """Retorna las horas restantes hasta que expire el token"""
+        from django.utils import timezone
+        if not self.download_token_expires_at:
+            return 0
+        time_diff = self.download_token_expires_at - timezone.now()
+        hours = time_diff.total_seconds() / 3600
+        return max(0, round(hours, 1))
+    
+    def get_download_url(self):
+        """Retorna la URL de descarga temporal"""
+        if self.is_download_token_valid() and self.payment_link.attachment:
+            from django.urls import reverse
+            return reverse('paypal_order_download', kwargs={'token': self.download_token})
+        return None
+    
+    def get_order_summary_url(self):
+        """Retorna la URL del resumen de orden"""
+        from django.urls import reverse
+        return reverse('paypal_order_detail', kwargs={'token': self.order_token})
+    
+    def get_status_badge(self):
+        """Retorna el badge HTML para el estado"""
+        badges = {
+            'pending': '<span class="badge bg-warning">Pendiente</span>',
+            'paid': '<span class="badge bg-success"><i class="bi bi-check-circle"></i> Pagado</span>',
+            'failed': '<span class="badge bg-danger">Fallido</span>',
+            'refunded': '<span class="badge bg-secondary">Reembolsado</span>',
+        }
+        return badges.get(self.status, '<span class="badge bg-secondary">Desconocido</span>')
+
 
 

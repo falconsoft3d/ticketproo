@@ -11,6 +11,7 @@ from django.http import HttpResponse, Http404, JsonResponse
 from django.utils import timezone
 from django.conf import settings
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
 from datetime import datetime, date, timedelta
 import os
 import json
@@ -20126,6 +20127,9 @@ def ai_manager_create(request):
         category = request.POST.get('category')
         description = request.POST.get('description', '')
         instructions = request.POST.get('instructions')
+        telegram_enabled = request.POST.get('telegram_enabled') == 'on'
+        telegram_bot_token = request.POST.get('telegram_bot_token', '').strip()
+        telegram_chat_id = request.POST.get('telegram_chat_id', '').strip()
         
         if not all([company_id, name, category, instructions]):
             messages.error(request, 'Por favor completa todos los campos requeridos')
@@ -20137,6 +20141,9 @@ def ai_manager_create(request):
                 category=category,
                 description=description,
                 instructions=instructions,
+                telegram_enabled=telegram_enabled,
+                telegram_bot_token=telegram_bot_token,
+                telegram_chat_id=telegram_chat_id,
                 created_by=request.user
             )
             messages.success(request, f'Gerente IA "{name}" creado exitosamente')
@@ -20209,6 +20216,12 @@ def ai_manager_edit(request, pk):
         manager.description = request.POST.get('description', '')
         manager.instructions = request.POST.get('instructions')
         manager.is_active = request.POST.get('is_active') == 'on'
+        
+        # Telegram integration
+        manager.telegram_enabled = request.POST.get('telegram_enabled') == 'on'
+        manager.telegram_bot_token = request.POST.get('telegram_bot_token', '').strip()
+        manager.telegram_chat_id = request.POST.get('telegram_chat_id', '').strip()
+        
         manager.save()
         
         messages.success(request, 'Gerente IA actualizado exitosamente')
@@ -20451,7 +20464,48 @@ IMPORTANTE:
                     file=attachment_file
                 )
             
-            messages.success(request, 'Reunión registrada y análisis generado exitosamente')
+            # Enviar por Telegram si está habilitado
+            if manager.telegram_enabled and manager.telegram_bot_token and manager.telegram_chat_id:
+                try:
+                    from .telegram_utils import send_telegram_message
+                    from django.utils import timezone
+                    
+                    # Formatear mensaje para Telegram (solo lo compartido y respuesta)
+                    telegram_message = f"""
+📝 *Nueva Reunión con {manager.name}*
+🏢 {manager.company.name}
+👤 {request.user.get_full_name() or request.user.username}
+📅 {timezone.now().strftime('%d/%m/%Y %H:%M')}
+
+━━━━━━━━━━━━━━━━
+
+*📌 TEMA*
+{title}
+
+━━━━━━━━━━━━━━━━
+
+*💬 LO QUE COMPARTIÓ*
+{user_input}
+
+━━━━━━━━━━━━━━━━
+
+*🤖 RESPUESTA DEL GERENTE IA*
+{ai_response}
+"""
+                    
+                    send_telegram_message(
+                        bot_token=manager.telegram_bot_token,
+                        chat_id=manager.telegram_chat_id,
+                        message=telegram_message,
+                        parse_mode='Markdown'
+                    )
+                    
+                    messages.success(request, 'Reunión registrada, análisis generado y enviado por Telegram exitosamente')
+                except Exception as telegram_error:
+                    messages.success(request, f'Reunión registrada exitosamente (Telegram: {str(telegram_error)})')
+            else:
+                messages.success(request, 'Reunión registrada y análisis generado exitosamente')
+            
             return redirect('ai_manager_meeting_detail', pk=meeting.pk)
             
         except Exception as e:
@@ -20696,7 +20750,53 @@ Por favor genera el resumen ejecutivo completo."""
                 tokens_used=tokens_used
             )
             
-            messages.success(request, 'Resumen ejecutivo generado exitosamente')
+            # Enviar por Telegram si está habilitado
+            if manager.telegram_enabled and manager.telegram_chat_id and manager.telegram_bot_token:
+                try:
+                    from .telegram_utils import send_telegram_message
+                    
+                    # Formatear mensaje para Telegram
+                    telegram_message = f"""
+📊 *Resumen Ejecutivo - {manager.name}*
+🏢 {manager.company.name}
+
+📅 *Período:* {start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')}
+👥 *Participantes:* {summary.participants_count}
+📝 *Reuniones:* {summary.total_meetings}
+
+━━━━━━━━━━━━━━━━
+
+*📝 RESUMEN*
+{summary_text}
+
+━━━━━━━━━━━━━━━━
+
+*💡 INSIGHTS CLAVE*
+{key_insights}
+
+━━━━━━━━━━━━━━━━
+
+*🎯 RECOMENDACIONES*
+{recommendations}
+"""
+                    
+                    success = send_telegram_message(
+                        bot_token=manager.telegram_bot_token,
+                        chat_id=manager.telegram_chat_id,
+                        message=telegram_message,
+                        parse_mode='Markdown'
+                    )
+                    
+                    if success:
+                        messages.success(request, 'Resumen ejecutivo generado y enviado por Telegram exitosamente')
+                    else:
+                        messages.warning(request, 'Resumen generado pero no se pudo enviar por Telegram')
+                    
+                except Exception as telegram_error:
+                    messages.warning(request, f'Resumen generado pero error al enviar por Telegram: {str(telegram_error)}')
+            else:
+                messages.success(request, 'Resumen ejecutivo generado exitosamente')
+            
             return redirect('ai_manager_detail', pk=pk)
             
         except Exception as e:
@@ -22356,6 +22456,669 @@ def supplier_contract_review_download_pdf(request, pk):
     response.write(pdf)
     
     return response
+
+
+# =====================================================
+# VISTAS DE ENLACES DE PAGO PAYPAL
+# =====================================================
+
+@login_required
+def paypal_link_list(request):
+    """Lista de enlaces de pago de PayPal"""
+    from .models import PayPalPaymentLink
+    
+    links = PayPalPaymentLink.objects.filter(user=request.user).select_related('company')
+    
+    # Filtros
+    search = request.GET.get('search', '')
+    if search:
+        links = links.filter(
+            Q(product_name__icontains=search) |
+            Q(description__icontains=search)
+        )
+    
+    company_id = request.GET.get('company')
+    if company_id:
+        links = links.filter(company_id=company_id)
+    
+    status = request.GET.get('status')
+    if status:
+        links = links.filter(status=status)
+    
+    # Paginación
+    paginator = Paginator(links, 12)
+    page_number = request.GET.get('page')
+    links = paginator.get_page(page_number)
+    
+    companies = Company.objects.filter(is_active=True).order_by('name')
+    
+    context = {
+        'links': links,
+        'companies': companies,
+        'page_title': 'Enlaces de Pago PayPal'
+    }
+    return render(request, 'tickets/paypal_link_list.html', context)
+
+
+@login_required
+def paypal_link_create(request):
+    """Crear nuevo enlace de pago"""
+    from .models import PayPalPaymentLink
+    
+    if request.method == 'POST':
+        try:
+            link = PayPalPaymentLink()
+            link.user = request.user
+            link.product_name = request.POST.get('product_name')
+            link.description = request.POST.get('description', '')
+            link.amount = request.POST.get('amount')
+            
+            company_id = request.POST.get('company')
+            if company_id:
+                link.company_id = company_id
+            
+            # Manejar archivo adjunto
+            if 'attachment' in request.FILES:
+                link.attachment = request.FILES['attachment']
+                link.attachment_name = request.POST.get('attachment_name', link.attachment.name)
+            
+            # Fecha de expiración (opcional)
+            expires_at = request.POST.get('expires_at')
+            if expires_at:
+                from datetime import datetime
+                link.expires_at = datetime.strptime(expires_at, '%Y-%m-%d')
+            
+            link.notes = request.POST.get('notes', '')
+            link.save()
+            
+            messages.success(request, f'Enlace de pago creado exitosamente. URL: {link.public_url}')
+            return redirect('paypal_link_detail', pk=link.pk)
+            
+        except Exception as e:
+            messages.error(request, f'Error al crear el enlace: {str(e)}')
+    
+    companies = Company.objects.filter(is_active=True).order_by('name')
+    
+    context = {
+        'companies': companies,
+        'page_title': 'Nuevo Enlace de Pago'
+    }
+    return render(request, 'tickets/paypal_link_form.html', context)
+
+
+@login_required
+def paypal_link_detail(request, pk):
+    """Detalle del enlace de pago"""
+    from .models import PayPalPaymentLink
+    
+    link = get_object_or_404(PayPalPaymentLink, pk=pk, user=request.user)
+    
+    context = {
+        'link': link,
+        'page_title': link.product_name
+    }
+    return render(request, 'tickets/paypal_link_detail.html', context)
+
+
+@login_required
+def paypal_link_edit(request, pk):
+    """Editar producto de pago (plantilla reutilizable)"""
+    from .models import PayPalPaymentLink
+    
+    link = get_object_or_404(PayPalPaymentLink, pk=pk, user=request.user)
+    
+    # Los productos reutilizables siempre pueden editarse
+    # Los cambios NO afectan a las órdenes ya creadas
+    
+    if request.method == 'POST':
+        try:
+            link.product_name = request.POST.get('product_name')
+            link.description = request.POST.get('description', '')
+            link.amount = request.POST.get('amount')
+            
+            company_id = request.POST.get('company')
+            link.company_id = company_id if company_id else None
+            
+            # Manejar archivo adjunto
+            if 'attachment' in request.FILES:
+                link.attachment = request.FILES['attachment']
+                link.attachment_name = request.POST.get('attachment_name', link.attachment.name)
+            
+            # Fecha de expiración
+            expires_at = request.POST.get('expires_at')
+            if expires_at:
+                from datetime import datetime
+                link.expires_at = datetime.strptime(expires_at, '%Y-%m-%d')
+            else:
+                link.expires_at = None
+            
+            link.notes = request.POST.get('notes', '')
+            link.save()
+            
+            messages.success(request, 'Producto actualizado exitosamente. Los cambios solo afectarán a las nuevas compras.')
+            return redirect('paypal_link_detail', pk=link.pk)
+            
+        except Exception as e:
+            messages.error(request, f'Error al actualizar el enlace: {str(e)}')
+    
+    companies = Company.objects.filter(is_active=True).order_by('name')
+    
+    context = {
+        'link': link,
+        'companies': companies,
+        'page_title': f'Editar - {link.product_name}'
+    }
+    return render(request, 'tickets/paypal_link_form.html', context)
+
+
+@login_required
+def paypal_link_delete(request, pk):
+    """Eliminar enlace de pago"""
+    from .models import PayPalPaymentLink
+    
+    link = get_object_or_404(PayPalPaymentLink, pk=pk, user=request.user)
+    
+    # No permitir eliminación si ya está pagado
+    if link.status == 'paid':
+        messages.warning(request, 'No se puede eliminar un enlace que ya ha sido pagado')
+        return redirect('paypal_link_detail', pk=link.pk)
+    
+    if request.method == 'POST':
+        product_name = link.product_name
+        link.delete()
+        messages.success(request, f'Enlace "{product_name}" eliminado exitosamente')
+        return redirect('paypal_link_list')
+    
+    context = {
+        'link': link,
+        'page_title': f'Eliminar - {link.product_name}'
+    }
+    return render(request, 'tickets/paypal_link_delete.html', context)
+
+
+@login_required
+def paypal_link_cancel(request, pk):
+    """Cancelar enlace de pago"""
+    from .models import PayPalPaymentLink
+    
+    link = get_object_or_404(PayPalPaymentLink, pk=pk, user=request.user)
+    
+    if link.status in ['active']:
+        link.status = 'cancelled'
+        link.save()
+        messages.success(request, 'Enlace cancelado exitosamente')
+    else:
+        messages.warning(request, f'No se puede cancelar un enlace con estado {link.get_status_display()}')
+    
+    return redirect('paypal_link_detail', pk=link.pk)
+
+
+# Vista de debug para PayPal (solo para admins)
+@login_required
+def paypal_debug_config(request):
+    """Vista para verificar configuración de PayPal"""
+    from .models import SystemConfiguration
+    
+    config = SystemConfiguration.objects.first()
+    
+    debug_info = {
+        'config_exists': config is not None,
+        'paypal_enabled': config.paypal_enabled if config else False,
+        'paypal_mode': config.paypal_mode if config else 'No configurado',
+        'client_id_configured': bool(config.paypal_client_id) if config else False,
+        'client_id_length': len(config.paypal_client_id) if config and config.paypal_client_id else 0,
+        'client_secret_configured': bool(config.paypal_client_secret) if config else False,
+    }
+    
+    context = {
+        'debug_info': debug_info,
+        'config': config,
+        'page_title': 'Debug PayPal'
+    }
+    
+    return render(request, 'tickets/paypal_debug.html', context)
+
+
+# Vista pública - sin login requerido
+def paypal_payment_page(request, token):
+    """Página pública de pago (reutilizable - cada compra crea una orden individual)"""
+    from .models import PayPalPaymentLink, SystemConfiguration
+    
+    link = get_object_or_404(PayPalPaymentLink, public_token=token)
+    
+    # Verificar si está activo (expiración)
+    if not link.is_active():
+        context = {
+            'error': 'Este enlace de pago ya no está disponible',
+            'link': link,
+            'page_title': 'Enlace No Disponible'
+        }
+        return render(request, 'tickets/paypal_payment_page.html', context)
+    
+    # Ya NO verificamos si está pagado - los enlaces son reutilizables
+    # Cada compra crea una orden individual (PayPalOrder)
+    
+    # Obtener configuración de PayPal
+    try:
+        config = SystemConfiguration.objects.first()
+        if not config or not config.paypal_enabled:
+            context = {
+                'error': 'El sistema de pagos no está disponible en este momento',
+                'page_title': 'Sistema No Disponible'
+            }
+            return render(request, 'tickets/paypal_payment_page.html', context)
+        
+        paypal_client_id = config.paypal_client_id
+        paypal_mode = config.paypal_mode  # 'sandbox' o 'live'
+        
+    except Exception as e:
+        context = {
+            'error': 'Error al cargar la configuración de pago',
+            'page_title': 'Error'
+        }
+        return render(request, 'tickets/paypal_payment_page.html', context)
+    
+    context = {
+        'link': link,
+        'paypal_client_id': paypal_client_id,
+        'paypal_mode': paypal_mode,
+        'page_title': link.product_name
+    }
+    return render(request, 'tickets/paypal_payment_page.html', context)
+
+
+@csrf_exempt  # PayPal webhook
+def paypal_webhook(request):
+    """Webhook para recibir notificaciones de PayPal"""
+    import json
+    from .models import PayPalPaymentLink, SystemConfiguration
+    
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    try:
+        payload = json.loads(request.body)
+        event_type = payload.get('event_type')
+        
+        # Manejar evento de pago completado
+        if event_type == 'CHECKOUT.ORDER.APPROVED' or event_type == 'PAYMENT.CAPTURE.COMPLETED':
+            resource = payload.get('resource', {})
+            order_id = resource.get('id')
+            
+            # Buscar el enlace por order_id
+            link = PayPalPaymentLink.objects.filter(paypal_order_id=order_id).first()
+            if link:
+                # Obtener información del pagador
+                payer_info = resource.get('payer', {})
+                link.mark_as_paid(order_id, payer_info)
+                
+                return JsonResponse({'status': 'success', 'message': 'Payment processed'})
+        
+        return JsonResponse({'status': 'ignored', 'message': 'Event not processed'})
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+
+@csrf_exempt  # API endpoint para crear orden
+def paypal_create_order(request):
+    """API para crear orden de PayPal usando el SDK"""
+    import json
+    import logging
+    from .models import PayPalPaymentLink, PayPalOrder, SystemConfiguration
+    
+    logger = logging.getLogger(__name__)
+    
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        link_id = data.get('link_id')
+        
+        logger.info(f"Creating PayPal order for link_id: {link_id}")
+        
+        link = get_object_or_404(PayPalPaymentLink, pk=link_id)
+        
+        # Verificar que está activo (el enlace puede ser reutilizado)
+        if not link.is_active():
+            logger.warning(f"Link {link_id} is not active")
+            return JsonResponse({'error': 'Link not active'}, status=400)
+        
+        # Crear una nueva orden para esta compra
+        new_order = PayPalOrder.objects.create(
+            payment_link=link,
+            product_name=link.product_name,
+            description=link.description,
+            amount=link.amount,
+            paypal_order_id='',  # Se actualizará después
+            status='pending'
+        )
+        
+        logger.info(f"Created new PayPalOrder: {new_order.id}")
+        
+        # Obtener configuración
+        config = SystemConfiguration.objects.first()
+        if not config or not config.paypal_enabled:
+            logger.error("PayPal not enabled in configuration")
+            return JsonResponse({'error': 'PayPal not enabled'}, status=400)
+        
+        # Verificar credenciales
+        if not config.paypal_client_id or not config.paypal_client_secret:
+            logger.error("PayPal credentials not configured")
+            return JsonResponse({'error': 'PayPal credentials not configured'}, status=400)
+        
+        # Usar PayPal SDK para crear orden
+        import requests
+        import base64
+        
+        # Obtener token de acceso
+        auth_string = f"{config.paypal_client_id}:{config.paypal_client_secret}"
+        auth_bytes = auth_string.encode('utf-8')
+        auth_base64 = base64.b64encode(auth_bytes).decode('utf-8')
+        
+        # Determinar URL según el modo
+        if config.paypal_mode == 'sandbox':
+            base_url = 'https://api-m.sandbox.paypal.com'
+        else:
+            base_url = 'https://api-m.paypal.com'
+        
+        # Obtener access token
+        token_response = requests.post(
+            f'{base_url}/v1/oauth2/token',
+            headers={
+                'Authorization': f'Basic {auth_base64}',
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            data={'grant_type': 'client_credentials'}
+        )
+        
+        if token_response.status_code != 200:
+            logger.error(f"Failed to get PayPal access token: {token_response.text}")
+            return JsonResponse({'error': 'Failed to authenticate with PayPal'}, status=500)
+        
+        access_token = token_response.json()['access_token']
+        
+        # Crear orden en PayPal
+        order_payload = {
+            'intent': 'CAPTURE',
+            'purchase_units': [{
+                'description': link.product_name,
+                'amount': {
+                    'currency_code': 'EUR',
+                    'value': str(link.amount)
+                },
+                'reference_id': str(new_order.id),  # Usar ID de la orden nueva
+                'custom_id': str(new_order.order_token)  # Token de la orden para identificación
+            }],
+            'application_context': {
+                'brand_name': config.site_name,
+                'landing_page': 'BILLING',
+                'user_action': 'PAY_NOW',
+                'return_url': request.build_absolute_uri(f'/paypal-payment/{link.public_token}/'),
+                'cancel_url': request.build_absolute_uri(f'/paypal-payment/{link.public_token}/')
+            }
+        }
+        
+        order_response = requests.post(
+            f'{base_url}/v2/checkout/orders',
+            headers={
+                'Authorization': f'Bearer {access_token}',
+                'Content-Type': 'application/json'
+            },
+            json=order_payload
+        )
+        
+        if order_response.status_code not in [200, 201]:
+            logger.error(f"Failed to create PayPal order: {order_response.text}")
+            # Marcar orden como fallida
+            new_order.status = 'failed'
+            new_order.save()
+            return JsonResponse({'error': 'Failed to create PayPal order'}, status=500)
+        
+        order_data = order_response.json()
+        paypal_order_id = order_data.get('id')
+        logger.info(f"PayPal order created successfully: {paypal_order_id}")
+        
+        # Actualizar la orden con el ID de PayPal
+        new_order.paypal_order_id = paypal_order_id
+        new_order.save()
+        
+        # Agregar el order_token a la respuesta para usarlo en el capture
+        order_data['internal_order_token'] = str(new_order.order_token)
+        order_data['internal_order_id'] = new_order.id
+        
+        return JsonResponse(order_data)
+        
+    except Exception as e:
+        logger.exception(f"Exception creating PayPal order: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=400)
+
+
+@csrf_exempt  # API endpoint para capturar pago
+def paypal_capture_order(request):
+    """API para capturar orden de PayPal usando el SDK"""
+    import json
+    import logging
+    from .models import PayPalOrder, SystemConfiguration
+    
+    logger = logging.getLogger(__name__)
+    
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        order_id = data.get('order_id')  # PayPal Order ID
+        internal_order_id = data.get('internal_order_id')  # Nuestro ID interno
+        
+        logger.info(f"Capturing PayPal order {order_id}, internal order: {internal_order_id}")
+        
+        # Buscar la orden por nuestro ID interno
+        order = get_object_or_404(PayPalOrder, pk=internal_order_id)
+        
+        # Obtener configuración
+        config = SystemConfiguration.objects.first()
+        if not config or not config.paypal_enabled:
+            logger.error("PayPal not enabled in configuration")
+            return JsonResponse({'error': 'PayPal not enabled'}, status=400)
+        
+        # Verificar credenciales
+        if not config.paypal_client_id or not config.paypal_client_secret:
+            logger.error("PayPal credentials not configured")
+            return JsonResponse({'error': 'PayPal credentials not configured'}, status=400)
+        
+        # Usar PayPal SDK para capturar orden
+        import requests
+        import base64
+        
+        # Obtener token de acceso
+        auth_string = f"{config.paypal_client_id}:{config.paypal_client_secret}"
+        auth_bytes = auth_string.encode('utf-8')
+        auth_base64 = base64.b64encode(auth_bytes).decode('utf-8')
+        
+        # Determinar URL según el modo
+        if config.paypal_mode == 'sandbox':
+            base_url = 'https://api-m.sandbox.paypal.com'
+        else:
+            base_url = 'https://api-m.paypal.com'
+        
+        # Obtener access token
+        token_response = requests.post(
+            f'{base_url}/v1/oauth2/token',
+            headers={
+                'Authorization': f'Basic {auth_base64}',
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            data={'grant_type': 'client_credentials'}
+        )
+        
+        if token_response.status_code != 200:
+            logger.error(f"Failed to get PayPal access token: {token_response.text}")
+            return JsonResponse({'error': 'Failed to authenticate with PayPal'}, status=500)
+        
+        access_token = token_response.json()['access_token']
+        
+        # Capturar orden
+        capture_response = requests.post(
+            f'{base_url}/v2/checkout/orders/{order_id}/capture',
+            headers={
+                'Authorization': f'Bearer {access_token}',
+                'Content-Type': 'application/json'
+            }
+        )
+        
+        if capture_response.status_code not in [200, 201]:
+            logger.error(f"Failed to capture PayPal order: {capture_response.text}")
+            return JsonResponse({'error': 'Failed to capture payment'}, status=500)
+        
+        capture_data = capture_response.json()
+        logger.info(f"PayPal order captured successfully: {order_id}")
+        
+        # Extraer información del pagador
+        payer_info = capture_data.get('payer', {})
+        
+        # Marcar la orden como pagada
+        order.mark_as_paid(payer_info)
+        
+        # Generar URL del resumen de orden (usar el token de la orden específica)
+        from django.urls import reverse
+        order_summary_url = request.build_absolute_uri(
+            reverse('paypal_order_detail', kwargs={'token': order.order_token})
+        )
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Payment captured successfully',
+            'order_summary_url': order_summary_url,
+            'capture_id': capture_data.get('id'),
+            'payer_email': payer_info.get('email_address', ''),
+            'order_token': str(order.order_token)
+        })
+        
+    except Exception as e:
+        logger.exception(f"Exception capturing PayPal order: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=400)
+
+
+# Vista pública - detalle de orden individual
+def paypal_order_detail(request, token):
+    """Página de detalle de una orden específica"""
+    from .models import PayPalOrder, SystemConfiguration
+    
+    order = get_object_or_404(PayPalOrder, order_token=token)
+    
+    # Obtener configuración para mostrar nombre del sitio
+    config = SystemConfiguration.objects.first()
+    
+    context = {
+        'order': order,
+        'link': order.payment_link,  # Para compatibilidad con el template
+        'config': config,
+        'page_title': f'Orden #{order.id:05d} - {order.product_name}',
+        'hours_remaining': order.get_hours_until_download_expires(),
+        'download_url_valid': order.is_download_token_valid(),
+    }
+    
+    return render(request, 'tickets/paypal_order_detail.html', context)
+
+
+# Vista legacy - resumen de orden (mantener compatibilidad)
+def paypal_link_orders(request, token):
+    """Mostrar todas las órdenes de un payment link (solo para el dueño)"""
+    from .models import PayPalPaymentLink, PayPalOrder
+    from django.contrib.auth.decorators import login_required
+    
+    link = get_object_or_404(PayPalPaymentLink, public_token=token)
+    
+    # Solo el dueño puede ver las órdenes
+    if request.user != link.user:
+        messages.error(request, 'No tienes permiso para ver estas órdenes')
+        return redirect('dashboard')
+    
+    # Obtener todas las órdenes
+    orders = PayPalOrder.objects.filter(payment_link=link).order_by('-created_at')
+    
+    # Calcular estadísticas
+    total_orders = orders.count()
+    paid_orders = orders.filter(status='completed').count()
+    total_revenue = sum(order.amount for order in orders.filter(status='completed'))
+    
+    context = {
+        'link': link,
+        'orders': orders,
+        'total_orders': total_orders,
+        'paid_orders': paid_orders,
+        'total_revenue': total_revenue,
+    }
+    
+    return render(request, 'tickets/paypal_link_orders.html', context)
+
+
+def paypal_order_summary(request, token):
+    """Legacy - Redirige a la lista de órdenes del enlace"""
+    return redirect('paypal_link_orders', token=token)
+
+
+# Vista pública - descargar archivo con token de orden
+def paypal_order_download(request, token):
+    """Descargar archivo usando token de orden (válido 72 horas)"""
+    from .models import PayPalOrder
+    import os
+    
+    order = get_object_or_404(PayPalOrder, download_token=token)
+    
+    # Verificar que está pagado
+    if not order.is_paid():
+        messages.error(request, 'Esta orden no ha sido completada')
+        return redirect('paypal_order_detail', token=order.order_token)
+    
+    # Verificar que el token no ha expirado (72 horas)
+    if not order.is_download_token_valid():
+        context = {
+            'order': order,
+            'link': order.payment_link,
+            'error': 'El enlace de descarga ha expirado',
+            'error_detail': 'Los enlaces de descarga son válidos por 72 horas después del pago. Por favor, contacta con el vendedor para obtener un nuevo enlace.',
+            'page_title': 'Enlace Expirado'
+        }
+        return render(request, 'tickets/paypal_download_expired.html', context)
+    
+    # Verificar que tiene archivo
+    if not order.payment_link.attachment:
+        messages.error(request, 'Este producto no tiene archivo adjunto')
+        return redirect('paypal_order_detail', token=order.order_token)
+    
+    # Incrementar contador de descargas
+    order.increment_download()
+    print(f"DEBUG: Descarga #{order.download_count} de la orden #{order.id}")
+    
+    # Preparar descarga
+    file_path = order.payment_link.attachment.path
+    if os.path.exists(file_path):
+        with open(file_path, 'rb') as fh:
+            response = HttpResponse(fh.read(), content_type="application/octet-stream")
+            response['Content-Disposition'] = f'attachment; filename="{order.payment_link.attachment_name or os.path.basename(file_path)}"'
+            return response
+    
+    messages.error(request, 'Archivo no encontrado en el servidor')
+    return redirect('paypal_order_detail', token=order.order_token)
+
+
+# Vista legacy - mantener compatibilidad (redirige al resumen de orden)
+def paypal_file_download(request, token):
+    """Redirige a la página de resumen de orden (compatibilidad)"""
+    from .models import PayPalPaymentLink
+    
+    link = get_object_or_404(PayPalPaymentLink, public_token=token)
+    
+    # Si está pagado, redirigir al resumen
+    if link.is_paid():
+        return redirect('paypal_order_summary', token=token)
+    
+    # Si no está pagado, redirigir a la página de pago
+    messages.warning(request, 'Debes completar el pago antes de acceder a tu orden')
+    return redirect('paypal_payment_page', token=token)
 
 
 

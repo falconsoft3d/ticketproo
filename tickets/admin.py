@@ -16,7 +16,7 @@ from .models import (
     Form, FormQuestion, FormQuestionOption, FormResponse, FormAnswer, Alcance,
     WhatsAppConnection, WhatsAppKeyword, WhatsAppMessage, ImagePrompt,
     AIManager, AIManagerMeeting, AIManagerMeetingAttachment, AIManagerSummary, CompanyAISummary, UserAIPerformanceEvaluation,
-    WebsiteTracker, LegalContract, SupplierContractReview
+    WebsiteTracker, LegalContract, SupplierContractReview, PayPalPaymentLink, PayPalOrder
 )
 
 # Configuración del sitio de administración
@@ -470,6 +470,17 @@ class SystemConfigurationAdmin(admin.ModelAdmin):
         ('Configuración de IA', {
             'fields': ('ai_chat_enabled', 'openai_api_key', 'openai_model', 'ai_employee_analysis_prompt'),
             'description': 'Configuración para funcionalidades de inteligencia artificial',
+            'classes': ('collapse',)
+        }),
+        ('Configuración de PayPal', {
+            'fields': (
+                'paypal_enabled',
+                'paypal_mode',
+                'paypal_client_id',
+                'paypal_client_secret',
+                'paypal_webhook_id'
+            ),
+            'description': 'Configuración para integración con PayPal. Obtén tus credenciales en https://developer.paypal.com',
             'classes': ('collapse',)
         }),
         ('Notificaciones por Email', {
@@ -3027,6 +3038,107 @@ class SupplierContractReviewAdmin(admin.ModelAdmin):
     def risk_badge(self, obj):
         return format_html(obj.get_risk_badge())
     risk_badge.short_description = 'Nivel de Riesgo'
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('user', 'company')
+
+
+@admin.register(PayPalOrder)
+class PayPalOrderAdmin(admin.ModelAdmin):
+    list_display = ('order_number', 'product_name', 'amount', 'status_badge', 'paypal_payer_email', 'payment_date', 'download_count', 'download_token_status', 'created_at')
+    list_filter = ('status', 'created_at', 'payment_date', 'payment_link')
+    search_fields = ('product_name', 'paypal_order_id', 'paypal_payer_name', 'paypal_payer_email', 'order_token')
+    readonly_fields = ('order_token', 'download_token', 'download_token_expires_at', 
+                      'paypal_order_id', 'paypal_payer_id', 'paypal_payer_email', 
+                      'paypal_payer_name', 'payment_date', 'download_count', 
+                      'created_at', 'updated_at')
+    
+    fieldsets = (
+        ('Información de la Orden', {
+            'fields': ('order_token', 'payment_link', 'status')
+        }),
+        ('Producto', {
+            'fields': ('product_name', 'description', 'amount')
+        }),
+        ('Información del Pago', {
+            'fields': ('paypal_order_id', 'paypal_payer_id', 'paypal_payer_name', 
+                      'paypal_payer_email', 'payment_date')
+        }),
+        ('Token de Descarga (72 horas)', {
+            'fields': ('download_token', 'download_token_expires_at', 'download_count'),
+            'description': 'El token de descarga se genera al completar el pago y expira 72 horas después.'
+        }),
+        ('Metadatos', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def order_number(self, obj):
+        return f"#{obj.id:05d}"
+    order_number.short_description = 'Número'
+    order_number.admin_order_field = 'id'
+    
+    def status_badge(self, obj):
+        return format_html(obj.get_status_badge())
+    status_badge.short_description = 'Estado'
+    
+    def download_token_status(self, obj):
+        if not obj.is_paid():
+            return format_html('<span class="badge bg-secondary">No pagado</span>')
+        if obj.is_download_token_valid():
+            hours = obj.get_hours_until_download_expires()
+            return format_html('<span class="badge bg-success">✓ Válido ({:.1f}h)</span>', hours)
+        return format_html('<span class="badge bg-danger">✗ Expirado</span>')
+    download_token_status.short_description = 'Token Descarga'
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('payment_link', 'payment_link__user')
+
+
+@admin.register(PayPalPaymentLink)
+class PayPalPaymentLinkAdmin(admin.ModelAdmin):
+    list_display = ('product_name', 'amount', 'total_orders', 'total_revenue', 'company', 'user', 'created_at')
+    list_filter = ('created_at', 'company', 'user')
+    search_fields = ('product_name', 'description')
+    readonly_fields = ('public_token', 'public_url', 'total_orders', 'total_revenue',
+                      'created_at', 'updated_at')
+    
+    fieldsets = (
+        ('Información del Producto (Plantilla)', {
+            'fields': ('product_name', 'description', 'amount', 'company'),
+            'description': 'Este es un producto reutilizable. Cada compra crea una orden individual.'
+        }),
+        ('Archivo Adjunto', {
+            'fields': ('attachment', 'attachment_name')
+        }),
+        ('URL Pública', {
+            'fields': ('public_token', 'public_url', 'expires_at'),
+            'description': 'Esta URL puede ser usada múltiples veces. Cada pago crea una orden separada.'
+        }),
+        ('Estadísticas de Ventas', {
+            'fields': ('total_orders', 'total_revenue'),
+            'description': 'Total de órdenes y revenue generado desde este enlace de pago.'
+        }),
+        ('Metadatos', {
+            'fields': ('user', 'notes', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def total_orders(self, obj):
+        count = obj.get_total_orders_count()
+        if count > 0:
+            return format_html('<strong>{}</strong> órdenes', count)
+        return '0 órdenes'
+    total_orders.short_description = 'Total Órdenes'
+    
+    def total_revenue(self, obj):
+        revenue = obj.get_total_revenue()
+        if revenue > 0:
+            return format_html('<strong>${:.2f}</strong>', revenue)
+        return '$0.00'
+    total_revenue.short_description = 'Revenue Total'
     
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('user', 'company')

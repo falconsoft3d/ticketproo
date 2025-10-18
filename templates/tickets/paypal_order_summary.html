@@ -1,0 +1,269 @@
+{% extends 'public_base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block hero_section %}
+<!-- Hero section personalizada -->
+<section class="hero-section bg-success">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-12 text-center text-white">
+                <i class="bi bi-check-circle-fill" style="font-size: 4rem;"></i>
+                <h1 class="display-5 fw-bold mb-3 mt-3">
+                    ¡Pago Completado!
+                </h1>
+                <p class="lead mb-0">
+                    Gracias por tu compra
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Resumen de la Orden -->
+            <div class="card shadow-lg border-0 mb-4">
+                <div class="card-header bg-white border-0 pt-4">
+                    <h3 class="text-center mb-0">
+                        <i class="bi bi-receipt text-success"></i> Resumen de tu Orden
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Información de la orden -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <small class="text-muted d-block mb-1">Número de Orden</small>
+                                <strong>#{{ link.id|stringformat:"05d" }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <div class="info-box">
+                                <small class="text-muted d-block mb-1">Fecha de Pago</small>
+                                <strong>{{ link.payment_date|date:"d/m/Y H:i" }}</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Producto -->
+                    <div class="mb-4">
+                        <h5 class="text-primary mb-3">
+                            <i class="bi bi-box"></i> Producto Adquirido
+                        </h5>
+                        <div class="product-info p-3 bg-light rounded">
+                            <h4 class="mb-2">{{ link.product_name }}</h4>
+                            {% if link.description %}
+                            <p class="text-muted mb-0">{{ link.description|linebreaks }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Detalles del Pago -->
+                    <div class="mb-4">
+                        <h5 class="text-primary mb-3">
+                            <i class="bi bi-credit-card"></i> Detalles del Pago
+                        </h5>
+                        <table class="table table-borderless">
+                            <tbody>
+                                <tr>
+                                    <td class="text-muted">Importe:</td>
+                                    <td class="text-end"><strong class="text-success fs-5">€{{ link.amount }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Método de pago:</td>
+                                    <td class="text-end"><i class="bi bi-paypal text-primary"></i> PayPal</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">ID de transacción:</td>
+                                    <td class="text-end"><code class="small">{{ link.paypal_order_id }}</code></td>
+                                </tr>
+                                {% if link.paypal_payer_name %}
+                                <tr>
+                                    <td class="text-muted">Pagador:</td>
+                                    <td class="text-end">{{ link.paypal_payer_name }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if link.paypal_payer_email %}
+                                <tr>
+                                    <td class="text-muted">Email:</td>
+                                    <td class="text-end">{{ link.paypal_payer_email }}</td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <hr>
+
+                    <!-- Descarga del Archivo -->
+                    {% if link.attachment %}
+                    <div class="mb-4">
+                        <h5 class="text-primary mb-3">
+                            <i class="bi bi-download"></i> Descarga tu Archivo
+                        </h5>
+                        
+                        {% if download_url_valid %}
+                        <!-- Token válido -->
+                        <div class="download-section p-4 bg-light rounded text-center">
+                            <i class="bi bi-file-earmark-arrow-down text-success" style="font-size: 3rem;"></i>
+                            <h5 class="mt-3 mb-3">{{ link.attachment_name }}</h5>
+                            
+                            <a href="{% url 'paypal_download_with_token' link.download_token %}" 
+                               class="btn btn-success btn-lg mb-3">
+                                <i class="bi bi-download"></i> Descargar Archivo
+                            </a>
+                            
+                            <div class="alert alert-info mb-0">
+                                <i class="bi bi-clock"></i>
+                                <strong>Importante:</strong> Este enlace de descarga es válido por 
+                                <strong class="text-primary">{{ hours_remaining }} horas</strong> más.
+                                <br>
+                                <small class="text-muted">
+                                    Expira el: {{ link.download_token_expires_at|date:"d/m/Y H:i" }}
+                                </small>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i>
+                                    Puedes descargar el archivo múltiples veces dentro del período válido.
+                                    <br>
+                                    Descargas realizadas: <strong>{{ link.download_count }}</strong>
+                                </small>
+                            </div>
+                        </div>
+                        
+                        {% else %}
+                        <!-- Token expirado -->
+                        <div class="download-section p-4 bg-light rounded text-center border border-warning">
+                            <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+                            <h5 class="mt-3 mb-3 text-warning">Enlace de Descarga Expirado</h5>
+                            
+                            <div class="alert alert-warning">
+                                <strong>El período de descarga de 72 horas ha expirado.</strong>
+                                <br>
+                                El enlace expiró el: {{ link.download_token_expires_at|date:"d/m/Y H:i" }}
+                            </div>
+                            
+                            <p class="text-muted mb-3">
+                                Por favor, contacta con el vendedor para solicitar un nuevo enlace de descarga.
+                            </p>
+                            
+                            {% if link.user.email %}
+                            <a href="mailto:{{ link.user.email }}?subject=Solicitud%20de%20nuevo%20enlace%20-%20Orden%20%23{{ link.id }}" 
+                               class="btn btn-outline-primary">
+                                <i class="bi bi-envelope"></i> Contactar Vendedor
+                            </a>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <!-- Sin archivo adjunto -->
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        Este producto no incluye archivo digital para descarga.
+                    </div>
+                    {% endif %}
+
+                    <hr>
+
+                    <!-- Información adicional -->
+                    <div class="text-center text-muted">
+                        <p class="mb-2">
+                            <i class="bi bi-shield-check text-success"></i>
+                            Transacción procesada de forma segura por PayPal
+                        </p>
+                        <p class="mb-0 small">
+                            Guarda esta página en tus favoritos para acceder a tu descarga.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información de soporte -->
+            <div class="card border-0 bg-light">
+                <div class="card-body text-center">
+                    <h6 class="mb-3">
+                        <i class="bi bi-question-circle"></i> ¿Necesitas Ayuda?
+                    </h6>
+                    <p class="text-muted mb-3">
+                        Si tienes algún problema con tu orden o descarga, no dudes en contactarnos.
+                    </p>
+                    {% if config and config.site_name %}
+                    <p class="mb-0 small text-muted">
+                        <strong>{{ config.site_name }}</strong>
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.hero-section {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    padding: 3rem 0;
+    margin-bottom: 0;
+}
+
+.card {
+    border-radius: 15px;
+}
+
+.info-box {
+    padding: 1rem;
+}
+
+.product-info {
+    border-left: 4px solid #28a745;
+}
+
+.download-section {
+    border: 2px dashed #dee2e6;
+    transition: all 0.3s ease;
+}
+
+.download-section:hover {
+    border-color: #28a745;
+    box-shadow: 0 0.5rem 1rem rgba(40, 167, 69, 0.15);
+}
+
+@media print {
+    .btn, .alert, .hero-section {
+        display: none !important;
+    }
+}
+</style>
+
+<script>
+// Copiar ID de transacción
+document.addEventListener('DOMContentLoaded', function() {
+    const transactionCode = document.querySelector('code');
+    if (transactionCode) {
+        transactionCode.style.cursor = 'pointer';
+        transactionCode.title = 'Click para copiar';
+        transactionCode.addEventListener('click', function() {
+            navigator.clipboard.writeText(this.textContent);
+            
+            // Mostrar feedback
+            const originalText = this.textContent;
+            this.textContent = '✓ Copiado!';
+            setTimeout(() => {
+                this.textContent = originalText;
+            }, 2000);
+        });
+    }
+});
+</script>
+{% endblock %}

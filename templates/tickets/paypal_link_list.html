@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2><i class="bi bi-paypal text-primary"></i> Enlaces de Pago PayPal</h2>
+                <a href="{% url 'paypal_link_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Nuevo Enlace de Pago
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Buscar</label>
+                    <input type="text" name="search" class="form-control" placeholder="Producto, descripción..." value="{{ request.GET.search }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Empresa</label>
+                    <select name="company" class="form-select">
+                        <option value="">Todas</option>
+                        {% for company in companies %}
+                        <option value="{{ company.id }}" {% if request.GET.company == company.id|stringformat:"s" %}selected{% endif %}>
+                            {{ company.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Estado</label>
+                    <select name="status" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Activo</option>
+                        <option value="paid" {% if request.GET.status == 'paid' %}selected{% endif %}>Pagado</option>
+                        <option value="expired" {% if request.GET.status == 'expired' %}selected{% endif %}>Expirado</option>
+                        <option value="cancelled" {% if request.GET.status == 'cancelled' %}selected{% endif %}>Cancelado</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i> Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Grid de enlaces -->
+    <div class="row">
+        {% for link in links %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm hover-shadow">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h5 class="card-title mb-0">{{ link.product_name }}</h5>
+                        <small class="text-muted">Producto Reutilizable</small>
+                    </div>
+                    
+                    {% if link.description %}
+                    <p class="card-text text-muted small mb-3">
+                        {{ link.description|truncatewords:20 }}
+                    </p>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <h3 class="text-primary mb-0">${{ link.amount }}</h3>
+                    </div>
+                    
+                    <!-- Estadísticas del Producto -->
+                    <div class="alert alert-light py-2 mb-3">
+                        <div class="row text-center small">
+                            <div class="col-6">
+                                <strong class="text-success d-block">{{ link.get_total_orders_count }}</strong>
+                                <small class="text-muted">Órdenes</small>
+                            </div>
+                            <div class="col-6">
+                                <strong class="text-primary d-block">${{ link.get_total_revenue|floatformat:2 }}</strong>
+                                <small class="text-muted">Revenue</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {% if link.attachment %}
+                        <small class="text-muted">
+                            <i class="bi bi-paperclip"></i> Archivo: {{ link.attachment_name|default:"Adjunto" }}
+                        </small>
+                        {% else %}
+                        <small class="text-muted">
+                            <i class="bi bi-x-circle"></i> Sin archivo adjunto
+                        </small>
+                        {% endif %}
+                    </div>
+                    
+                    {% if link.company %}
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            <i class="bi bi-building"></i> {{ link.company.name }}
+                        </small>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            <i class="bi bi-calendar"></i> {{ link.created_at|date:"d/m/Y H:i" }}
+                        </small>
+                    </div>
+                    
+                    {% if link.expires_at %}
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            <i class="bi bi-clock"></i> Expira: {{ link.expires_at|date:"d/m/Y" }}
+                        </small>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- URL Pública (siempre visible) -->
+                    <div class="mb-3">
+                        <div class="input-group input-group-sm">
+                            <input type="text" class="form-control" value="{{ link.public_url }}" id="url_{{ link.id }}" readonly>
+                            <button class="btn btn-outline-secondary" type="button" onclick="copyUrl('url_{{ link.id }}')">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 mb-2">
+                        <a href="{% url 'paypal_link_orders' link.public_token %}" class="btn btn-sm btn-success">
+                            <i class="bi bi-list-check"></i> Ver Órdenes ({{ link.get_total_orders_count }})
+                        </a>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'paypal_link_detail' link.pk %}" class="btn btn-sm btn-outline-primary flex-grow-1">
+                            <i class="bi bi-eye"></i> Detalle
+                        </a>
+                        <a href="{% url 'paypal_link_edit' link.pk %}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <a href="{% url 'paypal_link_delete' link.pk %}" class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info text-center">
+                <i class="bi bi-info-circle"></i> No hay enlaces de pago creados aún.
+                <a href="{% url 'paypal_link_create' %}" class="alert-link">Crear el primero</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Paginación -->
+    {% if links.has_other_pages %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if links.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ links.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.company %}&company={{ request.GET.company }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">
+                            Anterior
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Página {{ links.number }} de {{ links.paginator.num_pages }}
+                        </span>
+                    </li>
+
+                    {% if links.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ links.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.company %}&company={{ request.GET.company }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">
+                            Siguiente
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function copyUrl(elementId) {
+    const input = document.getElementById(elementId);
+    input.select();
+    document.execCommand('copy');
+    
+    // Mostrar feedback
+    const button = input.nextElementSibling;
+    const originalHTML = button.innerHTML;
+    button.innerHTML = '<i class="bi bi-check"></i>';
+    setTimeout(() => {
+        button.innerHTML = originalHTML;
+    }, 2000);
+}
+</script>
+
+<style>
+.hover-shadow {
+    transition: all 0.3s ease;
+}
+.hover-shadow:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    transform: translateY(-2px);
+}
+</style>
+{% endblock %}
