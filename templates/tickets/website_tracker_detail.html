@@ -1,0 +1,275 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Detalles del Rastreo - {{ tracker.target }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'website_tracker_list' %}">Rastreador Web</a></li>
+            <li class="breadcrumb-item active">{{ tracker.target|truncatechars:50 }}</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>
+                <i class="bi bi-radar text-primary"></i> 
+                Detalles del Rastreo
+            </h2>
+            <h4 class="text-muted">{{ tracker.target }}</h4>
+        </div>
+        <div>
+            <a href="{% url 'website_tracker_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+            <form method="POST" action="{% url 'website_tracker_create' %}" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="target" value="{{ tracker.target }}">
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-arrow-clockwise"></i> Re-rastrear
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Estado General -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card {% if tracker.is_online %}border-success{% elif tracker.status == 'error' %}border-danger{% else %}border-secondary{% endif %} border-3">
+                <div class="card-header {% if tracker.is_online %}bg-success{% elif tracker.status == 'error' %}bg-danger{% else %}bg-secondary{% endif %} text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-{% if tracker.is_online %}check-circle{% elif tracker.status == 'error' %}x-circle{% else %}dash-circle{% endif %}"></i>
+                        Estado: 
+                        {% if tracker.is_online %}
+                            En línea
+                        {% elif tracker.status == 'error' %}
+                            Error
+                        {% else %}
+                            Fuera de línea
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Objetivo:</strong> {{ tracker.target }}</p>
+                            {% if tracker.ip_address %}
+                            <p><strong>Dirección IP:</strong> <code>{{ tracker.ip_address }}</code></p>
+                            {% endif %}
+                            {% if tracker.ping_response_time %}
+                            <p><strong>Tiempo de respuesta:</strong> <span class="badge bg-info">{{ tracker.ping_response_time|floatformat:2 }} ms</span></p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {% if tracker.http_status_code %}
+                            <p><strong>Código HTTP:</strong> <span class="badge {% if tracker.http_status_code < 300 %}bg-success{% elif tracker.http_status_code < 400 %}bg-warning{% else %}bg-danger{% endif %}">{{ tracker.http_status_code }}</span></p>
+                            {% endif %}
+                            <p><strong>Rastreado por:</strong> {{ tracker.user.get_full_name|default:tracker.user.username }}</p>
+                            <p><strong>Fecha:</strong> {{ tracker.created_at|date:"d/m/Y H:i:s" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Columna izquierda -->
+        <div class="col-lg-6">
+            <!-- Headers HTTP -->
+            {% if tracker.http_headers %}
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i class="bi bi-list-ul"></i> Headers HTTP</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Header</th>
+                                    <th>Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for key, value in tracker.http_headers.items %}
+                                <tr>
+                                    <td><code>{{ key }}</code></td>
+                                    <td class="text-break"><small>{{ value }}</small></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Registros DNS -->
+            {% if tracker.ip_address or tracker.cname_records or tracker.txt_records or tracker.mx_records or tracker.ns_records %}
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="bi bi-hdd-network"></i> Registros DNS</h6>
+                </div>
+                <div class="card-body">
+                    <pre class="bg-light p-3 rounded"><code>{% if tracker.ip_address %}A: {{ tracker.ip_address }}
+{% endif %}{% if tracker.cname_records %}CNAME: {{ tracker.cname_records|join:", " }}
+{% endif %}{% if tracker.txt_records %}TXT: {{ tracker.txt_records|join:", " }}
+{% endif %}{% if tracker.mx_records %}MX: {{ tracker.mx_records|join:", " }}
+{% endif %}{% if tracker.ns_records %}NS: {{ tracker.ns_records|join:", " }}{% endif %}</code></pre>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Información del Servidor -->
+            {% if tracker.server_software %}
+            <div class="card mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0"><i class="bi bi-server"></i> Información del Servidor</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0"><code>{{ tracker.server_software }}</code></p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Columna derecha -->
+        <div class="col-lg-6">
+            <!-- Tecnologías Detectadas -->
+            {% if tracker.technologies %}
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="bi bi-gear"></i> Tecnologías Detectadas</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for tech in tracker.technologies %}
+                            <span class="badge bg-secondary fs-6">{{ tech }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Información SSL -->
+            {% if tracker.ssl_valid is not None %}
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0"><i class="bi bi-shield-lock"></i> Información SSL/TLS</h6>
+                </div>
+                <div class="card-body">
+                    <p><strong>Válido:</strong> 
+                        {% if tracker.ssl_valid %}
+                            <span class="badge bg-success"><i class="bi bi-check-circle"></i> Sí</span>
+                        {% else %}
+                            <span class="badge bg-danger"><i class="bi bi-x-circle"></i> No</span>
+                        {% endif %}
+                    </p>
+                    {% if tracker.ssl_issuer %}
+                    <p><strong>Emisor:</strong> {{ tracker.ssl_issuer }}</p>
+                    {% endif %}
+                    {% if tracker.ssl_expiry_date %}
+                    <p><strong>Expira:</strong> {{ tracker.ssl_expiry_date|date:"d/m/Y H:i:s" }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Resultado de Ping -->
+            {% if tracker.ping_response_time %}
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="bi bi-reception-4"></i> Resultado de Ping</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">
+                        <strong>Tiempo de respuesta:</strong> 
+                        <span class="badge bg-success">{{ tracker.ping_response_time|floatformat:2 }} ms</span>
+                    </p>
+                    <p class="mt-2 mb-0">
+                        <strong>Estado:</strong> 
+                        {% if tracker.is_active %}
+                            <span class="badge bg-success"><i class="bi bi-check-circle"></i> En línea</span>
+                        {% else %}
+                            <span class="badge bg-danger"><i class="bi bi-x-circle"></i> Fuera de línea</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Whois (si existe) -->
+            {% if tracker.whois_info %}
+            <div class="card mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> Información WHOIS</h6>
+                </div>
+                <div class="card-body">
+                    <pre class="bg-light p-3 rounded" style="max-height: 300px; overflow-y: auto;"><code>{{ tracker.whois_info }}</code></pre>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Error Message -->
+    {% if tracker.error_message %}
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-danger">
+                <h6 class="alert-heading">
+                    <i class="bi bi-exclamation-triangle"></i> Error durante el rastreo
+                </h6>
+                <pre class="mb-0"><code>{{ tracker.error_message }}</code></pre>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- JSON Completo (colapsable) -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <button class="btn btn-link text-decoration-none w-100 text-start" type="button" data-bs-toggle="collapse" data-bs-target="#jsonData">
+                        <i class="bi bi-code-square"></i> Ver datos completos (JSON)
+                    </button>
+                </div>
+                <div class="collapse" id="jsonData">
+                    <div class="card-body">
+                        <pre class="bg-dark text-light p-3 rounded" style="max-height: 500px; overflow-y: auto;"><code>{
+    "target": "{{ tracker.target }}",
+    "ip_address": "{{ tracker.ip_address }}",
+    "is_active": {{ tracker.is_active|lower }},
+    "http_status_code": {{ tracker.http_status_code|default:"null" }},
+    "ping_response_time": {{ tracker.ping_response_time|default:"null" }},
+    "server_software": "{{ tracker.server_software }}",
+    "technologies": {{ tracker.technologies|safe }},
+    "http_headers": {{ tracker.http_headers|safe }},
+    "cname_records": {{ tracker.cname_records|safe }},
+    "txt_records": {{ tracker.txt_records|safe }},
+    "mx_records": {{ tracker.mx_records|safe }},
+    "ns_records": {{ tracker.ns_records|safe }},
+    "ssl_valid": {{ tracker.ssl_valid|default:"null" }},
+    "ssl_issuer": "{{ tracker.ssl_issuer|escapejs }}",
+    "ssl_expiry_date": "{{ tracker.ssl_expiry_date|date:'c'|default:'' }}",
+    "page_title": "{{ tracker.page_title|escapejs }}",
+    "meta_description": "{{ tracker.meta_description|escapejs }}",
+    "page_size": {{ tracker.page_size|default:"null" }},
+    "load_time": {{ tracker.load_time|default:"null" }},
+    "created_at": "{{ tracker.created_at|date:'c' }}",
+    "created_by": "{{ tracker.user.username }}"
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

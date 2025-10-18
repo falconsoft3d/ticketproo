@@ -1,0 +1,196 @@
+{% extends 'public_base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <!-- Breadcrumb -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'public_image_prompts' %}">Prompts IA</a></li>
+                    <li class="breadcrumb-item active">{{ image_prompt.title }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Columna de la Imagen -->
+        <div class="col-lg-5 mb-4">
+            <div class="card shadow-sm border-0 sticky-top" style="top: 20px;">
+                <div class="card-body p-0">
+                    <img src="{{ image_prompt.image.url }}" 
+                         class="img-fluid rounded" 
+                         alt="{{ image_prompt.title }}"
+                         style="width: 100%; height: auto;">
+                </div>
+                <div class="card-footer bg-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="bi bi-person-circle"></i> {{ image_prompt.user.username }}
+                        </small>
+                        <small class="text-muted">
+                            <i class="bi bi-calendar"></i> {{ image_prompt.created_at|date:"d/m/Y" }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna de los Prompts -->
+        <div class="col-lg-7">
+            <!-- Título -->
+            <div class="mb-4">
+                <h1 class="display-5 mb-2">{{ image_prompt.title }}</h1>
+                {% if image_prompt.tags %}
+                    <div>
+                        <span class="badge bg-primary fs-6">
+                            <i class="bi bi-tags"></i> {{ image_prompt.tags }}
+                        </span>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Prompt Personalizado o Generado -->
+            {% if image_prompt.custom_prompt %}
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-pencil-square"></i> Prompt Personalizado
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text mb-3" style="white-space: pre-wrap;">{{ image_prompt.custom_prompt }}</p>
+                        <button class="btn btn-success w-100" onclick="copyToClipboard('{{ image_prompt.custom_prompt|escapejs }}', 'custom')">
+                            <i class="bi bi-clipboard"></i> <span id="copy-text-custom">Copiar Prompt Personalizado</span>
+                        </button>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Prompt Generado por IA -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-magic"></i> Prompt Generado por IA
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text mb-3" style="white-space: pre-wrap;">{{ image_prompt.generated_prompt }}</p>
+                    <button class="btn btn-primary w-100" onclick="copyToClipboard('{{ image_prompt.generated_prompt|escapejs }}', 'generated')">
+                        <i class="bi bi-clipboard"></i> <span id="copy-text-generated">Copiar Prompt Generado</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Información Adicional -->
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-info-circle"></i> Información
+                    </h6>
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="bi bi-person text-primary"></i> 
+                            <strong>Autor:</strong> {{ image_prompt.user.username }}
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-calendar-event text-primary"></i> 
+                            <strong>Fecha de creación:</strong> {{ image_prompt.created_at|date:"d/m/Y H:i" }}
+                        </li>
+                        {% if image_prompt.updated_at != image_prompt.created_at %}
+                            <li class="mb-2">
+                                <i class="bi bi-pencil text-primary"></i> 
+                                <strong>Última actualización:</strong> {{ image_prompt.updated_at|date:"d/m/Y H:i" }}
+                            </li>
+                        {% endif %}
+                        <li class="mb-2">
+                            <i class="bi bi-cpu text-primary"></i> 
+                            <strong>Tokens usados:</strong> {{ image_prompt.tokens_used }}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Botón Volver -->
+            <div class="mt-4">
+                <a href="{% url 'public_image_prompts' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver a Prompts
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript para copiar -->
+<script>
+function copyToClipboard(text, type) {
+    // Crear elemento temporal
+    const tempInput = document.createElement('textarea');
+    tempInput.value = text;
+    document.body.appendChild(tempInput);
+    tempInput.select();
+    
+    try {
+        document.execCommand('copy');
+        
+        // Cambiar el botón temporalmente
+        const spanElement = document.getElementById('copy-text-' + type);
+        const originalText = spanElement.textContent;
+        spanElement.innerHTML = '<i class="bi bi-check-circle"></i> ¡Copiado!';
+        
+        // Mostrar notificación
+        showNotification('Prompt copiado al portapapeles', 'success');
+        
+        setTimeout(() => {
+            spanElement.textContent = originalText;
+        }, 2000);
+    } catch (err) {
+        showNotification('Error al copiar el prompt', 'error');
+    }
+    
+    document.body.removeChild(tempInput);
+}
+
+function showNotification(message, type) {
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const icon = type === 'success' ? 'check-circle-fill' : 'exclamation-triangle-fill';
+    
+    const notification = document.createElement('div');
+    notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3`;
+    notification.style.zIndex = '9999';
+    notification.innerHTML = `
+        <i class="bi bi-${icon} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+</script>
+
+<!-- Estilos adicionales -->
+<style>
+    .card {
+        transition: transform 0.2s ease;
+    }
+    
+    .card:hover {
+        transform: translateY(-2px);
+    }
+    
+    @media (max-width: 991px) {
+        .sticky-top {
+            position: relative !important;
+        }
+    }
+</style>
+{% endblock %}

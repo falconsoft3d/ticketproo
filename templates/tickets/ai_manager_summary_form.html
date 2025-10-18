@@ -1,0 +1,301 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'ai_manager_list' %}">Gerentes IA</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'ai_manager_detail' manager.pk %}">{{ manager.name }}</a></li>
+                    <li class="breadcrumb-item active">Generar Resumen Ejecutivo</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Formulario -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-file-text"></i> Generar Resumen Ejecutivo
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="summaryForm">
+                        {% csrf_token %}
+                        
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>¿Qué es un Resumen Ejecutivo?</strong>
+                            <p class="mb-0 mt-2 small">
+                                Es un análisis completo generado por IA de todas las reuniones en un período específico. 
+                                Incluye patrones, tendencias, logros, desafíos y recomendaciones estratégicas.
+                            </p>
+                        </div>
+
+                        <!-- Selector de Período -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="period_start" class="form-label">
+                                    Fecha de Inicio <span class="text-danger">*</span>
+                                </label>
+                                <input type="date" 
+                                       class="form-control" 
+                                       id="period_start" 
+                                       name="period_start" 
+                                       required
+                                       max="{{ today }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="period_end" class="form-label">
+                                    Fecha de Fin <span class="text-danger">*</span>
+                                </label>
+                                <input type="date" 
+                                       class="form-control" 
+                                       id="period_end" 
+                                       name="period_end" 
+                                       required
+                                       max="{{ today }}">
+                            </div>
+                        </div>
+
+                        <!-- Atajos de Período -->
+                        <div class="mb-4">
+                            <label class="form-label">Atajos Rápidos:</label>
+                            <div class="btn-group w-100" role="group">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setLastWeek()">
+                                    Última Semana
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setLastMonth()">
+                                    Último Mes
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setLastQuarter()">
+                                    Último Trimestre
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setLastYear()">
+                                    Último Año
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Información del Período -->
+                        <div class="alert alert-light" id="periodInfo" style="display: none;">
+                            <strong>Período seleccionado:</strong>
+                            <div id="periodText" class="mt-2"></div>
+                            <div id="meetingsCount" class="mt-2 text-muted small">
+                                <i class="bi bi-hourglass-split"></i> Calculando reuniones...
+                            </div>
+                        </div>
+
+                        <!-- Lo que se generará -->
+                        <div class="card bg-light mb-4">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="bi bi-magic"></i> El resumen incluirá:
+                                </h6>
+                                <ul class="mb-0 small">
+                                    <li><strong>Resumen General:</strong> Análisis completo de todas las reuniones del período</li>
+                                    <li><strong>Insights Clave:</strong> 5-7 hallazgos más importantes identificados por la IA</li>
+                                    <li><strong>Recomendaciones:</strong> 5-7 acciones estratégicas específicas y accionables</li>
+                                    <li><strong>Estadísticas:</strong> Total de reuniones y participantes del período</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Botones -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-info" id="submitBtn">
+                                <i class="bi bi-sparkles"></i> Generar con IA
+                            </button>
+                            <button type="button" class="btn btn-info d-none" id="loadingBtn" disabled>
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                                Generando con IA...
+                            </button>
+                            <a href="{% url 'ai_manager_detail' manager.pk %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Info del Gerente -->
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-robot"></i> {{ manager.name }}
+                    </h6>
+                    <p class="card-text small">{{ manager.description|default:"Gerente IA especializado" }}</p>
+                    <hr>
+                    <div class="small">
+                        <p class="mb-1">
+                            <i class="bi bi-tag text-muted"></i> 
+                            <strong>Categoría:</strong> {{ manager.get_category_display }}
+                        </p>
+                        <p class="mb-0">
+                            <i class="bi bi-building text-muted"></i> 
+                            <strong>Empresa:</strong> {{ manager.company.name }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estadísticas Actuales -->
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-bar-chart"></i> Estadísticas
+                    </h6>
+                    <div class="row text-center">
+                        <div class="col-6 mb-2">
+                            <div class="border rounded p-2">
+                                <h4 class="mb-0 text-primary">{{ stats.total_meetings }}</h4>
+                                <small class="text-muted">Reuniones</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-2">
+                            <div class="border rounded p-2">
+                                <h4 class="mb-0 text-success">{{ stats.active_users }}</h4>
+                                <small class="text-muted">Usuarios</small>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="border rounded p-2">
+                                <h4 class="mb-0 text-info">{{ stats.total_summaries }}</h4>
+                                <small class="text-muted">Resúmenes Generados</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Consejos -->
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-lightbulb text-warning"></i> Consejos
+                    </h6>
+                    <ul class="small mb-0">
+                        <li>Selecciona un período con suficientes reuniones (mínimo 5)</li>
+                        <li>Los períodos mensuales suelen dar mejores insights</li>
+                        <li>La generación puede tardar 30-60 segundos</li>
+                        <li>El resumen analiza patrones y tendencias</li>
+                        <li>Las recomendaciones son específicas para tu empresa</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Funciones para atajos de período
+function setLastWeek() {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - 7);
+    setDates(start, end);
+}
+
+function setLastMonth() {
+    const end = new Date();
+    const start = new Date();
+    start.setMonth(start.getMonth() - 1);
+    setDates(start, end);
+}
+
+function setLastQuarter() {
+    const end = new Date();
+    const start = new Date();
+    start.setMonth(start.getMonth() - 3);
+    setDates(start, end);
+}
+
+function setLastYear() {
+    const end = new Date();
+    const start = new Date();
+    start.setFullYear(start.getFullYear() - 1);
+    setDates(start, end);
+}
+
+function setDates(start, end) {
+    document.getElementById('period_start').value = start.toISOString().split('T')[0];
+    document.getElementById('period_end').value = end.toISOString().split('T')[0];
+    updatePeriodInfo();
+}
+
+function updatePeriodInfo() {
+    const start = document.getElementById('period_start').value;
+    const end = document.getElementById('period_end').value;
+    
+    if (start && end) {
+        const startDate = new Date(start);
+        const endDate = new Date(end);
+        
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        const startStr = startDate.toLocaleDateString('es-ES', options);
+        const endStr = endDate.toLocaleDateString('es-ES', options);
+        
+        const days = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+        
+        document.getElementById('periodText').innerHTML = `
+            <strong>${startStr}</strong> hasta <strong>${endStr}</strong><br>
+            <small class="text-muted">(${days} días)</small>
+        `;
+        
+        document.getElementById('periodInfo').style.display = 'block';
+        
+        // Aquí podrías hacer una llamada AJAX para obtener el conteo de reuniones
+        // Por ahora mostramos un mensaje genérico
+        document.getElementById('meetingsCount').innerHTML = 
+            '<i class="bi bi-calendar"></i> Se analizarán todas las reuniones en este período';
+    }
+}
+
+// Event listeners
+document.getElementById('period_start').addEventListener('change', updatePeriodInfo);
+document.getElementById('period_end').addEventListener('change', updatePeriodInfo);
+
+// Form submit
+document.getElementById('summaryForm').addEventListener('submit', function(e) {
+    const start = document.getElementById('period_start').value;
+    const end = document.getElementById('period_end').value;
+    
+    if (!start || !end) {
+        e.preventDefault();
+        alert('Por favor selecciona ambas fechas');
+        return;
+    }
+    
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    
+    if (startDate > endDate) {
+        e.preventDefault();
+        alert('La fecha de inicio debe ser anterior a la fecha de fin');
+        return;
+    }
+    
+    // Mostrar loading
+    document.getElementById('submitBtn').classList.add('d-none');
+    document.getElementById('loadingBtn').classList.remove('d-none');
+});
+
+// Establecer fecha máxima como hoy
+const today = new Date().toISOString().split('T')[0];
+document.getElementById('period_start').max = today;
+document.getElementById('period_end').max = today;
+</script>
+{% endblock %}

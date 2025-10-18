@@ -1,0 +1,30 @@
+# Dependencias de Node.js
+node_modules/
+
+# Sesiones de WhatsApp (IMPORTANTE: NO subir a Git)
+.wwebjs_auth/
+.wwebjs_cache/
+
+# Archivos de sesión
+*.session
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Variables de entorno
+.env
+.env.local
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

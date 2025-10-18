@@ -19,17 +19,22 @@
                         <table class="table table-hover table-striped mb-0">
                             <thead class="table-primary">
                                 <tr>
+                                    <th class="py-3 text-center" style="width: 60px;">#</th>
                                     <th class="py-3"><i class="bi bi-card-heading"></i> Título</th>
                                     <th class="py-3"><i class="bi bi-tag"></i> Categoría</th>
                                     <th class="py-3"><i class="bi bi-file-text"></i> Descripción</th>
                                     <th class="py-3 text-center"><i class="bi bi-calendar"></i> Fecha</th>
+                                    <th class="py-3 text-center" style="width: 120px;"><i class="bi bi-link-45deg"></i> Acción</th>
                                 </tr>
                             </thead>
                             <tbody>
                             {% for alcance in alcances %}
                                 <tr>
+                                    <td class="align-middle text-center fw-bold text-primary">
+                                        {{ forloop.counter }}
+                                    </td>
                                     <td class="align-middle fw-bold">
-                                        <i class="bi bi-check-circle text-success"></i> {{ alcance.titulo }}
+                                         {{ alcance.titulo }}
                                     </td>
                                     <td class="align-middle">
                                         <span class="badge bg-info">{{ alcance.categoria }}</span>
@@ -37,6 +42,15 @@
                                     <td class="align-middle">{{ alcance.descripcion|linebreaksbr }}</td>
                                     <td class="align-middle text-center">
                                         <small class="text-muted">{{ alcance.creado_en|date:'d M Y' }}</small>
+                                    </td>
+                                    <td class="align-middle text-center">
+                                        {% if alcance.url %}
+                                            <a href="{{ alcance.url }}" target="_blank" class="btn btn-sm btn-primary">
+                                                <i class="bi bi-box-arrow-up-right"></i> Ver más
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted small">-</span>
+                                        {% endif %}
                                     </td>
                                 </tr>
                             {% endfor %}

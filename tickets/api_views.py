@@ -226,3 +226,100 @@ def toggle_api_access(request):
         return Response({
             'error': f'Error al cambiar estado de API: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+def whatsapp_receive_message(request):
+    """
+    Endpoint para recibir mensajes de WhatsApp desde el servidor Node.js
+    No requiere autenticación porque viene del servidor interno
+    """
+    from .models import WhatsAppConnection, WhatsAppMessage, WhatsAppKeyword
+    from django.contrib.auth.models import User
+    
+    try:
+        # Extraer datos del mensaje
+        user_id = request.data.get('user_id')
+        from_number = request.data.get('from')
+        body = request.data.get('body', '')
+        timestamp = request.data.get('timestamp')
+        message_id = request.data.get('message_id')
+        
+        if not user_id or not from_number:
+            return Response({
+                'error': 'Faltan datos requeridos (user_id, from)'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Obtener el usuario y la conexión
+        try:
+            user = User.objects.get(id=user_id)
+            connection = WhatsAppConnection.objects.get(user=user)
+        except (User.DoesNotExist, WhatsAppConnection.DoesNotExist):
+            return Response({
+                'error': 'Usuario o conexión no encontrada'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Guardar el mensaje recibido
+        incoming_message = WhatsAppMessage.objects.create(
+            connection=connection,
+            sender_number=from_number,
+            message_text=body,
+            message_type='received',
+            whatsapp_message_id=message_id
+        )
+        
+        # Buscar palabra clave que coincida
+        keywords = WhatsAppKeyword.objects.filter(
+            connection=connection,
+            is_active=True
+        ).order_by('-priority', 'keyword')
+        
+        auto_reply_text = None
+        matched_keyword = None
+        
+        for keyword in keywords:
+            message_to_check = body
+            keyword_to_check = keyword.keyword
+            
+            # Aplicar sensibilidad a mayúsculas/minúsculas
+            if not keyword.is_case_sensitive:
+                message_to_check = message_to_check.lower()
+                keyword_to_check = keyword_to_check.lower()
+            
+            # Verificar coincidencia
+            if keyword.is_exact_match:
+                if message_to_check == keyword_to_check:
+                    auto_reply_text = keyword.response
+                    matched_keyword = keyword
+                    break
+            else:
+                if keyword_to_check in message_to_check:
+                    auto_reply_text = keyword.response
+                    matched_keyword = keyword
+                    break
+        
+        # Si hay respuesta automática, enviarla
+        if auto_reply_text:
+            # Guardar la respuesta automática en la base de datos
+            WhatsAppMessage.objects.create(
+                connection=connection,
+                sender_number=connection.phone_number or 'Bot',
+                recipient_number=from_number,
+                message_text=auto_reply_text,
+                message_type='auto_reply',
+                related_keyword=matched_keyword
+            )
+            
+            return Response({
+                'auto_reply': auto_reply_text,
+                'matched_keyword': matched_keyword.keyword
+            })
+        else:
+            return Response({
+                'message': 'Mensaje recibido, sin respuesta automática'
+            })
+            
+    except Exception as e:
+        return Response({
+            'error': f'Error al procesar mensaje: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

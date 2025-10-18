@@ -1,0 +1,369 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Color Picker - Herramientas{% endblock %}
+
+{% block extra_css %}
+<style>
+    .color-display {
+        width: 100%;
+        height: 200px;
+        border-radius: 10px;
+        border: 3px solid #dee2e6;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .color-code-card {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .color-code-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .color-history-item {
+        width: 60px;
+        height: 60px;
+        border-radius: 8px;
+        border: 2px solid #dee2e6;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .color-history-item:hover {
+        transform: scale(1.1);
+        border-color: #0d6efd;
+    }
+    
+    .eyedropper-btn {
+        font-size: 1.5rem;
+        padding: 15px 30px;
+    }
+    
+    .copied-notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        animation: slideIn 0.3s ease;
+    }
+    
+    @keyframes slideIn {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item">Herramientas</li>
+                    <li class="breadcrumb-item active" aria-current="page">Color Picker</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h1 class="card-title mb-3">
+                        <i class="bi bi-palette text-primary"></i> Color Picker
+                    </h1>
+                    <p class="text-muted mb-0">
+                        Selecciona colores de cualquier parte de tu pantalla y obtén sus códigos en diferentes formatos.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-body text-center">
+                    <div class="mb-4">
+                        <div class="color-display mx-auto" id="colorDisplay" style="background-color: #3498db;"></div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <button class="btn btn-primary eyedropper-btn" id="eyedropperBtn">
+                            <i class="bi bi-eyedropper"></i> Seleccionar Color de Pantalla
+                        </button>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="colorInput" class="form-label fw-bold">O elige un color manualmente:</label>
+                        <input type="color" class="form-control form-control-color mx-auto" id="colorInput" value="#3498db" style="width: 100px; height: 50px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm border-0 color-code-card h-100" onclick="copyToClipboard('hexCode')">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-hash text-primary"></i> HEX
+                    </h5>
+                    <p class="card-text fs-4 fw-bold" id="hexCode">#3498db</p>
+                    <small class="text-muted"><i class="bi bi-clipboard"></i> Click para copiar</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm border-0 color-code-card h-100" onclick="copyToClipboard('rgbCode')">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-grid-3x3 text-success"></i> RGB
+                    </h5>
+                    <p class="card-text fs-4 fw-bold" id="rgbCode">rgb(52, 152, 219)</p>
+                    <small class="text-muted"><i class="bi bi-clipboard"></i> Click para copiar</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm border-0 color-code-card h-100" onclick="copyToClipboard('hslCode')">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-circle-half text-warning"></i> HSL
+                    </h5>
+                    <p class="card-text fs-4 fw-bold" id="hslCode">hsl(204, 70%, 53%)</p>
+                    <small class="text-muted"><i class="bi bi-clipboard"></i> Click para copiar</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm border-0 color-code-card h-100" onclick="copyToClipboard('cmykCode')">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-printer text-info"></i> CMYK
+                    </h5>
+                    <p class="card-text fs-4 fw-bold" id="cmykCode">cmyk(76%, 31%, 0%, 14%)</p>
+                    <small class="text-muted"><i class="bi bi-clipboard"></i> Click para copiar</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">
+                        <i class="bi bi-clock-history"></i> Historial de Colores
+                    </h5>
+                    <div class="d-flex flex-wrap gap-3" id="colorHistory">
+                        <div class="text-muted">No hay colores guardados aún</div>
+                    </div>
+                    <button class="btn btn-sm btn-outline-danger mt-3" id="clearHistoryBtn">
+                        <i class="bi bi-trash"></i> Limpiar Historial
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Container -->
+<div id="notificationContainer"></div>
+
+<script>
+let colorHistory = JSON.parse(localStorage.getItem('colorHistory')) || [];
+
+// Inicializar
+document.addEventListener('DOMContentLoaded', function() {
+    loadColorHistory();
+    updateColor('#3498db');
+});
+
+// EyeDropper API
+document.getElementById('eyedropperBtn').addEventListener('click', async function() {
+    if (!window.EyeDropper) {
+        alert('Lo sentimos, tu navegador no soporta la API EyeDropper. Por favor usa Chrome, Edge o Opera.');
+        return;
+    }
+    
+    try {
+        const eyeDropper = new EyeDropper();
+        const result = await eyeDropper.open();
+        updateColor(result.sRGBHex);
+        addToHistory(result.sRGBHex);
+    } catch (e) {
+        if (e.message !== 'The user canceled the selection.') {
+            console.error('Error:', e);
+        }
+    }
+});
+
+// Color input manual
+document.getElementById('colorInput').addEventListener('input', function(e) {
+    updateColor(e.target.value);
+    addToHistory(e.target.value);
+});
+
+// Actualizar todos los códigos de color
+function updateColor(hex) {
+    // Actualizar display
+    document.getElementById('colorDisplay').style.backgroundColor = hex;
+    document.getElementById('colorInput').value = hex;
+    
+    // Convertir a diferentes formatos
+    const rgb = hexToRgb(hex);
+    const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+    const cmyk = rgbToCmyk(rgb.r, rgb.g, rgb.b);
+    
+    // Actualizar textos
+    document.getElementById('hexCode').textContent = hex.toUpperCase();
+    document.getElementById('rgbCode').textContent = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+    document.getElementById('hslCode').textContent = `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`;
+    document.getElementById('cmykCode').textContent = `cmyk(${cmyk.c}%, ${cmyk.m}%, ${cmyk.y}%, ${cmyk.k}%)`;
+}
+
+// Conversiones de color
+function hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    } : null;
+}
+
+function rgbToHsl(r, g, b) {
+    r /= 255;
+    g /= 255;
+    b /= 255;
+    
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h, s, l = (max + min) / 2;
+    
+    if (max === min) {
+        h = s = 0;
+    } else {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        
+        switch (max) {
+            case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+            case g: h = ((b - r) / d + 2) / 6; break;
+            case b: h = ((r - g) / d + 4) / 6; break;
+        }
+    }
+    
+    return {
+        h: Math.round(h * 360),
+        s: Math.round(s * 100),
+        l: Math.round(l * 100)
+    };
+}
+
+function rgbToCmyk(r, g, b) {
+    let c = 1 - (r / 255);
+    let m = 1 - (g / 255);
+    let y = 1 - (b / 255);
+    let k = Math.min(c, m, y);
+    
+    c = ((c - k) / (1 - k)) || 0;
+    m = ((m - k) / (1 - k)) || 0;
+    y = ((y - k) / (1 - k)) || 0;
+    
+    return {
+        c: Math.round(c * 100),
+        m: Math.round(m * 100),
+        y: Math.round(y * 100),
+        k: Math.round(k * 100)
+    };
+}
+
+// Copiar al portapapeles
+function copyToClipboard(elementId) {
+    const text = document.getElementById(elementId).textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        showNotification('Copiado: ' + text);
+    });
+}
+
+// Mostrar notificación
+function showNotification(message) {
+    const notification = document.createElement('div');
+    notification.className = 'alert alert-success alert-dismissible fade show copied-notification';
+    notification.innerHTML = `
+        <i class="bi bi-check-circle"></i> ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.getElementById('notificationContainer').appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+// Historial de colores
+function addToHistory(color) {
+    color = color.toUpperCase();
+    
+    // Evitar duplicados
+    colorHistory = colorHistory.filter(c => c !== color);
+    
+    // Agregar al inicio
+    colorHistory.unshift(color);
+    
+    // Limitar a 10 colores
+    if (colorHistory.length > 10) {
+        colorHistory = colorHistory.slice(0, 10);
+    }
+    
+    localStorage.setItem('colorHistory', JSON.stringify(colorHistory));
+    loadColorHistory();
+}
+
+function loadColorHistory() {
+    const historyContainer = document.getElementById('colorHistory');
+    
+    if (colorHistory.length === 0) {
+        historyContainer.innerHTML = '<div class="text-muted">No hay colores guardados aún</div>';
+        return;
+    }
+    
+    historyContainer.innerHTML = colorHistory.map(color => `
+        <div class="color-history-item" 
+             style="background-color: ${color};" 
+             onclick="updateColor('${color}')"
+             title="${color}">
+        </div>
+    `).join('');
+}
+
+document.getElementById('clearHistoryBtn').addEventListener('click', function() {
+    if (confirm('¿Estás seguro de que deseas limpiar el historial de colores?')) {
+        colorHistory = [];
+        localStorage.removeItem('colorHistory');
+        loadColorHistory();
+        showNotification('Historial limpiado exitosamente');
+    }
+});
+</script>
+{% endblock %}

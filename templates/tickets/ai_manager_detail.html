@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'ai_manager_list' %}">Gerentes IA</a></li>
+                    <li class="breadcrumb-item active">{{ manager.name }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h2 class="mb-2">
+                                <i class="bi bi-robot"></i> {{ manager.name }}
+                            </h2>
+                            <p class="text-muted mb-2">{{ manager.description|default:"Gerente IA especializado" }}</p>
+                            <p class="mb-0">
+                                <span class="badge bg-primary">{{ manager.get_category_display }}</span>
+                                <span class="badge bg-secondary">{{ manager.company.name }}</span>
+                                {% if manager.is_active %}
+                                    <span class="badge bg-success">Activo</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inactivo</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-three-dots-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{% url 'ai_manager_edit' manager.pk %}">
+                                    <i class="bi bi-pencil"></i> Editar
+                                </a></li>
+                                <li><a class="dropdown-item text-danger" href="{% url 'ai_manager_delete' manager.pk %}">
+                                    <i class="bi bi-trash"></i> Eliminar
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 bg-primary text-white">
+                <div class="card-body text-center">
+                    <h5 class="mb-3">¿Listo para compartir?</h5>
+                    <a href="{% url 'ai_manager_meeting_create' manager.pk %}" class="btn btn-light btn-lg">
+                        <i class="bi bi-calendar-plus"></i> Nueva Reunión
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 text-center">
+                <div class="card-body">
+                    <h3 class="text-primary mb-0">{{ stats.total_meetings }}</h3>
+                    <small class="text-muted">Reuniones</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 text-center">
+                <div class="card-body">
+                    <h3 class="text-success mb-0">{{ stats.active_users }}</h3>
+                    <small class="text-muted">Usuarios Activos</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 text-center">
+                <div class="card-body">
+                    <h3 class="text-info mb-0">{{ stats.total_summaries }}</h3>
+                    <small class="text-muted">Resúmenes</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 text-center">
+                <div class="card-body">
+                    <h3 class="text-warning mb-0">{{ stats.total_tokens|floatformat:0 }}</h3>
+                    <small class="text-muted">Tokens Usados</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-4" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="meetings-tab" data-bs-toggle="tab" data-bs-target="#meetings" type="button" role="tab">
+                <i class="bi bi-calendar"></i> Reuniones Recientes
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="summaries-tab" data-bs-toggle="tab" data-bs-target="#summaries" type="button" role="tab">
+                <i class="bi bi-file-text"></i> Resúmenes Ejecutivos
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="config-tab" data-bs-toggle="tab" data-bs-target="#config" type="button" role="tab">
+                <i class="bi bi-gear"></i> Configuración
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <!-- Tab: Reuniones -->
+        <div class="tab-pane fade show active" id="meetings" role="tabpanel">
+            <div class="row">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4>Reuniones Recientes</h4>
+                        <a href="{% url 'ai_manager_meetings' manager.pk %}" class="btn btn-sm btn-outline-primary">
+                            Ver Todas <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+
+                    {% if recent_meetings %}
+                        <div class="list-group">
+                            {% for meeting in recent_meetings %}
+                            <a href="{% url 'ai_manager_meeting_detail' meeting.pk %}" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ meeting.title }}</h6>
+                                    <small class="text-muted">{{ meeting.created_at|date:"d/m/Y H:i" }}</small>
+                                </div>
+                                <p class="mb-1 text-muted small">{{ meeting.ai_summary|truncatewords:20 }}</p>
+                                <small>
+                                    <i class="bi bi-person"></i> {{ meeting.user.get_full_name|default:meeting.user.username }}
+                                    <span class="ms-2">
+                                        {% if meeting.input_type == 'text' %}
+                                            <i class="bi bi-keyboard"></i> Texto
+                                        {% else %}
+                                            <i class="bi bi-mic"></i> Audio
+                                        {% endif %}
+                                    </span>
+                                </small>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> Aún no hay reuniones. 
+                            <a href="{% url 'ai_manager_meeting_create' manager.pk %}" class="alert-link">Crea la primera</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Resúmenes -->
+        <div class="tab-pane fade" id="summaries" role="tabpanel">
+            <div class="row">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4>Resúmenes Ejecutivos</h4>
+                        {% if request.user.is_staff %}
+                        <a href="{% url 'ai_manager_generate_summary' manager.pk %}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-plus-circle"></i> Generar Resumen
+                        </a>
+                        {% endif %}
+                    </div>
+
+                    {% if summaries %}
+                        <div class="row">
+                            {% for summary in summaries %}
+                            <div class="col-md-6 mb-3">
+                                <div class="card shadow-sm h-100">
+                                    <div class="card-body">
+                                        <h6 class="card-title">
+                                            <i class="bi bi-calendar-range text-info"></i>
+                                            Período: {{ summary.period_start|date:"d/m/Y" }} - {{ summary.period_end|date:"d/m/Y" }}
+                                        </h6>
+                                        <p class="card-text small text-muted">{{ summary.summary_text|truncatewords:30 }}</p>
+                                        <hr>
+                                        <div class="row text-center small mb-3">
+                                            <div class="col-6">
+                                                <strong>{{ summary.total_meetings }}</strong><br>
+                                                <span class="text-muted">Reuniones</span>
+                                            </div>
+                                            <div class="col-6">
+                                                <strong>{{ summary.participants_count }}</strong><br>
+                                                <span class="text-muted">Participantes</span>
+                                            </div>
+                                        </div>
+                                        <a href="{% url 'ai_manager_summary_detail' summary.pk %}" class="btn btn-sm btn-outline-info w-100">
+                                            <i class="bi bi-eye"></i> Ver Resumen Completo
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> Aún no hay resúmenes ejecutivos generados.
+                            {% if request.user.is_staff %}
+                                <a href="{% url 'ai_manager_generate_summary' manager.pk %}" class="alert-link">Generar uno ahora</a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Configuración -->
+        <div class="tab-pane fade" id="config" role="tabpanel">
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body">
+                            <h5 class="card-title">Instrucciones para la IA</h5>
+                            <div class="p-3 bg-light rounded" style="white-space: pre-wrap;">{{ manager.instructions }}</div>
+                            
+                            <hr>
+                            
+                            <h5 class="card-title">Información</h5>
+                            <table class="table">
+                                <tr>
+                                    <th width="200">Creado por:</th>
+                                    <td>{{ manager.created_by.get_full_name|default:manager.created_by.username }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Fecha de creación:</th>
+                                    <td>{{ manager.created_at|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Última actualización:</th>
+                                    <td>{{ manager.updated_at|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card shadow-sm border-0 bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="bi bi-lightbulb"></i> Consejos
+                            </h6>
+                            <ul class="small mb-0">
+                                <li>Las instrucciones definen la personalidad de tu gerente IA</li>
+                                <li>Sé específico sobre el tono y enfoque deseado</li>
+                                <li>Puedes editar las instrucciones en cualquier momento</li>
+                                <li>Los cambios afectarán las próximas reuniones</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

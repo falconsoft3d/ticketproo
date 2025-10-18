@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'ai_manager_list' %}">Gerentes IA</a></li>
+                    <li class="breadcrumb-item active">Crear Gerente IA</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-robot"></i> Crear Gerente IA
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Empresa -->
+                        <div class="mb-3">
+                            <label for="company" class="form-label fw-bold">
+                                <i class="bi bi-building"></i> Empresa <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="company" name="company" required>
+                                <option value="">Selecciona una empresa...</option>
+                                {% for company in companies %}
+                                    <option value="{{ company.id }}">{{ company.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">Empresa a la que pertenecerá este gerente IA</small>
+                        </div>
+
+                        <!-- Nombre -->
+                        <div class="mb-3">
+                            <label for="name" class="form-label fw-bold">
+                                <i class="bi bi-person-badge"></i> Nombre del Gerente <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="name" name="name" 
+                                   placeholder="Ejemplo: Gerente de Ventas IA" required maxlength="200">
+                            <small class="text-muted">Nombre descriptivo para identificar al gerente</small>
+                        </div>
+
+                        <!-- Categoría -->
+                        <div class="mb-3">
+                            <label for="category" class="form-label fw-bold">
+                                <i class="bi bi-tag"></i> Categoría <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="category" name="category" required>
+                                <option value="">Selecciona una categoría...</option>
+                                <option value="ventas">Ventas</option>
+                                <option value="compras">Compras</option>
+                                <option value="contabilidad">Contabilidad</option>
+                                <option value="crm">CRM</option>
+                                <option value="inventario">Inventario</option>
+                                <option value="rrhh">Recursos Humanos</option>
+                                <option value="marketing">Marketing</option>
+                                <option value="operaciones">Operaciones</option>
+                                <option value="finanzas">Finanzas</option>
+                                <option value="ti">Tecnología</option>
+                                <option value="otro">Otro</option>
+                            </select>
+                            <small class="text-muted">Área de especialización del gerente</small>
+                        </div>
+
+                        <!-- Descripción -->
+                        <div class="mb-3">
+                            <label for="description" class="form-label fw-bold">
+                                <i class="bi bi-file-text"></i> Descripción
+                            </label>
+                            <textarea class="form-control" id="description" name="description" 
+                                      rows="3" placeholder="Describe el rol y responsabilidades de este gerente..."></textarea>
+                            <small class="text-muted">Opcional: Descripción detallada del rol</small>
+                        </div>
+
+                        <!-- Instrucciones para la IA -->
+                        <div class="mb-4">
+                            <label for="instructions" class="form-label fw-bold">
+                                <i class="bi bi-cpu"></i> Instrucciones para la IA <span class="text-danger">*</span>
+                            </label>
+                            <textarea class="form-control" id="instructions" name="instructions" 
+                                      rows="6" required 
+                                      placeholder="Ejemplo: Eres un gerente de ventas experimentado con 15 años en el sector. Tu objetivo es ayudar al equipo de ventas a mejorar sus números mediante análisis detallado y consejos prácticos...">Eres un gerente experimentado y empático. Tu objetivo es ayudar al equipo a mejorar.</textarea>
+                            <small class="text-muted">
+                                Define la personalidad, experiencia y enfoque del gerente IA. 
+                                Sé específico para obtener mejores resultados.
+                            </small>
+                        </div>
+
+                        <!-- Panel de ayuda -->
+                        <div class="alert alert-info">
+                            <h6 class="alert-heading">
+                                <i class="bi bi-lightbulb"></i> Consejos para mejores resultados:
+                            </h6>
+                            <ul class="mb-0">
+                                <li>Define claramente la personalidad del gerente (amigable, directo, motivador, etc.)</li>
+                                <li>Especifica años de experiencia y área de expertise</li>
+                                <li>Indica el enfoque principal (analítico, práctico, estratégico)</li>
+                                <li>Menciona el tono deseado (profesional, cercano, formal)</li>
+                                <li>Incluye el objetivo principal del gerente</li>
+                            </ul>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a href="{% url 'ai_manager_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Crear Gerente IA
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Ejemplos de categorías -->
+            <div class="card mt-4 shadow-sm border-0">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-info-circle"></i> Ejemplos por Categoría
+                    </h5>
+                    <div class="accordion" id="accordionExamples">
+                        <!-- Ventas -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseVentas">
+                                    <i class="bi bi-graph-up me-2"></i> Ventas
+                                </button>
+                            </h2>
+                            <div id="collapseVentas" class="accordion-collapse collapse" data-bs-parent="#accordionExamples">
+                                <div class="accordion-body">
+                                    <strong>Nombre:</strong> Gerente de Ventas IA<br>
+                                    <strong>Instrucciones:</strong> Eres un gerente de ventas con 15 años de experiencia en ventas B2B y B2C. 
+                                    Tu enfoque es práctico y motivador. Ayudas al equipo a identificar oportunidades, cerrar ventas y 
+                                    superar objeciones. Proporcionas consejos específicos y accionables basados en técnicas probadas.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CRM -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCRM">
+                                    <i class="bi bi-people me-2"></i> CRM
+                                </button>
+                            </h2>
+                            <div id="collapseCRM" class="accordion-collapse collapse" data-bs-parent="#accordionExamples">
+                                <div class="accordion-body">
+                                    <strong>Nombre:</strong> Gerente de Relaciones con Clientes IA<br>
+                                    <strong>Instrucciones:</strong> Eres un especialista en gestión de relaciones con clientes. 
+                                    Tu objetivo es mejorar la satisfacción y retención de clientes. Analizas interacciones, 
+                                    identificas patrones de comportamiento y sugieres estrategias personalizadas para fortalecer 
+                                    las relaciones con cada cliente.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- RRHH -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRRHH">
+                                    <i class="bi bi-person-badge me-2"></i> Recursos Humanos
+                                </button>
+                            </h2>
+                            <div id="collapseRRHH" class="accordion-collapse collapse" data-bs-parent="#accordionExamples">
+                                <div class="accordion-body">
+                                    <strong>Nombre:</strong> Gerente de RRHH IA<br>
+                                    <strong>Instrucciones:</strong> Eres un gerente de recursos humanos empático y profesional. 
+                                    Te enfocas en el bienestar del equipo, clima laboral y desarrollo profesional. Ayudas a 
+                                    identificar necesidades de capacitación, resolver conflictos y mejorar la comunicación interna.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

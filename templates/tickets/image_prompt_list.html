@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mis Prompts de Imágenes{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Mis Prompts</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2><i class="bi bi-list-task text-primary"></i> Mis Prompts de Imágenes</h2>
+            <p class="text-muted">Total: {{ total_prompts }} prompt{{ total_prompts|pluralize }}</p>
+        </div>
+        <div class="col-md-6 text-end">
+            <a href="{% url 'image_prompt_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Generar Nuevo Prompt
+            </a>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <form method="get" class="card shadow-sm border-0">
+                <div class="card-body">
+                    <div class="input-group">
+                        <input type="text" name="search" class="form-control" 
+                               placeholder="Buscar por título, prompt o etiquetas..." 
+                               value="{{ search }}">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search"></i> Buscar
+                        </button>
+                        {% if search %}
+                        <a href="{% url 'image_prompt_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Limpiar
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if page_obj %}
+    <div class="row g-4">
+        {% for prompt in page_obj %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0" style="transition: all 0.3s ease;">
+                <a href="{% url 'image_prompt_detail' prompt.pk %}" class="text-decoration-none">
+                    <div class="position-relative">
+                        <img src="{{ prompt.image.url }}" class="card-img-top" 
+                             style="height: 250px; object-fit: cover;" alt="{{ prompt.title }}">
+                        {% if prompt.is_public %}
+                        <span class="badge bg-success position-absolute top-0 end-0 m-2">
+                            <i class="bi bi-eye"></i> Público
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title text-dark">{{ prompt.title }}</h5>
+                        <p class="card-text text-muted small">
+                            {{ prompt.get_final_prompt|truncatewords:20 }}
+                        </p>
+                        {% if prompt.tags %}
+                        <div class="mb-2">
+                            <span class="badge bg-light text-dark"><i class="bi bi-tags"></i> {{ prompt.tags }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="bi bi-calendar3"></i> {{ prompt.created_at|date:"d M Y" }}
+                            </small>
+                            {% if prompt.tokens_used > 0 %}
+                            <small class="text-muted">
+                                <i class="bi bi-cpu"></i> {{ prompt.tokens_used }} tokens
+                            </small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </a>
+                <div class="card-footer bg-transparent border-0 pt-0">
+                    <div class="btn-group w-100" role="group">
+                        <a href="{% url 'image_prompt_detail' prompt.pk %}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye"></i> Ver
+                        </a>
+                        <a href="{% url 'image_prompt_edit' prompt.pk %}" class="btn btn-sm btn-outline-warning">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                        <a href="{% url 'image_prompt_delete' prompt.pk %}" class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Paginación -->
+    {% if page_obj.has_other_pages %}
+    <nav aria-label="Page navigation" class="mt-5">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}">Primera</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}">Anterior</a>
+            </li>
+            {% endif %}
+
+            <li class="page-item active">
+                <span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+            </li>
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}">Siguiente</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}">Última</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-info text-center">
+                <i class="bi bi-info-circle fs-1"></i>
+                <h4 class="mt-3">No tienes prompts generados aún</h4>
+                <p>¡Comienza subiendo tu primera imagen!</p>
+                <a href="{% url 'image_prompt_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Generar Primer Prompt
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if contract %}Editar{% else %}Nuevo{% endif %} Contrato Legal{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'legal_contract_list' %}">Contratos Legales</a></li>
+            <li class="breadcrumb-item active" aria-current="page">
+                {% if contract %}Editar{% else %}Nuevo{% endif %}
+            </li>
+        </ol>
+    </nav>
+
+    <!-- Título -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">
+            <i class="bi bi-file-earmark-ruled text-primary"></i>
+            {% if contract %}Editar Contrato{% else %}Nuevo Contrato Legal{% endif %}
+        </h1>
+    </div>
+
+    <!-- Formulario -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <!-- Información Básica -->
+                        <h5 class="card-title mb-3">
+                            <i class="bi bi-info-circle"></i> Información Básica
+                        </h5>
+                        
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Nombre del Contrato <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="name" name="name" 
+                                   value="{{ contract.name|default:'' }}" required
+                                   placeholder="Ej: Contrato de Soporte Técnico 2025">
+                            <div class="form-text">Nombre descriptivo para identificar el contrato</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="contract_type" class="form-label">Tipo de Contrato <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="contract_type" name="contract_type" 
+                                   value="{{ contract.contract_type|default:'' }}" required
+                                   placeholder="Ej: Soporte de Software, Desarrollo, Consultoría">
+                            <div class="form-text">Categoría o tipo de contrato</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="objective_prompt" class="form-label">Objetivo del Contrato <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="objective_prompt" name="objective_prompt" 
+                                      rows="5" required
+                                      placeholder="Describe detalladamente el objetivo y alcance del contrato. Por ejemplo: 'Soporte técnico 24/7 para sistema ERP, incluye mantenimiento correctivo y preventivo, actualizaciones mensuales, capacitación trimestral al personal'">{{ contract.objective_prompt|default:'' }}</textarea>
+                            <div class="form-text">
+                                <i class="bi bi-magic text-primary"></i>
+                                Este texto se usará para generar el contrato con IA. Sé lo más específico posible.
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Partes del Contrato -->
+                        <h5 class="card-title mb-3">
+                            <i class="bi bi-people"></i> Partes del Contrato
+                        </h5>
+
+                        <div class="mb-3">
+                            <label for="company" class="form-label">Empresa Proveedora (Tu Empresa) <span class="text-danger">*</span></label>
+                            <select class="form-select" id="company" name="company" required>
+                                <option value="">Selecciona la empresa proveedora</option>
+                                {% for comp in companies %}
+                                <option value="{{ comp.id }}" {% if contract.company_id == comp.id %}selected{% endif %}>
+                                    {{ comp.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">La empresa que provee el servicio o producto</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="client_company" class="form-label">Empresa Cliente <span class="text-danger">*</span></label>
+                            <select class="form-select" id="client_company" name="client_company" required>
+                                <option value="">Selecciona la empresa cliente</option>
+                                {% for comp in companies %}
+                                <option value="{{ comp.id }}" {% if contract.client_company_id == comp.id %}selected{% endif %}>
+                                    {{ comp.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">La empresa que contrata el servicio o producto</div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Detalles del Contrato -->
+                        <h5 class="card-title mb-3">
+                            <i class="bi bi-calendar-check"></i> Detalles del Contrato
+                        </h5>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="start_date" class="form-label">Fecha de Inicio</label>
+                                <input type="date" class="form-control" id="start_date" name="start_date" 
+                                       value="{% if contract.start_date %}{{ contract.start_date|date:'Y-m-d' }}{% endif %}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="end_date" class="form-label">Fecha de Finalización</label>
+                                <input type="date" class="form-control" id="end_date" name="end_date" 
+                                       value="{% if contract.end_date %}{{ contract.end_date|date:'Y-m-d' }}{% endif %}">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label for="amount" class="form-label">Monto del Contrato</label>
+                                <input type="number" step="0.01" class="form-control" id="amount" name="amount" 
+                                       value="{{ contract.amount|default:'' }}"
+                                       placeholder="0.00">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="currency" class="form-label">Moneda</label>
+                                <select class="form-select" id="currency" name="currency">
+                                    <option value="USD" {% if contract.currency == 'USD' or not contract %}selected{% endif %}>USD</option>
+                                    <option value="EUR" {% if contract.currency == 'EUR' %}selected{% endif %}>EUR</option>
+                                    <option value="MXN" {% if contract.currency == 'MXN' %}selected{% endif %}>MXN</option>
+                                    <option value="ARS" {% if contract.currency == 'ARS' %}selected{% endif %}>ARS</option>
+                                    <option value="COP" {% if contract.currency == 'COP' %}selected{% endif %}>COP</option>
+                                    <option value="CLP" {% if contract.currency == 'CLP' %}selected{% endif %}>CLP</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {% if contract %}
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notas Internas</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3" 
+                                      placeholder="Notas privadas sobre el contrato">{{ contract.notes|default:'' }}</textarea>
+                            <div class="form-text">Estas notas son privadas y no aparecen en el contrato generado</div>
+                        </div>
+                        {% endif %}
+
+                        <hr class="my-4">
+
+                        <!-- Botones -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i>
+                                {% if contract %}Actualizar{% else %}Crear{% endif %} Contrato
+                            </button>
+                            <a href="{% if contract %}{% url 'legal_contract_detail' contract.pk %}{% else %}{% url 'legal_contract_list' %}{% endif %}" 
+                               class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de ayuda -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm bg-light">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-lightbulb text-warning"></i> Consejos
+                    </h5>
+                    
+                    <h6 class="mt-3">📝 Objetivo del Contrato</h6>
+                    <p class="small">
+                        Describe claramente qué servicio o producto se está contratando, el alcance, 
+                        frecuencia, horarios de atención, y cualquier otro detalle relevante. 
+                        Cuanto más específico seas, mejor será el contrato generado por IA.
+                    </p>
+
+                    <h6 class="mt-3">🏢 Empresas</h6>
+                    <p class="small">
+                        Asegúrate de que las empresas tengan toda su información completa 
+                        (dirección, teléfono, email) para que aparezcan correctamente en el contrato.
+                    </p>
+
+                    <h6 class="mt-3">💰 Monto y Fechas</h6>
+                    <p class="small">
+                        Estos campos son opcionales pero recomendados. Si los llenas, 
+                        aparecerán automáticamente en el contrato generado.
+                    </p>
+
+                    <h6 class="mt-3">🤖 Generación con IA</h6>
+                    <p class="small">
+                        Después de crear el contrato, podrás usar IA para generar todo el 
+                        contenido legal automáticamente basado en tu objetivo.
+                    </p>
+
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Ejemplo de objetivo:</strong><br>
+                        <small class="text-muted">
+                            "Soporte técnico remoto 24/7 para sistema ERP Odoo. Incluye: 
+                            resolución de incidencias en máximo 4 horas, mantenimiento 
+                            preventivo mensual, actualizaciones de seguridad, capacitación 
+                            trimestral al equipo, respaldo diario de datos."
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .gap-2 {
+        gap: 0.5rem !important;
+    }
+    
+    .form-label {
+        font-weight: 500;
+    }
+    
+    .card {
+        border: none;
+    }
+    
+    textarea {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+</style>
+{% endblock %}

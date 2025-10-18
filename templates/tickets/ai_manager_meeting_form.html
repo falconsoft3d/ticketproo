@@ -1,0 +1,519 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'ai_manager_list' %}">Gerentes IA</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'ai_manager_detail' manager.pk %}">{{ manager.name }}</a></li>
+                    <li class="breadcrumb-item active">Nueva Reunión</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Columna del Formulario -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-calendar-plus"></i> Nueva Reunión
+                    </h3>
+                    <p class="mb-0 mt-2">
+                        <i class="bi bi-robot"></i> {{ manager.name }} - {{ manager.get_category_display }}
+                    </p>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- Título -->
+                        <div class="mb-3">
+                            <label for="title" class="form-label fw-bold">
+                                <i class="bi bi-card-heading"></i> Título de la Reunión <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="title" name="title" 
+                                   placeholder="Ejemplo: Reporte de ventas del día, Problemas en producción..." 
+                                   required maxlength="300">
+                            <small class="text-muted">Resume el tema principal de la reunión</small>
+                        </div>
+
+                        <!-- Tipo de Entrada -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-input-cursor"></i> Tipo de Entrada
+                            </label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="input_type" id="input_text" value="text" checked>
+                                <label class="btn btn-outline-primary" for="input_text">
+                                    <i class="bi bi-keyboard"></i> Texto
+                                </label>
+
+                                <input type="radio" class="btn-check" name="input_type" id="input_audio" value="audio">
+                                <label class="btn btn-outline-primary" for="input_audio">
+                                    <i class="bi bi-mic"></i> Audio
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Entrada de Texto -->
+                        <div class="mb-3" id="text_input_container">
+                            <label for="user_input" class="form-label fw-bold">
+                                <i class="bi bi-chat-left-text"></i> Comparte tus Pensamientos <span class="text-danger">*</span>
+                            </label>
+                            
+                            <!-- Botón de Micrófono -->
+                            <div class="mb-2">
+                                <button type="button" class="btn btn-outline-danger" id="record_btn">
+                                    <i class="bi bi-mic-fill"></i> <span id="record_text">Grabar Audio</span>
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary d-none" id="stop_btn">
+                                    <i class="bi bi-stop-circle-fill"></i> Detener Grabación
+                                </button>
+                                <span class="ms-2 text-muted d-none" id="recording_status">
+                                    <i class="bi bi-record-circle text-danger"></i> Grabando... <span id="recording_time">0:00</span>
+                                </span>
+                            </div>
+                            
+                            <textarea class="form-control" id="user_input" name="user_input" 
+                                      rows="10" required
+                                      placeholder="Cuéntale al gerente sobre:
+- ¿Qué hiciste hoy?
+- ¿Qué lograste?
+- ¿Qué desafíos enfrentaste?
+- ¿Qué planeas hacer mañana?
+- ¿Necesitas algún consejo específico?
+
+Sé específico y honesto para obtener mejores recomendaciones..."></textarea>
+                            <small class="text-muted">Comparte detalles sobre tu día, logros, desafíos o planes. Puedes usar el micrófono para dictar.</small>
+                        </div>
+
+                        <!-- Entrada de Audio -->
+                        <div class="mb-3 d-none" id="audio_input_container">
+                            <label for="audio_file" class="form-label fw-bold">
+                                <i class="bi bi-mic-fill"></i> Archivo de Audio
+                            </label>
+                            
+                            <!-- Botón de Grabar para modo audio -->
+                            <div class="mb-2">
+                                <button type="button" class="btn btn-danger" id="record_audio_btn">
+                                    <i class="bi bi-mic-fill"></i> <span id="record_audio_text">Grabar Audio</span>
+                                </button>
+                                <button type="button" class="btn btn-secondary d-none" id="stop_audio_btn">
+                                    <i class="bi bi-stop-circle-fill"></i> Detener
+                                </button>
+                                <span class="ms-2 text-muted d-none" id="recording_audio_status">
+                                    <i class="bi bi-record-circle text-danger"></i> Grabando... <span id="recording_audio_time">0:00</span>
+                                </span>
+                            </div>
+                            
+                            <input type="file" class="form-control" id="audio_file" name="audio_file" accept="audio/*">
+                            <small class="text-muted">Graba tu audio directamente o sube un archivo de audio</small>
+                        </div>
+
+                        <!-- Archivos Adjuntos -->
+                        <div class="mb-3">
+                            <label for="attachments" class="form-label fw-bold">
+                                <i class="bi bi-paperclip"></i> Archivos Adjuntos (Opcional)
+                            </label>
+                            <input type="file" class="form-control" id="attachments" name="attachments" multiple>
+                            <small class="text-muted">
+                                Puedes subir documentos, imágenes, PDFs que el gerente IA debe considerar en su análisis. 
+                                Selecciona uno o varios archivos.
+                            </small>
+                            <div id="attachment_preview" class="mt-2"></div>
+                        </div>
+
+                        <!-- Panel de Información -->
+                        <div class="alert alert-info">
+                            <h6 class="alert-heading">
+                                <i class="bi bi-info-circle"></i> ¿Qué pasará después?
+                            </h6>
+                            <ul class="mb-0">
+                                <li><strong>{{ manager.name }}</strong> analizará lo que compartas</li>
+                                <li>Considerará el contexto de tus reuniones anteriores</li>
+                                <li>Te dará feedback constructivo y personalizado</li>
+                                <li>Identificará áreas de mejora específicas</li>
+                                <li>Te proporcionará recomendaciones accionables</li>
+                            </ul>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a href="{% url 'ai_manager_detail' manager.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary" id="submit_btn">
+                                <i class="bi bi-send"></i> <span id="submit_text">Iniciar Reunión</span>
+                                <span class="spinner-border spinner-border-sm d-none" id="submit_spinner"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna de Información -->
+        <div class="col-lg-4">
+            <!-- Información del Gerente -->
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-robot"></i> Sobre {{ manager.name }}
+                    </h5>
+                    <p class="card-text">{{ manager.description|default:"Gerente IA especializado en ayudarte a mejorar." }}</p>
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="bi bi-tag"></i> {{ manager.get_category_display }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Consejos -->
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-lightbulb"></i> Consejos para una mejor reunión
+                    </h6>
+                    <ul class="small mb-0">
+                        <li>Sé específico con tus logros y desafíos</li>
+                        <li>Menciona métricas o números cuando sea posible</li>
+                        <li>Explica el contexto de las situaciones</li>
+                        <li>No tengas miedo de compartir dificultades</li>
+                        <li>Pregunta sobre temas específicos si necesitas ayuda</li>
+                        <li>Sé honesto para recibir consejos realmente útiles</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="card shadow-sm border-0 mt-3">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-bar-chart"></i> Tus Estadísticas
+                    </h6>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h4 class="mb-0">{{ manager.meetings.filter.count }}</h4>
+                            <small class="text-muted">Reuniones</small>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="mb-0">{{ manager.get_total_meetings }}</h4>
+                            <small class="text-muted">Total</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript para grabación de audio y cambio entre texto y audio -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const textRadio = document.getElementById('input_text');
+    const audioRadio = document.getElementById('input_audio');
+    const textContainer = document.getElementById('text_input_container');
+    const audioContainer = document.getElementById('audio_input_container');
+    const textInput = document.getElementById('user_input');
+    const submitBtn = document.getElementById('submit_btn');
+    const submitText = document.getElementById('submit_text');
+    const submitSpinner = document.getElementById('submit_spinner');
+
+    // Variables para transcripción en tiempo real (modo texto)
+    let recognition;
+    let isRecording = false;
+    let recordingSeconds = 0;
+    let recordingInterval;
+
+    const recordBtn = document.getElementById('record_btn');
+    const stopBtn = document.getElementById('stop_btn');
+    const recordingStatus = document.getElementById('recording_status');
+    const recordingTime = document.getElementById('recording_time');
+
+    // Variables para grabación en modo audio
+    let mediaRecorderAudio;
+    let audioChunksAudio = [];
+    let recordingIntervalAudio;
+    let recordingSecondsAudio = 0;
+
+    const recordAudioBtn = document.getElementById('record_audio_btn');
+    const stopAudioBtn = document.getElementById('stop_audio_btn');
+    const recordingAudioStatus = document.getElementById('recording_audio_status');
+    const recordingAudioTime = document.getElementById('recording_audio_time');
+    const audioFileInput = document.getElementById('audio_file');
+
+    function toggleInputs() {
+        if (textRadio.checked) {
+            textContainer.classList.remove('d-none');
+            audioContainer.classList.add('d-none');
+            textInput.required = true;
+        } else {
+            textContainer.classList.add('d-none');
+            audioContainer.classList.remove('d-none');
+            textInput.required = false;
+        }
+    }
+
+    textRadio.addEventListener('change', toggleInputs);
+    audioRadio.addEventListener('change', toggleInputs);
+
+    // ==================== TRANSCRIPCIÓN EN TIEMPO REAL (MODO TEXTO) ====================
+    
+    // Verificar si el navegador soporta Web Speech API
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'es-ES'; // Español
+
+        let finalTranscript = '';
+
+        recognition.onresult = function(event) {
+            let interimTranscript = '';
+
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                const transcript = event.results[i][0].transcript;
+                
+                if (event.results[i].isFinal) {
+                    finalTranscript += transcript + ' ';
+                } else {
+                    interimTranscript += transcript;
+                }
+            }
+
+            // Actualizar el textarea en tiempo real
+            textInput.value = finalTranscript + interimTranscript;
+            
+            // Hacer scroll al final del textarea
+            textInput.scrollTop = textInput.scrollHeight;
+        };
+
+        recognition.onerror = function(event) {
+            console.error('Error de reconocimiento:', event.error);
+            if (event.error === 'no-speech') {
+                // Reintentar si no detecta voz
+                if (isRecording) {
+                    recognition.start();
+                }
+            } else {
+                stopRecording();
+                alert('Error en el reconocimiento de voz: ' + event.error);
+            }
+        };
+
+        recognition.onend = function() {
+            if (isRecording) {
+                // Reiniciar si aún está grabando
+                recognition.start();
+            }
+        };
+
+        recordBtn.addEventListener('click', function() {
+            startRecording();
+        });
+
+        stopBtn.addEventListener('click', function() {
+            stopRecording();
+        });
+
+    } else {
+        // Si no hay soporte para Web Speech API, deshabilitar el botón
+        recordBtn.disabled = true;
+        recordBtn.innerHTML = '<i class="bi bi-mic-mute-fill"></i> No soportado';
+        recordBtn.title = 'Tu navegador no soporta reconocimiento de voz. Usa Chrome o Edge.';
+    }
+
+    function startRecording() {
+        isRecording = true;
+        recordingSeconds = 0;
+        
+        // Limpiar transcript previo
+        finalTranscript = textInput.value ? textInput.value + ' ' : '';
+        
+        try {
+            recognition.start();
+            
+            // UI updates
+            recordBtn.classList.add('d-none');
+            stopBtn.classList.remove('d-none');
+            recordingStatus.classList.remove('d-none');
+            
+            // Timer
+            recordingInterval = setInterval(() => {
+                recordingSeconds++;
+                recordingTime.textContent = formatTime(recordingSeconds);
+            }, 1000);
+            
+        } catch (error) {
+            console.error('Error al iniciar reconocimiento:', error);
+            alert('No se pudo iniciar el reconocimiento de voz');
+            isRecording = false;
+        }
+    }
+
+    function stopRecording() {
+        isRecording = false;
+        
+        if (recognition) {
+            recognition.stop();
+        }
+        
+        clearInterval(recordingInterval);
+        
+        // UI updates
+        recordBtn.classList.remove('d-none');
+        stopBtn.classList.add('d-none');
+        recordingStatus.classList.add('d-none');
+        recordingTime.textContent = '0:00';
+        
+        // Mostrar mensaje de éxito
+        if (textInput.value.trim().length > 0) {
+            const successMsg = document.createElement('div');
+            successMsg.className = 'alert alert-success alert-dismissible fade show mt-2';
+            successMsg.innerHTML = `
+                <i class="bi bi-check-circle"></i> Transcripción completada (${textInput.value.split(' ').length} palabras)
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            recordBtn.parentElement.appendChild(successMsg);
+            setTimeout(() => successMsg.remove(), 5000);
+        }
+    }
+
+    // ==================== GRABACIÓN MODO AUDIO ====================
+    recordAudioBtn.addEventListener('click', async function() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorderAudio = new MediaRecorder(stream);
+            audioChunksAudio = [];
+            recordingSecondsAudio = 0;
+
+            mediaRecorderAudio.ondataavailable = (event) => {
+                audioChunksAudio.push(event.data);
+            };
+
+            mediaRecorderAudio.onstop = async () => {
+                const audioBlob = new Blob(audioChunksAudio, { type: 'audio/webm' });
+                
+                // Crear un archivo File desde el Blob
+                const audioFile = new File([audioBlob], `recording_${Date.now()}.webm`, { type: 'audio/webm' });
+                
+                // Crear un DataTransfer para simular la selección de archivo
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(audioFile);
+                audioFileInput.files = dataTransfer.files;
+
+                // Detener el stream
+                stream.getTracks().forEach(track => track.stop());
+                
+                // Mostrar mensaje de éxito
+                const successMsg = document.createElement('div');
+                successMsg.className = 'alert alert-success alert-dismissible fade show mt-2';
+                successMsg.innerHTML = `
+                    <i class="bi bi-check-circle"></i> Audio grabado exitosamente (${formatTime(recordingSecondsAudio)})
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                recordAudioBtn.parentElement.appendChild(successMsg);
+                setTimeout(() => successMsg.remove(), 5000);
+            };
+
+            mediaRecorderAudio.start();
+
+            // UI updates
+            recordAudioBtn.classList.add('d-none');
+            stopAudioBtn.classList.remove('d-none');
+            recordingAudioStatus.classList.remove('d-none');
+
+            // Timer
+            recordingIntervalAudio = setInterval(() => {
+                recordingSecondsAudio++;
+                recordingAudioTime.textContent = formatTime(recordingSecondsAudio);
+            }, 1000);
+
+        } catch (error) {
+            alert('No se pudo acceder al micrófono. Por favor, permite el acceso al micrófono en tu navegador.');
+            console.error('Error accessing microphone:', error);
+        }
+    });
+
+    stopAudioBtn.addEventListener('click', function() {
+        if (mediaRecorderAudio && mediaRecorderAudio.state !== 'inactive') {
+            mediaRecorderAudio.stop();
+            clearInterval(recordingIntervalAudio);
+
+            // UI updates
+            recordAudioBtn.classList.remove('d-none');
+            stopAudioBtn.classList.add('d-none');
+            recordingAudioStatus.classList.add('d-none');
+            recordingAudioTime.textContent = '0:00';
+        }
+    });
+
+    // Función auxiliar para formatear tiempo
+    function formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    // ==================== PREVIEW DE ARCHIVOS ADJUNTOS ====================
+    const attachmentsInput = document.getElementById('attachments');
+    const attachmentPreview = document.getElementById('attachment_preview');
+
+    attachmentsInput.addEventListener('change', function(e) {
+        const files = Array.from(e.target.files);
+        
+        if (files.length === 0) {
+            attachmentPreview.innerHTML = '';
+            return;
+        }
+
+        let previewHTML = '<div class="alert alert-info"><h6><i class="bi bi-paperclip"></i> Archivos seleccionados:</h6><ul class="mb-0">';
+        
+        files.forEach((file, index) => {
+            const sizeKB = (file.size / 1024).toFixed(1);
+            const icon = getFileIcon(file.type, file.name);
+            previewHTML += `<li><i class="bi bi-${icon}"></i> <strong>${file.name}</strong> (${sizeKB} KB)</li>`;
+        });
+        
+        previewHTML += '</ul></div>';
+        attachmentPreview.innerHTML = previewHTML;
+    });
+
+    function getFileIcon(mimeType, fileName) {
+        if (mimeType.startsWith('image/')) return 'file-image';
+        if (mimeType === 'application/pdf') return 'file-pdf';
+        if (mimeType.includes('word') || fileName.endsWith('.doc') || fileName.endsWith('.docx')) return 'file-word';
+        if (mimeType.includes('excel') || fileName.endsWith('.xls') || fileName.endsWith('.xlsx')) return 'file-excel';
+        if (mimeType.includes('powerpoint') || fileName.endsWith('.ppt') || fileName.endsWith('.pptx')) return 'file-ppt';
+        if (mimeType.startsWith('text/')) return 'file-text';
+        if (mimeType.startsWith('video/')) return 'file-play';
+        return 'file-earmark';
+    }
+
+    // Mostrar spinner al enviar
+    document.querySelector('form').addEventListener('submit', function() {
+        submitBtn.disabled = true;
+        submitText.textContent = 'Analizando con IA...';
+        submitSpinner.classList.remove('d-none');
+    });
+});
+</script>
+
+<style>
+    .btn-check:checked + .btn-outline-primary {
+        background-color: #0d6efd;
+        color: white;
+    }
+</style>
+{% endblock %}

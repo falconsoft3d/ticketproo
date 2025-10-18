@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Dashboard Empresarial IA</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2>
+                <i class="bi bi-building-fill text-primary"></i> Dashboard Empresarial IA
+            </h2>
+            <p class="text-muted">Gestión inteligente de empresas con gerentes IA, reuniones y análisis estratégicos</p>
+        </div>
+    </div>
+
+    <!-- Empresas -->
+    {% if companies_data %}
+        <div class="row">
+            {% for company_data in companies_data %}
+            <div class="col-lg-6 mb-4">
+                <div class="card shadow-sm border-0 h-100 hover-lift">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="flex-grow-1">
+                                <h4 class="card-title mb-2">
+                                    <i class="bi bi-building text-primary"></i>
+                                    {{ company_data.company.name }}
+                                </h4>
+                                {% if company_data.company.description %}
+                                    <p class="card-text text-muted small mb-2">{{ company_data.company.description|truncatewords:20 }}</p>
+                                {% endif %}
+                                
+                                <!-- Objetivos Empresariales -->
+                                {% if company_data.company.business_objectives %}
+                                    <div class="alert alert-info p-2 mb-0 mt-2">
+                                        <h6 class="mb-1 small"><i class="bi bi-bullseye"></i> Objetivos Empresariales:</h6>
+                                        <p class="mb-0" style="font-size: 0.85rem;">{{ company_data.company.business_objectives|truncatewords:30 }}</p>
+                                        <button class="btn btn-link btn-sm p-0 mt-1" type="button" data-bs-toggle="collapse" 
+                                                data-bs-target="#objectives-{{ company_data.company.pk }}" aria-expanded="false">
+                                            <small>Ver completo</small>
+                                        </button>
+                                        <div class="collapse mt-2" id="objectives-{{ company_data.company.pk }}">
+                                            <p class="mb-0 small">{{ company_data.company.business_objectives|linebreaks }}</p>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="ms-2">
+                                <a href="{% url 'company_ai_dashboard_detail' company_data.company.pk %}" 
+                                   class="btn btn-outline-primary btn-sm mb-1">
+                                    <i class="bi bi-arrow-right-circle"></i> Dashboard
+                                </a>
+                                {% if user.is_staff %}
+                                <a href="{% url 'company_detail' company_data.company.pk %}" 
+                                   class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-building"></i> Empresa
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Estadísticas en Cards -->
+                        <div class="row g-2">
+                            <div class="col-6 col-md-3">
+                                <div class="text-center p-2 bg-light rounded">
+                                    <h5 class="mb-0 text-primary">{{ company_data.total_managers }}</h5>
+                                    <small class="text-muted">Gerentes</small>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="text-center p-2 bg-light rounded">
+                                    <h5 class="mb-0 text-success">{{ company_data.active_managers }}</h5>
+                                    <small class="text-muted">Activos</small>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="text-center p-2 bg-light rounded">
+                                    <h5 class="mb-0 text-info">{{ company_data.total_meetings }}</h5>
+                                    <small class="text-muted">Reuniones</small>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="text-center p-2 bg-light rounded">
+                                    <h5 class="mb-0 text-warning">{{ company_data.total_participants }}</h5>
+                                    <small class="text-muted">Usuarios</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Resúmenes generados -->
+                        {% if company_data.total_summaries > 0 %}
+                        <div class="mt-3">
+                            <span class="badge bg-info">
+                                <i class="bi bi-file-text"></i> {{ company_data.total_summaries }} Resumen{{ company_data.total_summaries|pluralize:"es" }} Empresarial{{ company_data.total_summaries|pluralize:"es" }}
+                            </span>
+                        </div>
+                        {% endif %}
+
+                        <!-- Acciones -->
+                        <div class="d-flex gap-2 mt-3">
+                            <a href="{% url 'company_ai_dashboard_detail' company_data.company.pk %}" 
+                               class="btn btn-sm btn-primary flex-grow-1">
+                                <i class="bi bi-speedometer2"></i> Dashboard
+                            </a>
+                            <a href="{% url 'ai_manager_list' %}?company={{ company_data.company.pk }}" 
+                               class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-robot"></i> Gerentes
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <!-- Estado Vacío -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm border-0 text-center py-5">
+                    <div class="card-body">
+                        <i class="bi bi-building-x display-1 text-muted mb-3"></i>
+                        <h4>No tienes empresas asignadas</h4>
+                        <p class="text-muted">Contacta con el administrador para que te asigne una empresa</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Información -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-info-circle text-primary"></i> Acerca del Dashboard Empresarial IA
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <p class="small mb-0">
+                                <strong><i class="bi bi-robot"></i> Gerentes IA:</strong><br>
+                                Asistentes especializados por departamento que analizan reuniones y proporcionan feedback inteligente
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            <p class="small mb-0">
+                                <strong><i class="bi bi-calendar-check"></i> Reuniones:</strong><br>
+                                Interacciones entre usuarios y gerentes IA con análisis, resúmenes y áreas de mejora
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            <p class="small mb-0">
+                                <strong><i class="bi bi-file-text"></i> Resúmenes Empresariales:</strong><br>
+                                Análisis estratégicos generados por IA que consolidan información de todos los gerentes
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.hover-lift {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.hover-lift:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+</style>
+{% endblock %}

@@ -92,6 +92,11 @@ class Company(models.Model):
         verbose_name='Token público',
         help_text='Token único para acceso público a estadísticas'
     )
+    business_objectives = models.TextField(
+        blank=True,
+        verbose_name='Objetivos Empresariales',
+        help_text='Objetivos, metas y KPIs estratégicos de la empresa. Estos serán considerados en los resúmenes ejecutivos generados por IA.'
+    )
     
     class Meta:
         ordering = ['name']
@@ -8843,6 +8848,7 @@ class Alcance(models.Model):
     titulo = models.CharField(max_length=200, verbose_name='Título')
     categoria = models.CharField(max_length=100, verbose_name='Categoría')
     descripcion = models.TextField(verbose_name='Descripción')
+    url = models.URLField(max_length=500, blank=True, null=True, verbose_name='URL del artículo relacionado')
     publico = models.BooleanField(default=True, verbose_name='¿Es público?')
     creado_por = models.ForeignKey(
         User,
@@ -9039,3 +9045,1182 @@ class WhatsAppMessage(models.Model):
 
     def __str__(self):
         return f"{self.get_message_type_display()} - {self.from_number} → {self.to_number}"
+
+
+# ==================== MODELO IMAGE TO PROMPT ====================
+
+class ImagePrompt(models.Model):
+    """Modelo para guardar imágenes y sus prompts generados por IA"""
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='image_prompts',
+        verbose_name='Usuario'
+    )
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título',
+        help_text='Título descriptivo para identificar esta imagen'
+    )
+    image = models.ImageField(
+        upload_to='image_prompts/%Y/%m/',
+        verbose_name='Imagen',
+        help_text='Sube una imagen para generar un prompt'
+    )
+    generated_prompt = models.TextField(
+        verbose_name='Prompt Generado',
+        blank=True,
+        help_text='Prompt generado automáticamente por IA'
+    )
+    custom_prompt = models.TextField(
+        verbose_name='Prompt Personalizado',
+        blank=True,
+        null=True,
+        help_text='Prompt editado manualmente por el usuario'
+    )
+    tags = models.CharField(
+        max_length=500,
+        blank=True,
+        verbose_name='Etiquetas',
+        help_text='Etiquetas separadas por comas para organizar'
+    )
+    is_public = models.BooleanField(
+        default=False,
+        verbose_name='¿Es público?',
+        help_text='Si está marcado, otros usuarios pueden ver este prompt'
+    )
+    tokens_used = models.IntegerField(
+        default=0,
+        verbose_name='Tokens usados',
+        help_text='Cantidad de tokens de IA utilizados'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+
+    class Meta:
+        verbose_name = 'Image to Prompt'
+        verbose_name_plural = 'Image to Prompts'
+        ordering = ['-created_at']
+        
+    def __str__(self):
+        return f"{self.title} - {self.user.username}"
+    
+    def get_final_prompt(self):
+        """Retorna el prompt personalizado si existe, sino el generado"""
+        return self.custom_prompt if self.custom_prompt else self.generated_prompt
+    
+    def delete(self, *args, **kwargs):
+        """Elimina la imagen del sistema de archivos antes de eliminar el objeto"""
+        # Eliminar el archivo de imagen si existe
+        if self.image:
+            if os.path.isfile(self.image.path):
+                os.remove(self.image.path)
+        super().delete(*args, **kwargs)
+
+
+class AIManager(models.Model):
+    """Modelo para Gerentes de IA por empresa"""
+    CATEGORY_CHOICES = [
+        ('ventas', 'Ventas'),
+        ('compras', 'Compras'),
+        ('contabilidad', 'Contabilidad'),
+        ('crm', 'CRM'),
+        ('inventario', 'Inventario'),
+        ('rrhh', 'Recursos Humanos'),
+        ('marketing', 'Marketing'),
+        ('operaciones', 'Operaciones'),
+        ('finanzas', 'Finanzas'),
+        ('ti', 'Tecnología'),
+        ('otro', 'Otro'),
+    ]
+    
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name='ai_managers',
+        verbose_name='Empresa'
+    )
+    name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre del Gerente IA',
+        help_text='Ejemplo: Gerente de Ventas IA'
+    )
+    category = models.CharField(
+        max_length=50,
+        choices=CATEGORY_CHOICES,
+        default='otro',
+        verbose_name='Categoría'
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción',
+        help_text='Describe el rol y responsabilidades de este gerente IA'
+    )
+    instructions = models.TextField(
+        verbose_name='Instrucciones para la IA',
+        help_text='Contexto y personalidad del gerente IA',
+        default='Eres un gerente experimentado y empático. Tu objetivo es ayudar al equipo a mejorar.'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='created_ai_managers',
+        verbose_name='Creado por'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        verbose_name = 'Gerente IA'
+        verbose_name_plural = 'Gerentes IA'
+        ordering = ['company', 'category', 'name']
+        unique_together = ['company', 'name']
+    
+    def __str__(self):
+        return f"{self.name} - {self.company.name}"
+    
+    def get_total_meetings(self):
+        """Retorna el total de reuniones de este gerente"""
+        return self.meetings.count()
+    
+    def get_active_users(self):
+        """Retorna usuarios únicos que han tenido reuniones"""
+        return User.objects.filter(ai_manager_meetings__ai_manager=self).distinct().count()
+
+
+class AIManagerMeeting(models.Model):
+    """Modelo para reuniones entre usuarios y gerentes IA"""
+    INPUT_TYPE_CHOICES = [
+        ('text', 'Texto'),
+        ('audio', 'Audio'),
+    ]
+    
+    ai_manager = models.ForeignKey(
+        AIManager,
+        on_delete=models.CASCADE,
+        related_name='meetings',
+        verbose_name='Gerente IA'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='ai_manager_meetings',
+        verbose_name='Usuario'
+    )
+    title = models.CharField(
+        max_length=300,
+        verbose_name='Título',
+        help_text='Resumen breve de la reunión'
+    )
+    input_type = models.CharField(
+        max_length=10,
+        choices=INPUT_TYPE_CHOICES,
+        default='text',
+        verbose_name='Tipo de entrada'
+    )
+    user_input = models.TextField(
+        verbose_name='Entrada del usuario',
+        help_text='Lo que el usuario escribió o transcripción del audio'
+    )
+    audio_file = models.FileField(
+        upload_to='ai_manager_meetings/%Y/%m/',
+        blank=True,
+        null=True,
+        verbose_name='Archivo de audio'
+    )
+    ai_response = models.TextField(
+        verbose_name='Respuesta de la IA',
+        help_text='Análisis y recomendaciones del gerente IA'
+    )
+    ai_summary = models.TextField(
+        verbose_name='Resumen de la IA',
+        help_text='Resumen corto de la reunión'
+    )
+    improvement_areas = models.TextField(
+        blank=True,
+        verbose_name='Áreas de mejora',
+        help_text='Áreas identificadas para mejorar'
+    )
+    tokens_used = models.IntegerField(
+        default=0,
+        verbose_name='Tokens usados'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de reunión'
+    )
+    
+    class Meta:
+        verbose_name = 'Reunión con Gerente IA'
+        verbose_name_plural = 'Reuniones con Gerentes IA'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.title} - {self.user.username} con {self.ai_manager.name}"
+    
+    def delete(self, *args, **kwargs):
+        """Elimina el archivo de audio si existe"""
+        if self.audio_file:
+            if os.path.isfile(self.audio_file.path):
+                os.remove(self.audio_file.path)
+        super().delete(*args, **kwargs)
+
+
+class AIManagerMeetingAttachment(models.Model):
+    """Modelo para adjuntos de reuniones con gerentes IA"""
+    meeting = models.ForeignKey(
+        AIManagerMeeting,
+        on_delete=models.CASCADE,
+        related_name='attachments',
+        verbose_name='Reunión'
+    )
+    file = models.FileField(
+        upload_to='ai_manager_meeting_attachments/%Y/%m/',
+        verbose_name='Archivo adjunto',
+        help_text='Documentos, imágenes, PDFs que el gerente debe considerar'
+    )
+    file_name = models.CharField(
+        max_length=255,
+        verbose_name='Nombre del archivo'
+    )
+    file_type = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Tipo de archivo'
+    )
+    file_size = models.IntegerField(
+        default=0,
+        verbose_name='Tamaño del archivo (bytes)'
+    )
+    uploaded_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de carga'
+    )
+    
+    class Meta:
+        verbose_name = 'Adjunto de Reunión IA'
+        verbose_name_plural = 'Adjuntos de Reuniones IA'
+        ordering = ['uploaded_at']
+    
+    def __str__(self):
+        return f"{self.file_name} - {self.meeting.title}"
+    
+    def save(self, *args, **kwargs):
+        if self.file:
+            self.file_name = self.file.name
+            self.file_type = self.file.content_type if hasattr(self.file, 'content_type') else ''
+            self.file_size = self.file.size
+        super().save(*args, **kwargs)
+    
+    def delete(self, *args, **kwargs):
+        # Eliminar el archivo físico al borrar el registro
+        if self.file:
+            if os.path.isfile(self.file.path):
+                os.remove(self.file.path)
+        super().delete(*args, **kwargs)
+    
+    def get_file_size_display(self):
+        """Retorna el tamaño en formato legible"""
+        size = self.file_size
+        for unit in ['B', 'KB', 'MB', 'GB']:
+            if size < 1024.0:
+                return f"{size:.1f} {unit}"
+            size /= 1024.0
+        return f"{size:.1f} TB"
+
+
+class AIManagerSummary(models.Model):
+    """Modelo para resúmenes generales del gerente IA"""
+    ai_manager = models.ForeignKey(
+        AIManager,
+        on_delete=models.CASCADE,
+        related_name='summaries',
+        verbose_name='Gerente IA'
+    )
+    period_start = models.DateField(
+        verbose_name='Inicio del período'
+    )
+    period_end = models.DateField(
+        verbose_name='Fin del período'
+    )
+    summary_text = models.TextField(
+        verbose_name='Resumen general',
+        help_text='Resumen de todas las reuniones del período'
+    )
+    key_insights = models.TextField(
+        verbose_name='Insights clave',
+        help_text='Puntos clave identificados'
+    )
+    recommendations = models.TextField(
+        verbose_name='Recomendaciones',
+        help_text='Recomendaciones para la empresa'
+    )
+    total_meetings = models.IntegerField(
+        default=0,
+        verbose_name='Total de reuniones'
+    )
+    participants_count = models.IntegerField(
+        default=0,
+        verbose_name='Participantes únicos'
+    )
+    tokens_used = models.IntegerField(
+        default=0,
+        verbose_name='Tokens usados'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    
+    class Meta:
+        verbose_name = 'Resumen del Gerente IA'
+        verbose_name_plural = 'Resúmenes del Gerente IA'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Resumen {self.ai_manager.name} - {self.period_start} a {self.period_end}"
+
+
+class CompanyAISummary(models.Model):
+    """Modelo para resúmenes empresariales generales (todos los gerentes)"""
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name='ai_summaries',
+        verbose_name='Empresa'
+    )
+    period_start = models.DateField(
+        verbose_name='Inicio del período'
+    )
+    period_end = models.DateField(
+        verbose_name='Fin del período'
+    )
+    executive_summary = models.TextField(
+        verbose_name='Resumen ejecutivo',
+        help_text='Resumen general de toda la empresa'
+    )
+    key_metrics = models.TextField(
+        verbose_name='Métricas clave',
+        help_text='KPIs y métricas importantes'
+    )
+    department_highlights = models.TextField(
+        verbose_name='Destacados por departamento',
+        help_text='Logros por área/gerente'
+    )
+    challenges = models.TextField(
+        verbose_name='Desafíos identificados',
+        help_text='Principales retos de la empresa'
+    )
+    strategic_recommendations = models.TextField(
+        verbose_name='Recomendaciones estratégicas',
+        help_text='Acciones recomendadas para la dirección'
+    )
+    total_managers = models.IntegerField(
+        default=0,
+        verbose_name='Total de gerentes'
+    )
+    total_meetings = models.IntegerField(
+        default=0,
+        verbose_name='Total de reuniones'
+    )
+    total_participants = models.IntegerField(
+        default=0,
+        verbose_name='Total de participantes'
+    )
+    tokens_used = models.IntegerField(
+        default=0,
+        verbose_name='Tokens usados'
+    )
+    generated_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name='Generado por'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    
+    class Meta:
+        verbose_name = 'Resumen Empresarial IA'
+        verbose_name_plural = 'Resúmenes Empresariales IA'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Resumen {self.company.name} - {self.period_start} a {self.period_end}"
+
+
+class UserAIPerformanceEvaluation(models.Model):
+    """Modelo para evaluaciones de desempeño de usuarios con IA"""
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='ai_performance_evaluations',
+        verbose_name='Usuario'
+    )
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name='user_evaluations',
+        verbose_name='Empresa',
+        null=True,
+        blank=True
+    )
+    evaluation_date = models.DateField(
+        verbose_name='Fecha de evaluación'
+    )
+    overall_score = models.IntegerField(
+        verbose_name='Puntuación general (1-100)',
+        help_text='Calificación automática generada por IA'
+    )
+    productivity_score = models.IntegerField(
+        default=0,
+        verbose_name='Productividad (1-100)'
+    )
+    communication_score = models.IntegerField(
+        default=0,
+        verbose_name='Comunicación (1-100)'
+    )
+    goal_achievement_score = models.IntegerField(
+        default=0,
+        verbose_name='Logro de objetivos (1-100)'
+    )
+    consistency_score = models.IntegerField(
+        default=0,
+        verbose_name='Consistencia (1-100)'
+    )
+    improvement_areas = models.TextField(
+        verbose_name='Áreas de mejora',
+        help_text='Áreas identificadas que necesitan mejora'
+    )
+    training_recommendations = models.TextField(
+        verbose_name='Recomendaciones de capacitación',
+        help_text='Cursos o entrenamientos sugeridos'
+    )
+    strengths = models.TextField(
+        verbose_name='Fortalezas identificadas',
+        help_text='Puntos fuertes del usuario'
+    )
+    meetings_analyzed = models.IntegerField(
+        default=0,
+        verbose_name='Reuniones analizadas'
+    )
+    period_start = models.DateField(
+        verbose_name='Inicio del período',
+        null=True,
+        blank=True
+    )
+    period_end = models.DateField(
+        verbose_name='Fin del período',
+        null=True,
+        blank=True
+    )
+    ai_summary = models.TextField(
+        verbose_name='Resumen IA',
+        help_text='Resumen narrativo generado por IA',
+        blank=True
+    )
+    tokens_used = models.IntegerField(
+        default=0,
+        verbose_name='Tokens usados'
+    )
+    generated_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='generated_evaluations',
+        verbose_name='Generado por'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    
+    class Meta:
+        verbose_name = 'Evaluación de Desempeño IA'
+        verbose_name_plural = 'Evaluaciones de Desempeño IA'
+        ordering = ['-evaluation_date', '-created_at']
+        unique_together = ['user', 'evaluation_date']
+    
+    def __str__(self):
+        return f"{self.user.get_full_name()} - {self.evaluation_date} - {self.overall_score}/100"
+    
+    def get_score_color(self):
+        """Retorna el color según la puntuación"""
+        if self.overall_score >= 90:
+            return 'success'
+        elif self.overall_score >= 75:
+            return 'info'
+        elif self.overall_score >= 60:
+            return 'warning'
+        else:
+            return 'danger'
+    
+    def get_performance_level(self):
+        """Retorna el nivel de desempeño"""
+        if self.overall_score >= 90:
+            return 'Excelente'
+        elif self.overall_score >= 75:
+            return 'Bueno'
+        elif self.overall_score >= 60:
+            return 'Regular'
+        else:
+            return 'Necesita Mejora'
+
+
+class WebsiteTracker(models.Model):
+    """Modelo para rastrear y analizar sitios web/IPs"""
+    
+    # Información básica
+    target = models.CharField(
+        max_length=500,
+        verbose_name='URL o IP',
+        help_text='URL completa (https://ejemplo.com) o dirección IP'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='website_trackers',
+        verbose_name='Usuario'
+    )
+    
+    # Información de conectividad
+    is_active = models.BooleanField(
+        default=False,
+        verbose_name='Está activo'
+    )
+    ping_response_time = models.FloatField(
+        null=True,
+        blank=True,
+        verbose_name='Tiempo de respuesta (ms)',
+        help_text='Tiempo de respuesta del ping en milisegundos'
+    )
+    
+    # Información de DNS
+    ip_address = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Dirección IP'
+    )
+    cname_records = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Registros CNAME'
+    )
+    txt_records = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Registros TXT'
+    )
+    mx_records = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Registros MX'
+    )
+    ns_records = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Registros NS'
+    )
+    
+    # Información HTTP
+    http_status_code = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name='Código de estado HTTP'
+    )
+    http_headers = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Headers HTTP'
+    )
+    redirect_url = models.CharField(
+        max_length=500,
+        blank=True,
+        verbose_name='URL de redirección'
+    )
+    
+    # Información del servidor
+    server_software = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Software del servidor'
+    )
+    technologies = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Tecnologías detectadas',
+        help_text='Frameworks, CMS, librerías detectadas'
+    )
+    
+    # Información de seguridad
+    ssl_valid = models.BooleanField(
+        null=True,
+        blank=True,
+        verbose_name='SSL válido'
+    )
+    ssl_issuer = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Emisor del certificado SSL'
+    )
+    ssl_expiry_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de expiración SSL'
+    )
+    
+    # Información de contenido
+    page_title = models.CharField(
+        max_length=500,
+        blank=True,
+        verbose_name='Título de la página'
+    )
+    meta_description = models.TextField(
+        blank=True,
+        verbose_name='Meta descripción'
+    )
+    page_size = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name='Tamaño de página (bytes)'
+    )
+    load_time = models.FloatField(
+        null=True,
+        blank=True,
+        verbose_name='Tiempo de carga (s)'
+    )
+    
+    # Información adicional
+    whois_data = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Datos WHOIS'
+    )
+    error_message = models.TextField(
+        blank=True,
+        verbose_name='Mensaje de error',
+        help_text='Si ocurre algún error durante el rastreo'
+    )
+    
+    # Metadatos
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de rastreo'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        verbose_name = 'Rastreador Web'
+        verbose_name_plural = 'Rastreadores Web'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.target} - {self.created_at.strftime('%d/%m/%Y %H:%M')}"
+    
+    def get_status_badge(self):
+        """Retorna el color del badge según el estado"""
+        if self.is_active:
+            return 'success'
+        elif self.error_message:
+            return 'danger'
+        else:
+            return 'secondary'
+    
+    def get_status_text(self):
+        """Retorna el texto del estado"""
+        if self.is_active:
+            return 'Activo'
+        elif self.error_message:
+            return 'Error'
+        else:
+            return 'Inactivo'
+
+
+class LegalContract(models.Model):
+    """Modelo para contratos legales generados con IA"""
+    
+    # Información básica
+    name = models.CharField(
+        max_length=255,
+        verbose_name='Nombre del contrato',
+        help_text='Ej: Contrato de Soporte de Software'
+    )
+    contract_type = models.CharField(
+        max_length=100,
+        verbose_name='Tipo de contrato',
+        help_text='Ej: Soporte de software, Desarrollo, Consultoría, etc.'
+    )
+    
+    # Partes del contrato
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.CASCADE,
+        related_name='legal_contracts_as_provider',
+        verbose_name='Empresa proveedora',
+        help_text='Tu empresa que provee el servicio'
+    )
+    client_company = models.ForeignKey(
+        'Company',
+        on_delete=models.CASCADE,
+        related_name='legal_contracts_as_client',
+        verbose_name='Empresa cliente',
+        help_text='La empresa que contrata el servicio'
+    )
+    
+    # Prompt y generación
+    objective_prompt = models.TextField(
+        verbose_name='Objetivo del contrato',
+        help_text='Describe el objetivo y alcance del contrato. Ej: Soporte técnico 24/7 para sistema ERP'
+    )
+    generated_content = models.TextField(
+        blank=True,
+        verbose_name='Contenido generado',
+        help_text='Contenido del contrato generado por IA'
+    )
+    
+    # Detalles del contrato
+    start_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de inicio'
+    )
+    end_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de finalización'
+    )
+    amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Monto del contrato',
+        help_text='Valor económico del contrato'
+    )
+    currency = models.CharField(
+        max_length=3,
+        default='USD',
+        verbose_name='Moneda',
+        help_text='Código de moneda (USD, EUR, MXN, etc.)'
+    )
+    
+    # Control de acceso
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='legal_contracts',
+        verbose_name='Creado por'
+    )
+    public_token = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+        verbose_name='Token público',
+        help_text='Token único para compartir el contrato públicamente'
+    )
+    is_public = models.BooleanField(
+        default=False,
+        verbose_name='Público',
+        help_text='Si está marcado, el contrato se puede ver públicamente con el enlace'
+    )
+    
+    # Estado
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ('draft', 'Borrador'),
+            ('generated', 'Generado'),
+            ('sent', 'Enviado'),
+            ('signed', 'Firmado'),
+            ('active', 'Activo'),
+            ('completed', 'Completado'),
+            ('cancelled', 'Cancelado'),
+        ],
+        default='draft',
+        verbose_name='Estado'
+    )
+    
+    # Metadatos
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    generated_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de generación',
+        help_text='Cuándo se generó el contenido con IA'
+    )
+    
+    # Configuración adicional
+    notes = models.TextField(
+        blank=True,
+        verbose_name='Notas internas',
+        help_text='Notas privadas sobre el contrato'
+    )
+    
+    class Meta:
+        verbose_name = 'Contrato Legal'
+        verbose_name_plural = 'Contratos Legales'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['public_token']),
+            models.Index(fields=['status']),
+            models.Index(fields=['-created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.name} - {self.company.name} / {self.client_company.name}"
+    
+    def get_absolute_url(self):
+        from django.urls import reverse
+        return reverse('legal_contract_detail', kwargs={'pk': self.pk})
+    
+    def get_public_url(self):
+        from django.urls import reverse
+        return reverse('legal_contract_public', kwargs={'token': self.public_token})
+    
+    def get_status_badge(self):
+        """Retorna el color del badge según el estado"""
+        status_colors = {
+            'draft': 'secondary',
+            'generated': 'info',
+            'sent': 'warning',
+            'signed': 'primary',
+            'active': 'success',
+            'completed': 'success',
+            'cancelled': 'danger',
+        }
+        return status_colors.get(self.status, 'secondary')
+    
+    def get_status_display_with_icon(self):
+        """Retorna el estado con icono"""
+        status_icons = {
+            'draft': 'bi-pencil',
+            'generated': 'bi-magic',
+            'sent': 'bi-send',
+            'signed': 'bi-pen',
+            'active': 'bi-check-circle',
+            'completed': 'bi-check-circle-fill',
+            'cancelled': 'bi-x-circle',
+        }
+        icon = status_icons.get(self.status, 'bi-circle')
+        return f'<i class="bi {icon}"></i> {self.get_status_display()}'
+    
+    def generate_with_ai(self):
+        """Genera el contenido del contrato usando OpenAI"""
+        from tickets.models import SystemConfiguration
+        
+        config = SystemConfiguration.objects.first()
+        if not config or not config.ai_chat_enabled or not config.openai_api_key:
+            raise Exception("OpenAI no está configurado. Por favor configura la API key en Configuración del Sistema.")
+        
+        try:
+            import openai
+            client = openai.OpenAI(api_key=config.openai_api_key)
+            
+            prompt = f"""
+            Genera un contrato legal profesional y detallado con los siguientes datos:
+            
+            TIPO DE CONTRATO: {self.contract_type}
+            OBJETIVO: {self.objective_prompt}
+            
+            EMPRESA PROVEEDORA:
+            - Nombre: {self.company.name}
+            - Dirección: {self.company.address}
+            - Teléfono: {self.company.phone}
+            - Email: {self.company.email}
+            
+            EMPRESA CLIENTE:
+            - Nombre: {self.client_company.name}
+            - Dirección: {self.client_company.address}
+            - Teléfono: {self.client_company.phone}
+            - Email: {self.client_company.email}
+            
+            DETALLES ADICIONALES:
+            - Fecha de inicio: {self.start_date if self.start_date else 'No especificada'}
+            - Fecha de finalización: {self.end_date if self.end_date else 'No especificada'}
+            - Monto: {f'{self.amount} {self.currency}' if self.amount else 'No especificado'}
+            
+            El contrato debe incluir:
+            1. Encabezado con las partes contratantes
+            2. Antecedentes y objeto del contrato
+            3. Obligaciones de cada parte
+            4. Términos y condiciones
+            5. Duración y vigencia
+            6. Aspectos económicos
+            7. Cláusulas de confidencialidad
+            8. Causas de rescisión
+            9. Solución de controversias
+            10. Firmas y datos de contacto
+            
+            Usa un lenguaje legal formal pero comprensible. Incluye cláusulas estándar para este tipo de contrato.
+            Formato en Markdown para mejor legibilidad.
+            """
+            
+            response = client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "Eres un abogado experto en redacción de contratos legales comerciales. Generas contratos profesionales, detallados y legalmente sólidos."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7,
+                max_tokens=4000
+            )
+            
+            self.generated_content = response.choices[0].message.content
+            self.generated_at = timezone.now()
+            self.status = 'generated'
+            self.save()
+            
+            return True
+            
+        except Exception as e:
+            raise Exception(f"Error al generar contrato: {str(e)}")
+
+
+class SupplierContractReview(models.Model):
+    """Modelo para revisar contratos de proveedores con IA"""
+    
+    REVIEW_STATUS_CHOICES = [
+        ('pending', 'Pendiente'),
+        ('reviewed', 'Revisado'),
+        ('approved', 'Aprobado'),
+        ('rejected', 'Rechazado'),
+    ]
+    
+    RISK_LEVEL_CHOICES = [
+        ('low', 'Bajo'),
+        ('medium', 'Medio'),
+        ('high', 'Alto'),
+        ('critical', 'Crítico'),
+    ]
+    
+    # Información básica
+    name = models.CharField(max_length=200, verbose_name="Nombre del Contrato")
+    supplier_name = models.CharField(max_length=200, verbose_name="Nombre del Proveedor")
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='supplier_contract_reviews', verbose_name="Empresa Revisora")
+    
+    # Contenido del contrato
+    contract_text = models.TextField(verbose_name="Texto del Contrato", help_text="Pegue aquí el texto del contrato o déjelo vacío si subirá un archivo")
+    contract_file = models.FileField(upload_to='contract_reviews/%Y/%m/', blank=True, null=True, verbose_name="Archivo del Contrato")
+    
+    # Análisis de IA
+    ai_review = models.TextField(blank=True, verbose_name="Revisión de IA", help_text="Análisis generado por IA")
+    risk_assessment = models.TextField(blank=True, verbose_name="Evaluación de Riesgos")
+    key_clauses = models.TextField(blank=True, verbose_name="Cláusulas Clave Identificadas")
+    recommendations = models.TextField(blank=True, verbose_name="Recomendaciones")
+    risk_level = models.CharField(max_length=20, choices=RISK_LEVEL_CHOICES, default='medium', verbose_name="Nivel de Riesgo")
+    
+    # Estado y seguimiento
+    status = models.CharField(max_length=20, choices=REVIEW_STATUS_CHOICES, default='pending', verbose_name="Estado")
+    reviewed_at = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de Revisión")
+    
+    # Notas internas
+    internal_notes = models.TextField(blank=True, verbose_name="Notas Internas")
+    
+    # Metadatos
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Usuario")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Última Actualización")
+    
+    class Meta:
+        verbose_name = "Revisión de Contrato de Proveedor"
+        verbose_name_plural = "Revisiones de Contratos de Proveedores"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.name} - {self.supplier_name}"
+    
+    def get_status_badge(self):
+        """Retorna el badge HTML para el estado"""
+        badges = {
+            'pending': '<span class="badge bg-warning">Pendiente</span>',
+            'reviewed': '<span class="badge bg-info">Revisado</span>',
+            'approved': '<span class="badge bg-success">Aprobado</span>',
+            'rejected': '<span class="badge bg-danger">Rechazado</span>',
+        }
+        return badges.get(self.status, '<span class="badge bg-secondary">Desconocido</span>')
+    
+    def get_risk_badge(self):
+        """Retorna el badge HTML para el nivel de riesgo"""
+        badges = {
+            'low': '<span class="badge bg-success"><i class="bi bi-shield-check"></i> Bajo</span>',
+            'medium': '<span class="badge bg-warning"><i class="bi bi-shield-exclamation"></i> Medio</span>',
+            'high': '<span class="badge bg-danger"><i class="bi bi-shield-x"></i> Alto</span>',
+            'critical': '<span class="badge bg-dark"><i class="bi bi-shield-fill-x"></i> Crítico</span>',
+        }
+        return badges.get(self.risk_level, '<span class="badge bg-secondary">N/A</span>')
+    
+    def get_contract_content(self):
+        """Obtiene el contenido del contrato, ya sea del texto o del archivo"""
+        if self.contract_text:
+            return self.contract_text
+        
+        if self.contract_file:
+            try:
+                file_extension = self.contract_file.name.split('.')[-1].lower()
+                
+                if file_extension == 'pdf':
+                    # Extraer texto de PDF
+                    import PyPDF2
+                    with self.contract_file.open('rb') as file:
+                        pdf_reader = PyPDF2.PdfReader(file)
+                        text = ""
+                        for page in pdf_reader.pages:
+                            text += page.extract_text()
+                        return text
+                
+                elif file_extension in ['doc', 'docx']:
+                    # Extraer texto de Word
+                    import docx
+                    doc = docx.Document(self.contract_file.path)
+                    text = "\n".join([paragraph.text for paragraph in doc.paragraphs])
+                    return text
+                
+                elif file_extension == 'txt':
+                    # Leer archivo de texto
+                    with self.contract_file.open('r', encoding='utf-8') as file:
+                        return file.read()
+                
+                else:
+                    return "Formato de archivo no soportado. Use PDF, DOCX o TXT."
+            
+            except Exception as e:
+                return f"Error al extraer texto del archivo: {str(e)}"
+        
+        return "No hay contenido disponible"
+    
+    def review_with_ai(self):
+        """Revisa el contrato usando IA"""
+        from django.utils import timezone
+        
+        # Verificar configuración de OpenAI
+        config = SystemConfiguration.objects.first()
+        if not config or not config.ai_chat_enabled or not config.openai_api_key:
+            raise Exception("OpenAI no está configurado. Por favor configura la API key en Configuración del Sistema.")
+        
+        try:
+            import openai
+            client = openai.OpenAI(api_key=config.openai_api_key)
+            
+            # Obtener el contenido del contrato
+            contract_content = self.get_contract_content()
+            
+            if not contract_content or contract_content.startswith("Error") or contract_content == "No hay contenido disponible":
+                raise Exception("No se puede obtener el contenido del contrato para revisar")
+            
+            prompt = f"""
+            Eres un abogado experto en revisión de contratos comerciales con proveedores. 
+            Analiza el siguiente contrato de proveedor de manera exhaustiva y profesional.
+            
+            PROVEEDOR: {self.supplier_name}
+            EMPRESA REVISORA: {self.company.name}
+            
+            CONTRATO:
+            {contract_content[:15000]}  # Limitar a 15000 caracteres para no exceder tokens
+            
+            Proporciona un análisis detallado en el siguiente formato:
+            
+            ## RESUMEN EJECUTIVO
+            [Resumen breve del contrato y su propósito]
+            
+            ## ANÁLISIS DETALLADO
+            [Análisis completo del contrato, términos principales, obligaciones de cada parte]
+            
+            ## CLÁUSULAS CLAVE
+            [Lista numerada de las cláusulas más importantes y su implicación]
+            
+            ## EVALUACIÓN DE RIESGOS
+            [Identificación de riesgos potenciales, cláusulas problemáticas, términos desfavorables]
+            
+            ## NIVEL DE RIESGO GENERAL
+            [Indica: BAJO, MEDIO, ALTO o CRÍTICO]
+            
+            ## RECOMENDACIONES
+            [Lista de recomendaciones específicas: qué negociar, qué cláusulas modificar, qué aclaraciones solicitar]
+            
+            ## PUNTOS A NEGOCIAR
+            [Lista de puntos específicos que deberían negociarse antes de firmar]
+            
+            Sé específico, profesional y enfócate en proteger los intereses de {self.company.name}.
+            """
+            
+            response = client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "Eres un abogado corporativo experto en revisión de contratos con proveedores. Tu objetivo es identificar riesgos, proteger los intereses del cliente y proporcionar recomendaciones prácticas."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.5,
+                max_tokens=4000
+            )
+            
+            full_review = response.choices[0].message.content
+            
+            # Extraer información estructurada
+            self.ai_review = full_review
+            
+            # Extraer cláusulas clave
+            if "## CLÁUSULAS CLAVE" in full_review:
+                clauses_section = full_review.split("## CLÁUSULAS CLAVE")[1].split("##")[0]
+                self.key_clauses = clauses_section.strip()
+            
+            # Extraer evaluación de riesgos
+            if "## EVALUACIÓN DE RIESGOS" in full_review:
+                risk_section = full_review.split("## EVALUACIÓN DE RIESGOS")[1].split("##")[0]
+                self.risk_assessment = risk_section.strip()
+            
+            # Extraer recomendaciones
+            if "## RECOMENDACIONES" in full_review:
+                recommendations_section = full_review.split("## RECOMENDACIONES")[1].split("##")[0]
+                self.recommendations = recommendations_section.strip()
+            
+            # Determinar nivel de riesgo
+            if "## NIVEL DE RIESGO GENERAL" in full_review:
+                risk_level_section = full_review.split("## NIVEL DE RIESGO GENERAL")[1].split("##")[0].strip().lower()
+                if "crítico" in risk_level_section or "critical" in risk_level_section:
+                    self.risk_level = 'critical'
+                elif "alto" in risk_level_section or "high" in risk_level_section:
+                    self.risk_level = 'high'
+                elif "medio" in risk_level_section or "medium" in risk_level_section:
+                    self.risk_level = 'medium'
+                else:
+                    self.risk_level = 'low'
+            
+            self.status = 'reviewed'
+            self.reviewed_at = timezone.now()
+            self.save()
+            
+            return True
+            
+        except Exception as e:
+            raise Exception(f"Error al revisar contrato: {str(e)}")
+
+

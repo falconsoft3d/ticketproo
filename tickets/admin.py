@@ -14,7 +14,9 @@ from .models import (
     FinancialPriceHistory, Product, ClientProjectAccess, ClientTimeEntry, CompanyDocumentation, CompanyDocumentationURL, ContactGenerator,
     CompanyRequestGenerator, CompanyRequest, CompanyRequestComment,
     Form, FormQuestion, FormQuestionOption, FormResponse, FormAnswer, Alcance,
-    WhatsAppConnection, WhatsAppKeyword, WhatsAppMessage
+    WhatsAppConnection, WhatsAppKeyword, WhatsAppMessage, ImagePrompt,
+    AIManager, AIManagerMeeting, AIManagerMeetingAttachment, AIManagerSummary, CompanyAISummary, UserAIPerformanceEvaluation,
+    WebsiteTracker, LegalContract, SupplierContractReview
 )
 
 # Configuración del sitio de administración
@@ -379,7 +381,7 @@ class TimeEntryAdmin(admin.ModelAdmin):
 class CompanyAdmin(admin.ModelAdmin):
     list_display = ('name', 'colored_badge', 'is_active', 'tickets_count', 'users_count', 'contact_info', 'created_at')
     list_filter = ('is_active', 'created_at')
-    search_fields = ('name', 'description', 'email', 'phone', 'website')
+    search_fields = ('name', 'description', 'email', 'phone', 'website', 'business_objectives')
     list_editable = ('is_active',)
     ordering = ('name',)
     date_hierarchy = 'created_at'
@@ -388,6 +390,10 @@ class CompanyAdmin(admin.ModelAdmin):
     fieldsets = (
         ('Información Básica', {
             'fields': ('name', 'description')
+        }),
+        ('Objetivos Empresariales', {
+            'fields': ('business_objectives',),
+            'description': 'Define los objetivos, metas y KPIs estratégicos de la empresa. Serán considerados en los resúmenes ejecutivos generados por IA.'
         }),
         ('Información de Contacto', {
             'fields': ('email', 'phone', 'website', 'address')
@@ -439,7 +445,7 @@ class CompanyAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         """Optimizar consultas"""
         queryset = super().get_queryset(request)
-        return queryset.prefetch_related('tickets', 'userprofile_set')
+        return queryset.prefetch_related('tickets', 'users')
 
 
 @admin.register(SystemConfiguration)
@@ -2654,4 +2660,376 @@ class WhatsAppMessageAdmin(admin.ModelAdmin):
     
     def has_change_permission(self, request, obj=None):
         return False
+
+
+@admin.register(ImagePrompt)
+class ImagePromptAdmin(admin.ModelAdmin):
+    list_display = ['title', 'user', 'image_preview', 'prompt_preview', 'is_public', 'tokens_used', 'created_at']
+    list_filter = ['is_public', 'created_at', 'user']
+    search_fields = ['title', 'generated_prompt', 'custom_prompt', 'tags']
+    readonly_fields = ['user', 'generated_prompt', 'tokens_used', 'created_at', 'updated_at', 'image_preview_large']
+    date_hierarchy = 'created_at'
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('user', 'title', 'tags', 'is_public')
+        }),
+        ('Imagen', {
+            'fields': ('image', 'image_preview_large')
+        }),
+        ('Prompts', {
+            'fields': ('generated_prompt', 'custom_prompt')
+        }),
+        ('Estadísticas', {
+            'fields': ('tokens_used', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def image_preview(self, obj):
+        if obj.image:
+            return format_html(
+                '<img src="{}" style="max-width: 100px; max-height: 100px; border-radius: 5px;"/>',
+                obj.image.url
+            )
+        return '-'
+    image_preview.short_description = 'Vista Previa'
+    
+    def image_preview_large(self, obj):
+        if obj.image:
+            return format_html(
+                '<img src="{}" style="max-width: 500px; border-radius: 10px;"/>',
+                obj.image.url
+            )
+        return '-'
+    image_preview_large.short_description = 'Imagen'
+    
+    def prompt_preview(self, obj):
+        prompt = obj.get_final_prompt()
+        return prompt[:80] + '...' if len(prompt) > 80 else prompt
+    prompt_preview.short_description = 'Prompt'
+
+
+@admin.register(AIManager)
+class AIManagerAdmin(admin.ModelAdmin):
+    list_display = ['name', 'company', 'category', 'is_active', 'total_meetings', 'active_users', 'created_at']
+    list_filter = ['is_active', 'category', 'company', 'created_at']
+    search_fields = ['name', 'description', 'company__name']
+    readonly_fields = ['created_by', 'created_at', 'updated_at', 'total_meetings', 'active_users']
+    date_hierarchy = 'created_at'
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('company', 'name', 'category', 'is_active')
+        }),
+        ('Configuración', {
+            'fields': ('description', 'instructions')
+        }),
+        ('Estadísticas', {
+            'fields': ('total_meetings', 'active_users'),
+            'classes': ('collapse',)
+        }),
+        ('Metadatos', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def total_meetings(self, obj):
+        return obj.get_total_meetings()
+    total_meetings.short_description = 'Reuniones'
+    
+    def active_users(self, obj):
+        return obj.get_active_users()
+    active_users.short_description = 'Usuarios activos'
+    
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(AIManagerMeeting)
+class AIManagerMeetingAdmin(admin.ModelAdmin):
+    list_display = ['title', 'ai_manager', 'user', 'input_type', 'tokens_used', 'created_at']
+    list_filter = ['input_type', 'ai_manager', 'created_at', 'user']
+    search_fields = ['title', 'user_input', 'ai_response', 'user__username', 'ai_manager__name']
+    readonly_fields = ['ai_manager', 'user', 'tokens_used', 'created_at']
+    date_hierarchy = 'created_at'
+    
+    class AIManagerMeetingAttachmentInline(admin.TabularInline):
+        model = AIManagerMeetingAttachment
+        extra = 0
+        readonly_fields = ['file_name', 'file_type', 'file_size', 'uploaded_at']
+        fields = ['file', 'file_name', 'file_type', 'file_size', 'uploaded_at']
+        can_delete = True
+    
+    inlines = [AIManagerMeetingAttachmentInline]
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('ai_manager', 'user', 'title', 'input_type')
+        }),
+        ('Entrada del Usuario', {
+            'fields': ('user_input', 'audio_file')
+        }),
+        ('Respuesta de la IA', {
+            'fields': ('ai_response', 'ai_summary', 'improvement_areas')
+        }),
+        ('Estadísticas', {
+            'fields': ('tokens_used', 'created_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+
+@admin.register(AIManagerMeetingAttachment)
+class AIManagerMeetingAttachmentAdmin(admin.ModelAdmin):
+    list_display = ['file_name', 'meeting', 'file_size', 'file_type', 'uploaded_at']
+    list_filter = ['uploaded_at', 'file_type']
+    search_fields = ['file_name', 'meeting__title', 'meeting__user__username']
+    readonly_fields = ['file_name', 'file_type', 'file_size', 'uploaded_at']
+    date_hierarchy = 'uploaded_at'
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('meeting', 'meeting__user', 'meeting__ai_manager')
+
+
+@admin.register(AIManagerSummary)
+class AIManagerSummaryAdmin(admin.ModelAdmin):
+    list_display = ['ai_manager', 'period_start', 'period_end', 'total_meetings', 'participants_count', 'created_at']
+    list_filter = ['ai_manager', 'period_start', 'period_end', 'created_at']
+    search_fields = ['summary_text', 'key_insights', 'recommendations', 'ai_manager__name']
+    readonly_fields = ['created_at']
+    date_hierarchy = 'created_at'
+    
+    fieldsets = (
+        ('Información del Período', {
+            'fields': ('ai_manager', 'period_start', 'period_end')
+        }),
+        ('Resumen', {
+            'fields': ('summary_text', 'key_insights', 'recommendations')
+        }),
+        ('Estadísticas', {
+            'fields': ('total_meetings', 'participants_count', 'tokens_used', 'created_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+
+@admin.register(CompanyAISummary)
+class CompanyAISummaryAdmin(admin.ModelAdmin):
+    list_display = ['company', 'period_start', 'period_end', 'total_managers', 'total_meetings', 'total_participants', 'generated_by', 'created_at']
+    list_filter = ['company', 'period_start', 'period_end', 'created_at']
+    search_fields = ['executive_summary', 'key_metrics', 'strategic_recommendations', 'company__name']
+    readonly_fields = ['generated_by', 'created_at']
+    date_hierarchy = 'created_at'
+    
+    fieldsets = (
+        ('Información General', {
+            'fields': ('company', 'period_start', 'period_end', 'generated_by', 'created_at')
+        }),
+        ('Resumen Ejecutivo', {
+            'fields': ('executive_summary', 'key_metrics', 'department_highlights')
+        }),
+        ('Análisis', {
+            'fields': ('challenges', 'strategic_recommendations')
+        }),
+        ('Estadísticas', {
+            'fields': ('total_managers', 'total_meetings', 'total_participants', 'tokens_used'),
+            'classes': ('collapse',)
+        }),
+    )
+
+
+@admin.register(UserAIPerformanceEvaluation)
+class UserAIPerformanceEvaluationAdmin(admin.ModelAdmin):
+    list_display = ['user', 'company', 'evaluation_date', 'overall_score', 'performance_level_badge', 'meetings_analyzed', 'created_at']
+    list_filter = ['evaluation_date', 'company', 'created_at']
+    search_fields = ['user__username', 'user__first_name', 'user__last_name', 'company__name', 'improvement_areas', 'training_recommendations']
+    readonly_fields = ['generated_by', 'created_at', 'performance_level_badge']
+    date_hierarchy = 'evaluation_date'
+    
+    fieldsets = (
+        ('Información General', {
+            'fields': ('user', 'company', 'evaluation_date', 'period_start', 'period_end', 'meetings_analyzed')
+        }),
+        ('Puntuaciones', {
+            'fields': ('overall_score', 'productivity_score', 'communication_score', 'goal_achievement_score', 'consistency_score', 'performance_level_badge')
+        }),
+        ('Análisis', {
+            'fields': ('ai_summary', 'strengths', 'improvement_areas', 'training_recommendations')
+        }),
+        ('Metadata', {
+            'fields': ('tokens_used', 'generated_by', 'created_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def performance_level_badge(self, obj):
+        """Muestra un badge con el nivel de desempeño"""
+        color = obj.get_score_color()
+        level = obj.get_performance_level()
+        return format_html(
+            '<span class="badge bg-{}" style="font-size: 14px;">{} - {}/100</span>',
+            color, level, obj.overall_score
+        )
+    performance_level_badge.short_description = 'Nivel de Desempeño'
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('user', 'company', 'generated_by')
+
+
+@admin.register(WebsiteTracker)
+class WebsiteTrackerAdmin(admin.ModelAdmin):
+    list_display = ['target', 'user', 'is_active_badge', 'http_status_code', 'ping_response_time', 'created_at']
+    list_filter = ['is_active', 'ssl_valid', 'created_at']
+    search_fields = ['target', 'ip_address', 'page_title', 'user__username']
+    readonly_fields = ['created_at', 'updated_at']
+    date_hierarchy = 'created_at'
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('target', 'user', 'created_at', 'updated_at')
+        }),
+        ('Conectividad', {
+            'fields': ('is_active', 'ping_response_time', 'ip_address')
+        }),
+        ('DNS', {
+            'fields': ('cname_records', 'txt_records', 'mx_records', 'ns_records'),
+            'classes': ('collapse',)
+        }),
+        ('HTTP', {
+            'fields': ('http_status_code', 'http_headers', 'redirect_url', 'server_software', 'technologies'),
+            'classes': ('collapse',)
+        }),
+        ('SSL/Seguridad', {
+            'fields': ('ssl_valid', 'ssl_issuer', 'ssl_expiry_date'),
+            'classes': ('collapse',)
+        }),
+        ('Contenido', {
+            'fields': ('page_title', 'meta_description', 'page_size', 'load_time'),
+            'classes': ('collapse',)
+        }),
+        ('Errores', {
+            'fields': ('error_message',),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def is_active_badge(self, obj):
+        color = obj.get_status_badge()
+        text = obj.get_status_text()
+        return format_html(
+            '<span class="badge bg-{}">{}</span>',
+            color, text
+        )
+    is_active_badge.short_description = 'Estado'
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('user')
+
+
+@admin.register(LegalContract)
+class LegalContractAdmin(admin.ModelAdmin):
+    list_display = ('name', 'contract_type', 'company', 'client_company', 'status_badge', 'amount_display', 'is_public', 'created_at')
+    list_filter = ('status', 'is_public', 'contract_type', 'created_at', 'company')
+    search_fields = ('name', 'contract_type', 'company__name', 'client_company__name', 'objective_prompt')
+    readonly_fields = ('public_token', 'created_at', 'updated_at', 'generated_at', 'get_public_link')
+    date_hierarchy = 'created_at'
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('name', 'contract_type', 'objective_prompt')
+        }),
+        ('Partes del Contrato', {
+            'fields': ('company', 'client_company')
+        }),
+        ('Detalles del Contrato', {
+            'fields': ('start_date', 'end_date', 'amount', 'currency')
+        }),
+        ('Contenido Generado', {
+            'fields': ('generated_content', 'generated_at'),
+            'classes': ('collapse',)
+        }),
+        ('Control de Acceso', {
+            'fields': ('user', 'status', 'is_public', 'public_token', 'get_public_link')
+        }),
+        ('Metadatos', {
+            'fields': ('notes', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def status_badge(self, obj):
+        color = obj.get_status_badge()
+        return format_html(
+            '<span class="badge bg-{}">{}</span>',
+            color, obj.get_status_display()
+        )
+    status_badge.short_description = 'Estado'
+    
+    def amount_display(self, obj):
+        if obj.amount:
+            return f"{obj.amount} {obj.currency}"
+        return '-'
+    amount_display.short_description = 'Monto'
+    
+    def get_public_link(self, obj):
+        if obj.pk:
+            from django.urls import reverse
+            from django.conf import settings
+            url = settings.BASE_URL + obj.get_public_url() if hasattr(settings, 'BASE_URL') else obj.get_public_url()
+            return format_html(
+                '<a href="{}" target="_blank">{}</a>',
+                url, url
+            )
+        return '-'
+    get_public_link.short_description = 'Enlace Público'
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('user', 'company', 'client_company')
+
+
+@admin.register(SupplierContractReview)
+class SupplierContractReviewAdmin(admin.ModelAdmin):
+    list_display = ('name', 'supplier_name', 'company', 'status_badge', 'risk_badge', 'reviewed_at', 'created_at')
+    list_filter = ('status', 'risk_level', 'company', 'created_at')
+    search_fields = ('name', 'supplier_name', 'contract_text', 'ai_review')
+    readonly_fields = ('reviewed_at', 'created_at', 'updated_at')
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('name', 'supplier_name', 'company', 'user')
+        }),
+        ('Contenido del Contrato', {
+            'fields': ('contract_text', 'contract_file')
+        }),
+        ('Análisis de IA', {
+            'fields': ('ai_review', 'risk_assessment', 'key_clauses', 'recommendations', 'risk_level')
+        }),
+        ('Estado', {
+            'fields': ('status', 'reviewed_at')
+        }),
+        ('Notas', {
+            'fields': ('internal_notes',)
+        }),
+        ('Metadatos', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def status_badge(self, obj):
+        return format_html(obj.get_status_badge())
+    status_badge.short_description = 'Estado'
+    
+    def risk_badge(self, obj):
+        return format_html(obj.get_risk_badge())
+    risk_badge.short_description = 'Nivel de Riesgo'
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('user', 'company')
+
+
 

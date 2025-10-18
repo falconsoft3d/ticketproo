@@ -1262,7 +1262,7 @@ class CompanyForm(forms.ModelForm):
     
     class Meta:
         model = Company
-        fields = ['name', 'description', 'address', 'phone', 'email', 'website', 'color', 'logo', 'public_token', 'is_active']
+        fields = ['name', 'description', 'business_objectives', 'address', 'phone', 'email', 'website', 'color', 'logo', 'public_token', 'is_active']
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -1272,6 +1272,11 @@ class CompanyForm(forms.ModelForm):
                 'class': 'form-control',
                 'rows': 3,
                 'placeholder': 'Descripción de la empresa (opcional)'
+            }),
+            'business_objectives': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 5,
+                'placeholder': 'Define los objetivos, metas y KPIs estratégicos de la empresa...\n\nEjemplos:\n- Aumentar las ventas un 20% este año\n- Mejorar la satisfacción del cliente al 95%\n- Reducir costos operativos en un 15%\n- Lanzar 3 nuevos productos\n- Expandirse a 2 nuevos mercados'
             }),
             'address': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -1309,6 +1314,7 @@ class CompanyForm(forms.ModelForm):
         labels = {
             'name': 'Nombre de la Empresa',
             'description': 'Descripción',
+            'business_objectives': 'Objetivos Empresariales',
             'address': 'Dirección',
             'phone': 'Teléfono',
             'email': 'Email de Contacto',
@@ -1316,6 +1322,9 @@ class CompanyForm(forms.ModelForm):
             'color': 'Color Identificativo',
             'public_token': 'Token Público',
             'is_active': 'Empresa Activa',
+        }
+        help_texts = {
+            'business_objectives': 'Define los objetivos, metas y KPIs estratégicos. Estos serán considerados por los gerentes IA al generar resúmenes ejecutivos.',
         }
     
     def clean_name(self):

@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="display-5">
+                <i class="bi bi-robot text-primary"></i> Gerentes IA
+            </h1>
+            <p class="text-muted">
+                <i class="bi bi-building"></i> {{ company.name }}
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'ai_manager_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Crear Gerente IA
+            </a>
+        </div>
+    </div>
+
+    {% if managers %}
+        <!-- Grid de Gerentes -->
+        <div class="row g-4">
+            {% for manager in managers %}
+                <div class="col-lg-4 col-md-6">
+                    <div class="card h-100 shadow-sm hover-card">
+                        <div class="card-header bg-{{ manager.category|slugify }} text-white">
+                            <h5 class="mb-0">
+                                {% if manager.category == 'ventas' %}
+                                    <i class="bi bi-graph-up"></i>
+                                {% elif manager.category == 'compras' %}
+                                    <i class="bi bi-cart"></i>
+                                {% elif manager.category == 'contabilidad' %}
+                                    <i class="bi bi-calculator"></i>
+                                {% elif manager.category == 'crm' %}
+                                    <i class="bi bi-people"></i>
+                                {% elif manager.category == 'inventario' %}
+                                    <i class="bi bi-box-seam"></i>
+                                {% elif manager.category == 'rrhh' %}
+                                    <i class="bi bi-person-badge"></i>
+                                {% elif manager.category == 'marketing' %}
+                                    <i class="bi bi-megaphone"></i>
+                                {% elif manager.category == 'operaciones' %}
+                                    <i class="bi bi-gear"></i>
+                                {% elif manager.category == 'finanzas' %}
+                                    <i class="bi bi-cash-coin"></i>
+                                {% elif manager.category == 'ti' %}
+                                    <i class="bi bi-laptop"></i>
+                                {% else %}
+                                    <i class="bi bi-briefcase"></i>
+                                {% endif %}
+                                {{ manager.name }}
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text text-muted">
+                                {{ manager.description|truncatewords:20 }}
+                            </p>
+                            
+                            <!-- Estadísticas -->
+                            <div class="row text-center mb-3">
+                                <div class="col-6">
+                                    <div class="border rounded p-2">
+                                        <h4 class="mb-0">{{ manager.get_total_meetings }}</h4>
+                                        <small class="text-muted">Reuniones</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="border rounded p-2">
+                                        <h4 class="mb-0">{{ manager.get_active_users }}</h4>
+                                        <small class="text-muted">Usuarios</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Botones -->
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'ai_manager_meeting_create' manager.pk %}" class="btn btn-primary">
+                                    <i class="bi bi-calendar-plus"></i> Nueva Reunión
+                                </a>
+                                <a href="{% url 'ai_manager_detail' manager.pk %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-eye"></i> Ver Detalle
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <small class="text-muted">
+                                <i class="bi bi-tag"></i> {{ manager.get_category_display }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <!-- Empty State -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <i class="bi bi-robot text-muted" style="font-size: 4rem;"></i>
+                        <h3 class="mt-3">No hay gerentes IA</h3>
+                        <p class="text-muted">Crea tu primer gerente IA para comenzar a mejorar tu empresa</p>
+                        <a href="{% url 'ai_manager_create' %}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Crear Primer Gerente IA
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+    .hover-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .hover-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2) !important;
+    }
+    
+    .bg-ventas { background-color: #28a745; }
+    .bg-compras { background-color: #17a2b8; }
+    .bg-contabilidad { background-color: #6f42c1; }
+    .bg-crm { background-color: #fd7e14; }
+    .bg-inventario { background-color: #20c997; }
+    .bg-rrhh { background-color: #e83e8c; }
+    .bg-marketing { background-color: #f012be; }
+    .bg-operaciones { background-color: #6c757d; }
+    .bg-finanzas { background-color: #ffc107; }
+    .bg-ti { background-color: #007bff; }
+    .bg-otro { background-color: #343a40; }
+</style>
+{% endblock %}

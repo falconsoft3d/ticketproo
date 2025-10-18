@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ image_prompt.title }} - Detalle{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'image_prompt_list' %}">Mis Prompts</a></li>
+                    <li class="breadcrumb-item active">{{ image_prompt.title }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2><i class="bi bi-image text-primary"></i> {{ image_prompt.title }}</h2>
+            <p class="text-muted">
+                Creado el {{ image_prompt.created_at|date:"d M Y H:i" }}
+                {% if image_prompt.updated_at != image_prompt.created_at %}
+                · Actualizado el {{ image_prompt.updated_at|date:"d M Y H:i" }}
+                {% endif %}
+            </p>
+        </div>
+        <div class="col-md-6 text-end">
+            <div class="btn-group" role="group">
+                <a href="{% url 'image_prompt_edit' image_prompt.pk %}" class="btn btn-warning">
+                    <i class="bi bi-pencil"></i> Editar
+                </a>
+                <a href="{% url 'image_prompt_delete' image_prompt.pk %}" class="btn btn-danger">
+                    <i class="bi bi-trash"></i> Eliminar
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Columna de la imagen -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-0">
+                    <img src="{{ image_prompt.image.url }}" class="img-fluid rounded" alt="{{ image_prompt.title }}">
+                </div>
+                <div class="card-footer bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        {% if image_prompt.is_public %}
+                            <span class="badge bg-success">
+                                <i class="bi bi-eye"></i> Público
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary">
+                                <i class="bi bi-eye-slash"></i> Privado
+                            </span>
+                        {% endif %}
+                        
+                        {% if image_prompt.tokens_used > 0 %}
+                            <small class="text-muted">
+                                <i class="bi bi-cpu"></i> {{ image_prompt.tokens_used }} tokens usados
+                            </small>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            {% if image_prompt.tags %}
+            <div class="card shadow-sm border-0 mt-3">
+                <div class="card-body">
+                    <h6 class="card-title"><i class="bi bi-tags"></i> Etiquetas</h6>
+                    <div class="d-flex flex-wrap gap-2">
+                        {{ image_prompt.tags }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Columna de los prompts -->
+        <div class="col-lg-6">
+            {% if image_prompt.generated_prompt %}
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-magic"></i> Prompt Generado por IA
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text" style="white-space: pre-line;">{{ image_prompt.generated_prompt }}</p>
+                    <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('generatedPrompt')">
+                        <i class="bi bi-clipboard"></i> Copiar al Portapapeles
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if image_prompt.custom_prompt %}
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-pencil-square"></i> Prompt Personalizado
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text" style="white-space: pre-line;">{{ image_prompt.custom_prompt }}</p>
+                    <button class="btn btn-sm btn-outline-success" onclick="copyToClipboard('customPrompt')">
+                        <i class="bi bi-clipboard"></i> Copiar al Portapapeles
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not image_prompt.generated_prompt and not image_prompt.custom_prompt %}
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle"></i> 
+                No hay prompts generados para esta imagen todavía.
+            </div>
+            {% endif %}
+
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body">
+                    <h6 class="card-title"><i class="bi bi-info-circle"></i> Información</h6>
+                    <ul class="list-unstyled mb-0">
+                        <li><strong>Usuario:</strong> {{ image_prompt.user.username }}</li>
+                        <li><strong>Creado:</strong> {{ image_prompt.created_at|date:"d/m/Y H:i" }}</li>
+                        <li><strong>Actualizado:</strong> {{ image_prompt.updated_at|date:"d/m/Y H:i" }}</li>
+                        <li><strong>Estado:</strong> 
+                            {% if image_prompt.is_public %}
+                                <span class="badge bg-success">Público</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Privado</span>
+                            {% endif %}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <a href="{% url 'image_prompt_list' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver a la Lista
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Container -->
+<div id="notificationContainer"></div>
+
+<script>
+function copyToClipboard(type) {
+    let text = '';
+    
+    if (type === 'generatedPrompt') {
+        text = `{{ image_prompt.generated_prompt|escapejs }}`;
+    } else if (type === 'customPrompt') {
+        text = `{{ image_prompt.custom_prompt|escapejs }}`;
+    }
+    
+    navigator.clipboard.writeText(text).then(() => {
+        showNotification('Prompt copiado al portapapeles');
+    }).catch(err => {
+        console.error('Error al copiar:', err);
+        alert('No se pudo copiar al portapapeles');
+    });
+}
+
+function showNotification(message) {
+    const notification = document.createElement('div');
+    notification.className = 'alert alert-success alert-dismissible fade show position-fixed top-0 end-0 m-3';
+    notification.style.zIndex = '9999';
+    notification.innerHTML = `
+        <i class="bi bi-check-circle"></i> ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.getElementById('notificationContainer').appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+</script>
+{% endblock %}

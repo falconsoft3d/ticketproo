@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .api_views import (
     TicketViewSet, CategoryViewSet, CompanyViewSet, ProjectViewSet,
-    api_status, generate_api_token, toggle_api_access
+    api_status, generate_api_token, toggle_api_access, whatsapp_receive_message
 )
 
 # Router para los ViewSets
@@ -20,6 +20,9 @@ api_urlpatterns = [
     path('status/', api_status, name='api-status'),
     path('generate-token/', generate_api_token, name='api-generate-token'),
     path('toggle-access/', toggle_api_access, name='api-toggle-access'),
+    
+    # URLs de WhatsApp
+    path('whatsapp/message/', whatsapp_receive_message, name='api-whatsapp-message'),
 ]
 
 # Django espera que la variable se llame urlpatterns

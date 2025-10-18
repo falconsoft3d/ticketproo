@@ -1,0 +1,321 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'user_ai_performance_dashboard' %}">Desempeño de Usuarios</a></li>
+                    <li class="breadcrumb-item active">{{ evaluated_user.get_full_name }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Header con Usuario -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" 
+                                 style="width: 70px; height: 70px; font-size: 30px;">
+                                {{ evaluated_user.first_name|first|default:evaluated_user.username|first|upper }}
+                            </div>
+                            <div>
+                                <h2 class="mb-1">{{ evaluated_user.get_full_name|default:evaluated_user.username }}</h2>
+                                <p class="text-muted mb-0">@{{ evaluated_user.username }} | {{ evaluated_user.email }}</p>
+                            </div>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#generateEvaluationModal">
+                                <i class="bi bi-plus-circle"></i> Generar Nueva Evaluación
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas Rápidas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 text-center">
+                <div class="card-body">
+                    <h3 class="mb-0 text-primary">{{ stats.total_meetings }}</h3>
+                    <small class="text-muted">Reuniones</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 text-center">
+                <div class="card-body">
+                    <h3 class="mb-0 text-info">{{ stats.total_evaluations }}</h3>
+                    <small class="text-muted">Evaluaciones</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 text-center">
+                <div class="card-body">
+                    <h3 class="mb-0 text-success">{{ stats.avg_score|floatformat:1 }}</h3>
+                    <small class="text-muted">Promedio General</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 text-center">
+                <div class="card-body">
+                    <h3 class="mb-0 text-warning">{{ stats.latest_score }}</h3>
+                    <small class="text-muted">Última Puntuación</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico de Progreso -->
+    {% if evaluations %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-graph-up"></i> Evolución del Desempeño
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="performanceChart" height="80"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Evaluaciones Detalladas -->
+    <div class="row">
+        {% for evaluation in evaluations %}
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-{{ evaluation.get_score_color }}  text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            {{ evaluation.evaluation_date|date:"d/m/Y" }}
+                        </h5>
+                        <span class="badge bg-light text-dark">
+                            {{ evaluation.overall_score }}/100
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <h6 class="text-{{ evaluation.get_score_color }}">
+                        {{ evaluation.get_performance_level }}
+                    </h6>
+                    
+                    <!-- Puntuaciones Detalladas -->
+                    <div class="mb-3">
+                        <small class="text-muted">Productividad:</small>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar bg-primary" style="width: {{ evaluation.productivity_score }}%;">
+                                {{ evaluation.productivity_score }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">Comunicación:</small>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar bg-info" style="width: {{ evaluation.communication_score }}%;">
+                                {{ evaluation.communication_score }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">Logro de Objetivos:</small>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar bg-success" style="width: {{ evaluation.goal_achievement_score }}%;">
+                                {{ evaluation.goal_achievement_score }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">Consistencia:</small>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar bg-warning" style="width: {{ evaluation.consistency_score }}%;">
+                                {{ evaluation.consistency_score }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Resumen -->
+                    <div class="alert alert-light">
+                        <small><strong>Resumen:</strong></small>
+                        <div class="small">{{ evaluation.ai_summary|safe|truncatewords_html:30 }}</div>
+                    </div>
+
+                    <!-- Fortalezas -->
+                    <button class="btn btn-sm btn-outline-success w-100 mb-2" type="button" 
+                            data-bs-toggle="collapse" data-bs-target="#strengths-{{ evaluation.pk }}">
+                        <i class="bi bi-star"></i> Ver Fortalezas
+                    </button>
+                    <div class="collapse" id="strengths-{{ evaluation.pk }}">
+                        <div class="alert alert-success small">
+                            {{ evaluation.strengths|safe }}
+                        </div>
+                    </div>
+
+                    <!-- Áreas de Mejora -->
+                    <button class="btn btn-sm btn-outline-warning w-100 mb-2" type="button" 
+                            data-bs-toggle="collapse" data-bs-target="#improvements-{{ evaluation.pk }}">
+                        <i class="bi bi-exclamation-triangle"></i> Ver Áreas de Mejora
+                    </button>
+                    <div class="collapse" id="improvements-{{ evaluation.pk }}">
+                        <div class="alert alert-warning small">
+                            {{ evaluation.improvement_areas|safe }}
+                        </div>
+                    </div>
+
+                    <!-- Capacitación -->
+                    <button class="btn btn-sm btn-outline-info w-100" type="button" 
+                            data-bs-toggle="collapse" data-bs-target="#training-{{ evaluation.pk }}">
+                        <i class="bi bi-book"></i> Ver Recomendaciones de Capacitación
+                    </button>
+                    <div class="collapse" id="training-{{ evaluation.pk }}">
+                        <div class="alert alert-info small">
+                            {{ evaluation.training_recommendations|safe }}
+                        </div>
+                    </div>
+
+                    <hr>
+                    <small class="text-muted">
+                        <i class="bi bi-calendar-check"></i> Período: 
+                        {{ evaluation.period_start|date:"d/m/Y" }} - {{ evaluation.period_end|date:"d/m/Y" }}<br>
+                        <i class="bi bi-list-check"></i> Reuniones analizadas: {{ evaluation.meetings_analyzed }}
+                    </small>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-warning">
+        <h5><i class="bi bi-exclamation-triangle"></i> Sin evaluaciones</h5>
+        <p class="mb-0">Este usuario aún no tiene evaluaciones generadas. Haz clic en "Generar Nueva Evaluación" para crear una.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal para Generar Evaluación -->
+<div class="modal fade" id="generateEvaluationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'user_ai_performance_generate' evaluated_user.pk %}">
+                {% csrf_token %}
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-plus-circle"></i> Generar Evaluación
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Selecciona el período de tiempo para analizar:</p>
+                    <div class="mb-3">
+                        <label class="form-label">Fecha de Inicio</label>
+                        <input type="date" class="form-control" name="period_start" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Fecha de Fin</label>
+                        <input type="date" class="form-control" name="period_end" required>
+                    </div>
+                    <div class="alert alert-info small">
+                        <i class="bi bi-info-circle"></i> La IA analizará todas las reuniones del usuario en este período para generar la evaluación.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-magic"></i> Generar con IA
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {% if evaluations %}
+    const ctx = document.getElementById('performanceChart');
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ chart_data.labels|safe }},
+            datasets: [
+                {
+                    label: 'Puntuación General',
+                    data: {{ chart_data.overall_scores|safe }},
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'Productividad',
+                    data: {{ chart_data.productivity_scores|safe }},
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                    tension: 0.4
+                },
+                {
+                    label: 'Comunicación',
+                    data: {{ chart_data.communication_scores|safe }},
+                    borderColor: 'rgb(255, 206, 86)',
+                    backgroundColor: 'rgba(255, 206, 86, 0.1)',
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Evolución del Desempeño en el Tiempo'
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        callback: function(value) {
+                            return value + '/100';
+                        }
+                    }
+                }
+            },
+            interaction: {
+                mode: 'nearest',
+                axis: 'x',
+                intersect: false
+            }
+        }
+    });
+    {% endif %}
+});
+</script>
+{% endblock %}

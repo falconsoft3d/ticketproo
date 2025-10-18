@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Generar Resumen Empresarial - {{ company.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Breadcrumb -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'company_ai_dashboard_list' %}">Dashboard Empresarial IA</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'company_ai_dashboard_detail' company.pk %}">{{ company.name }}</a></li>
+                    <li class="breadcrumb-item active">Generar Resumen</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Formulario Principal -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-file-earmark-plus"></i> Generar Resumen Empresarial IA
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <h5 class="mb-3">{{ company.name }}</h5>
+
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <!-- Selector de Período -->
+                        <div class="card bg-light mb-4">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="bi bi-calendar-range"></i> Período de Análisis
+                                </h6>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="period_start" class="form-label">Fecha Inicio</label>
+                                        <input type="date" 
+                                               class="form-control" 
+                                               id="period_start" 
+                                               name="period_start" 
+                                               required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="period_end" class="form-label">Fecha Fin</label>
+                                        <input type="date" 
+                                               class="form-control" 
+                                               id="period_end" 
+                                               name="period_end" 
+                                               required>
+                                    </div>
+                                </div>
+
+                                <!-- Atajos Rápidos -->
+                                <div>
+                                    <label class="form-label">Atajos Rápidos:</label>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button type="button" class="btn btn-outline-secondary" onclick="setLastWeek()">
+                                            Última Semana
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary" onclick="setLastMonth()">
+                                            Último Mes
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary" onclick="setLastQuarter()">
+                                            Último Trimestre
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary" onclick="setLastYear()">
+                                            Último Año
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Estadísticas del Período Actual -->
+                        <div class="card bg-light mb-4">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="bi bi-graph-up"></i> Datos Disponibles
+                                </h6>
+                                <div class="row text-center">
+                                    <div class="col-4">
+                                        <h4 class="text-primary mb-0">{{ total_managers }}</h4>
+                                        <small class="text-muted">Gerentes IA</small>
+                                    </div>
+                                    <div class="col-4">
+                                        <h4 class="text-info mb-0">{{ total_meetings }}</h4>
+                                        <small class="text-muted">Reuniones Totales</small>
+                                    </div>
+                                    <div class="col-4">
+                                        <h4 class="text-success mb-0">{{ total_participants }}</h4>
+                                        <small class="text-muted">Participantes</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-cpu"></i> Generar con IA
+                            </button>
+                            <a href="{% url 'company_ai_dashboard_detail' company.pk %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Informativo -->
+        <div class="col-lg-4">
+            {% if company.business_objectives %}
+            <!-- Objetivos Empresariales -->
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0">
+                        <i class="bi bi-bullseye"></i> Objetivos Empresariales
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="small mb-0">{{ company.business_objectives|linebreaks }}</p>
+                    <hr>
+                    <p class="small text-muted mb-0">
+                        <i class="bi bi-info-circle"></i> La IA considerará estos objetivos al generar el resumen ejecutivo
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Información -->
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">
+                        <i class="bi bi-info-circle"></i> ¿Qué incluye el resumen?
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="small mb-0">
+                        <li><strong>Resumen Ejecutivo:</strong> Visión general estratégica de la empresa</li>
+                        <li><strong>Métricas Clave:</strong> KPIs consolidados de todos los gerentes</li>
+                        <li><strong>Highlights Departamentales:</strong> Logros por área</li>
+                        <li><strong>Desafíos:</strong> Problemas identificados transversalmente</li>
+                        <li><strong>Recomendaciones:</strong> Acciones estratégicas sugeridas</li>
+                        {% if company.business_objectives %}
+                        <li><strong>Evaluación de Objetivos:</strong> Progreso hacia metas empresariales</li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Cómo funciona -->
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0">
+                        <i class="bi bi-lightbulb"></i> Cómo funciona
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ol class="small mb-0">
+                        <li>Selecciona el período a analizar</li>
+                        <li>La IA recopila datos de todos los gerentes</li>
+                        <li>Analiza reuniones, patrones y tendencias</li>
+                        <li>Genera insights estratégicos consolidados</li>
+                        <li>Guarda el resumen para consulta histórica</li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- Tips -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0">
+                        <i class="bi bi-star"></i> Tips
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="small mb-0">
+                        <li>Genera resúmenes mensuales para tracking continuo</li>
+                        <li>Compara resúmenes de diferentes períodos</li>
+                        <li>Usa el análisis para sesiones de planificación</li>
+                        <li>Identifica tendencias a largo plazo</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function setLastWeek() {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(end.getDate() - 7);
+    
+    document.getElementById('period_start').valueAsDate = start;
+    document.getElementById('period_end').valueAsDate = end;
+}
+
+function setLastMonth() {
+    const end = new Date();
+    const start = new Date();
+    start.setMonth(end.getMonth() - 1);
+    
+    document.getElementById('period_start').valueAsDate = start;
+    document.getElementById('period_end').valueAsDate = end;
+}
+
+function setLastQuarter() {
+    const end = new Date();
+    const start = new Date();
+    start.setMonth(end.getMonth() - 3);
+    
+    document.getElementById('period_start').valueAsDate = start;
+    document.getElementById('period_end').valueAsDate = end;
+}
+
+function setLastYear() {
+    const end = new Date();
+    const start = new Date();
+    start.setFullYear(end.getFullYear() - 1);
+    
+    document.getElementById('period_start').valueAsDate = start;
+    document.getElementById('period_end').valueAsDate = end;
+}
+
+// Set default to last month on load
+document.addEventListener('DOMContentLoaded', function() {
+    setLastMonth();
+});
+</script>
+{% endblock %}

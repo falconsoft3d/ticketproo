@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'ai_manager_list' %}">Gerentes IA</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'ai_manager_detail' manager.pk %}">{{ manager.name }}</a></li>
+                    <li class="breadcrumb-item active">Editar</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-pencil"></i> Editar Gerente IA
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Empresa -->
+                        <div class="mb-3">
+                            <label for="company" class="form-label">
+                                Empresa <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="company" name="company" required disabled>
+                                <option value="{{ manager.company.id }}" selected>{{ manager.company.name }}</option>
+                            </select>
+                            <div class="form-text">La empresa no puede ser modificada</div>
+                        </div>
+
+                        <!-- Nombre -->
+                        <div class="mb-3">
+                            <label for="name" class="form-label">
+                                Nombre del Gerente <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="name" 
+                                   name="name" 
+                                   value="{{ manager.name }}" 
+                                   required 
+                                   maxlength="200">
+                            <div class="form-text">Ejemplo: "Gerente de Ventas IA", "Coach de RRHH"</div>
+                        </div>
+
+                        <!-- Categoría -->
+                        <div class="mb-3">
+                            <label for="category" class="form-label">
+                                Categoría <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="category" name="category" required>
+                                <option value="ventas" {% if manager.category == 'ventas' %}selected{% endif %}>Ventas</option>
+                                <option value="compras" {% if manager.category == 'compras' %}selected{% endif %}>Compras</option>
+                                <option value="contabilidad" {% if manager.category == 'contabilidad' %}selected{% endif %}>Contabilidad</option>
+                                <option value="crm" {% if manager.category == 'crm' %}selected{% endif %}>CRM</option>
+                                <option value="inventario" {% if manager.category == 'inventario' %}selected{% endif %}>Inventario</option>
+                                <option value="rrhh" {% if manager.category == 'rrhh' %}selected{% endif %}>Recursos Humanos</option>
+                                <option value="marketing" {% if manager.category == 'marketing' %}selected{% endif %}>Marketing</option>
+                                <option value="operaciones" {% if manager.category == 'operaciones' %}selected{% endif %}>Operaciones</option>
+                                <option value="finanzas" {% if manager.category == 'finanzas' %}selected{% endif %}>Finanzas</option>
+                                <option value="ti" {% if manager.category == 'ti' %}selected{% endif %}>Tecnología</option>
+                                <option value="otro" {% if manager.category == 'otro' %}selected{% endif %}>Otro</option>
+                            </select>
+                        </div>
+
+                        <!-- Descripción -->
+                        <div class="mb-3">
+                            <label for="description" class="form-label">
+                                Descripción
+                            </label>
+                            <textarea class="form-control" 
+                                      id="description" 
+                                      name="description" 
+                                      rows="3">{{ manager.description }}</textarea>
+                            <div class="form-text">Breve descripción del propósito de este gerente</div>
+                        </div>
+
+                        <!-- Instrucciones -->
+                        <div class="mb-3">
+                            <label for="instructions" class="form-label">
+                                Instrucciones para la IA <span class="text-danger">*</span>
+                            </label>
+                            <textarea class="form-control" 
+                                      id="instructions" 
+                                      name="instructions" 
+                                      rows="8" 
+                                      required>{{ manager.instructions }}</textarea>
+                            <div class="form-text">
+                                Define cómo debe comportarse y responder este gerente IA. 
+                                Sé específico sobre el tono, enfoque y tipo de feedback que debe dar.
+                            </div>
+                        </div>
+
+                        <!-- Estado -->
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" 
+                                       type="checkbox" 
+                                       id="is_active" 
+                                       name="is_active"
+                                       {% if manager.is_active %}checked{% endif %}>
+                                <label class="form-check-label" for="is_active">
+                                    Gerente Activo
+                                </label>
+                            </div>
+                            <div class="form-text">Los gerentes inactivos no aparecen en la lista principal</div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Botones -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Guardar Cambios
+                            </button>
+                            <a href="{% url 'ai_manager_detail' manager.pk %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Ayuda -->
+            <div class="card shadow-sm border-0 bg-light mb-3">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-lightbulb text-warning"></i> Consejos para Editar
+                    </h6>
+                    <ul class="small mb-0">
+                        <li>Los cambios afectarán las próximas reuniones</li>
+                        <li>Las reuniones anteriores mantienen su contexto</li>
+                        <li>Puedes desactivar temporalmente un gerente</li>
+                        <li>Las instrucciones son clave para buenos resultados</li>
+                        <li>Sé específico sobre el estilo de feedback</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Estadísticas Actuales -->
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-bar-chart"></i> Estadísticas Actuales
+                    </h6>
+                    <div class="row text-center">
+                        <div class="col-6 mb-2">
+                            <div class="border rounded p-2">
+                                <h4 class="mb-0 text-primary">{{ manager.get_total_meetings }}</h4>
+                                <small class="text-muted">Reuniones</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-2">
+                            <div class="border rounded p-2">
+                                <h4 class="mb-0 text-success">{{ manager.get_active_users }}</h4>
+                                <small class="text-muted">Usuarios</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información -->
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-info-circle"></i> Información
+                    </h6>
+                    <div class="small">
+                        <p class="mb-1">
+                            <strong>Creado:</strong><br>
+                            {{ manager.created_at|date:"d/m/Y H:i" }}
+                        </p>
+                        <p class="mb-1">
+                            <strong>Última actualización:</strong><br>
+                            {{ manager.updated_at|date:"d/m/Y H:i" }}
+                        </p>
+                        <p class="mb-0">
+                            <strong>Creado por:</strong><br>
+                            {{ manager.created_by.get_full_name|default:manager.created_by.username }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

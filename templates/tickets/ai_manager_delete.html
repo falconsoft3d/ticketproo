@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'ai_manager_list' %}">Gerentes IA</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'ai_manager_detail' manager.pk %}">{{ manager.name }}</a></li>
+                    <li class="breadcrumb-item active">Eliminar</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Alerta de Advertencia -->
+            <div class="alert alert-danger d-flex align-items-center shadow-sm" role="alert">
+                <i class="bi bi-exclamation-triangle-fill fs-3 me-3"></i>
+                <div>
+                    <h5 class="alert-heading mb-1">¡Atención! Esta acción es irreversible</h5>
+                    <p class="mb-0">Estás a punto de eliminar permanentemente este gerente IA y todos sus datos asociados.</p>
+                </div>
+            </div>
+
+            <!-- Información del Gerente -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-trash"></i> Confirmar Eliminación
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <h5 class="mb-3">
+                        <i class="bi bi-robot"></i> {{ manager.name }}
+                    </h5>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <p class="mb-2">
+                                <strong>Empresa:</strong><br>
+                                {{ manager.company.name }}
+                            </p>
+                            <p class="mb-2">
+                                <strong>Categoría:</strong><br>
+                                {{ manager.get_category_display }}
+                            </p>
+                            <p class="mb-0">
+                                <strong>Creado:</strong><br>
+                                {{ manager.created_at|date:"d/m/Y H:i" }}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-2">
+                                <strong>Descripción:</strong><br>
+                                {{ manager.description|default:"Sin descripción" }}
+                            </p>
+                            <p class="mb-0">
+                                <strong>Estado:</strong><br>
+                                {% if manager.is_active %}
+                                    <span class="badge bg-success">Activo</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Inactivo</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Estadísticas -->
+                    <h6 class="text-danger mb-3">
+                        <i class="bi bi-info-circle"></i> Datos que se eliminarán:
+                    </h6>
+                    
+                    <div class="row text-center mb-4">
+                        <div class="col-md-4">
+                            <div class="border border-danger rounded p-3">
+                                <h3 class="text-danger mb-0">{{ stats.total_meetings }}</h3>
+                                <small class="text-muted">Reuniones</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border border-danger rounded p-3">
+                                <h3 class="text-danger mb-0">{{ stats.total_summaries }}</h3>
+                                <small class="text-muted">Resúmenes</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border border-danger rounded p-3">
+                                <h3 class="text-danger mb-0">{{ stats.total_participants }}</h3>
+                                <small class="text-muted">Participantes</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lista de lo que se eliminará -->
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading">
+                            <i class="bi bi-exclamation-circle"></i> Se eliminarán:
+                        </h6>
+                        <ul class="mb-0">
+                            <li>El gerente IA "<strong>{{ manager.name }}</strong>"</li>
+                            <li>Todas las <strong>{{ stats.total_meetings }}</strong> reuniones registradas</li>
+                            <li>Todos los <strong>{{ stats.total_summaries }}</strong> resúmenes ejecutivos</li>
+                            <li>Todos los archivos de audio asociados</li>
+                            <li>Todo el historial de interacciones</li>
+                        </ul>
+                    </div>
+
+                    <!-- Formulario de Confirmación -->
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="confirmDelete" required>
+                            <label class="form-check-label" for="confirmDelete">
+                                Entiendo que esta acción es <strong>irreversible</strong> y eliminará todos los datos asociados
+                            </label>
+                        </div>
+
+                        <hr>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-danger" id="deleteButton" disabled>
+                                <i class="bi bi-trash"></i> Sí, Eliminar Permanentemente
+                            </button>
+                            <a href="{% url 'ai_manager_detail' manager.pk %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> No, Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información Adicional -->
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-lightbulb"></i> ¿Consideraste estas alternativas?
+                    </h6>
+                    <ul class="mb-0">
+                        <li>Puedes <strong>desactivar</strong> el gerente en lugar de eliminarlo</li>
+                        <li>Los gerentes inactivos no aparecen en la lista pero conservan todo su historial</li>
+                        <li>Podrás reactivarlo en cualquier momento desde la edición</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Habilitar botón solo si el checkbox está marcado
+document.getElementById('confirmDelete').addEventListener('change', function() {
+    document.getElementById('deleteButton').disabled = !this.checked;
+});
+</script>
+{% endblock %}

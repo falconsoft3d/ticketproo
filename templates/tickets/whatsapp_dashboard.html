@@ -4,17 +4,13 @@
 
 {% block content %}
 <div class="container-fluid py-4">
-    <!-- Banner de Demostración -->
-    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+    <!-- Banner de Estado del Servidor -->
+    <div id="serverStatusBanner" class="alert alert-info alert-dismissible fade show d-none" role="alert">
         <div class="d-flex align-items-center">
-            <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+            <i class="fas fa-info-circle fa-2x me-3"></i>
             <div>
-                <h5 class="alert-heading mb-1">Modo Demostración</h5>
-                <p class="mb-0">
-                    Esta es una interfaz de demostración. Para usar WhatsApp real, necesitas implementar el backend con 
-                    <a href="https://github.com/pedroslopez/whatsapp-web.js" target="_blank" class="alert-link">whatsapp-web.js</a>. 
-                    Lee <code>WHATSAPP_INTEGRATION.md</code> para instrucciones completas.
-                </p>
+                <h5 class="alert-heading mb-1">Servidor WhatsApp</h5>
+                <p class="mb-0" id="serverStatusMessage"></p>
             </div>
         </div>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -27,18 +23,23 @@
             <p class="text-muted mb-0">Gestiona tus mensajes automatizados de WhatsApp</p>
         </div>
         <div>
+            <span id="connectionStatus" class="badge fs-6 me-2">
+                {% if connection.status == 'connected' %}
+                    <span class="bg-success"><i class="fas fa-circle"></i> Conectado</span>
+                {% elif connection.status == 'connecting' or connection.status == 'qr_pending' %}
+                    <span class="bg-warning"><i class="fas fa-circle"></i> Conectando...</span>
+                {% elif connection.status == 'error' %}
+                    <span class="bg-danger"><i class="fas fa-circle"></i> Error</span>
+                {% else %}
+                    <span class="bg-secondary"><i class="fas fa-circle"></i> Desconectado</span>
+                {% endif %}
+            </span>
             {% if connection.status == 'connected' %}
-                <span class="badge bg-success fs-6 me-2">
-                    <i class="fas fa-circle"></i> Conectado
-                </span>
-                <a href="{% url 'whatsapp_disconnect' %}" class="btn btn-outline-danger">
+                <a href="{% url 'whatsapp_disconnect' %}" class="btn btn-outline-danger" id="disconnectBtn">
                     <i class="fas fa-unlink"></i> Desconectar
                 </a>
             {% else %}
-                <span class="badge bg-secondary fs-6 me-2">
-                    <i class="fas fa-circle"></i> Desconectado
-                </span>
-                <a href="{% url 'whatsapp_connect' %}" class="btn btn-success">
+                <a href="{% url 'whatsapp_connect' %}" class="btn btn-success" id="connectBtn">
                     <i class="fas fa-qrcode"></i> Conectar
                 </a>
             {% endif %}
@@ -46,49 +47,44 @@
     </div>
 
     <!-- Estado de Conexión y QR -->
-    {% if connection.status == 'qr_pending' and connection.qr_code %}
-    <div class="row mb-4">
+    <div id="qrCodeSection" class="row mb-4" style="display: {% if connection.status == 'qr_pending' %}block{% else %}none{% endif %};">
         <div class="col-12">
             <div class="card border-warning">
                 <div class="card-header bg-warning text-dark">
                     <h5 class="mb-0">
-                        <i class="fas fa-qrcode"></i> Código QR de Demostración
+                        <i class="fas fa-qrcode"></i> Escanea el Código QR con WhatsApp
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle"></i> 
-                        <strong>Modo Demostración:</strong> Este es un QR de prueba para mostrar la interfaz. 
-                        Para conectar WhatsApp real, necesitas implementar el backend con <code>whatsapp-web.js</code>.
-                        <a href="https://github.com/pedroslopez/whatsapp-web.js" target="_blank" class="alert-link">Ver documentación</a>
+                        <strong>Instrucciones:</strong> Abre WhatsApp en tu teléfono → Menú → Dispositivos vinculados → Vincular un dispositivo → Escanea este código
                     </div>
                     
-                    <div class="text-center">
-                        <div class="bg-dark d-inline-block p-4 rounded shadow">
-                            <pre class="text-white mb-0" style="font-family: monospace; font-size: 8px; line-height: 1;">{{ connection.qr_code }}</pre>
+                    <div class="text-center" id="qrCodeContainer">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando QR...</span>
                         </div>
-                    </div>
-                    
-                    <div class="mt-4 p-3 bg-light rounded">
-                        <h6><i class="fas fa-laptop-code"></i> Pasos para Implementar WhatsApp Real:</h6>
-                        <ol class="mb-0">
-                            <li>Instalar Node.js: <code>brew install node</code> (macOS)</li>
-                            <li>Crear servicio: <code>npm install whatsapp-web.js</code></li>
-                            <li>Conectar con Django vía API REST</li>
-                            <li>Implementar detección de palabras clave</li>
-                            <li>Enviar auto-respuestas</li>
-                        </ol>
+                        <p class="text-muted mt-2">Generando código QR...</p>
                     </div>
                     
                     <div class="text-center mt-3">
                         <a href="{% url 'whatsapp_disconnect' %}" class="btn btn-outline-secondary">
                             <i class="fas fa-times"></i> Cancelar
                         </a>
-                        <a href="{% url 'whatsapp_simulate_connection' %}" class="btn btn-success">
-                            <i class="fas fa-check-circle"></i> Simular Conexión Exitosa (Demo)
-                        </a>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información de Conexión -->
+    {% if connection.status == 'connected' and connection.phone_number %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i> 
+                <strong>Conectado:</strong> {{ connection.phone_number }}
             </div>
         </div>
     </div>
@@ -296,6 +292,7 @@
                 </div>
                 <div class="card-body">
                     <ol class="mb-0">
+                        <li><strong>Inicia el Servidor:</strong> Ejecuta <code>cd whatsapp_server && npm start</code> en una terminal</li>
                         <li><strong>Conecta tu WhatsApp:</strong> Haz clic en "Conectar" y escanea el código QR con tu teléfono</li>
                         <li><strong>Crea Palabras Clave:</strong> Define palabras o frases que activarán respuestas automáticas</li>
                         <li><strong>Configura Respuestas:</strong> Establece qué mensaje se enviará cuando alguien escriba una palabra clave</li>
@@ -307,4 +304,124 @@
         </div>
     </div>
 </div>
+
+<script>
+// Estado de polling
+let pollingInterval = null;
+let currentStatus = '{{ connection.status }}';
+
+// Función para actualizar el estado
+function updateConnectionStatus() {
+    fetch('{% url "whatsapp_status" %}')
+        .then(response => response.json())
+        .then(data => {
+            currentStatus = data.status;
+            
+            // Actualizar badge de estado
+            const statusBadge = document.getElementById('connectionStatus');
+            let badgeHTML = '';
+            
+            switch(data.status) {
+                case 'connected':
+                    badgeHTML = '<span class="bg-success"><i class="fas fa-circle"></i> Conectado</span>';
+                    document.getElementById('qrCodeSection').style.display = 'none';
+                    // Detener polling cuando está conectado
+                    if (pollingInterval) {
+                        clearInterval(pollingInterval);
+                        pollingInterval = null;
+                    }
+                    // Recargar página para actualizar botones y estadísticas
+                    setTimeout(() => location.reload(), 2000);
+                    break;
+                case 'qr_pending':
+                case 'connecting':
+                    badgeHTML = '<span class="bg-warning"><i class="fas fa-circle"></i> Conectando...</span>';
+                    if (data.qr_code) {
+                        displayQRCode(data.qr_code);
+                    }
+                    document.getElementById('qrCodeSection').style.display = 'block';
+                    break;
+                case 'error':
+                    badgeHTML = '<span class="bg-danger"><i class="fas fa-circle"></i> Error</span>';
+                    showServerMessage('Error de conexión. Verifica que el servidor WhatsApp esté ejecutándose.', 'danger');
+                    if (pollingInterval) {
+                        clearInterval(pollingInterval);
+                        pollingInterval = null;
+                    }
+                    break;
+                default:
+                    badgeHTML = '<span class="bg-secondary"><i class="fas fa-circle"></i> Desconectado</span>';
+                    document.getElementById('qrCodeSection').style.display = 'none';
+                    if (pollingInterval) {
+                        clearInterval(pollingInterval);
+                        pollingInterval = null;
+                    }
+            }
+            
+            statusBadge.innerHTML = badgeHTML;
+        })
+        .catch(error => {
+            console.error('Error al actualizar estado:', error);
+            showServerMessage('No se pudo conectar al servidor. Verifica que esté ejecutándose en http://localhost:3000', 'danger');
+        });
+}
+
+// Función para mostrar el código QR
+function displayQRCode(qrCodeText) {
+    const container = document.getElementById('qrCodeContainer');
+    
+    // Generar QR code como imagen usando una librería externa (qrcode.js)
+    // Por ahora mostramos el texto del QR
+    container.innerHTML = `
+        <div class="bg-white d-inline-block p-4 rounded shadow">
+            <div id="qrcode"></div>
+        </div>
+        <p class="text-muted mt-3">Escanea con WhatsApp en tu teléfono</p>
+    `;
+    
+    // Si tienes qrcode.js incluido, genera la imagen
+    if (typeof QRCode !== 'undefined') {
+        new QRCode(document.getElementById("qrcode"), {
+            text: qrCodeText,
+            width: 256,
+            height: 256
+        });
+    } else {
+        // Fallback: mostrar como texto ASCII
+        container.innerHTML = `
+            <div class="bg-dark d-inline-block p-4 rounded shadow">
+                <pre class="text-white mb-0" style="font-family: monospace; font-size: 8px; line-height: 1;">${qrCodeText}</pre>
+            </div>
+            <p class="text-muted mt-3">Escanea con WhatsApp en tu teléfono</p>
+        `;
+    }
+}
+
+// Función para mostrar mensajes del servidor
+function showServerMessage(message, type = 'info') {
+    const banner = document.getElementById('serverStatusBanner');
+    const messageEl = document.getElementById('serverStatusMessage');
+    
+    banner.className = `alert alert-${type} alert-dismissible fade show`;
+    banner.classList.remove('d-none');
+    messageEl.textContent = message;
+}
+
+// Iniciar polling si estamos en estado de conexión
+if (currentStatus === 'qr_pending' || currentStatus === 'connecting') {
+    pollingInterval = setInterval(updateConnectionStatus, 2000); // Cada 2 segundos
+    // Primera llamada inmediata
+    updateConnectionStatus();
+}
+
+// Detener polling al salir de la página
+window.addEventListener('beforeunload', () => {
+    if (pollingInterval) {
+        clearInterval(pollingInterval);
+    }
+});
+</script>
+
+<!-- QRCode.js library (opcional, para mejor visualización del QR) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 {% endblock %}

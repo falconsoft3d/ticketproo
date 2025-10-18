@@ -1,0 +1,395 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard IA - {{ company.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Breadcrumb -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'company_ai_dashboard_list' %}">Dashboard Empresarial IA</a></li>
+                    <li class="breadcrumb-item active">{{ company.name }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Header con acciones -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>
+                <i class="bi bi-building-fill text-primary"></i> {{ company.name }}
+            </h2>
+            {% if company.description %}
+                <p class="text-muted">{{ company.description }}</p>
+            {% endif %}
+        </div>
+        <div class="col-md-4 text-end">
+            {% if user.is_staff %}
+                <a href="{% url 'company_ai_generate_summary' company.pk %}" class="btn btn-primary">
+                    <i class="bi bi-file-earmark-plus"></i> Generar Resumen Empresarial
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Objetivos Empresariales -->
+    {% if company.business_objectives %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-start border-info border-4">
+                <div class="card-header bg-gradient" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <h5 class="card-title mb-0 text-white">
+                        <i class="bi bi-bullseye me-2"></i>
+                        Objetivos Empresariales
+                        <small class="float-end">
+                            <i class="bi bi-robot me-1"></i>
+                            Usados por IA
+                        </small>
+                    </h5>
+                </div>
+                <div class="card-body bg-light">
+                    <div class="objectives-list">
+                        {% for line in company.business_objectives.splitlines %}
+                            {% if line.strip %}
+                                <div class="objective-item mb-2 p-2 bg-white rounded border-start border-primary border-3">
+                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                    <span>{{ line|safe }}</span>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Estos objetivos son considerados por los gerentes IA al generar resúmenes ejecutivos y análisis estratégicos.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-warning shadow-sm">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-exclamation-triangle-fill me-3" style="font-size: 2rem;"></i>
+                    <div>
+                        <h6 class="alert-heading mb-1">
+                            <i class="bi bi-bullseye me-1"></i>
+                            Objetivos Empresariales No Definidos
+                        </h6>
+                        <p class="mb-2">
+                            No se han configurado objetivos empresariales para <strong>{{ company.name }}</strong>. 
+                            Los objetivos ayudan a los gerentes IA a generar análisis más precisos y alineados con la estrategia.
+                        </p>
+                        <a href="{% url 'company_detail' company.id %}" class="btn btn-sm btn-warning">
+                            <i class="bi bi-pencil me-1"></i>
+                            Definir Objetivos Ahora
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Tarjetas de estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 text-center">
+                <div class="card-body">
+                    <i class="bi bi-robot display-4 text-primary"></i>
+                    <h3 class="mt-2">{{ managers_stats|length }}</h3>
+                    <p class="text-muted mb-0">Gerentes IA</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 text-center">
+                <div class="card-body">
+                    <i class="bi bi-calendar-check display-4 text-info"></i>
+                    <h3 class="mt-2">{{ total_meetings }}</h3>
+                    <p class="text-muted mb-0">Reuniones Totales</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 text-center">
+                <div class="card-body">
+                    <i class="bi bi-people display-4 text-success"></i>
+                    <h3 class="mt-2">{{ participants|length }}</h3>
+                    <p class="text-muted mb-0">Participantes</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 text-center">
+                <div class="card-body">
+                    <i class="bi bi-file-text display-4 text-warning"></i>
+                    <h3 class="mt-2">{{ company_summaries.count }}</h3>
+                    <p class="text-muted mb-0">Resúmenes IA</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-4" id="companyDashboardTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="managers-tab" data-bs-toggle="tab" data-bs-target="#managers" type="button" role="tab">
+                <i class="bi bi-robot"></i> Gerentes IA
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab">
+                <i class="bi bi-people"></i> Usuarios
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="meetings-tab" data-bs-toggle="tab" data-bs-target="#meetings" type="button" role="tab">
+                <i class="bi bi-calendar-check"></i> Reuniones Recientes
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="summaries-tab" data-bs-toggle="tab" data-bs-target="#summaries" type="button" role="tab">
+                <i class="bi bi-file-text"></i> Resúmenes Empresariales
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="companyDashboardTabsContent">
+        <!-- Gerentes IA Tab -->
+        <div class="tab-pane fade show active" id="managers" role="tabpanel">
+            {% if managers_stats %}
+                <div class="row">
+                    {% for manager_data in managers_stats %}
+                    <div class="col-lg-6 mb-3">
+                        <div class="card shadow-sm border-0">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h5 class="card-title mb-1">
+                                            <i class="bi bi-robot text-primary"></i> {{ manager_data.manager.name }}
+                                            {% if manager_data.manager.is_active %}
+                                                <span class="badge bg-success">Activo</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Inactivo</span>
+                                            {% endif %}
+                                        </h5>
+                                        <p class="text-muted small mb-0">
+                                            <i class="bi bi-briefcase"></i> {{ manager_data.manager.get_category_display }}
+                                        </p>
+                                    </div>
+                                    <a href="{% url 'ai_manager_detail' manager_data.manager.pk %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-arrow-right-circle"></i> Ver
+                                    </a>
+                                </div>
+                                <div class="row g-2 mt-2">
+                                    <div class="col-4">
+                                        <div class="text-center p-2 bg-light rounded">
+                                            <strong class="text-info">{{ manager_data.total_meetings }}</strong><br>
+                                            <small class="text-muted">Reuniones</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="text-center p-2 bg-light rounded">
+                                            <strong class="text-success">{{ manager_data.active_users }}</strong><br>
+                                            <small class="text-muted">Usuarios</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="text-center p-2 bg-light rounded">
+                                            <strong class="text-warning">{{ manager_data.total_tokens|default:0 }}</strong><br>
+                                            <small class="text-muted">Tokens</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No hay gerentes IA configurados para esta empresa
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Usuarios Tab -->
+        <div class="tab-pane fade" id="users" role="tabpanel">
+            {% if participants %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Usuario</th>
+                                <th>Email</th>
+                                <th class="text-center">Reuniones</th>
+                                <th class="text-center">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in participants %}
+                            <tr>
+                                <td>
+                                    <i class="bi bi-person-circle text-primary"></i>
+                                    {{ user.get_full_name|default:user.username }}
+                                </td>
+                                <td>{{ user.email }}</td>
+                                <td class="text-center">
+                                    <span class="badge bg-info">
+                                        {{ user.meeting_count|default:0 }}
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    {% if user.is_active %}
+                                        <span class="badge bg-success">Activo</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Inactivo</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No hay usuarios con reuniones registradas
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Reuniones Recientes Tab -->
+        <div class="tab-pane fade" id="meetings" role="tabpanel">
+            {% if recent_meetings %}
+                <div class="list-group">
+                    {% for meeting in recent_meetings %}
+                    <a href="{% url 'ai_manager_meeting_detail' meeting.pk %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">
+                                <i class="bi bi-robot text-primary"></i> {{ meeting.ai_manager.name }}
+                            </h6>
+                            <small class="text-muted">{{ meeting.created_at|date:"d/m/Y H:i" }}</small>
+                        </div>
+                        <p class="mb-1 text-truncate">
+                            <strong>{{ meeting.user.get_full_name|default:meeting.user.username }}</strong>: 
+                            {{ meeting.meeting_input|truncatewords:15 }}
+                        </p>
+                        <small class="text-muted">
+                            <i class="bi bi-{{ meeting.input_type }}"></i> {{ meeting.get_input_type_display }}
+                            {% if meeting.tokens_used %}
+                                | {{ meeting.tokens_used }} tokens
+                            {% endif %}
+                        </small>
+                    </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No hay reuniones registradas
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Resúmenes Empresariales Tab -->
+        <div class="tab-pane fade" id="summaries" role="tabpanel">
+            {% if company_summaries %}
+                <div class="list-group">
+                    {% for summary in company_summaries %}
+                    <a href="{% url 'company_ai_summary_detail' summary.pk %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">
+                                    <i class="bi bi-file-text text-primary"></i> 
+                                    Resumen Empresarial
+                                </h6>
+                                <p class="mb-1">
+                                    <i class="bi bi-calendar-range"></i> 
+                                    {{ summary.period_start|date:"d/m/Y" }} - {{ summary.period_end|date:"d/m/Y" }}
+                                </p>
+                                <small class="text-muted">
+                                    Generado por {{ summary.generated_by.get_full_name|default:summary.generated_by.username }} 
+                                    el {{ summary.created_at|date:"d/m/Y H:i" }}
+                                </small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-primary">{{ summary.total_managers }} Gerentes</span><br>
+                                <span class="badge bg-info mt-1">{{ summary.total_meetings }} Reuniones</span>
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% if user.is_staff %}
+                <div class="text-center mt-3">
+                    <a href="{% url 'company_ai_generate_summary' company.pk %}" class="btn btn-primary">
+                        <i class="bi bi-file-earmark-plus"></i> Generar Nuevo Resumen
+                    </a>
+                </div>
+                {% endif %}
+            {% else %}
+                <div class="alert alert-warning text-center">
+                    <i class="bi bi-file-earmark-x display-4 d-block mb-3"></i>
+                    <h5>No hay resúmenes empresariales generados</h5>
+                    <p>Los resúmenes empresariales consolidan información de todos los gerentes IA</p>
+                    {% if user.is_staff %}
+                        <a href="{% url 'company_ai_generate_summary' company.pk %}" class="btn btn-primary mt-2">
+                            <i class="bi bi-file-earmark-plus"></i> Generar Primer Resumen
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+/* Estilos para los objetivos empresariales */
+.objectives-list .objective-item {
+    transition: all 0.2s ease;
+}
+
+.objectives-list .objective-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.card-header.bg-gradient {
+    border-bottom: none;
+}
+
+.objective-item i {
+    font-size: 1.1rem;
+}
+
+.objective-item span {
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+/* Animación sutil para el card de objetivos */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card.border-start {
+    animation: fadeInUp 0.5s ease;
+}
+</style>
+{% endblock %}

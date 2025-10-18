@@ -23,6 +23,12 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'public_image_prompts' %}active{% endif %}" href="{% url 'public_image_prompts' %}">
+                        <i class="bi bi-image me-1"></i>
+                        Prompts IA
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link {% if request.resolver_match.url_name == 'public_concepts' %}active{% endif %}" href="{% url 'public_concepts' %}">
                         <i class="bi bi-lightbulb me-1"></i>
                         Conceptos

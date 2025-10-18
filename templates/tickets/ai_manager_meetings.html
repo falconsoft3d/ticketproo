@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'ai_manager_list' %}">Gerentes IA</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'ai_manager_detail' manager.pk %}">{{ manager.name }}</a></li>
+                    <li class="breadcrumb-item active">Reuniones</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <h2>
+                <i class="bi bi-calendar"></i> Reuniones de {{ manager.name }}
+            </h2>
+            <p class="text-muted">{{ manager.get_category_display }} • {{ manager.company.name }}</p>
+        </div>
+        <div class="col-lg-4 text-end">
+            <a href="{% url 'ai_manager_meeting_create' manager.pk %}" class="btn btn-primary">
+                <i class="bi bi-calendar-plus"></i> Nueva Reunión
+            </a>
+        </div>
+    </div>
+
+    <!-- Estadísticas Rápidas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 text-center">
+                <div class="card-body">
+                    <h3 class="text-primary mb-0">{{ stats.total_meetings }}</h3>
+                    <small class="text-muted">Total Reuniones</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 text-center">
+                <div class="card-body">
+                    <h3 class="text-success mb-0">{{ stats.text_meetings }}</h3>
+                    <small class="text-muted">Por Texto</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 text-center">
+                <div class="card-body">
+                    <h3 class="text-info mb-0">{{ stats.audio_meetings }}</h3>
+                    <small class="text-muted">Por Audio</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 text-center">
+                <div class="card-body">
+                    <h3 class="text-warning mb-0">{{ stats.unique_users }}</h3>
+                    <small class="text-muted">Participantes</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros y Búsqueda -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-6">
+                    <label for="search" class="form-label">Buscar</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           placeholder="Buscar por título o contenido..." 
+                           value="{{ request.GET.search }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="input_type" class="form-label">Tipo de Entrada</label>
+                    <select class="form-select" id="input_type" name="input_type">
+                        <option value="">Todos</option>
+                        <option value="text" {% if request.GET.input_type == 'text' %}selected{% endif %}>Texto</option>
+                        <option value="audio" {% if request.GET.input_type == 'audio' %}selected{% endif %}>Audio</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="user" class="form-label">Usuario</label>
+                    <select class="form-select" id="user" name="user">
+                        <option value="">Todos</option>
+                        {% for user in users %}
+                        <option value="{{ user.id }}" {% if request.GET.user|stringformat:"s" == user.id|stringformat:"s" %}selected{% endif %}>
+                            {{ user.get_full_name|default:user.username }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search"></i> Buscar
+                    </button>
+                    <a href="{% url 'ai_manager_meetings' manager.pk %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle"></i> Limpiar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Reuniones -->
+    {% if meetings %}
+        <div class="row">
+            {% for meeting in meetings %}
+            <div class="col-lg-6 mb-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title mb-0">{{ meeting.title }}</h5>
+                            <span class="badge {% if meeting.input_type == 'text' %}bg-primary{% else %}bg-info{% endif %}">
+                                {% if meeting.input_type == 'text' %}
+                                    <i class="bi bi-keyboard"></i> Texto
+                                {% else %}
+                                    <i class="bi bi-mic"></i> Audio
+                                {% endif %}
+                            </span>
+                        </div>
+                        
+                        <div class="text-muted small mb-3">
+                            <i class="bi bi-person"></i> {{ meeting.user.get_full_name|default:meeting.user.username }}
+                            <span class="ms-2">
+                                <i class="bi bi-calendar"></i> {{ meeting.created_at|date:"d/m/Y H:i" }}
+                            </span>
+                        </div>
+
+                        <p class="card-text text-muted small mb-3">
+                            <strong>Resumen:</strong> {{ meeting.ai_summary|truncatewords:25 }}
+                        </p>
+
+                        {% if meeting.improvement_areas %}
+                        <div class="alert alert-warning alert-sm small mb-3">
+                            <i class="bi bi-exclamation-triangle"></i> 
+                            <strong>Áreas de mejora identificadas</strong>
+                        </div>
+                        {% endif %}
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="bi bi-coin"></i> {{ meeting.tokens_used }} tokens
+                            </small>
+                            <a href="{% url 'ai_manager_meeting_detail' meeting.pk %}" class="btn btn-sm btn-outline-primary">
+                                Ver Detalle <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Paginación -->
+        {% if is_paginated %}
+        <nav aria-label="Paginación de reuniones">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.input_type %}&input_type={{ request.GET.input_type }}{% endif %}{% if request.GET.user %}&user={{ request.GET.user }}{% endif %}">
+                            <i class="bi bi-chevron-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.input_type %}&input_type={{ request.GET.input_type }}{% endif %}{% if request.GET.user %}&user={{ request.GET.user }}{% endif %}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.input_type %}&input_type={{ request.GET.input_type }}{% endif %}{% if request.GET.user %}&user={{ request.GET.user }}{% endif %}">
+                                {{ num }}
+                            </a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.input_type %}&input_type={{ request.GET.input_type }}{% endif %}{% if request.GET.user %}&user={{ request.GET.user }}{% endif %}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.input_type %}&input_type={{ request.GET.input_type }}{% endif %}{% if request.GET.user %}&user={{ request.GET.user }}{% endif %}">
+                            <i class="bi bi-chevron-double-right"></i>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+    {% else %}
+        <!-- Estado Vacío -->
+        <div class="card shadow-sm border-0 text-center py-5">
+            <div class="card-body">
+                <i class="bi bi-calendar-x display-1 text-muted mb-3"></i>
+                {% if request.GET.search or request.GET.input_type or request.GET.user %}
+                    <h4>No se encontraron reuniones</h4>
+                    <p class="text-muted">Intenta ajustar los filtros de búsqueda</p>
+                    <a href="{% url 'ai_manager_meetings' manager.pk %}" class="btn btn-outline-primary">
+                        <i class="bi bi-x-circle"></i> Limpiar Filtros
+                    </a>
+                {% else %}
+                    <h4>Aún no hay reuniones</h4>
+                    <p class="text-muted">Crea la primera reunión con este gerente IA</p>
+                    <a href="{% url 'ai_manager_meeting_create' manager.pk %}" class="btn btn-primary">
+                        <i class="bi bi-calendar-plus"></i> Nueva Reunión
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Botón Volver -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <a href="{% url 'ai_manager_detail' manager.pk %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver al Gerente
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -162,6 +162,9 @@ urlpatterns = [
     # URLs de herramientas calculadora (solo para agentes)
     path('tools/calculator/', views.calculator_view, name='calculator'),
     
+    # URLs de herramientas color picker (solo para agentes)
+    path('tools/color-picker/', views.color_picker_view, name='color_picker'),
+    
     # URLs de herramientas comandos (solo para agentes)
     path('tools/commands/', views.command_library_view, name='command_library'),
     path('tools/commands/create/', views.command_create_view, name='command_create'),
@@ -350,6 +353,12 @@ urlpatterns = [
     
     # AJAX para mejorar tickets con IA
     path('tickets/<int:ticket_id>/improve-ai/', views.improve_ticket_with_ai, name='improve_ticket_with_ai'),
+    
+    # AJAX para mejorar texto de ticket durante creación (sin ticket existente)
+    path('tickets/improve-text-ai/', views.improve_ticket_text_with_ai, name='improve_ticket_text_with_ai'),
+    
+    # AJAX para mejorar texto de alcance con IA
+    path('alcances/improve-text-ai/', views.improve_alcance_text_with_ai, name='improve_alcance_text_with_ai'),
     
     # AJAX para buscar información de empresa con IA
     path('companies/<int:company_id>/search-ai/', views.search_company_info_with_ai, name='search_company_info_with_ai'),
@@ -716,10 +725,76 @@ urlpatterns += [
     path('whatsapp/', views.whatsapp_dashboard, name='whatsapp_dashboard'),
     path('whatsapp/connect/', views.whatsapp_connect, name='whatsapp_connect'),
     path('whatsapp/disconnect/', views.whatsapp_disconnect, name='whatsapp_disconnect'),
+    path('whatsapp/status/', views.whatsapp_status, name='whatsapp_status'),
     path('whatsapp/simulate-connection/', views.whatsapp_simulate_connection, name='whatsapp_simulate_connection'),
     path('whatsapp/keywords/create/', views.whatsapp_keyword_create, name='whatsapp_keyword_create'),
     path('whatsapp/keywords/<int:pk>/edit/', views.whatsapp_keyword_edit, name='whatsapp_keyword_edit'),
     path('whatsapp/keywords/<int:pk>/delete/', views.whatsapp_keyword_delete, name='whatsapp_keyword_delete'),
     path('whatsapp/messages/', views.whatsapp_messages, name='whatsapp_messages'),
+    
+    # URLs de Image to Prompt
+    path('image-prompts/', views.image_prompt_list, name='image_prompt_list'),
+    path('image-prompts/create/', views.image_prompt_create, name='image_prompt_create'),
+    path('image-prompts/<int:pk>/', views.image_prompt_detail, name='image_prompt_detail'),
+    path('image-prompts/<int:pk>/edit/', views.image_prompt_edit, name='image_prompt_edit'),
+    path('image-prompts/<int:pk>/delete/', views.image_prompt_delete, name='image_prompt_delete'),
+    
+    # Prompts públicos
+    path('prompts/', views.public_image_prompts, name='public_image_prompts'),
+    path('prompts/<int:pk>/', views.public_image_prompt_detail, name='public_image_prompt_detail'),
+    
+    # Company AI Dashboard
+    path('company-ai-dashboard/', views.company_ai_dashboard_list, name='company_ai_dashboard_list'),
+    path('company-ai-dashboard/<int:pk>/', views.company_ai_dashboard_detail, name='company_ai_dashboard_detail'),
+    path('company-ai-dashboard/<int:pk>/generate-summary/', views.company_ai_generate_summary, name='company_ai_generate_summary'),
+    path('company-ai-summary/<int:pk>/', views.company_ai_summary_detail, name='company_ai_summary_detail'),
+    
+    # Dashboard de Desempeño de Usuarios IA
+    path('user-ai-performance/', views.user_ai_performance_dashboard, name='user_ai_performance_dashboard'),
+    path('user-ai-performance/<int:user_id>/', views.user_ai_performance_detail, name='user_ai_performance_detail'),
+    path('user-ai-performance/<int:user_id>/generate/', views.user_ai_performance_generate, name='user_ai_performance_generate'),
+    
+    # Gerentes IA
+    path('ai-managers/', views.ai_manager_list, name='ai_manager_list'),
+    path('ai-managers/create/', views.ai_manager_create, name='ai_manager_create'),
+    path('ai-managers/<int:pk>/', views.ai_manager_detail, name='ai_manager_detail'),
+    path('ai-managers/<int:pk>/edit/', views.ai_manager_edit, name='ai_manager_edit'),
+    path('ai-managers/<int:pk>/delete/', views.ai_manager_delete, name='ai_manager_delete'),
+    path('ai-managers/<int:pk>/meeting/', views.ai_manager_meeting_create, name='ai_manager_meeting_create'),
+    path('ai-managers/<int:pk>/meetings/', views.ai_manager_meetings, name='ai_manager_meetings'),
+    path('ai-managers/<int:pk>/summary/generate/', views.ai_manager_generate_summary, name='ai_manager_generate_summary'),
+    path('ai-manager-meeting/<int:pk>/', views.ai_manager_meeting_detail, name='ai_manager_meeting_detail'),
+    path('ai-manager-summary/<int:pk>/', views.ai_manager_summary_detail, name='ai_manager_summary_detail'),
+    
+    # Rastreador Web
+    path('web-tracker/', views.website_tracker_list, name='website_tracker_list'),
+    path('web-tracker/create/', views.website_tracker_create, name='website_tracker_create'),
+    path('web-tracker/<int:pk>/', views.website_tracker_detail, name='website_tracker_detail'),
+    path('web-tracker/<int:pk>/delete/', views.website_tracker_delete, name='website_tracker_delete'),
+    
+    # Generador de Contratos Legales
+    path('legal-contracts/', views.legal_contract_list, name='legal_contract_list'),
+    path('legal-contracts/create/', views.legal_contract_create, name='legal_contract_create'),
+    path('legal-contracts/<int:pk>/', views.legal_contract_detail, name='legal_contract_detail'),
+    path('legal-contracts/<int:pk>/edit/', views.legal_contract_edit, name='legal_contract_edit'),
+    path('legal-contracts/<int:pk>/delete/', views.legal_contract_delete, name='legal_contract_delete'),
+    path('legal-contracts/<int:pk>/update-content/', views.legal_contract_update_content, name='legal_contract_update_content'),
+    path('legal-contracts/<int:pk>/generate/', views.legal_contract_generate, name='legal_contract_generate'),
+    path('legal-contracts/<int:pk>/download-pdf/', views.legal_contract_download_pdf, name='legal_contract_download_pdf'),
+    path('legal-contracts/<int:pk>/toggle-public/', views.legal_contract_toggle_public, name='legal_contract_toggle_public'),
+    
+    # URL pública para contratos (sin autenticación)
+    path('contract/<uuid:token>/', views.legal_contract_public, name='legal_contract_public'),
+    path('contract/<uuid:token>/download/', views.legal_contract_public_pdf, name='legal_contract_public_pdf'),
+    
+    # Revisión de Contratos de Proveedores
+    path('supplier-contracts/', views.supplier_contract_review_list, name='supplier_contract_review_list'),
+    path('supplier-contracts/create/', views.supplier_contract_review_create, name='supplier_contract_review_create'),
+    path('supplier-contracts/<int:pk>/', views.supplier_contract_review_detail, name='supplier_contract_review_detail'),
+    path('supplier-contracts/<int:pk>/edit/', views.supplier_contract_review_edit, name='supplier_contract_review_edit'),
+    path('supplier-contracts/<int:pk>/delete/', views.supplier_contract_review_delete, name='supplier_contract_review_delete'),
+    path('supplier-contracts/<int:pk>/generate/', views.supplier_contract_review_generate, name='supplier_contract_review_generate'),
+    path('supplier-contracts/<int:pk>/update-status/', views.supplier_contract_review_update_status, name='supplier_contract_review_update_status'),
+    path('supplier-contracts/<int:pk>/download-pdf/', views.supplier_contract_review_download_pdf, name='supplier_contract_review_download_pdf'),
 ]
 

@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Desempeño de Usuarios IA</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2>
+                <i class="bi bi-person-check-fill text-success"></i> Dashboard de Desempeño de Usuarios IA
+            </h2>
+            <p class="text-muted">Evaluación automática del desempeño de usuarios basada en reuniones con gerentes IA</p>
+        </div>
+    </div>
+
+    <!-- Estadísticas Generales -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 hover-lift">
+                <div class="card-body text-center">
+                    <h3 class="mb-0 text-primary">{{ total_users }}</h3>
+                    <small class="text-muted">Usuarios Activos</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 hover-lift">
+                <div class="card-body text-center">
+                    <h3 class="mb-0 text-success">
+                        {% for user_data in users_data %}{% if user_data.has_evaluation %}1{% endif %}{% endfor %}
+                    </h3>
+                    <small class="text-muted">Con Evaluaciones</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 hover-lift">
+                <div class="card-body text-center">
+                    <h3 class="mb-0 text-info">
+                        {% widthratio users_data|length 1 1 %}
+                    </h3>
+                    <small class="text-muted">Total Reuniones</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Usuarios -->
+    {% if users_data %}
+        <div class="row">
+            {% for user_data in users_data %}
+            <div class="col-lg-6 mb-4">
+                <div class="card shadow-sm border-0 h-100 hover-lift">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" 
+                                         style="width: 50px; height: 50px; font-size: 20px;">
+                                        {{ user_data.user.first_name|first|default:user_data.user.username|first|upper }}
+                                    </div>
+                                    <div>
+                                        <h5 class="card-title mb-0">
+                                            {{ user_data.user.get_full_name|default:user_data.user.username }}
+                                        </h5>
+                                        <small class="text-muted">@{{ user_data.user.username }}</small>
+                                    </div>
+                                </div>
+                                
+                                <!-- Última Evaluación -->
+                                {% if user_data.latest_evaluation %}
+                                    <div class="alert alert-{{ user_data.latest_evaluation.get_score_color }} p-2 mb-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <small><strong>Última Evaluación:</strong></small><br>
+                                                <span class="h4 mb-0">{{ user_data.latest_evaluation.overall_score }}/100</span>
+                                                <small class="ms-2">{{ user_data.latest_evaluation.get_performance_level }}</small>
+                                            </div>
+                                            <div class="text-end">
+                                                <small class="text-muted">{{ user_data.latest_evaluation.evaluation_date|date:"d/m/Y" }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-warning p-2 mb-2">
+                                        <small><i class="bi bi-exclamation-triangle"></i> Sin evaluaciones aún</small>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="ms-2">
+                                <a href="{% url 'user_ai_performance_detail' user_data.user.pk %}" 
+                                   class="btn btn-primary btn-sm">
+                                    <i class="bi bi-graph-up"></i> Ver Detalle
+                                </a>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Estadísticas del Usuario -->
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <div class="text-center p-2 bg-light rounded">
+                                    <h5 class="mb-0 text-primary">{{ user_data.meeting_count }}</h5>
+                                    <small class="text-muted">Reuniones</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-center p-2 bg-light rounded">
+                                    <h5 class="mb-0 text-success">{{ user_data.avg_score|floatformat:0|default:"--" }}</h5>
+                                    <small class="text-muted">Promedio</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                <i class="bi bi-clock"></i> Última reunión: {{ user_data.last_meeting|date:"d/m/Y H:i" }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <h5><i class="bi bi-info-circle"></i> No hay usuarios con reuniones</h5>
+            <p class="mb-0">Los usuarios aparecerán aquí cuando realicen reuniones con gerentes IA.</p>
+        </div>
+    {% endif %}
+
+    <!-- Información -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body">
+                    <h5>
+                        <i class="bi bi-info-circle text-primary"></i> Acerca del Sistema de Evaluación
+                    </h5>
+                    <ul class="mb-0">
+                        <li>Las evaluaciones se generan automáticamente con IA analizando las reuniones</li>
+                        <li>Puntuaciones de 1-100 en: General, Productividad, Comunicación, Logros y Consistencia</li>
+                        <li>Se identifican fortalezas, áreas de mejora y recomendaciones de capacitación</li>
+                        <li>Los gráficos muestran la evolución del desempeño en el tiempo</li>
+                        <li>Cada evaluación considera el contexto y objetivos de la empresa</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.hover-lift {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.hover-lift:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+</style>
+{% endblock %}

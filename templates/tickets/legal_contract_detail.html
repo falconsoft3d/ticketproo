@@ -1,0 +1,362 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ contract.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'legal_contract_list' %}">Contratos Legales</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ contract.name }}</li>
+        </ol>
+    </nav>
+
+    <!-- Título y Acciones -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">
+            <i class="bi bi-file-earmark-ruled text-primary"></i>
+            {{ contract.name }}
+        </h1>
+        <div class="d-flex gap-2">
+            {% if not contract.generated_content %}
+            <form method="POST" action="{% url 'legal_contract_generate' contract.pk %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-magic"></i> Generar con IA
+                </button>
+            </form>
+            {% endif %}
+            
+            {% if contract.generated_content %}
+            <a href="{% url 'legal_contract_download_pdf' contract.pk %}" class="btn btn-primary">
+                <i class="bi bi-download"></i> Descargar PDF
+            </a>
+            {% endif %}
+            
+            <a href="{% url 'legal_contract_edit' contract.pk %}" class="btn btn-outline-secondary">
+                <i class="bi bi-pencil"></i> Editar
+            </a>
+            
+            <form method="POST" action="{% url 'legal_contract_toggle_public' contract.pk %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-{% if contract.is_public %}success{% else %}secondary{% endif %}">
+                    <i class="bi bi-{% if contract.is_public %}globe-americas{% else %}lock{% endif %}"></i>
+                    {% if contract.is_public %}Público{% else %}Privado{% endif %}
+                </button>
+            </form>
+            
+            <a href="{% url 'legal_contract_delete' contract.pk %}" class="btn btn-outline-danger">
+                <i class="bi bi-trash"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Información del Contrato -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Información del Contrato</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <strong>Tipo de Contrato:</strong><br>
+                            <span class="badge bg-info">{{ contract.contract_type }}</span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <strong>Estado:</strong><br>
+                            <span class="badge bg-{{ contract.get_status_badge }}">{{ contract.get_status_display }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Objetivo del Contrato:</strong><br>
+                        <p class="text-muted mt-2">{{ contract.objective_prompt }}</p>
+                    </div>
+                    
+                    <div class="row">
+                        {% if contract.start_date %}
+                        <div class="col-md-6 mb-3">
+                            <strong>Fecha de Inicio:</strong><br>
+                            {{ contract.start_date|date:"d/m/Y" }}
+                        </div>
+                        {% endif %}
+                        
+                        {% if contract.end_date %}
+                        <div class="col-md-6 mb-3">
+                            <strong>Fecha de Finalización:</strong><br>
+                            {{ contract.end_date|date:"d/m/Y" }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if contract.amount %}
+                    <div class="mb-3">
+                        <strong>Monto:</strong><br>
+                        <span class="badge bg-success fs-6">{{ contract.amount }} {{ contract.currency }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <small class="text-muted">
+                                <i class="bi bi-person"></i> Creado por {{ contract.user.get_full_name|default:contract.user.username }}
+                            </small>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <small class="text-muted">
+                                <i class="bi bi-clock"></i> {{ contract.created_at|date:"d/m/Y H:i" }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Partes del Contrato -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-building"></i> Partes Contratantes</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="border-start border-4 border-primary ps-3">
+                                <h6 class="text-primary">PROVEEDOR</h6>
+                                <p class="mb-1"><strong>{{ contract.company.name }}</strong></p>
+                                {% if contract.company.address %}
+                                <p class="mb-1 small"><i class="bi bi-geo-alt"></i> {{ contract.company.address }}</p>
+                                {% endif %}
+                                {% if contract.company.phone %}
+                                <p class="mb-1 small"><i class="bi bi-telephone"></i> {{ contract.company.phone }}</p>
+                                {% endif %}
+                                {% if contract.company.email %}
+                                <p class="mb-0 small"><i class="bi bi-envelope"></i> {{ contract.company.email }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <div class="border-start border-4 border-success ps-3">
+                                <h6 class="text-success">CLIENTE</h6>
+                                <p class="mb-1"><strong>{{ contract.client_company.name }}</strong></p>
+                                {% if contract.client_company.address %}
+                                <p class="mb-1 small"><i class="bi bi-geo-alt"></i> {{ contract.client_company.address }}</p>
+                                {% endif %}
+                                {% if contract.client_company.phone %}
+                                <p class="mb-1 small"><i class="bi bi-telephone"></i> {{ contract.client_company.phone }}</p>
+                                {% endif %}
+                                {% if contract.client_company.email %}
+                                <p class="mb-0 small"><i class="bi bi-envelope"></i> {{ contract.client_company.email }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contenido Generado -->
+            {% if contract.generated_content %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-file-text"></i> Contenido del Contrato</h5>
+                    <button type="button" class="btn btn-sm btn-light" id="toggleEditBtn" onclick="toggleEditMode()">
+                        <i class="bi bi-pencil"></i> Editar Contenido
+                    </button>
+                </div>
+                <div class="card-body">
+                    <!-- Vista de lectura -->
+                    <div id="contentView" class="contract-content">
+                        {{ contract.generated_content|linebreaks }}
+                    </div>
+                    
+                    <!-- Editor de contenido (oculto por defecto) -->
+                    <div id="contentEditor" style="display: none;">
+                        <form method="POST" action="{% url 'legal_contract_update_content' contract.pk %}" id="contentForm">
+                            {% csrf_token %}
+                            <textarea class="form-control" name="generated_content" rows="20" id="contentTextarea">{{ contract.generated_content }}</textarea>
+                            <div class="mt-3 d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle"></i> Guardar Cambios
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="cancelEdit()">
+                                    <i class="bi bi-x-circle"></i> Cancelar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    {% if contract.generated_at %}
+                    <hr>
+                    <small class="text-muted">
+                        <i class="bi bi-magic"></i> Generado con IA el {{ contract.generated_at|date:"d/m/Y H:i" }}
+                    </small>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <h5><i class="bi bi-info-circle"></i> Contrato no generado</h5>
+                <p class="mb-0">
+                    Este contrato aún no ha sido generado con IA. 
+                    Haz clic en el botón "Generar con IA" para crear el contenido automáticamente.
+                </p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-md-4">
+            <!-- Enlace Público -->
+            {% if contract.is_public %}
+            <div class="card shadow-sm mb-4 border-success">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="bi bi-globe"></i> Acceso Público</h6>
+                </div>
+                <div class="card-body">
+                    <p class="small mb-2">Comparte este enlace para que otros vean el contrato:</p>
+                    <div class="input-group input-group-sm">
+                        <input type="text" class="form-control" id="publicUrl" 
+                               value="{{ request.scheme }}://{{ request.get_host }}{% url 'legal_contract_public' contract.public_token %}" 
+                               readonly>
+                        <button class="btn btn-outline-success" type="button" onclick="copyPublicUrl()">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+                    <a href="{% url 'legal_contract_public' contract.public_token %}" 
+                       target="_blank" 
+                       class="btn btn-sm btn-success mt-2 w-100">
+                        <i class="bi bi-box-arrow-up-right"></i> Abrir vista pública
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Notas -->
+            {% if contract.notes %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-warning">
+                    <h6 class="mb-0"><i class="bi bi-sticky"></i> Notas Internas</h6>
+                </div>
+                <div class="card-body">
+                    <p class="small mb-0">{{ contract.notes|linebreaks }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Historial -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0"><i class="bi bi-clock-history"></i> Historial</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <small>
+                                <i class="bi bi-plus-circle text-success"></i>
+                                Creado: {{ contract.created_at|date:"d/m/Y H:i" }}
+                            </small>
+                        </li>
+                        {% if contract.updated_at != contract.created_at %}
+                        <li class="mb-2">
+                            <small>
+                                <i class="bi bi-pencil text-primary"></i>
+                                Actualizado: {{ contract.updated_at|date:"d/m/Y H:i" }}
+                            </small>
+                        </li>
+                        {% endif %}
+                        {% if contract.generated_at %}
+                        <li class="mb-2">
+                            <small>
+                                <i class="bi bi-magic text-info"></i>
+                                Generado: {{ contract.generated_at|date:"d/m/Y H:i" }}
+                            </small>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyPublicUrl() {
+    const urlInput = document.getElementById('publicUrl');
+    urlInput.select();
+    urlInput.setSelectionRange(0, 99999);
+    
+    navigator.clipboard.writeText(urlInput.value).then(function() {
+        // Cambiar temporalmente el texto del botón
+        const btn = event.target.closest('button');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check"></i> Copiado!';
+        btn.classList.remove('btn-outline-primary');
+        btn.classList.add('btn-success');
+        
+        setTimeout(function() {
+            btn.innerHTML = originalHTML;
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline-primary');
+        }, 2000);
+    });
+}
+
+function toggleEditMode() {
+    const contentView = document.getElementById('contentView');
+    const contentEditor = document.getElementById('contentEditor');
+    const toggleBtn = document.getElementById('toggleEditBtn');
+    
+    if (contentView.style.display === 'none') {
+        // Cambiar a modo lectura
+        contentView.style.display = 'block';
+        contentEditor.style.display = 'none';
+        toggleBtn.innerHTML = '<i class="bi bi-pencil"></i> Editar Contenido';
+    } else {
+        // Cambiar a modo edición
+        contentView.style.display = 'none';
+        contentEditor.style.display = 'block';
+        toggleBtn.innerHTML = '<i class="bi bi-eye"></i> Ver Contenido';
+    }
+}
+
+function cancelEdit() {
+    const contentView = document.getElementById('contentView');
+    const contentEditor = document.getElementById('contentEditor');
+    const toggleBtn = document.getElementById('toggleEditBtn');
+    
+    // Restaurar el contenido original del textarea
+    const originalContent = `{{ contract.generated_content|escapejs }}`;
+    document.getElementById('contentTextarea').value = originalContent;
+    
+    // Volver a modo lectura
+    contentView.style.display = 'block';
+    contentEditor.style.display = 'none';
+    toggleBtn.innerHTML = '<i class="bi bi-pencil"></i> Editar Contenido';
+}
+</script>
+
+<style>
+    .contract-content {
+        white-space: pre-wrap;
+        font-family: 'Georgia', serif;
+        line-height: 1.8;
+        font-size: 0.95rem;
+    }
+
+    .gap-2 {
+        gap: 0.5rem !important;
+    }
+
+    .border-4 {
+        border-width: 4px !important;
+    }
+
+    .fs-6 {
+        font-size: 1.1rem !important;
+    }
+</style>
+{% endblock %}

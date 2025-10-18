@@ -1,0 +1,261 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Resumen Empresarial - {{ summary.company.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Breadcrumb -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'company_ai_dashboard_list' %}">Dashboard Empresarial IA</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'company_ai_dashboard_detail' summary.company.pk %}">{{ summary.company.name }}</a></li>
+                    <li class="breadcrumb-item active">Resumen Empresarial</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Contenido Principal -->
+        <div class="col-lg-9">
+            <!-- Header -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h2 class="mb-2">
+                                <i class="bi bi-building-fill text-primary"></i> {{ summary.company.name }}
+                            </h2>
+                            <h5 class="text-muted mb-3">
+                                <i class="bi bi-calendar-range"></i> 
+                                Resumen Empresarial
+                            </h5>
+                            <p class="mb-0">
+                                <strong>Período:</strong> 
+                                {{ summary.period_start|date:"d/m/Y" }} - {{ summary.period_end|date:"d/m/Y" }}
+                            </p>
+                        </div>
+                        <button onclick="window.print()" class="btn btn-outline-primary">
+                            <i class="bi bi-printer"></i> Imprimir
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumen Ejecutivo -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-clipboard-data"></i> Resumen Ejecutivo
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="executive-summary-content">
+                        {{ summary.executive_summary|safe }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Métricas Clave -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-graph-up"></i> Métricas Clave
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="metrics-content">
+                        {{ summary.key_metrics|safe }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Highlights Departamentales -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-star-fill"></i> Highlights Departamentales
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="highlights-content">
+                        {{ summary.department_highlights|safe }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Desafíos Identificados -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle-fill"></i> Desafíos Identificados
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="challenges-content">
+                        {{ summary.challenges|safe }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recomendaciones Estratégicas -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-lightbulb-fill"></i> Recomendaciones Estratégicas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="recommendations-content">
+                        {{ summary.strategic_recommendations|safe }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body text-center">
+                    <a href="{% url 'company_ai_dashboard_detail' summary.company.pk %}" class="btn btn-primary me-2">
+                        <i class="bi bi-arrow-left"></i> Volver al Dashboard
+                    </a>
+                    {% if user.is_staff %}
+                    <a href="{% url 'company_ai_generate_summary' summary.company.pk %}" class="btn btn-outline-success">
+                        <i class="bi bi-file-earmark-plus"></i> Generar Nuevo Resumen
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-3">
+            <!-- Información del Resumen -->
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="bi bi-info-circle"></i> Información
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Generado por</small>
+                        <strong>{{ summary.generated_by.get_full_name|default:summary.generated_by.username }}</strong>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Fecha de generación</small>
+                        <strong>{{ summary.created_at|date:"d/m/Y H:i" }}</strong>
+                    </div>
+                    <hr>
+                    <div class="mb-2">
+                        <small class="text-muted d-block">Período analizado</small>
+                        <strong>{{ summary.period_start|date:"d/m/Y" }}</strong><br>
+                        <small>hasta</small><br>
+                        <strong>{{ summary.period_end|date:"d/m/Y" }}</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="bi bi-bar-chart"></i> Estadísticas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="text-muted">Gerentes IA:</span>
+                        <strong class="text-primary">{{ summary.total_managers }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="text-muted">Reuniones:</span>
+                        <strong class="text-info">{{ summary.total_meetings }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="text-muted">Participantes:</span>
+                        <strong class="text-success">{{ summary.total_participants }}</strong>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted small">Tokens usados:</span>
+                        <strong class="text-warning small">{{ summary.tokens_used|default:0 }}</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones Rápidas -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="bi bi-lightning"></i> Acciones
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button onclick="window.print()" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-printer"></i> Imprimir
+                        </button>
+                        <a href="{% url 'company_ai_dashboard_detail' summary.company.pk %}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-building"></i> Ver Empresa
+                        </a>
+                        {% if user.is_staff %}
+                        <a href="{% url 'company_ai_generate_summary' summary.company.pk %}" class="btn btn-sm btn-outline-success">
+                            <i class="bi bi-plus-circle"></i> Nuevo Resumen
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Estilos para contenido generado por IA */
+.executive-summary-content,
+.metrics-content,
+.highlights-content,
+.challenges-content,
+.recommendations-content {
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+.executive-summary-content strong,
+.metrics-content strong,
+.highlights-content strong,
+.challenges-content strong,
+.recommendations-content strong {
+    color: #0d6efd;
+    font-weight: 600;
+}
+
+/* Estilos para impresión */
+@media print {
+    .breadcrumb,
+    button,
+    .btn,
+    .sidebar {
+        display: none !important;
+    }
+    
+    .card {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        border: 1px solid #dee2e6 !important;
+        box-shadow: none !important;
+    }
+    
+    .card-header {
+        background-color: #f8f9fa !important;
+        color: #000 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
+</style>
+{% endblock %}

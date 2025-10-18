@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Generar Prompt desde Imagen{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'image_prompt_list' %}">Mis Prompts</a></li>
+                    <li class="breadcrumb-item active">Generar desde Imagen</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <h2 class="card-title mb-3">
+                        <i class="bi bi-image text-primary"></i> Generar Prompt desde Imagen
+                    </h2>
+                    <p class="text-muted mb-4">
+                        Sube una imagen y la IA generará automáticamente un prompt detallado que describe la imagen.
+                    </p>
+
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="title" class="form-label fw-bold">
+                                <i class="bi bi-card-heading"></i> Título <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="title" name="title" 
+                                   required maxlength="200" placeholder="Ej: Atardecer en la playa">
+                            <small class="text-muted">Un nombre descriptivo para identificar esta imagen</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="image" class="form-label fw-bold">
+                                <i class="bi bi-image"></i> Imagen <span class="text-danger">*</span>
+                            </label>
+                            <input type="file" class="form-control" id="image" name="image" 
+                                   accept="image/*" required onchange="previewImage(this)">
+                            <small class="text-muted">Formatos soportados: JPG, PNG, WebP (máx. 5MB)</small>
+                            
+                            <!-- Preview -->
+                            <div id="imagePreview" class="mt-3" style="display: none;">
+                                <img id="preview" src="" alt="Preview" 
+                                     style="max-width: 100%; max-height: 400px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="tags" class="form-label fw-bold">
+                                <i class="bi bi-tags"></i> Etiquetas
+                            </label>
+                            <input type="text" class="form-control" id="tags" name="tags" 
+                                   maxlength="500" placeholder="paisaje, naturaleza, fotografía">
+                            <small class="text-muted">Separa las etiquetas con comas para organizar mejor tus imágenes</small>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="is_public" name="is_public">
+                                <label class="form-check-label fw-bold" for="is_public">
+                                    <i class="bi bi-eye"></i> Hacer público
+                                </label>
+                                <small class="d-block text-muted">Si está activado, otros usuarios podrán ver este prompt</small>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Nota:</strong> Una vez subida la imagen, la IA analizará la imagen y generará un prompt detallado automáticamente. 
+                            Esto puede tomar unos segundos.
+                        </div>
+
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a href="{% url 'image_prompt_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-upload"></i> Subir y Generar Prompt
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-lightbulb"></i> ¿Cómo funciona?</h5>
+                    <ol class="small">
+                        <li class="mb-2"><strong>Sube tu imagen:</strong> Selecciona una imagen desde tu dispositivo</li>
+                        <li class="mb-2"><strong>La IA analiza:</strong> GPT-4 Vision analiza los elementos visuales</li>
+                        <li class="mb-2"><strong>Genera el prompt:</strong> Crea un prompt detallado optimizado para DALL-E, Midjourney, Stable Diffusion</li>
+                        <li><strong>Edita si quieres:</strong> Puedes personalizar el prompt generado</li>
+                    </ol>
+                    <hr>
+                    <h6 class="fw-bold">¿Qué describe el prompt?</h6>
+                    <ul class="small">
+                        <li>Sujeto principal</li>
+                        <li>Estilo artístico</li>
+                        <li>Colores y tonalidades</li>
+                        <li>Iluminación</li>
+                        <li>Composición</li>
+                        <li>Detalles técnicos</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            document.getElementById('imagePreview').style.display = 'block';
+            document.getElementById('preview').src = e.target.result;
+        }
+        
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,230 @@
+{% extends 'public_base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <h1 class="display-4 mb-3">
+                <i class="bi bi-image text-primary"></i> Prompts Públicos
+            </h1>
+            <p class="lead text-muted">
+                Explora prompts generados por IA para crear imágenes increíbles
+            </p>
+        </div>
+    </div>
+
+    <!-- Buscador -->
+    <div class="row mb-4">
+        <div class="col-lg-6 mx-auto">
+            <form method="get" action="{% url 'public_image_prompts' %}" class="input-group">
+                <input type="text" class="form-control form-control-lg" name="search" 
+                       placeholder="Buscar por título, prompt o etiquetas..." 
+                       value="{{ search }}">
+                <button class="btn btn-primary" type="submit">
+                    <i class="bi bi-search"></i> Buscar
+                </button>
+                {% if search %}
+                    <a href="{% url 'public_image_prompts' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle"></i>
+                    </a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <!-- Contador -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <p class="text-muted">
+                {% if search %}
+                    Mostrando {{ page_obj.paginator.count }} resultado{{ page_obj.paginator.count|pluralize }} para "{{ search }}"
+                {% else %}
+                    {{ total_prompts }} prompt{{ total_prompts|pluralize }} público{{ total_prompts|pluralize }} disponible{{ total_prompts|pluralize }}
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <!-- Grid de Prompts -->
+    {% if page_obj %}
+        <div class="row g-4">
+            {% for prompt in page_obj %}
+                <div class="col-lg-4 col-md-6">
+                    <div class="card h-100 shadow-sm hover-card">
+                        <!-- Imagen -->
+                        <div class="position-relative">
+                            <img src="{{ prompt.image.url }}" class="card-img-top" alt="{{ prompt.title }}" 
+                                 style="height: 250px; object-fit: cover;">
+                            
+                            <!-- Badge de Usuario -->
+                            <div class="position-absolute top-0 end-0 m-2">
+                                <span class="badge bg-dark bg-opacity-75">
+                                    <i class="bi bi-person-circle"></i> {{ prompt.user.username }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <!-- Contenido -->
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title">{{ prompt.title }}</h5>
+                            
+                            <!-- Prompt Preview -->
+                            <p class="card-text text-muted small flex-grow-1">
+                                {{ prompt.get_final_prompt|truncatewords:20 }}
+                            </p>
+                            
+                            <!-- Tags -->
+                            {% if prompt.tags %}
+                                <div class="mb-2">
+                                    <span class="badge bg-primary">
+                                        <i class="bi bi-tags"></i> {{ prompt.tags }}
+                                    </span>
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Botones -->
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'public_image_prompt_detail' prompt.pk %}" 
+                                   class="btn btn-primary btn-sm flex-grow-1">
+                                    <i class="bi bi-eye"></i> Ver Detalle
+                                </a>
+                                <button class="btn btn-outline-primary btn-sm" 
+                                        onclick="copyPrompt('{{ prompt.get_final_prompt|escapejs }}', this)"
+                                        title="Copiar prompt">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Footer -->
+                        <div class="card-footer bg-transparent border-top-0">
+                            <small class="text-muted">
+                                <i class="bi bi-calendar"></i> {{ prompt.created_at|date:"d/m/Y" }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Paginación -->
+        {% if page_obj.has_other_pages %}
+            <div class="row mt-5">
+                <div class="col-12">
+                    <nav aria-label="Navegación de páginas">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}">
+                                        <i class="bi bi-chevron-double-left"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+
+                            <li class="page-item active">
+                                <span class="page-link">
+                                    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                </span>
+                            </li>
+
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}">
+                                        <i class="bi bi-chevron-double-right"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="row">
+            <div class="col-12">
+                <div class="alert alert-info text-center">
+                    <i class="bi bi-info-circle fs-1 d-block mb-3"></i>
+                    <h4>No hay prompts disponibles</h4>
+                    {% if search %}
+                        <p>No se encontraron resultados para "{{ search }}"</p>
+                        <a href="{% url 'public_image_prompts' %}" class="btn btn-primary">
+                            Ver todos los prompts
+                        </a>
+                    {% else %}
+                        <p>Aún no hay prompts públicos compartidos</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Estilos adicionales -->
+<style>
+    .hover-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .hover-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2) !important;
+    }
+    
+    .card-img-top {
+        transition: transform 0.3s ease;
+    }
+    
+    .hover-card:hover .card-img-top {
+        transform: scale(1.05);
+    }
+    
+    .card {
+        overflow: hidden;
+    }
+</style>
+
+<!-- JavaScript para copiar -->
+<script>
+function copyPrompt(text, button) {
+    // Crear elemento temporal
+    const tempInput = document.createElement('textarea');
+    tempInput.value = text;
+    document.body.appendChild(tempInput);
+    tempInput.select();
+    
+    try {
+        document.execCommand('copy');
+        
+        // Cambiar el botón temporalmente
+        const originalHTML = button.innerHTML;
+        button.innerHTML = '<i class="bi bi-check-circle"></i> ¡Copiado!';
+        button.classList.remove('btn-outline-primary');
+        button.classList.add('btn-success');
+        
+        setTimeout(() => {
+            button.innerHTML = originalHTML;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-primary');
+        }, 2000);
+    } catch (err) {
+        alert('Error al copiar el prompt');
+    }
+    
+    document.body.removeChild(tempInput);
+}
+</script>
+{% endblock %}

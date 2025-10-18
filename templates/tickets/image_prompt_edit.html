@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Editar: {{ image_prompt.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'image_prompt_list' %}">Mis Prompts</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'image_prompt_detail' image_prompt.pk %}">{{ image_prompt.title }}</a></li>
+                    <li class="breadcrumb-item active">Editar</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <h2 class="card-title mb-3">
+                        <i class="bi bi-pencil text-warning"></i> Editar Prompt
+                    </h2>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="title" class="form-label fw-bold">
+                                <i class="bi bi-card-heading"></i> Título <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="title" name="title" 
+                                   value="{{ image_prompt.title }}" required maxlength="200">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-magic"></i> Prompt Generado por IA (solo lectura)
+                            </label>
+                            <textarea class="form-control" rows="6" readonly>{{ image_prompt.generated_prompt }}</textarea>
+                            <small class="text-muted">Este es el prompt original generado por la IA. No se puede editar.</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="custom_prompt" class="form-label fw-bold">
+                                <i class="bi bi-pencil-square"></i> Prompt Personalizado
+                            </label>
+                            <textarea class="form-control" id="custom_prompt" name="custom_prompt" 
+                                      rows="8" placeholder="Escribe tu versión personalizada del prompt...">{{ image_prompt.custom_prompt }}</textarea>
+                            <small class="text-muted">Edita el prompt generado o crea uno completamente nuevo. Este será el prompt que se use cuando copies.</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="tags" class="form-label fw-bold">
+                                <i class="bi bi-tags"></i> Etiquetas
+                            </label>
+                            <input type="text" class="form-control" id="tags" name="tags" 
+                                   value="{{ image_prompt.tags }}" maxlength="500" 
+                                   placeholder="paisaje, naturaleza, fotografía">
+                            <small class="text-muted">Separa las etiquetas con comas</small>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="is_public" name="is_public" 
+                                       {% if image_prompt.is_public %}checked{% endif %}>
+                                <label class="form-check-label fw-bold" for="is_public">
+                                    <i class="bi bi-eye"></i> Hacer público
+                                </label>
+                                <small class="d-block text-muted">Si está activado, otros usuarios podrán ver este prompt</small>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a href="{% url 'image_prompt_detail' image_prompt.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle"></i> Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-image"></i> Imagen</h5>
+                    <img src="{{ image_prompt.image.url }}" class="img-fluid rounded" alt="{{ image_prompt.title }}">
+                    <div class="mt-2">
+                        <small class="text-muted">La imagen no se puede cambiar. Si quieres usar otra imagen, crea un nuevo prompt.</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body">
+                    <h6 class="card-title"><i class="bi bi-info-circle"></i> Consejos</h6>
+                    <ul class="small mb-0">
+                        <li>El prompt personalizado es opcional</li>
+                        <li>Si no editas el prompt, se usará el generado por IA</li>
+                        <li>Puedes mejorar o simplificar el prompt según tus necesidades</li>
+                        <li>Las etiquetas te ayudan a organizar tus prompts</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

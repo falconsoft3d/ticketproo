@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'ai_manager_list' %}">Gerentes IA</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'ai_manager_detail' summary.ai_manager.pk %}">{{ summary.ai_manager.name }}</a></li>
+                    <li class="breadcrumb-item active">Resumen Ejecutivo</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Contenido Principal -->
+        <div class="col-lg-9">
+            <!-- Header -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h2 class="mb-2">
+                                <i class="bi bi-file-text-fill text-info"></i> Resumen Ejecutivo
+                            </h2>
+                            <p class="text-muted mb-0">
+                                <i class="bi bi-calendar-range"></i> 
+                                {{ summary.period_start|date:"d/m/Y" }} - {{ summary.period_end|date:"d/m/Y" }}
+                            </p>
+                        </div>
+                        <div>
+                            <button class="btn btn-outline-primary" onclick="window.print()">
+                                <i class="bi bi-printer"></i> Imprimir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estadísticas del Período -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card shadow-sm border-0 text-center">
+                        <div class="card-body">
+                            <h3 class="text-primary mb-0">{{ summary.total_meetings }}</h3>
+                            <small class="text-muted">Reuniones</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card shadow-sm border-0 text-center">
+                        <div class="card-body">
+                            <h3 class="text-success mb-0">{{ summary.participants_count }}</h3>
+                            <small class="text-muted">Participantes</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card shadow-sm border-0 text-center">
+                        <div class="card-body">
+                            <h3 class="text-info mb-0">{{ summary.created_at|date:"d/m/Y" }}</h3>
+                            <small class="text-muted">Generado</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card shadow-sm border-0 text-center">
+                        <div class="card-body">
+                            <h3 class="text-warning mb-0">{{ summary.tokens_used }}</h3>
+                            <small class="text-muted">Tokens</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumen General -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-file-text"></i> Resumen General
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div style="white-space: pre-wrap;">{{ summary.summary_text|safe }}</div>
+                </div>
+            </div>
+
+            <!-- Insights Clave -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-lightbulb"></i> Insights Clave
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div style="white-space: pre-wrap;">{{ summary.key_insights|safe }}</div>
+                </div>
+            </div>
+
+            <!-- Recomendaciones -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0">
+                        <i class="bi bi-clipboard-check"></i> Recomendaciones Estratégicas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div style="white-space: pre-wrap;">{{ summary.recommendations|safe }}</div>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'ai_manager_detail' summary.ai_manager.pk %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver al Gerente
+                        </a>
+                        <a href="{% url 'ai_manager_generate_summary' summary.ai_manager.pk %}" class="btn btn-info">
+                            <i class="bi bi-plus-circle"></i> Generar Nuevo Resumen
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-3">
+            <!-- Información del Gerente -->
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-robot"></i> {{ summary.ai_manager.name }}
+                    </h6>
+                    <p class="card-text small">{{ summary.ai_manager.description|default:"Gerente IA especializado" }}</p>
+                    <hr>
+                    <div class="small">
+                        <p class="mb-1">
+                            <i class="bi bi-tag text-muted"></i> 
+                            <strong>Categoría:</strong> {{ summary.ai_manager.get_category_display }}
+                        </p>
+                        <p class="mb-0">
+                            <i class="bi bi-building text-muted"></i> 
+                            <strong>Empresa:</strong> {{ summary.ai_manager.company.name }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Período Analizado -->
+            <div class="card shadow-sm border-0 mb-3 bg-light">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-calendar-range"></i> Período Analizado
+                    </h6>
+                    <div class="small">
+                        <p class="mb-1">
+                            <strong>Inicio:</strong><br>
+                            {{ summary.period_start|date:"d/m/Y" }}
+                        </p>
+                        <p class="mb-0">
+                            <strong>Fin:</strong><br>
+                            {{ summary.period_end|date:"d/m/Y" }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Compartir -->
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-share"></i> Compartir
+                    </h6>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard()">
+                            <i class="bi bi-clipboard"></i> Copiar Enlace
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard() {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(function() {
+        alert('Enlace copiado al portapapeles');
+    }, function() {
+        alert('Error al copiar el enlace');
+    });
+}
+</script>
+
+<!-- Estilos para impresión -->
+<style>
+@media print {
+    .navbar, .breadcrumb, .btn, .card:last-child, .col-lg-3 {
+        display: none !important;
+    }
+    .col-lg-9 {
+        width: 100% !important;
+    }
+}
+</style>
+{% endblock %}

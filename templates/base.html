@@ -49,18 +49,20 @@
                            href="{% url 'ticket_list' %}">
                             <i class="bi bi-list-ul"></i> 
                             {% if user.groups.all and user.groups.first.name == 'Agentes' %}
-                                Todos los Tickets
+                                Todos
                             {% else %}
                                 Mis Tickets
                             {% endif %}
                         </a>
                     </li>
+                    <!--
                     <li class="nav-item">
                         <a class="nav-link {% if request.resolver_match.url_name == 'ticket_create' %}active{% endif %}" 
                            href="{% url 'ticket_create' %}">
                             <i class="bi bi-plus-circle"></i>
                         </a>
                     </li>
+                    -->
                     
                     <!-- Menú de Chat -->
                     <li class="nav-item dropdown">
@@ -200,6 +202,46 @@
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'alcance_create' %}active{% endif %}" 
                                    href="{% url 'alcance_create' %}">
                                     <i class="bi bi-plus-circle"></i> Crear Alcance
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">IA - Image to Prompt</li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'image_prompt_list' %}active{% endif %}" 
+                                   href="{% url 'image_prompt_list' %}">
+                                    <i class="bi bi-list-task"></i> Mis Prompts
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'image_prompt_create' %}active{% endif %}" 
+                                   href="{% url 'image_prompt_create' %}">
+                                    <i class="bi bi-image"></i> Generar Prompt desde Imagen
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Gerentes IA</li>
+                            <li>
+                                <a class="dropdown-item {% if 'company_ai_dashboard' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'company_ai_dashboard_list' %}">
+                                    <i class="bi bi-building"></i> Dashboard Empresarial
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'user_ai_performance' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'user_ai_performance_dashboard' %}">
+                                    <i class="bi bi-person-check"></i> Desempeño de Usuarios
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'ai_manager_list' %}active{% endif %}" 
+                                   href="{% url 'ai_manager_list' %}">
+                                    <i class="bi bi-robot"></i> Ver Gerentes IA
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'ai_manager_create' %}active{% endif %}" 
+                                   href="{% url 'ai_manager_create' %}">
+                                    <i class="bi bi-plus-circle"></i> Crear Gerente IA
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
@@ -354,18 +396,6 @@
                                     <i class="bi bi-envelope-paper"></i> Formularios de Contacto
                                 </a>
                             </li>
-                            <li>
-                                <a class="dropdown-item {% if 'document' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'document_list' %}">
-                                    <i class="bi bi-file-earmark-text"></i> Documentos
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item {% if 'agreement' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'agreement_list' %}">
-                                    <i class="bi bi-file-earmark-check"></i> Acuerdos
-                                </a>
-                            </li>
                             <li><hr class="dropdown-divider"></li>
                             <li class="dropdown-header">Blog</li>
                             <li>
@@ -462,6 +492,22 @@
                                 <a class="dropdown-item {% if 'command_library' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'command_library' %}">
                                     <i class="bi bi-terminal"></i> Biblioteca de Comandos
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Diseño</li>
+                            <li>
+                                <a class="dropdown-item {% if 'color_picker' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'color_picker' %}">
+                                    <i class="bi bi-palette"></i> Color Picker
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Redes y Análisis</li>
+                            <li>
+                                <a class="dropdown-item {% if 'website_tracker' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'website_tracker_list' %}">
+                                    <i class="bi bi-radar"></i> Rastreador Web
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
@@ -563,6 +609,70 @@
                         </ul>
                     </li>
                     
+                    
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="docDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-file-earmark-text"></i> Doc
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="docDropdown">
+                            <li>
+                                <h6 class="dropdown-header">Documentación</h6>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'document' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'document_list' %}">
+                                    <i class="bi bi-file-earmark-text"></i> Documentos
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'agreement' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'agreement_list' %}">
+                                    <i class="bi bi-file-earmark-check"></i> Acuerdos
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'multiple_documentation' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'multiple_documentation_list' %}">
+                                    <i class="fas fa-folder-open"></i> Documentación Múltiple
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'company_documentation' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'company_documentation_list' %}">
+                                    <i class="bi bi-collection"></i> Documentaciones de Empresas
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'legal_contract' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'legal_contract_list' %}">
+                                    <i class="bi bi-file-earmark-ruled"></i> Contratos Legales
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'supplier_contract_review' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'supplier_contract_review_list' %}">
+                                    <i class="bi bi-shield-check"></i> Revisar Contratos de Proveedores
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <h6 class="dropdown-header">Captura de Leads</h6>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'contact_generator' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'contact_generator_list' %}">
+                                    <i class="bi bi-person-plus"></i> Crear Contactos
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'company_request_generator' in request.resolver_match.url_name %}active{% endif %}"
+                                   href="{% url 'company_request_generator_list' %}">
+                                    <i class="bi bi-file-earmark-text"></i> Crear Solicitudes Empresas
+                                </a>
+                            </li>
+                        </ul>
+                    </li>    
+                    
                     <!-- Menú Otros (Solo para Agentes) -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="reportsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -615,6 +725,12 @@
                                 <a class="dropdown-item {% if 'company_documentation' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'company_documentation_list' %}">
                                     <i class="bi bi-collection"></i> Documentaciones de Empresas
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'legal_contract' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'legal_contract_list' %}">
+                                    <i class="bi bi-file-earmark-ruled"></i> Contratos Legales
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>

@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'supplier_contract_review_list' %}">Revisión de Contratos</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'supplier_contract_review_detail' review.pk %}">{{ review.name }}</a></li>
+            <li class="breadcrumb-item active">Eliminar</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="mb-4">
+        <h2><i class="bi bi-exclamation-triangle text-danger"></i> Confirmar Eliminación</h2>
+    </div>
+
+    <!-- Card de confirmación -->
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="bi bi-trash"></i> Eliminar Revisión de Contrato</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>¡Atención!</strong> Esta acción no se puede deshacer. Se eliminará permanentemente la revisión y toda su información asociada.
+                    </div>
+
+                    <!-- Información del contrato a eliminar -->
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6 class="text-muted mb-3">Información de la Revisión a Eliminar:</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td class="fw-bold" width="30%">Nombre:</td>
+                                    <td>{{ review.name }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Proveedor:</td>
+                                    <td>{{ review.supplier_name }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Empresa Revisora:</td>
+                                    <td>{{ review.company.name }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Estado:</td>
+                                    <td>{{ review.get_status_badge|safe }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Nivel de Riesgo:</td>
+                                    <td>{{ review.get_risk_badge|safe }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Fecha de Creación:</td>
+                                    <td>{{ review.created_at|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                                {% if review.reviewed_at %}
+                                <tr>
+                                    <td class="fw-bold">Revisado:</td>
+                                    <td>{{ review.reviewed_at|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                                {% endif %}
+                            </table>
+
+                            {% if review.ai_review %}
+                            <div class="alert alert-info mb-0">
+                                <i class="bi bi-info-circle"></i> Esta revisión contiene un análisis completo generado con IA que también se eliminará.
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <p class="mb-4">
+                        ¿Está seguro de que desea eliminar la revisión <strong>"{{ review.name }}"</strong>?
+                    </p>
+
+                    <!-- Formulario de confirmación -->
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Sí, Eliminar Permanentemente
+                            </button>
+                            <a href="{% url 'supplier_contract_review_detail' review.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> No, Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

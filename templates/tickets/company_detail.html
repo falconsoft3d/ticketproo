@@ -51,6 +51,77 @@
 
             <!-- Información principal -->
             <div class="row mb-4">
+                <!-- Objetivos Empresariales -->
+                <div class="col-12 mb-4">
+                    <div class="card shadow-sm border-info">
+                        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-bullseye me-2"></i>
+                                Objetivos Empresariales
+                                <small class="ms-2">
+                                    <i class="bi bi-robot"></i> Usados en resúmenes IA
+                                </small>
+                            </h5>
+                            {% if is_agent %}
+                            <button type="button" class="btn btn-sm btn-light" onclick="toggleEditObjectives()">
+                                <i class="bi bi-pencil me-1"></i>
+                                <span id="editButtonText">Editar</span>
+                            </button>
+                            {% endif %}
+                        </div>
+                        <div class="card-body">
+                            <!-- Vista de solo lectura -->
+                            <div id="objectivesView">
+                                {% if company.business_objectives %}
+                                    <div class="alert alert-light mb-0">
+                                        <p class="mb-0" style="white-space: pre-wrap;">{{ company.business_objectives }}</p>
+                                    </div>
+                                    <div class="mt-3">
+                                        <small class="text-muted">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            Estos objetivos son considerados por los gerentes IA al generar resúmenes ejecutivos y análisis estratégicos.
+                                        </small>
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-warning">
+                                        <i class="bi bi-exclamation-triangle me-2"></i>
+                                        <strong>No hay objetivos definidos.</strong> Define los objetivos empresariales para que los gerentes IA puedan generar resúmenes más precisos.
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Formulario de edición -->
+                            <div id="objectivesEdit" style="display: none;">
+                                <form method="POST" action="{% url 'company_detail' company.id %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="update_objectives">
+                                    <div class="mb-3">
+                                        <textarea 
+                                            name="business_objectives" 
+                                            class="form-control" 
+                                            rows="6" 
+                                            placeholder="Ejemplo:&#10;- Aumentar ventas en un 20% este año&#10;- Mejorar satisfacción del cliente al 95%&#10;- Reducir costos operativos en 15%&#10;- Lanzar 3 nuevos productos&#10;- Expandir a 2 nuevos mercados"
+                                        >{{ company.business_objectives }}</textarea>
+                                        <small class="text-muted">
+                                            Define los objetivos estratégicos de la empresa. Cada objetivo en una línea nueva.
+                                        </small>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button type="submit" class="btn btn-success">
+                                            <i class="bi bi-check-circle me-1"></i>
+                                            Guardar Objetivos
+                                        </button>
+                                        <button type="button" class="btn btn-secondary" onclick="toggleEditObjectives()">
+                                            <i class="bi bi-x-circle me-1"></i>
+                                            Cancelar
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Información de contacto -->
                 <div class="col-lg-6">
                     <div class="card shadow-sm h-100">
@@ -484,5 +555,24 @@ function copyTicketToClipboard() {
         alert('Error al copiar la URL. Por favor, cópiala manualmente.');
     });
 }
+
+function toggleEditObjectives() {
+    const viewDiv = document.getElementById('objectivesView');
+    const editDiv = document.getElementById('objectivesEdit');
+    const buttonText = document.getElementById('editButtonText');
+    
+    if (viewDiv.style.display === 'none') {
+        // Mostrar vista, ocultar edición
+        viewDiv.style.display = 'block';
+        editDiv.style.display = 'none';
+        buttonText.textContent = 'Editar';
+    } else {
+        // Ocultar vista, mostrar edición
+        viewDiv.style.display = 'none';
+        editDiv.style.display = 'block';
+        buttonText.textContent = 'Cancelar';
+    }
+}
+
 </script>
 {% endblock %}

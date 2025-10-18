@@ -39,7 +39,9 @@ from .models import (
     CompanyDocumentation, CompanyDocumentationURL, ContactGenerator,
     CompanyRequestGenerator, CompanyRequest, CompanyRequestComment,
     Form, FormQuestion, FormQuestionOption, FormResponse, FormAnswer, Alcance,
-    WhatsAppConnection, WhatsAppKeyword, WhatsAppMessage
+    WhatsAppConnection, WhatsAppKeyword, WhatsAppMessage, ImagePrompt,
+    AIManager, AIManagerMeeting, AIManagerSummary, CompanyAISummary, UserAIPerformanceEvaluation,
+    WebsiteTracker, LegalContract
 )
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
@@ -2656,6 +2658,17 @@ def company_detail_view(request, company_id):
         company.public_token = uuid.uuid4()
         company.save()
     
+    # Manejar actualización de objetivos empresariales (POST)
+    if request.method == 'POST' and request.POST.get('action') == 'update_objectives':
+        if is_agent(request.user):
+            business_objectives = request.POST.get('business_objectives', '').strip()
+            company.business_objectives = business_objectives
+            company.save()
+            messages.success(request, f'✅ Objetivos empresariales de "{company.name}" actualizados exitosamente.')
+        else:
+            messages.error(request, '❌ No tienes permisos para modificar esta empresa.')
+        return redirect('company_detail', company_id=company.id)
+    
     # Estadísticas de la empresa
     total_tickets = company.tickets.count()
     open_tickets = company.tickets.filter(status='open').count()
@@ -2679,6 +2692,7 @@ def company_detail_view(request, company_id):
         'active_users': active_users,
         'recent_tickets': recent_tickets,
         'company_users': company_users,
+        'is_agent': is_agent(request.user),
     }
     
     return render(request, 'tickets/company_detail.html', context)
@@ -5006,6 +5020,13 @@ def pdf_split_view(request):
 def calculator_view(request):
     """Vista para la calculadora con historial"""
     return render(request, 'tickets/calculator.html')
+
+
+@login_required
+@user_passes_test(is_agent)
+def color_picker_view(request):
+    """Vista para el selector de colores (Color Picker)"""
+    return render(request, 'tickets/color_picker.html')
 
 
 @login_required
@@ -8262,6 +8283,284 @@ def improve_ticket_with_ai(request, ticket_id):
             
     except Exception as e:
         return JsonResponse({'error': f'Error al mejorar ticket: {str(e)}'}, status=500)
+
+
+@login_required
+def improve_ticket_text_with_ai(request):
+    """Vista AJAX para mejorar texto de ticket durante la creación (sin ticket existente)"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    
+    try:
+        # Verificar configuración de OpenAI
+        config = SystemConfiguration.get_config()
+        if not config.openai_api_key:
+            return JsonResponse({'error': 'API key de OpenAI no configurada'}, status=500)
+        
+        # Obtener datos del request
+        improvement_type = request.POST.get('type', 'both')
+        current_text = request.POST.get('text', '')
+        current_title = request.POST.get('title', '')
+        current_description = request.POST.get('description', '')
+        
+        # Preparar el prompt según el tipo de mejora
+        if improvement_type == 'title':
+            if not current_text:
+                return JsonResponse({'error': 'No se proporcionó texto para mejorar'}, status=400)
+            
+            prompt = f"""
+            Mejora el siguiente título de ticket de soporte técnico para que sea más claro, específico y profesional:
+
+            Título actual: "{current_text}"
+            
+            Proporciona ÚNICAMENTE un título mejorado, sin explicaciones adicionales.
+            El título debe ser:
+            - Claro y específico
+            - Profesional pero comprensible
+            - Máximo 100 caracteres
+            - Debe reflejar exactamente el problema
+            """
+            
+        elif improvement_type == 'description':
+            if not current_text:
+                return JsonResponse({'error': 'No se proporcionó texto para mejorar'}, status=400)
+            
+            prompt = f"""
+            Mejora la siguiente descripción de ticket de soporte técnico para que sea más clara, detallada y estructurada:
+
+            Descripción actual: "{current_text}"
+            
+            Proporciona ÚNICAMENTE una descripción mejorada, sin explicaciones adicionales.
+            La descripción debe ser:
+            - Clara y bien estructurada
+            - Incluir pasos para reproducir si es relevante
+            - Mencionar el impacto del problema
+            - Ser específica y detallada
+            - Mantener el contenido original pero mejor organizado
+            """
+            
+        else:  # both
+            if not current_title or not current_description:
+                return JsonResponse({'error': 'Se requiere título y descripción para mejorar ambos'}, status=400)
+            
+            prompt = f"""
+            Mejora el siguiente ticket de soporte técnico para que el título y descripción sean más claros, específicos y profesionales:
+
+            Título actual: "{current_title}"
+            Descripción actual: "{current_description}"
+            
+            Responde ÚNICAMENTE con el siguiente formato JSON sin texto adicional:
+            {{
+                "title": "título mejorado aquí",
+                "description": "descripción mejorada aquí"
+            }}
+            
+            Criterios:
+            - Título: Claro, específico, profesional, máximo 100 caracteres
+            - Descripción: Clara, estructurada, detallada, bien organizada
+            - Mantener el contenido original pero mejorado
+            """
+        
+        # Llamar a OpenAI
+        try:
+            from openai import OpenAI
+            client = OpenAI(api_key=config.openai_api_key)
+        except Exception as e:
+            return JsonResponse({'error': f'Error al inicializar cliente OpenAI: {str(e)}'}, status=500)
+        
+        try:
+            response = client.chat.completions.create(
+                model=config.openai_model or 'gpt-4o-mini',
+                messages=[
+                    {"role": "system", "content": "Eres un experto en soporte técnico que mejora la comunicación de tickets para hacerlos más claros y profesionales."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=1000,
+                temperature=0.3
+            )
+            
+            ai_response = response.choices[0].message.content.strip()
+        except Exception as e:
+            return JsonResponse({'error': f'Error al llamar a OpenAI: {str(e)}'}, status=500)
+        
+        # Procesar respuesta según el tipo
+        if improvement_type == 'both':
+            try:
+                import json
+                # Limpiar respuesta si tiene marcadores de código
+                if ai_response.startswith('```json'):
+                    ai_response = ai_response.replace('```json', '').replace('```', '').strip()
+                elif ai_response.startswith('```'):
+                    ai_response = ai_response.replace('```', '').strip()
+                
+                result = json.loads(ai_response)
+                return JsonResponse({
+                    'success': True,
+                    'improved_title': result.get('title', ''),
+                    'improved_description': result.get('description', ''),
+                    'tokens_used': response.usage.total_tokens
+                })
+            except json.JSONDecodeError:
+                return JsonResponse({'error': 'Error al procesar la respuesta de IA'}, status=500)
+        else:
+            return JsonResponse({
+                'success': True,
+                'improved_text': ai_response,
+                'tokens_used': response.usage.total_tokens
+            })
+            
+    except Exception as e:
+        return JsonResponse({'error': f'Error al mejorar texto: {str(e)}'}, status=500)
+
+
+@login_required
+def improve_alcance_text_with_ai(request):
+    """Vista AJAX para mejorar texto de alcance usando IA"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    
+    try:
+        # Verificar configuración de OpenAI
+        config = SystemConfiguration.get_config()
+        if not config.openai_api_key:
+            return JsonResponse({'error': 'API key de OpenAI no configurada'}, status=500)
+        
+        # Obtener datos del request
+        improvement_type = request.POST.get('type', 'all')
+        current_text = request.POST.get('text', '')
+        current_title = request.POST.get('title', '')
+        current_category = request.POST.get('category', '')
+        current_description = request.POST.get('description', '')
+        
+        # Preparar el prompt según el tipo de mejora
+        if improvement_type == 'title':
+            if not current_text:
+                return JsonResponse({'error': 'No se proporcionó texto para mejorar'}, status=400)
+            
+            prompt = f"""
+            Mejora el siguiente título de alcance de servicios para que sea más claro, profesional y atractivo:
+
+            Título actual: "{current_text}"
+            
+            Proporciona ÚNICAMENTE un título mejorado, sin explicaciones adicionales.
+            El título debe ser:
+            - Claro y específico
+            - Profesional y atractivo
+            - Máximo 100 caracteres
+            - Que transmita valor y profesionalismo
+            """
+            
+        elif improvement_type == 'category':
+            if not current_text:
+                return JsonResponse({'error': 'No se proporcionó texto para mejorar'}, status=400)
+            
+            prompt = f"""
+            Mejora la siguiente categoría de alcance de servicios para que sea más clara y profesional:
+
+            Categoría actual: "{current_text}"
+            
+            Proporciona ÚNICAMENTE una categoría mejorada, sin explicaciones adicionales.
+            La categoría debe ser:
+            - Clara y concisa
+            - Profesional
+            - Máximo 50 caracteres
+            - Usar terminología estándar de la industria
+            """
+            
+        elif improvement_type == 'description':
+            if not current_text:
+                return JsonResponse({'error': 'No se proporcionó texto para mejorar'}, status=400)
+            
+            prompt = f"""
+            Mejora la siguiente descripción de alcance de servicios para que sea más clara, detallada y profesional:
+
+            Descripción actual: "{current_text}"
+            
+            Proporciona ÚNICAMENTE una descripción mejorada, sin explicaciones adicionales.
+            La descripción debe ser:
+            - Clara y bien estructurada
+            - Profesional y persuasiva
+            - Detallada pero concisa
+            - Destacar beneficios y valor
+            - Usar viñetas o párrafos cortos si es apropiado
+            """
+            
+        else:  # all
+            if not current_title or not current_category or not current_description:
+                return JsonResponse({'error': 'Se requiere título, categoría y descripción para mejorar todo'}, status=400)
+            
+            prompt = f"""
+            Mejora el siguiente alcance de servicios para que el título, categoría y descripción sean más claros, profesionales y atractivos:
+
+            Título actual: "{current_title}"
+            Categoría actual: "{current_category}"
+            Descripción actual: "{current_description}"
+            
+            Responde ÚNICAMENTE con el siguiente formato JSON sin texto adicional:
+            {{
+                "title": "título mejorado aquí",
+                "category": "categoría mejorada aquí",
+                "description": "descripción mejorada aquí"
+            }}
+            
+            Criterios:
+            - Título: Claro, específico, profesional, máximo 100 caracteres, atractivo
+            - Categoría: Clara, concisa, profesional, máximo 50 caracteres, terminología estándar
+            - Descripción: Clara, estructurada, detallada, profesional, persuasiva, destacar valor
+            - Mantener el contenido original pero mejorado significativamente
+            """
+        
+        # Llamar a OpenAI
+        try:
+            from openai import OpenAI
+            client = OpenAI(api_key=config.openai_api_key)
+        except Exception as e:
+            return JsonResponse({'error': f'Error al inicializar cliente OpenAI: {str(e)}'}, status=500)
+        
+        try:
+            response = client.chat.completions.create(
+                model=config.openai_model or 'gpt-4o-mini',
+                messages=[
+                    {"role": "system", "content": "Eres un experto en marketing y comunicación de servicios profesionales que mejora textos para hacerlos más claros, profesionales y persuasivos."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=1000,
+                temperature=0.3
+            )
+            
+            ai_response = response.choices[0].message.content.strip()
+        except Exception as e:
+            return JsonResponse({'error': f'Error al llamar a OpenAI: {str(e)}'}, status=500)
+        
+        # Procesar respuesta según el tipo
+        if improvement_type == 'all':
+            try:
+                import json
+                # Limpiar respuesta si tiene marcadores de código
+                if ai_response.startswith('```json'):
+                    ai_response = ai_response.replace('```json', '').replace('```', '').strip()
+                elif ai_response.startswith('```'):
+                    ai_response = ai_response.replace('```', '').strip()
+                
+                result = json.loads(ai_response)
+                return JsonResponse({
+                    'success': True,
+                    'improved_title': result.get('title', ''),
+                    'improved_category': result.get('category', ''),
+                    'improved_description': result.get('description', ''),
+                    'tokens_used': response.usage.total_tokens
+                })
+            except json.JSONDecodeError:
+                return JsonResponse({'error': 'Error al procesar la respuesta de IA'}, status=500)
+        else:
+            return JsonResponse({
+                'success': True,
+                'improved_text': ai_response,
+                'tokens_used': response.usage.total_tokens
+            })
+            
+    except Exception as e:
+        return JsonResponse({'error': f'Error al mejorar texto: {str(e)}'}, status=500)
 
 
 @login_required
@@ -13612,6 +13911,7 @@ def page_visits_analytics_view(request):
     from django.utils import timezone
     from datetime import datetime, timedelta
     from .models import PageVisit
+    from django.views.decorators.cache import never_cache
     
     # Filtros de fecha
     end_date = timezone.now().date()
@@ -13755,7 +14055,12 @@ def page_visits_analytics_view(request):
         'exclude_bots': exclude_bots,
     }
     
-    return render(request, 'tickets/page_visits_analytics.html', context)
+    response = render(request, 'tickets/page_visits_analytics.html', context)
+    # Agregar headers para evitar cache
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    return response
 
 
 @login_required
@@ -19212,12 +19517,14 @@ def alcance_create(request):
         titulo = request.POST.get('titulo')
         categoria = request.POST.get('categoria')
         descripcion = request.POST.get('descripcion')
+        url = request.POST.get('url')
         publico = request.POST.get('publico') == 'on'
         
         alcance = Alcance.objects.create(
             titulo=titulo,
             categoria=categoria,
             descripcion=descripcion,
+            url=url,
             publico=publico,
             creado_por=request.user
         )
@@ -19240,6 +19547,7 @@ def alcance_edit(request, pk):
         alcance.titulo = request.POST.get('titulo')
         alcance.categoria = request.POST.get('categoria')
         alcance.descripcion = request.POST.get('descripcion')
+        alcance.url = request.POST.get('url')
         alcance.publico = request.POST.get('publico') == 'on'
         alcance.save()
         
@@ -19376,42 +19684,85 @@ def whatsapp_keyword_delete(request, pk):
 
 @login_required
 def whatsapp_connect(request):
-    """Iniciar conexión de WhatsApp y obtener QR"""
-    import qrcode
-    from io import StringIO
+    """Iniciar conexión de WhatsApp con servidor Node.js"""
+    import requests
     
     connection = WhatsAppConnection.objects.get_or_create(user=request.user)[0]
-    connection.status = 'qr_pending'
     
-    # Generar un código de demostración
-    demo_code = f"WHATSAPP-DEMO-{request.user.id}-{connection.id}"
+    try:
+        # Llamar al servidor Node.js para iniciar conexión
+        response = requests.post('http://localhost:3000/connect', 
+            json={'user_id': request.user.id},
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            connection.status = data.get('status', 'connecting')
+            connection.qr_code = data.get('qr', '')
+            connection.save()
+            
+            # Manejar diferentes respuestas del servidor
+            if data.get('already_connected'):
+                messages.success(request, '✅ Ya estás conectado a WhatsApp')
+            elif data.get('already_connecting'):
+                messages.info(request, '⏳ Conexión en proceso. Escanea el código QR para continuar')
+            elif data.get('already_exists'):
+                messages.info(request, f"ℹ️ {data.get('message', 'Cliente existente')}")
+            elif data.get('qr'):
+                messages.success(request, '✅ Escanea el código QR con tu WhatsApp')
+            else:
+                messages.info(request, f"ℹ️ {data.get('message', 'Conexión iniciada')}")
+        else:
+            connection.status = 'error'
+            connection.save()
+            messages.error(request, f'❌ Error al conectar: {response.text}')
+            
+    except requests.exceptions.ConnectionError:
+        connection.status = 'error'
+        connection.save()
+        messages.error(request, '❌ No se pudo conectar al servidor WhatsApp. Asegúrate de que esté ejecutándose en http://localhost:3000')
+    except Exception as e:
+        connection.status = 'error'
+        connection.save()
+        messages.error(request, f'❌ Error inesperado: {str(e)}')
     
-    # Generar QR en formato ASCII
-    qr = qrcode.QRCode(border=1)
-    qr.add_data(f"Para conectar WhatsApp Web, necesitas:\n\n1. Instalar whatsapp-web.js (Node.js)\n2. Código de sesión: {demo_code}\n\nEsta es una demostración. Para usar WhatsApp real, implementa el backend con whatsapp-web.js")
-    qr.make(fit=True)
-    
-    # Convertir a ASCII art
-    output = StringIO()
-    qr.print_ascii(out=output, invert=True)
-    ascii_qr = output.getvalue()
-    
-    connection.qr_code = ascii_qr
-    connection.save()
-    
-    messages.info(request, '⚠️ QR de demostración generado. Para conectar WhatsApp real, implementa el backend con whatsapp-web.js')
     return redirect('whatsapp_dashboard')
 
 
 @login_required
 def whatsapp_disconnect(request):
-    """Desconectar WhatsApp"""
-    connection = WhatsAppConnection.objects.get_or_create(user=request.user)[0]
-    connection.status = 'disconnected'
-    connection.qr_code = None
-    connection.save()
+    """Desconectar WhatsApp del servidor Node.js"""
+    import requests
     
-    messages.success(request, 'Desconectado de WhatsApp')
+    connection = WhatsAppConnection.objects.get_or_create(user=request.user)[0]
+    
+    try:
+        # Llamar al servidor Node.js para desconectar
+        response = requests.post('http://localhost:3000/disconnect',
+            json={'user_id': request.user.id},
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            connection.status = 'disconnected'
+            connection.qr_code = None
+            connection.phone_number = None
+            connection.save()
+            messages.success(request, '✅ Desconectado de WhatsApp exitosamente')
+        else:
+            messages.error(request, f'❌ Error al desconectar: {response.text}')
+            
+    except requests.exceptions.ConnectionError:
+        # Si el servidor no responde, marcar como desconectado de todas formas
+        connection.status = 'disconnected'
+        connection.qr_code = None
+        connection.phone_number = None
+        connection.save()
+        messages.warning(request, '⚠️ Servidor WhatsApp no disponible. Conexión marcada como desconectada.')
+    except Exception as e:
+        messages.error(request, f'❌ Error inesperado: {str(e)}')
+    
     return redirect('whatsapp_dashboard')
 
 
@@ -19436,6 +19787,64 @@ def whatsapp_simulate_connection(request):
 
 
 @login_required
+def whatsapp_status(request):
+    """Obtener estado actual de la conexión (para AJAX polling)"""
+    import requests
+    from django.http import JsonResponse
+    
+    connection = WhatsAppConnection.objects.get_or_create(user=request.user)[0]
+    
+    try:
+        # Consultar estado en el servidor Node.js
+        response = requests.get(f'http://localhost:3000/status/{request.user.id}', timeout=5)
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Actualizar estado en la base de datos
+            connection.status = data.get('status', 'disconnected')
+            connection.qr_code = data.get('qr', '')
+            
+            # Si está conectado, obtener información del usuario
+            if connection.status == 'connected' and not connection.phone_number:
+                try:
+                    info_response = requests.get(f'http://localhost:3000/info/{request.user.id}', timeout=5)
+                    if info_response.status_code == 200:
+                        info_data = info_response.json()
+                        if info_data.get('status') == 'connected' and info_data.get('info'):
+                            connection.phone_number = info_data['info'].get('phone', '')
+                except:
+                    pass
+            
+            connection.save()
+            
+            return JsonResponse({
+                'status': connection.status,
+                'qr_code': connection.qr_code,
+                'phone_number': connection.phone_number,
+                'has_client': data.get('has_client', False)
+            })
+        else:
+            return JsonResponse({
+                'status': 'error',
+                'error': 'Error al consultar servidor'
+            }, status=500)
+            
+    except requests.exceptions.ConnectionError:
+        connection.status = 'error'
+        connection.save()
+        return JsonResponse({
+            'status': 'error',
+            'error': 'Servidor WhatsApp no disponible'
+        }, status=503)
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'error': str(e)
+        }, status=500)
+
+
+@login_required
 def whatsapp_messages(request):
     """Ver historial de mensajes"""
     connection = WhatsAppConnection.objects.get_or_create(user=request.user)[0]
@@ -19452,3 +19861,2502 @@ def whatsapp_messages(request):
         'page_title': 'Mensajes WhatsApp'
     }
     return render(request, 'tickets/whatsapp_messages.html', context)
+
+
+# ==================== VISTAS DE IMAGE TO PROMPT ====================
+
+@login_required
+def image_prompt_list(request):
+    """Lista de todas las imágenes y prompts del usuario"""
+    prompts = ImagePrompt.objects.filter(user=request.user).order_by('-created_at')
+    
+    # Filtros
+    search = request.GET.get('search', '')
+    if search:
+        prompts = prompts.filter(
+            Q(title__icontains=search) | 
+            Q(generated_prompt__icontains=search) | 
+            Q(custom_prompt__icontains=search) |
+            Q(tags__icontains=search)
+        )
+    
+    # Paginación
+    paginator = Paginator(prompts, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'search': search,
+        'total_prompts': ImagePrompt.objects.filter(user=request.user).count(),
+        'page_title': 'Mis Prompts de Imágenes'
+    }
+    return render(request, 'tickets/image_prompt_list.html', context)
+
+
+@login_required
+def image_prompt_create(request):
+    """Crear un nuevo prompt desde una imagen"""
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        tags = request.POST.get('tags', '')
+        is_public = request.POST.get('is_public') == 'on'
+        image_file = request.FILES.get('image')
+        
+        if not title or not image_file:
+            messages.error(request, 'Por favor completa todos los campos requeridos')
+            return render(request, 'tickets/image_prompt_create.html')
+        
+        # Crear el objeto ImagePrompt
+        image_prompt = ImagePrompt.objects.create(
+            user=request.user,
+            title=title,
+            image=image_file,
+            tags=tags,
+            is_public=is_public
+        )
+        
+        # Generar prompt con IA
+        try:
+            from .models import SystemConfiguration
+            config = SystemConfiguration.get_config()
+            
+            if not config.openai_api_key:
+                messages.warning(request, 'Imagen guardada, pero no se pudo generar el prompt (API key no configurada)')
+                return redirect('image_prompt_detail', pk=image_prompt.pk)
+            
+            # Usar OpenAI Vision para analizar la imagen
+            from openai import OpenAI
+            import base64
+            
+            client = OpenAI(api_key=config.openai_api_key)
+            
+            # Leer y codificar la imagen
+            image_prompt.image.seek(0)
+            image_data = base64.b64encode(image_prompt.image.read()).decode('utf-8')
+            
+            # Llamar a la API con vision
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "Eres un experto en generar prompts detallados para DALL-E, Midjourney y Stable Diffusion. Analiza la imagen y genera un prompt descriptivo que capture todos los detalles visuales, estilo, composición, colores, iluminación y atmósfera. IMPORTANTE: Genera SOLO texto plano, sin usar formato Markdown, sin asteriscos, sin guiones, sin numeración. Todo debe ser texto corrido separado por comas o puntos."
+                    },
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Analiza esta imagen y genera un prompt detallado en texto plano (sin formato Markdown) que describa el sujeto principal y elementos secundarios, el estilo artístico, los colores dominantes, la iluminación y atmósfera, la composición y perspectiva, y detalles técnicos de calidad. Genera un prompt optimizado para generadores de imágenes por IA, todo en texto corrido sin formato especial."
+                            },
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{image_data}"
+                                }
+                            }
+                        ]
+                    }
+                ],
+                max_tokens=800
+            )
+            
+            generated_prompt = response.choices[0].message.content.strip()
+            tokens_used = response.usage.total_tokens
+            
+            # Actualizar el objeto
+            image_prompt.generated_prompt = generated_prompt
+            image_prompt.tokens_used = tokens_used
+            image_prompt.save()
+            
+            messages.success(request, 'Imagen subida y prompt generado exitosamente!')
+            return redirect('image_prompt_detail', pk=image_prompt.pk)
+            
+        except Exception as e:
+            messages.warning(request, f'Imagen guardada, pero hubo un error al generar el prompt: {str(e)}')
+            return redirect('image_prompt_detail', pk=image_prompt.pk)
+    
+    context = {
+        'page_title': 'Generar Prompt desde Imagen'
+    }
+    return render(request, 'tickets/image_prompt_create.html', context)
+
+
+@login_required
+def image_prompt_detail(request, pk):
+    """Ver detalle de un prompt de imagen"""
+    image_prompt = get_object_or_404(ImagePrompt, pk=pk, user=request.user)
+    
+    context = {
+        'image_prompt': image_prompt,
+        'page_title': f'Prompt: {image_prompt.title}'
+    }
+    return render(request, 'tickets/image_prompt_detail.html', context)
+
+
+@login_required
+def image_prompt_edit(request, pk):
+    """Editar un prompt de imagen"""
+    image_prompt = get_object_or_404(ImagePrompt, pk=pk, user=request.user)
+    
+    if request.method == 'POST':
+        image_prompt.title = request.POST.get('title')
+        image_prompt.custom_prompt = request.POST.get('custom_prompt')
+        image_prompt.tags = request.POST.get('tags', '')
+        image_prompt.is_public = request.POST.get('is_public') == 'on'
+        image_prompt.save()
+        
+        messages.success(request, 'Prompt actualizado exitosamente')
+        return redirect('image_prompt_detail', pk=image_prompt.pk)
+    
+    context = {
+        'image_prompt': image_prompt,
+        'page_title': f'Editar: {image_prompt.title}'
+    }
+    return render(request, 'tickets/image_prompt_edit.html', context)
+
+
+@login_required
+def image_prompt_delete(request, pk):
+    """Eliminar un prompt de imagen"""
+    image_prompt = get_object_or_404(ImagePrompt, pk=pk, user=request.user)
+    
+    if request.method == 'POST':
+        title = image_prompt.title
+        image_prompt.delete()
+        messages.success(request, f'Prompt "{title}" eliminado exitosamente')
+        return redirect('image_prompt_list')
+    
+    context = {
+        'image_prompt': image_prompt,
+        'page_title': f'Eliminar: {image_prompt.title}'
+    }
+    return render(request, 'tickets/image_prompt_delete.html', context)
+
+
+def public_image_prompts(request):
+    """Vista pública de prompts de imágenes"""
+    prompts = ImagePrompt.objects.filter(is_public=True).order_by('-created_at')
+    
+    # Filtros
+    search = request.GET.get('search', '')
+    if search:
+        prompts = prompts.filter(
+            Q(title__icontains=search) | 
+            Q(generated_prompt__icontains=search) | 
+            Q(custom_prompt__icontains=search) |
+            Q(tags__icontains=search)
+        )
+    
+    # Paginación
+    paginator = Paginator(prompts, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'search': search,
+        'total_prompts': ImagePrompt.objects.filter(is_public=True).count(),
+        'page_title': 'Prompts Públicos'
+    }
+    return render(request, 'tickets/public_image_prompts.html', context)
+
+
+def public_image_prompt_detail(request, pk):
+    """Vista pública del detalle de un prompt de imagen"""
+    image_prompt = get_object_or_404(ImagePrompt, pk=pk, is_public=True)
+    
+    context = {
+        'image_prompt': image_prompt,
+        'page_title': f'Prompt: {image_prompt.title}'
+    }
+    return render(request, 'tickets/public_image_prompt_detail.html', context)
+
+
+# ==================== GERENTES IA ====================
+
+def get_user_companies(user):
+    """Función auxiliar para obtener empresas del usuario"""
+    # Si es staff, puede ver todas las empresas
+    if user.is_staff:
+        return Company.objects.all()
+    else:
+        # Para usuarios normales, buscar empresas donde tiene proyectos o tickets
+        # O simplemente retornar todas (ya que Company no tiene created_by)
+        # Por ahora retornamos todas las empresas
+        return Company.objects.all()
+
+@login_required
+def ai_manager_list(request):
+    """Lista de gerentes IA de la empresa del usuario"""
+    user_companies = get_user_companies(request.user)
+    
+    if not user_companies.exists():
+        messages.warning(request, 'No tienes una empresa asignada. Por favor crea una empresa primero.')
+        return redirect('dashboard')
+    
+    # Obtener TODOS los gerentes de TODAS las empresas del usuario
+    managers = AIManager.objects.filter(
+        company__in=user_companies, 
+        is_active=True
+    ).select_related('company').order_by('company', 'category', 'name')
+    
+    context = {
+        'managers': managers,
+        'companies': user_companies,
+        'total_companies': user_companies.count(),
+        'page_title': 'Gerentes IA'
+    }
+    return render(request, 'tickets/ai_manager_list.html', context)
+
+
+@login_required
+def ai_manager_create(request):
+    """Crear un nuevo gerente IA"""
+    user_companies = get_user_companies(request.user)
+    
+    if not user_companies.exists():
+        messages.warning(request, 'No tienes una empresa asignada.')
+        return redirect('dashboard')
+    
+    if request.method == 'POST':
+        company_id = request.POST.get('company')
+        name = request.POST.get('name')
+        category = request.POST.get('category')
+        description = request.POST.get('description', '')
+        instructions = request.POST.get('instructions')
+        
+        if not all([company_id, name, category, instructions]):
+            messages.error(request, 'Por favor completa todos los campos requeridos')
+        else:
+            company = get_object_or_404(Company, pk=company_id)
+            AIManager.objects.create(
+                company=company,
+                name=name,
+                category=category,
+                description=description,
+                instructions=instructions,
+                created_by=request.user
+            )
+            messages.success(request, f'Gerente IA "{name}" creado exitosamente')
+            return redirect('ai_manager_list')
+    
+    context = {
+        'companies': user_companies,
+        'page_title': 'Crear Gerente IA'
+    }
+    return render(request, 'tickets/ai_manager_form.html', context)
+
+
+@login_required
+def ai_manager_detail(request, pk):
+    """Detalle de un gerente IA"""
+    manager = get_object_or_404(AIManager, pk=pk)
+    
+    # Verificar que el usuario pertenece a la empresa
+    user_companies = get_user_companies(request.user)
+    
+    if manager.company not in user_companies:
+        messages.error(request, 'No tienes permiso para ver este gerente IA')
+        return redirect('ai_manager_list')
+    
+    # Obtener últimas reuniones
+    recent_meetings = manager.meetings.select_related('user').order_by('-created_at')[:10]
+    
+    # Obtener resúmenes
+    summaries = manager.summaries.order_by('-created_at')[:5]
+    
+    # Estadísticas dinámicas (se actualizan en tiempo real)
+    meetings = manager.meetings.all()
+    total_meetings = meetings.count()
+    active_users = meetings.values('user').distinct().count()
+    total_summaries = manager.summaries.count()
+    total_tokens = meetings.aggregate(total=Sum('tokens_used'))['total'] or 0
+    
+    stats = {
+        'total_meetings': total_meetings,
+        'active_users': active_users,
+        'total_summaries': total_summaries,
+        'total_tokens': total_tokens,
+    }
+    
+    context = {
+        'manager': manager,
+        'recent_meetings': recent_meetings,
+        'summaries': summaries,
+        'stats': stats,
+        'page_title': manager.name
+    }
+    return render(request, 'tickets/ai_manager_detail.html', context)
+
+
+@login_required
+def ai_manager_edit(request, pk):
+    """Editar un gerente IA"""
+    manager = get_object_or_404(AIManager, pk=pk)
+    
+    # Verificar permisos
+    user_companies = get_user_companies(request.user)
+    
+    if manager.company not in user_companies:
+        messages.error(request, 'No tienes permiso para editar este gerente IA')
+        return redirect('ai_manager_list')
+    
+    if request.method == 'POST':
+        manager.name = request.POST.get('name')
+        manager.category = request.POST.get('category')
+        manager.description = request.POST.get('description', '')
+        manager.instructions = request.POST.get('instructions')
+        manager.is_active = request.POST.get('is_active') == 'on'
+        manager.save()
+        
+        messages.success(request, 'Gerente IA actualizado exitosamente')
+        return redirect('ai_manager_detail', pk=manager.pk)
+    
+    context = {
+        'manager': manager,
+        'page_title': f'Editar: {manager.name}'
+    }
+    return render(request, 'tickets/ai_manager_edit.html', context)
+
+
+@login_required
+def ai_manager_delete(request, pk):
+    """Eliminar un gerente IA"""
+    manager = get_object_or_404(AIManager, pk=pk)
+    
+    # Verificar permisos
+    user_companies = get_user_companies(request.user)
+    
+    if manager.company not in user_companies:
+        messages.error(request, 'No tienes permiso para eliminar este gerente IA')
+        return redirect('ai_manager_list')
+    
+    if request.method == 'POST':
+        name = manager.name
+        manager.delete()
+        messages.success(request, f'Gerente IA "{name}" eliminado exitosamente')
+        return redirect('ai_manager_list')
+    
+    # Estadísticas para la página de confirmación
+    meetings = manager.meetings.all()
+    stats = {
+        'total_meetings': meetings.count(),
+        'total_summaries': manager.summaries.count(),
+        'total_participants': meetings.values('user').distinct().count(),
+    }
+    
+    context = {
+        'manager': manager,
+        'stats': stats,
+        'page_title': f'Eliminar: {manager.name}'
+    }
+    return render(request, 'tickets/ai_manager_delete.html', context)
+
+
+@login_required
+def ai_manager_meeting_create(request, pk):
+    """Crear una reunión con un gerente IA"""
+    manager = get_object_or_404(AIManager, pk=pk, is_active=True)
+    
+    # Verificar permisos
+    user_companies = get_user_companies(request.user)
+    
+    if manager.company not in user_companies:
+        messages.error(request, 'No tienes permiso para reunirte con este gerente IA')
+        return redirect('ai_manager_list')
+    
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        input_type = request.POST.get('input_type', 'text')
+        user_input = request.POST.get('user_input')
+        audio_file = request.FILES.get('audio_file')
+        attachments = request.FILES.getlist('attachments')
+        
+        # Si está en modo audio y hay archivo pero no texto, transcribir
+        if input_type == 'audio' and audio_file and not user_input:
+            try:
+                from .models import SystemConfiguration
+                config = SystemConfiguration.get_config()
+                
+                if config.openai_api_key:
+                    from openai import OpenAI
+                    client = OpenAI(api_key=config.openai_api_key)
+                    
+                    # Transcribir audio con Whisper
+                    audio_file.seek(0)
+                    transcription = client.audio.transcriptions.create(
+                        model="whisper-1",
+                        file=audio_file
+                    )
+                    user_input = transcription.text
+            except Exception as e:
+                messages.error(request, f'Error al transcribir audio: {str(e)}')
+                return render(request, 'tickets/ai_manager_meeting_form.html', {
+                    'manager': manager,
+                    'page_title': f'Nueva Reunión con {manager.name}'
+                })
+        
+        if not title or not user_input:
+            messages.error(request, 'Por favor completa todos los campos requeridos')
+            return render(request, 'tickets/ai_manager_meeting_form.html', {
+                'manager': manager,
+                'page_title': f'Nueva Reunión con {manager.name}'
+            })
+        
+        # Procesar archivos adjuntos para incluir en el contexto de IA
+        attachments_context = ""
+        if attachments:
+            attachments_context = f"\n\nArchivos adjuntos proporcionados ({len(attachments)}):\n"
+            for att in attachments:
+                file_size_kb = att.size / 1024
+                attachments_context += f"- {att.name} ({file_size_kb:.1f} KB, tipo: {att.content_type})\n"
+            attachments_context += "\nNOTA: Considera que el usuario ha compartido estos archivos como contexto adicional para su reunión."
+        
+        # Procesar con IA
+        try:
+            from .models import SystemConfiguration
+            config = SystemConfiguration.get_config()
+            
+            if not config.openai_api_key:
+                messages.warning(request, 'Reunión guardada, pero no se pudo generar respuesta IA (API key no configurada)')
+                meeting = AIManagerMeeting.objects.create(
+                    ai_manager=manager,
+                    user=request.user,
+                    title=title,
+                    input_type=input_type,
+                    user_input=user_input,
+                    audio_file=audio_file,
+                    ai_response='No disponible',
+                    ai_summary='No disponible'
+                )
+                return redirect('ai_manager_meeting_detail', pk=meeting.pk)
+            
+            from openai import OpenAI
+            client = OpenAI(api_key=config.openai_api_key)
+            
+            # Obtener historial de reuniones previas del usuario con este gerente
+            previous_meetings = AIManagerMeeting.objects.filter(
+                ai_manager=manager,
+                user=request.user
+            ).order_by('-created_at')[:5]
+            
+            context_history = ""
+            if previous_meetings.exists():
+                context_history = "\n\nHistorial reciente de reuniones:\n"
+                for i, meeting in enumerate(previous_meetings, 1):
+                    context_history += f"\n{i}. {meeting.title}\n"
+                    context_history += f"   Usuario dijo: {meeting.user_input[:200]}...\n"
+                    context_history += f"   Resumen: {meeting.ai_summary[:200]}...\n"
+            
+            # Llamar a la IA
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": f"""{manager.instructions}
+
+Información de la empresa: {manager.company.name}
+Tu rol: {manager.name} - {manager.get_category_display()}
+Descripción: {manager.description}
+
+{context_history}
+{attachments_context}
+
+Tu objetivo es:
+1. Escuchar atentamente lo que el usuario comparte
+2. Proporcionar un análisis constructivo y empático
+3. Identificar áreas de mejora específicas y accionables
+4. Dar recomendaciones prácticas basadas en el contexto de la empresa
+5. Motivar y apoyar al usuario en su crecimiento
+
+IMPORTANTE: 
+- NO uses formato Markdown (nada de **, ##, ###, -, *, etc.)
+- Para resaltar texto importante usa HTML: <strong>texto</strong>
+- Escribe párrafos normales separados por saltos de línea
+- Usa listas simples con números o guiones HTML si es necesario
+- Responde de manera profesional pero cercana
+- Sé específico en tus recomendaciones"""
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Tema: {title}\n\n{user_input}"
+                    }
+                ],
+                max_tokens=1000
+            )
+            
+            ai_response = response.choices[0].message.content.strip()
+            tokens_used = response.usage.total_tokens
+            
+            # Generar resumen corto
+            summary_response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "Resume en 2-3 líneas lo más importante de esta reunión. NO uses Markdown. Usa <strong>texto</strong> para resaltar palabras clave."
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Usuario dijo: {user_input}\n\nRespuesta: {ai_response}"
+                    }
+                ],
+                max_tokens=150
+            )
+            
+            ai_summary = summary_response.choices[0].message.content.strip()
+            tokens_used += summary_response.usage.total_tokens
+            
+            # Identificar áreas de mejora
+            improvements_response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "Lista 3-5 áreas de mejora específicas basadas en lo discutido. NO uses Markdown. Usa <strong>texto</strong> para resaltar. Formato: lista simple con números, cada área en una línea."
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Contexto: {title}\n\n{user_input}"
+                    }
+                ],
+                max_tokens=200
+            )
+            
+            improvement_areas = improvements_response.choices[0].message.content.strip()
+            tokens_used += improvements_response.usage.total_tokens
+            
+            # Crear la reunión
+            meeting = AIManagerMeeting.objects.create(
+                ai_manager=manager,
+                user=request.user,
+                title=title,
+                input_type=input_type,
+                user_input=user_input,
+                audio_file=audio_file,
+                ai_response=ai_response,
+                ai_summary=ai_summary,
+                improvement_areas=improvement_areas,
+                tokens_used=tokens_used
+            )
+            
+            # Guardar los archivos adjuntos
+            from .models import AIManagerMeetingAttachment
+            for attachment_file in attachments:
+                AIManagerMeetingAttachment.objects.create(
+                    meeting=meeting,
+                    file=attachment_file
+                )
+            
+            messages.success(request, 'Reunión registrada y análisis generado exitosamente')
+            return redirect('ai_manager_meeting_detail', pk=meeting.pk)
+            
+        except Exception as e:
+            messages.error(request, f'Error al procesar la reunión: {str(e)}')
+            return render(request, 'tickets/ai_manager_meeting_form.html', {
+                'manager': manager,
+                'page_title': f'Nueva Reunión con {manager.name}'
+            })
+    
+    context = {
+        'manager': manager,
+        'page_title': f'Nueva Reunión con {manager.name}'
+    }
+    return render(request, 'tickets/ai_manager_meeting_form.html', context)
+
+
+@login_required
+def ai_manager_meetings(request, pk):
+    """Lista de reuniones de un gerente IA"""
+    manager = get_object_or_404(AIManager, pk=pk)
+    
+    # Verificar permisos
+    user_companies = get_user_companies(request.user)
+    
+    if manager.company not in user_companies:
+        messages.error(request, 'No tienes permiso para ver estas reuniones')
+        return redirect('ai_manager_list')
+    
+    # Si es admin/gerente, ver todas. Si no, solo las suyas
+    if request.user.is_staff or request.user == manager.created_by:
+        meetings = manager.meetings.select_related('user').order_by('-created_at')
+    else:
+        meetings = manager.meetings.filter(user=request.user).order_by('-created_at')
+    
+    # Filtros
+    search = request.GET.get('search', '')
+    input_type = request.GET.get('input_type', '')
+    user_filter = request.GET.get('user', '')
+    
+    if search:
+        meetings = meetings.filter(
+            Q(title__icontains=search) | 
+            Q(user_input__icontains=search) |
+            Q(ai_summary__icontains=search)
+        )
+    
+    if input_type:
+        meetings = meetings.filter(input_type=input_type)
+    
+    if user_filter:
+        meetings = meetings.filter(user_id=user_filter)
+    
+    # Estadísticas dinámicas
+    all_meetings = manager.meetings.all()
+    stats = {
+        'total_meetings': all_meetings.count(),
+        'text_meetings': all_meetings.filter(input_type='text').count(),
+        'audio_meetings': all_meetings.filter(input_type='audio').count(),
+        'unique_users': all_meetings.values('user').distinct().count(),
+    }
+    
+    # Usuarios únicos para el filtro
+    users = User.objects.filter(
+        id__in=manager.meetings.values_list('user_id', flat=True).distinct()
+    ).order_by('first_name', 'last_name')
+    
+    # Paginación
+    paginator = Paginator(meetings, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'manager': manager,
+        'meetings': page_obj,
+        'page_obj': page_obj,
+        'is_paginated': page_obj.has_other_pages(),
+        'stats': stats,
+        'users': users,
+        'page_title': f'Reuniones - {manager.name}'
+    }
+    return render(request, 'tickets/ai_manager_meetings.html', context)
+
+
+@login_required
+def ai_manager_meeting_detail(request, pk):
+    """Detalle de una reunión"""
+    meeting = get_object_or_404(AIManagerMeeting, pk=pk)
+    
+    # Verificar permisos
+    if meeting.user != request.user and not request.user.is_staff:
+        messages.error(request, 'No tienes permiso para ver esta reunión')
+        return redirect('ai_manager_list')
+    
+    context = {
+        'meeting': meeting,
+        'page_title': meeting.title
+    }
+    return render(request, 'tickets/ai_manager_meeting_detail.html', context)
+
+
+@login_required
+def ai_manager_generate_summary(request, pk):
+    """Generar resumen general del gerente IA"""
+    manager = get_object_or_404(AIManager, pk=pk)
+    
+    # Verificar permisos (solo admin o creador)
+    if not request.user.is_staff and request.user != manager.created_by:
+        messages.error(request, 'No tienes permiso para generar resúmenes')
+        return redirect('ai_manager_detail', pk=pk)
+    
+    if request.method == 'POST':
+        period_start = request.POST.get('period_start')
+        period_end = request.POST.get('period_end')
+        
+        if not period_start or not period_end:
+            messages.error(request, 'Por favor selecciona las fechas')
+            return redirect('ai_manager_detail', pk=pk)
+        
+        try:
+            from datetime import datetime
+            start_date = datetime.strptime(period_start, '%Y-%m-%d').date()
+            end_date = datetime.strptime(period_end, '%Y-%m-%d').date()
+            
+            # Obtener reuniones del período
+            meetings = manager.meetings.filter(
+                created_at__date__gte=start_date,
+                created_at__date__lte=end_date
+            ).select_related('user')
+            
+            if not meetings.exists():
+                messages.warning(request, 'No hay reuniones en este período')
+                return redirect('ai_manager_detail', pk=pk)
+            
+            # Generar resumen con IA
+            from .models import SystemConfiguration
+            config = SystemConfiguration.get_config()
+            
+            if not config.openai_api_key:
+                messages.warning(request, 'No se puede generar resumen (API key no configurada)')
+                return redirect('ai_manager_detail', pk=pk)
+            
+            from openai import OpenAI
+            client = OpenAI(api_key=config.openai_api_key)
+            
+            # Preparar contexto de todas las reuniones
+            meetings_context = ""
+            for i, meeting in enumerate(meetings, 1):
+                meetings_context += f"\n\n=== Reunión {i}: {meeting.title} ===\n"
+                meetings_context += f"Usuario: {meeting.user.username}\n"
+                meetings_context += f"Fecha: {meeting.created_at.strftime('%d/%m/%Y')}\n"
+                meetings_context += f"Entrada: {meeting.user_input[:500]}...\n"
+                meetings_context += f"Resumen: {meeting.ai_summary}\n"
+                meetings_context += f"Áreas de mejora: {meeting.improvement_areas}\n"
+            
+            # Generar resumen
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": f"""Eres {manager.name}, {manager.get_category_display()} de {manager.company.name}.
+
+Analiza todas las reuniones del período y genera un resumen ejecutivo completo que incluya:
+1. Resumen general de lo discutido
+2. Patrones y tendencias identificadas
+3. Logros y progreso del equipo
+4. Desafíos principales
+5. Recomendaciones estratégicas para la empresa
+
+IMPORTANTE:
+- NO uses formato Markdown (nada de **, ##, ###, -, *, etc.)
+- Para resaltar texto importante usa HTML: <strong>texto</strong>
+- Escribe párrafos normales separados por saltos de línea doble
+- Usa números simples (1., 2., 3.) para las listas
+- Sé específico, profesional y orientado a la acción"""
+                    },
+                    {
+                        "role": "user",
+                        "content": f"""Período: {start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')}
+Total de reuniones: {meetings.count()}
+Participantes únicos: {meetings.values('user').distinct().count()}
+
+{meetings_context}
+
+Por favor genera el resumen ejecutivo completo."""
+                    }
+                ],
+                max_tokens=2000
+            )
+            
+            summary_text = response.choices[0].message.content.strip()
+            tokens_used = response.usage.total_tokens
+            
+            # Generar insights clave
+            insights_response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "Extrae 5-7 insights clave más importantes del resumen. NO uses Markdown. Usa <strong>texto</strong> para resaltar conceptos clave. Formato: lista numerada simple (1., 2., 3., etc.)."
+                    },
+                    {
+                        "role": "user",
+                        "content": summary_text
+                    }
+                ],
+                max_tokens=500
+            )
+            
+            key_insights = insights_response.choices[0].message.content.strip()
+            tokens_used += insights_response.usage.total_tokens
+            
+            # Generar recomendaciones
+            recommendations_response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "Genera 5-7 recomendaciones estratégicas específicas y accionables para la empresa. NO uses Markdown. Usa <strong>texto</strong> para resaltar acciones clave. Formato: lista numerada simple (1., 2., 3., etc.)."
+                    },
+                    {
+                        "role": "user",
+                        "content": summary_text
+                    }
+                ],
+                max_tokens=500
+            )
+            
+            recommendations = recommendations_response.choices[0].message.content.strip()
+            tokens_used += recommendations_response.usage.total_tokens
+            
+            # Crear el resumen
+            summary = AIManagerSummary.objects.create(
+                ai_manager=manager,
+                period_start=start_date,
+                period_end=end_date,
+                summary_text=summary_text,
+                key_insights=key_insights,
+                recommendations=recommendations,
+                total_meetings=meetings.count(),
+                participants_count=meetings.values('user').distinct().count(),
+                tokens_used=tokens_used
+            )
+            
+            messages.success(request, 'Resumen ejecutivo generado exitosamente')
+            return redirect('ai_manager_detail', pk=pk)
+            
+        except Exception as e:
+            messages.error(request, f'Error al generar resumen: {str(e)}')
+            return redirect('ai_manager_detail', pk=pk)
+    
+    # GET: Mostrar formulario
+    from datetime import date
+    meetings = manager.meetings.all()
+    stats = {
+        'total_meetings': meetings.count(),
+        'active_users': meetings.values('user').distinct().count(),
+        'total_summaries': manager.summaries.count(),
+    }
+    
+    context = {
+        'manager': manager,
+        'stats': stats,
+        'today': date.today().isoformat(),
+        'page_title': f'Generar Resumen - {manager.name}'
+    }
+    return render(request, 'tickets/ai_manager_summary_form.html', context)
+
+
+@login_required
+def ai_manager_summary_detail(request, pk):
+    """Ver detalle de un resumen ejecutivo"""
+    summary = get_object_or_404(AIManagerSummary, pk=pk)
+    
+    # Verificar permisos
+    user_companies = get_user_companies(request.user)
+    
+    if summary.ai_manager.company not in user_companies:
+        messages.error(request, 'No tienes permiso para ver este resumen')
+        return redirect('ai_manager_list')
+    
+    context = {
+        'summary': summary,
+        'page_title': f'Resumen Ejecutivo - {summary.ai_manager.name}'
+    }
+    return render(request, 'tickets/ai_manager_summary_detail.html', context)
+
+
+# ==================== COMPANY AI DASHBOARD ====================
+
+def clean_markdown_to_html(text):
+    """Convierte Markdown a HTML y limpia formato"""
+    import re
+    
+    # Reemplazar **texto** con <strong>texto</strong>
+    text = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', text)
+    
+    # Reemplazar *texto* con <em>texto</em>
+    text = re.sub(r'\*(.*?)\*', r'<em>\1</em>', text)
+    
+    # Reemplazar ### título con <strong>título</strong>
+    text = re.sub(r'###\s+(.*?)(\n|$)', r'<strong>\1</strong><br><br>', text)
+    text = re.sub(r'##\s+(.*?)(\n|$)', r'<strong>\1</strong><br><br>', text)
+    text = re.sub(r'#\s+(.*?)(\n|$)', r'<strong>\1</strong><br><br>', text)
+    
+    # Reemplazar saltos de línea dobles con <br><br>
+    text = re.sub(r'\n\n+', '<br><br>', text)
+    
+    # Reemplazar saltos de línea simples con <br>
+    text = re.sub(r'\n', '<br>', text)
+    
+    # Limpiar listas con - o *
+    text = re.sub(r'<br>\s*[-*]\s+', '<br>• ', text)
+    
+    return text.strip()
+
+
+@login_required
+def company_ai_dashboard_list(request):
+    """Lista de empresas con gerentes IA"""
+    user_companies = get_user_companies(request.user)
+    
+    # Obtener estadísticas de cada empresa
+    companies_data = []
+    for company in user_companies:
+        managers = AIManager.objects.filter(company=company)
+        meetings = AIManagerMeeting.objects.filter(ai_manager__company=company)
+        
+        # Solo incluir empresas que tengan al menos un gerente O al menos una reunión
+        total_managers = managers.count()
+        total_meetings = meetings.count()
+        
+        if total_managers > 0 or total_meetings > 0:
+            companies_data.append({
+                'company': company,
+                'total_managers': total_managers,
+                'active_managers': managers.filter(is_active=True).count(),
+                'total_meetings': total_meetings,
+                'total_participants': meetings.values('user').distinct().count(),
+                'total_summaries': CompanyAISummary.objects.filter(company=company).count(),
+            })
+    
+    context = {
+        'companies_data': companies_data,
+        'page_title': 'Dashboard Empresarial IA'
+    }
+    return render(request, 'tickets/company_ai_dashboard_list.html', context)
+
+
+@login_required
+def company_ai_dashboard_detail(request, pk):
+    """Dashboard detallado de una empresa con sus gerentes IA"""
+    company = get_object_or_404(Company, pk=pk)
+    
+    # Verificar permisos
+    user_companies = get_user_companies(request.user)
+    
+    if company not in user_companies:
+        messages.error(request, 'No tienes permiso para ver este dashboard')
+        return redirect('company_ai_dashboard_list')
+    
+    # Obtener todos los gerentes de la empresa
+    managers = AIManager.objects.filter(company=company).prefetch_related('meetings')
+    
+    # Obtener todas las reuniones
+    all_meetings = AIManagerMeeting.objects.filter(ai_manager__company=company)
+    
+    # Estadísticas generales
+    total_meetings = all_meetings.count()
+    total_participants = all_meetings.values('user').distinct().count()
+    total_tokens = all_meetings.aggregate(total=Sum('tokens_used'))['total'] or 0
+    
+    # Estadísticas por gerente
+    managers_stats = []
+    for manager in managers:
+        manager_meetings = all_meetings.filter(ai_manager=manager)
+        managers_stats.append({
+            'manager': manager,
+            'total_meetings': manager_meetings.count(),
+            'active_users': manager_meetings.values('user').distinct().count(),
+            'total_tokens': manager_meetings.aggregate(total=Sum('tokens_used'))['total'] or 0,
+        })
+    
+    # Usuarios participantes con conteo de reuniones
+    from django.db.models import Count
+    participants = User.objects.filter(
+        id__in=all_meetings.values_list('user_id', flat=True).distinct()
+    ).annotate(
+        meeting_count=Count('ai_manager_meetings', filter=Q(ai_manager_meetings__ai_manager__company=company))
+    ).order_by('first_name', 'last_name')
+    
+    # Resúmenes empresariales
+    company_summaries = CompanyAISummary.objects.filter(company=company).order_by('-created_at')[:5]
+    
+    # Reuniones recientes
+    recent_meetings = all_meetings.select_related('ai_manager', 'user').order_by('-created_at')[:10]
+    
+    context = {
+        'company': company,
+        'managers': managers,
+        'managers_stats': managers_stats,
+        'participants': participants,
+        'company_summaries': company_summaries,
+        'recent_meetings': recent_meetings,
+        'total_meetings': total_meetings,
+        'total_participants': total_participants,
+        'total_tokens': total_tokens,
+        'page_title': f'Dashboard - {company.name}'
+    }
+    return render(request, 'tickets/company_ai_dashboard_detail.html', context)
+
+
+@login_required
+def company_ai_generate_summary(request, pk):
+    """Generar resumen empresarial general"""
+    
+    company = get_object_or_404(Company, pk=pk)
+    
+    # Verificar permisos (solo admin o staff)
+    user_companies = get_user_companies(request.user)
+    
+    if company not in user_companies:
+        messages.error(request, 'No tienes permiso para generar resúmenes')
+        return redirect('company_ai_dashboard_list')
+    
+    if not request.user.is_staff:
+        messages.error(request, 'Solo administradores pueden generar resúmenes empresariales')
+        return redirect('company_ai_dashboard_detail', pk=pk)
+    
+    if request.method == 'POST':
+        period_start = request.POST.get('period_start')
+        period_end = request.POST.get('period_end')
+        
+        if not period_start or not period_end:
+            messages.error(request, 'Por favor selecciona las fechas')
+            return redirect('company_ai_dashboard_detail', pk=pk)
+        
+        try:
+            from datetime import datetime
+            start_date = datetime.strptime(period_start, '%Y-%m-%d').date()
+            end_date = datetime.strptime(period_end, '%Y-%m-%d').date()
+            
+            # Obtener todos los gerentes y reuniones del período
+            managers = AIManager.objects.filter(company=company)
+            meetings = AIManagerMeeting.objects.filter(
+                ai_manager__company=company,
+                created_at__date__gte=start_date,
+                created_at__date__lte=end_date
+            ).select_related('ai_manager', 'user')
+            
+            if not meetings.exists():
+                messages.warning(request, 'No hay reuniones en este período')
+                return redirect('company_ai_dashboard_detail', pk=pk)
+            
+            # Generar resumen con IA
+            from .models import SystemConfiguration
+            config = SystemConfiguration.get_config()
+            
+            if not config.openai_api_key:
+                messages.warning(request, 'No se puede generar resumen (API key no configurada)')
+                return redirect('company_ai_dashboard_detail', pk=pk)
+            
+            from openai import OpenAI
+            client = OpenAI(api_key=config.openai_api_key)
+            
+            # Preparar contexto agrupado por gerente
+            managers_context = ""
+            for manager in managers:
+                manager_meetings = meetings.filter(ai_manager=manager)
+                if manager_meetings.exists():
+                    managers_context += f"\n\n{'='*60}\n"
+                    managers_context += f"GERENTE: {manager.name} ({manager.get_category_display()})\n"
+                    managers_context += f"Total de reuniones: {manager_meetings.count()}\n"
+                    managers_context += f"{'='*60}\n"
+                    
+                    for i, meeting in enumerate(manager_meetings[:10], 1):  # Max 10 por gerente
+                        managers_context += f"\nReunión {i}: {meeting.title}\n"
+                        managers_context += f"Usuario: {meeting.user.get_full_name() or meeting.user.username}\n"
+                        managers_context += f"Fecha: {meeting.created_at.strftime('%d/%m/%Y')}\n"
+                        managers_context += f"Resumen: {meeting.ai_summary[:300]}...\n"
+            
+            # Generar resumen ejecutivo
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": f"""Eres un analista ejecutivo de {company.name}.
+
+Analiza toda la información de los diferentes gerentes IA y genera un resumen ejecutivo empresarial completo.
+
+{f"OBJETIVOS EMPRESARIALES A CONSIDERAR:{chr(10)}{company.business_objectives}{chr(10)}{chr(10)}" if company.business_objectives else ""}Incluye:
+1. Visión general del desempeño de la empresa
+2. Análisis transversal de todas las áreas
+3. Patrones y tendencias identificadas a nivel empresa
+4. Sinergias y áreas de oportunidad entre departamentos
+{f"5. Evaluación del progreso hacia los objetivos empresariales definidos" if company.business_objectives else ""}
+
+IMPORTANTE SOBRE EL FORMATO:
+- NO uses formato Markdown (nada de **, ##, ###, -, *, etc.)
+- Para resaltar texto importante usa HTML: <strong>texto</strong>
+- Para saltos de línea usa <br> o <br><br> para doble espacio
+- Escribe en párrafos claros separados con <br><br>
+- Usa listas con números seguidos de punto y <br> entre items
+- Enfoque estratégico para la dirección"""
+                    },
+                    {
+                        "role": "user",
+                        "content": f"""Período: {start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')}
+Empresa: {company.name}
+Total de gerentes activos: {managers.filter(is_active=True).count()}
+Total de reuniones: {meetings.count()}
+Participantes únicos: {meetings.values('user').distinct().count()}
+
+{managers_context}
+
+Genera el resumen ejecutivo empresarial."""
+                    }
+                ],
+                max_tokens=2500
+            )
+            
+            executive_summary = response.choices[0].message.content.strip()
+            executive_summary = clean_markdown_to_html(executive_summary)
+            tokens_used = response.usage.total_tokens
+            
+            # Generar métricas clave
+            metrics_response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": f"""Extrae 5-7 métricas y KPIs clave del resumen.
+
+{f"OBJETIVOS EMPRESARIALES:{chr(10)}{company.business_objectives}{chr(10)}{chr(10)}Prioriza métricas relacionadas con estos objetivos.{chr(10)}{chr(10)}" if company.business_objectives else ""}FORMATO:
+- NO uses formato Markdown (nada de **, ##, ###, -, *, etc.)
+- Usa <strong>texto</strong> para resaltar números y métricas importantes
+- Usa <br> para separar cada métrica
+- Lista numerada simple: 1. Métrica<br>2. Métrica<br>etc.
+- Cada métrica debe tener el valor destacado con <strong>"""
+                    },
+                    {
+                        "role": "user",
+                        "content": executive_summary
+                    }
+                ],
+                max_tokens=500
+            )
+            
+            key_metrics = metrics_response.choices[0].message.content.strip()
+            key_metrics = clean_markdown_to_html(key_metrics)
+            tokens_used += metrics_response.usage.total_tokens
+            
+            # Generar destacados por departamento
+            highlights_response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": """Resume los logros más importantes de cada departamento/gerente.
+
+FORMATO:
+- NO uses formato Markdown (nada de **, ##, ###, -, *, etc.)
+- Usa <strong>texto</strong> para resaltar logros importantes
+- Usa <br><br> para separar departamentos
+- Usa <br> para separar logros dentro de un departamento
+- Organiza por departamento con el nombre del departamento en <strong>Departamento:</strong>"""
+                    },
+                    {
+                        "role": "user",
+                        "content": managers_context
+                    }
+                ],
+                max_tokens=800
+            )
+            
+            department_highlights = highlights_response.choices[0].message.content.strip()
+            department_highlights = clean_markdown_to_html(department_highlights)
+            tokens_used += highlights_response.usage.total_tokens
+            
+            # Generar desafíos
+            challenges_response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": """Identifica los 5-7 desafíos más importantes que enfrenta la empresa.
+
+FORMATO:
+- NO uses formato Markdown (nada de **, ##, ###, -, *, etc.)
+- Usa <strong>texto</strong> para resaltar desafíos críticos
+- Usa <br> para separar cada desafío
+- Lista numerada simple: 1. Desafío<br>2. Desafío<br>etc.
+- Cada desafío debe ser claro y accionable"""
+                    },
+                    {
+                        "role": "user",
+                        "content": executive_summary
+                    }
+                ],
+                max_tokens=600
+            )
+            
+            challenges = challenges_response.choices[0].message.content.strip()
+            challenges = clean_markdown_to_html(challenges)
+            tokens_used += challenges_response.usage.total_tokens
+            
+            # Generar recomendaciones estratégicas
+            recommendations_response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": f"""Genera 7-10 recomendaciones estratégicas para la dirección.
+
+{f"OBJETIVOS EMPRESARIALES:{chr(10)}{company.business_objectives}{chr(10)}{chr(10)}Las recomendaciones deben estar alineadas con estos objetivos.{chr(10)}{chr(10)}" if company.business_objectives else ""}FORMATO:
+- NO uses formato Markdown (nada de **, ##, ###, -, *, etc.)
+- Usa <strong>texto</strong> para resaltar acciones clave y prioridades
+- Usa <br> para separar cada recomendación
+- Lista numerada con prioridades: 1. [ALTA] Recomendación<br>2. [MEDIA] Recomendación<br>etc.
+- Cada recomendación debe ser específica y accionable"""
+                    },
+                    {
+                        "role": "user",
+                        "content": executive_summary
+                    }
+                ],
+                max_tokens=800
+            )
+            
+            strategic_recommendations = recommendations_response.choices[0].message.content.strip()
+            strategic_recommendations = clean_markdown_to_html(strategic_recommendations)
+            tokens_used += recommendations_response.usage.total_tokens
+            
+            # Crear el resumen empresarial
+            summary = CompanyAISummary.objects.create(
+                company=company,
+                period_start=start_date,
+                period_end=end_date,
+                executive_summary=executive_summary,
+                key_metrics=key_metrics,
+                department_highlights=department_highlights,
+                challenges=challenges,
+                strategic_recommendations=strategic_recommendations,
+                total_managers=managers.count(),
+                total_meetings=meetings.count(),
+                total_participants=meetings.values('user').distinct().count(),
+                tokens_used=tokens_used,
+                generated_by=request.user
+            )
+            
+            messages.success(request, 'Resumen empresarial generado exitosamente')
+            return redirect('company_ai_summary_detail', pk=summary.pk)
+            
+        except Exception as e:
+            messages.error(request, f'Error al generar resumen: {str(e)}')
+            return redirect('company_ai_dashboard_detail', pk=pk)
+    
+    # GET: Mostrar formulario
+    from datetime import date
+    managers = AIManager.objects.filter(company=company)
+    meetings = AIManagerMeeting.objects.filter(ai_manager__company=company)
+    
+    stats = {
+        'total_managers': managers.count(),
+        'total_meetings': meetings.count(),
+        'total_participants': meetings.values('user').distinct().count(),
+        'total_summaries': CompanyAISummary.objects.filter(company=company).count(),
+    }
+    
+    context = {
+        'company': company,
+        'stats': stats,
+        'today': date.today().isoformat(),
+        'page_title': f'Generar Resumen Empresarial - {company.name}'
+    }
+    return render(request, 'tickets/company_ai_summary_form.html', context)
+
+
+@login_required
+def company_ai_summary_detail(request, pk):
+    """Ver detalle de un resumen empresarial"""
+    summary = get_object_or_404(CompanyAISummary, pk=pk)
+    
+    # Verificar permisos
+    user_companies = get_user_companies(request.user)
+    
+    if summary.company not in user_companies:
+        messages.error(request, 'No tienes permiso para ver este resumen')
+        return redirect('company_ai_dashboard_list')
+    
+    context = {
+        'summary': summary,
+        'page_title': f'Resumen Empresarial - {summary.company.name}'
+    }
+    return render(request, 'tickets/company_ai_summary_detail.html', context)
+
+
+# =============================================================================
+# VISTAS PARA DASHBOARD DE DESEMPEÑO DE USUARIOS IA
+# =============================================================================
+
+@login_required
+def user_ai_performance_dashboard(request):
+    """Dashboard principal de desempeño de usuarios con IA"""
+    user_companies = get_user_companies(request.user)
+    
+    # Obtener usuarios con reuniones de IA
+    from django.db.models import Count, Avg, Max
+    users_with_meetings = User.objects.filter(
+        ai_manager_meetings__ai_manager__company__in=user_companies
+    ).annotate(
+        meeting_count=Count('ai_manager_meetings'),
+        last_meeting=Max('ai_manager_meetings__created_at'),
+        avg_score=Avg('ai_performance_evaluations__overall_score')
+    ).filter(meeting_count__gt=0).distinct().order_by('-meeting_count')
+    
+    # Preparar datos
+    users_data = []
+    for user in users_with_meetings:
+        latest_evaluation = user.ai_performance_evaluations.order_by('-evaluation_date').first()
+        
+        users_data.append({
+            'user': user,
+            'meeting_count': user.meeting_count,
+            'last_meeting': user.last_meeting,
+            'avg_score': user.avg_score or 0,
+            'latest_evaluation': latest_evaluation,
+            'has_evaluation': latest_evaluation is not None
+        })
+    
+    context = {
+        'users_data': users_data,
+        'total_users': len(users_data),
+        'page_title': 'Dashboard de Desempeño de Usuarios IA'
+    }
+    return render(request, 'tickets/user_ai_performance_dashboard.html', context)
+
+
+@login_required
+def user_ai_performance_detail(request, user_id):
+    """Detalle de desempeño de un usuario específico"""
+    user = get_object_or_404(User, pk=user_id)
+    user_companies = get_user_companies(request.user)
+    
+    # Verificar que el usuario tiene reuniones en empresas accesibles
+    user_meetings = AIManagerMeeting.objects.filter(
+        user=user,
+        ai_manager__company__in=user_companies
+    )
+    
+    if not user_meetings.exists():
+        messages.error(request, 'Este usuario no tiene reuniones registradas')
+        return redirect('user_ai_performance_dashboard')
+    
+    # Obtener evaluaciones
+    evaluations = UserAIPerformanceEvaluation.objects.filter(user=user).order_by('-evaluation_date')
+    
+    # Estadísticas
+    from django.db.models import Avg, Count
+    stats = {
+        'total_meetings': user_meetings.count(),
+        'total_evaluations': evaluations.count(),
+        'avg_score': evaluations.aggregate(Avg('overall_score'))['overall_score__avg'] or 0,
+        'latest_score': evaluations.first().overall_score if evaluations.exists() else 0,
+    }
+    
+    # Datos para gráfico de progreso
+    chart_data = {
+        'labels': [eval.evaluation_date.strftime('%d/%m/%Y') for eval in evaluations[:10][::-1]],
+        'overall_scores': [eval.overall_score for eval in evaluations[:10][::-1]],
+        'productivity_scores': [eval.productivity_score for eval in evaluations[:10][::-1]],
+        'communication_scores': [eval.communication_score for eval in evaluations[:10][::-1]],
+    }
+    
+    context = {
+        'evaluated_user': user,
+        'evaluations': evaluations,
+        'stats': stats,
+        'chart_data': chart_data,
+        'page_title': f'Desempeño de {user.get_full_name()}'
+    }
+    return render(request, 'tickets/user_ai_performance_detail.html', context)
+
+
+@login_required
+def user_ai_performance_generate(request, user_id):
+    """Generar nueva evaluación de desempeño para un usuario"""
+    user = get_object_or_404(User, pk=user_id)
+    user_companies = get_user_companies(request.user)
+    
+    if request.method == 'POST':
+        period_start = request.POST.get('period_start')
+        period_end = request.POST.get('period_end')
+        
+        if not period_start or not period_end:
+            messages.error(request, 'Por favor selecciona las fechas del período')
+            return redirect('user_ai_performance_detail', user_id=user_id)
+        
+        try:
+            from datetime import datetime
+            start_date = datetime.strptime(period_start, '%Y-%m-%d').date()
+            end_date = datetime.strptime(period_end, '%Y-%m-%d').date()
+            
+            # Obtener reuniones del período
+            meetings = AIManagerMeeting.objects.filter(
+                user=user,
+                ai_manager__company__in=user_companies,
+                created_at__date__gte=start_date,
+                created_at__date__lte=end_date
+            ).select_related('ai_manager')
+            
+            if not meetings.exists():
+                messages.warning(request, 'No hay reuniones en este período')
+                return redirect('user_ai_performance_detail', user_id=user_id)
+            
+            # Generar evaluación con IA
+            from .models import SystemConfiguration
+            config = SystemConfiguration.get_config()
+            
+            if not config.openai_api_key:
+                messages.error(request, 'No hay API key configurada')
+                return redirect('user_ai_performance_detail', user_id=user_id)
+            
+            from openai import OpenAI
+            client = OpenAI(api_key=config.openai_api_key)
+            
+            # Preparar contexto de reuniones
+            meetings_context = ""
+            for i, meeting in enumerate(meetings[:20], 1):  # Limitar a 20 reuniones
+                meetings_context += f"\nReunión {i} - {meeting.created_at.strftime('%d/%m/%Y')}:\n"
+                meetings_context += f"Gerente: {meeting.ai_manager.name}\n"
+                meetings_context += f"Tema: {meeting.title}\n"
+                meetings_context += f"Input del usuario: {meeting.user_input[:300]}...\n"
+                meetings_context += f"Resumen: {meeting.ai_summary[:200]}...\n"
+                meetings_context += f"Áreas de mejora: {meeting.improvement_areas[:150]}...\n\n"
+            
+            # Llamada 1: Evaluación general y puntuaciones
+            evaluation_response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": f"""Eres un evaluador de desempeño experto. Analiza las reuniones del usuario y genera una evaluación completa.
+
+Usuario: {user.get_full_name()}
+Período: {start_date} a {end_date}
+Total de reuniones: {meetings.count()}
+
+{meetings_context}
+
+Genera una evaluación con:
+1. Puntuación general (1-100)
+2. Productividad (1-100)
+3. Comunicación (1-100)
+4. Logro de objetivos (1-100)
+5. Consistencia (1-100)
+
+FORMATO DE RESPUESTA (EXACTAMENTE ASÍ):
+OVERALL: [número]
+PRODUCTIVITY: [número]
+COMMUNICATION: [número]
+GOALS: [número]
+CONSISTENCY: [número]
+
+Luego agrega un análisis de 2-3 párrafos explicando las puntuaciones. NO uses Markdown, usa <strong>texto</strong> para resaltar."""
+                    }
+                ],
+                max_tokens=600
+            )
+            
+            eval_text = evaluation_response.choices[0].message.content.strip()
+            tokens_used = evaluation_response.usage.total_tokens
+            
+            # Parsear puntuaciones
+            import re
+            overall_match = re.search(r'OVERALL:\s*(\d+)', eval_text)
+            productivity_match = re.search(r'PRODUCTIVITY:\s*(\d+)', eval_text)
+            communication_match = re.search(r'COMMUNICATION:\s*(\d+)', eval_text)
+            goals_match = re.search(r'GOALS:\s*(\d+)', eval_text)
+            consistency_match = re.search(r'CONSISTENCY:\s*(\d+)', eval_text)
+            
+            overall_score = int(overall_match.group(1)) if overall_match else 75
+            productivity_score = int(productivity_match.group(1)) if productivity_match else 75
+            communication_score = int(communication_match.group(1)) if communication_match else 75
+            goal_achievement_score = int(goals_match.group(1)) if goals_match else 75
+            consistency_score = int(consistency_match.group(1)) if consistency_match else 75
+            
+            # Extraer resumen (después de las puntuaciones)
+            summary_parts = eval_text.split('CONSISTENCY:')
+            ai_summary = summary_parts[1].strip() if len(summary_parts) > 1 else eval_text
+            ai_summary = clean_markdown_to_html(ai_summary)
+            
+            # Llamada 2: Fortalezas
+            strengths_response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": f"""Identifica las 3-5 principales fortalezas del usuario basándote en sus reuniones.
+
+{meetings_context[:2000]}
+
+Lista las fortalezas de forma concreta y específica. NO uses Markdown, usa <strong>texto</strong> para resaltar. Formato: lista numerada simple."""
+                    }
+                ],
+                max_tokens=300
+            )
+            
+            strengths = strengths_response.choices[0].message.content.strip()
+            strengths = clean_markdown_to_html(strengths)
+            tokens_used += strengths_response.usage.total_tokens
+            
+            # Llamada 3: Áreas de mejora
+            improvement_response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": f"""Identifica las 3-5 principales áreas de mejora del usuario.
+
+{meetings_context[:2000]}
+
+Lista las áreas que necesitan trabajo. Sé constructivo. NO uses Markdown, usa <strong>texto</strong> para resaltar."""
+                    }
+                ],
+                max_tokens=300
+            )
+            
+            improvement_areas = improvement_response.choices[0].message.content.strip()
+            improvement_areas = clean_markdown_to_html(improvement_areas)
+            tokens_used += improvement_response.usage.total_tokens
+            
+            # Llamada 4: Recomendaciones de capacitación
+            training_response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": f"""Sugiere 3-5 cursos, entrenamientos o recursos específicos que ayudarían al usuario a mejorar.
+
+Áreas de mejora identificadas:
+{improvement_areas}
+
+Proporciona recomendaciones concretas (nombres de cursos, temas, plataformas). NO uses Markdown, usa <strong>texto</strong> para resaltar."""
+                    }
+                ],
+                max_tokens=300
+            )
+            
+            training_recommendations = training_response.choices[0].message.content.strip()
+            training_recommendations = clean_markdown_to_html(training_recommendations)
+            tokens_used += training_response.usage.total_tokens
+            
+            # Crear la evaluación
+            evaluation = UserAIPerformanceEvaluation.objects.create(
+                user=user,
+                company=meetings.first().ai_manager.company,
+                evaluation_date=end_date,
+                overall_score=overall_score,
+                productivity_score=productivity_score,
+                communication_score=communication_score,
+                goal_achievement_score=goal_achievement_score,
+                consistency_score=consistency_score,
+                improvement_areas=improvement_areas,
+                training_recommendations=training_recommendations,
+                strengths=strengths,
+                meetings_analyzed=meetings.count(),
+                period_start=start_date,
+                period_end=end_date,
+                ai_summary=ai_summary,
+                tokens_used=tokens_used,
+                generated_by=request.user
+            )
+            
+            messages.success(request, f'Evaluación generada exitosamente. Puntuación: {overall_score}/100')
+            return redirect('user_ai_performance_detail', user_id=user_id)
+            
+        except Exception as e:
+            messages.error(request, f'Error al generar evaluación: {str(e)}')
+            return redirect('user_ai_performance_detail', user_id=user_id)
+    
+    return redirect('user_ai_performance_detail', user_id=user_id)
+
+
+# ============= VISTAS PARA RASTREADOR WEB =============
+
+@login_required
+def website_tracker_list(request):
+    """Lista de rastreos realizados"""
+    trackers = WebsiteTracker.objects.filter(user=request.user).order_by('-created_at')
+    
+    context = {
+        'trackers': trackers,
+        'page_title': 'Rastreador Web'
+    }
+    return render(request, 'tickets/website_tracker_list.html', context)
+
+
+@login_required
+def website_tracker_create(request):
+    """Crear nuevo rastreo de sitio web/IP"""
+    if request.method == 'POST':
+        target = request.POST.get('target', '').strip()
+        
+        if not target:
+            messages.error(request, 'Debes proporcionar una URL o IP')
+            return redirect('website_tracker_list')
+        
+        try:
+            # Importar la función de rastreo
+            from .web_tracker_utils import track_website
+            
+            # Realizar el rastreo
+            result = track_website(target)
+            
+            # Crear el registro
+            tracker = WebsiteTracker.objects.create(
+                target=target,
+                user=request.user,
+                is_active=result['is_active'],
+                ping_response_time=result['ping_response_time'],
+                ip_address=result['ip_address'] or '',
+                cname_records=result['cname_records'],
+                txt_records=result['txt_records'],
+                mx_records=result['mx_records'],
+                ns_records=result['ns_records'],
+                http_status_code=result['http_status_code'],
+                http_headers=result['http_headers'],
+                redirect_url=result['redirect_url'] or '',
+                server_software=result['server_software'] or '',
+                technologies=result['technologies'],
+                ssl_valid=result['ssl_valid'],
+                ssl_issuer=result['ssl_issuer'] or '',
+                ssl_expiry_date=result['ssl_expiry_date'],
+                page_title=result['page_title'] or '',
+                meta_description=result['meta_description'] or '',
+                page_size=result['page_size'],
+                load_time=result['load_time'],
+                error_message=result['error_message'] or ''
+            )
+            
+            messages.success(request, f'Rastreo completado exitosamente para {target}')
+            return redirect('website_tracker_detail', pk=tracker.pk)
+            
+        except Exception as e:
+            messages.error(request, f'Error al realizar el rastreo: {str(e)}')
+            return redirect('website_tracker_list')
+    
+    return redirect('website_tracker_list')
+
+
+@login_required
+def website_tracker_detail(request, pk):
+    """Detalle de un rastreo"""
+    tracker = get_object_or_404(WebsiteTracker, pk=pk, user=request.user)
+    
+    context = {
+        'tracker': tracker,
+        'page_title': f'Rastreo - {tracker.target}'
+    }
+    return render(request, 'tickets/website_tracker_detail.html', context)
+
+
+@login_required
+def website_tracker_delete(request, pk):
+    """Eliminar un rastreo"""
+    tracker = get_object_or_404(WebsiteTracker, pk=pk, user=request.user)
+    
+    if request.method == 'POST':
+        target = tracker.target
+        tracker.delete()
+        messages.success(request, f'Rastreo de {target} eliminado exitosamente')
+        return redirect('website_tracker_list')
+    
+    context = {
+        'tracker': tracker,
+        'page_title': f'Eliminar rastreo - {tracker.target}'
+    }
+    return render(request, 'tickets/website_tracker_delete.html', context)
+
+
+# ============= VIEWS PARA GENERADOR DE CONTRATOS LEGALES =============
+
+@login_required
+def legal_contract_list(request):
+    """Lista de contratos legales"""
+    contracts = LegalContract.objects.filter(user=request.user).select_related(
+        'company', 'client_company', 'user'
+    ).order_by('-created_at')
+    
+    # Filtros
+    status_filter = request.GET.get('status', '')
+    search = request.GET.get('search', '')
+    
+    if status_filter:
+        contracts = contracts.filter(status=status_filter)
+    
+    if search:
+        contracts = contracts.filter(
+            Q(name__icontains=search) |
+            Q(contract_type__icontains=search) |
+            Q(company__name__icontains=search) |
+            Q(client_company__name__icontains=search)
+        )
+    
+    # Paginación
+    paginator = Paginator(contracts, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'status_filter': status_filter,
+        'search': search,
+        'page_title': 'Contratos Legales'
+    }
+    return render(request, 'tickets/legal_contract_list.html', context)
+
+
+@login_required
+def legal_contract_create(request):
+    """Crear nuevo contrato legal"""
+    if request.method == 'POST':
+        try:
+            contract = LegalContract.objects.create(
+                name=request.POST.get('name'),
+                contract_type=request.POST.get('contract_type'),
+                objective_prompt=request.POST.get('objective_prompt'),
+                company_id=request.POST.get('company'),
+                client_company_id=request.POST.get('client_company'),
+                start_date=request.POST.get('start_date') or None,
+                end_date=request.POST.get('end_date') or None,
+                amount=request.POST.get('amount') or None,
+                currency=request.POST.get('currency', 'USD'),
+                user=request.user,
+                status='draft'
+            )
+            
+            messages.success(request, 'Contrato creado exitosamente')
+            return redirect('legal_contract_detail', pk=contract.pk)
+            
+        except Exception as e:
+            messages.error(request, f'Error al crear el contrato: {str(e)}')
+    
+    companies = Company.objects.filter(is_active=True).order_by('name')
+    
+    context = {
+        'companies': companies,
+        'page_title': 'Nuevo Contrato Legal'
+    }
+    return render(request, 'tickets/legal_contract_form.html', context)
+
+
+@login_required
+def legal_contract_detail(request, pk):
+    """Detalle de un contrato legal"""
+    contract = get_object_or_404(
+        LegalContract.objects.select_related('company', 'client_company', 'user'),
+        pk=pk,
+        user=request.user
+    )
+    
+    context = {
+        'contract': contract,
+        'page_title': f'Contrato - {contract.name}'
+    }
+    return render(request, 'tickets/legal_contract_detail.html', context)
+
+
+@login_required
+def legal_contract_edit(request, pk):
+    """Editar contrato legal"""
+    contract = get_object_or_404(LegalContract, pk=pk, user=request.user)
+    
+    if request.method == 'POST':
+        try:
+            contract.name = request.POST.get('name')
+            contract.contract_type = request.POST.get('contract_type')
+            contract.objective_prompt = request.POST.get('objective_prompt')
+            contract.company_id = request.POST.get('company')
+            contract.client_company_id = request.POST.get('client_company')
+            contract.start_date = request.POST.get('start_date') or None
+            contract.end_date = request.POST.get('end_date') or None
+            contract.amount = request.POST.get('amount') or None
+            contract.currency = request.POST.get('currency', 'USD')
+            contract.notes = request.POST.get('notes', '')
+            contract.save()
+            
+            messages.success(request, 'Contrato actualizado exitosamente')
+            return redirect('legal_contract_detail', pk=contract.pk)
+            
+        except Exception as e:
+            messages.error(request, f'Error al actualizar el contrato: {str(e)}')
+    
+    companies = Company.objects.filter(is_active=True).order_by('name')
+    
+    context = {
+        'contract': contract,
+        'companies': companies,
+        'page_title': f'Editar - {contract.name}'
+    }
+    return render(request, 'tickets/legal_contract_form.html', context)
+
+
+@login_required
+def legal_contract_delete(request, pk):
+    """Eliminar contrato legal"""
+    contract = get_object_or_404(LegalContract, pk=pk, user=request.user)
+    
+    if request.method == 'POST':
+        name = contract.name
+        contract.delete()
+        messages.success(request, f'Contrato "{name}" eliminado exitosamente')
+        return redirect('legal_contract_list')
+    
+    context = {
+        'contract': contract,
+        'page_title': f'Eliminar - {contract.name}'
+    }
+    return render(request, 'tickets/legal_contract_delete.html', context)
+
+
+@login_required
+def legal_contract_update_content(request, pk):
+    """Actualizar el contenido generado del contrato"""
+    contract = get_object_or_404(LegalContract, pk=pk, user=request.user)
+    
+    if request.method == 'POST':
+        try:
+            new_content = request.POST.get('generated_content', '').strip()
+            if not new_content:
+                messages.error(request, 'El contenido no puede estar vacío')
+                return redirect('legal_contract_detail', pk=contract.pk)
+            
+            contract.generated_content = new_content
+            contract.save()
+            
+            messages.success(request, 'Contenido del contrato actualizado exitosamente')
+        except Exception as e:
+            messages.error(request, f'Error al actualizar el contenido: {str(e)}')
+    
+    return redirect('legal_contract_detail', pk=contract.pk)
+
+
+@login_required
+def legal_contract_generate(request, pk):
+    """Generar contrato con IA"""
+    contract = get_object_or_404(LegalContract, pk=pk, user=request.user)
+    
+    if request.method == 'POST':
+        try:
+            contract.generate_with_ai()
+            messages.success(request, 'Contrato generado exitosamente con IA')
+        except Exception as e:
+            messages.error(request, f'Error al generar el contrato: {str(e)}')
+        
+        return redirect('legal_contract_detail', pk=contract.pk)
+    
+    return redirect('legal_contract_detail', pk=contract.pk)
+
+
+@login_required
+def legal_contract_download_pdf(request, pk):
+    """Descargar contrato en PDF"""
+    from reportlab.lib.pagesizes import letter, A4
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
+    from io import BytesIO
+    import markdown
+    from bs4 import BeautifulSoup
+    
+    contract = get_object_or_404(LegalContract, pk=pk, user=request.user)
+    
+    # Crear el PDF en memoria
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=72, leftMargin=72,
+                            topMargin=72, bottomMargin=18)
+    
+    # Estilos
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=18,
+        textColor=colors.HexColor('#2C3E50'),
+        spaceAfter=30,
+        alignment=TA_CENTER,
+        fontName='Helvetica-Bold'
+    )
+    
+    heading_style = ParagraphStyle(
+        'CustomHeading',
+        parent=styles['Heading2'],
+        fontSize=14,
+        textColor=colors.HexColor('#34495E'),
+        spaceAfter=12,
+        spaceBefore=12,
+        fontName='Helvetica-Bold'
+    )
+    
+    normal_style = ParagraphStyle(
+        'CustomNormal',
+        parent=styles['Normal'],
+        fontSize=11,
+        leading=16,
+        alignment=TA_JUSTIFY,
+        spaceAfter=10
+    )
+    
+    # Contenido del PDF
+    story = []
+    
+    # Título
+    story.append(Paragraph(contract.name.upper(), title_style))
+    story.append(Spacer(1, 0.2 * inch))
+    
+    # Información de las partes
+    story.append(Paragraph("PARTES CONTRATANTES", heading_style))
+    
+    parties_data = [
+        ['PROVEEDOR:', contract.company.name],
+        ['Dirección:', contract.company.address or 'N/A'],
+        ['Teléfono:', contract.company.phone or 'N/A'],
+        ['Email:', contract.company.email or 'N/A'],
+        ['', ''],
+        ['CLIENTE:', contract.client_company.name],
+        ['Dirección:', contract.client_company.address or 'N/A'],
+        ['Teléfono:', contract.client_company.phone or 'N/A'],
+        ['Email:', contract.client_company.email or 'N/A'],
+    ]
+    
+    parties_table = Table(parties_data, colWidths=[2*inch, 4*inch])
+    parties_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#2C3E50')),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+    ]))
+    
+    story.append(parties_table)
+    story.append(Spacer(1, 0.3 * inch))
+    
+    # Detalles del contrato
+    if contract.start_date or contract.end_date or contract.amount:
+        story.append(Paragraph("DETALLES DEL CONTRATO", heading_style))
+        
+        details_data = []
+        if contract.start_date:
+            details_data.append(['Fecha de inicio:', contract.start_date.strftime('%d/%m/%Y')])
+        if contract.end_date:
+            details_data.append(['Fecha de finalización:', contract.end_date.strftime('%d/%m/%Y')])
+        if contract.amount:
+            details_data.append(['Monto:', f'{contract.amount} {contract.currency}'])
+        
+        details_table = Table(details_data, colWidths=[2*inch, 4*inch])
+        details_table.setStyle(TableStyle([
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#2C3E50')),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ]))
+        
+        story.append(details_table)
+        story.append(Spacer(1, 0.3 * inch))
+    
+    # Contenido generado
+    if contract.generated_content:
+        story.append(Paragraph("CONTENIDO DEL CONTRATO", heading_style))
+        story.append(Spacer(1, 0.1 * inch))
+        
+        # Convertir Markdown a HTML y luego a paragraphs
+        html_content = markdown.markdown(contract.generated_content)
+        soup = BeautifulSoup(html_content, 'html.parser')
+        
+        for element in soup.find_all(['p', 'h1', 'h2', 'h3', 'ul', 'ol']):
+            if element.name in ['h1', 'h2', 'h3']:
+                story.append(Paragraph(element.get_text(), heading_style))
+            elif element.name == 'p':
+                story.append(Paragraph(element.get_text(), normal_style))
+            elif element.name in ['ul', 'ol']:
+                for li in element.find_all('li'):
+                    story.append(Paragraph(f"• {li.get_text()}", normal_style))
+            story.append(Spacer(1, 0.1 * inch))
+    
+    # Firmas
+    story.append(PageBreak())
+    story.append(Spacer(1, 1 * inch))
+    story.append(Paragraph("FIRMAS", heading_style))
+    story.append(Spacer(1, 0.5 * inch))
+    
+    signatures_data = [
+        ['_' * 40, '_' * 40],
+        [contract.company.name, contract.client_company.name],
+        ['Proveedor', 'Cliente'],
+    ]
+    
+    signatures_table = Table(signatures_data, colWidths=[3*inch, 3*inch])
+    signatures_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 1), (-1, 2), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('TOPPADDING', (0, 0), (-1, -1), 10),
+    ]))
+    
+    story.append(signatures_table)
+    
+    # Pie de página con fecha
+    story.append(Spacer(1, 0.5 * inch))
+    footer_text = f"Documento generado el {timezone.now().strftime('%d de %B de %Y')}"
+    story.append(Paragraph(footer_text, ParagraphStyle('Footer', parent=styles['Normal'],
+                                                        fontSize=9, textColor=colors.grey,
+                                                        alignment=TA_CENTER)))
+    
+    # Construir el PDF
+    doc.build(story)
+    
+    # Obtener el valor del PDF
+    pdf = buffer.getvalue()
+    buffer.close()
+    
+    # Crear la respuesta
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="contrato_{contract.pk}_{contract.name.replace(" ", "_")}.pdf"'
+    response.write(pdf)
+    
+    return response
+
+
+@login_required
+def legal_contract_toggle_public(request, pk):
+    """Activar/desactivar acceso público del contrato"""
+    contract = get_object_or_404(LegalContract, pk=pk, user=request.user)
+    
+    if request.method == 'POST':
+        contract.is_public = not contract.is_public
+        contract.save()
+        
+        status = 'activado' if contract.is_public else 'desactivado'
+        messages.success(request, f'Acceso público {status} para el contrato')
+        
+        return redirect('legal_contract_detail', pk=contract.pk)
+    
+    return redirect('legal_contract_detail', pk=contract.pk)
+
+
+def legal_contract_public(request, token):
+    """Vista pública del contrato (sin autenticación)"""
+    contract = get_object_or_404(
+        LegalContract.objects.select_related('company', 'client_company'),
+        public_token=token,
+        is_public=True
+    )
+    
+    context = {
+        'contract': contract,
+        'page_title': contract.name,
+        'is_public_view': True
+    }
+    return render(request, 'tickets/legal_contract_public.html', context)
+
+
+def legal_contract_public_pdf(request, token):
+    """Descargar PDF público del contrato (sin autenticación)"""
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
+    from io import BytesIO
+    import markdown
+    from bs4 import BeautifulSoup
+    
+    contract = get_object_or_404(LegalContract, public_token=token, is_public=True)
+    
+    # Usar el mismo código que legal_contract_download_pdf pero sin requerir autenticación
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=72, leftMargin=72,
+                            topMargin=72, bottomMargin=18)
+    
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=18,
+        textColor=colors.HexColor('#2C3E50'),
+        spaceAfter=30,
+        alignment=TA_CENTER,
+        fontName='Helvetica-Bold'
+    )
+    
+    heading_style = ParagraphStyle(
+        'CustomHeading',
+        parent=styles['Heading2'],
+        fontSize=14,
+        textColor=colors.HexColor('#34495E'),
+        spaceAfter=12,
+        spaceBefore=12,
+        fontName='Helvetica-Bold'
+    )
+    
+    normal_style = ParagraphStyle(
+        'CustomNormal',
+        parent=styles['Normal'],
+        fontSize=11,
+        leading=16,
+        alignment=TA_JUSTIFY,
+        spaceAfter=10
+    )
+    
+    story = []
+    story.append(Paragraph(contract.name.upper(), title_style))
+    story.append(Spacer(1, 0.2 * inch))
+    
+    story.append(Paragraph("PARTES CONTRATANTES", heading_style))
+    
+    parties_data = [
+        ['PROVEEDOR:', contract.company.name],
+        ['Dirección:', contract.company.address or 'N/A'],
+        ['Teléfono:', contract.company.phone or 'N/A'],
+        ['Email:', contract.company.email or 'N/A'],
+        ['', ''],
+        ['CLIENTE:', contract.client_company.name],
+        ['Dirección:', contract.client_company.address or 'N/A'],
+        ['Teléfono:', contract.client_company.phone or 'N/A'],
+        ['Email:', contract.client_company.email or 'N/A'],
+    ]
+    
+    parties_table = Table(parties_data, colWidths=[2*inch, 4*inch])
+    parties_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#2C3E50')),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+    ]))
+    
+    story.append(parties_table)
+    story.append(Spacer(1, 0.3 * inch))
+    
+    if contract.start_date or contract.end_date or contract.amount:
+        story.append(Paragraph("DETALLES DEL CONTRATO", heading_style))
+        
+        details_data = []
+        if contract.start_date:
+            details_data.append(['Fecha de inicio:', contract.start_date.strftime('%d/%m/%Y')])
+        if contract.end_date:
+            details_data.append(['Fecha de finalización:', contract.end_date.strftime('%d/%m/%Y')])
+        if contract.amount:
+            details_data.append(['Monto:', f'{contract.amount} {contract.currency}'])
+        
+        details_table = Table(details_data, colWidths=[2*inch, 4*inch])
+        details_table.setStyle(TableStyle([
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#2C3E50')),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ]))
+        
+        story.append(details_table)
+        story.append(Spacer(1, 0.3 * inch))
+    
+    if contract.generated_content:
+        story.append(Paragraph("CONTENIDO DEL CONTRATO", heading_style))
+        story.append(Spacer(1, 0.1 * inch))
+        
+        html_content = markdown.markdown(contract.generated_content)
+        soup = BeautifulSoup(html_content, 'html.parser')
+        
+        for element in soup.find_all(['p', 'h1', 'h2', 'h3', 'ul', 'ol']):
+            if element.name in ['h1', 'h2', 'h3']:
+                story.append(Paragraph(element.get_text(), heading_style))
+            elif element.name == 'p':
+                story.append(Paragraph(element.get_text(), normal_style))
+            elif element.name in ['ul', 'ol']:
+                for li in element.find_all('li'):
+                    story.append(Paragraph(f"• {li.get_text()}", normal_style))
+            story.append(Spacer(1, 0.1 * inch))
+    
+    story.append(PageBreak())
+    story.append(Spacer(1, 1 * inch))
+    story.append(Paragraph("FIRMAS", heading_style))
+    story.append(Spacer(1, 0.5 * inch))
+    
+    signatures_data = [
+        ['_' * 40, '_' * 40],
+        [contract.company.name, contract.client_company.name],
+        ['Proveedor', 'Cliente'],
+    ]
+    
+    signatures_table = Table(signatures_data, colWidths=[3*inch, 3*inch])
+    signatures_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 1), (-1, 2), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('TOPPADDING', (0, 0), (-1, -1), 10),
+    ]))
+    
+    story.append(signatures_table)
+    story.append(Spacer(1, 0.5 * inch))
+    
+    footer_text = f"Documento generado el {timezone.now().strftime('%d de %B de %Y')}"
+    story.append(Paragraph(footer_text, ParagraphStyle('Footer', parent=styles['Normal'],
+                                                        fontSize=9, textColor=colors.grey,
+                                                        alignment=TA_CENTER)))
+    
+    doc.build(story)
+    pdf = buffer.getvalue()
+    buffer.close()
+    
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="contrato_{contract.name.replace(" ", "_")}.pdf"'
+    response.write(pdf)
+    
+    return response
+
+
+# ============================================================================
+# VISTAS PARA REVISIÓN DE CONTRATOS DE PROVEEDORES
+# ============================================================================
+
+@login_required
+def supplier_contract_review_list(request):
+    """Lista de revisiones de contratos de proveedores"""
+    from .models import SupplierContractReview
+    
+    reviews = SupplierContractReview.objects.filter(user=request.user).select_related('company')
+    
+    # Filtros
+    search = request.GET.get('search', '')
+    if search:
+        reviews = reviews.filter(
+            Q(name__icontains=search) |
+            Q(supplier_name__icontains=search)
+        )
+    
+    company_id = request.GET.get('company')
+    if company_id:
+        reviews = reviews.filter(company_id=company_id)
+    
+    status = request.GET.get('status')
+    if status:
+        reviews = reviews.filter(status=status)
+    
+    risk_level = request.GET.get('risk_level')
+    if risk_level:
+        reviews = reviews.filter(risk_level=risk_level)
+    
+    # Paginación
+    paginator = Paginator(reviews, 12)
+    page_number = request.GET.get('page')
+    reviews = paginator.get_page(page_number)
+    
+    companies = Company.objects.filter(is_active=True).order_by('name')
+    
+    context = {
+        'reviews': reviews,
+        'companies': companies,
+        'page_title': 'Revisión de Contratos de Proveedores'
+    }
+    return render(request, 'tickets/supplier_contract_review_list.html', context)
+
+
+@login_required
+def supplier_contract_review_create(request):
+    """Crear nueva revisión de contrato"""
+    from .models import SupplierContractReview
+    
+    if request.method == 'POST':
+        try:
+            review = SupplierContractReview()
+            review.user = request.user
+            review.name = request.POST.get('name')
+            review.supplier_name = request.POST.get('supplier_name')
+            review.company_id = request.POST.get('company')
+            review.contract_text = request.POST.get('contract_text', '')
+            
+            # Manejar archivo
+            if 'contract_file' in request.FILES:
+                review.contract_file = request.FILES['contract_file']
+            
+            review.internal_notes = request.POST.get('internal_notes', '')
+            review.save()
+            
+            messages.success(request, 'Contrato guardado exitosamente. Ahora puedes generar la revisión con IA.')
+            return redirect('supplier_contract_review_detail', pk=review.pk)
+            
+        except Exception as e:
+            messages.error(request, f'Error al guardar el contrato: {str(e)}')
+    
+    companies = Company.objects.filter(is_active=True).order_by('name')
+    
+    context = {
+        'companies': companies,
+        'page_title': 'Nueva Revisión de Contrato'
+    }
+    return render(request, 'tickets/supplier_contract_review_form.html', context)
+
+
+@login_required
+def supplier_contract_review_detail(request, pk):
+    """Detalle de revisión de contrato"""
+    from .models import SupplierContractReview
+    
+    review = get_object_or_404(SupplierContractReview, pk=pk, user=request.user)
+    
+    context = {
+        'review': review,
+        'page_title': review.name
+    }
+    return render(request, 'tickets/supplier_contract_review_detail.html', context)
+
+
+@login_required
+def supplier_contract_review_edit(request, pk):
+    """Editar revisión de contrato"""
+    from .models import SupplierContractReview
+    
+    review = get_object_or_404(SupplierContractReview, pk=pk, user=request.user)
+    
+    if request.method == 'POST':
+        try:
+            review.name = request.POST.get('name')
+            review.supplier_name = request.POST.get('supplier_name')
+            review.company_id = request.POST.get('company')
+            review.contract_text = request.POST.get('contract_text', '')
+            
+            # Manejar archivo
+            if 'contract_file' in request.FILES:
+                review.contract_file = request.FILES['contract_file']
+            
+            review.internal_notes = request.POST.get('internal_notes', '')
+            review.save()
+            
+            messages.success(request, 'Contrato actualizado exitosamente')
+            return redirect('supplier_contract_review_detail', pk=review.pk)
+            
+        except Exception as e:
+            messages.error(request, f'Error al actualizar el contrato: {str(e)}')
+    
+    companies = Company.objects.filter(is_active=True).order_by('name')
+    
+    context = {
+        'review': review,
+        'companies': companies,
+        'page_title': f'Editar - {review.name}'
+    }
+    return render(request, 'tickets/supplier_contract_review_form.html', context)
+
+
+@login_required
+def supplier_contract_review_delete(request, pk):
+    """Eliminar revisión de contrato"""
+    from .models import SupplierContractReview
+    
+    review = get_object_or_404(SupplierContractReview, pk=pk, user=request.user)
+    
+    if request.method == 'POST':
+        name = review.name
+        review.delete()
+        messages.success(request, f'Revisión "{name}" eliminada exitosamente')
+        return redirect('supplier_contract_review_list')
+    
+    context = {
+        'review': review,
+        'page_title': f'Eliminar - {review.name}'
+    }
+    return render(request, 'tickets/supplier_contract_review_delete.html', context)
+
+
+@login_required
+def supplier_contract_review_generate(request, pk):
+    """Generar revisión con IA"""
+    from .models import SupplierContractReview
+    
+    review = get_object_or_404(SupplierContractReview, pk=pk, user=request.user)
+    
+    if request.method == 'POST':
+        try:
+            review.review_with_ai()
+            messages.success(request, 'Revisión generada exitosamente con IA')
+        except Exception as e:
+            messages.error(request, f'Error al generar revisión: {str(e)}')
+    
+    return redirect('supplier_contract_review_detail', pk=review.pk)
+
+
+@login_required
+def supplier_contract_review_update_status(request, pk):
+    """Actualizar el estado de la revisión"""
+    from .models import SupplierContractReview
+    
+    review = get_object_or_404(SupplierContractReview, pk=pk, user=request.user)
+    
+    if request.method == 'POST':
+        new_status = request.POST.get('status')
+        if new_status in dict(SupplierContractReview.REVIEW_STATUS_CHOICES).keys():
+            review.status = new_status
+            review.save()
+            messages.success(request, f'Estado actualizado a {review.get_status_display()}')
+        else:
+            messages.error(request, 'Estado inválido')
+    
+    return redirect('supplier_contract_review_detail', pk=review.pk)
+
+
+@login_required
+def supplier_contract_review_download_pdf(request, pk):
+    """Descargar revisión en PDF"""
+    from .models import SupplierContractReview
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib import colors
+    from reportlab.lib.units import inch
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT
+    from io import BytesIO
+    
+    review = get_object_or_404(SupplierContractReview, pk=pk, user=request.user)
+    
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter,
+                           rightMargin=72, leftMargin=72,
+                           topMargin=72, bottomMargin=18)
+    
+    story = []
+    styles = getSampleStyleSheet()
+    
+    # Título
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=24,
+        textColor=colors.HexColor('#1a365d'),
+        spaceAfter=30,
+        alignment=TA_CENTER
+    )
+    story.append(Paragraph("REVISIÓN DE CONTRATO DE PROVEEDOR", title_style))
+    story.append(Spacer(1, 0.3 * inch))
+    
+    # Información básica
+    info_data = [
+        ['Contrato:', review.name],
+        ['Proveedor:', review.supplier_name],
+        ['Empresa Revisora:', review.company.name],
+        ['Estado:', review.get_status_display()],
+        ['Nivel de Riesgo:', review.get_risk_level_display()],
+        ['Fecha de Revisión:', review.reviewed_at.strftime('%d/%m/%Y') if review.reviewed_at else 'Pendiente'],
+    ]
+    
+    info_table = Table(info_data, colWidths=[2*inch, 4*inch])
+    info_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#e6f2ff')),
+        ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+    ]))
+    
+    story.append(info_table)
+    story.append(Spacer(1, 0.5 * inch))
+    
+    # Revisión de IA
+    if review.ai_review:
+        story.append(Paragraph("ANÁLISIS COMPLETO", styles['Heading2']))
+        story.append(Spacer(1, 0.2 * inch))
+        
+        # Procesar el contenido línea por línea
+        review_lines = review.ai_review.split('\n')
+        for line in review_lines:
+            if line.strip():
+                story.append(Paragraph(line, styles['BodyText']))
+                story.append(Spacer(1, 0.1 * inch))
+    
+    # Footer
+    story.append(Spacer(1, 0.5 * inch))
+    footer_text = f"Documento generado el {timezone.now().strftime('%d de %B de %Y')}"
+    story.append(Paragraph(footer_text, ParagraphStyle('Footer', parent=styles['Normal'],
+                                                        fontSize=9, textColor=colors.grey,
+                                                        alignment=TA_CENTER)))
+    
+    doc.build(story)
+    pdf = buffer.getvalue()
+    buffer.close()
+    
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="revision_contrato_{review.name.replace(" ", "_")}.pdf"'
+    response.write(pdf)
+    
+    return response
+
+
+
+
