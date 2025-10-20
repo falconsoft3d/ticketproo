@@ -256,6 +256,50 @@
             left: 100%;
         }
         
+        .btn-outline-success {
+            border: 2px solid var(--success-color);
+            color: var(--success-color);
+            background: rgba(16, 185, 129, 0.05);
+            border-radius: 12px;
+            padding: 1rem 2rem;
+            font-size: 1.125rem;
+            font-weight: 600;
+            text-transform: none;
+            letter-spacing: 0.025em;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            backdrop-filter: blur(10px);
+        }
+        
+        .btn-outline-success:hover {
+            background: var(--success-color);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-xl);
+            border-color: var(--success-color);
+        }
+        
+        .btn-outline-success:active {
+            transform: translateY(0);
+        }
+        
+        .btn-outline-success::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .btn-outline-success:hover::before {
+            left: 100%;
+        }
+        
         .feature-badge {
             background: linear-gradient(135deg, var(--success-color) 0%, #34d399 100%);
             color: white;
@@ -313,6 +357,18 @@
         
         .form-floating textarea + label {
             padding: 1rem 1.25rem;
+        }
+        
+        .form-floating select.form-control {
+            padding-top: 1.625rem;
+            padding-bottom: 0.625rem;
+            line-height: 1.25;
+        }
+        
+        .form-floating select.form-control:focus ~ label,
+        .form-floating select.form-control:not(:placeholder-shown) ~ label {
+            opacity: 0.65;
+            transform: scale(0.85) translateY(-0.5rem) translateX(0.15rem);
         }
         
         .trust-indicators {
@@ -569,6 +625,31 @@
         @keyframes spinner-border {
             to { transform: rotate(360deg); }
         }
+        
+        /* Estilos para los contadores de botones */
+        .badge {
+            font-size: 0.75rem;
+            min-width: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .badge.bg-success {
+            animation: pulse-success 0.6s ease-in-out;
+        }
+        
+        .badge.bg-danger {
+            animation: pulse-error 0.6s ease-in-out;
+        }
+        
+        @keyframes pulse-success {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); background-color: #198754; }
+        }
+        
+        @keyframes pulse-error {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); background-color: #dc3545; }
+        }
     </style>
 </head>
 <body>
@@ -598,7 +679,20 @@
                                             <img src="{{ landing_page.imagen.url }}" alt="{{ landing_page.nombre_producto }}" class="product-image">
                                         </div>
                                     {% endif %}
+
+                                    {% if landing_page.meeting_url %}
+                                            <div class="d-grid mb-3">
+                                                <a href="{{ landing_page.meeting_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-success btn-lg" id="meetingButton" onclick="trackMeetingClick(event)">
+                                                    <i class="fas fa-calendar-plus me-2"></i>
+                                                    Planificar Reunión
+                                                    <span class="badge bg-light text-dark ms-2" id="meetingCounter">{{ landing_page.meeting_button_clicks }}</span>
+                                                </a>
+                                            </div>
+                                            {% endif %}        
+
                                 </div>
+
+                                
                             </div>
                             
                             <!-- Sección del Formulario -->
@@ -614,6 +708,8 @@
                                                 {{ landing_page.subtitulo_formulario|default:"Completa el formulario y recibe información detallada sobre nuestros productos y servicios." }}
                                             </p>
                                         </div>
+
+                                        
                                         
                                         <form method="post" id="landingForm" novalidate>
                                             {% csrf_token %}
@@ -635,43 +731,63 @@
                                                 </div>
                                             </div>
                                             
-                                            <div class="form-floating">
-                                                {{ form.email }}
-                                                <label for="{{ form.email.id_for_label }}" class="required-field">{{ form.email.label }}</label>
+                                            <div class="row">
+                                                <div class="col-sm-6">
+                                                    <div class="form-floating">
+                                                        {{ form.email }}
+                                                        <label for="{{ form.email.id_for_label }}" class="required-field">{{ form.email.label }}</label>
+                                                    </div>
+                                                    <div class="invalid-feedback"></div>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <div class="form-floating">
+                                                        {{ form.telefono }}
+                                                        <label for="{{ form.telefono.id_for_label }}" class="required-field">{{ form.telefono.label }}</label>
+                                                    </div>
+                                                    <div class="invalid-feedback"></div>
+                                                </div>
                                             </div>
-                                            <div class="invalid-feedback"></div>
                                             
-                                            <div class="form-floating">
-                                                {{ form.telefono }}
-                                                <label for="{{ form.telefono.id_for_label }}">{{ form.telefono.label }}</label>
+                                            <div class="row">
+                                                <div class="col-sm-6">
+                                                    <div class="form-floating">
+                                                        {{ form.empresa }}
+                                                        <label for="{{ form.empresa.id_for_label }}" class="required-field">{{ form.empresa.label }}</label>
+                                                    </div>
+                                                    <div class="invalid-feedback"></div>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <div class="form-floating">
+                                                        {{ form.cargo }}
+                                                        <label for="{{ form.cargo.id_for_label }}" class="required-field">{{ form.cargo.label }}</label>
+                                                    </div>
+                                                    <div class="invalid-feedback"></div>
+                                                </div>
                                             </div>
-                                            <div class="invalid-feedback"></div>
-                                            
-                                            <div class="form-floating">
-                                                {{ form.empresa }}
-                                                <label for="{{ form.empresa.id_for_label }}">{{ form.empresa.label }}</label>
-                                            </div>
-                                            <div class="invalid-feedback"></div>
                                             
                                             <div class="form-floating">
                                                 {{ form.mensaje }}
-                                                <label for="{{ form.mensaje.id_for_label }}">{{ form.mensaje.label }}</label>
+                                                <label for="{{ form.mensaje.id_for_label }}" class="required-field">{{ form.mensaje.label }}</label>
+                                            </div>
+                                            <div class="invalid-feedback"></div>
+                                            
+                                            <div class="form-floating">
+                                                {{ form.preferred_contact_time }}
+                                                <label for="{{ form.preferred_contact_time.id_for_label }}" class="required-field">{{ form.preferred_contact_time.label }}</label>
                                             </div>
                                             <div class="invalid-feedback"></div>
                                             
                                             <div class="d-grid mb-3">
-                                                <button type="submit" class="btn btn-primary btn-lg">
+                                                <button type="submit" class="btn btn-primary btn-lg" id="contactButton">
                                                     <i class="fas fa-paper-plane me-2"></i>
-                                                    Solicitar Información Gratuita
+                                                    Contactar
+                                                    <span class="badge bg-light text-dark ms-2" id="contactCounter">{{ landing_page.contact_button_clicks }}</span>
                                                 </button>
                                             </div>
                                             
-                                            <div class="text-center">
-                                                <p class="text-muted small mb-0">
-                                                    <i class="fas fa-lock me-2" style="color: var(--success-color);"></i>
-                                                    Tus datos están seguros. Sin spam garantizado.
-                                                </p>
-                                            </div>
+                                            
+                                            
+                                            
                                         </form>
                                     </div>
                                 </div>
@@ -687,6 +803,91 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
+        // Variable global con el slug de la landing page
+        const LANDING_PAGE_SLUG = '{{ landing_page.slug }}';
+        
+        // Función para rastrear clics en el botón de reunión
+        function trackMeetingClick(event) {
+            // Actualizar contador visual inmediatamente
+            const counter = document.getElementById('meetingCounter');
+            if (counter) {
+                const currentCount = parseInt(counter.textContent) || 0;
+                counter.textContent = currentCount + 1;
+                counter.classList.add('bg-success', 'text-white');
+                counter.classList.remove('bg-light', 'text-dark');
+            }
+            
+            // Permitir que el enlace se abra normalmente
+            // El rastreo se hace de forma asíncrona
+            setTimeout(() => {
+                fetch(`/api/landing-pages/${LANDING_PAGE_SLUG}/meeting-click/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('Click de reunión rastreado:', data.meeting_clicks);
+                        // Actualizar con el valor real del servidor
+                        if (counter) {
+                            counter.textContent = data.meeting_clicks;
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.log('Error al rastrear clic de reunión:', error);
+                    // Revertir el contador en caso de error
+                    if (counter) {
+                        const currentCount = parseInt(counter.textContent) || 1;
+                        counter.textContent = Math.max(0, currentCount - 1);
+                        counter.classList.add('bg-danger', 'text-white');
+                        counter.classList.remove('bg-success', 'bg-light', 'text-dark');
+                    }
+                });
+            }, 100);
+        }
+        
+        // Función para rastrear clics en el botón de contacto
+        function trackContactClick() {
+            // Actualizar contador visual inmediatamente
+            const counter = document.getElementById('contactCounter');
+            if (counter) {
+                const currentCount = parseInt(counter.textContent) || 0;
+                counter.textContent = currentCount + 1;
+                counter.classList.add('bg-success', 'text-white');
+                counter.classList.remove('bg-light', 'text-dark');
+            }
+            
+            fetch(`/api/landing-pages/${LANDING_PAGE_SLUG}/contact-click/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Click de contacto rastreado:', data.contact_clicks);
+                    // Actualizar con el valor real del servidor
+                    if (counter) {
+                        counter.textContent = data.contact_clicks;
+                    }
+                }
+            })
+            .catch(error => {
+                console.log('Error al rastrear clic de contacto:', error);
+                // Revertir el contador en caso de error
+                if (counter) {
+                    const currentCount = parseInt(counter.textContent) || 1;
+                    counter.textContent = Math.max(0, currentCount - 1);
+                    counter.classList.add('bg-danger', 'text-white');
+                    counter.classList.remove('bg-success', 'bg-light', 'text-dark');
+                }
+            });
+        }
+        
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('landingForm');
             let isSubmitting = false;
@@ -702,6 +903,9 @@
                 }
                 
                 isSubmitting = true;
+                
+                // Rastrear clic del botón de contacto
+                trackContactClick();
                 
                 // Mostrar overlay de carga
                 showLoadingOverlay();
@@ -783,7 +987,7 @@
             
             function validateForm() {
                 let isValid = true;
-                const requiredFields = ['nombre', 'apellido', 'email'];
+                const requiredFields = ['nombre', 'apellido', 'email', 'telefono', 'empresa', 'cargo', 'mensaje', 'preferred_contact_time'];
                 
                 // Limpiar validaciones previas
                 form.querySelectorAll('.is-invalid').forEach(field => {
@@ -820,7 +1024,7 @@
             }
             
             // Limpiar validación al escribir con efecto mejorado
-            form.querySelectorAll('input').forEach(input => {
+            form.querySelectorAll('input, textarea, select').forEach(input => {
                 input.addEventListener('input', function() {
                     this.classList.remove('is-invalid');
                     const feedback = this.closest('.form-floating').nextElementSibling;

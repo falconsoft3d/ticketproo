@@ -3677,7 +3677,8 @@ class LandingPageForm(forms.ModelForm):
             'subtitulo_formulario',
             'empresa_campana',
             'telegram_bot_token',
-            'telegram_chat_id'
+            'telegram_chat_id',
+            'meeting_url'
         ]
         widgets = {
             'nombre_producto': forms.TextInput(attrs={
@@ -3727,6 +3728,10 @@ class LandingPageForm(forms.ModelForm):
             'telegram_chat_id': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': '-1001234567890 o @mi_canal'
+            }),
+            'meeting_url': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://calendly.com/tu-usuario'
             })
         }
         labels = {
@@ -3741,7 +3746,8 @@ class LandingPageForm(forms.ModelForm):
             'subtitulo_formulario': 'Subtítulo del Formulario',
             'empresa_campana': 'Empresa de la Campaña',
             'telegram_bot_token': 'Bot Token de Telegram',
-            'telegram_chat_id': 'Chat ID de Telegram'
+            'telegram_chat_id': 'Chat ID de Telegram',
+            'meeting_url': 'URL de Reunión'
         }
         help_texts = {
             'slug': 'URL única para acceder a la landing page (solo letras, números y guiones)',
@@ -3749,7 +3755,8 @@ class LandingPageForm(forms.ModelForm):
             'color_secundario': 'Color de fondo y elementos secundarios',
             'is_active': 'Si está marcado, la landing page será visible públicamente',
             'telegram_bot_token': 'Token del bot de Telegram para enviar notificaciones. Obtén uno creando un bot con @BotFather',
-            'telegram_chat_id': 'ID del chat o canal donde enviar notificaciones. Puedes usar @userinfobot para obtenerlo'
+            'telegram_chat_id': 'ID del chat o canal donde enviar notificaciones. Puedes usar @userinfobot para obtenerlo',
+            'meeting_url': 'URL donde los visitantes pueden agendar reuniones contigo (Calendly, Google Meet, etc.)'
         }
     
     def clean_slug(self):
@@ -3782,7 +3789,7 @@ class LandingPageSubmissionForm(forms.ModelForm):
     
     class Meta:
         model = LandingPageSubmission
-        fields = ['nombre', 'apellido', 'email', 'telefono', 'empresa', 'mensaje']
+        fields = ['nombre', 'apellido', 'email', 'telefono', 'empresa', 'cargo', 'mensaje', 'preferred_contact_time']
         widgets = {
             'nombre': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -3801,18 +3808,28 @@ class LandingPageSubmissionForm(forms.ModelForm):
             }),
             'telefono': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Teléfono (Opcional)'
+                'placeholder': 'Teléfono',
+                'required': True
             }),
             'empresa': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Empresa',
                 'required': True
             }),
+            'cargo': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Cargo',
+                'required': True
+            }),
             'mensaje': forms.Textarea(attrs={
                 'class': 'form-control',
                 'placeholder': 'Cuéntanos sobre tu proyecto o necesidades...',
                 'rows': 4,
-                'style': 'resize: vertical;'
+                'style': 'resize: vertical;',
+                'required': True
+            }),
+            'preferred_contact_time': forms.Select(attrs={
+                'class': 'form-control'
             })
         }
         labels = {
@@ -3821,7 +3838,9 @@ class LandingPageSubmissionForm(forms.ModelForm):
             'email': 'Email',
             'telefono': 'Teléfono',
             'empresa': 'Empresa',
-            'mensaje': 'Mensaje o comentarios'
+            'cargo': 'Cargo',
+            'mensaje': 'Mensaje o comentarios',
+            'preferred_contact_time': 'Cuándo prefieres que te contactemos'
         }
     
     def clean_email(self):

@@ -856,5 +856,9 @@ urlpatterns += [
     path('paypal/webhook/', views.paypal_webhook, name='paypal_webhook'),
     path('paypal/create-order/', views.paypal_create_order, name='paypal_create_order'),
     path('paypal/capture-order/', views.paypal_capture_order, name='paypal_capture_order'),
+    
+    # URLs de API para contadores de landing pages
+    path('api/landing-pages/<slug:slug>/meeting-click/', views.landing_page_meeting_click, name='api_landing_meeting_click'),
+    path('api/landing-pages/<slug:slug>/contact-click/', views.landing_page_contact_click, name='api_landing_contact_click'),
 ]
 

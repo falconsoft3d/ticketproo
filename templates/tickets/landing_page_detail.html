@@ -67,18 +67,72 @@
                                     <hr/>
 
 
+                                    <!-- KPIs Principales -->
+                                    <div class="row text-center mb-4">
+                                        <div class="col-6 col-md-3 mb-3">
+                                            <div class="card h-100 shadow-sm">
+                                                <div class="card-body text-center py-3">
+                                                    <i class="fas fa-eye fa-2x text-primary mb-2"></i>
+                                                    <div class="fw-bold text-primary h4 mb-0">{{ landing_page.total_views }}</div>
+                                                    <small class="text-muted">Vistas Totales</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6 col-md-3 mb-3">
+                                            <div class="card h-100 shadow-sm">
+                                                <div class="card-body text-center py-3">
+                                                    <i class="fas fa-paper-plane fa-2x text-success mb-2"></i>
+                                                    <div class="fw-bold text-success h4 mb-0">{{ landing_page.total_submissions }}</div>
+                                                    <small class="text-muted">Envíos Totales</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6 col-md-3 mb-3">
+                                            <div class="card h-100 shadow-sm">
+                                                <div class="card-body text-center py-3">
+                                                    <i class="fas fa-calendar-plus fa-2x text-warning mb-2"></i>
+                                                    <div class="fw-bold text-warning h4 mb-0">{{ landing_page.meeting_button_clicks }}</div>
+                                                    <small class="text-muted">Clics Reunión</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6 col-md-3 mb-3">
+                                            <div class="card h-100 shadow-sm">
+                                                <div class="card-body text-center py-3">
+                                                    <i class="fas fa-mouse-pointer fa-2x text-secondary mb-2"></i>
+                                                    <div class="fw-bold text-secondary h4 mb-0">{{ landing_page.contact_button_clicks }}</div>
+                                                    <small class="text-muted">Clics Contactar</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Tasas de Conversión -->
+                                    <h6 class="mb-3 text-center"><i class="fas fa-chart-line me-2"></i>Tasas de Conversión</h6>
                                     <div class="row text-center">
                                         <div class="col-4">
-                                            <div class="fw-bold text-primary h4">{{ landing_page.total_views }}</div>
-                                            <small class="text-muted">Vistas Totales</small>
+                                            <div class="fw-bold text-info h5">{{ landing_page.conversion_rate|floatformat:1 }}%</div>
+                                            <small class="text-muted">Tasa de Envío</small>
                                         </div>
                                         <div class="col-4">
-                                            <div class="fw-bold text-success h4">{{ landing_page.total_submissions }}</div>
-                                            <small class="text-muted">Envíos Totales</small>
+                                            {% if landing_page.total_views > 0 %}
+                                                {% widthratio landing_page.meeting_button_clicks landing_page.total_views 100 as meeting_click_rate %}
+                                                <div class="fw-bold text-success h5">{{ meeting_click_rate|floatformat:1 }}%</div>
+                                                <small class="text-muted">Tasa de Interés</small>
+                                            {% else %}
+                                                <div class="fw-bold text-muted h5">0%</div>
+                                                <small class="text-muted">Tasa de Interés</small>
+                                            {% endif %}
                                         </div>
                                         <div class="col-4">
-                                            <div class="fw-bold text-info h4">{{ landing_page.conversion_rate|floatformat:1 }}%</div>
-                                            <small class="text-muted">Tasa de Conversión</small>
+                                            {% if landing_page.total_views > 0 %}
+                                                {% widthratio landing_page.contact_button_clicks landing_page.total_views 100 as contact_click_rate %}
+                                                <div class="fw-bold text-info h5">{{ contact_click_rate|floatformat:1 }}%</div>
+                                                <small class="text-muted">Tasa de Contacto</small>
+                                            {% else %}
+                                                <div class="fw-bold text-muted h5">0%</div>
+                                                <small class="text-muted">Tasa de Contacto</small>
+                                            {% endif %}
                                         </div>
                                     </div>
 

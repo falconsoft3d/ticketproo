@@ -70,6 +70,10 @@
                                         <label class="form-label text-muted">Empresa:</label>
                                         <p class="fw-bold">{{ submission.empresa|default:"No especificada" }}</p>
                                     </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">Cargo:</label>
+                                        <p class="fw-bold">{{ submission.cargo|default:"No especificado" }}</p>
+                                    </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="mb-3">
@@ -84,6 +88,16 @@
                                                     {{ submission.telefono }}
                                                     <i class="fas fa-phone ms-1 text-muted"></i>
                                                 </a>
+                                            {% else %}
+                                                No especificado
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">Cuándo contactar:</label>
+                                        <p class="fw-bold">
+                                            {% if submission.preferred_contact_time %}
+                                                <span class="badge bg-info">{{ submission.get_preferred_contact_time_display }}</span>
                                             {% else %}
                                                 No especificado
                                             {% endif %}

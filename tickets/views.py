@@ -24915,3 +24915,59 @@ def ai_article_project_delete(request, pk):
     }
     return render(request, 'tickets/ai_article_project_delete.html', context)
 
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def landing_page_meeting_click(request, slug):
+    """
+    Incrementa el contador de clics del botón "Planificar Reunión"
+    """
+    try:
+        from django.db import transaction
+        
+        # Buscar la landing page por slug
+        landing_page = get_object_or_404(LandingPage, slug=slug, is_active=True)
+        
+        # Incrementar el contador de clics de reunión de forma atómica
+        with transaction.atomic():
+            landing_page.meeting_button_clicks += 1
+            landing_page.save(update_fields=['meeting_button_clicks'])
+        
+        return JsonResponse({
+            'success': True,
+            'meeting_clicks': landing_page.meeting_button_clicks
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'error': f'Error al incrementar contador: {str(e)}'
+        }, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def landing_page_contact_click(request, slug):
+    """
+    Incrementa el contador de clics del botón "Contactar"
+    """
+    try:
+        from django.db import transaction
+        
+        # Buscar la landing page por slug
+        landing_page = get_object_or_404(LandingPage, slug=slug, is_active=True)
+        
+        # Incrementar el contador de clics de contacto de forma atómica
+        with transaction.atomic():
+            landing_page.contact_button_clicks += 1
+            landing_page.save(update_fields=['contact_button_clicks'])
+        
+        return JsonResponse({
+            'success': True,
+            'contact_clicks': landing_page.contact_button_clicks
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'error': f'Error al incrementar contador: {str(e)}'
+        }, status=500)
+

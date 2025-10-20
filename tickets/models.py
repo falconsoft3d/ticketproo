@@ -5482,6 +5482,13 @@ class LandingPage(models.Model):
         help_text='ID del chat o canal donde enviar las notificaciones (ej: -1001234567890 o @mi_canal)'
     )
     
+    # URL de reunión
+    meeting_url = models.URLField(
+        blank=True,
+        verbose_name='URL de Reunión',
+        help_text='URL para planificar reuniones (ej: Calendly, Google Meet, Zoom, etc.)'
+    )
+    
     # Metadatos
     created_by = models.ForeignKey(
         User,
@@ -5505,6 +5512,14 @@ class LandingPage(models.Model):
     submissions_count = models.PositiveIntegerField(
         default=0,
         verbose_name='Formularios enviados'
+    )
+    meeting_button_clicks = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Clics en "Planificar Reunión"'
+    )
+    contact_button_clicks = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Clics en "Contactar"'
     )
     
     class Meta:
@@ -5577,17 +5592,36 @@ class LandingPageSubmission(models.Model):
     )
     telefono = models.CharField(
         max_length=20,
-        blank=True,
         verbose_name='Teléfono'
     )
     empresa = models.CharField(
         max_length=200,
         verbose_name='Empresa'
     )
+    cargo = models.CharField(
+        max_length=100,
+        verbose_name='Cargo'
+    )
     mensaje = models.TextField(
-        blank=True,
         verbose_name='Mensaje o comentarios',
         help_text='Cuéntanos más sobre tus necesidades o proyecto'
+    )
+    
+    # Preferencias de contacto
+    preferred_contact_time = models.CharField(
+        max_length=20,
+        choices=[
+            ('asap', 'Lo antes posible'),
+            ('monday', 'El próximo lunes'),
+            ('tuesday', 'El próximo martes'),
+            ('wednesday', 'El próximo miércoles'),
+            ('thursday', 'El próximo jueves'),
+            ('friday', 'El próximo viernes'),
+            ('next_week', 'La próxima semana'),
+            ('flexible', 'Horario flexible'),
+        ],
+        default='asap',
+        verbose_name='Cuándo prefieres que te contactemos'
     )
     
     # Metadatos de seguimiento

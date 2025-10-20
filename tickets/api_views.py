@@ -323,3 +323,69 @@ def whatsapp_receive_message(request):
         return Response({
             'error': f'Error al procesar mensaje: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([])  # No requiere autenticación para permitir acceso público
+def landing_page_meeting_click(request, slug):
+    """
+    Incrementa el contador de clics del botón "Planificar Reunión"
+    """
+    try:
+        from .models import LandingPage
+        from django.db import transaction
+        
+        # Buscar la landing page por slug
+        landing_page = LandingPage.objects.get(slug=slug, is_active=True)
+        
+        # Incrementar el contador de clics de reunión de forma atómica
+        with transaction.atomic():
+            landing_page.meeting_button_clicks += 1
+            landing_page.save(update_fields=['meeting_button_clicks'])
+        
+        return Response({
+            'success': True,
+            'meeting_clicks': landing_page.meeting_button_clicks
+        })
+        
+    except LandingPage.DoesNotExist:
+        return Response({
+            'error': 'Landing page no encontrada'
+        }, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({
+            'error': f'Error al incrementar contador: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([])  # No requiere autenticación para permitir acceso público
+def landing_page_contact_click(request, slug):
+    """
+    Incrementa el contador de clics del botón "Contactar"
+    """
+    try:
+        from .models import LandingPage
+        from django.db import transaction
+        
+        # Buscar la landing page por slug
+        landing_page = LandingPage.objects.get(slug=slug, is_active=True)
+        
+        # Incrementar el contador de clics de contacto de forma atómica
+        with transaction.atomic():
+            landing_page.contact_button_clicks += 1
+            landing_page.save(update_fields=['contact_button_clicks'])
+        
+        return Response({
+            'success': True,
+            'contact_clicks': landing_page.contact_button_clicks
+        })
+        
+    except LandingPage.DoesNotExist:
+        return Response({
+            'error': 'Landing page no encontrada'
+        }, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({
+            'error': f'Error al incrementar contador: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
