@@ -68,7 +68,7 @@
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle {% if 'chat' in request.resolver_match.url_name or 'ai_chat' in request.resolver_match.url_name %}active{% endif %}" 
                            href="#" id="navbarDropdownChat" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-chat-dots"></i> Chat
+                            <i class="bi bi-chat-dots"></i>
                         </a>
                         <ul class="dropdown-menu">
                             <li>
@@ -85,6 +85,59 @@
                             </li>
                         </ul>
                     </li>
+                    
+                    <!-- Menú de Empleado - Solo para Agentes y Administradores -->
+                    {% if user.is_authenticated %}
+                        {% if user.is_staff or user.is_superuser or user.groups.all and user.groups.first.name == 'Agentes' %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if 'employee_request' in request.resolver_match.url_name or 'ai_manager' in request.resolver_match.url_name or 'employee_dashboard' in request.resolver_match.url_name or 'internal_agreement' in request.resolver_match.url_name %}active{% endif %}" 
+                           href="#" id="navbarDropdownEmployee" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-badge"></i> Empleado
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'employee_dashboard' %}active{% endif %}" 
+                                   href="{% url 'employee_dashboard' %}">
+                                    <i class="bi bi-speedometer2"></i> Dashboard de Empleado
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'employee_request_list' %}active{% endif %}" 
+                                   href="{% url 'employee_request_list' %}">
+                                    <i class="bi bi-file-earmark-text"></i> Solicitudes de Empleados
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'employee_request_create' %}active{% endif %}" 
+                                   href="{% url 'employee_request_create' %}">
+                                    <i class="bi bi-plus-circle"></i> Nueva Solicitud
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item {% if 'ai_manager' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'ai_manager_list' %}">
+                                    <i class="bi bi-robot"></i> AI Managers
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item {% if 'internal_agreement' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'internal_agreement_list' %}">
+                                    <i class="bi bi-file-earmark-check"></i> Acuerdos Internos
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'internal_agreement_create' %}active{% endif %}" 
+                                   href="{% url 'internal_agreement_create' %}">
+                                    <i class="bi bi-plus-circle"></i> Nuevo Acuerdo
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                        {% endif %}
+                    {% endif %}
                     
                     <!-- Menú de Capacitación -->
                     {% if user.is_authenticated %}
@@ -141,12 +194,13 @@
                     </li>
                     {% endif %}
                     
-                    <!-- Menú de Compartir Archivos -->
+                    <!-- Menú de Compartir Archivos - Solo para Agentes y Administradores -->
                     {% if user.is_authenticated %}
+                        {% if user.is_staff or user.is_superuser or user.groups.all and user.groups.first.name == 'Agentes' %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle {% if 'shared_file' in request.resolver_match.url_name or 'form' in request.resolver_match.url_name %}active{% endif %}" 
                            href="#" id="navbarDropdownFiles" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-folder-symlink"></i> Compartir
+                            <i class="bi bi-folder-symlink"></i> Comp.
                         </a>
                         <ul class="dropdown-menu">
                             <li class="dropdown-header">Archivos</li>
@@ -297,6 +351,7 @@
                             {% endif %}
                         </ul>
                     </li>
+                        {% endif %}
                     {% endif %}
                     
                     <!-- Menú de Formularios -->
@@ -456,7 +511,7 @@
                     <!-- Menú Herramientas (Solo para Agentes) -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="toolsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-tools"></i> Herramientas
+                            <i class="bi bi-tools"></i> Her.
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="toolsDropdown">
                             <li class="dropdown-header">Herramientas de PDF</li>
@@ -839,13 +894,13 @@
                             {% if is_working %}
                                 <li class="nav-item">
                                     <a class="btn btn-danger btn-sm me-2" href="{% url 'time_end_work' %}">
-                                        <i class="bi bi-stop-circle"></i> Finalizar
+                                        <i class="bi bi-stop-circle"></i>
                                     </a>
                                 </li>
                             {% else %}
                                 <li class="nav-item">
                                     <a class="btn btn-success btn-sm me-2" href="{% url 'time_start_work' %}">
-                                        <i class="bi bi-play-circle"></i> Iniciar
+                                        <i class="bi bi-play-circle"></i>
                                     </a>
                                 </li>
                             {% endif %}

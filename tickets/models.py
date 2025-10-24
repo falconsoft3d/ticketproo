@@ -856,6 +856,26 @@ class UserProfile(models.Model):
         help_text='Permite que visitantes envíen formularios de contacto para crear empresas'
     )
     
+    # Configuración de ubicación para el clima
+    city = models.CharField(
+        max_length=100,
+        default='Valencia',
+        verbose_name='Ciudad',
+        help_text='Ciudad para mostrar información del clima'
+    )
+    country = models.CharField(
+        max_length=100,
+        default='España',
+        verbose_name='País',
+        help_text='País para mostrar información del clima'
+    )
+    country_code = models.CharField(
+        max_length=2,
+        default='ES',
+        verbose_name='Código de país',
+        help_text='Código ISO de 2 letras del país (ej: ES, US, FR)'
+    )
+    
     created_at = models.DateTimeField(
         default=timezone.now,
         verbose_name='Fecha de creación'
@@ -3947,6 +3967,30 @@ class Contact(models.Model):
         verbose_name='Notas',
         help_text='Notas adicionales sobre el contacto'
     )
+    
+    # Seguimiento de contacto
+    contacted_by_phone = models.BooleanField(
+        default=False,
+        verbose_name='Contactado por teléfono',
+        help_text='Marcar si se contactó al cliente por teléfono'
+    )
+    contacted_by_web = models.BooleanField(
+        default=False,
+        verbose_name='Contactado por web/email',
+        help_text='Marcar si se contactó al cliente por web o email'
+    )
+    contact_tracking_notes = models.TextField(
+        blank=True,
+        verbose_name='Notas de seguimiento',
+        help_text='Notas sobre los contactos realizados'
+    )
+    last_contact_date = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Fecha del último contacto',
+        help_text='Fecha del último contacto realizado'
+    )
+    
     contact_date = models.DateTimeField(
         default=timezone.now,
         verbose_name='Fecha de Contacto'
@@ -11093,6 +11137,431 @@ class AIArticle(models.Model):
         """Override save para actualizar automáticamente el conteo de palabras"""
         if self.content:
             self.word_count = len(self.content.split())
+        super().save(*args, **kwargs)
+
+
+class EmployeeRequest(models.Model):
+    """Modelo para las solicitudes de empleados"""
+    
+    STATUS_CHOICES = [
+        ('draft', 'Borrador'),
+        ('approved', 'Aprobada'),
+        ('rejected', 'Rechazada'),
+    ]
+    
+    sequence = models.PositiveIntegerField(
+        verbose_name='Secuencia',
+        help_text='Número de secuencia de la solicitud'
+    )
+    
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título',
+        help_text='Título de la solicitud'
+    )
+    
+    text = models.TextField(
+        verbose_name='Texto',
+        help_text='Descripción detallada de la solicitud'
+    )
+    
+    date = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha',
+        help_text='Fecha de creación de la solicitud'
+    )
+    
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='draft',
+        verbose_name='Estado',
+        help_text='Estado actual de la solicitud'
+    )
+    
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='employee_requests',
+        verbose_name='Creado por'
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de Creación'
+    )
+    
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Fecha de Actualización'
+    )
+    
+    class Meta:
+        verbose_name = 'Solicitud de Empleado'
+        verbose_name_plural = 'Solicitudes de Empleados'
+        ordering = ['-sequence', '-created_at']
+        unique_together = ['sequence']
+    
+    def __str__(self):
+        return f"Solicitud #{self.sequence} - {self.title}"
+    
+    def get_status_display_class(self):
+        """Retorna la clase CSS para el estado"""
+        classes = {
+            'draft': 'badge bg-secondary',
+            'approved': 'badge bg-success',
+            'rejected': 'badge bg-danger',
+        }
+        return classes.get(self.status, 'badge bg-secondary')
+    
+    def get_status_icon(self):
+        """Retorna el ícono para el estado"""
+        icons = {
+            'draft': 'bi bi-file-earmark-text',
+            'approved': 'bi bi-check-circle',
+            'rejected': 'bi bi-x-circle',
+        }
+        return icons.get(self.status, 'bi bi-file-earmark-text')
+    
+    def save(self, *args, **kwargs):
+        """Override save para generar automáticamente la secuencia"""
+        if not self.sequence:
+            # Obtener el último número de secuencia y agregar 1
+            last_request = EmployeeRequest.objects.order_by('-sequence').first()
+            self.sequence = (last_request.sequence + 1) if last_request else 1
+        super().save(*args, **kwargs)
+
+
+class InternalAgreement(models.Model):
+    """Modelo para gestionar acuerdos internos de la empresa"""
+    
+    STATUS_CHOICES = [
+        ('draft', 'Borrador'),
+        ('review', 'En Revisión'),
+        ('approved', 'Aprobado'),
+        ('rejected', 'Rechazado'),
+        ('active', 'Activo'),
+        ('expired', 'Expirado'),
+        ('cancelled', 'Cancelado'),
+    ]
+    
+    TYPE_CHOICES = [
+        ('policy', 'Política'),
+        ('procedure', 'Procedimiento'),
+        ('contract', 'Contrato'),
+        ('guideline', 'Directriz'),
+        ('agreement', 'Acuerdo'),
+        ('regulation', 'Reglamento'),
+    ]
+    
+    PRIORITY_CHOICES = [
+        ('low', 'Baja'),
+        ('medium', 'Media'),
+        ('high', 'Alta'),
+        ('critical', 'Crítica'),
+    ]
+    
+    sequence = models.PositiveIntegerField(
+        unique=True,
+        verbose_name='Número de Secuencia',
+        help_text='Número único auto-generado'
+    )
+    
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título',
+        help_text='Título descriptivo del acuerdo interno'
+    )
+    
+    description = models.TextField(
+        verbose_name='Descripción',
+        help_text='Descripción detallada del acuerdo interno'
+    )
+    
+    content = models.TextField(
+        verbose_name='Contenido',
+        help_text='Contenido completo del acuerdo interno'
+    )
+    
+    agreement_type = models.CharField(
+        max_length=20,
+        choices=TYPE_CHOICES,
+        default='agreement',
+        verbose_name='Tipo de Acuerdo'
+    )
+    
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='draft',
+        verbose_name='Estado'
+    )
+    
+    priority = models.CharField(
+        max_length=20,
+        choices=PRIORITY_CHOICES,
+        default='medium',
+        verbose_name='Prioridad'
+    )
+    
+    effective_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Vigencia',
+        help_text='Fecha en que el acuerdo entra en vigencia'
+    )
+    
+    expiration_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Expiración',
+        help_text='Fecha en que el acuerdo expira (opcional)'
+    )
+    
+    department = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Departamento',
+        help_text='Departamento al que aplica el acuerdo'
+    )
+    
+    applies_to_all = models.BooleanField(
+        default=True,
+        verbose_name='Aplica a Todos',
+        help_text='Si el acuerdo aplica a todos los empleados'
+    )
+    
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='internal_agreements_created',
+        verbose_name='Creado por'
+    )
+    
+    approved_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='internal_agreements_approved',
+        verbose_name='Aprobado por'
+    )
+    
+    approved_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Aprobación'
+    )
+    
+    # Campos para firmantes del acuerdo
+    signer_1 = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='internal_agreements_signed_1',
+        verbose_name='Primer Firmante',
+        help_text='Usuario que firma el acuerdo como primer firmante'
+    )
+    
+    signer_1_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Firma 1',
+        help_text='Fecha en que el primer firmante firmó el acuerdo'
+    )
+    
+    signer_2 = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='internal_agreements_signed_2',
+        verbose_name='Segundo Firmante',
+        help_text='Usuario que firma el acuerdo como segundo firmante'
+    )
+    
+    signer_2_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Firma 2',
+        help_text='Fecha en que el segundo firmante firmó el acuerdo'
+    )
+    
+    tags = models.CharField(
+        max_length=500,
+        blank=True,
+        verbose_name='Etiquetas',
+        help_text='Etiquetas separadas por comas para facilitar búsquedas'
+    )
+    
+    version = models.CharField(
+        max_length=20,
+        default='1.0',
+        verbose_name='Versión',
+        help_text='Versión del acuerdo'
+    )
+    
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de Creación'
+    )
+    
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última Actualización'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Acuerdo Interno'
+        verbose_name_plural = 'Acuerdos Internos'
+        indexes = [
+            models.Index(fields=['status', 'agreement_type']),
+            models.Index(fields=['effective_date', 'expiration_date']),
+        ]
+    
+    def __str__(self):
+        return f"#{self.sequence} - {self.title}"
+    
+    def get_status_badge_class(self):
+        """Retorna la clase CSS para el badge del estado"""
+        classes = {
+            'draft': 'badge bg-secondary',
+            'review': 'badge bg-warning',
+            'approved': 'badge bg-info',
+            'rejected': 'badge bg-danger',
+            'active': 'badge bg-success',
+            'expired': 'badge bg-dark',
+            'cancelled': 'badge bg-light text-dark',
+        }
+        return classes.get(self.status, 'badge bg-secondary')
+    
+    def get_status_icon(self):
+        """Retorna el ícono para el estado"""
+        icons = {
+            'draft': 'bi bi-file-earmark-text',
+            'review': 'bi bi-eye',
+            'approved': 'bi bi-check-circle-fill',
+            'rejected': 'bi bi-x-circle-fill',
+            'active': 'bi bi-check-circle',
+            'expired': 'bi bi-clock-history',
+            'cancelled': 'bi bi-x-circle',
+        }
+        return icons.get(self.status, 'bi bi-file-earmark-text')
+    
+    def get_type_icon(self):
+        """Retorna el ícono para el tipo de acuerdo"""
+        icons = {
+            'policy': 'bi bi-shield-check',
+            'procedure': 'bi bi-list-check',
+            'contract': 'bi bi-file-earmark-text',
+            'guideline': 'bi bi-signpost',
+            'agreement': 'bi bi-handshake',
+            'regulation': 'bi bi-bookmark-check',
+        }
+        return icons.get(self.agreement_type, 'bi bi-file-earmark-check')
+    
+    def get_priority_badge_class(self):
+        """Retorna la clase CSS para el badge de prioridad"""
+        classes = {
+            'low': 'badge bg-light text-dark',
+            'medium': 'badge bg-info',
+            'high': 'badge bg-warning text-dark',
+            'critical': 'badge bg-danger',
+        }
+        return classes.get(self.priority, 'badge bg-info')
+    
+    def is_active(self):
+        """Verifica si el acuerdo está activo y vigente"""
+        if self.status != 'active':
+            return False
+        
+        today = timezone.now().date()
+        
+        if self.effective_date and self.effective_date > today:
+            return False
+        
+        if self.expiration_date and self.expiration_date < today:
+            return False
+        
+        return True
+    
+    def can_edit(self, user):
+        """Verifica si el usuario puede editar el acuerdo"""
+        from .utils import is_agent
+        return is_agent(user) or user.is_staff or user == self.created_by
+    
+    def can_delete(self, user):
+        """Verifica si el usuario puede eliminar el acuerdo"""
+        from .utils import is_agent
+        return (is_agent(user) or user.is_staff or user == self.created_by) and self.status == 'draft'
+    
+    def is_signed_by(self, user):
+        """Verifica si el usuario ya firmó el acuerdo"""
+        return self.signer_1 == user or self.signer_2 == user
+    
+    def can_sign(self, user):
+        """Verifica si el usuario puede firmar el acuerdo"""
+        # Solo se puede firmar si está activo o aprobado y el usuario no ha firmado ya
+        if self.status not in ['active', 'approved']:
+            return False
+        
+        # Si ya firmó, no puede firmar de nuevo
+        if self.is_signed_by(user):
+            return False
+        
+        # Si no hay firmantes asignados, cualquier usuario autorizado puede firmar
+        if not self.signer_1 and not self.signer_2:
+            from .utils import is_agent
+            return is_agent(user) or user.is_staff
+        
+        # Si hay firmantes asignados, solo ellos pueden firmar
+        return user == self.signer_1 or user == self.signer_2
+    
+    def sign_agreement(self, user):
+        """Firma el acuerdo con el usuario especificado"""
+        if not self.can_sign(user):
+            return False
+        
+        from django.utils import timezone
+        current_time = timezone.now()
+        
+        # Firmar en el primer slot disponible
+        if not self.signer_1 or (self.signer_1 == user and not self.signer_1_date):
+            self.signer_1 = user
+            self.signer_1_date = current_time
+        elif not self.signer_2 or (self.signer_2 == user and not self.signer_2_date):
+            self.signer_2 = user
+            self.signer_2_date = current_time
+        else:
+            return False
+        
+        self.save()
+        return True
+    
+    def is_fully_signed(self):
+        """Verifica si el acuerdo está completamente firmado"""
+        return (self.signer_1 and self.signer_1_date and 
+                self.signer_2 and self.signer_2_date)
+    
+    def get_signature_status(self):
+        """Retorna el estado de las firmas"""
+        if self.is_fully_signed():
+            return "Completamente firmado"
+        elif self.signer_1_date or self.signer_2_date:
+            return "Parcialmente firmado"
+        elif self.signer_1 or self.signer_2:
+            return "Pendiente de firma"
+        else:
+            return "Sin firmantes asignados"
+    
+    def save(self, *args, **kwargs):
+        """Override save para generar automáticamente la secuencia"""
+        if not self.sequence:
+            # Obtener el último número de secuencia y agregar 1
+            last_agreement = InternalAgreement.objects.order_by('-sequence').first()
+            self.sequence = (last_agreement.sequence + 1) if last_agreement else 1
         super().save(*args, **kwargs)
 
 

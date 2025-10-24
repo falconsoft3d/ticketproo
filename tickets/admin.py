@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
+from django.utils import timezone
 from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserNote, 
     TimeEntry, Project, Company, SystemConfiguration, Document, UserProfile,
@@ -17,7 +18,7 @@ from .models import (
     WhatsAppConnection, WhatsAppKeyword, WhatsAppMessage, ImagePrompt,
     AIManager, AIManagerMeeting, AIManagerMeetingAttachment, AIManagerSummary, CompanyAISummary, UserAIPerformanceEvaluation,
     WebsiteTracker, LegalContract, SupplierContractReview, PayPalPaymentLink, PayPalOrder, TodoItem,
-    AIBook, AIBookChapter
+    AIBook, AIBookChapter, EmployeeRequest, InternalAgreement
 )
 
 # Configuración del sitio de administración
@@ -599,9 +600,9 @@ class DocumentAdmin(admin.ModelAdmin):
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'cargo', 'company', 'phone')
-    list_filter = ('company', 'cargo')
-    search_fields = ('user__username', 'user__first_name', 'user__last_name', 'cargo', 'phone')
+    list_display = ('user', 'cargo', 'company', 'phone', 'city', 'country')
+    list_filter = ('company', 'cargo', 'country', 'city')
+    search_fields = ('user__username', 'user__first_name', 'user__last_name', 'cargo', 'phone', 'city', 'country')
     raw_id_fields = ('user',)
     ordering = ('user__username',)
     
@@ -615,12 +616,20 @@ class UserProfileAdmin(admin.ModelAdmin):
         ('Información de Contacto', {
             'fields': ('phone',)
         }),
+        ('Ubicación y Clima', {
+            'fields': ('city', 'country', 'country_code'),
+            'description': 'Configuración de ubicación para mostrar información del clima en el dashboard'
+        }),
         ('Información Personal', {
             'fields': ('bio',),
             'classes': ('collapse',)
         }),
+        ('Facturación', {
+            'fields': ('precio_hora', 'coste_hora'),
+            'classes': ('collapse',)
+        }),
         ('Configuración', {
-            'fields': ('notification_preferences',),
+            'fields': ('notification_preferences', 'enable_public_contact_form'),
             'classes': ('collapse',)
         })
     )
@@ -3279,3 +3288,184 @@ class AIBookChapterAdmin(admin.ModelAdmin):
 
 
 
+
+@admin.register(EmployeeRequest)
+class EmployeeRequestAdmin(admin.ModelAdmin):
+    """Administración de solicitudes de empleados"""
+    
+    list_display = ['sequence', 'title', 'status_badge', 'created_by', 'date', 'created_at']
+    list_filter = ['status', 'created_at', 'updated_at']
+    search_fields = ['sequence', 'title', 'text', 'created_by__username', 'created_by__first_name', 'created_by__last_name']
+    readonly_fields = ['sequence', 'created_at', 'updated_at']
+    ordering = ['-sequence', '-created_at']
+    
+    fieldsets = (
+        (None, {
+            'fields': ('sequence', 'title', 'text', 'status')
+        }),
+        ('Información del Sistema', {
+            'fields': ('created_by', 'date', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def status_badge(self, obj):
+        """Mostrar estado con badge"""
+        return format_html(
+            '<span class="{}">{}</span>',
+            obj.get_status_display_class().replace('badge ', ''),
+            obj.get_status_display()
+        )
+    status_badge.short_description = 'Estado'
+    
+    def get_readonly_fields(self, request, obj=None):
+        """Hacer que algunos campos sean de solo lectura según permisos"""
+        readonly_fields = list(self.readonly_fields)
+        
+        # Si no es superusuario, agregar más campos de solo lectura
+        if not request.user.is_superuser:
+            if obj and obj.pk:  # Si está editando
+                readonly_fields.extend(['created_by'])
+        
+        return readonly_fields
+    
+    def save_model(self, request, obj, form, change):
+        """Override save_model para asignar el usuario creador"""
+        if not change:  # Si es nuevo
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(InternalAgreement)
+class InternalAgreementAdmin(admin.ModelAdmin):
+    """Administración de acuerdos internos"""
+    
+    list_display = (
+        'sequence',
+        'title',
+        'agreement_type',
+        'status_badge',
+        'priority_badge',
+        'department',
+        'effective_date',
+        'expiration_date',
+        'created_by',
+        'created_at'
+    )
+    
+    list_filter = (
+        'status',
+        'agreement_type',
+        'priority',
+        'department',
+        'applies_to_all',
+        'effective_date',
+        'expiration_date',
+        'created_by',
+        'created_at'
+    )
+    
+    search_fields = (
+        'sequence',
+        'title',
+        'description',
+        'content',
+        'department',
+        'tags',
+        'created_by__username',
+        'created_by__first_name',
+        'created_by__last_name'
+    )
+    
+    readonly_fields = (
+        'sequence',
+        'approved_date',
+        'created_at',
+        'updated_at',
+        'version'
+    )
+    
+    ordering = ('-created_at', '-sequence')
+    date_hierarchy = 'created_at'
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('sequence', 'title', 'description')
+        }),
+        ('Contenido del Acuerdo', {
+            'fields': ('content', 'tags')
+        }),
+        ('Clasificación', {
+            'fields': ('agreement_type', 'status', 'priority', 'version')
+        }),
+        ('Aplicación', {
+            'fields': ('department', 'applies_to_all')
+        }),
+        ('Fechas de Vigencia', {
+            'fields': ('effective_date', 'expiration_date')
+        }),
+        ('Aprobación', {
+            'fields': ('approved_by', 'approved_date'),
+            'classes': ('collapse',)
+        }),
+        ('Información del Sistema', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def status_badge(self, obj):
+        """Mostrar estado con badge de color"""
+        return format_html(
+            '<span class="{}">{}</span>',
+            obj.get_status_badge_class(),
+            obj.get_status_display()
+        )
+    status_badge.short_description = 'Estado'
+    
+    def priority_badge(self, obj):
+        """Mostrar prioridad con badge de color"""
+        return format_html(
+            '<span class="{}">{}</span>',
+            obj.get_priority_badge_class(),
+            obj.get_priority_display()
+        )
+    priority_badge.short_description = 'Prioridad'
+    
+    def get_readonly_fields(self, request, obj=None):
+        """Hacer que algunos campos sean de solo lectura según permisos"""
+        readonly_fields = list(self.readonly_fields)
+        
+        # Si no es superusuario o agente, agregar más campos de solo lectura
+        if not request.user.is_superuser:
+            # Importar is_agent aquí para evitar imports circulares
+            from .utils import is_agent
+            if not is_agent(request.user):
+                if obj and obj.pk:  # Si está editando
+                    readonly_fields.extend(['created_by', 'approved_by'])
+        
+        return readonly_fields
+    
+    def save_model(self, request, obj, form, change):
+        """Override save_model para asignar el usuario creador"""
+        if not change:  # Si es nuevo
+            obj.created_by = request.user
+        
+        # Si se está aprobando el acuerdo (activo o aprobado)
+        if 'status' in form.changed_data and obj.status in ['active', 'approved'] and not obj.approved_by:
+            obj.approved_by = request.user
+            obj.approved_date = timezone.now()
+        
+        # Si se rechaza, limpiar datos de aprobación
+        elif 'status' in form.changed_data and obj.status == 'rejected':
+            obj.approved_by = None
+            obj.approved_date = None
+        
+        super().save_model(request, obj, form, change)
+    
+    def get_queryset(self, request):
+        """Optimizar consultas con select_related"""
+        return super().get_queryset(request).select_related(
+            'created_by', 
+            'approved_by'
+        )

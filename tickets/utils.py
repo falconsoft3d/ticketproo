@@ -296,3 +296,109 @@ def send_telegram_notification(landing_page, submission):
         logger = logging.getLogger(__name__)
         logger.error(f"Error enviando notificación de Telegram: {str(e)}")
         return False
+
+
+def get_weather_info(city='Valencia', country_code='ES'):
+    """
+    Obtiene información del clima usando OpenWeatherMap API
+    """
+    try:
+        import requests
+        from django.conf import settings
+        
+        # API Key de OpenWeatherMap (usa una API gratuita)
+        # Para desarrollo, usaremos una API que no requiere clave
+        # En producción se debería usar OpenWeatherMap con API key
+        
+        # API alternativa gratuita que no requiere key
+        url = f"https://api.open-meteo.com/v1/forecast"
+        
+        # Primero obtenemos las coordenadas de la ciudad
+        geocoding_url = f"https://geocoding-api.open-meteo.com/v1/search"
+        geo_params = {
+            'name': city,
+            'count': 1,
+            'language': 'es',
+            'format': 'json'
+        }
+        
+        geo_response = requests.get(geocoding_url, params=geo_params, timeout=10)
+        
+        if geo_response.status_code != 200:
+            return None
+            
+        geo_data = geo_response.json()
+        
+        if not geo_data.get('results'):
+            return None
+            
+        location = geo_data['results'][0]
+        lat = location['latitude']
+        lon = location['longitude']
+        
+        # Obtener datos del clima actual
+        weather_params = {
+            'latitude': lat,
+            'longitude': lon,
+            'current': 'temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m',
+            'timezone': 'Europe/Madrid',
+            'language': 'es'
+        }
+        
+        weather_response = requests.get(url, params=weather_params, timeout=10)
+        
+        if weather_response.status_code != 200:
+            return None
+            
+        weather_data = weather_response.json()
+        current = weather_data.get('current', {})
+        
+        # Mapear códigos de clima a descripciones e iconos
+        weather_codes = {
+            0: {'description': 'Despejado', 'icon': 'bi-sun'},
+            1: {'description': 'Principalmente despejado', 'icon': 'bi-sun'},
+            2: {'description': 'Parcialmente nublado', 'icon': 'bi-cloud-sun'},
+            3: {'description': 'Nublado', 'icon': 'bi-clouds'},
+            45: {'description': 'Niebla', 'icon': 'bi-cloud-fog'},
+            48: {'description': 'Niebla helada', 'icon': 'bi-cloud-fog'},
+            51: {'description': 'Llovizna ligera', 'icon': 'bi-cloud-drizzle'},
+            53: {'description': 'Llovizna moderada', 'icon': 'bi-cloud-drizzle'},
+            55: {'description': 'Llovizna intensa', 'icon': 'bi-cloud-drizzle'},
+            61: {'description': 'Lluvia ligera', 'icon': 'bi-cloud-rain'},
+            63: {'description': 'Lluvia moderada', 'icon': 'bi-cloud-rain'},
+            65: {'description': 'Lluvia intensa', 'icon': 'bi-cloud-rain-heavy'},
+            71: {'description': 'Nieve ligera', 'icon': 'bi-cloud-snow'},
+            73: {'description': 'Nieve moderada', 'icon': 'bi-cloud-snow'},
+            75: {'description': 'Nieve intensa', 'icon': 'bi-cloud-snow'},
+            80: {'description': 'Chubascos ligeros', 'icon': 'bi-cloud-rain'},
+            81: {'description': 'Chubascos moderados', 'icon': 'bi-cloud-rain'},
+            82: {'description': 'Chubascos intensos', 'icon': 'bi-cloud-rain-heavy'},
+            95: {'description': 'Tormenta', 'icon': 'bi-cloud-lightning'},
+            96: {'description': 'Tormenta con granizo', 'icon': 'bi-cloud-lightning-rain'},
+            99: {'description': 'Tormenta intensa', 'icon': 'bi-cloud-lightning-rain'},
+        }
+        
+        weather_code = current.get('weather_code', 0)
+        weather_info = weather_codes.get(weather_code, {'description': 'Desconocido', 'icon': 'bi-question'})
+        
+        return {
+            'city': city,
+            'country': location.get('country', country_code),
+            'temperature': round(current.get('temperature_2m', 0)),
+            'humidity': current.get('relative_humidity_2m', 0),
+            'wind_speed': current.get('wind_speed_10m', 0),
+            'description': weather_info['description'],
+            'icon': weather_info['icon'],
+            'success': True
+        }
+        
+    except Exception as e:
+        logger.error(f"Error obteniendo información del clima: {str(e)}")
+        return {
+            'city': city,
+            'temperature': '--',
+            'description': 'No disponible',
+            'icon': 'bi-exclamation-triangle',
+            'success': False,
+            'error': str(e)
+        }

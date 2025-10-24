@@ -508,6 +508,7 @@ urlpatterns = [
     path('landing-pages/<int:pk>/submissions/', views.landing_page_submissions, name='landing_page_submissions'),
     path('landing-pages/submissions/<int:submission_id>/', views.landing_page_submission_detail, name='landing_page_submission_detail'),
     path('landing-pages/submissions/<int:submission_id>/toggle-processed/', views.toggle_submission_processed, name='toggle_submission_processed'),
+    path('landing-pages/submissions/<int:submission_id>/update-contact-tracking/', views.update_contact_tracking, name='update_contact_tracking'),
     path('landing-pages/contacts/', views.landing_page_contacts, name='landing_page_contacts'),
     path('landing-pages/submissions/<int:submission_id>/create-contact/', views.create_contact_from_submission_view, name='create_contact_from_submission'),
     
@@ -860,5 +861,20 @@ urlpatterns += [
     # URLs de API para contadores de landing pages
     path('api/landing-pages/<slug:slug>/meeting-click/', views.landing_page_meeting_click, name='api_landing_meeting_click'),
     path('api/landing-pages/<slug:slug>/contact-click/', views.landing_page_contact_click, name='api_landing_contact_click'),
+    
+    # URLs de solicitudes de empleados
+    path('employee-dashboard/', views.employee_dashboard, name='employee_dashboard'),
+    path('employee-requests/', views.employee_request_list, name='employee_request_list'),
+    path('employee-requests/create/', views.employee_request_create, name='employee_request_create'),
+    path('employee-requests/<int:pk>/', views.employee_request_detail, name='employee_request_detail'),
+    path('employee-requests/<int:pk>/edit/', views.employee_request_edit, name='employee_request_edit'),
+    path('employee-requests/<int:pk>/delete/', views.employee_request_delete, name='employee_request_delete'),
+    
+    # URLs de acuerdos internos
+    path('internal-agreements/', views.internal_agreement_list, name='internal_agreement_list'),
+    path('internal-agreements/create/', views.internal_agreement_create, name='internal_agreement_create'),
+    path('internal-agreements/<int:pk>/', views.internal_agreement_detail, name='internal_agreement_detail'),
+    path('internal-agreements/<int:pk>/edit/', views.internal_agreement_edit, name='internal_agreement_edit'),
+    path('internal-agreements/<int:pk>/delete/', views.internal_agreement_delete, name='internal_agreement_delete'),
 ]
 

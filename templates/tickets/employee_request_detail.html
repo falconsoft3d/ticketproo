@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h4><i class="bi bi-person-badge text-primary"></i> {{ page_title }}</h4>
+                    <p class="text-muted mb-0">Detalle de la solicitud de empleado</p>
+                </div>
+                <div>
+                    {% if user.is_staff or user.groups.all and user.groups.first.name == 'Agentes' or request_instance.created_by == user and request_instance.status == 'draft' %}
+                    <a href="{% url 'employee_request_edit' request_instance.pk %}" class="btn btn-outline-primary me-2">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a>
+                    {% endif %}
+                    {% if user.is_staff or user.groups.all and user.groups.first.name == 'Agentes' or request_instance.created_by == user and request_instance.status == 'draft' %}
+                    <a href="{% url 'employee_request_delete' request_instance.pk %}" class="btn btn-outline-danger me-2" 
+                       onclick="return confirm('¿Estás seguro de que quieres eliminar esta solicitud?')">
+                        <i class="bi bi-trash"></i> Eliminar
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'employee_request_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <!-- Información principal -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-file-earmark-text text-info"></i>
+                                    {{ request_instance.title }}
+                                </h5>
+                                <span class="{{ request_instance.get_status_display_class }}">
+                                    <i class="{{ request_instance.get_status_icon }}"></i>
+                                    {{ request_instance.get_status_display }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-4">
+                                <h6><i class="bi bi-text-paragraph"></i> Descripción</h6>
+                                <div class="bg-light p-3 rounded">
+                                    {{ request_instance.text|linebreaks }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <!-- Información de la solicitud -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="bi bi-info-circle text-info"></i>
+                                Información de la Solicitud
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label fw-bold">Secuencia:</label>
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge bg-primary fs-6">#{{ request_instance.sequence }}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-12">
+                                    <label class="form-label fw-bold">Estado:</label>
+                                    <div>
+                                        <span class="{{ request_instance.get_status_display_class }}">
+                                            <i class="{{ request_instance.get_status_icon }}"></i>
+                                            {{ request_instance.get_status_display }}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-12">
+                                    <label class="form-label fw-bold">Creado por:</label>
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-person-circle me-2 text-muted"></i>
+                                        <span>{{ request_instance.created_by.get_full_name|default:request_instance.created_by.username }}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-12">
+                                    <label class="form-label fw-bold">Fecha de solicitud:</label>
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-calendar me-2 text-muted"></i>
+                                        <span>{{ request_instance.date|date:"d/m/Y H:i" }}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-12">
+                                    <label class="form-label fw-bold">Creación:</label>
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-clock me-2 text-muted"></i>
+                                        <span>{{ request_instance.created_at|date:"d/m/Y H:i" }}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-12">
+                                    <label class="form-label fw-bold">Última actualización:</label>
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-arrow-clockwise me-2 text-muted"></i>
+                                        <span>{{ request_instance.updated_at|date:"d/m/Y H:i" }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Estados disponibles -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="bi bi-flag text-info"></i>
+                                Estados de Solicitud
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-2">
+                                <div class="col-12">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <span class="badge bg-secondary me-2">
+                                            <i class="bi bi-file-earmark-text"></i> Borrador
+                                        </span>
+                                        <small class="text-muted">En progreso</small>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <span class="badge bg-success me-2">
+                                            <i class="bi bi-check-circle"></i> Aprobada
+                                        </span>
+                                        <small class="text-muted">Solicitud aprobada</small>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge bg-danger me-2">
+                                            <i class="bi bi-x-circle"></i> Rechazada
+                                        </span>
+                                        <small class="text-muted">Solicitud no aprobada</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

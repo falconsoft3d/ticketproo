@@ -12025,6 +12025,58 @@ def toggle_submission_processed(request, submission_id):
 
 @login_required
 @user_passes_test(is_agent_or_superuser, login_url='/')
+def update_contact_tracking(request, submission_id):
+    """Vista para actualizar el seguimiento de contacto de un envío"""
+    from .models import LandingPageSubmission
+    from django.utils import timezone
+    from datetime import datetime
+    
+    if request.method == 'POST':
+        try:
+            submission = get_object_or_404(LandingPageSubmission, pk=submission_id)
+            
+            # Obtener datos del formulario
+            contacted_by_phone = request.POST.get('contacted_by_phone') == 'on'
+            contacted_by_web = request.POST.get('contacted_by_web') == 'on'
+            contact_notes = request.POST.get('contact_notes', '')
+            contact_date_str = request.POST.get('contact_date', '')
+            
+            # Actualizar campos
+            submission.contacted_by_phone = contacted_by_phone
+            submission.contacted_by_web = contacted_by_web
+            submission.contact_notes = contact_notes
+            
+            # Procesar fecha de contacto
+            if contact_date_str:
+                try:
+                    # Convertir datetime-local format a datetime object
+                    contact_datetime = datetime.strptime(contact_date_str, '%Y-%m-%dT%H:%M')
+                    submission.contact_date = timezone.make_aware(contact_datetime)
+                except ValueError:
+                    pass  # Si no se puede parsear, mantener el valor anterior
+            
+            submission.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Seguimiento de contacto actualizado correctamente',
+                'contacted_by_phone': submission.contacted_by_phone,
+                'contacted_by_web': submission.contacted_by_web,
+                'contact_date': submission.contact_date.isoformat() if submission.contact_date else None,
+                'contact_notes': submission.contact_notes
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': f'Error al actualizar seguimiento: {str(e)}'
+            }, status=400)
+    
+    return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+
+
+@login_required
+@user_passes_test(is_agent_or_superuser, login_url='/')
 def landing_page_contacts(request):
     """Vista para ver todos los contactos creados desde landing pages"""
     from .models import Contact
@@ -24971,3 +25023,557 @@ def landing_page_contact_click(request, slug):
             'error': f'Error al incrementar contador: {str(e)}'
         }, status=500)
 
+
+# ============================================
+# VISTAS DE SOLICITUDES DE EMPLEADOS
+# ============================================
+
+@login_required
+def employee_request_list(request):
+    """Vista para listar las solicitudes de empleados"""
+    from .models import EmployeeRequest
+    from django.db import models
+    
+    # Filtros básicos
+    status_filter = request.GET.get('status', '')
+    search = request.GET.get('search', '')
+    
+    # Query base
+    requests = EmployeeRequest.objects.all()
+    
+    # Si no es agente/admin, solo puede ver sus propias solicitudes
+    if not (request.user.is_staff or request.user.groups.filter(name='Agentes').exists()):
+        requests = requests.filter(created_by=request.user)
+    
+    # Aplicar filtros
+    if status_filter:
+        requests = requests.filter(status=status_filter)
+    
+    if search:
+        requests = requests.filter(
+            models.Q(title__icontains=search) | 
+            models.Q(text__icontains=search) |
+            models.Q(sequence__icontains=search)
+        )
+    
+    # Paginación
+    from django.core.paginator import Paginator
+    paginator = Paginator(requests, 15)
+    page = request.GET.get('page')
+    requests = paginator.get_page(page)
+    
+    context = {
+        'requests': requests,
+        'status_filter': status_filter,
+        'search': search,
+        'status_choices': EmployeeRequest.STATUS_CHOICES,
+    }
+    
+    return render(request, 'tickets/employee_request_list.html', context)
+
+
+@login_required
+def employee_request_create(request):
+    """Vista para crear una nueva solicitud de empleado"""
+    from .forms import EmployeeRequestForm
+    
+    if request.method == 'POST':
+        form = EmployeeRequestForm(request.POST, user=request.user)
+        if form.is_valid():
+            request_instance = form.save(commit=False)
+            request_instance.created_by = request.user
+            request_instance.save()
+            messages.success(request, f'Solicitud #{request_instance.sequence} creada correctamente.')
+            return redirect('employee_request_detail', pk=request_instance.pk)
+    else:
+        form = EmployeeRequestForm(user=request.user)
+    
+    context = {
+        'form': form,
+        'page_title': 'Nueva Solicitud de Empleado',
+        'is_create': True,
+    }
+    
+    return render(request, 'tickets/employee_request_form.html', context)
+
+
+@login_required
+def employee_request_detail(request, pk):
+    """Vista para ver el detalle de una solicitud de empleado"""
+    from .models import EmployeeRequest
+    
+    employee_request = get_object_or_404(EmployeeRequest, pk=pk)
+    
+    # Verificar permisos
+    if not (request.user.is_staff or 
+            request.user.groups.filter(name='Agentes').exists() or 
+            employee_request.created_by == request.user):
+        messages.error(request, 'No tienes permisos para ver esta solicitud.')
+        return redirect('employee_request_list')
+    
+    context = {
+        'request_instance': employee_request,
+        'page_title': f'Solicitud #{employee_request.sequence}',
+    }
+    
+    return render(request, 'tickets/employee_request_detail.html', context)
+
+
+@login_required
+def employee_request_edit(request, pk):
+    """Vista para editar una solicitud de empleado"""
+    from .models import EmployeeRequest
+    from .forms import EmployeeRequestForm
+    
+    employee_request = get_object_or_404(EmployeeRequest, pk=pk)
+    
+    # Verificar permisos de edición
+    can_edit = (
+        request.user.is_staff or 
+        request.user.groups.filter(name='Agentes').exists() or 
+        (employee_request.created_by == request.user and employee_request.status == 'draft')
+    )
+    
+    if not can_edit:
+        messages.error(request, 'No tienes permisos para editar esta solicitud.')
+        return redirect('employee_request_detail', pk=pk)
+    
+    if request.method == 'POST':
+        form = EmployeeRequestForm(request.POST, instance=employee_request, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Solicitud #{employee_request.sequence} actualizada correctamente.')
+            return redirect('employee_request_detail', pk=pk)
+    else:
+        form = EmployeeRequestForm(instance=employee_request, user=request.user)
+    
+    context = {
+        'form': form,
+        'request_instance': employee_request,
+        'page_title': f'Editar Solicitud #{employee_request.sequence}',
+        'is_create': False,
+    }
+    
+    return render(request, 'tickets/employee_request_form.html', context)
+
+
+@login_required
+def employee_request_delete(request, pk):
+    """Vista para eliminar una solicitud de empleado"""
+    from .models import EmployeeRequest
+    
+    employee_request = get_object_or_404(EmployeeRequest, pk=pk)
+    
+    # Solo el creador o agentes/admin pueden eliminar
+    can_delete = (
+        request.user.is_staff or 
+        request.user.groups.filter(name='Agentes').exists() or 
+        (employee_request.created_by == request.user and employee_request.status == 'draft')
+    )
+    
+    if not can_delete:
+        messages.error(request, 'No tienes permisos para eliminar esta solicitud.')
+        return redirect('employee_request_detail', pk=pk)
+    
+    if request.method == 'POST':
+        sequence = employee_request.sequence
+        employee_request.delete()
+        messages.success(request, f'Solicitud #{sequence} eliminada correctamente.')
+        return redirect('employee_request_list')
+    
+    context = {
+        'request_instance': employee_request,
+        'page_title': f'Eliminar Solicitud #{employee_request.sequence}',
+    }
+    
+    return render(request, 'tickets/employee_request_delete.html', context)
+
+
+@login_required
+def employee_dashboard(request):
+    """Vista del dashboard para empleados con métricas de productividad"""
+    from django.db.models import Count, Sum, Q
+    from datetime import datetime, timedelta
+    from django.utils import timezone
+    from .utils import is_agent
+    
+    # Verificar si el usuario puede ver el dashboard de otros empleados
+    can_view_others = (
+        request.user.is_staff or 
+        request.user.is_superuser or 
+        is_agent(request.user)
+    )
+    
+    # Obtener el empleado seleccionado
+    selected_employee_id = request.GET.get('employee_id')
+    selected_employee = request.user  # Por defecto, el usuario actual
+    
+    if selected_employee_id and can_view_others:
+        try:
+            selected_employee = User.objects.get(id=selected_employee_id)
+        except User.DoesNotExist:
+            messages.warning(request, 'El empleado seleccionado no existe.')
+            selected_employee = request.user
+    elif selected_employee_id and not can_view_others:
+        messages.warning(request, 'No tienes permisos para ver el dashboard de otros empleados.')
+    
+    # Obtener lista de empleados para el selector (solo si puede ver otros)
+    available_employees = []
+    if can_view_others:
+        # Obtener usuarios que son empleados (tienen registros de tiempo o están en grupo de agentes)
+        employee_users = User.objects.filter(
+            Q(time_entries__isnull=False) | 
+            Q(groups__name='Agentes') |
+            Q(is_staff=True)
+        ).distinct().order_by('first_name', 'last_name', 'username')
+        
+        available_employees = employee_users
+    
+    # Obtener fechas para los períodos
+    now = timezone.now()
+    today = now.date()
+    week_start = today - timedelta(days=today.weekday())  # Lunes de esta semana
+    month_start = today.replace(day=1)  # Primer día del mes actual
+    
+    # Métricas de horas trabajadas
+    # Horas del día actual
+    today_entries = TimeEntry.objects.filter(
+        user=selected_employee,
+        fecha_entrada__date=today,
+        fecha_salida__isnull=False
+    )
+    
+    hours_today = 0
+    for entry in today_entries:
+        if entry.fecha_salida:
+            duration = entry.fecha_salida - entry.fecha_entrada
+            hours_today += duration.total_seconds() / 3600
+    
+    # Horas de la semana actual
+    week_entries = TimeEntry.objects.filter(
+        user=selected_employee,
+        fecha_entrada__date__gte=week_start,
+        fecha_entrada__date__lte=today,
+        fecha_salida__isnull=False
+    )
+    
+    hours_week = 0
+    for entry in week_entries:
+        if entry.fecha_salida:
+            duration = entry.fecha_salida - entry.fecha_entrada
+            hours_week += duration.total_seconds() / 3600
+    
+    # Horas del mes actual
+    month_entries = TimeEntry.objects.filter(
+        user=selected_employee,
+        fecha_entrada__date__gte=month_start,
+        fecha_entrada__date__lte=today,
+        fecha_salida__isnull=False
+    )
+    
+    hours_month = 0
+    for entry in month_entries:
+        if entry.fecha_salida:
+            duration = entry.fecha_salida - entry.fecha_entrada
+            hours_month += duration.total_seconds() / 3600
+    
+    # Contactos creados en el mes
+    contacts_month = Contact.objects.filter(
+        created_by=selected_employee,
+        created_at__date__gte=month_start
+    ).count()
+    
+    # Oportunidades creadas en el mes
+    opportunities_month = Opportunity.objects.filter(
+        assigned_to=selected_employee,
+        created_at__date__gte=month_start
+    ).count()
+    
+    # Tickets creados en el mes
+    tickets_month = Ticket.objects.filter(
+        Q(created_by=selected_employee) | Q(assigned_to=selected_employee),
+        created_at__date__gte=month_start
+    ).count()
+    
+    # Reuniones con Gerente IA en el mes
+    ai_meetings_month = AIManagerMeeting.objects.filter(
+        user=selected_employee,
+        created_at__date__gte=month_start
+    ).count()
+    
+    # Datos para gráficos (últimos 7 días)
+    chart_data = []
+    for i in range(7):
+        day = today - timedelta(days=i)
+        day_entries = TimeEntry.objects.filter(
+            user=selected_employee,
+            fecha_entrada__date=day,
+            fecha_salida__isnull=False
+        )
+        
+        day_hours = 0
+        for entry in day_entries:
+            if entry.fecha_salida:
+                duration = entry.fecha_salida - entry.fecha_entrada
+                day_hours += duration.total_seconds() / 3600
+        
+        chart_data.append({
+            'date': day.strftime('%d/%m'),
+            'hours': round(day_hours, 2)
+        })
+    
+    chart_data.reverse()  # Para mostrar de más antiguo a más reciente
+    
+    # Obtener información del clima
+    weather_info = None
+    try:
+        # Obtener la ubicación del empleado seleccionado
+        profile = getattr(selected_employee, 'profile', None)
+        if profile:
+            city = profile.city or 'Valencia'
+            country_code = profile.country_code or 'ES'
+        else:
+            city = 'Valencia'
+            country_code = 'ES'
+        
+        from .utils import get_weather_info
+        weather_info = get_weather_info(city, country_code)
+    except Exception as e:
+        # Si hay error, usar valores por defecto
+        weather_info = {
+            'city': 'Valencia',
+            'temperature': '--',
+            'description': 'No disponible',
+            'icon': 'bi-exclamation-triangle',
+            'success': False
+        }
+    
+    context = {
+        'page_title': f'Dashboard de Empleado - {selected_employee.get_full_name() or selected_employee.username}',
+        'hours_today': round(hours_today, 2),
+        'hours_week': round(hours_week, 2),
+        'hours_month': round(hours_month, 2),
+        'contacts_month': contacts_month,
+        'opportunities_month': opportunities_month,
+        'tickets_month': tickets_month,
+        'ai_meetings_month': ai_meetings_month,
+        'chart_data': chart_data,
+        'current_user': request.user,
+        'selected_employee': selected_employee,
+        'available_employees': available_employees,
+        'can_view_others': can_view_others,
+        'today': today,
+        'week_start': week_start,
+        'month_start': month_start,
+        'weather_info': weather_info,
+    }
+    
+    return render(request, 'tickets/employee_dashboard.html', context)
+
+
+# ===================================================
+# VISTAS PARA ACUERDOS INTERNOS
+# ===================================================
+
+@login_required
+def internal_agreement_list(request):
+    """Vista para listar los acuerdos internos"""
+    from .models import InternalAgreement
+    from django.db import models
+    from .utils import is_agent
+    
+    # Solo agentes y administradores pueden acceder
+    if not (is_agent(request.user) or request.user.is_staff):
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('dashboard')
+    
+    # Filtros básicos
+    status_filter = request.GET.get('status', '')
+    type_filter = request.GET.get('type', '')
+    priority_filter = request.GET.get('priority', '')
+    search = request.GET.get('search', '')
+    
+    # Query base
+    agreements = InternalAgreement.objects.all()
+    
+    # Aplicar filtros
+    if status_filter:
+        agreements = agreements.filter(status=status_filter)
+    
+    if type_filter:
+        agreements = agreements.filter(agreement_type=type_filter)
+    
+    if priority_filter:
+        agreements = agreements.filter(priority=priority_filter)
+    
+    if search:
+        agreements = agreements.filter(
+            models.Q(title__icontains=search) | 
+            models.Q(description__icontains=search) |
+            models.Q(content__icontains=search) |
+            models.Q(tags__icontains=search) |
+            models.Q(sequence__icontains=search)
+        )
+    
+    # Optimizar consultas
+    agreements = agreements.select_related('created_by', 'approved_by')
+    
+    # Paginación
+    from django.core.paginator import Paginator
+    paginator = Paginator(agreements, 15)
+    page = request.GET.get('page')
+    agreements_page = paginator.get_page(page)
+    
+    # Agregar información de permisos a cada acuerdo
+    for agreement in agreements_page:
+        agreement.user_can_edit = agreement.can_edit(request.user)
+        agreement.user_can_delete = agreement.can_delete(request.user)
+    
+    context = {
+        'agreements': agreements_page,
+        'status_filter': status_filter,
+        'type_filter': type_filter,
+        'priority_filter': priority_filter,
+        'search': search,
+        'status_choices': InternalAgreement.STATUS_CHOICES,
+        'type_choices': InternalAgreement.TYPE_CHOICES,
+        'priority_choices': InternalAgreement.PRIORITY_CHOICES,
+    }
+    
+    return render(request, 'tickets/internal_agreement_list.html', context)
+
+
+@login_required
+def internal_agreement_create(request):
+    """Vista para crear un nuevo acuerdo interno"""
+    from .forms import InternalAgreementForm
+    from .utils import is_agent
+    
+    # Solo agentes y administradores pueden crear
+    if not (is_agent(request.user) or request.user.is_staff):
+        messages.error(request, 'No tienes permisos para crear acuerdos internos.')
+        return redirect('internal_agreement_list')
+    
+    if request.method == 'POST':
+        form = InternalAgreementForm(request.POST, user=request.user)
+        if form.is_valid():
+            agreement = form.save(commit=False)
+            agreement.created_by = request.user
+            agreement.save()
+            messages.success(request, f'Acuerdo Interno #{agreement.sequence} creado correctamente.')
+            return redirect('internal_agreement_detail', pk=agreement.pk)
+    else:
+        form = InternalAgreementForm(user=request.user)
+    
+    context = {
+        'form': form,
+        'page_title': 'Nuevo Acuerdo Interno',
+        'is_create': True,
+    }
+    
+    return render(request, 'tickets/internal_agreement_form.html', context)
+
+
+@login_required
+def internal_agreement_detail(request, pk):
+    """Vista para ver el detalle de un acuerdo interno"""
+    from .models import InternalAgreement
+    from .utils import is_agent
+    
+    # Solo agentes y administradores pueden ver
+    if not (is_agent(request.user) or request.user.is_staff):
+        messages.error(request, 'No tienes permisos para ver los acuerdos internos.')
+        return redirect('dashboard')
+    
+    agreement = get_object_or_404(InternalAgreement, pk=pk)
+    
+    # Procesar etiquetas
+    tags_list = []
+    if agreement.tags:
+        tags_list = [tag.strip() for tag in agreement.tags.split(',') if tag.strip()]
+    
+    context = {
+        'agreement': agreement,
+        'tags_list': tags_list,
+        'page_title': f'Acuerdo #{agreement.sequence}',
+        'can_edit': agreement.can_edit(request.user),
+        'can_delete': agreement.can_delete(request.user),
+    }
+    
+    return render(request, 'tickets/internal_agreement_detail.html', context)
+
+
+@login_required
+def internal_agreement_edit(request, pk):
+    """Vista para editar un acuerdo interno"""
+    from .models import InternalAgreement
+    from .forms import InternalAgreementForm
+    from .utils import is_agent
+    
+    agreement = get_object_or_404(InternalAgreement, pk=pk)
+    
+    # Verificar permisos de edición
+    if not agreement.can_edit(request.user):
+        messages.error(request, 'No tienes permisos para editar este acuerdo.')
+        return redirect('internal_agreement_detail', pk=pk)
+    
+    if request.method == 'POST':
+        form = InternalAgreementForm(request.POST, instance=agreement, user=request.user)
+        if form.is_valid():
+            # Verificar si se está cambiando el estado que requiere aprobación/rechazo
+            old_status = agreement.status
+            agreement = form.save()
+            
+            # Si cambió a activo, aprobado y no tenía aprobación, registrar aprobación
+            if (old_status not in ['active', 'approved'] and agreement.status in ['active', 'approved'] and 
+                not agreement.approved_by):
+                agreement.approved_by = request.user
+                from django.utils import timezone
+                agreement.approved_date = timezone.now()
+                agreement.save()
+                
+            # Si se rechazó, limpiar datos de aprobación
+            elif agreement.status == 'rejected':
+                agreement.approved_by = None
+                agreement.approved_date = None
+                agreement.save()
+            
+            messages.success(request, f'Acuerdo #{agreement.sequence} actualizado correctamente.')
+            return redirect('internal_agreement_detail', pk=pk)
+    else:
+        form = InternalAgreementForm(instance=agreement, user=request.user)
+    
+    context = {
+        'form': form,
+        'agreement': agreement,
+        'page_title': f'Editar Acuerdo #{agreement.sequence}',
+        'is_create': False,
+    }
+    
+    return render(request, 'tickets/internal_agreement_form.html', context)
+
+
+@login_required
+def internal_agreement_delete(request, pk):
+    """Vista para eliminar un acuerdo interno"""
+    from .models import InternalAgreement
+    
+    agreement = get_object_or_404(InternalAgreement, pk=pk)
+    
+    # Verificar permisos de eliminación
+    if not agreement.can_delete(request.user):
+        messages.error(request, 'No tienes permisos para eliminar este acuerdo.')
+        return redirect('internal_agreement_detail', pk=pk)
+    
+    if request.method == 'POST':
+        sequence = agreement.sequence
+        agreement.delete()
+        messages.success(request, f'Acuerdo #{sequence} eliminado correctamente.')
+        return redirect('internal_agreement_list')
+    
+    context = {
+        'agreement': agreement,
+        'page_title': f'Eliminar Acuerdo #{agreement.sequence}',
+    }
+    
+    return render(request, 'tickets/internal_agreement_confirm_delete.html', context)

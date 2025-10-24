@@ -1,0 +1,485 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .metric-card {
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s ease-in-out;
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .metric-icon {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+    }
+    
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .metric-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+        margin-bottom: 0;
+    }
+    
+    .dashboard-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 30px;
+        margin-bottom: 30px;
+        position: relative;
+    }
+    
+    .dashboard-header.viewing-other {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    
+    .dashboard-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .dashboard-header:hover::before {
+        opacity: 1;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-top: 20px;
+    }
+    
+    .period-info {
+        font-size: 0.8rem;
+        color: #6c757d;
+        text-align: center;
+        margin-top: 10px;
+    }
+    
+    .quick-action-btn {
+        transition: all 0.3s ease;
+        border-width: 2px;
+        font-weight: 500;
+    }
+    
+    .quick-action-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .quick-actions-header {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        border-radius: 10px 10px 0 0;
+    }
+    
+    .weather-widget {
+        background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+        border-radius: 15px;
+        padding: 20px;
+        margin: 10px 0;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: all 0.3s ease;
+        color: white;
+    }
+    
+    .weather-widget:hover {
+        background: linear-gradient(135deg, #5ba0f2 0%, #4080cd 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+    
+    .weather-icon {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        color: #ffffff;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    
+    .weather-temp {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+        color: #ffffff;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    
+    .weather-desc {
+        font-size: 0.9rem;
+        color: #ffffff;
+        opacity: 0.9;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+    
+    .weather-details {
+        font-size: 0.8rem;
+        color: #ffffff;
+        opacity: 0.8;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header del Dashboard -->
+    <div class="dashboard-header {% if selected_employee.id != current_user.id %}viewing-other{% endif %}">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h1 class="mb-0">
+                    <i class="bi bi-speedometer2"></i> Dashboard de Empleado
+                    {% if selected_employee.id != current_user.id %}
+                        <small class="badge bg-light text-dark ms-2">Viendo otro empleado</small>
+                    {% endif %}
+                </h1>
+                <p class="mb-0 mt-2">
+                    {% if selected_employee.id == current_user.id %}
+                        Hola {{ current_user.get_full_name|default:current_user.username }}, aquí tienes un resumen de tu productividad
+                    {% else %}
+                        Dashboard de {{ selected_employee.get_full_name|default:selected_employee.username }}
+                    {% endif %}
+                </p>
+            </div>
+            <div class="col-md-6">
+                <!-- Widget del Clima -->
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="weather-widget text-center">
+                            {% if weather_info and weather_info.success %}
+                                <div class="weather-icon">
+                                    <i class="{{ weather_info.icon }}"></i>
+                                </div>
+                                <div class="weather-temp">
+                                    {{ weather_info.temperature }}°C
+                                </div>
+                                <div class="weather-desc">
+                                    {{ weather_info.description }}
+                                </div>
+                                <div class="weather-details">
+                                    <i class="bi bi-geo-alt"></i> {{ weather_info.city }}
+                                    {% if weather_info.humidity %}
+                                        <br><i class="bi bi-droplet"></i> {{ weather_info.humidity }}% 
+                                        <i class="bi bi-wind ms-2"></i> {{ weather_info.wind_speed }} km/h
+                                    {% endif %}
+                                </div>
+                            {% else %}
+                                <div class="weather-icon">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                </div>
+                                <div class="weather-temp">--°C</div>
+                                <div class="weather-desc">Clima no disponible</div>
+                                <div class="weather-details">
+                                    <i class="bi bi-geo-alt"></i> Valencia
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Selector de Empleado (solo para agentes y administradores) -->
+                {% if can_view_others and available_employees %}
+                <div class="row align-items-end mt-3">
+                    <div class="col-md-8">
+                        <form method="GET" class="d-flex align-items-end">
+                            <div class="me-2 flex-grow-1">
+                                <label for="employee_select" class="form-label text-black mb-1">Seleccionar Empleado:</label>
+                                <select name="employee_id" id="employee_select" class="form-select form-select-sm">
+                                    <option value="">-- Mi Dashboard --</option>
+                                    {% for employee in available_employees %}
+                                        <option value="{{ employee.id }}" 
+                                                {% if employee.id == selected_employee.id %}selected{% endif %}>
+                                            {{ employee.get_full_name|default:employee.username }}
+                                            {% if employee.id == current_user.id %} (Tú){% endif %}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div>
+                                <button type="submit" class="btn btn-light btn-sm">
+                                    <i class="bi bi-search"></i> Ver
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <h3 class="mb-0 text-black">{{ today|date:"d/m/Y" }}</h3>
+                        <p class="mb-0 text-black-50">{{ today|date:"l" }}</p>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-end mt-3">
+                    <h3 class="mb-0 text-black">{{ today|date:"d/m/Y" }}</h3>
+                    <p class="mb-0 text-black-50">{{ today|date:"l" }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Métricas de Horas -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="mb-3"><i class="bi bi-clock"></i> Horas Trabajadas</h3>
+        </div>
+        
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="card metric-card h-100 border-0 bg-primary text-white">
+                <div class="card-body text-center">
+                    <div class="metric-icon">
+                        <i class="bi bi-sun"></i>
+                    </div>
+                    <div class="metric-value">{{ hours_today }}</div>
+                    <p class="metric-label text-white-50">Horas Hoy</p>
+                    <div class="period-info text-white-50">
+                        {{ today|date:"d/m/Y" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="card metric-card h-100 border-0 bg-success text-white">
+                <div class="card-body text-center">
+                    <div class="metric-icon">
+                        <i class="bi bi-calendar-week"></i>
+                    </div>
+                    <div class="metric-value">{{ hours_week }}</div>
+                    <p class="metric-label text-white-50">Horas Esta Semana</p>
+                    <div class="period-info text-white-50">
+                        Desde {{ week_start|date:"d/m" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="card metric-card h-100 border-0 bg-info text-white">
+                <div class="card-body text-center">
+                    <div class="metric-icon">
+                        <i class="bi bi-calendar-month"></i>
+                    </div>
+                    <div class="metric-value">{{ hours_month }}</div>
+                    <p class="metric-label text-white-50">Horas Este Mes</p>
+                    <div class="period-info text-white-50">
+                        Desde {{ month_start|date:"d/m" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones Rápidas - Solo para el propio dashboard -->
+    {% if selected_employee.id == current_user.id %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0" style="box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);">
+                <div class="card-header quick-actions-header border-0">
+                    <h4 class="mb-0 text-black">
+                        <i class="bi bi-lightning-charge me-2"></i>Acciones Rápidas
+                        <small class="ms-2 opacity-75">- Impulsa tu productividad</small>
+                    </h4>
+                </div>
+                <div class="card-body bg-light">
+                    <div class="row">
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <a href="{% url 'time_start_work' %}" class="btn btn-outline-primary w-100 quick-action-btn d-flex align-items-center justify-content-center" style="height: 65px;">
+                                <i class="bi bi-play-circle me-2" style="font-size: 1.8rem;"></i>
+                                <div class="text-start">
+                                    <div style="font-weight: 600;">Iniciar Jornada</div>
+                                    <small class="text-muted">Registrar entrada</small>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <a href="{% url 'contact_create' %}" class="btn btn-outline-success w-100 quick-action-btn d-flex align-items-center justify-content-center" style="height: 65px;">
+                                <i class="bi bi-person-plus me-2" style="font-size: 1.8rem;"></i>
+                                <div class="text-start">
+                                    <div style="font-weight: 600;">Nuevo Contacto</div>
+                                    <small class="text-muted">Agregar cliente</small>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <a href="{% url 'opportunity_create' %}" class="btn btn-outline-warning w-100 quick-action-btn d-flex align-items-center justify-content-center" style="height: 65px;">
+                                <i class="bi bi-target me-2" style="font-size: 1.8rem;"></i>
+                                <div class="text-start">
+                                    <div style="font-weight: 600;">Nueva Oportunidad</div>
+                                    <small class="text-muted">Crear venta</small>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <a href="{% url 'ticket_create' %}" class="btn btn-outline-danger w-100 quick-action-btn d-flex align-items-center justify-content-center" style="height: 65px;">
+                                <i class="bi bi-ticket-perforated me-2" style="font-size: 1.8rem;"></i>
+                                <div class="text-start">
+                                    <div style="font-weight: 600;">Nuevo Ticket</div>
+                                    <small class="text-muted">Registrar tarea</small>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Métricas de Productividad -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="mb-3"><i class="bi bi-graph-up"></i> Métricas de Productividad (Este Mes)</h3>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card metric-card h-100 border-0">
+                <div class="card-body text-center">
+                    <div class="metric-icon text-warning">
+                        <i class="bi bi-person-plus"></i>
+                    </div>
+                    <div class="metric-value text-dark">{{ contacts_month }}</div>
+                    <p class="metric-label">Contactos Creados</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card metric-card h-100 border-0">
+                <div class="card-body text-center">
+                    <div class="metric-icon text-success">
+                        <i class="bi bi-target"></i>
+                    </div>
+                    <div class="metric-value text-dark">{{ opportunities_month }}</div>
+                    <p class="metric-label">Oportunidades Creadas</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card metric-card h-100 border-0">
+                <div class="card-body text-center">
+                    <div class="metric-icon text-danger">
+                        <i class="bi bi-ticket-perforated"></i>
+                    </div>
+                    <div class="metric-value text-dark">{{ tickets_month }}</div>
+                    <p class="metric-label">Tickets Creados</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card metric-card h-100 border-0">
+                <div class="card-body text-center">
+                    <div class="metric-icon text-info">
+                        <i class="bi bi-robot"></i>
+                    </div>
+                    <div class="metric-value text-dark">{{ ai_meetings_month }}</div>
+                    <p class="metric-label">Reuniones con Gerente IA</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico de Horas de los Últimos 7 Días -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="bi bi-bar-chart"></i> Horas Trabajadas - Últimos 7 Días</h4>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="hoursChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Datos del gráfico desde Django
+    const chartData = {{ chart_data|safe }};
+    
+    // Configuración del gráfico
+    const ctx = document.getElementById('hoursChart').getContext('2d');
+    const hoursChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: chartData.map(item => item.date),
+            datasets: [{
+                label: 'Horas Trabajadas',
+                data: chartData.map(item => item.hours),
+                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 2,
+                borderRadius: 5,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value + 'h';
+                        }
+                    }
+                }
+            },
+            elements: {
+                bar: {
+                    borderRadius: 5
+                }
+            }
+        }
+    });
+
+    // Auto-submit del formulario cuando se cambia la selección de empleado
+    const employeeSelect = document.getElementById('employee_select');
+    if (employeeSelect) {
+        employeeSelect.addEventListener('change', function() {
+            // Mostrar un indicador de carga
+            const submitBtn = this.closest('form').querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Cargando...';
+            submitBtn.disabled = true;
+            
+            // Auto-enviar el formulario
+            this.closest('form').submit();
+        });
+    }
+});
+</script>
+{% endblock %}

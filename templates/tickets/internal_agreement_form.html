@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h2>
+                        <i class="bi bi-file-earmark-check text-primary"></i> 
+                        {{ page_title }}
+                    </h2>
+                    {% if not is_create and agreement %}
+                        <p class="text-muted">Acuerdo #{{ agreement.sequence }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <a href="{% url 'internal_agreement_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver a la lista
+                    </a>
+                    {% if not is_create and agreement %}
+                        <a href="{% url 'internal_agreement_detail' agreement.pk %}" class="btn btn-outline-info">
+                            <i class="bi bi-eye"></i> Ver detalle
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <div class="row">
+                            <!-- Información básica -->
+                            <div class="col-md-8">
+                                <h5 class="card-title mb-3">
+                                    <i class="bi bi-info-circle text-primary"></i> Información Básica
+                                </h5>
+                                
+                                <div class="mb-3">
+                                    <label for="{{ form.title.id_for_label }}" class="form-label required">
+                                        {{ form.title.label }}
+                                    </label>
+                                    {{ form.title }}
+                                    {% if form.title.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.title.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    {% if form.title.help_text %}
+                                        <div class="form-text">{{ form.title.help_text }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.description.id_for_label }}" class="form-label required">
+                                        {{ form.description.label }}
+                                    </label>
+                                    {{ form.description }}
+                                    {% if form.description.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.description.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    {% if form.description.help_text %}
+                                        <div class="form-text">{{ form.description.help_text }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.content.id_for_label }}" class="form-label required">
+                                        {{ form.content.label }}
+                                    </label>
+                                    {{ form.content }}
+                                    {% if form.content.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.content.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    {% if form.content.help_text %}
+                                        <div class="form-text">{{ form.content.help_text }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.tags.id_for_label }}" class="form-label">
+                                        {{ form.tags.label }}
+                                    </label>
+                                    {{ form.tags }}
+                                    {% if form.tags.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.tags.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    {% if form.tags.help_text %}
+                                        <div class="form-text">{{ form.tags.help_text }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Configuración -->
+                            <div class="col-md-4">
+                                <h5 class="card-title mb-3">
+                                    <i class="bi bi-gear text-warning"></i> Configuración
+                                </h5>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.agreement_type.id_for_label }}" class="form-label required">
+                                        {{ form.agreement_type.label }}
+                                    </label>
+                                    {{ form.agreement_type }}
+                                    {% if form.agreement_type.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.agreement_type.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.status.id_for_label }}" class="form-label required">
+                                        {{ form.status.label }}
+                                    </label>
+                                    {{ form.status }}
+                                    {% if form.status.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.status.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.priority.id_for_label }}" class="form-label required">
+                                        {{ form.priority.label }}
+                                    </label>
+                                    {{ form.priority }}
+                                    {% if form.priority.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.priority.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.version.id_for_label }}" class="form-label">
+                                        {{ form.version.label }}
+                                    </label>
+                                    {{ form.version }}
+                                    {% if form.version.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.version.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    {% if form.version.help_text %}
+                                        <div class="form-text">{{ form.version.help_text }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <hr>
+
+                                <h6 class="text-muted mb-3">
+                                    <i class="bi bi-calendar text-info"></i> Fechas de Vigencia
+                                </h6>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.effective_date.id_for_label }}" class="form-label">
+                                        {{ form.effective_date.label }}
+                                    </label>
+                                    {{ form.effective_date }}
+                                    {% if form.effective_date.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.effective_date.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    {% if form.effective_date.help_text %}
+                                        <div class="form-text">{{ form.effective_date.help_text }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.expiration_date.id_for_label }}" class="form-label">
+                                        {{ form.expiration_date.label }}
+                                    </label>
+                                    {{ form.expiration_date }}
+                                    {% if form.expiration_date.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.expiration_date.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    {% if form.expiration_date.help_text %}
+                                        <div class="form-text">{{ form.expiration_date.help_text }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <hr>
+
+                                <h6 class="text-muted mb-3">
+                                    <i class="bi bi-people text-success"></i> Aplicación
+                                </h6>
+
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        {{ form.applies_to_all }}
+                                        <label class="form-check-label" for="{{ form.applies_to_all.id_for_label }}">
+                                            {{ form.applies_to_all.label }}
+                                        </label>
+                                    </div>
+                                    {% if form.applies_to_all.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.applies_to_all.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    {% if form.applies_to_all.help_text %}
+                                        <div class="form-text">{{ form.applies_to_all.help_text }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-3" id="department-field">
+                                    <label for="{{ form.department.id_for_label }}" class="form-label">
+                                        {{ form.department.label }}
+                                    </label>
+                                    {{ form.department }}
+                                    {% if form.department.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.department.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    {% if form.department.help_text %}
+                                        <div class="form-text">{{ form.department.help_text }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'internal_agreement_list' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> 
+                                {% if is_create %}Crear Acuerdo{% else %}Actualizar Acuerdo{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleDepartmentField(appliesToAll) {
+    const departmentField = document.getElementById('department-field');
+    if (appliesToAll) {
+        departmentField.style.display = 'none';
+        document.getElementById('{{ form.department.id_for_label }}').value = '';
+    } else {
+        departmentField.style.display = 'block';
+    }
+}
+
+// Ejecutar al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    const appliesToAllCheckbox = document.getElementById('{{ form.applies_to_all.id_for_label }}');
+    if (appliesToAllCheckbox) {
+        toggleDepartmentField(appliesToAllCheckbox.checked);
+    }
+});
+</script>
+
+<style>
+.required::after {
+    content: " *";
+    color: red;
+}
+</style>
+{% endblock %}

@@ -108,6 +108,85 @@
                     {% endif %}
                 </div>
             </div>
+
+            <!-- Seguimiento de Contacto -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-telephone-forward text-success"></i> Seguimiento de Contacto
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-telephone"></i> Contacto telefónico</h6>
+                            {% if contact.contacted_by_phone %}
+                                <span class="badge bg-success fs-6 p-2">
+                                    <i class="bi bi-check-circle"></i> Contactado por teléfono
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary fs-6 p-2">
+                                    <i class="bi bi-x-circle"></i> No contactado por teléfono
+                                </span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-envelope"></i> Contacto web/email</h6>
+                            {% if contact.contacted_by_web %}
+                                <span class="badge bg-primary fs-6 p-2">
+                                    <i class="bi bi-check-circle"></i> Contactado por web/email
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary fs-6 p-2">
+                                    <i class="bi bi-x-circle"></i> No contactado por web/email
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if contact.last_contact_date %}
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <h6><i class="bi bi-calendar-check"></i> Último contacto</h6>
+                            <p class="text-muted">{{ contact.last_contact_date|date:"d/m/Y H:i" }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if contact.contact_tracking_notes %}
+                    <div class="row">
+                        <div class="col-12">
+                            <h6><i class="bi bi-chat-dots"></i> Notas de seguimiento</h6>
+                            <div class="bg-light p-3 rounded">
+                                {{ contact.contact_tracking_notes|linebreaks }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Estado visual del seguimiento -->
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <small class="text-muted">Estado del seguimiento:</small>
+                            <div class="d-flex gap-2 flex-wrap mt-1">
+                                {% if contact.contacted_by_phone and contact.contacted_by_web %}
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-check-all"></i> Contacto completo
+                                    </span>
+                                {% elif contact.contacted_by_phone or contact.contacted_by_web %}
+                                    <span class="badge bg-warning">
+                                        <i class="bi bi-hourglass-split"></i> Contacto parcial
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-danger">
+                                        <i class="bi bi-exclamation-triangle"></i> Sin contacto registrado
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Información adicional -->

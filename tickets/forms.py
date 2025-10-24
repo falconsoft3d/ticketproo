@@ -25,7 +25,8 @@ from .models import (
     ClientProjectAccess, ClientTimeEntry, ProductSet, ProductItem, Precotizador, PrecotizadorExample, PrecotizadorQuote,
     CompanyDocumentation, CompanyDocumentationURL, ContactGenerator,
     CompanyRequestGenerator, CompanyRequest, CompanyRequestComment,
-    Form, FormQuestion, FormQuestionOption, FormResponse, FormAnswer
+    Form, FormQuestion, FormQuestionOption, FormResponse, FormAnswer,
+    EmployeeRequest, InternalAgreement
 )
 
 class CategoryForm(forms.ModelForm):
@@ -2938,7 +2939,9 @@ class ContactForm(forms.ModelForm):
         model = Contact
         fields = [
             'name', 'email', 'phone', 'position', 'company', 
-            'status', 'source', 'notes', 'contact_date'
+            'status', 'source', 'notes', 'contact_date',
+            'contacted_by_phone', 'contacted_by_web', 
+            'contact_tracking_notes', 'last_contact_date'
         ]
         widgets = {
             'name': forms.TextInput(attrs={
@@ -2977,15 +2980,46 @@ class ContactForm(forms.ModelForm):
                 'class': 'form-control',
                 'type': 'datetime-local'
             }),
+            'contacted_by_phone': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'contacted_by_web': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'contact_tracking_notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Notas sobre los contactos realizados...'
+            }),
+            'last_contact_date': forms.DateTimeInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local'
+            }),
         }
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
+        from django.utils import timezone
+        now = timezone.now()
+        
         # Establecer valores por defecto para nuevos contactos
         if not self.instance.pk:
-            from django.utils import timezone
-            self.fields['contact_date'].initial = timezone.now().strftime('%Y-%m-%dT%H:%M')
+            # Contacto nuevo
+            self.fields['contact_date'].initial = now.strftime('%Y-%m-%dT%H:%M')
+            self.fields['last_contact_date'].initial = now.strftime('%Y-%m-%dT%H:%M')
+        else:
+            # Contacto existente - mantener valores actuales o sugerir fecha actual si está vacío
+            if self.instance.contact_date:
+                self.fields['contact_date'].initial = self.instance.contact_date.strftime('%Y-%m-%dT%H:%M')
+            else:
+                self.fields['contact_date'].initial = now.strftime('%Y-%m-%dT%H:%M')
+                
+            if self.instance.last_contact_date:
+                self.fields['last_contact_date'].initial = self.instance.last_contact_date.strftime('%Y-%m-%dT%H:%M')
+            elif not self.instance.last_contact_date:
+                # Si no hay fecha de último contacto, sugerir la fecha actual
+                self.fields['last_contact_date'].initial = now.strftime('%Y-%m-%dT%H:%M')
         
         # Personalizar labels
         self.fields['name'].label = 'Nombre Completo'
@@ -2997,6 +3031,10 @@ class ContactForm(forms.ModelForm):
         self.fields['source'].label = 'Fuente'
         self.fields['notes'].label = 'Notas'
         self.fields['contact_date'].label = 'Fecha y Hora de Contacto'
+        self.fields['contacted_by_phone'].label = 'Contactado por teléfono'
+        self.fields['contacted_by_web'].label = 'Contactado por web/email'
+        self.fields['contact_tracking_notes'].label = 'Notas de seguimiento'
+        self.fields['last_contact_date'].label = 'Fecha del último contacto'
 
 
 class BlogCategoryForm(forms.ModelForm):
@@ -4454,6 +4492,21 @@ class TranscriptionActionForm(forms.Form):
 class MultipleDocumentationForm(forms.ModelForm):
     """Formulario para crear y editar documentaciones múltiples"""
     
+    # Campo personalizado para la contraseña que mantenga el valor en edición
+    access_password = forms.CharField(
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Contraseña de acceso',
+            'maxlength': '100',
+            'id': 'access_password_field',
+            'type': 'text'  # Usar texto normal para mostrar el valor
+        }),
+        label='Contraseña de acceso',
+        help_text='Contraseña que los usuarios deberán ingresar para acceder'
+    )
+    
     class Meta:
         model = MultipleDocumentation
         fields = ['title', 'description', 'is_active', 'password_protected', 'access_password']
@@ -4476,47 +4529,44 @@ class MultipleDocumentationForm(forms.ModelForm):
                 'class': 'form-check-input',
                 'id': 'password_protected_checkbox'
             }),
-            'access_password': forms.PasswordInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Contraseña de acceso',
-                'maxlength': '100',
-                'id': 'access_password_field'
-            }),
         }
         labels = {
             'title': 'Título',
             'description': 'Descripción', 
             'is_active': 'Activo',
             'password_protected': 'Protegido con contraseña',
-            'access_password': 'Contraseña de acceso',
         }
         help_texts = {
             'title': 'Nombre descriptivo para identificar esta documentación',
             'description': 'Descripción opcional de qué contiene esta documentación',
             'is_active': 'Si está activo, se puede acceder públicamente',
             'password_protected': 'Si está marcado, se requerirá una contraseña para acceder',
-            'access_password': 'Contraseña que los usuarios deberán ingresar para acceder',
         }
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Hacer que la contraseña no sea requerida cuando no está protegida
-        if not self.instance.pk or not self.instance.password_protected:
-            self.fields['access_password'].required = False
+        # Si estamos editando una instancia existente, establecer el valor de la contraseña
+        if self.instance and self.instance.pk:
+            # Solo usar initial, que es la forma correcta en Django
+            if hasattr(self.instance, 'access_password') and self.instance.access_password:
+                self.fields['access_password'].initial = self.instance.access_password
     
     def clean(self):
         cleaned_data = super().clean()
         password_protected = cleaned_data.get('password_protected')
         access_password = cleaned_data.get('access_password')
         
-        # Si está protegida con contraseña, validar que se haya proporcionado
+        # Si está protegido por contraseña pero no se proporciona una contraseña
         if password_protected and not access_password:
-            raise forms.ValidationError({
-                'access_password': 'La contraseña es requerida cuando la documentación está protegida.'
-            })
+            # Si estamos editando y la instancia ya tiene contraseña, mantenerla
+            if self.instance and self.instance.pk and self.instance.access_password:
+                cleaned_data['access_password'] = self.instance.access_password
+            else:
+                # Si es nueva documentación, requerir contraseña
+                raise forms.ValidationError('Debe proporcionar una contraseña cuando la documentación está protegida.')
         
-        # Si no está protegida, limpiar la contraseña
+        # Si no está protegido por contraseña, limpiar el campo
         if not password_protected:
             cleaned_data['access_password'] = ''
         
@@ -5673,3 +5723,217 @@ class PublicFormResponseForm(forms.Form):
                         choices=choices,
                         widget=forms.RadioSelect(attrs={'class': 'form-check-input'})
                     )
+
+
+class EmployeeRequestForm(forms.ModelForm):
+    """Formulario para crear y editar solicitudes de empleados"""
+    
+    class Meta:
+        model = EmployeeRequest
+        fields = ['title', 'text', 'status']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título de la solicitud',
+                'maxlength': '200'
+            }),
+            'text': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 5,
+                'placeholder': 'Descripción detallada de la solicitud...'
+            }),
+            'status': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+        }
+        labels = {
+            'title': 'Título',
+            'text': 'Descripción',
+            'status': 'Estado',
+        }
+        help_texts = {
+            'title': 'Título descriptivo de la solicitud',
+            'text': 'Describe detalladamente la solicitud del empleado',
+            'status': 'Estado actual de la solicitud',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        # Si es un usuario que no es agente/admin, solo puede crear borradores
+        if user and not (user.is_staff or user.groups.filter(name='Agentes').exists()):
+            self.fields['status'].choices = [('draft', 'Borrador')]
+            self.fields['status'].initial = 'draft'
+        
+        # Agregar clases CSS adicionales
+        for field_name, field in self.fields.items():
+            if 'class' not in field.widget.attrs:
+                field.widget.attrs['class'] = 'form-control'
+    
+    def save(self, commit=True):
+        """Override save para asignar el usuario que crea la solicitud"""
+        instance = super().save(commit=False)
+        
+        # Si es una nueva instancia y no tiene created_by, lo asignamos
+        if not instance.pk and hasattr(self, 'user'):
+            instance.created_by = self.user
+        
+        if commit:
+            instance.save()
+        return instance
+
+
+class InternalAgreementForm(forms.ModelForm):
+    """Formulario para crear y editar acuerdos internos"""
+    
+    class Meta:
+        model = InternalAgreement
+        fields = [
+            'title', 'description', 'content', 'agreement_type', 'status', 
+            'priority', 'effective_date', 'expiration_date', 'department', 
+            'applies_to_all', 'signer_1', 'signer_2', 'tags', 'version'
+        ]
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título del acuerdo interno',
+                'maxlength': '200'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción breve del acuerdo...'
+            }),
+            'content': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 8,
+                'placeholder': 'Contenido completo del acuerdo interno...'
+            }),
+            'agreement_type': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'status': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'priority': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'effective_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'expiration_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'department': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Departamento al que aplica (opcional)',
+                'maxlength': '100'
+            }),
+            'applies_to_all': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'signer_1': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'signer_2': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'tags': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Etiquetas separadas por comas',
+                'maxlength': '500'
+            }),
+            'version': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '1.0',
+                'maxlength': '20'
+            }),
+        }
+        labels = {
+            'title': 'Título',
+            'description': 'Descripción',
+            'content': 'Contenido',
+            'agreement_type': 'Tipo de Acuerdo',
+            'status': 'Estado',
+            'priority': 'Prioridad',
+            'effective_date': 'Fecha de Vigencia',
+            'expiration_date': 'Fecha de Expiración',
+            'department': 'Departamento',
+            'applies_to_all': 'Aplica a todos los empleados',
+            'signer_1': 'Primer Firmante',
+            'signer_2': 'Segundo Firmante',
+            'tags': 'Etiquetas',
+            'version': 'Versión',
+        }
+        help_texts = {
+            'title': 'Título descriptivo del acuerdo interno',
+            'description': 'Descripción breve del propósito del acuerdo',
+            'content': 'Contenido completo del acuerdo interno',
+            'effective_date': 'Fecha en que el acuerdo entra en vigencia',
+            'expiration_date': 'Fecha en que el acuerdo expira (opcional)',
+            'department': 'Departamento específico al que aplica (dejar vacío si aplica a toda la empresa)',
+            'applies_to_all': 'Marcar si el acuerdo aplica a todos los empleados de la empresa',
+            'signer_1': 'Usuario que debe firmar el acuerdo como primer firmante',
+            'signer_2': 'Usuario que debe firmar el acuerdo como segundo firmante',
+            'tags': 'Etiquetas para facilitar búsquedas, separadas por comas',
+            'version': 'Versión del acuerdo (ej: 1.0, 1.1, 2.0)',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        # Si es un usuario que no es agente/admin, restringir algunos campos
+        if self.user and not (self.user.is_staff or self.user.groups.filter(name='Agentes').exists()):
+            # Los usuarios normales solo pueden crear borradores
+            self.fields['status'].choices = [('draft', 'Borrador')]
+            self.fields['status'].initial = 'draft'
+        
+        # Configuración del campo applies_to_all
+        self.fields['applies_to_all'].widget.attrs.update({
+            'onchange': 'toggleDepartmentField(this.checked)'
+        })
+        
+        # Agregar clases CSS adicionales
+        for field_name, field in self.fields.items():
+            if field_name == 'applies_to_all':
+                continue  # Este ya tiene su clase específica
+            if 'class' not in field.widget.attrs:
+                field.widget.attrs['class'] = 'form-control'
+    
+    def clean(self):
+        """Validaciones personalizadas"""
+        cleaned_data = super().clean()
+        effective_date = cleaned_data.get('effective_date')
+        expiration_date = cleaned_data.get('expiration_date')
+        applies_to_all = cleaned_data.get('applies_to_all')
+        department = cleaned_data.get('department')
+        
+        # Validar fechas
+        if effective_date and expiration_date:
+            if expiration_date <= effective_date:
+                raise forms.ValidationError(
+                    'La fecha de expiración debe ser posterior a la fecha de vigencia.'
+                )
+        
+        # Validar departamento vs applies_to_all
+        if not applies_to_all and not department:
+            raise forms.ValidationError(
+                'Si el acuerdo no aplica a todos, debe especificar un departamento.'
+            )
+        
+        return cleaned_data
+    
+    def save(self, commit=True):
+        """Override save para asignar el usuario creador"""
+        instance = super().save(commit=False)
+        
+        if not instance.pk and self.user:  # Si es nuevo
+            instance.created_by = self.user
+        
+        if commit:
+            instance.save()
+        return instance

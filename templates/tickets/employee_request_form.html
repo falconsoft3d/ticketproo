@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h4><i class="bi bi-person-badge text-primary"></i> {{ page_title }}</h4>
+                    <p class="text-muted mb-0">
+                        {% if is_create %}
+                            Crea una nueva solicitud de empleado
+                        {% else %}
+                            Edita los detalles de la solicitud
+                        {% endif %}
+                    </p>
+                </div>
+                <a href="{% url 'employee_request_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver
+                </a>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-file-earmark-text text-info"></i>
+                                {% if is_create %}Nueva Solicitud{% else %}Editar Solicitud{% endif %}
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="post">
+                                {% csrf_token %}
+                                
+                                <!-- Título -->
+                                <div class="mb-3">
+                                    <label for="{{ form.title.id_for_label }}" class="form-label">
+                                        <i class="bi bi-card-heading"></i> {{ form.title.label }} *
+                                    </label>
+                                    {{ form.title }}
+                                    {% if form.title.help_text %}
+                                    <div class="form-text">{{ form.title.help_text }}</div>
+                                    {% endif %}
+                                    {% if form.title.errors %}
+                                        <div class="alert alert-danger mt-2">
+                                            {{ form.title.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Descripción -->
+                                <div class="mb-3">
+                                    <label for="{{ form.text.id_for_label }}" class="form-label">
+                                        <i class="bi bi-text-paragraph"></i> {{ form.text.label }} *
+                                    </label>
+                                    {{ form.text }}
+                                    {% if form.text.help_text %}
+                                    <div class="form-text">{{ form.text.help_text }}</div>
+                                    {% endif %}
+                                    {% if form.text.errors %}
+                                        <div class="alert alert-danger mt-2">
+                                            {{ form.text.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Estado -->
+                                <div class="mb-3">
+                                    <label for="{{ form.status.id_for_label }}" class="form-label">
+                                        <i class="bi bi-flag"></i> {{ form.status.label }}
+                                    </label>
+                                    {{ form.status }}
+                                    {% if form.status.help_text %}
+                                    <div class="form-text">{{ form.status.help_text }}</div>
+                                    {% endif %}
+                                    {% if form.status.errors %}
+                                        <div class="alert alert-danger mt-2">
+                                            {{ form.status.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Errores generales del formulario -->
+                                {% if form.non_field_errors %}
+                                    <div class="alert alert-danger">
+                                        {{ form.non_field_errors }}
+                                    </div>
+                                {% endif %}
+                                
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'employee_request_list' %}" class="btn btn-outline-secondary">
+                                        <i class="bi bi-x-circle"></i> Cancelar
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-check-circle"></i> 
+                                        {% if is_create %}Crear Solicitud{% else %}Actualizar Solicitud{% endif %}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="bi bi-info-circle text-info"></i>
+                                Información
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <h6><i class="bi bi-lightbulb"></i> Estados de Solicitud</h6>
+                                <ul class="mb-0">
+                                    <li><strong>Borrador:</strong> Solicitud en progreso, puede editarse</li>
+                                    <li><strong>Aprobada:</strong> Solicitud aprobada por administración</li>
+                                    <li><strong>Rechazada:</strong> Solicitud no aprobada</li>
+                                </ul>
+                            </div>
+                            
+                            {% if not is_create and request_instance %}
+                            <div class="alert alert-secondary">
+                                <h6><i class="bi bi-file-earmark-text"></i> Detalles de la Solicitud</h6>
+                                <p class="mb-1"><strong>Secuencia:</strong> #{{ request_instance.sequence }}</p>
+                                <p class="mb-1"><strong>Creada:</strong> {{ request_instance.created_at|date:"d/m/Y H:i" }}</p>
+                                <p class="mb-0"><strong>Actualizada:</strong> {{ request_instance.updated_at|date:"d/m/Y H:i" }}</p>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="alert alert-warning">
+                                <h6><i class="bi bi-exclamation-triangle"></i> Importante</h6>
+                                <p class="mb-0">Una vez que una solicitud sea aprobada o rechazada, solo los administradores podrán modificarla.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
