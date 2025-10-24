@@ -25498,6 +25498,8 @@ def internal_agreement_detail(request, pk):
         'page_title': f'Acuerdo #{agreement.sequence}',
         'can_edit': agreement.can_edit(request.user),
         'can_delete': agreement.can_delete(request.user),
+        'can_sign_user': (agreement.signer_1 == request.user and not agreement.signer_1_date) or 
+                        (agreement.signer_2 == request.user and not agreement.signer_2_date),
     }
     
     return render(request, 'tickets/internal_agreement_detail.html', context)
@@ -25577,3 +25579,47 @@ def internal_agreement_delete(request, pk):
     }
     
     return render(request, 'tickets/internal_agreement_confirm_delete.html', context)
+
+
+@login_required
+def internal_agreement_sign(request, pk):
+    """Vista para firmar un acuerdo interno"""
+    from .models import InternalAgreement
+    from .utils import is_agent
+    from django.utils import timezone
+    
+    # Solo agentes y administradores pueden firmar
+    if not (is_agent(request.user) or request.user.is_staff):
+        messages.error(request, 'No tienes permisos para firmar acuerdos internos.')
+        return redirect('dashboard')
+    
+    agreement = get_object_or_404(InternalAgreement, pk=pk)
+    
+    if request.method == 'POST':
+        signer_number = request.POST.get('signer_number')
+        
+        try:
+            signer_number = int(signer_number)
+            if signer_number not in [1, 2]:
+                raise ValueError("Número de firmante inválido")
+        except (ValueError, TypeError):
+            messages.error(request, 'Número de firmante inválido.')
+            return redirect('internal_agreement_detail', pk=pk)
+        
+        # Verificar si el usuario puede firmar
+        if not agreement.can_sign(request.user, signer_number):
+            messages.error(request, 'No tienes permisos para firmar como este firmante o ya has firmado.')
+            return redirect('internal_agreement_detail', pk=pk)
+        
+        # Firmar el acuerdo
+        success = agreement.sign_agreement(request.user, signer_number)
+        
+        if success:
+            messages.success(request, f'Has firmado exitosamente el acuerdo como {"primer" if signer_number == 1 else "segundo"} firmante.')
+        else:
+            messages.error(request, 'No se pudo completar la firma. Verifica que tengas permisos.')
+        
+        return redirect('internal_agreement_detail', pk=pk)
+    
+    # Si no es POST, redirigir al detalle
+    return redirect('internal_agreement_detail', pk=pk)

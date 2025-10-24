@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
+from django.db import models
 import os
 
 
@@ -5896,6 +5897,18 @@ class InternalAgreementForm(forms.ModelForm):
         self.fields['applies_to_all'].widget.attrs.update({
             'onchange': 'toggleDepartmentField(this.checked)'
         })
+        
+        # Configurar queryset para los campos de firmantes
+        # Solo mostrar usuarios que son staff o pertenecen al grupo Agentes
+        from django.contrib.auth.models import User
+        eligible_signers = User.objects.filter(
+            models.Q(is_staff=True) | models.Q(groups__name='Agentes')
+        ).distinct().order_by('first_name', 'last_name', 'username')
+        
+        self.fields['signer_1'].queryset = eligible_signers
+        self.fields['signer_2'].queryset = eligible_signers
+        self.fields['signer_1'].empty_label = "Seleccionar primer firmante..."
+        self.fields['signer_2'].empty_label = "Seleccionar segundo firmante..."
         
         # Agregar clases CSS adicionales
         for field_name, field in self.fields.items():

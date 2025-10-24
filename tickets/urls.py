@@ -15,11 +15,11 @@ urlpatterns = [
     path('tickets/<int:pk>/approve/', views.ticket_approve_view, name='ticket_approve'),
     path('tickets/<int:pk>/unassign/', views.unassign_ticket_view, name='unassign_ticket'),
     
-    # URLs de TODO List para tickets
-    path('tickets/<int:pk>/todo/add/', views.ticket_todo_add, name='ticket_todo_add'),
-    path('tickets/<int:pk>/todo/<int:item_id>/toggle/', views.ticket_todo_toggle, name='ticket_todo_toggle'),
-    path('tickets/<int:pk>/todo/<int:item_id>/delete/', views.ticket_todo_delete, name='ticket_todo_delete'),
-    path('tickets/<int:pk>/todo/generate-ai/', views.ticket_todo_generate_ai, name='ticket_todo_generate_ai'),
+    # URLs de TODO List para tickets - COMENTADAS TEMPORALMENTE
+    # path('tickets/<int:pk>/todo/add/', views.ticket_todo_add, name='ticket_todo_add'),
+    # path('tickets/<int:pk>/todo/<int:item_id>/toggle/', views.ticket_todo_toggle, name='ticket_todo_toggle'),
+    # path('tickets/<int:pk>/todo/<int:item_id>/delete/', views.ticket_todo_delete, name='ticket_todo_delete'),
+    # path('tickets/<int:pk>/todo/generate-ai/', views.ticket_todo_generate_ai, name='ticket_todo_generate_ai'),
     
     # URLs públicas de cursos (sin autenticación) - DEBEN IR ANTES que la ruta genérica de tickets
     path('public/courses/<uuid:token>/', views.course_public, name='course_public'),
@@ -876,5 +876,6 @@ urlpatterns += [
     path('internal-agreements/<int:pk>/', views.internal_agreement_detail, name='internal_agreement_detail'),
     path('internal-agreements/<int:pk>/edit/', views.internal_agreement_edit, name='internal_agreement_edit'),
     path('internal-agreements/<int:pk>/delete/', views.internal_agreement_delete, name='internal_agreement_delete'),
+    path('internal-agreements/<int:pk>/sign/', views.internal_agreement_sign, name='internal_agreement_sign'),
 ]
 
