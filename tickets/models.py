@@ -11499,9 +11499,10 @@ class InternalAgreement(models.Model):
     
     def is_signed_by(self, user):
         """Verifica si el usuario ya firmó el acuerdo"""
-        return self.signer_1 == user or self.signer_2 == user
+        return (self.signer_1 == user and self.signer_1_date) or \
+               (self.signer_2 == user and self.signer_2_date)
     
-    def can_sign(self, user):
+    def can_sign(self, user, signer_number=None):
         """Verifica si el usuario puede firmar el acuerdo"""
         # Solo se puede firmar si está activo o aprobado y el usuario no ha firmado ya
         if self.status not in ['active', 'approved']:
@@ -11509,6 +11510,14 @@ class InternalAgreement(models.Model):
         
         # Si ya firmó, no puede firmar de nuevo
         if self.is_signed_by(user):
+            return False
+        
+        # Si se especifica número de firmante, verificar específicamente
+        if signer_number is not None:
+            if signer_number == 1:
+                return user == self.signer_1 and not self.signer_1_date
+            elif signer_number == 2:
+                return user == self.signer_2 and not self.signer_2_date
             return False
         
         # Si no hay firmantes asignados, cualquier usuario autorizado puede firmar
@@ -11519,26 +11528,45 @@ class InternalAgreement(models.Model):
         # Si hay firmantes asignados, solo ellos pueden firmar
         return user == self.signer_1 or user == self.signer_2
     
-    def sign_agreement(self, user):
+    def sign_agreement(self, user, signer_number=None):
         """Firma el acuerdo con el usuario especificado"""
-        if not self.can_sign(user):
-            return False
-        
-        from django.utils import timezone
-        current_time = timezone.now()
-        
-        # Firmar en el primer slot disponible
-        if not self.signer_1 or (self.signer_1 == user and not self.signer_1_date):
-            self.signer_1 = user
-            self.signer_1_date = current_time
-        elif not self.signer_2 or (self.signer_2 == user and not self.signer_2_date):
-            self.signer_2 = user
-            self.signer_2_date = current_time
+        if signer_number is not None:
+            # Firmar como un número específico de firmante
+            if not self.can_sign(user, signer_number):
+                return False
+            
+            from django.utils import timezone
+            current_time = timezone.now()
+            
+            if signer_number == 1:
+                self.signer_1_date = current_time
+            elif signer_number == 2:
+                self.signer_2_date = current_time
+            else:
+                return False
+            
+            self.save()
+            return True
         else:
-            return False
-        
-        self.save()
-        return True
+            # Lógica original para compatibilidad
+            if not self.can_sign(user):
+                return False
+            
+            from django.utils import timezone
+            current_time = timezone.now()
+            
+            # Firmar en el primer slot disponible
+            if not self.signer_1 or (self.signer_1 == user and not self.signer_1_date):
+                self.signer_1 = user
+                self.signer_1_date = current_time
+            elif not self.signer_2 or (self.signer_2 == user and not self.signer_2_date):
+                self.signer_2 = user
+                self.signer_2_date = current_time
+            else:
+                return False
+            
+            self.save()
+            return True
     
     def is_fully_signed(self):
         """Verifica si el acuerdo está completamente firmado"""
