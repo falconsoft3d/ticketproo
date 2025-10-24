@@ -25615,7 +25615,28 @@ def internal_agreement_sign(request, pk):
         success = agreement.sign_agreement(request.user, signer_number)
         
         if success:
-            messages.success(request, f'Has firmado exitosamente el acuerdo como {"primer" if signer_number == 1 else "segundo"} firmante.')
+            # Obtener la fecha/hora de la firma
+            if signer_number == 1:
+                signature_date = agreement.signer_1_date
+            else:
+                signature_date = agreement.signer_2_date
+            
+            # Mensaje de éxito con fecha y hora
+            formatted_date = signature_date.strftime("%d/%m/%Y a las %H:%M")
+            signer_role = "primer" if signer_number == 1 else "segundo"
+            
+            messages.success(
+                request, 
+                f'¡Firma registrada exitosamente! Has firmado el acuerdo como {signer_role} firmante '
+                f'el {formatted_date}.'
+            )
+            
+            # Verificar si el acuerdo está completamente firmado
+            if agreement.is_fully_signed():
+                messages.info(
+                    request,
+                    f'🎉 ¡El acuerdo está completamente firmado! Todos los firmantes requeridos han confirmado su firma.'
+                )
         else:
             messages.error(request, 'No se pudo completar la firma. Verifica que tengas permisos.')
         

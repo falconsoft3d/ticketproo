@@ -199,28 +199,56 @@
                                 <!-- Estado general de firmas -->
                                 <div class="mt-3 pt-3 border-top">
                                     {% if agreement.is_fully_signed %}
-                                        <div class="alert alert-success mb-0">
-                                            <i class="bi bi-check-circle-fill"></i> 
-                                            <strong>Acuerdo completamente firmado</strong>
+                                        <div class="alert alert-success signature-status mb-0">
+                                            <div class="text-center">
+                                                <i class="bi bi-check-circle-fill display-4 text-success"></i>
+                                                <h4 class="mt-2 mb-1">¡Acuerdo Completamente Firmado!</h4>
+                                                <p class="mb-0">Todos los firmantes requeridos han confirmado digitalmente este acuerdo</p>
+                                                <small class="text-muted">
+                                                    Documento con validez legal y trazabilidad completa
+                                                </small>
+                                            </div>
                                         </div>
                                     {% else %}
                                         <div class="alert alert-warning mb-3">
-                                            <i class="bi bi-exclamation-triangle-fill"></i> 
-                                            <strong>Faltan firmas por completar</strong>
+                                            <div class="text-center">
+                                                <i class="bi bi-clock-fill display-6"></i>
+                                                <h5 class="mt-2 mb-1">Firmas Pendientes</h5>
+                                                <p class="mb-0">Este acuerdo requiere firmas adicionales para estar completo</p>
+                                            </div>
                                         </div>
                                         
-                                        <!-- Botones de firma -->
                                         {% if agreement.can_sign_user %}
-                                            <div class="text-center">
+                                            <div class="signature-buttons text-center">
+                                                <h5 class="text-white mb-3">
+                                                    <i class="bi bi-pen-fill"></i> Firma Digital Requerida
+                                                </h5>
+                                                <p class="text-light mb-4">Haz clic en el botón correspondiente para confirmar tu firma digital</p>
+                                                
                                                 {% if agreement.signer_1 == user and not agreement.signer_1_date %}
-                                                    <button onclick="signAgreement(1)" class="btn btn-success me-2">
-                                                        <i class="bi bi-pen"></i> Firmar como Primer Firmante
-                                                    </button>
+                                                    <form method="post" action="{% url 'internal_agreement_sign' agreement.pk %}" style="display: inline;" class="me-3">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="signer_number" value="1">
+                                                        <button type="submit" class="btn btn-sign btn-lg" onclick="return confirm('¿Confirma que desea firmar este acuerdo como PRIMER FIRMANTE?\n\nEsta acción registrará su nombre, fecha y hora de firma, y no podrá ser modificada posteriormente.')">
+                                                            <i class="bi bi-pen-fill me-2"></i>
+                                                            <strong>FIRMAR COMO PRIMER FIRMANTE</strong>
+                                                            <br>
+                                                            <small>{{ user.get_full_name|default:user.username }}</small>
+                                                        </button>
+                                                    </form>
                                                 {% endif %}
+                                                
                                                 {% if agreement.signer_2 == user and not agreement.signer_2_date %}
-                                                    <button onclick="signAgreement(2)" class="btn btn-success">
-                                                        <i class="bi bi-pen"></i> Firmar como Segundo Firmante
-                                                    </button>
+                                                    <form method="post" action="{% url 'internal_agreement_sign' agreement.pk %}" style="display: inline;">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="signer_number" value="2">
+                                                        <button type="submit" class="btn btn-sign btn-lg" onclick="return confirm('¿Confirma que desea firmar este acuerdo como SEGUNDO FIRMANTE?\n\nEsta acción registrará su nombre, fecha y hora de firma, y no podrá ser modificada posteriormente.')">
+                                                            <i class="bi bi-pen-fill me-2"></i>
+                                                            <strong>FIRMAR COMO SEGUNDO FIRMANTE</strong>
+                                                            <br>
+                                                            <small>{{ user.get_full_name|default:user.username }}</small>
+                                                        </button>
+                                                    </form>
                                                 {% endif %}
                                             </div>
                                         {% endif %}
@@ -345,32 +373,7 @@
     </div>
 </div>
 
-<!-- Modal de confirmación de firma -->
-<div class="modal fade" id="signModal" tabindex="-1" aria-labelledby="signModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="signModalLabel">
-                    <i class="bi bi-pen"></i> Confirmar Firma
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p>¿Está seguro de que desea firmar este acuerdo como <strong id="signerRole"></strong>?</p>
-                <div class="alert alert-warning">
-                    <i class="bi bi-exclamation-triangle"></i>
-                    <strong>Importante:</strong> Una vez firmado, no podrá modificar su decisión.
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-success" onclick="confirmSign()">
-                    <i class="bi bi-pen"></i> Firmar Acuerdo
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+<!-- Modal de confirmación de firma - NO NECESARIO -->
 
 <style>
 .agreement-content {
@@ -434,53 +437,50 @@
         display: block !important;
     }
 }
+
+/* Estilos para botones de firma */
+.signature-buttons {
+    background: linear-gradient(135deg, #198754, #20c997);
+    padding: 2rem;
+    border-radius: 15px;
+    border: 3px solid #198754;
+    box-shadow: 0 8px 25px rgba(25, 135, 84, 0.3);
+}
+
+.btn-sign {
+    background: linear-gradient(135deg, #fff, #f8f9fa);
+    border: 2px solid #198754;
+    color: #198754;
+    font-weight: bold;
+    padding: 12px 30px;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.btn-sign:hover {
+    background: linear-gradient(135deg, #198754, #20c997);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(25, 135, 84, 0.4);
+}
+
+.btn-sign:active {
+    transform: translateY(0);
+}
+
+.signature-status {
+    animation: pulseGreen 2s infinite;
+}
+
+@keyframes pulseGreen {
+    0% { box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(25, 135, 84, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(25, 135, 84, 0); }
+}
 </style>
 
 <script>
-let currentSignerNumber = null;
-
-function signAgreement(signerNumber) {
-    currentSignerNumber = signerNumber;
-    const signerRole = signerNumber === 1 ? 'Primer Firmante' : 'Segundo Firmante';
-    document.getElementById('signerRole').textContent = signerRole;
-    
-    const signModal = new bootstrap.Modal(document.getElementById('signModal'));
-    signModal.show();
-}
-
-function confirmSign() {
-    if (!currentSignerNumber) return;
-    
-    // Mostrar loading
-    const signModal = bootstrap.Modal.getInstance(document.getElementById('signModal'));
-    signModal.hide();
-    
-    // Crear formulario para envío
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = `{% url 'internal_agreement_sign' agreement.pk %}`;
-    
-    // Token CSRF
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
-    if (csrfToken) {
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = 'csrfmiddlewaretoken';
-        csrfInput.value = csrfToken.value;
-        form.appendChild(csrfInput);
-    }
-    
-    // Número de firmante
-    const signerInput = document.createElement('input');
-    signerInput.type = 'hidden';
-    signerInput.name = 'signer_number';
-    signerInput.value = currentSignerNumber;
-    form.appendChild(signerInput);
-    
-    document.body.appendChild(form);
-    form.submit();
-}
-
 function printAgreement() {
     // Agregar sección de firmas para impresión
     const signatureSection = `
