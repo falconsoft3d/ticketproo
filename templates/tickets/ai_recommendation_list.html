@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'dashboard' %}">
+                        <i class="bi bi-house"></i> Dashboard
+                    </a>
+                </li>
+                <li class="breadcrumb-item active">{{ page_title }}</li>
+            </ol>
+        </nav>
+        <h2><i class="bi bi-lightbulb"></i> {{ page_title }}</h2>
+        <p class="text-muted">Asistente inteligente para respuestas profesionales y políticamente correctas</p>
+    </div>
+    
+    <!-- Solo mostrar botón de crear para usuarios autenticados -->
+    {% if user.is_authenticated %}
+    <div>
+        <a href="{% url 'ai_recommendation_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nueva Recomendación
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+{% if recommendations %}
+<div class="row">
+    {% for recommendation in recommendations %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 text-primary">
+                        <i class="bi bi-lightbulb-fill"></i> Recomendación
+                    </h6>
+                    <small class="text-muted">
+                        {{ recommendation.created_at|date:"d/m/Y" }}
+                    </small>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                <h5 class="card-title">{{ recommendation.title }}</h5>
+                <p class="card-text text-muted">{{ recommendation.context_text|truncatechars:120 }}</p>
+                
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <small class="text-muted">
+                        <i class="bi bi-person"></i> {{ recommendation.created_by.get_full_name|default:recommendation.created_by.username }}
+                    </small>
+                    <small class="text-muted">
+                        <i class="bi bi-graph-up"></i> {{ recommendation.get_usage_count }} uso{{ recommendation.get_usage_count|pluralize }}
+                    </small>
+                </div>
+            </div>
+            
+            <div class="card-footer bg-transparent">
+                <div class="row g-2">
+                    <div class="col">
+                        <a href="{% url 'ai_recommendation_detail' recommendation.pk %}" 
+                           class="btn btn-primary w-100">
+                            <i class="bi bi-robot"></i> Usar IA
+                        </a>
+                    </div>
+                    <div class="col-auto">
+                        <div class="btn-group" role="group">
+                            <a href="{% url 'ai_recommendation_edit' recommendation.pk %}" 
+                               class="btn btn-outline-secondary btn-sm" 
+                               title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{% url 'ai_recommendation_delete' recommendation.pk %}" 
+                               class="btn btn-outline-danger btn-sm" 
+                               title="Eliminar">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Información adicional -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="alert alert-info" role="alert">
+            <h6 class="alert-heading">
+                <i class="bi bi-info-circle"></i> ¿Cómo funciona?
+            </h6>
+            <p class="mb-2">Las recomendaciones IA te ayudan a generar respuestas profesionales para casos específicos de clientes:</p>
+            <ul class="mb-0">
+                <li>Crea recomendaciones con contexto específico (ej: políticas de la empresa, tono de comunicación)</li>
+                <li>Ingresa el caso del cliente y obtén una respuesta sugerida</li>
+                <li>La IA genera respuestas políticamente correctas y profesionales</li>
+                <li>Úsalo como asistente para emails y comunicación con clientes</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="text-center py-5">
+    <i class="bi bi-lightbulb" style="font-size: 4rem; color: #dee2e6;"></i>
+    <h4 class="text-muted mt-3">No hay recomendaciones IA disponibles</h4>
+    <p class="text-muted">Crea tu primera recomendación para empezar a usar el asistente inteligente.</p>
+    
+    {% if user.is_authenticated %}
+    <a href="{% url 'ai_recommendation_create' %}" class="btn btn-primary mt-3">
+        <i class="bi bi-plus-circle"></i> Crear la primera recomendación
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
+<style>
+.card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+}
+
+.btn-group .btn {
+    border-radius: 0.375rem;
+}
+
+.btn-group .btn:not(:last-child) {
+    margin-right: 2px;
+}
+</style>
+{% endblock %}

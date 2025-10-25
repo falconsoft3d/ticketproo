@@ -1,0 +1,619 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard QA{% endblock %}
+
+{% block extra_head %}
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+    /* Forzar aplicación de estilos con !important */
+    .qa-dashboard {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%) !important;
+        min-height: 100vh !important;
+        padding: 2rem 0 !important;
+    }
+    
+    .dashboard-container {
+        max-width: 1400px !important;
+        margin: 0 auto !important;
+        padding: 0 1rem !important;
+    }
+    
+    .dashboard-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        border-radius: 20px !important;
+        padding: 3rem 2rem !important;
+        margin-bottom: 3rem !important;
+        color: white !important;
+        box-shadow: 0 20px 40px rgba(102, 126, 234, 0.3) !important;
+        position: relative !important;
+        overflow: hidden !important;
+    }
+    
+    .dashboard-header::before {
+        content: '' !important;
+        position: absolute !important;
+        top: -50% !important;
+        left: -50% !important;
+        width: 200% !important;
+        height: 200% !important;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px) !important;
+        background-size: 20px 20px !important;
+        animation: float 20s infinite linear !important;
+    }
+    
+    @keyframes float {
+        0% { transform: translateX(0) translateY(0); }
+        100% { transform: translateX(-20px) translateY(-20px); }
+    }
+    
+    .dashboard-title {
+        font-size: 3rem !important;
+        font-weight: 800 !important;
+        margin-bottom: 0.5rem !important;
+        position: relative !important;
+        z-index: 1 !important;
+        color: white !important;
+    }
+    
+    .dashboard-subtitle {
+        font-size: 1.2rem !important;
+        opacity: 0.9 !important;
+        position: relative !important;
+        z-index: 1 !important;
+        color: white !important;
+    }
+    
+    .header-actions {
+        position: relative !important;
+        z-index: 1 !important;
+    }
+    
+    .action-btn {
+        background: rgba(255, 255, 255, 0.2) !important;
+        border: 2px solid rgba(255, 255, 255, 0.3) !important;
+        color: white !important;
+        padding: 0.75rem 1.5rem !important;
+        border-radius: 50px !important;
+        text-decoration: none !important;
+        display: inline-block !important;
+        margin: 0.25rem !important;
+        transition: all 0.3s ease !important;
+        backdrop-filter: blur(10px) !important;
+    }
+    
+    .action-btn:hover {
+        background: rgba(255, 255, 255, 0.3) !important;
+        border-color: rgba(255, 255, 255, 0.5) !important;
+        color: white !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+    }
+    
+    .metrics-grid {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+        gap: 2rem !important;
+        margin-bottom: 3rem !important;
+    }
+    
+    .metric-card {
+        background: white !important;
+        border-radius: 20px !important;
+        padding: 2.5rem 2rem !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
+        position: relative !important;
+        overflow: hidden !important;
+        transition: all 0.4s ease !important;
+        border: 1px solid rgba(255,255,255,0.8) !important;
+        min-height: 200px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        align-items: center !important;
+        text-align: center !important;
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-10px) !important;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.15) !important;
+    }
+    
+    .metric-card::before {
+        content: '' !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        height: 5px !important;
+        background: var(--card-color) !important;
+    }
+    
+    .metric-card.primary { 
+        --card-color: linear-gradient(135deg, #667eea, #764ba2); 
+    }
+    .metric-card.danger { 
+        --card-color: linear-gradient(135deg, #f093fb, #f5576c); 
+    }
+    .metric-card.success { 
+        --card-color: linear-gradient(135deg, #4facfe, #00f2fe); 
+    }
+    .metric-card.warning { 
+        --card-color: linear-gradient(135deg, #43e97b, #38f9d7); 
+    }
+    
+    .metric-header {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: flex-start !important;
+        margin-bottom: 1.5rem !important;
+        width: 100% !important;
+    }
+    
+    .metric-icon {
+        width: 60px !important;
+        height: 60px !important;
+        border-radius: 15px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 1.5rem !important;
+        color: white !important;
+        background: var(--card-color) !important;
+        margin: 0 auto 1rem auto !important;
+    }
+    
+    .metric-number {
+        font-size: 3.5rem !important;
+        font-weight: 900 !important;
+        color: #2d3748 !important;
+        line-height: 1 !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .metric-label {
+        font-size: 1rem !important;
+        color: #718096 !important;
+        font-weight: 600 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+    }
+    
+    .metric-progress {
+        margin-top: 1rem !important;
+        background: #f7fafc !important;
+        border-radius: 10px !important;
+        overflow: hidden !important;
+        height: 8px !important;
+        width: 100% !important;
+    }
+    
+    .metric-progress-bar {
+        height: 100% !important;
+        background: var(--card-color) !important;
+        border-radius: 10px !important;
+        transition: width 1s ease !important;
+    }
+    
+    .metric-percentage {
+        font-size: 0.875rem !important;
+        color: #718096 !important;
+        margin-top: 0.5rem !important;
+    }
+    
+    .content-grid {
+        display: grid !important;
+        grid-template-columns: 2fr 1fr !important;
+        gap: 2rem !important;
+        margin-bottom: 2rem !important;
+    }
+    
+    .chart-card {
+        background: white !important;
+        border-radius: 20px !important;
+        padding: 2rem !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
+    }
+    
+    .chart-header {
+        background: linear-gradient(135deg, #667eea, #764ba2) !important;
+        color: white !important;
+        padding: 1.5rem 2rem !important;
+        border-radius: 15px 15px 0 0 !important;
+        margin: -2rem -2rem 2rem -2rem !important;
+    }
+    
+    .chart-title {
+        font-size: 1.25rem !important;
+        font-weight: 700 !important;
+        margin: 0 !important;
+        color: white !important;
+    }
+    
+    .stats-item {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        padding: 1rem 0 !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+    }
+    
+    .stats-item:last-child {
+        border-bottom: none !important;
+    }
+    
+    .stats-label {
+        font-weight: 600 !important;
+        color: #4a5568 !important;
+    }
+    
+    .stats-value {
+        font-weight: 700 !important;
+        font-size: 1.1rem !important;
+    }
+    
+    .progress-bar-custom {
+        width: 100% !important;
+        height: 10px !important;
+        background: #e2e8f0 !important;
+        border-radius: 5px !important;
+        overflow: hidden !important;
+        margin-top: 0.5rem !important;
+    }
+    
+    .progress-fill {
+        height: 100% !important;
+        border-radius: 5px !important;
+        transition: width 1s ease !important;
+    }
+    
+    .progress-fill.primary { background: linear-gradient(135deg, #667eea, #764ba2) !important; }
+    .progress-fill.danger { background: linear-gradient(135deg, #f093fb, #f5576c) !important; }
+    .progress-fill.success { background: linear-gradient(135deg, #4facfe, #00f2fe) !important; }
+    .progress-fill.warning { background: linear-gradient(135deg, #43e97b, #38f9d7) !important; }
+    
+    .recent-activity {
+        background: white !important;
+        border-radius: 20px !important;
+        padding: 2rem !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
+    }
+    
+    .activity-header {
+        background: linear-gradient(135deg, #667eea, #764ba2) !important;
+        color: white !important;
+        padding: 1.5rem 2rem !important;
+        border-radius: 15px 15px 0 0 !important;
+        margin: -2rem -2rem 2rem -2rem !important;
+    }
+    
+    .activity-item {
+        padding: 1.5rem 0 !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    .activity-item:hover {
+        background: #f7fafc !important;
+        margin: 0 -1rem !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+        border-radius: 10px !important;
+    }
+    
+    .activity-item:last-child {
+        border-bottom: none !important;
+    }
+    
+    .empty-state {
+        text-align: center !important;
+        padding: 3rem 2rem !important;
+        color: #718096 !important;
+    }
+    
+    .empty-icon {
+        font-size: 4rem !important;
+        color: #cbd5e0 !important;
+        margin-bottom: 1rem !important;
+    }
+    
+    .floating-action {
+        position: fixed !important;
+        bottom: 2rem !important;
+        right: 2rem !important;
+        width: 60px !important;
+        height: 60px !important;
+        background: linear-gradient(135deg, #667eea, #764ba2) !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        color: white !important;
+        text-decoration: none !important;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4) !important;
+        transition: all 0.3s ease !important;
+        z-index: 1000 !important;
+    }
+    
+    .floating-action:hover {
+        transform: scale(1.1) !important;
+        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6) !important;
+        color: white !important;
+    }
+    
+    @media (max-width: 768px) {
+        .qa-dashboard {
+            padding: 1rem 0 !important;
+        }
+        
+        .dashboard-container {
+            padding: 0 0.5rem !important;
+        }
+        
+        .dashboard-header {
+            padding: 2rem 1.5rem !important;
+            margin-bottom: 2rem !important;
+        }
+        
+        .dashboard-title {
+            font-size: 2rem !important;
+        }
+        
+        .metrics-grid {
+            grid-template-columns: 1fr !important;
+            gap: 1rem !important;
+        }
+        
+        .content-grid {
+            grid-template-columns: 1fr !important;
+            gap: 1rem !important;
+        }
+        
+        .metric-card {
+            padding: 2rem 1.5rem !important;
+        }
+        
+        .floating-action {
+            bottom: 1rem !important;
+            right: 1rem !important;
+            width: 50px !important;
+            height: 50px !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="qa-dashboard">
+    <div class="dashboard-container">
+        <!-- Header -->
+        <div class="dashboard-header">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="dashboard-title">
+                        <i class="fas fa-chart-line me-3"></i>Dashboard QA
+                    </h1>
+                    <p class="dashboard-subtitle mb-0">
+                        Panel de control para gestión de quejas y sugerencias
+                    </p>
+                </div>
+                <div class="col-md-4">
+                    <div class="header-actions text-end">
+                        <a href="{% url 'qa_complaint_create' %}" class="action-btn">
+                            <i class="fas fa-plus me-2"></i>Nuevo Reporte
+                        </a>
+                        <a href="{% url 'qa_complaint_list' %}" class="action-btn">
+                            <i class="fas fa-list me-2"></i>Ver Todos
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Métricas Principales -->
+        <div class="metrics-grid">
+            <div class="metric-card primary">
+                <div class="metric-header">
+                    <div class="metric-icon">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                </div>
+                <div class="metric-number">{{ total_complaints|default:0 }}</div>
+                <div class="metric-label">Total de Reportes</div>
+            </div>
+            
+            <div class="metric-card danger">
+                <div class="metric-header">
+                    <div class="metric-icon">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                </div>
+                <div class="metric-number">{{ open_complaints|default:0 }}</div>
+                <div class="metric-label">Reportes Abiertos</div>
+                {% if open_complaints > 0 and total_complaints > 0 %}
+                    <div class="metric-progress">
+                        <div class="metric-progress-bar" style="width: {% widthratio open_complaints total_complaints 100 %}%"></div>
+                    </div>
+                    <div class="metric-percentage">{% widthratio open_complaints total_complaints 100 %}% del total</div>
+                {% endif %}
+            </div>
+            
+            <div class="metric-card success">
+                <div class="metric-header">
+                    <div class="metric-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+                <div class="metric-number">{{ resolved_complaints|default:0 }}</div>
+                <div class="metric-label">Reportes Resueltos</div>
+                {% if resolved_complaints > 0 and total_complaints > 0 %}
+                    <div class="metric-progress">
+                        <div class="metric-progress-bar" style="width: {% widthratio resolved_complaints total_complaints 100 %}%"></div>
+                    </div>
+                    <div class="metric-percentage">{% widthratio resolved_complaints total_complaints 100 %}% del total</div>
+                {% endif %}
+            </div>
+            
+            <div class="metric-card warning">
+                <div class="metric-header">
+                    <div class="metric-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                </div>
+                <div class="metric-number">{{ overdue_complaints|default:0 }}</div>
+                <div class="metric-label">Reportes Atrasados</div>
+                <div class="metric-percentage">Más de 7 días sin resolver</div>
+            </div>
+        </div>
+
+        <!-- Contenido Principal -->
+        <div class="content-grid">
+            <!-- Estadísticas por Tipo -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">
+                        <i class="fas fa-chart-pie me-2"></i>Reportes por Tipo
+                    </h3>
+                </div>
+                {% if type_stats %}
+                    {% for stat in type_stats %}
+                        <div class="stats-item">
+                            <div class="stats-label">
+                                <i class="fas fa-tag me-2"></i>
+                                {% if stat.type == 'complaint' %}Quejas
+                                {% elif stat.type == 'suggestion' %}Sugerencias  
+                                {% elif stat.type == 'feedback' %}Comentarios
+                                {% elif stat.type == 'improvement' %}Mejoras
+                                {% else %}{{ stat.get_type_display }}{% endif %}
+                            </div>
+                            <div class="stats-value">{{ stat.count }}</div>
+                        </div>
+                        <div class="progress-bar-custom">
+                            <div class="progress-fill 
+                                {% if stat.type == 'complaint' %}danger
+                                {% elif stat.type == 'suggestion' %}primary
+                                {% elif stat.type == 'feedback' %}success
+                                {% else %}warning{% endif %}" 
+                                style="width: {% if total_complaints %}{% widthratio stat.count total_complaints 100 %}{% else %}0{% endif %}%">
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <i class="fas fa-chart-pie"></i>
+                        </div>
+                        <h5>No hay datos disponibles</h5>
+                        <p>Los datos aparecerán cuando haya reportes.</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Actividad Reciente -->
+            <div class="recent-activity">
+                <div class="activity-header">
+                    <h3 class="chart-title">
+                        <i class="fas fa-clock me-2"></i>Actividad Reciente
+                    </h3>
+                </div>
+                {% if recent_complaints %}
+                    {% for complaint in recent_complaints %}
+                        <div class="activity-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">
+                                        <a href="{% url 'qa_complaint_detail' complaint.pk %}" 
+                                           class="text-decoration-none text-dark">
+                                            {{ complaint.title|truncatechars:35 }}
+                                        </a>
+                                    </h6>
+                                    <small class="text-muted">
+                                        <i class="fas fa-building me-1"></i>
+                                        {{ complaint.company.name|truncatechars:20 }}
+                                    </small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge 
+                                        {% if complaint.type == 'complaint' %}bg-danger
+                                        {% elif complaint.type == 'suggestion' %}bg-info
+                                        {% elif complaint.type == 'feedback' %}bg-success
+                                        {% else %}bg-warning{% endif %}">
+                                        {{ complaint.get_type_display }}
+                                    </span>
+                                    <br>
+                                    <small class="text-muted">
+                                        {{ complaint.created_at|date:"d/m H:i" }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    <div class="text-center mt-3">
+                        <a href="{% url 'qa_complaint_list' %}" class="btn btn-primary btn-sm">
+                            Ver Todos los Reportes
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <i class="fas fa-inbox"></i>
+                        </div>
+                        <h6>No hay reportes recientes</h6>
+                        <p>Los nuevos reportes aparecerán aquí.</p>
+                        <a href="{% url 'qa_complaint_create' %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus me-1"></i>Crear Primer Reporte
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Botón Flotante -->
+    <a href="{% url 'qa_complaint_create' %}" class="floating-action" title="Crear Nuevo Reporte">
+        <i class="fas fa-plus"></i>
+    </a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Animación de conteo para los números
+    const numbers = document.querySelectorAll('.metric-number');
+    numbers.forEach(number => {
+        const finalValue = parseInt(number.textContent);
+        number.textContent = '0';
+        
+        const increment = finalValue / 30;
+        let current = 0;
+        
+        const timer = setInterval(() => {
+            current += increment;
+            if (current >= finalValue) {
+                number.textContent = finalValue;
+                clearInterval(timer);
+            } else {
+                number.textContent = Math.floor(current);
+            }
+        }, 50);
+    });
+
+    // Animación de barras de progreso
+    const progressBars = document.querySelectorAll('.metric-progress-bar, .progress-fill');
+    progressBars.forEach(bar => {
+        const width = bar.style.width;
+        bar.style.width = '0%';
+        setTimeout(() => {
+            bar.style.width = width;
+        }, 500);
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,238 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'employee_absence_list' %}">
+                        <i class="bi bi-calendar-x"></i> Ausencias
+                    </a>
+                </li>
+                <li class="breadcrumb-item active">Calendario</li>
+            </ol>
+        </nav>
+        <h2><i class="bi bi-calendar3"></i> {{ page_title }}</h2>
+        <p class="text-muted">Vista de calendario con ausencias aprobadas</p>
+    </div>
+    
+    <div class="btn-group" role="group">
+        <a href="{% url 'employee_absence_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nueva Ausencia
+        </a>
+        <a href="{% url 'employee_absence_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-list-ul"></i> Vista Lista
+        </a>
+    </div>
+</div>
+
+<!-- Navegación del calendario -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+            <a href="?year={{ prev_year }}&month={{ prev_month }}" class="btn btn-outline-primary">
+                <i class="bi bi-chevron-left"></i> Anterior
+            </a>
+            
+            <h4 class="mb-0">{{ current_month }} {{ current_year }}</h4>
+            
+            <a href="?year={{ next_year }}&month={{ next_month }}" class="btn btn-outline-primary">
+                Siguiente <i class="bi bi-chevron-right"></i>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Vista de calendario simplificada -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-calendar-event"></i> Ausencias del Mes
+        </h5>
+    </div>
+    <div class="card-body">
+        <!-- Nota sobre funcionalidad completa -->
+        <div class="alert alert-info" role="alert">
+            <h6 class="alert-heading">
+                <i class="bi bi-info-circle"></i> Vista de Calendario
+            </h6>
+            <p class="mb-2">Aquí se muestran las ausencias aprobadas para este mes. Para una implementación completa con calendario interactivo, se puede integrar FullCalendar.js.</p>
+            <p class="mb-0">Los datos del calendario están disponibles en formato JSON: <code>{{ calendar_data }}</code></p>
+        </div>
+        
+        <!-- Lista de ausencias del mes -->
+        <div id="calendar-events">
+            <!-- Aquí se puede integrar FullCalendar o mostrar una vista simplificada -->
+            <div class="row">
+                <div class="col-12">
+                    <h6 class="text-primary mb-3">Ausencias de {{ current_month }} {{ current_year }}</h6>
+                    
+                    <div id="absence-list">
+                        <!-- El contenido se carga dinámicamente -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Leyenda -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h6 class="mb-0">
+            <i class="bi bi-palette"></i> Leyenda de Tipos
+        </h6>
+    </div>
+    <div class="card-body">
+        <div class="row" id="legend">
+            <!-- Se carga dinámicamente -->
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Datos del calendario pasados desde Django
+    const calendarData = {{ calendar_data|safe }};
+    
+    // Mostrar eventos en lista
+    const absenceList = document.getElementById('absence-list');
+    
+    if (calendarData.length === 0) {
+        absenceList.innerHTML = `
+            <div class="text-center py-4">
+                <i class="bi bi-calendar-x" style="font-size: 3rem; color: #dee2e6;"></i>
+                <h5 class="text-muted mt-3">No hay ausencias este mes</h5>
+                <p class="text-muted">No se encontraron ausencias aprobadas para {{ current_month }} {{ current_year }}.</p>
+            </div>
+        `;
+    } else {
+        let html = '';
+        
+        // Agrupar por fecha
+        const groupedEvents = {};
+        calendarData.forEach(event => {
+            const startDate = new Date(event.start);
+            const endDate = new Date(event.end);
+            endDate.setDate(endDate.getDate() - 1); // Ajustar fecha de fin
+            
+            // Crear entradas para cada día del rango
+            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                const dateKey = d.toISOString().split('T')[0];
+                if (!groupedEvents[dateKey]) {
+                    groupedEvents[dateKey] = [];
+                }
+                groupedEvents[dateKey].push(event);
+            }
+        });
+        
+        // Ordenar fechas
+        const sortedDates = Object.keys(groupedEvents).sort();
+        
+        sortedDates.forEach(date => {
+            const dateObj = new Date(date + 'T00:00:00');
+            const formattedDate = dateObj.toLocaleDateString('es-ES', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            
+            html += `
+                <div class="mb-4">
+                    <h6 class="text-secondary border-bottom pb-2">
+                        <i class="bi bi-calendar-event"></i> ${formattedDate}
+                    </h6>
+                    <div class="row">
+            `;
+            
+            groupedEvents[date].forEach(event => {
+                html += `
+                    <div class="col-md-6 mb-2">
+                        <div class="card border-start" style="border-left: 4px solid ${event.color} !important;">
+                            <div class="card-body py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>${event.title}</strong>
+                                    </div>
+                                    <a href="${event.url}" class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                    </div>
+                </div>
+            `;
+        });
+        
+        absenceList.innerHTML = html;
+    }
+    
+    // Generar leyenda de tipos
+    const legend = document.getElementById('legend');
+    const uniqueColors = {};
+    
+    calendarData.forEach(event => {
+        if (!uniqueColors[event.color]) {
+            // Extraer tipo del título (formato: "Nombre - Tipo")
+            const titleParts = event.title.split(' - ');
+            const type = titleParts[titleParts.length - 1];
+            uniqueColors[event.color] = type;
+        }
+    });
+    
+    let legendHtml = '';
+    Object.entries(uniqueColors).forEach(([color, type]) => {
+        legendHtml += `
+            <div class="col-auto mb-2">
+                <span class="badge" style="background-color: ${color}; color: white;">
+                    ${type}
+                </span>
+            </div>
+        `;
+    });
+    
+    if (legendHtml === '') {
+        legendHtml = '<div class="col-12"><small class="text-muted">No hay tipos de ausencias para mostrar</small></div>';
+    }
+    
+    legend.innerHTML = legendHtml;
+});
+</script>
+
+<style>
+.card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.border-start {
+    border-left-width: 4px !important;
+}
+
+.alert {
+    border: none;
+}
+
+#calendar-events {
+    min-height: 300px;
+}
+</style>
+
+<!-- Nota: Para implementación completa de calendario, agregar FullCalendar -->
+<!-- 
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css' rel='stylesheet' />
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+-->
+
+{% endblock %}

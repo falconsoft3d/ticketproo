@@ -1,0 +1,584 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'company_protocol_list' %}">
+                        <i class="bi bi-file-text"></i> Protocolos
+                    </a>
+                </li>
+                <li class="breadcrumb-item active">{{ protocol.title|truncatechars:50 }}</li>
+            </ol>
+        </nav>
+        <h2>
+            <i class="bi bi-file-text"></i> {{ protocol.title }}
+        </h2>
+        <p class="text-muted">Versión {{ protocol.version }}</p>
+    </div>
+    
+    <div class="btn-group" role="group">
+        <a href="{% url 'company_protocol_edit' protocol.pk %}" class="btn btn-outline-secondary">
+            <i class="bi bi-pencil"></i> Editar
+        </a>
+        <a href="{% url 'company_protocol_print_pdf' protocol.pk %}" class="btn btn-success">
+            <i class="bi bi-printer"></i> Imprimir PDF
+        </a>
+        <a href="{% url 'company_protocol_list' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Contenido principal -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-file-earmark-text"></i> Contenido del Protocolo
+                    </h5>
+                    <div class="d-flex gap-2">
+                        <span class="badge {% if protocol.is_active %}bg-success{% else %}bg-secondary{% endif %} fs-6">
+                            {% if protocol.is_active %}Activo{% else %}Inactivo{% endif %}
+                        </span>
+                        <span class="badge bg-primary fs-6">v{{ protocol.version }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Contenido del protocolo -->
+                <div id="protocol-content" class="protocol-content">
+                    {{ protocol.content|linebreaks }}
+                </div>
+                
+                <!-- Acciones rápidas -->
+                <div class="mt-4 pt-3 border-top">
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="printContent()">
+                            <i class="bi bi-printer"></i> Imprimir Solo Contenido
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="copyToClipboard()">
+                            <i class="bi bi-clipboard"></i> Copiar Texto
+                        </button>
+                        <button type="button" class="btn btn-outline-info btn-sm" onclick="toggleTextSize()">
+                            <i class="bi bi-zoom-in"></i> Cambiar Tamaño
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Panel lateral -->
+    <div class="col-md-4">
+        <!-- Información del protocolo -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-info-circle"></i> Información del Protocolo
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if protocol.company %}
+                <div class="mb-3">
+                    <strong class="text-primary">Empresa:</strong>
+                    <div>
+                        <i class="bi bi-building text-muted"></i> {{ protocol.company.name }}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="mb-3">
+                    <strong class="text-primary">Título:</strong>
+                    <div>{{ protocol.title }}</div>
+                </div>
+                
+                <div class="mb-3">
+                    <strong class="text-primary">Versión:</strong>
+                    <div>{{ protocol.version }}</div>
+                </div>
+                
+                <div class="mb-3">
+                    <strong class="text-primary">Estado:</strong>
+                    <div>
+                        <span class="badge {% if protocol.is_active %}bg-success{% else %}bg-secondary{% endif %}">
+                            {% if protocol.is_active %}Activo{% else %}Inactivo{% endif %}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <strong class="text-primary">Creado por:</strong>
+                    <div>{{ protocol.created_by.get_full_name|default:protocol.created_by.username }}</div>
+                    <small class="text-muted">{{ protocol.created_at|date:"d/m/Y H:i" }}</small>
+                </div>
+                
+                <div class="mb-3">
+                    <strong class="text-primary">Última actualización:</strong>
+                    <div>{{ protocol.updated_at|date:"d/m/Y H:i" }}</div>
+                </div>
+                
+                <div class="mb-3">
+                    <strong class="text-primary">Estadísticas:</strong>
+                    <div>
+                        <small>
+                            <i class="bi bi-file-word"></i> {{ protocol.get_word_count }} palabras<br>
+                            <i class="bi bi-type"></i> ~{{ protocol.content|length }} caracteres
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Acciones disponibles -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-gear"></i> Acciones Disponibles
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'company_protocol_edit' protocol.pk %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-pencil"></i> Editar Protocolo
+                    </a>
+                    <a href="{% url 'company_protocol_print_pdf' protocol.pk %}" class="btn btn-outline-success btn-sm">
+                        <i class="bi bi-printer"></i> Descargar PDF
+                    </a>
+                    <button type="button" class="btn btn-outline-warning btn-sm" onclick="duplicateProtocol()">
+                        <i class="bi bi-files"></i> Duplicar Protocolo
+                    </button>
+                    <a href="{% url 'company_protocol_delete' protocol.pk %}" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-trash"></i> Eliminar Protocolo
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Información adicional -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-robot"></i> Asistente IA
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="analyzeReadability()">
+                        <i class="bi bi-bar-chart"></i> Analizar Legibilidad
+                    </button>
+                    <button type="button" class="btn btn-outline-info btn-sm" onclick="getAISuggestions()">
+                        <i class="bi bi-lightbulb"></i> Sugerencias de Mejora
+                    </button>
+                    <button type="button" class="btn btn-outline-success btn-sm" onclick="generateSummary()">
+                        <i class="bi bi-file-text"></i> Generar Resumen
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Información adicional -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-lightbulb"></i> Información
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="small">
+                    <p><strong>Impresión:</strong> Usa el botón "Imprimir PDF" para generar una versión profesional del protocolo con formato empresarial.</p>
+                    
+                    <p><strong>Edición:</strong> Puedes editar el contenido en cualquier momento. Se actualizará automáticamente la fecha de modificación.</p>
+                    
+                    <p><strong>Versiones:</strong> Considera incrementar la versión cuando hagas cambios significativos al protocolo.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentTextSize = 'normal';
+
+function printContent() {
+    // Crear una nueva ventana con solo el contenido del protocolo
+    const content = document.getElementById('protocol-content').innerHTML;
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>{{ protocol.title }} - v{{ protocol.version }}</title>
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; margin: 20px; }
+                h1 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+                .meta { color: #666; font-size: 0.9em; margin-bottom: 20px; }
+            </style>
+        </head>
+        <body>
+            <h1>{{ protocol.title }}</h1>
+            <div class="meta">
+                Versión {{ protocol.version }} | 
+                Creado por {{ protocol.created_by.get_full_name|default:protocol.created_by.username }} | 
+                {{ protocol.created_at|date:"d/m/Y" }}
+            </div>
+            <div>${content}</div>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+}
+
+function copyToClipboard() {
+    const content = document.getElementById('protocol-content').innerText;
+    navigator.clipboard.writeText(content).then(function() {
+        // Mostrar notificación
+        const toast = document.createElement('div');
+        toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed top-0 end-0 m-3';
+        toast.setAttribute('role', 'alert');
+        toast.style.zIndex = '9999';
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi bi-check-circle"></i> Contenido copiado al portapapeles
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        document.body.appendChild(toast);
+        
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+        
+        // Remover el toast después de que se oculte
+        toast.addEventListener('hidden.bs.toast', function() {
+            document.body.removeChild(toast);
+        });
+    }).catch(function(err) {
+        alert('Error al copiar al portapapeles');
+    });
+}
+
+function toggleTextSize() {
+    const content = document.getElementById('protocol-content');
+    
+    if (currentTextSize === 'normal') {
+        content.style.fontSize = '1.1em';
+        currentTextSize = 'large';
+    } else if (currentTextSize === 'large') {
+        content.style.fontSize = '1.2em';
+        currentTextSize = 'larger';
+    } else {
+        content.style.fontSize = '1em';
+        currentTextSize = 'normal';
+    }
+}
+
+function duplicateProtocol() {
+    if (confirm('¿Deseas crear una copia de este protocolo?')) {
+        // Redirigir al formulario de creación con datos pre-llenados
+        const title = "{{ protocol.title|escapejs }} (Copia)";
+        const content = encodeURIComponent("{{ protocol.content|escapejs }}");
+        window.location.href = `{% url 'company_protocol_create' %}?title=${encodeURIComponent(title)}&content=${content}`;
+    }
+}
+</script>
+
+<style>
+.card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.protocol-content {
+    font-size: 1em;
+    line-height: 1.7;
+    color: #333;
+    transition: font-size 0.3s ease;
+}
+
+.protocol-content p {
+    margin-bottom: 1rem;
+    text-align: justify;
+}
+
+.protocol-content h1, .protocol-content h2, .protocol-content h3 {
+    color: #2c3e50;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.btn-sm {
+    font-size: 0.8rem;
+}
+
+// ================================
+// FUNCIONES DE IA
+// ================================
+
+function analyzeReadability() {
+    const protocolId = {{ protocol.pk }};
+    const button = event.target;
+    const originalText = button.innerHTML;
+    
+    button.disabled = true;
+    button.innerHTML = '<i class="spinner-border spinner-border-sm"></i> Analizando...';
+    
+    fetch(`/company-protocols/${protocolId}/ai/analyze-readability/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showReadabilityResults(data);
+            } else {
+                showAlert('error', data.error || 'Error analizando legibilidad');
+            }
+        })
+        .catch(error => {
+            showAlert('error', 'Error de conexión: ' + error.message);
+        })
+        .finally(() => {
+            button.disabled = false;
+            button.innerHTML = originalText;
+        });
+}
+
+function getAISuggestions() {
+    const protocolId = {{ protocol.pk }};
+    const button = event.target;
+    const originalText = button.innerHTML;
+    
+    button.disabled = true;
+    button.innerHTML = '<i class="spinner-border spinner-border-sm"></i> Generando...';
+    
+    fetch(`/company-protocols/${protocolId}/ai/get-suggestions/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAISuggestions(data);
+            } else {
+                showAlert('error', data.error || 'Error obteniendo sugerencias');
+            }
+        })
+        .catch(error => {
+            showAlert('error', 'Error de conexión: ' + error.message);
+        })
+        .finally(() => {
+            button.disabled = false;
+            button.innerHTML = originalText;
+        });
+}
+
+function generateSummary() {
+    const protocolId = {{ protocol.pk }};
+    const button = event.target;
+    const originalText = button.innerHTML;
+    
+    button.disabled = true;
+    button.innerHTML = '<i class="spinner-border spinner-border-sm"></i> Generando...';
+    
+    fetch(`/company-protocols/${protocolId}/ai/generate-summary/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showExecutiveSummary(data);
+            } else {
+                showAlert('error', data.error || 'Error generando resumen');
+            }
+        })
+        .catch(error => {
+            showAlert('error', 'Error de conexión: ' + error.message);
+        })
+        .finally(() => {
+            button.disabled = false;
+            button.innerHTML = originalText;
+        });
+}
+
+function showReadabilityResults(data) {
+    const modalHtml = `
+        <div class="modal fade" id="readabilityModalDetail" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-bar-chart"></i> Análisis de Legibilidad
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="text-center mb-4">
+                            <h4>Puntuación de Legibilidad</h4>
+                            <div>
+                                <span class="badge bg-${data.color} fs-5">${data.score}/10</span>
+                                <span class="text-${data.color} fw-bold">${data.level}</span>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Métricas Detalladas</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <strong>Palabras:</strong> ${data.metrics.word_count}<br>
+                                        <strong>Oraciones:</strong> ${data.metrics.sentence_count}<br>
+                                        <strong>Párrafos:</strong> ${data.metrics.paragraph_count}
+                                    </div>
+                                    <div class="col-6">
+                                        <strong>Palabras/oración:</strong> ${data.metrics.avg_words_per_sentence}<br>
+                                        <strong>Oraciones/párrafo:</strong> ${data.metrics.avg_sentences_per_paragraph}<br>
+                                        <strong>Complejidad:</strong> ${data.metrics.complexity_ratio}%
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('readabilityModalDetail');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add new modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modal = new bootstrap.Modal(document.getElementById('readabilityModalDetail'));
+    modal.show();
+}
+
+function showAISuggestions(data) {
+    const modalHtml = `
+        <div class="modal fade" id="suggestionsModalDetail" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-lightbulb"></i> Sugerencias de Mejora con IA
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="bg-light p-3 rounded">
+                            <pre style="white-space: pre-wrap; font-family: inherit;">${data.suggestions}</pre>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('suggestionsModalDetail');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add new modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modal = new bootstrap.Modal(document.getElementById('suggestionsModalDetail'));
+    modal.show();
+}
+
+function showExecutiveSummary(data) {
+    const modalHtml = `
+        <div class="modal fade" id="summaryModalDetail" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-file-text"></i> Resumen Ejecutivo
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <strong>Palabras:</strong> ${data.word_count}
+                        </div>
+                        <div class="bg-light p-3 rounded">
+                            <div style="white-space: pre-wrap; line-height: 1.6;">${data.summary}</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-primary" onclick="copyToClipboard('${data.summary.replace(/'/g, "\\'")}')">
+                            <i class="bi bi-clipboard"></i> Copiar
+                        </button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('summaryModalDetail');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add new modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modal = new bootstrap.Modal(document.getElementById('summaryModalDetail'));
+    modal.show();
+}
+
+function showAlert(type, message) {
+    const alertsContainer = document.getElementById('alerts-container') || createAlertsContainer();
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    alertsContainer.innerHTML = alertHtml;
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        const alert = alertsContainer.querySelector('.alert');
+        if (alert) {
+            bootstrap.Alert.getOrCreateInstance(alert).close();
+        }
+    }, 5000);
+}
+
+function createAlertsContainer() {
+    const container = document.createElement('div');
+    container.id = 'alerts-container';
+    container.className = 'position-fixed top-0 end-0 p-3';
+    container.style.zIndex = '9999';
+    document.body.appendChild(container);
+    return container;
+}
+
+@media print {
+    .btn, .card-header, .breadcrumb, nav {
+        display: none !important;
+    }
+    
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
+    .protocol-content {
+        font-size: 12pt !important;
+    }
+}
+</style>
+{% endblock %}

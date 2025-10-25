@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'training_plan_list' %}">
+                        <i class="bi bi-mortarboard"></i> Planes de Capacitación
+                    </a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="{% url 'training_plan_detail' training_link.training_plan.pk %}">
+                        Plan #{{ training_link.training_plan.sequence }}
+                    </a>
+                </li>
+                <li class="breadcrumb-item active">Eliminar Recurso</li>
+            </ol>
+        </nav>
+        <h2><i class="bi bi-trash"></i> {{ page_title }}</h2>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>¡Atención!</strong> Esta acción no se puede deshacer. 
+                    También se eliminará el progreso de todos los empleados en este recurso.
+                </div>
+                
+                <h5>¿Estás seguro que deseas eliminar este recurso?</h5>
+                
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <i class="bi bi-link-45deg"></i> {{ training_link.title }}
+                        </h6>
+                        <p class="card-text">
+                            <strong>URL:</strong> 
+                            <a href="{{ training_link.url }}" target="_blank" class="text-decoration-none">
+                                {{ training_link.url }}
+                            </a>
+                        </p>
+                        
+                        {% if training_link.description %}
+                        <p class="card-text">
+                            <strong>Descripción:</strong> {{ training_link.description }}
+                        </p>
+                        {% endif %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    <strong>Plan:</strong> {{ training_link.training_plan.title }}
+                                </small>
+                            </div>
+                            <div class="col-md-3">
+                                <small class="text-muted">
+                                    <strong>Orden:</strong> {{ training_link.order }}
+                                </small>
+                            </div>
+                            <div class="col-md-3">
+                                <small class="{% if training_link.is_required %}text-danger{% else %}text-secondary{% endif %}">
+                                    <strong>Tipo:</strong> 
+                                    {% if training_link.is_required %}
+                                        Obligatorio
+                                    {% else %}
+                                        Opcional
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'training_plan_detail' training_link.training_plan.pk %}" 
+                       class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Cancelar
+                    </a>
+                    
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Sí, Eliminar Recurso
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.alert {
+    border-left: 4px solid #f0ad4e;
+}
+</style>
+{% endblock %}

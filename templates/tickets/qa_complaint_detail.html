@@ -1,0 +1,606 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Reporte QA: {{ complaint.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .complaint-header {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+    }
+    
+    .priority-critical { 
+        color: #dc3545; 
+        font-weight: bold; 
+        background-color: #f8d7da;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+    }
+    .priority-high { 
+        color: #fd7e14; 
+        font-weight: bold;
+        background-color: #ffeaa7;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+    }
+    .priority-medium { 
+        color: #ffc107;
+        background-color: #fff3cd;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+    }
+    .priority-low { 
+        color: #28a745;
+        background-color: #d4edda;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+    }
+    
+    .status-open { 
+        color: #dc3545;
+        background-color: #f8d7da;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+    }
+    .status-in_progress { 
+        color: #ffc107;
+        background-color: #fff3cd;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+    }
+    .status-resolved { 
+        color: #28a745;
+        background-color: #d4edda;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+    }
+    .status-closed { 
+        color: #6c757d;
+        background-color: #e9ecef;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+    }
+    
+    .info-card {
+        border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .info-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+    
+    .timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+    
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 1rem;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background-color: #dee2e6;
+    }
+    
+    .timeline-item {
+        position: relative;
+        margin-bottom: 1.5rem;
+        background: white;
+        border-radius: 8px;
+        padding: 1rem;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -1.5rem;
+        top: 1rem;
+        width: 12px;
+        height: 12px;
+        background-color: #007bff;
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 0 0 2px #dee2e6;
+    }
+    
+    .comment-form {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-top: 2rem;
+    }
+    
+    .attachment-preview {
+        max-width: 200px;
+        max-height: 200px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+    
+    .action-buttons {
+        position: sticky;
+        top: 20px;
+        z-index: 100;
+    }
+    
+    .modal-backdrop.show {
+        opacity: 0.7;
+    }
+    
+    .quick-actions {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Encabezado del Reporte -->
+    <div class="complaint-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="d-flex align-items-center mb-3">
+                    <h1 class="mb-0 me-3">{{ complaint.title }}</h1>
+                    <span class="badge bg-light text-dark fs-6">#{{ complaint.id }}</span>
+                </div>
+                <p class="mb-2 opacity-75">{{ complaint.description|truncatechars:150 }}</p>
+                <div class="d-flex flex-wrap gap-2">
+                    <span class="badge bg-light text-dark">
+                        <i class="fas fa-building"></i> {{ complaint.company.name }}
+                    </span>
+                    <span class="badge bg-light text-dark">
+                        <i class="fas fa-calendar"></i> {{ complaint.created_at|date:"d/m/Y H:i" }}
+                    </span>
+                    <span class="badge bg-light text-dark">
+                        <i class="fas fa-user"></i> {{ complaint.reported_by.get_full_name|default:complaint.reported_by.username }}
+                    </span>
+                </div>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="mb-3">
+                    <span class="priority-{{ complaint.priority }}">
+                        {% if complaint.priority == 'critical' %}
+                            <i class="fas fa-exclamation-triangle"></i>
+                        {% elif complaint.priority == 'high' %}
+                            <i class="fas fa-arrow-up"></i>
+                        {% elif complaint.priority == 'medium' %}
+                            <i class="fas fa-minus"></i>
+                        {% else %}
+                            <i class="fas fa-arrow-down"></i>
+                        {% endif %}
+                        {{ complaint.get_priority_display }}
+                    </span>
+                </div>
+                <div class="mb-3">
+                    <span class="status-{{ complaint.status }}">
+                        {{ complaint.get_status_display }}
+                    </span>
+                </div>
+                <div class="d-flex gap-2 justify-content-end">
+                    {% if user.is_staff or user.is_superuser %}
+                        <a href="{% url 'qa_complaint_edit' complaint.pk %}" class="btn btn-light btn-sm">
+                            <i class="fas fa-edit"></i> Editar
+                        </a>
+                    {% endif %}
+                    <a href="{% url 'qa_complaint_list' %}" class="btn btn-outline-light btn-sm">
+                        <i class="fas fa-list"></i> Lista
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Contenido Principal -->
+        <div class="col-lg-8">
+            <!-- Descripción Completa -->
+            <div class="card info-card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file-alt text-primary"></i> Descripción Detallada
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="description-content">
+                        {{ complaint.description|linebreaks }}
+                    </div>
+                    
+                    {% if complaint.attachment %}
+                        <hr>
+                        <div class="attachment-section">
+                            <h6><i class="fas fa-paperclip"></i> Archivo Adjunto</h6>
+                            <div class="d-flex align-items-center">
+                                {% if complaint.attachment.url|slice:"-4:" == ".jpg" or complaint.attachment.url|slice:"-5:" == ".jpeg" or complaint.attachment.url|slice:"-4:" == ".png" %}
+                                    <img src="{{ complaint.attachment.url }}" alt="Adjunto" class="attachment-preview me-3">
+                                {% else %}
+                                    <i class="fas fa-file fa-3x text-muted me-3"></i>
+                                {% endif %}
+                                <div>
+                                    <strong>{{ complaint.attachment.name }}</strong><br>
+                                    <a href="{{ complaint.attachment.url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-download"></i> Descargar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Resolución (si está resuelta) -->
+            {% if complaint.status == 'resolved' and complaint.resolution %}
+                <div class="card info-card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-check-circle"></i> Resolución
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2">{{ complaint.resolution|linebreaks }}</p>
+                        <small class="text-muted">
+                            <i class="fas fa-clock"></i> 
+                            Resuelto el {{ complaint.resolution_date|date:"d/m/Y H:i" }}
+                            {% if complaint.resolved_by %}
+                                por {{ complaint.resolved_by.get_full_name|default:complaint.resolved_by.username }}
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Historial de Comentarios -->
+            <div class="card info-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-comments text-primary"></i> 
+                        Historial de Comentarios
+                        <span class="badge bg-secondary">{{ complaint.comments.count }}</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if complaint.comments.exists %}
+                        <div class="timeline">
+                            {% for comment in complaint.comments.all %}
+                                <div class="timeline-item">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            <strong>{{ comment.author.get_full_name|default:comment.author.username }}</strong>
+                                            {% if comment.is_internal %}
+                                                <span class="badge bg-warning text-dark ms-2">Interno</span>
+                                            {% endif %}
+                                        </div>
+                                        <small class="text-muted">{{ comment.created_at|date:"d/m/Y H:i" }}</small>
+                                    </div>
+                                    <p class="mb-0">{{ comment.content|linebreaks }}</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-comments fa-2x text-muted mb-2"></i>
+                            <p class="text-muted">No hay comentarios aún.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Formulario de Comentarios -->
+            <div class="comment-form">
+                <h6><i class="fas fa-plus-circle text-primary"></i> Agregar Comentario</h6>
+                <form method="POST" id="commentForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="add_comment" value="1">
+                    
+                    <div class="mb-3">
+                        <textarea class="form-control" name="comment_content" 
+                                  placeholder="Escribe tu comentario aquí..." 
+                                  rows="4" required></textarea>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" 
+                                   name="is_internal" id="is_internal">
+                            <label class="form-check-label" for="is_internal">
+                                <i class="fas fa-lock"></i> Comentario interno
+                            </label>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> Enviar Comentario
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Panel Lateral -->
+        <div class="col-lg-4">
+            <div class="action-buttons">
+                <!-- Acciones Rápidas -->
+                {% if user.is_staff or user.is_superuser %}
+                    <div class="quick-actions">
+                        <h6><i class="fas fa-bolt text-warning"></i> Acciones Rápidas</h6>
+                        
+                        <!-- Asignación -->
+                        <div class="mb-3">
+                            <label class="form-label">Asignar a:</label>
+                            <select class="form-select form-select-sm" id="assignSelect">
+                                <option value="">Sin asignar</option>
+                                {% if users %}
+                                    {% for user in users %}
+                                        <option value="{{ user.id }}" 
+                                                {% if complaint.assigned_to.id == user.id %}selected{% endif %}>
+                                            {{ user.get_full_name|default:user.username }}
+                                        </option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                        </div>
+                        
+                        <!-- Botón de Resolución -->
+                        {% if complaint.status != 'resolved' %}
+                            <button class="btn btn-success btn-sm w-100 mb-2" 
+                                    data-bs-toggle="modal" data-bs-target="#resolveModal">
+                                <i class="fas fa-check"></i> Marcar como Resuelto
+                            </button>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+                <!-- Información del Reporte -->
+                <div class="card info-card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-info-circle text-info"></i> Información
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <small class="text-muted">Tipo:</small><br>
+                                <span class="badge 
+                                           {% if complaint.type == 'complaint' %}bg-danger
+                                           {% elif complaint.type == 'suggestion' %}bg-info
+                                           {% elif complaint.type == 'feedback' %}bg-success
+                                           {% elif complaint.type == 'improvement' %}bg-primary
+                                           {% else %}bg-warning{% endif %}">
+                                    {{ complaint.get_type_display }}
+                                </span>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">Estado:</small><br>
+                                <span class="status-{{ complaint.status }}">
+                                    {{ complaint.get_status_display }}
+                                </span>
+                            </div>
+                            <div class="col-12 mt-2">
+                                <small class="text-muted">Prioridad:</small><br>
+                                <span class="priority-{{ complaint.priority }}">
+                                    {{ complaint.get_priority_display }}
+                                </span>
+                            </div>
+                            <div class="col-12 mt-2">
+                                <small class="text-muted">Asignado a:</small><br>
+                                {% if complaint.assigned_to %}
+                                    <strong>{{ complaint.assigned_to.get_full_name|default:complaint.assigned_to.username }}</strong>
+                                {% else %}
+                                    <span class="text-muted">Sin asignar</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información de Contacto -->
+                {% if complaint.contact_email or complaint.contact_phone %}
+                    <div class="card info-card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-address-book text-success"></i> Contacto
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            {% if complaint.contact_email %}
+                                <div class="mb-2">
+                                    <small class="text-muted">Email:</small><br>
+                                    <a href="mailto:{{ complaint.contact_email }}">{{ complaint.contact_email }}</a>
+                                </div>
+                            {% endif %}
+                            {% if complaint.contact_phone %}
+                                <div>
+                                    <small class="text-muted">Teléfono:</small><br>
+                                    <a href="tel:{{ complaint.contact_phone }}">{{ complaint.contact_phone }}</a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Fechas Importantes -->
+                <div class="card info-card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-calendar text-primary"></i> Fechas
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-2">
+                            <small class="text-muted">Creado:</small><br>
+                            {{ complaint.created_at|date:"d/m/Y H:i" }}
+                        </div>
+                        <div class="mb-2">
+                            <small class="text-muted">Actualizado:</small><br>
+                            {{ complaint.updated_at|date:"d/m/Y H:i" }}
+                        </div>
+                        {% if complaint.resolution_date %}
+                            <div>
+                                <small class="text-muted">Resuelto:</small><br>
+                                {{ complaint.resolution_date|date:"d/m/Y H:i" }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Resolución -->
+<div class="modal fade" id="resolveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-check-circle text-success"></i> 
+                    Resolver Reporte QA
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="resolveForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="resolution" class="form-label">
+                            Descripción de la Resolución <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" id="resolution" name="resolution" 
+                                  rows="4" placeholder="Describe cómo se resolvió el reporte..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check"></i> Marcar como Resuelto
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Asignación rápida
+    const assignSelect = document.getElementById('assignSelect');
+    if (assignSelect) {
+        assignSelect.addEventListener('change', function() {
+            const assignedToId = this.value;
+            
+            fetch(`{% url 'qa_complaint_assign' complaint.pk %}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: `assigned_to=${assignedToId}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Mostrar mensaje de éxito
+                    const alert = document.createElement('div');
+                    alert.className = 'alert alert-success alert-dismissible fade show';
+                    alert.innerHTML = `
+                        ${data.message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    
+                    const container = document.querySelector('.container-fluid');
+                    container.insertBefore(alert, container.firstChild);
+                    
+                    // Auto-ocultar después de 3 segundos
+                    setTimeout(() => {
+                        if (alert.parentNode) {
+                            alert.remove();
+                        }
+                    }, 3000);
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al asignar el reporte');
+            });
+        });
+    }
+    
+    // Formulario de resolución
+    const resolveForm = document.getElementById('resolveForm');
+    if (resolveForm) {
+        resolveForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const resolution = document.getElementById('resolution').value.trim();
+            if (!resolution) {
+                alert('La descripción de la resolución es requerida');
+                return;
+            }
+            
+            fetch(`{% url 'qa_complaint_resolve' complaint.pk %}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: `resolution=${encodeURIComponent(resolution)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Cerrar modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('resolveModal'));
+                    modal.hide();
+                    
+                    // Recargar página para mostrar la resolución
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al resolver el reporte');
+            });
+        });
+    }
+    
+    // Envío de comentarios con AJAX (opcional)
+    const commentForm = document.getElementById('commentForm');
+    if (commentForm) {
+        commentForm.addEventListener('submit', function(e) {
+            const content = this.querySelector('[name="comment_content"]').value.trim();
+            if (!content) {
+                e.preventDefault();
+                alert('El comentario no puede estar vacío');
+            }
+        });
+    }
+    
+    // Auto-scroll al último comentario si viene de agregar comentario
+    if (window.location.hash === '#comments') {
+        const timeline = document.querySelector('.timeline');
+        if (timeline) {
+            timeline.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+});
+</script>
+{% endblock %}

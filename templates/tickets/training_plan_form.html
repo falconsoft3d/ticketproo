@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'training_plan_list' %}">
+                        <i class="bi bi-mortarboard"></i> Planes de Capacitación
+                    </a>
+                </li>
+                {% if plan %}
+                <li class="breadcrumb-item">
+                    <a href="{% url 'training_plan_detail' plan.pk %}">Plan #{{ plan.sequence }}</a>
+                </li>
+                <li class="breadcrumb-item active">Editar</li>
+                {% else %}
+                <li class="breadcrumb-item active">Crear Plan</li>
+                {% endif %}
+            </ol>
+        </nav>
+        <h2>
+            {% if plan %}
+                <i class="bi bi-pencil"></i> Editar Plan #{{ plan.sequence }}
+            {% else %}
+                <i class="bi bi-plus-circle"></i> Crear Nuevo Plan
+            {% endif %}
+        </h2>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle"></i> Información del Plan
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="title" class="form-label">
+                            Título del Plan <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="title" 
+                               name="title" 
+                               value="{% if plan %}{{ plan.title }}{% endif %}"
+                               required 
+                               maxlength="200"
+                               placeholder="Ej: Inducción para Nuevos Empleados">
+                        <div class="form-text">Nombre descriptivo del plan de capacitación</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">
+                            Descripción <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" 
+                                  id="description" 
+                                  name="description" 
+                                  rows="5" 
+                                  required
+                                  placeholder="Describe el objetivo y contenido del plan de capacitación...">{% if plan %}{{ plan.description }}{% endif %}</textarea>
+                        <div class="form-text">Explica qué aprenderán los empleados con este plan</div>
+                    </div>
+                    
+                    {% if plan %}
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" 
+                                   type="checkbox" 
+                                   id="is_active" 
+                                   name="is_active"
+                                   {% if plan.is_active %}checked{% endif %}>
+                            <label class="form-check-label" for="is_active">
+                                Plan Activo
+                            </label>
+                        </div>
+                        <div class="form-text">Los planes inactivos no serán visibles para los empleados</div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% if plan %}{% url 'training_plan_detail' plan.pk %}{% else %}{% url 'training_plan_list' %}{% endif %}" 
+                           class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancelar
+                        </a>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            {% if plan %}
+                                <i class="bi bi-check-circle"></i> Actualizar Plan
+                            {% else %}
+                                <i class="bi bi-plus-circle"></i> Crear Plan
+                            {% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightbulb"></i> Consejos
+                </h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-3">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        <strong>Título claro:</strong> Usa un nombre descriptivo que indique el propósito del plan.
+                    </li>
+                    <li class="mb-3">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        <strong>Descripción detallada:</strong> Explica qué competencias desarrollará el empleado.
+                    </li>
+                    <li class="mb-3">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        <strong>Secuencia lógica:</strong> Después de crear el plan, ordena los recursos por dificultad.
+                    </li>
+                    {% if plan %}
+                    <li class="mb-0">
+                        <i class="bi bi-info-circle text-info me-2"></i>
+                        <strong>Plan creado:</strong> {{ plan.created_at|date:"d/m/Y H:i" }}
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+        
+        {% if plan %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-bar-chart"></i> Estadísticas
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center">
+                    <div class="row">
+                        <div class="col">
+                            <div class="text-muted small">Recursos</div>
+                            <div class="fw-bold h5">{{ plan.get_total_links }}</div>
+                        </div>
+                        <div class="col">
+                            <div class="text-muted small">Secuencia</div>
+                            <div class="fw-bold h5">#{{ plan.sequence }}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="d-grid">
+                    <a href="{% url 'training_link_create' plan.pk %}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-plus-circle"></i> Agregar Recurso
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.form-label {
+    font-weight: 600;
+}
+
+.card {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+</style>
+{% endblock %}

@@ -1,0 +1,241 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'training_plan_list' %}">
+                        <i class="bi bi-mortarboard"></i> Planes de Capacitación
+                    </a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="{% url 'training_plan_detail' plan.pk %}">Plan #{{ plan.sequence }}</a>
+                </li>
+                {% if training_link %}
+                <li class="breadcrumb-item active">Editar URL</li>
+                {% else %}
+                <li class="breadcrumb-item active">Agregar URL</li>
+                {% endif %}
+            </ol>
+        </nav>
+        <h2>
+            {% if training_link %}
+                <i class="bi bi-pencil"></i> Editar Recurso
+            {% else %}
+                <i class="bi bi-plus-circle"></i> Agregar Recurso
+            {% endif %}
+        </h2>
+        <p class="text-muted">Plan: <strong>{{ plan.title }}</strong></p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-link-45deg"></i> Información del Recurso
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="title" class="form-label">
+                            Título del Recurso <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="title" 
+                               name="title" 
+                               value="{% if training_link %}{{ training_link.title }}{% endif %}"
+                               required 
+                               maxlength="200"
+                               placeholder="Ej: Video de Introducción a la Empresa">
+                        <div class="form-text">Nombre descriptivo del recurso de capacitación</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="url" class="form-label">
+                            URL del Recurso <span class="text-danger">*</span>
+                        </label>
+                        <input type="url" 
+                               class="form-control" 
+                               id="url" 
+                               name="url" 
+                               value="{% if training_link %}{{ training_link.url }}{% endif %}"
+                               required
+                               placeholder="https://ejemplo.com/video-capacitacion">
+                        <div class="form-text">Enlace al video, documento, artículo o plataforma de capacitación</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">
+                            Descripción (Opcional)
+                        </label>
+                        <textarea class="form-control" 
+                                  id="description" 
+                                  name="description" 
+                                  rows="3"
+                                  placeholder="Describe qué aprenderá el empleado con este recurso...">{% if training_link %}{{ training_link.description }}{% endif %}</textarea>
+                        <div class="form-text">Información adicional sobre el contenido del recurso</div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="order" class="form-label">
+                                    Orden
+                                </label>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="order" 
+                                       name="order" 
+                                       value="{% if training_link %}{{ training_link.order }}{% else %}0{% endif %}"
+                                       min="0"
+                                       max="999">
+                                <div class="form-text">Posición en la secuencia de capacitación</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Tipo de Recurso</label>
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" 
+                                           type="checkbox" 
+                                           id="is_required" 
+                                           name="is_required"
+                                           {% if not training_link or training_link.is_required %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_required">
+                                        <strong>Recurso Obligatorio</strong>
+                                    </label>
+                                </div>
+                                <div class="form-text">Los recursos obligatorios deben completarse para finalizar el plan</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'training_plan_detail' plan.pk %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver al Plan
+                        </a>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            {% if training_link %}
+                                <i class="bi bi-check-circle"></i> Actualizar Recurso
+                            {% else %}
+                                <i class="bi bi-plus-circle"></i> Agregar Recurso
+                            {% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightbulb"></i> Tipos de Recursos
+                </h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-3">
+                        <i class="bi bi-play-circle text-primary me-2"></i>
+                        <strong>Videos:</strong> YouTube, Vimeo, cursos en línea
+                    </li>
+                    <li class="mb-3">
+                        <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+                        <strong>Documentos:</strong> PDFs, manuales, presentaciones
+                    </li>
+                    <li class="mb-3">
+                        <i class="bi bi-globe text-success me-2"></i>
+                        <strong>Sitios Web:</strong> Artículos, blogs, wikis
+                    </li>
+                    <li class="mb-0">
+                        <i class="bi bi-mortarboard text-warning me-2"></i>
+                        <strong>Cursos:</strong> Plataformas de e-learning
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle"></i> Consejos
+                </h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-3">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        <strong>Orden lógico:</strong> Estructura el contenido de básico a avanzado.
+                    </li>
+                    <li class="mb-3">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        <strong>URLs válidas:</strong> Verifica que los enlaces funcionen correctamente.
+                    </li>
+                    <li class="mb-0">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        <strong>Contenido accesible:</strong> Asegúrate de que no requiera credenciales especiales.
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        {% if plan %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-list-ul"></i> Plan: {{ plan.title }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center">
+                    <div class="row">
+                        <div class="col">
+                            <div class="text-muted small">Recursos</div>
+                            <div class="fw-bold h5">{{ plan.get_total_links }}</div>
+                        </div>
+                        <div class="col">
+                            <div class="text-muted small">Secuencia</div>
+                            <div class="fw-bold h5">#{{ plan.sequence }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.form-label {
+    font-weight: 600;
+}
+
+.card {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.form-check-input:checked {
+    background-color: #667eea;
+    border-color: #667eea;
+}
+</style>
+{% endblock %}

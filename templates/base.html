@@ -90,7 +90,7 @@
                     {% if user.is_authenticated %}
                         {% if user.is_staff or user.is_superuser or user.groups.all and user.groups.first.name == 'Agentes' %}
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if 'employee_request' in request.resolver_match.url_name or 'ai_manager' in request.resolver_match.url_name or 'employee_dashboard' in request.resolver_match.url_name or 'internal_agreement' in request.resolver_match.url_name %}active{% endif %}" 
+                        <a class="nav-link dropdown-toggle {% if 'employee_request' in request.resolver_match.url_name or 'ai_manager' in request.resolver_match.url_name or 'employee_dashboard' in request.resolver_match.url_name or 'internal_agreement' in request.resolver_match.url_name or 'training_plan' in request.resolver_match.url_name or 'my_training_progress' in request.resolver_match.url_name or 'ai_recommendation' in request.resolver_match.url_name or 'employee_absence' in request.resolver_match.url_name or 'company_protocol' in request.resolver_match.url_name %}active{% endif %}" 
                            href="#" id="navbarDropdownEmployee" role="button" data-bs-toggle="dropdown">
                             <i class="bi bi-person-badge"></i> Empleado
                         </a>
@@ -132,6 +132,52 @@
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'internal_agreement_create' %}active{% endif %}" 
                                    href="{% url 'internal_agreement_create' %}">
                                     <i class="bi bi-plus-circle"></i> Nuevo Acuerdo
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item {% if 'training_plan' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'training_plan_list' %}">
+                                    <i class="bi bi-mortarboard"></i> Planes de Capacitación
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'my_training_progress' %}active{% endif %}" 
+                                   href="{% url 'my_training_progress' %}">
+                                    <i class="bi bi-graph-up"></i> Mi Progreso
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item {% if 'ai_recommendation' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'ai_recommendation_list' %}">
+                                    <i class="bi bi-lightbulb"></i> Recomendaciones IA
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item {% if 'employee_absence' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'employee_absence_list' %}">
+                                    <i class="bi bi-calendar-x"></i> Gestión de Ausencias
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'employee_absence_calendar' %}active{% endif %}" 
+                                   href="{% url 'employee_absence_calendar' %}">
+                                    <i class="bi bi-calendar3"></i> Calendario de Ausencias
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item {% if 'company_protocol' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'company_protocol_list' %}">
+                                    <i class="bi bi-file-text"></i> Protocolos Empresa
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'company_protocol_create' %}active{% endif %}" 
+                                   href="{% url 'company_protocol_create' %}">
+                                    <i class="bi bi-plus-circle"></i> Nuevo Protocolo
                                 </a>
                             </li>
                         </ul>
@@ -503,6 +549,57 @@
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'concept_create' %}active{% endif %}" 
                                    href="{% url 'concept_create' %}">
                                     <i class="bi bi-plus-circle"></i> Nuevo Concepto
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Menú QA - Quejas y Sugerencias (Solo para Agentes) -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if 'qa_' in request.resolver_match.url_name %}active{% endif %}" 
+                           href="#" id="navbarDropdownQA" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-comments"></i> QA
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li class="dropdown-header">Control de Calidad</li>
+                            
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'qa_complaint_list' %}active{% endif %}" 
+                                   href="{% url 'qa_complaint_list' %}">
+                                    <i class="fas fa-list"></i> Gestionar Reportes
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'qa_complaint_create' %}active{% endif %}" 
+                                   href="{% url 'qa_complaint_create' %}">
+                                    <i class="fas fa-plus-circle"></i> Nuevo Reporte QA
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Filtros Rápidos</li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'qa_complaint_list' %}?status=open">
+                                    <i class="fas fa-exclamation-circle text-danger"></i> Reportes Abiertos
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'qa_complaint_list' %}?assigned=me">
+                                    <i class="fas fa-user-check text-primary"></i> Mis Asignaciones
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'qa_complaint_list' %}?priority=critical">
+                                    <i class="fas fa-exclamation-triangle text-danger"></i> Prioridad Crítica
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'qa_complaint_list' %}?type=complaint">
+                                    <i class="fas fa-frown text-warning"></i> Solo Quejas
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'qa_complaint_list' %}?type=suggestion">
+                                    <i class="fas fa-lightbulb text-info"></i> Solo Sugerencias
                                 </a>
                             </li>
                         </ul>

@@ -11593,8 +11593,1058 @@ class InternalAgreement(models.Model):
         super().save(*args, **kwargs)
 
 
+class TrainingPlan(models.Model):
+    """Plan de Capacitación"""
+    sequence = models.PositiveIntegerField(unique=True, verbose_name='Secuencia')
+    title = models.CharField(max_length=200, verbose_name='Título del Plan')
+    description = models.TextField(blank=True, verbose_name='Descripción')
+    is_active = models.BooleanField(default=True, verbose_name='Activo')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Fecha de actualización')
+    created_by = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, verbose_name='Creado por')
+
+    class Meta:
+        verbose_name = 'Plan de Capacitación'
+        verbose_name_plural = 'Planes de Capacitación'
+        ordering = ['sequence']
+
+    def __str__(self):
+        return f"Plan #{self.sequence}: {self.title}"
+
+    def get_total_links(self):
+        """Retorna el total de enlaces en este plan"""
+        return self.links.count()
+
+    def get_progress_for_user(self, user):
+        """Retorna el progreso del usuario en este plan"""
+        total_links = self.get_total_links()
+        if total_links == 0:
+            return 0
+        
+        # Contar directamente los EmployeeLinkProgress del usuario para este plan
+        from .models import EmployeeLinkProgress
+        completed_links = EmployeeLinkProgress.objects.filter(
+            employee=user,
+            link__plan=self
+        ).count()
+        
+        return (completed_links / total_links) * 100
+
+    def is_completed_by_user(self, user):
+        """Verifica si el usuario completó todo el plan"""
+        try:
+            progress = EmployeeTrainingProgress.objects.get(employee=user, plan=self)
+            return progress.status == 'completed'
+        except EmployeeTrainingProgress.DoesNotExist:
+            return False
 
 
+class TrainingLink(models.Model):
+    """Enlace de Capacitación"""
+    plan = models.ForeignKey(TrainingPlan, on_delete=models.CASCADE, related_name='links', verbose_name='Plan de Capacitación')
+    title = models.CharField(max_length=200, verbose_name='Título del Enlace')
+    url = models.URLField(verbose_name='URL')
+    description = models.TextField(blank=True, verbose_name='Descripción')
+    order = models.PositiveIntegerField(default=0, verbose_name='Orden')
+    is_required = models.BooleanField(default=True, verbose_name='Requerido')
+    estimated_hours = models.PositiveIntegerField(default=1, verbose_name='Horas estimadas')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')
+
+    class Meta:
+        verbose_name = 'Enlace de Capacitación'
+        verbose_name_plural = 'Enlaces de Capacitación'
+        ordering = ['order', 'id']
+
+    def __str__(self):
+        return f"{self.plan.title} - {self.title}"
+
+    def is_completed_by_user(self, user):
+        """Verifica si el usuario completó este enlace"""
+        return EmployeeLinkProgress.objects.filter(employee=user, link=self).exists()
 
 
+class EmployeeTrainingProgress(models.Model):
+    """Progreso de Capacitación por Empleado"""
+    STATUS_CHOICES = [
+        ('not_started', 'No iniciado'),
+        ('in_progress', 'En progreso'),
+        ('completed', 'Completado'),
+    ]
+    
+    employee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='training_progress', verbose_name='Empleado')
+    plan = models.ForeignKey(TrainingPlan, on_delete=models.CASCADE, related_name='employee_progress', verbose_name='Plan de Capacitación')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='not_started', verbose_name='Estado')
+    started_at = models.DateTimeField(blank=True, null=True, verbose_name='Iniciado el')
+    completed_at = models.DateTimeField(blank=True, null=True, verbose_name='Completado el')
+    notes = models.TextField(blank=True, verbose_name='Notas')
 
+    class Meta:
+        verbose_name = 'Progreso de Capacitación'
+        verbose_name_plural = 'Progreso de Capacitaciones'
+        unique_together = ('employee', 'plan')
+
+    def __str__(self):
+        return f"{self.employee.username} - {self.plan.title} ({self.get_status_display()})"
+
+    def get_completion_percentage(self):
+        """Calcula el porcentaje de completado"""
+        total_links = self.plan.get_total_links()
+        if total_links == 0:
+            return 0
+        completed_links = self.completed_links.count()
+        return (completed_links / total_links) * 100
+
+    def update_status(self):
+        """Actualiza el estado basado en los enlaces completados"""
+        total_links = self.plan.get_total_links()
+        completed_links = self.completed_links.count()
+        
+        if completed_links == 0:
+            self.status = 'not_started'
+            self.started_at = None
+            self.completed_at = None
+        elif completed_links == total_links:
+            self.status = 'completed'
+            if not self.completed_at:
+                from django.utils import timezone
+                self.completed_at = timezone.now()
+        else:
+            self.status = 'in_progress'
+            if not self.started_at:
+                from django.utils import timezone
+                self.started_at = timezone.now()
+            self.completed_at = None
+        
+        self.save()
+
+
+class EmployeeLinkProgress(models.Model):
+    """Progreso individual de cada enlace por empleado"""
+    employee = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Empleado')
+    link = models.ForeignKey(TrainingLink, on_delete=models.CASCADE, related_name='employee_progress', verbose_name='Enlace')
+    training_progress = models.ForeignKey(EmployeeTrainingProgress, on_delete=models.CASCADE, related_name='completed_links', verbose_name='Progreso de Capacitación')
+    completed_at = models.DateTimeField(auto_now_add=True, verbose_name='Completado el')
+    time_spent_hours = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True, verbose_name='Tiempo invertido (horas)')
+    notes = models.TextField(blank=True, verbose_name='Notas')
+
+    class Meta:
+        verbose_name = 'Progreso de Enlace'
+        verbose_name_plural = 'Progreso de Enlaces'
+        unique_together = ('employee', 'link')
+
+    def __str__(self):
+        return f"{self.employee.username} - {self.link.title}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Actualizar el estado del progreso general del entrenamiento
+        self.training_progress.update_status()
+
+
+# ========== MODELOS DE RECOMENDACIONES IA ==========
+
+class AIRecommendation(models.Model):
+    """Modelo para gestionar recomendaciones de IA para respuestas políticamente correctas"""
+    
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título',
+        help_text='Título descriptivo de la recomendación'
+    )
+    context_text = models.TextField(
+        verbose_name='Texto de Contexto',
+        help_text='Contexto base que usará la IA para generar respuestas'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activa',
+        help_text='Si está activa, podrá ser usada para generar respuestas'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='created_recommendations',
+        verbose_name='Creado por'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Recomendación IA'
+        verbose_name_plural = 'Recomendaciones IA'
+    
+    def __str__(self):
+        return self.title
+    
+    def get_usage_count(self):
+        """Retorna el número de veces que se ha usado esta recomendación"""
+        return self.usage_logs.count()
+
+
+class AIRecommendationUsage(models.Model):
+    """Modelo para registrar el uso de recomendaciones IA"""
+    
+    recommendation = models.ForeignKey(
+        AIRecommendation,
+        on_delete=models.CASCADE,
+        related_name='usage_logs',
+        verbose_name='Recomendación'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='ai_recommendation_usage',
+        verbose_name='Usuario'
+    )
+    client_case = models.TextField(
+        verbose_name='Caso del Cliente',
+        help_text='Caso específico o situación del cliente enviada para análisis'
+    )
+    ai_response = models.TextField(
+        verbose_name='Respuesta de IA',
+        help_text='Respuesta generada por la IA basada en el contexto y caso'
+    )
+    is_helpful = models.BooleanField(
+        default=True,
+        verbose_name='¿Fue útil?',
+        help_text='Calificación de utilidad de la respuesta'
+    )
+    feedback = models.TextField(
+        blank=True,
+        verbose_name='Comentarios',
+        help_text='Comentarios adicionales del usuario sobre la respuesta'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de uso'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Uso de Recomendación IA'
+        verbose_name_plural = 'Usos de Recomendaciones IA'
+    
+    def __str__(self):
+        return f"{self.recommendation.title} - {self.user.username} ({self.created_at.strftime('%d/%m/%Y')})"
+
+
+# ========== MODELOS DE AUSENCIAS DE EMPLEADOS ==========
+
+class AbsenceType(models.Model):
+    """Tipos de ausencias disponibles"""
+    
+    name = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name='Nombre del Tipo',
+        help_text='Ej: Vacaciones, Enfermedad, Permiso Personal'
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción',
+        help_text='Descripción detallada del tipo de ausencia'
+    )
+    requires_documentation = models.BooleanField(
+        default=False,
+        verbose_name='Requiere Documentación',
+        help_text='Si se requiere documentación de respaldo (ej: certificado médico)'
+    )
+    is_paid = models.BooleanField(
+        default=True,
+        verbose_name='Es Remunerado',
+        help_text='Si la ausencia es con goce de sueldo'
+    )
+    max_days_per_year = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        verbose_name='Máximo Días por Año',
+        help_text='Límite anual de días para este tipo de ausencia (opcional)'
+    )
+    color = models.CharField(
+        max_length=7,
+        default='#007bff',
+        verbose_name='Color',
+        help_text='Color para mostrar en el calendario (formato hex: #RRGGBB)'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo',
+        help_text='Si este tipo de ausencia está disponible para uso'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'Tipo de Ausencia'
+        verbose_name_plural = 'Tipos de Ausencias'
+    
+    def __str__(self):
+        return self.name
+    
+    def get_usage_count(self):
+        """Retorna el número de ausencias registradas de este tipo"""
+        return self.absences.count()
+
+
+class EmployeeAbsence(models.Model):
+    """Registro de ausencias de empleados"""
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pendiente'),
+        ('approved', 'Aprobada'),
+        ('rejected', 'Rechazada'),
+        ('cancelled', 'Cancelada'),
+    ]
+    
+    employee = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='absences',
+        verbose_name='Empleado'
+    )
+    absence_type = models.ForeignKey(
+        AbsenceType,
+        on_delete=models.CASCADE,
+        related_name='absences',
+        verbose_name='Tipo de Ausencia'
+    )
+    start_date = models.DateField(
+        verbose_name='Fecha de Inicio',
+        help_text='Primer día de ausencia'
+    )
+    end_date = models.DateField(
+        verbose_name='Fecha de Fin',
+        help_text='Último día de ausencia'
+    )
+    lost_hours = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=0.00,
+        verbose_name='Horas Perdidas',
+        help_text='Total de horas laborales perdidas por la ausencia'
+    )
+    reason = models.TextField(
+        verbose_name='Motivo',
+        help_text='Explicación detallada del motivo de la ausencia'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        verbose_name='Estado'
+    )
+    documentation_file = models.FileField(
+        upload_to='absence_documentation/%Y/%m/',
+        blank=True,
+        null=True,
+        verbose_name='Documentación',
+        help_text='Archivo de respaldo (certificado médico, etc.)'
+    )
+    approved_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='approved_absences',
+        verbose_name='Aprobado por'
+    )
+    approved_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de aprobación'
+    )
+    rejection_reason = models.TextField(
+        blank=True,
+        verbose_name='Motivo de rechazo',
+        help_text='Razón por la cual se rechazó la ausencia'
+    )
+    notes = models.TextField(
+        blank=True,
+        verbose_name='Notas adicionales',
+        help_text='Comentarios internos sobre la ausencia'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de solicitud'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        ordering = ['-start_date', '-created_at']
+        verbose_name = 'Ausencia de Empleado'
+        verbose_name_plural = 'Ausencias de Empleados'
+    
+    def __str__(self):
+        return f"{self.employee.get_full_name() or self.employee.username} - {self.absence_type.name} ({self.start_date} a {self.end_date})"
+    
+    def clean(self):
+        """Validación personalizada"""
+        from django.core.exceptions import ValidationError
+        
+        if self.start_date and self.end_date:
+            if self.start_date > self.end_date:
+                raise ValidationError('La fecha de inicio no puede ser posterior a la fecha de fin.')
+    
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+    
+    def get_duration_days(self):
+        """Retorna la duración en días de la ausencia"""
+        if self.start_date and self.end_date:
+            return (self.end_date - self.start_date).days + 1
+        return 0
+    
+    def calculate_lost_hours(self, hours_per_day=8):
+        """Calcula las horas perdidas basado en los días de ausencia"""
+        duration_days = self.get_duration_days()
+        return duration_days * hours_per_day
+    
+    def get_lost_hours_display(self):
+        """Retorna las horas perdidas formateadas"""
+        if self.lost_hours:
+            return f"{self.lost_hours} horas"
+        return "0 horas"
+    
+    def get_average_hours_per_day(self):
+        """Retorna el promedio de horas perdidas por día"""
+        duration_days = self.get_duration_days()
+        if duration_days > 0 and self.lost_hours:
+            return round(float(self.lost_hours) / duration_days, 1)
+        return 0.0
+    
+    def get_status_display_class(self):
+        """Retorna la clase CSS para el estado"""
+        status_classes = {
+            'pending': 'warning',
+            'approved': 'success',
+            'rejected': 'danger',
+            'cancelled': 'secondary',
+        }
+        return status_classes.get(self.status, 'secondary')
+    
+    def is_current(self):
+        """Verifica si la ausencia está actualmente en curso"""
+        from django.utils import timezone
+        today = timezone.now().date()
+        return self.start_date <= today <= self.end_date and self.status == 'approved'
+    
+    def approve(self, approved_by_user):
+        """Aprueba la ausencia"""
+        self.status = 'approved'
+        self.approved_by = approved_by_user
+        self.approved_at = timezone.now()
+        self.save()
+    
+    def reject(self, reason, rejected_by_user):
+        """Rechaza la ausencia"""
+        self.status = 'rejected'
+        self.rejection_reason = reason
+        self.approved_by = rejected_by_user
+        self.approved_at = timezone.now()
+        self.save()
+
+
+class CompanyProtocol(models.Model):
+    """Modelo para gestionar protocolos de empresa"""
+    
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.CASCADE,
+        related_name='protocols',
+        verbose_name='Empresa',
+        help_text='Empresa a la que pertenece este protocolo',
+        null=True,
+        blank=True
+    )
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título del Protocolo',
+        help_text='Título descriptivo del protocolo empresarial'
+    )
+    content = models.TextField(
+        verbose_name='Contenido del Protocolo',
+        help_text='Contenido completo del protocolo. Puedes usar formato básico.'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='created_protocols',
+        verbose_name='Creado por'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo',
+        help_text='Indica si el protocolo está activo y disponible'
+    )
+    version = models.CharField(
+        max_length=10,
+        default='1.0',
+        verbose_name='Versión',
+        help_text='Versión del protocolo (ej: 1.0, 1.1, 2.0)'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Protocolo de Empresa'
+        verbose_name_plural = 'Protocolos de Empresa'
+    
+    def __str__(self):
+        return f"{self.title} (v{self.version})"
+    
+    def get_short_content(self, max_length=100):
+        """Retorna una versión truncada del contenido"""
+        if len(self.content) <= max_length:
+            return self.content
+        return self.content[:max_length] + '...'
+    
+    def get_word_count(self):
+        """Retorna el número de palabras en el contenido"""
+        return len(self.content.split())
+    
+    def increment_version(self):
+        """Incrementa automáticamente la versión del protocolo"""
+        try:
+            version_parts = self.version.split('.')
+            major = int(version_parts[0])
+            minor = int(version_parts[1]) if len(version_parts) > 1 else 0
+            minor += 1
+            if minor >= 10:
+                major += 1
+                minor = 0
+            self.version = f"{major}.{minor}"
+        except (ValueError, IndexError):
+            self.version = "1.0"
+    
+    def generate_ai_content(self, content_type="comprehensive"):
+        """Genera contenido automático del protocolo usando IA"""
+        from tickets.models import SystemConfiguration
+        
+        config = SystemConfiguration.objects.first()
+        if not config or not config.ai_chat_enabled or not config.openai_api_key:
+            return {"success": False, "error": "OpenAI no está configurado en el sistema"}
+        
+        try:
+            import openai
+            client = openai.OpenAI(api_key=config.openai_api_key)
+            
+            company_context = f" para la empresa {self.company.name}" if self.company else ""
+            
+            prompts = {
+                "comprehensive": f"""
+                Genera un protocolo empresarial completo y profesional con el título: "{self.title}"{company_context}.
+                
+                El protocolo debe incluir:
+                1. Introducción y propósito
+                2. Alcance y aplicabilidad
+                3. Responsabilidades
+                4. Procedimientos detallados paso a paso
+                5. Requisitos y estándares
+                6. Medidas de seguridad (si aplica)
+                7. Documentación y registros
+                8. Revisión y actualización
+                
+                Escribe en español, usando un lenguaje profesional y claro. El protocolo debe ser práctico y actionable.
+                """,
+                "summary": f"""
+                Basándote en el título "{self.title}"{company_context}, genera un resumen ejecutivo y puntos clave 
+                para un protocolo empresarial. Incluye objetivos principales, beneficios esperados y requisitos básicos.
+                Máximo 500 palabras.
+                """,
+                "checklist": f"""
+                Crea una lista de verificación (checklist) detallada para el protocolo "{self.title}"{company_context}.
+                Incluye todos los pasos necesarios, verificaciones de seguridad, y puntos de control de calidad.
+                Formato de lista numerada y clara.
+                """
+            }
+            
+            response = client.chat.completions.create(
+                model=config.openai_model or "gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "Eres un experto consultor empresarial especializado en crear protocolos y procedimientos corporativos de alta calidad."},
+                    {"role": "user", "content": prompts.get(content_type, prompts["comprehensive"])}
+                ],
+                max_tokens=2000,
+                temperature=0.7
+            )
+            
+            generated_content = response.choices[0].message.content.strip()
+            
+            return {
+                "success": True,
+                "content": generated_content,
+                "word_count": len(generated_content.split()),
+                "content_type": content_type
+            }
+            
+        except Exception as e:
+            return {"success": False, "error": f"Error generando contenido: {str(e)}"}
+    
+    def analyze_readability(self):
+        """Analiza la legibilidad del protocolo"""
+        import re
+        
+        try:
+            text = self.content
+            if not text:
+                return {"success": False, "error": "No hay contenido para analizar"}
+            
+            # Métricas básicas
+            word_count = len(text.split())
+            sentence_count = len(re.split(r'[.!?]+', text))
+            paragraph_count = len([p for p in text.split('\n\n') if p.strip()])
+            
+            # Promedio de palabras por oración
+            avg_words_per_sentence = word_count / max(sentence_count, 1)
+            
+            # Promedio de oraciones por párrafo
+            avg_sentences_per_paragraph = sentence_count / max(paragraph_count, 1)
+            
+            # Análisis de complejidad
+            complex_words = len([word for word in text.split() if len(word) > 6])
+            complexity_ratio = complex_words / max(word_count, 1) * 100
+            
+            # Puntuación de legibilidad (escala 1-10)
+            readability_score = 10
+            
+            if avg_words_per_sentence > 20:
+                readability_score -= 2
+            elif avg_words_per_sentence > 15:
+                readability_score -= 1
+                
+            if complexity_ratio > 30:
+                readability_score -= 2
+            elif complexity_ratio > 20:
+                readability_score -= 1
+                
+            if avg_sentences_per_paragraph > 8:
+                readability_score -= 1
+            
+            readability_score = max(1, readability_score)
+            
+            # Nivel de legibilidad
+            if readability_score >= 8:
+                level = "Excelente"
+                color = "success"
+            elif readability_score >= 6:
+                level = "Bueno"
+                color = "info"
+            elif readability_score >= 4:
+                level = "Regular"
+                color = "warning"
+            else:
+                level = "Difícil"
+                color = "danger"
+            
+            return {
+                "success": True,
+                "score": readability_score,
+                "level": level,
+                "color": color,
+                "metrics": {
+                    "word_count": word_count,
+                    "sentence_count": sentence_count,
+                    "paragraph_count": paragraph_count,
+                    "avg_words_per_sentence": round(avg_words_per_sentence, 1),
+                    "avg_sentences_per_paragraph": round(avg_sentences_per_paragraph, 1),
+                    "complexity_ratio": round(complexity_ratio, 1)
+                }
+            }
+            
+        except Exception as e:
+            return {"success": False, "error": f"Error analizando legibilidad: {str(e)}"}
+    
+    def get_ai_suggestions(self):
+        """Genera sugerencias de mejora usando IA"""
+        from tickets.models import SystemConfiguration
+        
+        config = SystemConfiguration.objects.first()
+        if not config or not config.ai_chat_enabled or not config.openai_api_key:
+            return {"success": False, "error": "OpenAI no está configurado en el sistema"}
+        
+        try:
+            import openai
+            client = openai.OpenAI(api_key=config.openai_api_key)
+            
+            # Análisis de legibilidad primero
+            readability = self.analyze_readability()
+            
+            prompt = f"""
+            Analiza el siguiente protocolo empresarial y proporciona sugerencias específicas de mejora:
+            
+            TÍTULO: {self.title}
+            EMPRESA: {self.company.name if self.company else 'No especificada'}
+            
+            CONTENIDO:
+            {self.content[:1500]}...
+            
+            Proporciona sugerencias en las siguientes categorías:
+            1. CLARIDAD: Cómo mejorar la claridad del lenguaje
+            2. ESTRUCTURA: Sugerencias de organización del contenido
+            3. COMPLETITUD: Qué elementos podrían estar faltando
+            4. PROFESIONALISMO: Cómo hacer el protocolo más profesional
+            5. ACCIONABILIDAD: Cómo hacer las instrucciones más específicas
+            
+            Proporciona máximo 3 sugerencias por categoría, sean concretas y actionables.
+            """
+            
+            response = client.chat.completions.create(
+                model=config.openai_model or "gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "Eres un consultor experto en documentación empresarial y mejora de procesos corporativos."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=1000,
+                temperature=0.6
+            )
+            
+            suggestions = response.choices[0].message.content.strip()
+            
+            return {
+                "success": True,
+                "suggestions": suggestions,
+                "readability_info": readability if readability["success"] else None
+            }
+            
+        except Exception as e:
+            return {"success": False, "error": f"Error generando sugerencias: {str(e)}"}
+    
+    def generate_executive_summary(self):
+        """Genera un resumen ejecutivo del protocolo"""
+        from tickets.models import SystemConfiguration
+        
+        config = SystemConfiguration.objects.first()
+        if not config or not config.ai_chat_enabled or not config.openai_api_key:
+            return {"success": False, "error": "OpenAI no está configurado en el sistema"}
+        
+        try:
+            import openai
+            client = openai.OpenAI(api_key=config.openai_api_key)
+            
+            prompt = f"""
+            Crea un resumen ejecutivo profesional del siguiente protocolo:
+            
+            TÍTULO: {self.title}
+            EMPRESA: {self.company.name if self.company else 'No especificada'}
+            
+            CONTENIDO:
+            {self.content}
+            
+            El resumen ejecutivo debe incluir:
+            1. Propósito y objetivos principales
+            2. Beneficios clave
+            3. Impacto en la organización
+            4. Recursos necesarios
+            5. Cronograma de implementación (si aplica)
+            
+            Máximo 300 palabras, lenguaje ejecutivo y persuasivo.
+            """
+            
+            response = client.chat.completions.create(
+                model=config.openai_model or "gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "Eres un director ejecutivo escribiendo resúmenes para la junta directiva."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=500,
+                temperature=0.5
+            )
+            
+            summary = response.choices[0].message.content.strip()
+            
+            return {
+                "success": True,
+                "summary": summary,
+                "word_count": len(summary.split())
+            }
+            
+        except Exception as e:
+            return {"success": False, "error": f"Error generando resumen: {str(e)}"}
+
+
+class QAComplaint(models.Model):
+    """Modelo para gestionar quejas y sugerencias de QA asociadas a empresas"""
+    
+    TYPE_CHOICES = [
+        ('complaint', 'Queja'),
+        ('suggestion', 'Sugerencia'),
+        ('feedback', 'Retroalimentación'),
+        ('improvement', 'Mejora'),
+        ('quality_issue', 'Problema de Calidad'),
+    ]
+    
+    PRIORITY_CHOICES = [
+        ('low', 'Baja'),
+        ('medium', 'Media'),
+        ('high', 'Alta'),
+        ('critical', 'Crítica'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('open', 'Abierto'),
+        ('in_progress', 'En Progreso'),
+        ('pending_review', 'Pendiente de Revisión'),
+        ('resolved', 'Resuelto'),
+        ('closed', 'Cerrado'),
+        ('rejected', 'Rechazado'),
+    ]
+    
+    # Campos principales
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título',
+        help_text='Título descriptivo de la queja o sugerencia'
+    )
+    description = models.TextField(
+        verbose_name='Descripción',
+        help_text='Descripción detallada del problema o sugerencia'
+    )
+    type = models.CharField(
+        max_length=20,
+        choices=TYPE_CHOICES,
+        default='complaint',
+        verbose_name='Tipo',
+        help_text='Tipo de reporte: queja, sugerencia, etc.'
+    )
+    priority = models.CharField(
+        max_length=10,
+        choices=PRIORITY_CHOICES,
+        default='medium',
+        verbose_name='Prioridad',
+        help_text='Nivel de prioridad del reporte'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='open',
+        verbose_name='Estado',
+        help_text='Estado actual del reporte'
+    )
+    
+    # Relaciones
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.CASCADE,
+        related_name='qa_complaints',
+        verbose_name='Empresa',
+        help_text='Empresa asociada a esta queja o sugerencia'
+    )
+    reported_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='reported_complaints',
+        verbose_name='Reportado por',
+        help_text='Usuario que reportó la queja o sugerencia'
+    )
+    assigned_to = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assigned_complaints',
+        verbose_name='Asignado a',
+        help_text='Usuario responsable de resolver la queja'
+    )
+    
+    # Campos adicionales
+    contact_email = models.EmailField(
+        blank=True,
+        verbose_name='Email de contacto',
+        help_text='Email del cliente o usuario que reporta (opcional)'
+    )
+    contact_phone = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name='Teléfono de contacto',
+        help_text='Teléfono del cliente o usuario que reporta (opcional)'
+    )
+    
+    # Campos de seguimiento
+    resolution = models.TextField(
+        blank=True,
+        verbose_name='Resolución',
+        help_text='Descripción de cómo se resolvió la queja o implementó la sugerencia'
+    )
+    resolution_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de resolución'
+    )
+    resolved_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='resolved_complaints',
+        verbose_name='Resuelto por',
+        help_text='Usuario que resolvió la queja'
+    )
+    
+    # Campos de auditoría
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    # Campos de archivo
+    attachment = models.FileField(
+        upload_to='qa_complaints/%Y/%m/',
+        blank=True,
+        null=True,
+        verbose_name='Archivo adjunto',
+        help_text='Imagen, documento o archivo relacionado con la queja'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Queja/Sugerencia QA'
+        verbose_name_plural = 'Quejas/Sugerencias QA'
+    
+    def __str__(self):
+        return f"{self.get_type_display()}: {self.title} ({self.company.name})"
+    
+    def get_status_color(self):
+        """Retorna el color Bootstrap para el estado"""
+        colors = {
+            'open': 'danger',
+            'in_progress': 'warning',
+            'pending_review': 'info',
+            'resolved': 'success',
+            'closed': 'secondary',
+            'rejected': 'dark',
+        }
+        return colors.get(self.status, 'secondary')
+    
+    def get_priority_color(self):
+        """Retorna el color Bootstrap para la prioridad"""
+        colors = {
+            'low': 'success',
+            'medium': 'warning',
+            'high': 'danger',
+            'critical': 'dark',
+        }
+        return colors.get(self.priority, 'secondary')
+    
+    def get_type_icon(self):
+        """Retorna el ícono Bootstrap para el tipo"""
+        icons = {
+            'complaint': 'exclamation-triangle',
+            'suggestion': 'lightbulb',
+            'feedback': 'chat-dots',
+            'improvement': 'arrow-up-circle',
+            'quality_issue': 'bug',
+        }
+        return icons.get(self.type, 'file-text')
+    
+    def is_overdue(self):
+        """Verifica si la queja está vencida (más de 7 días sin resolver)"""
+        if self.status in ['resolved', 'closed']:
+            return False
+        
+        from datetime import timedelta
+        overdue_date = self.created_at + timedelta(days=7)
+        return timezone.now() > overdue_date
+    
+    def get_age_days(self):
+        """Retorna la antigüedad en días"""
+        return (timezone.now() - self.created_at).days
+    
+    def can_edit(self, user):
+        """Verifica si un usuario puede editar esta queja"""
+        from .utils import is_agent
+        return (
+            user.is_staff or 
+            user.is_superuser or 
+            user == self.reported_by or 
+            user == self.assigned_to or
+            is_agent(user)
+        )
+    
+    def can_resolve(self, user):
+        """Verifica si un usuario puede resolver esta queja"""
+        from .utils import is_agent
+        return (
+            user.is_staff or 
+            user.is_superuser or 
+            user == self.assigned_to or
+            is_agent(user)
+        )
+    
+    def resolve(self, resolution_text, resolved_by):
+        """Marca la queja como resuelta"""
+        self.status = 'resolved'
+        self.resolution = resolution_text
+        self.resolution_date = timezone.now()
+        self.resolved_by = resolved_by
+        if not self.assigned_to:
+            self.assigned_to = resolved_by
+        self.save()
+    
+    def assign_to(self, user):
+        """Asigna la queja a un usuario"""
+        self.assigned_to = user
+        if self.status == 'open':
+            self.status = 'in_progress'
+        self.save()
+
+
+class QAComplaintComment(models.Model):
+    """Modelo para comentarios en quejas y sugerencias QA"""
+    
+    complaint = models.ForeignKey(
+        QAComplaint,
+        on_delete=models.CASCADE,
+        related_name='comments',
+        verbose_name='Queja/Sugerencia'
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Autor'
+    )
+    content = models.TextField(
+        verbose_name='Comentario',
+        help_text='Contenido del comentario o nota'
+    )
+    is_internal = models.BooleanField(
+        default=False,
+        verbose_name='Comentario interno',
+        help_text='Marca si es un comentario interno (no visible para el cliente)'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    
+    class Meta:
+        ordering = ['created_at']
+        verbose_name = 'Comentario QA'
+        verbose_name_plural = 'Comentarios QA'
+    
+    def __str__(self):
+        return f"Comentario de {self.author.username} en {self.complaint.title[:50]}"

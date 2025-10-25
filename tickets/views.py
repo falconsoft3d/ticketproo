@@ -290,12 +290,21 @@ def ticket_list_view(request):
     priority_filter = request.GET.get('priority')
     search = request.GET.get('search')
     assigned_filter = request.GET.get('assigned_to')  # Nuevo filtro para agentes
+    company_filter = request.GET.get('company')  # Nuevo filtro por empresa
     
     if status_filter:
         tickets = tickets.filter(status=status_filter)
     
     if priority_filter:
         tickets = tickets.filter(priority=priority_filter)
+    
+    if company_filter:
+        try:
+            from .models import Company
+            company = Company.objects.get(pk=company_filter)
+            tickets = tickets.filter(company=company)
+        except (Company.DoesNotExist, ValueError):
+            pass
     
     if search:
         tickets = tickets.filter(
@@ -315,14 +324,20 @@ def ticket_list_view(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
+    # Obtener todas las empresas para el filtro
+    from .models import Company
+    companies = Company.objects.all().order_by('name')
+    
     context = {
         'page_obj': page_obj,
         'status_filter': status_filter,
         'priority_filter': priority_filter,
         'search': search,
         'assigned_filter': assigned_filter,
+        'company_filter': company_filter,
         'status_choices': Ticket.STATUS_CHOICES,
         'priority_choices': Ticket.PRIORITY_CHOICES,
+        'companies': companies,
         'is_agent': is_agent(request.user),
         'user_role': get_user_role(request.user),
     }
@@ -363,12 +378,21 @@ def ticket_export_excel(request):
     priority_filter = request.GET.get('priority')
     search = request.GET.get('search')
     assigned_filter = request.GET.get('assigned_to')
+    company_filter = request.GET.get('company')
     
     if status_filter:
         tickets = tickets.filter(status=status_filter)
     
     if priority_filter:
         tickets = tickets.filter(priority=priority_filter)
+    
+    if company_filter:
+        try:
+            from .models import Company
+            company = Company.objects.get(pk=company_filter)
+            tickets = tickets.filter(company=company)
+        except (Company.DoesNotExist, ValueError):
+            pass
     
     if search:
         tickets = tickets.filter(
@@ -25644,3 +25668,2584 @@ def internal_agreement_sign(request, pk):
     
     # Si no es POST, redirigir al detalle
     return redirect('internal_agreement_detail', pk=pk)
+
+
+@login_required
+def ticket_print_preview(request, ticket_id):
+    """Vista para obtener vista previa de ticket para impresión"""
+    from django.http import JsonResponse
+    from .models import Ticket
+    
+    try:
+        ticket = get_object_or_404(Ticket, id=ticket_id)
+        
+        # Verificar permisos - solo puede ver tickets asignados a él o que ha creado
+        if not (ticket.assigned_to == request.user or ticket.created_by == request.user or request.user.is_staff):
+            return JsonResponse({
+                'success': False,
+                'message': 'No tienes permisos para ver este ticket'
+            })
+        
+        # Preparar datos del ticket
+        ticket_data = {
+            'title': ticket.title,
+            'created_at': ticket.created_at.strftime('%d/%m/%Y %H:%M'),
+            'created_by': ticket.created_by.get_full_name() or ticket.created_by.username,
+            'status': ticket.get_status_display(),
+            'category': ticket.category.name if ticket.category else 'Sin categoría',
+        }
+        
+        return JsonResponse({
+            'success': True,
+            'ticket': ticket_data
+        })
+        
+    except Ticket.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Ticket no encontrado'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': 'Error al cargar el ticket'
+        })
+
+
+@login_required
+def ticket_print(request, ticket_id):
+    """Vista para imprimir ticket con campos específicos"""
+    from .models import Ticket
+    
+    try:
+        ticket = get_object_or_404(Ticket, id=ticket_id)
+        
+        # Verificar permisos - solo puede imprimir tickets asignados a él o que ha creado
+        if not (ticket.assigned_to == request.user or ticket.created_by == request.user or request.user.is_staff):
+            messages.error(request, 'No tienes permisos para imprimir este ticket.')
+            return redirect('employee_dashboard')
+        
+        context = {
+            'ticket': ticket,
+        }
+        
+        return render(request, 'tickets/ticket_print.html', context)
+        
+    except Ticket.DoesNotExist:
+        messages.error(request, 'Ticket no encontrado.')
+        return redirect('employee_dashboard')
+    except Exception as e:
+        messages.error(request, 'Error al cargar el ticket para impresión.')
+        return redirect('employee_dashboard')
+
+
+@login_required
+def ticket_print_pdf(request, pk):
+    """Vista para generar PDF del ticket"""
+    from django.http import HttpResponse
+    from reportlab.lib.pagesizes import A4
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    from reportlab.lib.colors import Color, black, white, blue
+    from reportlab.lib import colors
+    from io import BytesIO
+    from .models import Ticket
+    import datetime
+    
+    try:
+        ticket = get_object_or_404(Ticket, pk=pk)
+        
+        # Verificar permisos - solo puede generar PDF de tickets asignados a él o que ha creado
+        if not (ticket.assigned_to == request.user or ticket.created_by == request.user or request.user.is_staff):
+            messages.error(request, 'No tienes permisos para generar PDF de este ticket.')
+            return redirect('ticket_detail', pk=pk)
+        
+        # Crear el objeto HttpResponse con el tipo de contenido PDF
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="ticket_{ticket.id}.pdf"'
+        
+        # Crear el buffer
+        buffer = BytesIO()
+        
+        # Crear el documento PDF
+        doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=72, leftMargin=72, 
+                              topMargin=72, bottomMargin=72)
+        
+        # Contenedor para los elementos del PDF
+        story = []
+        
+        # Obtener estilos
+        styles = getSampleStyleSheet()
+        
+        # Crear estilos personalizados
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=24,
+            spaceAfter=30,
+            textColor=colors.black,
+            alignment=1  # Centrado
+        )
+        
+        header_style = ParagraphStyle(
+            'CustomHeader',
+            parent=styles['Heading2'],
+            fontSize=14,
+            spaceBefore=20,
+            spaceAfter=10,
+            textColor=colors.black
+        )
+        
+        normal_style = ParagraphStyle(
+            'CustomNormal',
+            parent=styles['Normal'],
+            fontSize=11,
+            spaceAfter=10
+        )
+        
+        # Título del documento
+        story.append(Paragraph(f"TICKET #{ticket.id}", title_style))
+        story.append(Spacer(1, 20))
+        
+        # Información básica del ticket en tabla
+        data = [
+            ['Campo', 'Información'],
+            ['Título', ticket.title],
+            ['Fecha de Creación', ticket.created_at.strftime('%d/%m/%Y %H:%M')],
+            ['Creado por', ticket.created_by.get_full_name() or ticket.created_by.username],
+            ['Estado', ticket.get_status_display()],
+            ['Categoría', ticket.category.name if ticket.category else 'Sin categoría'],
+            ['Asignado a', ticket.assigned_to.get_full_name() if ticket.assigned_to else 'Sin asignar'],
+            ['Prioridad', ticket.get_priority_display()],
+            ['Tipo', 'Error' if ticket.ticket_type == 'error' else 'Desarrollo']
+        ]
+        
+        # Crear la tabla
+        table = Table(data, colWidths=[2*inch, 4*inch])
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (1, 0), colors.black),
+            ('TEXTCOLOR', (0, 0), (1, 0), colors.white),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('FONTNAME', (0, 1), (0, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 1), (-1, -1), 10),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ]))
+        
+        story.append(table)
+        story.append(Spacer(1, 30))
+        
+        # Descripción del ticket
+        story.append(Paragraph("Descripción del Ticket", header_style))
+        description_text = ticket.description if ticket.description else "Sin descripción disponible."
+        # Convertir saltos de línea a <br/> para que Paragraph los respete
+        # Paragraph entiende etiquetas HTML limitadas, incluyendo <br/>
+        description_html = (description_text.replace('\r\n', '\n')
+                                             .replace('\r', '\n')
+                                             .replace('\n', '<br/>'))
+        story.append(Paragraph(description_html, normal_style))
+        story.append(Spacer(1, 20))
+        
+        # Información adicional si existe
+        if hasattr(ticket, 'contact') and ticket.contact:
+            story.append(Paragraph("Contacto Relacionado", header_style))
+            story.append(Paragraph(f"{ticket.contact.name} - {ticket.contact.email}", normal_style))
+            story.append(Spacer(1, 20))
+        
+        # Pie de página
+        story.append(Spacer(1, 30))
+        footer_style = ParagraphStyle(
+            'Footer',
+            parent=styles['Normal'],
+            fontSize=9,
+            textColor=colors.grey,
+            alignment=1  # Centrado
+        )
+        
+        now = datetime.datetime.now()
+        footer_text = f"Documento generado el {now.strftime('%d/%m/%Y')} a las {now.strftime('%H:%M')} | Usuario: {request.user.get_full_name() or request.user.username} | Sistema TicketPro"
+        story.append(Paragraph(footer_text, footer_style))
+        
+        # Construir el PDF
+        doc.build(story)
+        
+        # Obtener el valor del buffer y enviarlo en la respuesta
+        pdf = buffer.getvalue()
+        buffer.close()
+        response.write(pdf)
+        
+        return response
+        
+    except Ticket.DoesNotExist:
+        messages.error(request, 'Ticket no encontrado.')
+        return redirect('ticket_list')
+    except Exception as e:
+        messages.error(request, f'Error al generar el PDF: {str(e)}')
+        return redirect('ticket_detail', pk=pk)
+
+
+@login_required
+def tickets_export_pdf(request):
+    """Vista para exportar múltiples tickets a PDF"""
+    if request.method != 'POST':
+        messages.error(request, 'Método no permitido.')
+        return redirect('ticket_list')
+    
+    from django.http import HttpResponse
+    from reportlab.lib.pagesizes import A4
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    from reportlab.lib.colors import Color, black, white
+    from reportlab.lib import colors
+    from io import BytesIO
+    from .models import Ticket
+    import datetime
+    
+    try:
+        ticket_ids = request.POST.getlist('ticket_ids')
+        
+        if not ticket_ids:
+            messages.error(request, 'No se seleccionaron tickets para exportar.')
+            return redirect('ticket_list')
+        
+        # Obtener los tickets con verificación de permisos
+        tickets = []
+        for ticket_id in ticket_ids:
+            try:
+                ticket = Ticket.objects.get(pk=ticket_id)
+                # Verificar permisos - solo puede exportar tickets asignados a él o que ha creado
+                if (ticket.assigned_to == request.user or ticket.created_by == request.user or request.user.is_staff):
+                    tickets.append(ticket)
+            except Ticket.DoesNotExist:
+                continue
+        
+        if not tickets:
+            messages.error(request, 'No tienes permisos para exportar ninguno de los tickets seleccionados.')
+            return redirect('ticket_list')
+        
+        # Crear el objeto HttpResponse con el tipo de contenido PDF
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="tickets_export_{datetime.datetime.now().strftime("%Y%m%d_%H%M")}.pdf"'
+        
+        # Crear el buffer
+        buffer = BytesIO()
+        
+        # Crear el documento PDF
+        doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=72, leftMargin=72, 
+                              topMargin=72, bottomMargin=72)
+        
+        # Contenedor para los elementos del PDF
+        story = []
+        
+        # Obtener estilos
+        styles = getSampleStyleSheet()
+        
+        # Crear estilos personalizados
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=20,
+            spaceAfter=30,
+            textColor=colors.black,
+            alignment=1  # Centrado
+        )
+        
+        ticket_title_style = ParagraphStyle(
+            'TicketTitle',
+            parent=styles['Heading1'],
+            fontSize=16,
+            spaceAfter=20,
+            textColor=colors.black,
+            alignment=1  # Centrado
+        )
+        
+        header_style = ParagraphStyle(
+            'CustomHeader',
+            parent=styles['Heading2'],
+            fontSize=12,
+            spaceBefore=15,
+            spaceAfter=8,
+            textColor=colors.black
+        )
+        
+        normal_style = ParagraphStyle(
+            'CustomNormal',
+            parent=styles['Normal'],
+            fontSize=10,
+            spaceAfter=8
+        )
+        
+        # Título principal del documento
+        story.append(Paragraph(f"EXPORTACIÓN DE TICKETS", title_style))
+        story.append(Paragraph(f"Total de tickets: {len(tickets)}", normal_style))
+        story.append(Spacer(1, 20))
+        
+        # Procesar cada ticket
+        for i, ticket in enumerate(tickets):
+            # Título del ticket
+            story.append(Paragraph(f"TICKET #{ticket.id}", ticket_title_style))
+            story.append(Spacer(1, 10))
+            
+            # Información básica del ticket en tabla
+            data = [
+                ['Campo', 'Información'],
+                ['Título', ticket.title],
+                ['Fecha de Creación', ticket.created_at.strftime('%d/%m/%Y %H:%M')],
+                ['Creado por', ticket.created_by.get_full_name() or ticket.created_by.username],
+                ['Estado', ticket.get_status_display()],
+                ['Categoría', ticket.category.name if ticket.category else 'Sin categoría'],
+                ['Asignado a', ticket.assigned_to.get_full_name() if ticket.assigned_to else 'Sin asignar'],
+                ['Prioridad', ticket.get_priority_display()],
+                ['Tipo', 'Error' if ticket.ticket_type == 'error' else 'Desarrollo']
+            ]
+            
+            # Crear la tabla
+            table = Table(data, colWidths=[1.5*inch, 4.5*inch])
+            table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (1, 0), colors.black),
+                ('TEXTCOLOR', (0, 0), (1, 0), colors.white),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('FONTNAME', (0, 1), (0, -1), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 1), (-1, -1), 9),
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ]))
+            
+            story.append(table)
+            story.append(Spacer(1, 15))
+            
+            # Descripción del ticket
+            story.append(Paragraph("Descripción del Ticket", header_style))
+            description_text = ticket.description if ticket.description else "Sin descripción disponible."
+            # Convertir saltos de línea a <br/> para que Paragraph los respete
+            description_html = (description_text.replace('\r\n', '\n')
+                                                 .replace('\r', '\n')
+                                                 .replace('\n', '<br/>'))
+            story.append(Paragraph(description_html, normal_style))
+            
+            # Agregar separador entre tickets (excepto el último)
+            if i < len(tickets) - 1:
+                story.append(PageBreak())
+        
+        # Pie de página
+        story.append(Spacer(1, 30))
+        footer_style = ParagraphStyle(
+            'Footer',
+            parent=styles['Normal'],
+            fontSize=8,
+            textColor=colors.grey,
+            alignment=1  # Centrado
+        )
+        
+        now = datetime.datetime.now()
+        footer_text = f"Documento generado el {now.strftime('%d/%m/%Y')} a las {now.strftime('%H:%M')} | Usuario: {request.user.get_full_name() or request.user.username} | Sistema TicketPro"
+        story.append(Paragraph(footer_text, footer_style))
+        
+        # Construir el PDF
+        doc.build(story)
+        
+        # Obtener el valor del buffer y enviarlo en la respuesta
+        pdf = buffer.getvalue()
+        buffer.close()
+        response.write(pdf)
+        
+        return response
+        
+    except Exception as e:
+        messages.error(request, f'Error al generar el PDF: {str(e)}')
+        return redirect('ticket_list')
+
+
+@login_required
+def get_filtered_ticket_ids(request):
+    """Vista AJAX para obtener todos los IDs de tickets que coinciden con el filtro actual"""
+    from django.http import JsonResponse
+    from django.db import models
+    from django.contrib.auth.models import User
+    from .models import Ticket
+    
+    try:
+        # Obtener los mismos filtros que usa ticket_list_view
+        search = request.GET.get('search', '')
+        status_filter = request.GET.get('status', '')
+        priority_filter = request.GET.get('priority', '')
+        assigned_filter = request.GET.get('assigned_to', '')
+        company_filter = request.GET.get('company', '')
+        
+        # Aplicar los mismos filtros de la vista principal
+        if request.user.groups.filter(name='Agentes').exists():
+            # Los agentes ven todos los tickets
+            tickets = Ticket.objects.all()
+        else:
+            # Los usuarios normales ven solo sus tickets y los de su empresa
+            tickets = Ticket.objects.filter(
+                models.Q(created_by=request.user) | 
+                models.Q(assigned_to=request.user) |
+                (models.Q(company=request.user.profile.company) if hasattr(request.user, 'profile') and request.user.profile.company else models.Q(pk__in=[]))
+            )
+        
+        # Aplicar filtros de búsqueda
+        if search:
+            tickets = tickets.filter(
+                models.Q(title__icontains=search) |
+                models.Q(description__icontains=search) |
+                models.Q(ticket_number__icontains=search)
+            )
+        
+        if status_filter:
+            tickets = tickets.filter(status=status_filter)
+        
+        if priority_filter:
+            tickets = tickets.filter(priority=priority_filter)
+        
+        if company_filter:
+            try:
+                from .models import Company
+                company = Company.objects.get(pk=company_filter)
+                tickets = tickets.filter(company=company)
+            except (Company.DoesNotExist, ValueError):
+                pass
+        
+        if assigned_filter:
+            if assigned_filter == 'unassigned':
+                tickets = tickets.filter(assigned_to__isnull=True)
+            elif assigned_filter == 'me':
+                tickets = tickets.filter(assigned_to=request.user)
+            else:
+                try:
+                    assigned_user = User.objects.get(pk=assigned_filter)
+                    tickets = tickets.filter(assigned_to=assigned_user)
+                except (User.DoesNotExist, ValueError):
+                    pass
+        
+        # Obtener solo los IDs, ordenados igual que en la vista principal
+        ticket_ids = list(tickets.order_by('-created_at').values_list('pk', flat=True))
+        
+        # Aplicar validación de permisos (solo tickets que puede exportar)
+        allowed_ticket_ids = []
+        for ticket_id in ticket_ids:
+            try:
+                ticket = Ticket.objects.get(pk=ticket_id)
+                if (ticket.assigned_to == request.user or ticket.created_by == request.user or request.user.is_staff):
+                    allowed_ticket_ids.append(ticket_id)
+            except Ticket.DoesNotExist:
+                continue
+        
+        return JsonResponse({
+            'success': True,
+            'ticket_ids': allowed_ticket_ids,
+            'total_count': len(allowed_ticket_ids)
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error al obtener tickets: {str(e)}'
+        })
+
+
+# ===== VISTAS DE CAPACITACIÓN =====
+
+@login_required
+def training_plan_list(request):
+    """Vista para listar todos los planes de capacitación"""
+    from .models import TrainingPlan, EmployeeTrainingProgress, EmployeeLinkProgress
+    
+    plans = TrainingPlan.objects.filter(is_active=True).prefetch_related('links')
+    
+    # Agregar progreso del usuario actual para cada plan
+    for plan in plans:
+        # Calcular progreso de forma directa (mismo método que en detail)
+        total_links = plan.get_total_links()
+        completed_links_count = EmployeeLinkProgress.objects.filter(
+            employee=request.user, 
+            link__plan=plan
+        ).count()
+        
+        if total_links > 0:
+            plan.user_progress = (completed_links_count / total_links) * 100
+        else:
+            plan.user_progress = 0
+            
+        plan.is_completed = plan.is_completed_by_user(request.user)
+    
+    context = {
+        'plans': plans,
+        'page_title': 'Planes de Capacitación',
+    }
+    
+    return render(request, 'tickets/training_plan_list.html', context)
+
+
+@login_required
+def training_plan_detail(request, pk):
+    """Vista para ver el detalle de un plan de capacitación"""
+    from .models import TrainingPlan, TrainingLink, EmployeeLinkProgress, EmployeeTrainingProgress
+    
+    plan = get_object_or_404(TrainingPlan, pk=pk, is_active=True)
+    links = plan.links.all()
+    
+    # Obtener o crear progreso del plan para el usuario
+    training_progress, created = EmployeeTrainingProgress.objects.get_or_create(
+        employee=request.user,
+        plan=plan
+    )
+    
+    # Obtener progreso del usuario para cada enlace
+    for link in links:
+        link.is_completed = EmployeeLinkProgress.objects.filter(
+            employee=request.user, 
+            link=link
+        ).exists()
+    
+    # Estadísticas del plan
+    total_links = plan.get_total_links()
+    
+    # Calcular progreso de forma directa
+    completed_links_count = EmployeeLinkProgress.objects.filter(
+        employee=request.user, 
+        link__plan=plan
+    ).count()
+    
+    if total_links > 0:
+        user_progress_percent = (completed_links_count / total_links) * 100
+    else:
+        user_progress_percent = 0
+    
+    is_completed = plan.is_completed_by_user(request.user)
+    
+    context = {
+        'plan': plan,
+        'links': links,
+        'total_links': total_links,
+        'user_progress_percent': user_progress_percent,
+        'is_completed': is_completed,
+        'page_title': f'Plan de Capacitación #{plan.sequence}',
+        'debug_completed_count': completed_links_count,  # Para debug
+    }
+    
+    return render(request, 'tickets/training_plan_detail.html', context)
+
+
+@login_required
+def training_link_complete(request, pk):
+    """Vista para marcar un enlace como completado"""
+    from .models import TrainingLink, EmployeeLinkProgress, EmployeeTrainingProgress
+    
+    if request.method == 'POST':
+        link = get_object_or_404(TrainingLink, pk=pk)
+        notes = request.POST.get('notes', '').strip()
+        
+        # Obtener o crear progreso del plan
+        training_progress, created = EmployeeTrainingProgress.objects.get_or_create(
+            employee=request.user,
+            plan=link.plan
+        )
+        
+        # Crear progreso del enlace si no existe
+        link_progress, created = EmployeeLinkProgress.objects.get_or_create(
+            employee=request.user,
+            link=link,
+            training_progress=training_progress,
+            defaults={'notes': notes}
+        )
+        
+        if not created and notes:
+            link_progress.notes = notes
+        
+        messages.success(request, f'Enlace "{link.title}" marcado como completado.')
+        return redirect('training_plan_detail', pk=link.plan.pk)
+    
+    return redirect('training_plan_list')
+
+
+@login_required
+def training_link_uncomplete(request, pk):
+    """Vista para marcar un enlace como no completado"""
+    from .models import TrainingLink, EmployeeLinkProgress
+    
+    if request.method == 'POST':
+        link = get_object_or_404(TrainingLink, pk=pk)
+        
+        try:
+            progress = EmployeeLinkProgress.objects.get(employee=request.user, link=link)
+            progress.delete()
+            messages.info(request, f'Marcado como pendiente: {link.title}')
+        except EmployeeLinkProgress.DoesNotExist:
+            pass
+        
+        return redirect('training_plan_detail', pk=link.plan.pk)
+    
+    return redirect('training_plan_list')
+
+
+@login_required
+def my_training_progress(request):
+    """Vista para ver el progreso personal de capacitación"""
+    from .models import TrainingPlan, EmployeeTrainingProgress, EmployeeLinkProgress
+    
+    # Obtener todos los planes activos
+    plans = TrainingPlan.objects.filter(is_active=True).prefetch_related('links')
+    
+    progress_data = []
+    for plan in plans:
+        total_links = plan.get_total_links()
+        completed_links = EmployeeLinkProgress.objects.filter(
+            employee=request.user,
+            link__plan=plan
+        ).count()
+        
+        progress_percent = (completed_links / total_links * 100) if total_links > 0 else 0
+        
+        # Obtener o crear progreso del entrenamiento
+        training_progress, created = EmployeeTrainingProgress.objects.get_or_create(
+            employee=request.user,
+            plan=plan
+        )
+        
+        progress_data.append({
+            'plan': plan,
+            'total_links': total_links,
+            'completed_links': completed_links,
+            'pending_links': total_links - completed_links,
+            'progress_percent': progress_percent,
+            'is_completed': progress_percent == 100,
+            'training_progress': training_progress,
+        })
+    
+    # Calcular estadísticas generales
+    total_plans = len(progress_data)
+    completed_plans = sum(1 for data in progress_data if data['is_completed'])
+    in_progress_plans = sum(1 for data in progress_data if 0 < data['progress_percent'] < 100)
+    completion_rate = (completed_plans / total_plans * 100) if total_plans > 0 else 0
+    
+    context = {
+        'progress_data': progress_data,
+        'page_title': 'Mi Progreso de Capacitación',
+        'total_plans': total_plans,
+        'completed_plans': completed_plans,
+        'in_progress_plans': in_progress_plans,
+        'completion_rate': completion_rate,
+    }
+    
+    return render(request, 'tickets/my_training_progress.html', context)
+
+
+# Vistas administrativas (solo para Agentes)
+@login_required
+def training_plan_create(request):
+    """Vista para crear un nuevo plan de capacitación"""
+    from .models import TrainingPlan
+    
+    # Verificar permisos
+    if not (request.user.is_staff or (hasattr(request.user, 'groups') and 
+            request.user.groups.filter(name='Agentes').exists())):
+        messages.error(request, 'No tienes permisos para crear planes de capacitación.')
+        return redirect('training_plan_list')
+    
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        description = request.POST.get('description', '').strip()
+        
+        if title and description:
+            plan = TrainingPlan.objects.create(
+                title=title,
+                description=description,
+                created_by=request.user
+            )
+            messages.success(request, f'Plan de capacitación #{plan.sequence} creado exitosamente.')
+            return redirect('training_plan_detail', pk=plan.pk)
+        else:
+            messages.error(request, 'Título y descripción son requeridos.')
+    
+    context = {
+        'page_title': 'Crear Plan de Capacitación',
+    }
+    
+    return render(request, 'tickets/training_plan_form.html', context)
+
+
+@login_required
+def training_plan_edit(request, pk):
+    """Vista para editar un plan de capacitación"""
+    from .models import TrainingPlan
+    
+    # Verificar permisos
+    if not (request.user.is_staff or (hasattr(request.user, 'groups') and 
+            request.user.groups.filter(name='Agentes').exists())):
+        messages.error(request, 'No tienes permisos para editar planes de capacitación.')
+        return redirect('training_plan_list')
+    
+    plan = get_object_or_404(TrainingPlan, pk=pk)
+    
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        description = request.POST.get('description', '').strip()
+        is_active = request.POST.get('is_active') == 'on'
+        
+        if title and description:
+            plan.title = title
+            plan.description = description
+            plan.is_active = is_active
+            plan.save()
+            messages.success(request, f'Plan de capacitación #{plan.sequence} actualizado exitosamente.')
+            return redirect('training_plan_detail', pk=plan.pk)
+        else:
+            messages.error(request, 'Título y descripción son requeridos.')
+    
+    context = {
+        'plan': plan,
+        'page_title': f'Editar Plan #{plan.sequence}',
+    }
+    
+    return render(request, 'tickets/training_plan_form.html', context)
+
+
+@login_required
+def training_link_create(request, plan_pk):
+    """Vista para agregar un enlace a un plan de capacitación"""
+    from .models import TrainingPlan, TrainingLink
+    
+    # Verificar permisos
+    if not (request.user.is_staff or (hasattr(request.user, 'groups') and 
+            request.user.groups.filter(name='Agentes').exists())):
+        messages.error(request, 'No tienes permisos para gestionar enlaces de capacitación.')
+        return redirect('training_plan_list')
+    
+    plan = get_object_or_404(TrainingPlan, pk=plan_pk)
+    
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        url = request.POST.get('url', '').strip()
+        description = request.POST.get('description', '').strip()
+        is_required = request.POST.get('is_required') == 'on'
+        order = request.POST.get('order', 0)
+        estimated_hours = request.POST.get('estimated_hours', 1)
+        
+        try:
+            order = int(order)
+        except (ValueError, TypeError):
+            order = 0
+        
+        try:
+            estimated_hours = int(estimated_hours)
+        except (ValueError, TypeError):
+            estimated_hours = 1
+        
+        if title and url:
+            training_link = TrainingLink.objects.create(
+                plan=plan,
+                title=title,
+                url=url,
+                description=description,
+                is_required=is_required,
+                order=order,
+                estimated_hours=estimated_hours
+            )
+            messages.success(request, f'Enlace "{title}" agregado al plan exitosamente.')
+            return redirect('training_plan_detail', pk=plan.pk)
+        else:
+            messages.error(request, 'Título y URL son requeridos.')
+    
+    context = {
+        'plan': plan,
+        'page_title': f'Agregar URL al Plan #{plan.sequence}',
+    }
+    
+    return render(request, 'tickets/training_url_form.html', context)
+
+
+@login_required
+def training_link_edit(request, pk):
+    """Vista para editar un enlace de capacitación"""
+    from .models import TrainingLink
+    
+    # Verificar permisos
+    if not (request.user.is_staff or (hasattr(request.user, 'groups') and 
+            request.user.groups.filter(name='Agentes').exists())):
+        messages.error(request, 'No tienes permisos para editar enlaces de capacitación.')
+        return redirect('training_plan_list')
+    
+    training_link = get_object_or_404(TrainingLink, pk=pk)
+    
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        url = request.POST.get('url', '').strip()
+        description = request.POST.get('description', '').strip()
+        is_required = request.POST.get('is_required') == 'on'
+        order = request.POST.get('order', 0)
+        estimated_hours = request.POST.get('estimated_hours', 1)
+        
+        try:
+            order = int(order)
+        except (ValueError, TypeError):
+            order = training_link.order
+        
+        try:
+            estimated_hours = int(estimated_hours)
+        except (ValueError, TypeError):
+            estimated_hours = training_link.estimated_hours
+        
+        if title and url:
+            training_link.title = title
+            training_link.url = url
+            training_link.description = description
+            training_link.is_required = is_required
+            training_link.order = order
+            training_link.estimated_hours = estimated_hours
+            training_link.save()
+            messages.success(request, f'Enlace "{title}" actualizado exitosamente.')
+            return redirect('training_plan_detail', pk=training_link.plan.pk)
+        else:
+            messages.error(request, 'Título y URL son requeridos.')
+    
+    context = {
+        'training_link': training_link,
+        'plan': training_link.plan,
+        'page_title': f'Editar Enlace: {training_link.title}',
+    }
+    
+    return render(request, 'tickets/training_link_form.html', context)
+
+
+@login_required
+def training_link_delete(request, pk):
+    """Vista para eliminar un enlace de capacitación"""
+    from .models import TrainingLink
+    
+    # Verificar permisos
+    if not (request.user.is_staff or (hasattr(request.user, 'groups') and 
+            request.user.groups.filter(name='Agentes').exists())):
+        messages.error(request, 'No tienes permisos para eliminar enlaces de capacitación.')
+        return redirect('training_plan_list')
+    
+    training_link = get_object_or_404(TrainingLink, pk=pk)
+    plan_pk = training_link.plan.pk
+    
+    if request.method == 'POST':
+        title = training_link.title
+        training_link.delete()
+        messages.success(request, f'Enlace "{title}" eliminado exitosamente.')
+        return redirect('training_plan_detail', pk=plan_pk)
+    
+    context = {
+        'training_url': training_url,
+        'page_title': f'Eliminar URL: {training_url.title}',
+    }
+    
+    return render(request, 'tickets/training_url_delete.html', context)
+
+
+# ========== VISTAS DE RECOMENDACIONES IA ==========
+
+@login_required
+def ai_recommendation_list(request):
+    """Vista para listar todas las recomendaciones IA"""
+    from .models import AIRecommendation
+    
+    recommendations = AIRecommendation.objects.filter(is_active=True).order_by('-created_at')
+    
+    context = {
+        'recommendations': recommendations,
+        'page_title': 'Recomendaciones IA',
+    }
+    
+    return render(request, 'tickets/ai_recommendation_list.html', context)
+
+
+@login_required
+def ai_recommendation_create(request):
+    """Vista para crear una nueva recomendación IA"""
+    from .models import AIRecommendation
+    
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        context_text = request.POST.get('context_text')
+        
+        if title and context_text:
+            recommendation = AIRecommendation.objects.create(
+                title=title,
+                context_text=context_text,
+                created_by=request.user
+            )
+            messages.success(request, f'Recomendación "{title}" creada exitosamente.')
+            return redirect('ai_recommendation_list')
+        else:
+            messages.error(request, 'Por favor, completa todos los campos requeridos.')
+    
+    context = {
+        'page_title': 'Crear Recomendación IA',
+    }
+    
+    return render(request, 'tickets/ai_recommendation_form.html', context)
+
+
+@login_required
+def ai_recommendation_edit(request, pk):
+    """Vista para editar una recomendación IA"""
+    from .models import AIRecommendation
+    
+    try:
+        recommendation = AIRecommendation.objects.get(pk=pk)
+    except AIRecommendation.DoesNotExist:
+        messages.error(request, 'La recomendación solicitada no existe.')
+        return redirect('ai_recommendation_list')
+    
+    if request.method == 'POST':
+        recommendation.title = request.POST.get('title', recommendation.title)
+        recommendation.context_text = request.POST.get('context_text', recommendation.context_text)
+        recommendation.save()
+        
+        messages.success(request, f'Recomendación "{recommendation.title}" actualizada exitosamente.')
+        return redirect('ai_recommendation_list')
+    
+    context = {
+        'recommendation': recommendation,
+        'page_title': f'Editar Recomendación: {recommendation.title}',
+    }
+    
+    return render(request, 'tickets/ai_recommendation_form.html', context)
+
+
+@login_required
+def ai_recommendation_detail(request, pk):
+    """Vista para ver el detalle de una recomendación y usar la IA"""
+    from .models import AIRecommendation, AIRecommendationUsage
+    from .ai_utils import AIContentOptimizer
+    
+    try:
+        recommendation = AIRecommendation.objects.get(pk=pk)
+    except AIRecommendation.DoesNotExist:
+        messages.error(request, 'La recomendación solicitada no existe.')
+        return redirect('ai_recommendation_list')
+    
+    ai_response = None
+    client_case = ""
+    
+    if request.method == 'POST':
+        client_case = request.POST.get('client_case', '').strip()
+        
+        if client_case:
+            # Crear instancia del optimizador de IA
+            ai_optimizer = AIContentOptimizer()
+            
+            # Preparar el prompt para la IA
+            messages_for_ai = [
+                {
+                    "role": "system",
+                    "content": f"""Eres un asistente experto en comunicación empresarial y atención al cliente. 
+                    
+CONTEXTO BASE:
+{recommendation.context_text}
+
+Tu tarea es generar una respuesta profesional, políticamente correcta y empática para el caso del cliente que se te presente. 
+La respuesta debe ser:
+- Profesional y respetuosa
+- Empática con la situación del cliente
+- Clara y concisa
+- Orientada a soluciones
+- Políticamente correcta
+- Apropiada para comunicación por email
+
+Responde únicamente con la sugerencia de respuesta, sin explicaciones adicionales."""
+                },
+                {
+                    "role": "user", 
+                    "content": f"Caso del cliente: {client_case}"
+                }
+            ]
+            
+            # Hacer la petición a la IA
+            result = ai_optimizer._make_ai_request(messages_for_ai, max_tokens=800, temperature=0.7)
+            
+            if 'error' not in result:
+                try:
+                    ai_response = result['choices'][0]['message']['content'].strip()
+                    
+                    # Guardar el uso de la recomendación
+                    AIRecommendationUsage.objects.create(
+                        recommendation=recommendation,
+                        user=request.user,
+                        client_case=client_case,
+                        ai_response=ai_response
+                    )
+                    
+                    messages.success(request, 'Respuesta generada exitosamente.')
+                    
+                except (KeyError, IndexError) as e:
+                    messages.error(request, 'Error al procesar la respuesta de la IA.')
+                    ai_response = "Error al generar la respuesta. Por favor, intenta nuevamente."
+            else:
+                messages.error(request, f'Error de IA: {result["error"]}')
+                ai_response = "Error al conectar con el servicio de IA. Verifica la configuración."
+        else:
+            messages.error(request, 'Por favor, ingresa el caso del cliente.')
+    
+    # Obtener el historial de usos recientes
+    recent_usage = AIRecommendationUsage.objects.filter(
+        recommendation=recommendation
+    ).order_by('-created_at')[:5]
+    
+    context = {
+        'recommendation': recommendation,
+        'ai_response': ai_response,
+        'client_case': client_case,
+        'recent_usage': recent_usage,
+        'page_title': f'Asistente IA: {recommendation.title}',
+    }
+    
+    return render(request, 'tickets/ai_recommendation_detail.html', context)
+
+
+@login_required
+def ai_recommendation_delete(request, pk):
+    """Vista para eliminar una recomendación IA"""
+    from .models import AIRecommendation
+    
+    try:
+        recommendation = AIRecommendation.objects.get(pk=pk)
+    except AIRecommendation.DoesNotExist:
+        messages.error(request, 'La recomendación solicitada no existe.')
+        return redirect('ai_recommendation_list')
+    
+    if request.method == 'POST':
+        title = recommendation.title
+        recommendation.delete()
+        messages.success(request, f'Recomendación "{title}" eliminada exitosamente.')
+        return redirect('ai_recommendation_list')
+    
+    context = {
+        'recommendation': recommendation,
+        'page_title': f'Eliminar Recomendación: {recommendation.title}',
+    }
+    
+    return render(request, 'tickets/ai_recommendation_delete.html', context)
+
+
+# ========== VISTAS DE AUSENCIAS DE EMPLEADOS ==========
+
+@login_required
+def employee_absence_list(request):
+    """Vista para listar ausencias de empleados"""
+    from .models import EmployeeAbsence, AbsenceType
+    from django.db.models import Q
+    from datetime import datetime, timedelta
+    from django.utils import timezone
+    
+    # Filtros
+    employee_filter = request.GET.get('employee', '')
+    type_filter = request.GET.get('type', '')
+    status_filter = request.GET.get('status', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    
+    # Obtener todas las ausencias
+    absences = EmployeeAbsence.objects.select_related('employee', 'absence_type', 'approved_by')
+    
+    # Aplicar filtros
+    if employee_filter:
+        absences = absences.filter(
+            Q(employee__username__icontains=employee_filter) |
+            Q(employee__first_name__icontains=employee_filter) |
+            Q(employee__last_name__icontains=employee_filter)
+        )
+    
+    if type_filter:
+        absences = absences.filter(absence_type_id=type_filter)
+    
+    if status_filter:
+        absences = absences.filter(status=status_filter)
+    
+    if date_from:
+        try:
+            date_from_obj = datetime.strptime(date_from, '%Y-%m-%d').date()
+            absences = absences.filter(start_date__gte=date_from_obj)
+        except ValueError:
+            pass
+    
+    if date_to:
+        try:
+            date_to_obj = datetime.strptime(date_to, '%Y-%m-%d').date()
+            absences = absences.filter(end_date__lte=date_to_obj)
+        except ValueError:
+            pass
+    
+    # Obtener tipos de ausencias para el filtro
+    absence_types = AbsenceType.objects.filter(is_active=True)
+    
+    # Datos adicionales para reportes PDF
+    from django.contrib.auth.models import User
+    all_employees = User.objects.filter(is_active=True).order_by('first_name', 'last_name', 'username')
+    
+    current_year = timezone.now().year
+    current_month = timezone.now().month
+    years_range = range(current_year - 2, current_year + 1)  # Últimos 2 años y año actual
+    
+    # Estadísticas rápidas
+    today = timezone.now().date()
+    current_absences = EmployeeAbsence.objects.filter(
+        start_date__lte=today,
+        end_date__gte=today,
+        status='approved'
+    ).count()
+    
+    pending_approvals = EmployeeAbsence.objects.filter(status='pending').count()
+    
+    context = {
+        'absences': absences,
+        'absence_types': absence_types,
+        'all_employees': all_employees,
+        'current_year': current_year,
+        'current_month': current_month,
+        'years_range': years_range,
+        'current_absences': current_absences,
+        'pending_approvals': pending_approvals,
+        'employee_filter': employee_filter,
+        'type_filter': type_filter,
+        'status_filter': status_filter,
+        'date_from': date_from,
+        'date_to': date_to,
+        'page_title': 'Gestión de Ausencias',
+    }
+    
+    return render(request, 'tickets/employee_absence_list.html', context)
+
+
+@login_required
+def employee_absence_create(request):
+    """Vista para crear una nueva ausencia"""
+    from .models import EmployeeAbsence, AbsenceType
+    from django.contrib.auth.models import User
+    
+    if request.method == 'POST':
+        employee_id = request.POST.get('employee')
+        absence_type_id = request.POST.get('absence_type')
+        start_date = request.POST.get('start_date')
+        end_date = request.POST.get('end_date')
+        reason = request.POST.get('reason')
+        lost_hours = request.POST.get('lost_hours', 0)
+        documentation_file = request.FILES.get('documentation_file')
+        
+        try:
+            # Convertir horas perdidas
+            try:
+                lost_hours = float(lost_hours) if lost_hours else 0.0
+            except ValueError:
+                lost_hours = 0.0
+            
+            employee = User.objects.get(id=employee_id)
+            absence_type = AbsenceType.objects.get(id=absence_type_id)
+            
+            absence = EmployeeAbsence.objects.create(
+                employee=employee,
+                absence_type=absence_type,
+                start_date=start_date,
+                end_date=end_date,
+                reason=reason,
+                lost_hours=lost_hours,
+                documentation_file=documentation_file
+            )
+            
+            messages.success(request, f'Ausencia registrada para {employee.get_full_name() or employee.username}.')
+            return redirect('employee_absence_list')
+            
+        except (User.DoesNotExist, AbsenceType.DoesNotExist) as e:
+            messages.error(request, 'Error en los datos seleccionados.')
+        except Exception as e:
+            messages.error(request, f'Error al crear la ausencia: {str(e)}')
+    
+    # Obtener empleados y tipos de ausencias
+    employees = User.objects.filter(is_active=True).order_by('first_name', 'last_name', 'username')
+    absence_types = AbsenceType.objects.filter(is_active=True)
+    
+    context = {
+        'employees': employees,
+        'absence_types': absence_types,
+        'page_title': 'Registrar Nueva Ausencia',
+    }
+    
+    return render(request, 'tickets/employee_absence_form.html', context)
+
+
+@login_required
+def employee_absence_detail(request, pk):
+    """Vista para ver el detalle de una ausencia"""
+    from .models import EmployeeAbsence
+    
+    try:
+        absence = EmployeeAbsence.objects.select_related(
+            'employee', 'absence_type', 'approved_by'
+        ).get(pk=pk)
+    except EmployeeAbsence.DoesNotExist:
+        messages.error(request, 'La ausencia solicitada no existe.')
+        return redirect('employee_absence_list')
+    
+    context = {
+        'absence': absence,
+        'page_title': f'Ausencia de {absence.employee.get_full_name() or absence.employee.username}',
+    }
+    
+    return render(request, 'tickets/employee_absence_detail.html', context)
+
+
+@login_required
+def employee_absence_edit(request, pk):
+    """Vista para editar una ausencia"""
+    from .models import EmployeeAbsence, AbsenceType
+    from django.contrib.auth.models import User
+    
+    try:
+        absence = EmployeeAbsence.objects.get(pk=pk)
+    except EmployeeAbsence.DoesNotExist:
+        messages.error(request, 'La ausencia solicitada no existe.')
+        return redirect('employee_absence_list')
+    
+    if request.method == 'POST':
+        absence.employee_id = request.POST.get('employee')
+        absence.absence_type_id = request.POST.get('absence_type')
+        absence.start_date = request.POST.get('start_date')
+        absence.end_date = request.POST.get('end_date')
+        absence.reason = request.POST.get('reason')
+        
+        # Actualizar horas perdidas
+        lost_hours = request.POST.get('lost_hours', 0)
+        try:
+            absence.lost_hours = float(lost_hours) if lost_hours else 0.0
+        except ValueError:
+            absence.lost_hours = 0.0
+        
+        if request.FILES.get('documentation_file'):
+            absence.documentation_file = request.FILES.get('documentation_file')
+        
+        try:
+            absence.save()
+            messages.success(request, 'Ausencia actualizada exitosamente.')
+            return redirect('employee_absence_detail', pk=absence.pk)
+        except Exception as e:
+            messages.error(request, f'Error al actualizar la ausencia: {str(e)}')
+    
+    # Obtener empleados y tipos de ausencias
+    employees = User.objects.filter(is_active=True).order_by('first_name', 'last_name', 'username')
+    absence_types = AbsenceType.objects.filter(is_active=True)
+    
+    context = {
+        'absence': absence,
+        'employees': employees,
+        'absence_types': absence_types,
+        'page_title': f'Editar Ausencia de {absence.employee.get_full_name() or absence.employee.username}',
+    }
+    
+    return render(request, 'tickets/employee_absence_form.html', context)
+
+
+@login_required
+def employee_absence_approve(request, pk):
+    """Vista para aprobar una ausencia"""
+    from .models import EmployeeAbsence
+    
+    try:
+        absence = EmployeeAbsence.objects.get(pk=pk)
+    except EmployeeAbsence.DoesNotExist:
+        messages.error(request, 'La ausencia solicitada no existe.')
+        return redirect('employee_absence_list')
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'approve':
+            absence.approve(request.user)
+            messages.success(request, f'Ausencia de {absence.employee.get_full_name() or absence.employee.username} aprobada.')
+        
+        elif action == 'reject':
+            rejection_reason = request.POST.get('rejection_reason', '')
+            if rejection_reason:
+                absence.reject(rejection_reason, request.user)
+                messages.success(request, f'Ausencia de {absence.employee.get_full_name() or absence.employee.username} rechazada.')
+            else:
+                messages.error(request, 'Debes proporcionar un motivo para el rechazo.')
+                return redirect('employee_absence_detail', pk=pk)
+        
+        return redirect('employee_absence_detail', pk=pk)
+    
+    return redirect('employee_absence_detail', pk=pk)
+
+
+@login_required
+def employee_absence_delete(request, pk):
+    """Vista para eliminar una ausencia"""
+    from .models import EmployeeAbsence
+    
+    try:
+        absence = EmployeeAbsence.objects.get(pk=pk)
+    except EmployeeAbsence.DoesNotExist:
+        messages.error(request, 'La ausencia solicitada no existe.')
+        return redirect('employee_absence_list')
+    
+    if request.method == 'POST':
+        employee_name = absence.employee.get_full_name() or absence.employee.username
+        absence.delete()
+        messages.success(request, f'Ausencia de {employee_name} eliminada exitosamente.')
+        return redirect('employee_absence_list')
+    
+    context = {
+        'absence': absence,
+        'page_title': f'Eliminar Ausencia de {absence.employee.get_full_name() or absence.employee.username}',
+    }
+    
+    return render(request, 'tickets/employee_absence_delete.html', context)
+
+
+@login_required
+def employee_absence_calendar(request):
+    """Vista de calendario de ausencias"""
+    from .models import EmployeeAbsence
+    from datetime import datetime, timedelta
+    from django.utils import timezone
+    import calendar
+    import json
+    
+    # Obtener mes y año de los parámetros o usar el mes actual
+    now = timezone.now()
+    year = int(request.GET.get('year', now.year))
+    month = int(request.GET.get('month', now.month))
+    
+    # Crear objeto fecha para el mes solicitado
+    try:
+        current_date = datetime(year, month, 1).date()
+    except ValueError:
+        current_date = now.date().replace(day=1)
+        year = current_date.year
+        month = current_date.month
+    
+    # Calcular fechas de inicio y fin del mes
+    first_day = current_date
+    if month == 12:
+        last_day = current_date.replace(year=year+1, month=1, day=1) - timedelta(days=1)
+    else:
+        last_day = current_date.replace(month=month+1, day=1) - timedelta(days=1)
+    
+    # Obtener ausencias del mes
+    absences = EmployeeAbsence.objects.filter(
+        start_date__lte=last_day,
+        end_date__gte=first_day,
+        status='approved'
+    ).select_related('employee', 'absence_type')
+    
+    # Preparar datos para el calendario
+    calendar_data = []
+    for absence in absences:
+        calendar_data.append({
+            'id': absence.id,
+            'title': f"{absence.employee.get_full_name() or absence.employee.username} - {absence.absence_type.name}",
+            'start': absence.start_date.isoformat(),
+            'end': (absence.end_date + timedelta(days=1)).isoformat(),  # FullCalendar usa fin exclusivo
+            'color': absence.absence_type.color,
+            'url': f"/employee-absences/{absence.id}/",
+        })
+    
+    # Navegación del calendario
+    prev_month = month - 1 if month > 1 else 12
+    prev_year = year if month > 1 else year - 1
+    next_month = month + 1 if month < 12 else 1
+    next_year = year if month < 12 else year + 1
+    
+    context = {
+        'calendar_data': json.dumps(calendar_data),
+        'current_month': calendar.month_name[month],
+        'current_year': year,
+        'prev_month': prev_month,
+        'prev_year': prev_year,
+        'next_month': next_month,
+        'next_year': next_year,
+        'page_title': f'Calendario de Ausencias - {calendar.month_name[month]} {year}',
+    }
+    
+    return render(request, 'tickets/employee_absence_calendar.html', context)
+
+
+@login_required
+def employee_absence_report_pdf(request):
+    """Vista para generar reporte PDF de ausencias por empleado y mes"""
+    from django.http import HttpResponse
+    from reportlab.lib.pagesizes import letter, A4
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib import colors
+    from reportlab.lib.units import inch
+    from reportlab.graphics.shapes import Drawing, Line
+    import io
+    import calendar
+    from datetime import datetime, timedelta
+    from .models import EmployeeAbsence, AbsenceType
+    from django.contrib.auth.models import User
+    from django.utils import timezone
+    
+    # Obtener parámetros
+    employee_id = request.GET.get('employee_id')
+    year = int(request.GET.get('year', timezone.now().year))
+    month = int(request.GET.get('month', timezone.now().month))
+    
+    # Validar empleado
+    try:
+        employee = User.objects.get(id=employee_id) if employee_id else None
+    except User.DoesNotExist:
+        employee = None
+    
+    if not employee:
+        return HttpResponse('Empleado no encontrado', status=404)
+    
+    # Calcular fechas del mes
+    try:
+        first_day = datetime(year, month, 1).date()
+        if month == 12:
+            last_day = datetime(year + 1, 1, 1).date() - timedelta(days=1)
+        else:
+            last_day = datetime(year, month + 1, 1).date() - timedelta(days=1)
+    except ValueError:
+        first_day = timezone.now().date().replace(day=1)
+        last_day = first_day.replace(day=calendar.monthrange(first_day.year, first_day.month)[1])
+    
+    # Obtener ausencias del empleado en el mes
+    absences = EmployeeAbsence.objects.filter(
+        employee=employee,
+        start_date__lte=last_day,
+        end_date__gte=first_day
+    ).select_related('absence_type', 'approved_by').order_by('start_date')
+    
+    # Crear PDF
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=72)
+    
+    # Estilos
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=18,
+        spaceAfter=20,
+        alignment=1,  # Centrado
+        textColor=colors.darkblue
+    )
+    
+    subtitle_style = ParagraphStyle(
+        'CustomSubtitle',
+        parent=styles['Heading2'],
+        fontSize=14,
+        spaceAfter=15,
+        textColor=colors.darkblue
+    )
+    
+    normal_style = ParagraphStyle(
+        'CustomNormal',
+        parent=styles['Normal'],
+        fontSize=10,
+        spaceAfter=6
+    )
+    
+    # Contenido del PDF
+    story = []
+    
+    # Título
+    month_name = calendar.month_name[month]
+    title = Paragraph(f"Reporte de Ausencias", title_style)
+    subtitle = Paragraph(f"{employee.get_full_name() or employee.username}", subtitle_style)
+    period = Paragraph(f"Período: {month_name} {year}", normal_style)
+    
+    story.append(title)
+    story.append(subtitle)
+    story.append(period)
+    story.append(Spacer(1, 20))
+    
+    # Información del empleado
+    employee_info = [
+        ['Información del Empleado', ''],
+        ['Nombre:', employee.get_full_name() or employee.username],
+        ['Usuario:', employee.username],
+        ['Email:', employee.email or 'No registrado'],
+        ['Fecha del reporte:', timezone.now().strftime('%d/%m/%Y %H:%M')]
+    ]
+    
+    employee_table = Table(employee_info, colWidths=[2*inch, 3*inch])
+    employee_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (1, 0), colors.lightblue),
+        ('TEXTCOLOR', (0, 0), (1, 0), colors.darkblue),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (1, 0), 12),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 10),
+        ('BOTTOMPADING', (0, 0), (-1, 0), 12),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+    ]))
+    
+    story.append(employee_table)
+    story.append(Spacer(1, 20))
+    
+    # Resumen estadístico
+    total_days = sum(absence.get_duration_days() for absence in absences)
+    total_hours = sum(float(absence.lost_hours) for absence in absences)
+    approved_count = absences.filter(status='approved').count()
+    pending_count = absences.filter(status='pending').count()
+    rejected_count = absences.filter(status='rejected').count()
+    
+    summary_info = [
+        ['Resumen del Mes', ''],
+        ['Total de ausencias:', str(len(absences))],
+        ['Días de ausencia:', str(total_days)],
+        ['Horas perdidas:', f"{total_hours:.1f} horas"],
+        ['Aprobadas:', str(approved_count)],
+        ['Pendientes:', str(pending_count)],
+        ['Rechazadas:', str(rejected_count)]
+    ]
+    
+    summary_table = Table(summary_info, colWidths=[2*inch, 1.5*inch])
+    summary_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (1, 0), colors.lightgreen),
+        ('TEXTCOLOR', (0, 0), (1, 0), colors.darkgreen),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (1, 0), 12),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 10),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+    ]))
+    
+    story.append(summary_table)
+    story.append(Spacer(1, 20))
+    
+    # Detalle de ausencias
+    if absences.exists():
+        story.append(Paragraph("Detalle de Ausencias", subtitle_style))
+        story.append(Spacer(1, 10))
+        
+        # Crear tabla de ausencias
+        absence_data = [['Tipo', 'Fechas', 'Días', 'Horas', 'Estado', 'Motivo']]
+        
+        for absence in absences:
+            # Formatear fechas
+            if absence.start_date == absence.end_date:
+                dates = absence.start_date.strftime('%d/%m/%Y')
+            else:
+                dates = f"{absence.start_date.strftime('%d/%m/%Y')} - {absence.end_date.strftime('%d/%m/%Y')}"
+            
+            # Truncar motivo si es muy largo
+            reason = absence.reason[:40] + '...' if len(absence.reason) > 40 else absence.reason
+            
+            absence_data.append([
+                absence.absence_type.name,
+                dates,
+                str(absence.get_duration_days()),
+                f"{absence.lost_hours} h",
+                absence.get_status_display(),
+                reason
+            ])
+        
+        absence_table = Table(absence_data, colWidths=[1.3*inch, 1.6*inch, 0.6*inch, 0.7*inch, 0.9*inch, 1.9*inch])
+        absence_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 9),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ]))
+        
+        story.append(absence_table)
+        story.append(Spacer(1, 20))
+        
+        # Detalle completo de cada ausencia
+        story.append(Paragraph("Información Detallada", subtitle_style))
+        story.append(Spacer(1, 10))
+        
+        for i, absence in enumerate(absences):
+            if i > 0:
+                story.append(Spacer(1, 15))
+            
+            # Información detallada de la ausencia
+            detail_info = [
+                [f'Ausencia #{i+1}', ''],
+                ['Tipo:', absence.absence_type.name],
+                ['Inicio:', absence.start_date.strftime('%d/%m/%Y')],
+                ['Fin:', absence.end_date.strftime('%d/%m/%Y')],
+                ['Duración:', f'{absence.get_duration_days()} día{"s" if absence.get_duration_days() != 1 else ""}'],
+                ['Horas perdidas:', f'{absence.lost_hours} horas'],
+                ['Estado:', absence.get_status_display()],
+                ['Solicitada:', absence.created_at.strftime('%d/%m/%Y %H:%M')],
+            ]
+            
+            if absence.approved_by:
+                detail_info.append(['Gestionada por:', absence.approved_by.get_full_name() or absence.approved_by.username])
+                detail_info.append(['Fecha gestión:', absence.approved_at.strftime('%d/%m/%Y %H:%M')])
+            
+            detail_table = Table(detail_info, colWidths=[1.5*inch, 4*inch])
+            detail_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (1, 0), colors.lightcyan),
+                ('TEXTCOLOR', (0, 0), (1, 0), colors.darkblue),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('FONTNAME', (0, 0), (1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (1, 0), 11),
+                ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                ('FONTSIZE', (0, 1), (-1, -1), 9),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ]))
+            
+            story.append(detail_table)
+            
+            # Motivo
+            story.append(Spacer(1, 5))
+            motivo_para = Paragraph(f"<b>Motivo:</b> {absence.reason}", normal_style)
+            story.append(motivo_para)
+            
+            # Motivo de rechazo si aplica
+            if absence.rejection_reason:
+                rejection_para = Paragraph(f"<b>Motivo de rechazo:</b> {absence.rejection_reason}", normal_style)
+                story.append(rejection_para)
+            
+            # Separador entre ausencias
+            if i < len(absences) - 1:
+                story.append(Spacer(1, 10))
+                # Línea separadora
+                drawing = Drawing(400, 1)
+                drawing.add(Line(0, 0, 400, 0))
+                story.append(drawing)
+    
+    else:
+        story.append(Paragraph("No se registraron ausencias en este período", normal_style))
+    
+    # Pie de página
+    story.append(Spacer(1, 30))
+    footer = Paragraph(
+        f"Reporte generado el {timezone.now().strftime('%d/%m/%Y a las %H:%M')} | Sistema de Gestión de Ausencias",
+        ParagraphStyle(
+            'Footer',
+            parent=styles['Normal'],
+            fontSize=8,
+            textColor=colors.grey,
+            alignment=1
+        )
+    )
+    story.append(footer)
+    
+    # Construir PDF
+    doc.build(story)
+    
+    # Preparar respuesta
+    buffer.seek(0)
+    response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+    
+    # Nombre del archivo
+    employee_name = (employee.get_full_name() or employee.username).replace(' ', '_')
+    filename = f"ausencias_{employee_name}_{month_name}_{year}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    return response
+
+
+# ==================== VISTAS DE PROTOCOLOS DE EMPRESA ====================
+
+@login_required
+def company_protocol_list(request):
+    """Vista para listar protocolos de empresa"""
+    from .models import CompanyProtocol
+    from django.db.models import Q
+    
+    # Filtros
+    search = request.GET.get('search', '')
+    active_filter = request.GET.get('active', 'all')
+    
+    # Obtener protocolos
+    protocols = CompanyProtocol.objects.all()
+    
+    # Aplicar filtros
+    if search:
+        protocols = protocols.filter(
+            Q(title__icontains=search) | Q(content__icontains=search)
+        )
+    
+    if active_filter == 'active':
+        protocols = protocols.filter(is_active=True)
+    elif active_filter == 'inactive':
+        protocols = protocols.filter(is_active=False)
+    
+    protocols = protocols.select_related('created_by').order_by('-created_at')
+    
+    context = {
+        'protocols': protocols,
+        'search': search,
+        'active_filter': active_filter,
+        'page_title': 'Protocolos de Empresa',
+    }
+    
+    return render(request, 'tickets/company_protocol_list.html', context)
+
+
+@login_required
+def company_protocol_create(request):
+    """Vista para crear un nuevo protocolo"""
+    from .models import CompanyProtocol, Company
+    
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        content = request.POST.get('content')
+        company_id = request.POST.get('company')
+        version = request.POST.get('version', '1.0')
+        is_active = request.POST.get('is_active') == 'on'
+        
+        # Validaciones básicas
+        if not all([title, content, company_id]):
+            messages.error(request, 'El título, contenido y empresa son requeridos.')
+        else:
+            try:
+                company = Company.objects.get(pk=company_id)
+                protocol = CompanyProtocol.objects.create(
+                    title=title,
+                    content=content,
+                    company=company,
+                    version=version,
+                    is_active=is_active,
+                    created_by=request.user
+                )
+                
+                messages.success(request, f'Protocolo "{protocol.title}" creado exitosamente.')
+                return redirect('company_protocol_detail', pk=protocol.pk)
+                
+            except Company.DoesNotExist:
+                messages.error(request, 'La empresa seleccionada no existe.')
+            except Exception as e:
+                messages.error(request, f'Error al crear el protocolo: {str(e)}')
+    
+    # Obtener todas las empresas para el formulario
+    companies = Company.objects.all().order_by('name')
+    
+    context = {
+        'page_title': 'Crear Protocolo de Empresa',
+        'companies': companies,
+    }
+    
+    return render(request, 'tickets/company_protocol_form.html', context)
+
+
+@login_required
+def company_protocol_detail(request, pk):
+    """Vista para ver el detalle de un protocolo"""
+    from .models import CompanyProtocol
+    
+    try:
+        protocol = CompanyProtocol.objects.select_related('created_by').get(pk=pk)
+    except CompanyProtocol.DoesNotExist:
+        messages.error(request, 'El protocolo solicitado no existe.')
+        return redirect('company_protocol_list')
+    
+    context = {
+        'protocol': protocol,
+        'page_title': f'Protocolo: {protocol.title}',
+    }
+    
+    return render(request, 'tickets/company_protocol_detail.html', context)
+
+
+@login_required
+def company_protocol_edit(request, pk):
+    """Vista para editar un protocolo"""
+    from .models import CompanyProtocol, Company
+    
+    try:
+        protocol = CompanyProtocol.objects.get(pk=pk)
+    except CompanyProtocol.DoesNotExist:
+        messages.error(request, 'El protocolo solicitado no existe.')
+        return redirect('company_protocol_list')
+    
+    if request.method == 'POST':
+        protocol.title = request.POST.get('title', protocol.title)
+        protocol.content = request.POST.get('content', protocol.content)
+        company_id = request.POST.get('company')
+        protocol.version = request.POST.get('version', protocol.version)
+        protocol.is_active = request.POST.get('is_active') == 'on'
+        
+        if company_id:
+            try:
+                protocol.company = Company.objects.get(pk=company_id)
+            except Company.DoesNotExist:
+                messages.error(request, 'La empresa seleccionada no existe.')
+                return render(request, 'tickets/company_protocol_form.html', {
+                    'protocol': protocol,
+                    'companies': Company.objects.all().order_by('name'),
+                    'page_title': f'Editar Protocolo: {protocol.title}',
+                })
+        
+        try:
+            protocol.save()
+            messages.success(request, 'Protocolo actualizado exitosamente.')
+            return redirect('company_protocol_detail', pk=protocol.pk)
+        except Exception as e:
+            messages.error(request, f'Error al actualizar el protocolo: {str(e)}')
+    
+    # Obtener todas las empresas para el formulario
+    companies = Company.objects.all().order_by('name')
+    
+    context = {
+        'protocol': protocol,
+        'companies': companies,
+        'page_title': f'Editar Protocolo: {protocol.title}',
+    }
+    
+    return render(request, 'tickets/company_protocol_form.html', context)
+
+
+@login_required
+def company_protocol_delete(request, pk):
+    """Vista para eliminar un protocolo"""
+    from .models import CompanyProtocol
+    
+    try:
+        protocol = CompanyProtocol.objects.get(pk=pk)
+    except CompanyProtocol.DoesNotExist:
+        messages.error(request, 'El protocolo solicitado no existe.')
+        return redirect('company_protocol_list')
+    
+    if request.method == 'POST':
+        protocol_title = protocol.title
+        protocol.delete()
+        messages.success(request, f'Protocolo "{protocol_title}" eliminado exitosamente.')
+        return redirect('company_protocol_list')
+    
+    context = {
+        'protocol': protocol,
+        'page_title': f'Eliminar Protocolo: {protocol.title}',
+    }
+    
+    return render(request, 'tickets/company_protocol_delete.html', context)
+
+
+@login_required
+def company_protocol_print_pdf(request, pk):
+    """Vista para imprimir protocolo en PDF"""
+    from django.http import HttpResponse
+    from reportlab.lib.pagesizes import letter, A4
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib import colors
+    from reportlab.lib.units import inch
+    import io
+    from .models import CompanyProtocol
+    from django.utils import timezone
+    
+    try:
+        protocol = CompanyProtocol.objects.select_related('created_by').get(pk=pk)
+    except CompanyProtocol.DoesNotExist:
+        return HttpResponse('Protocolo no encontrado', status=404)
+    
+    # Crear PDF
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=72)
+    
+    # Estilos
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=20,
+        spaceAfter=30,
+        alignment=1,  # Centrado
+        textColor=colors.darkblue,
+        fontName='Helvetica-Bold'
+    )
+    
+    subtitle_style = ParagraphStyle(
+        'CustomSubtitle',
+        parent=styles['Heading2'],
+        fontSize=14,
+        spaceAfter=20,
+        textColor=colors.darkblue,
+        fontName='Helvetica-Bold'
+    )
+    
+    content_style = ParagraphStyle(
+        'CustomContent',
+        parent=styles['Normal'],
+        fontSize=11,
+        spaceAfter=12,
+        alignment=0,  # Justificado
+        fontName='Helvetica'
+    )
+    
+    meta_style = ParagraphStyle(
+        'MetaStyle',
+        parent=styles['Normal'],
+        fontSize=9,
+        textColor=colors.grey,
+        spaceAfter=6
+    )
+    
+    # Contenido del PDF
+    story = []
+    
+    # Encabezado de empresa
+    company_header = Paragraph("PROTOCOLO DE EMPRESA", title_style)
+    story.append(company_header)
+    story.append(Spacer(1, 20))
+    
+    # Título del protocolo
+    protocol_title = Paragraph(protocol.title, subtitle_style)
+    story.append(protocol_title)
+    story.append(Spacer(1, 15))
+    
+    # Información del protocolo
+    meta_info = f"""
+    <b>Empresa:</b> {protocol.company.name if protocol.company else 'No asignada'}<br/>
+    <b>Versión:</b> {protocol.version}<br/>
+    <b>Creado por:</b> {protocol.created_by.get_full_name() or protocol.created_by.username}<br/>
+    <b>Fecha de creación:</b> {protocol.created_at.strftime('%d/%m/%Y %H:%M')}<br/>
+    <b>Última actualización:</b> {protocol.updated_at.strftime('%d/%m/%Y %H:%M')}<br/>
+    <b>Estado:</b> {'Activo' if protocol.is_active else 'Inactivo'}<br/>
+    <b>Palabras:</b> {protocol.get_word_count()}
+    """
+    story.append(Paragraph(meta_info, meta_style))
+    story.append(Spacer(1, 30))
+    
+    # Línea separadora
+    from reportlab.graphics.shapes import Drawing, Line
+    drawing = Drawing(400, 2)
+    drawing.add(Line(0, 1, 400, 1, strokeColor=colors.darkblue, strokeWidth=2))
+    story.append(drawing)
+    story.append(Spacer(1, 20))
+    
+    # Contenido del protocolo
+    # Dividir el contenido en párrafos
+    content_paragraphs = protocol.content.split('\n')
+    
+    for paragraph_text in content_paragraphs:
+        if paragraph_text.strip():  # Solo agregar párrafos no vacíos
+            # Escapar caracteres especiales para ReportLab
+            paragraph_text = paragraph_text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+            paragraph = Paragraph(paragraph_text, content_style)
+            story.append(paragraph)
+        else:
+            # Agregar espacio para párrafos vacíos
+            story.append(Spacer(1, 12))
+    
+    # Pie de página
+    story.append(Spacer(1, 40))
+    
+    # Línea separadora final
+    drawing_footer = Drawing(400, 2)
+    drawing_footer.add(Line(0, 1, 400, 1, strokeColor=colors.lightgrey, strokeWidth=1))
+    story.append(drawing_footer)
+    story.append(Spacer(1, 10))
+    
+    footer_text = f"""
+    <i>Documento generado el {timezone.now().strftime('%d/%m/%Y a las %H:%M')} | 
+    Sistema de Gestión de Protocolos Empresariales</i>
+    """
+    footer = Paragraph(footer_text, ParagraphStyle(
+        'Footer',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=colors.grey,
+        alignment=1  # Centrado
+    ))
+    story.append(footer)
+    
+    # Construir PDF
+    doc.build(story)
+    
+    # Preparar respuesta
+    buffer.seek(0)
+    response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+    
+    # Nombre del archivo
+    protocol_name = protocol.title.replace(' ', '_').replace('/', '_')
+    filename = f"protocolo_{protocol_name}_v{protocol.version}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    return response
+
+
+# ================================
+# VISTAS API DE IA PARA PROTOCOLOS
+# ================================
+
+@login_required
+def company_protocol_ai_generate_content(request, pk):
+    """API para generar contenido del protocolo con IA"""
+    from django.http import JsonResponse
+    from .models import CompanyProtocol
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'})
+    
+    try:
+        protocol = CompanyProtocol.objects.get(pk=pk)
+    except CompanyProtocol.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Protocolo no encontrado'})
+    
+    content_type = request.POST.get('content_type', 'comprehensive')
+    result = protocol.generate_ai_content(content_type)
+    
+    return JsonResponse(result)
+
+
+@login_required
+def company_protocol_ai_analyze_readability(request, pk):
+    """API para analizar legibilidad del protocolo"""
+    from django.http import JsonResponse
+    from .models import CompanyProtocol
+    
+    try:
+        protocol = CompanyProtocol.objects.get(pk=pk)
+    except CompanyProtocol.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Protocolo no encontrado'})
+    
+    result = protocol.analyze_readability()
+    return JsonResponse(result)
+
+
+@login_required
+def company_protocol_ai_get_suggestions(request, pk):
+    """API para obtener sugerencias de mejora con IA"""
+    from django.http import JsonResponse
+    from .models import CompanyProtocol
+    
+    try:
+        protocol = CompanyProtocol.objects.get(pk=pk)
+    except CompanyProtocol.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Protocolo no encontrado'})
+    
+    result = protocol.get_ai_suggestions()
+    return JsonResponse(result)
+
+
+@login_required
+def company_protocol_ai_generate_summary(request, pk):
+    """API para generar resumen ejecutivo con IA"""
+    from django.http import JsonResponse
+    from .models import CompanyProtocol
+    
+    try:
+        protocol = CompanyProtocol.objects.get(pk=pk)
+    except CompanyProtocol.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Protocolo no encontrado'})
+    
+    result = protocol.generate_executive_summary()
+    return JsonResponse(result)
+
+
+@login_required
+def company_protocol_ai_improve_content(request, pk):
+    """API para mejorar automáticamente el contenido con IA"""
+    from django.http import JsonResponse
+    from .models import CompanyProtocol, SystemConfiguration
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'})
+    
+    try:
+        protocol = CompanyProtocol.objects.get(pk=pk)
+    except CompanyProtocol.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Protocolo no encontrado'})
+    
+    try:
+        config = SystemConfiguration.objects.first()
+        if not config or not config.ai_chat_enabled or not config.openai_api_key:
+            return JsonResponse({'success': False, 'error': 'OpenAI no está configurado en el sistema'})
+        
+        import openai
+        client = openai.OpenAI(api_key=config.openai_api_key)
+        
+        improvement_type = request.POST.get('improvement_type', 'general')
+        
+        prompts = {
+            'general': f"""
+            Mejora el siguiente protocolo empresarial manteniendo todo el contenido importante pero haciéndolo más claro, profesional y fácil de seguir:
+            
+            TÍTULO: {protocol.title}
+            CONTENIDO ACTUAL:
+            {protocol.content}
+            
+            Mejora la estructura, claridad y profesionalismo sin cambiar el mensaje principal.
+            """,
+            'clarity': f"""
+            Reescribe este protocolo para hacerlo más claro y fácil de entender, usando lenguaje simple pero profesional:
+            
+            {protocol.content}
+            """,
+            'structure': f"""
+            Reorganiza y mejora la estructura de este protocolo usando encabezados, listas y párrafos bien organizados:
+            
+            {protocol.content}
+            """,
+            'professional': f"""
+            Reescribe este protocolo con un tono más profesional y formal apropiado para un documento corporativo:
+            
+            {protocol.content}
+            """
+        }
+        
+        response = client.chat.completions.create(
+            model=config.openai_model or "gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "Eres un experto editor de documentos corporativos especializado en mejorar protocolos empresariales."},
+                {"role": "user", "content": prompts.get(improvement_type, prompts['general'])}
+            ],
+            max_tokens=2000,
+            temperature=0.6
+        )
+        
+        improved_content = response.choices[0].message.content.strip()
+        
+        return JsonResponse({
+            'success': True,
+            'improved_content': improved_content,
+            'improvement_type': improvement_type,
+            'word_count': len(improved_content.split())
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Error mejorando contenido: {str(e)}'})
+
+
+# ================================
+# VISTAS DE QA - QUEJAS Y SUGERENCIAS
+# ================================
+
+@login_required
+def qa_complaint_list(request):
+    """Vista para listar quejas y sugerencias QA"""
+    from django.db.models import Q, Count
+    from .models import QAComplaint, Company
+    
+    # Filtros
+    search_query = request.GET.get('search', '')
+    company_filter = request.GET.get('company', '')
+    type_filter = request.GET.get('type', '')
+    status_filter = request.GET.get('status', '')
+    priority_filter = request.GET.get('priority', '')
+    assigned_filter = request.GET.get('assigned', '')
+    
+    # Query base
+    complaints = QAComplaint.objects.select_related('company', 'reported_by', 'assigned_to')
+    
+    # Aplicar filtros
+    if search_query:
+        complaints = complaints.filter(
+            Q(title__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(company__name__icontains=search_query)
+        )
+    
+    if company_filter:
+        complaints = complaints.filter(company_id=company_filter)
+    
+    if type_filter:
+        complaints = complaints.filter(type=type_filter)
+    
+    if status_filter:
+        complaints = complaints.filter(status=status_filter)
+    
+    if priority_filter:
+        complaints = complaints.filter(priority=priority_filter)
+    
+    if assigned_filter:
+        if assigned_filter == 'unassigned':
+            complaints = complaints.filter(assigned_to__isnull=True)
+        elif assigned_filter == 'me':
+            complaints = complaints.filter(assigned_to=request.user)
+        else:
+            complaints = complaints.filter(assigned_to_id=assigned_filter)
+    
+    # Ordenar
+    complaints = complaints.order_by('-created_at')
+    
+    # Estadísticas
+    stats = QAComplaint.objects.aggregate(
+        total=Count('id'),
+        open_count=Count('id', filter=Q(status='open')),
+        in_progress_count=Count('id', filter=Q(status='in_progress')),
+        resolved_count=Count('id', filter=Q(status='resolved')),
+        high_priority_count=Count('id', filter=Q(priority__in=['high', 'critical']))
+    )
+    
+    # Datos para filtros
+    companies = Company.objects.all().order_by('name')
+    users = User.objects.filter(
+        Q(is_staff=True) | Q(groups__name='Agentes')
+    ).distinct().order_by('username')
+    
+    context = {
+        'complaints': complaints,
+        'companies': companies,
+        'users': users,
+        'stats': stats,
+        'search_query': search_query,
+        'company_filter': company_filter,
+        'type_filter': type_filter,
+        'status_filter': status_filter,
+        'priority_filter': priority_filter,
+        'assigned_filter': assigned_filter,
+        'page_title': 'Gestión QA - Quejas y Sugerencias',
+        'type_choices': QAComplaint.TYPE_CHOICES,
+        'status_choices': QAComplaint.STATUS_CHOICES,
+        'priority_choices': QAComplaint.PRIORITY_CHOICES,
+    }
+    
+    return render(request, 'tickets/qa_complaint_list.html', context)
+
+
+@login_required
+def qa_complaint_create(request):
+    """Vista para crear nueva queja o sugerencia QA"""
+    from .models import QAComplaint, Company
+    
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        description = request.POST.get('description')
+        type = request.POST.get('type')
+        priority = request.POST.get('priority')
+        company_id = request.POST.get('company')
+        contact_email = request.POST.get('contact_email')
+        contact_phone = request.POST.get('contact_phone')
+        attachment = request.FILES.get('attachment')
+        
+        # Validaciones
+        if not all([title, description, type, company_id]):
+            messages.error(request, 'Título, descripción, tipo y empresa son requeridos.')
+        else:
+            try:
+                company = Company.objects.get(pk=company_id)
+                complaint = QAComplaint.objects.create(
+                    title=title,
+                    description=description,
+                    type=type,
+                    priority=priority or 'medium',
+                    company=company,
+                    reported_by=request.user,
+                    contact_email=contact_email,
+                    contact_phone=contact_phone,
+                    attachment=attachment
+                )
+                
+                messages.success(request, f'Reporte QA "{complaint.title}" creado exitosamente.')
+                return redirect('qa_complaint_detail', pk=complaint.pk)
+                
+            except Company.DoesNotExist:
+                messages.error(request, 'La empresa seleccionada no existe.')
+            except Exception as e:
+                messages.error(request, f'Error al crear el reporte: {str(e)}')
+    
+    companies = Company.objects.all().order_by('name')
+    
+    context = {
+        'companies': companies,
+        'type_choices': QAComplaint.TYPE_CHOICES,
+        'priority_choices': QAComplaint.PRIORITY_CHOICES,
+        'page_title': 'Nuevo Reporte QA',
+    }
+    
+    return render(request, 'tickets/qa_complaint_form.html', context)
+
+
+@login_required
+def qa_complaint_detail(request, pk):
+    """Vista para ver detalle de queja o sugerencia QA"""
+    from .models import QAComplaint, QAComplaintComment
+    from django.db.models import Q
+    
+    try:
+        complaint = QAComplaint.objects.select_related(
+            'company', 'reported_by', 'assigned_to'
+        ).prefetch_related(
+            'comments__author'
+        ).get(pk=pk)
+    except QAComplaint.DoesNotExist:
+        messages.error(request, 'El reporte QA solicitado no existe.')
+        return redirect('qa_complaint_list')
+    
+    # Manejar comentarios
+    if request.method == 'POST' and 'add_comment' in request.POST:
+        content = request.POST.get('comment_content')
+        is_internal = request.POST.get('is_internal') == 'on'
+        
+        if content:
+            QAComplaintComment.objects.create(
+                complaint=complaint,
+                author=request.user,
+                content=content,
+                is_internal=is_internal
+            )
+            messages.success(request, 'Comentario agregado exitosamente.')
+            return redirect('qa_complaint_detail', pk=pk)
+    
+    # Usuarios para asignación
+    users = User.objects.filter(
+        Q(is_staff=True) | Q(groups__name='Agentes')
+    ).distinct().order_by('username')
+    
+    context = {
+        'complaint': complaint,
+        'users': users,
+        'page_title': f'Reporte QA: {complaint.title}',
+    }
+    
+    return render(request, 'tickets/qa_complaint_detail.html', context)
+
+
+@login_required
+def qa_complaint_edit(request, pk):
+    """Vista para editar queja o sugerencia QA"""
+    from .models import QAComplaint, Company
+    
+    try:
+        complaint = QAComplaint.objects.get(pk=pk)
+    except QAComplaint.DoesNotExist:
+        messages.error(request, 'El reporte QA solicitado no existe.')
+        return redirect('qa_complaint_list')
+    
+    # Verificar permisos
+    if not complaint.can_edit(request.user):
+        messages.error(request, 'No tienes permisos para editar este reporte.')
+        return redirect('qa_complaint_detail', pk=pk)
+    
+    if request.method == 'POST':
+        complaint.title = request.POST.get('title', complaint.title)
+        complaint.description = request.POST.get('description', complaint.description)
+        complaint.type = request.POST.get('type', complaint.type)
+        complaint.priority = request.POST.get('priority', complaint.priority)
+        complaint.status = request.POST.get('status', complaint.status)
+        complaint.contact_email = request.POST.get('contact_email', complaint.contact_email)
+        complaint.contact_phone = request.POST.get('contact_phone', complaint.contact_phone)
+        
+        company_id = request.POST.get('company')
+        if company_id:
+            try:
+                complaint.company = Company.objects.get(pk=company_id)
+            except Company.DoesNotExist:
+                messages.error(request, 'La empresa seleccionada no existe.')
+                return render(request, 'tickets/qa_complaint_form.html', {
+                    'complaint': complaint,
+                    'companies': Company.objects.all().order_by('name'),
+                    'type_choices': QAComplaint.TYPE_CHOICES,
+                    'priority_choices': QAComplaint.PRIORITY_CHOICES,
+                    'status_choices': QAComplaint.STATUS_CHOICES,
+                    'page_title': f'Editar Reporte QA: {complaint.title}',
+                })
+        
+        # Asignación
+        assigned_to_id = request.POST.get('assigned_to')
+        if assigned_to_id:
+            try:
+                complaint.assigned_to = User.objects.get(pk=assigned_to_id)
+            except User.DoesNotExist:
+                pass
+        elif assigned_to_id == '':
+            complaint.assigned_to = None
+        
+        # Archivo adjunto
+        if 'attachment' in request.FILES:
+            complaint.attachment = request.FILES['attachment']
+        
+        try:
+            complaint.save()
+            messages.success(request, 'Reporte QA actualizado exitosamente.')
+            return redirect('qa_complaint_detail', pk=complaint.pk)
+        except Exception as e:
+            messages.error(request, f'Error al actualizar el reporte: {str(e)}')
+    
+    companies = Company.objects.all().order_by('name')
+    users = User.objects.filter(
+        Q(is_staff=True) | Q(groups__name='Agentes')
+    ).distinct().order_by('username')
+    
+    context = {
+        'complaint': complaint,
+        'companies': companies,
+        'users': users,
+        'type_choices': QAComplaint.TYPE_CHOICES,
+        'priority_choices': QAComplaint.PRIORITY_CHOICES,
+        'status_choices': QAComplaint.STATUS_CHOICES,
+        'page_title': f'Editar Reporte QA: {complaint.title}',
+    }
+    
+    return render(request, 'tickets/qa_complaint_form.html', context)
+
+
+@login_required
+def qa_complaint_delete(request, pk):
+    """Vista para eliminar queja o sugerencia QA"""
+    from .models import QAComplaint
+    
+    try:
+        complaint = QAComplaint.objects.get(pk=pk)
+    except QAComplaint.DoesNotExist:
+        messages.error(request, 'El reporte QA solicitado no existe.')
+        return redirect('qa_complaint_list')
+    
+    # Verificar permisos
+    if not request.user.is_staff and not request.user.is_superuser:
+        messages.error(request, 'No tienes permisos para eliminar este reporte.')
+        return redirect('qa_complaint_detail', pk=pk)
+    
+    if request.method == 'POST':
+        title = complaint.title
+        complaint.delete()
+        messages.success(request, f'Reporte QA "{title}" eliminado exitosamente.')
+        return redirect('qa_complaint_list')
+    
+    context = {
+        'complaint': complaint,
+        'page_title': f'Eliminar Reporte QA: {complaint.title}',
+    }
+    
+    return render(request, 'tickets/qa_complaint_delete.html', context)
+
+
+@login_required
+def qa_complaint_assign(request, pk):
+    """Vista para asignar queja o sugerencia QA a un usuario"""
+    from django.http import JsonResponse
+    from .models import QAComplaint
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'})
+    
+    try:
+        complaint = QAComplaint.objects.get(pk=pk)
+    except QAComplaint.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Reporte no encontrado'})
+    
+    # Verificar permisos
+    if not complaint.can_edit(request.user):
+        return JsonResponse({'success': False, 'error': 'Sin permisos'})
+    
+    assigned_to_id = request.POST.get('assigned_to')
+    
+    try:
+        if assigned_to_id:
+            assigned_user = User.objects.get(pk=assigned_to_id)
+            complaint.assign_to(assigned_user)
+            message = f'Reporte asignado a {assigned_user.get_full_name() or assigned_user.username}'
+        else:
+            complaint.assigned_to = None
+            complaint.save()
+            message = 'Asignación removida del reporte'
+        
+        return JsonResponse({
+            'success': True,
+            'message': message,
+            'status': complaint.get_status_display(),
+            'assigned_to': complaint.assigned_to.get_full_name() if complaint.assigned_to else None
+        })
+        
+    except User.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Usuario no encontrado'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@login_required
+def qa_complaint_resolve(request, pk):
+    """Vista para resolver queja o sugerencia QA"""
+    from django.http import JsonResponse
+    from .models import QAComplaint
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'})
+    
+    try:
+        complaint = QAComplaint.objects.get(pk=pk)
+    except QAComplaint.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Reporte no encontrado'})
+    
+    # Verificar permisos
+    if not complaint.can_resolve(request.user):
+        return JsonResponse({'success': False, 'error': 'Sin permisos para resolver'})
+    
+    resolution_text = request.POST.get('resolution')
+    
+    if not resolution_text:
+        return JsonResponse({'success': False, 'error': 'La resolución es requerida'})
+    
+    try:
+        complaint.resolve(resolution_text, request.user)
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Reporte marcado como resuelto',
+            'status': complaint.get_status_display(),
+            'resolution_date': complaint.resolution_date.strftime('%d/%m/%Y %H:%M') if complaint.resolution_date else None
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@login_required
+def qa_dashboard(request):
+    """Dashboard de QA con estadísticas y métricas"""
+    from django.db.models import Count, Q, Avg
+    from datetime import timedelta
+    from .models import QAComplaint
+    
+    # Estadísticas generales
+    total_complaints = QAComplaint.objects.count()
+    open_complaints = QAComplaint.objects.filter(status='open').count()
+    resolved_complaints = QAComplaint.objects.filter(status='resolved').count()
+    overdue_complaints = QAComplaint.objects.filter(
+        status__in=['open', 'in_progress'],
+        created_at__lt=timezone.now() - timedelta(days=7)
+    ).count()
+    
+    # Estadísticas por tipo
+    type_stats = QAComplaint.objects.values('type').annotate(
+        count=Count('id')
+    ).order_by('-count')
+    
+    # Estadísticas por empresa
+    company_stats = QAComplaint.objects.values(
+        'company__name'
+    ).annotate(
+        count=Count('id')
+    ).order_by('-count')[:10]
+    
+    # Estadísticas por prioridad
+    priority_stats = QAComplaint.objects.values('priority').annotate(
+        count=Count('id')
+    ).order_by('-count')
+    
+    # Reportes recientes
+    recent_complaints = QAComplaint.objects.select_related(
+        'company', 'reported_by'
+    ).order_by('-created_at')[:10]
+    
+    # Mis asignaciones
+    my_assignments = QAComplaint.objects.filter(
+        assigned_to=request.user
+    ).exclude(status__in=['resolved', 'closed']).order_by('-priority', '-created_at')
+    
+    context = {
+        'total_complaints': total_complaints,
+        'open_complaints': open_complaints,
+        'resolved_complaints': resolved_complaints,
+        'overdue_complaints': overdue_complaints,
+        'type_stats': type_stats,
+        'company_stats': company_stats,
+        'priority_stats': priority_stats,
+        'recent_complaints': recent_complaints,
+        'my_assignments': my_assignments,
+        'page_title': 'Dashboard QA',
+    }
+    
+    return render(request, 'tickets/qa_dashboard.html', context)

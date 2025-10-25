@@ -1,0 +1,620 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'company_protocol_list' %}">
+                        <i class="bi bi-file-text"></i> Protocolos
+                    </a>
+                </li>
+                <li class="breadcrumb-item active">{{ page_title }}</li>
+            </ol>
+        </nav>
+        <h2>
+            <i class="bi bi-{% if protocol %}pencil{% else %}plus-circle{% endif %}"></i> 
+            {{ page_title }}
+        </h2>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-form"></i> Información del Protocolo
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="title" class="form-label">
+                                <i class="bi bi-type"></i> Título del Protocolo <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="title" 
+                                   name="title" 
+                                   value="{% if protocol %}{{ protocol.title }}{% endif %}"
+                                   placeholder="Ej: Protocolo de Seguridad en el Trabajo"
+                                   required>
+                            <div class="form-text">Título descriptivo y claro del protocolo empresarial</div>
+                        </div>
+                        
+                        <div class="col-md-3 mb-3">
+                            <label for="company" class="form-label">
+                                <i class="bi bi-building"></i> Empresa <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="company" name="company" required>
+                                <option value="">Seleccionar empresa...</option>
+                                {% for company in companies %}
+                                    <option value="{{ company.id }}" 
+                                            {% if protocol and protocol.company_id == company.id %}selected{% endif %}>
+                                        {{ company.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Empresa a la que pertenece este protocolo</div>
+                        </div>
+                        
+                        <div class="col-md-3 mb-3">
+                            <label for="version" class="form-label">
+                                <i class="bi bi-tag"></i> Versión
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="version" 
+                                   name="version" 
+                                   value="{% if protocol %}{{ protocol.version }}{% else %}1.0{% endif %}"
+                                   placeholder="1.0">
+                            <div class="form-text">Versión del protocolo (ej: 1.0, 1.1, 2.0)</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="content" class="form-label">
+                            <i class="bi bi-file-text"></i> Contenido del Protocolo <span class="text-danger">*</span>
+                        </label>
+                        
+                        <!-- Botones de IA -->
+                        <div class="mb-2">
+                            <div class="btn-group" role="group" aria-label="Herramientas de IA">
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="generateAIContent()">
+                                    <i class="bi bi-magic"></i> Generar con IA
+                                </button>
+                                <button type="button" class="btn btn-outline-info btn-sm" onclick="analyzeReadability()">
+                                    <i class="bi bi-bar-chart"></i> Analizar Legibilidad
+                                </button>
+                                <button type="button" class="btn btn-outline-success btn-sm" onclick="getAISuggestions()">
+                                    <i class="bi bi-lightbulb"></i> Sugerencias IA
+                                </button>
+                                <button type="button" class="btn btn-outline-warning btn-sm" onclick="improveContent()">
+                                    <i class="bi bi-arrow-up-circle"></i> Mejorar Contenido
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <textarea class="form-control" 
+                                  id="content" 
+                                  name="content" 
+                                  rows="15"
+                                  placeholder="Describe aquí el contenido completo del protocolo empresarial..."
+                                  required>{% if protocol %}{{ protocol.content }}{% endif %}</textarea>
+                        <div class="form-text">
+                            Contenido completo del protocolo. Usa párrafos separados por líneas vacías.
+                            <span id="word-count" class="fw-bold"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" 
+                                   type="checkbox" 
+                                   id="is_active" 
+                                   name="is_active"
+                                   {% if not protocol or protocol.is_active %}checked{% endif %}>
+                            <label class="form-check-label" for="is_active">
+                                <i class="bi bi-check-circle"></i> Protocolo activo
+                            </label>
+                            <div class="form-text">Los protocolos activos están disponibles para consulta y descarga</div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> 
+                            {% if protocol %}Actualizar Protocolo{% else %}Crear Protocolo{% endif %}
+                        </button>
+                        <a href="{% url 'company_protocol_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver
+                        </a>
+                        {% if protocol %}
+                        <a href="{% url 'company_protocol_detail' protocol.pk %}" class="btn btn-outline-info">
+                            <i class="bi bi-eye"></i> Ver Detalle
+                        </a>
+                        <a href="{% url 'company_protocol_print_pdf' protocol.pk %}" class="btn btn-outline-success">
+                            <i class="bi bi-printer"></i> Imprimir PDF
+                        </a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-info-circle"></i> Guía de Contenido
+                </h6>
+            </div>
+            <div class="card-body">
+                <h6>Estructura Sugerida:</h6>
+                <ol class="small">
+                    <li><strong>Objetivo:</strong> Propósito del protocolo</li>
+                    <li><strong>Alcance:</strong> A quién aplica</li>
+                    <li><strong>Responsabilidades:</strong> Roles y funciones</li>
+                    <li><strong>Procedimientos:</strong> Pasos detallados</li>
+                    <li><strong>Recursos:</strong> Herramientas necesarias</li>
+                    <li><strong>Medidas:</strong> Controles y verificaciones</li>
+                    <li><strong>Revisión:</strong> Frecuencia de actualización</li>
+                </ol>
+                
+                <h6>Consejos:</h6>
+                <ul class="small">
+                    <li>Usa lenguaje claro y directo</li>
+                    <li>Incluye ejemplos prácticos</li>
+                    <li>Define términos técnicos</li>
+                    <li>Organiza en secciones numeradas</li>
+                    <li>Mantén coherencia en el formato</li>
+                </ul>
+            </div>
+        </div>
+        
+        {% if protocol %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-clock-history"></i> Información del Protocolo
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="small">
+                    <div class="mb-2">
+                        <strong>Creado por:</strong> {{ protocol.created_by.get_full_name|default:protocol.created_by.username }}
+                    </div>
+                    <div class="mb-2">
+                        <strong>Fecha de creación:</strong> {{ protocol.created_at|date:"d/m/Y H:i" }}
+                    </div>
+                    <div class="mb-2">
+                        <strong>Última actualización:</strong> {{ protocol.updated_at|date:"d/m/Y H:i" }}
+                    </div>
+                    <div class="mb-2">
+                        <strong>Estado:</strong> 
+                        <span class="badge {% if protocol.is_active %}bg-success{% else %}bg-secondary{% endif %}">
+                            {% if protocol.is_active %}Activo{% else %}Inactivo{% endif %}
+                        </span>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Palabras:</strong> {{ protocol.get_word_count }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const contentTextarea = document.getElementById('content');
+    const wordCountSpan = document.getElementById('word-count');
+    
+    function updateWordCount() {
+        const text = contentTextarea.value.trim();
+        const words = text ? text.split(/\s+/).length : 0;
+        wordCountSpan.textContent = `${words} palabras`;
+        
+        // Cambiar color según la cantidad de palabras
+        if (words < 50) {
+            wordCountSpan.className = 'fw-bold text-warning';
+        } else if (words < 200) {
+            wordCountSpan.className = 'fw-bold text-primary';
+        } else {
+            wordCountSpan.className = 'fw-bold text-success';
+        }
+    }
+    
+    // Actualizar contador en tiempo real
+    contentTextarea.addEventListener('input', updateWordCount);
+    
+    // Actualizar al cargar la página
+    updateWordCount();
+    
+    // Autoguardado cada 30 segundos (opcional)
+    // setInterval(function() {
+    //     if (contentTextarea.value.trim()) {
+    //         localStorage.setItem('protocol_draft', contentTextarea.value);
+    //         console.log('Borrador guardado automáticamente');
+    //     }
+    // }, 30000);
+});
+
+// ================================
+// FUNCIONES DE IA
+// ================================
+
+function generateAIContent() {
+    const modal = new bootstrap.Modal(document.getElementById('aiGenerateModal'));
+    modal.show();
+}
+
+function analyzeReadability() {
+    {% if protocol %}
+    const protocolId = {{ protocol.pk }};
+    const button = event.target;
+    const originalText = button.innerHTML;
+    
+    button.disabled = true;
+    button.innerHTML = '<i class="spinner-border spinner-border-sm"></i> Analizando...';
+    
+    fetch(`/company-protocols/${protocolId}/ai/analyze-readability/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showReadabilityResults(data);
+            } else {
+                showAlert('error', data.error || 'Error analizando legibilidad');
+            }
+        })
+        .catch(error => {
+            showAlert('error', 'Error de conexión: ' + error.message);
+        })
+        .finally(() => {
+            button.disabled = false;
+            button.innerHTML = originalText;
+        });
+    {% else %}
+    showAlert('warning', 'Primero guarda el protocolo para usar las funciones de IA');
+    {% endif %}
+}
+
+function getAISuggestions() {
+    {% if protocol %}
+    const protocolId = {{ protocol.pk }};
+    const button = event.target;
+    const originalText = button.innerHTML;
+    
+    button.disabled = true;
+    button.innerHTML = '<i class="spinner-border spinner-border-sm"></i> Generando...';
+    
+    fetch(`/company-protocols/${protocolId}/ai/get-suggestions/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAISuggestions(data);
+            } else {
+                showAlert('error', data.error || 'Error obteniendo sugerencias');
+            }
+        })
+        .catch(error => {
+            showAlert('error', 'Error de conexión: ' + error.message);
+        })
+        .finally(() => {
+            button.disabled = false;
+            button.innerHTML = originalText;
+        });
+    {% else %}
+    showAlert('warning', 'Primero guarda el protocolo para usar las funciones de IA');
+    {% endif %}
+}
+
+function improveContent() {
+    {% if protocol %}
+    const modal = new bootstrap.Modal(document.getElementById('aiImproveModal'));
+    modal.show();
+    {% else %}
+    showAlert('warning', 'Primero guarda el protocolo para usar las funciones de IA');
+    {% endif %}
+}
+
+function executeAIGeneration() {
+    const contentType = document.getElementById('aiContentType').value;
+    {% if protocol %}
+    const protocolId = {{ protocol.pk }};
+    const button = document.getElementById('executeGenerateBtn');
+    const originalText = button.innerHTML;
+    
+    button.disabled = true;
+    button.innerHTML = '<i class="spinner-border spinner-border-sm"></i> Generando...';
+    
+    const formData = new FormData();
+    formData.append('content_type', contentType);
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+    
+    fetch(`/company-protocols/${protocolId}/ai/generate-content/`, {
+        method: 'POST',
+        body: formData
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('content').value = data.content;
+                updateWordCount();
+                bootstrap.Modal.getInstance(document.getElementById('aiGenerateModal')).hide();
+                showAlert('success', `Contenido generado exitosamente (${data.word_count} palabras)`);
+            } else {
+                showAlert('error', data.error || 'Error generando contenido');
+            }
+        })
+        .catch(error => {
+            showAlert('error', 'Error de conexión: ' + error.message);
+        })
+        .finally(() => {
+            button.disabled = false;
+            button.innerHTML = originalText;
+        });
+    {% else %}
+    showAlert('warning', 'Primero guarda el protocolo para usar las funciones de IA');
+    {% endif %}
+}
+
+function executeAIImprovement() {
+    const improvementType = document.getElementById('aiImprovementType').value;
+    {% if protocol %}
+    const protocolId = {{ protocol.pk }};
+    const button = document.getElementById('executeImproveBtn');
+    const originalText = button.innerHTML;
+    
+    button.disabled = true;
+    button.innerHTML = '<i class="spinner-border spinner-border-sm"></i> Mejorando...';
+    
+    const formData = new FormData();
+    formData.append('improvement_type', improvementType);
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+    
+    fetch(`/company-protocols/${protocolId}/ai/improve-content/`, {
+        method: 'POST',
+        body: formData
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('content').value = data.improved_content;
+                updateWordCount();
+                bootstrap.Modal.getInstance(document.getElementById('aiImproveModal')).hide();
+                showAlert('success', `Contenido mejorado exitosamente (${data.word_count} palabras)`);
+            } else {
+                showAlert('error', data.error || 'Error mejorando contenido');
+            }
+        })
+        .catch(error => {
+            showAlert('error', 'Error de conexión: ' + error.message);
+        })
+        .finally(() => {
+            button.disabled = false;
+            button.innerHTML = originalText;
+        });
+    {% endif %}
+}
+
+function showReadabilityResults(data) {
+    const modal = document.getElementById('readabilityModal');
+    document.getElementById('readabilityScore').innerHTML = `
+        <span class="badge bg-${data.color} fs-5">${data.score}/10</span>
+        <span class="text-${data.color} fw-bold">${data.level}</span>
+    `;
+    
+    document.getElementById('readabilityMetrics').innerHTML = `
+        <div class="row">
+            <div class="col-6">
+                <strong>Palabras:</strong> ${data.metrics.word_count}<br>
+                <strong>Oraciones:</strong> ${data.metrics.sentence_count}<br>
+                <strong>Párrafos:</strong> ${data.metrics.paragraph_count}
+            </div>
+            <div class="col-6">
+                <strong>Palabras/oración:</strong> ${data.metrics.avg_words_per_sentence}<br>
+                <strong>Oraciones/párrafo:</strong> ${data.metrics.avg_sentences_per_paragraph}<br>
+                <strong>Complejidad:</strong> ${data.metrics.complexity_ratio}%
+            </div>
+        </div>
+    `;
+    
+    new bootstrap.Modal(modal).show();
+}
+
+function showAISuggestions(data) {
+    const modal = document.getElementById('suggestionsModal');
+    document.getElementById('suggestionsList').innerHTML = `
+        <div class="bg-light p-3 rounded">
+            <pre style="white-space: pre-wrap; font-family: inherit;">${data.suggestions}</pre>
+        </div>
+    `;
+    
+    new bootstrap.Modal(modal).show();
+}
+
+function showAlert(type, message) {
+    const alertsContainer = document.getElementById('alerts-container') || createAlertsContainer();
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    alertsContainer.innerHTML = alertHtml;
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        const alert = alertsContainer.querySelector('.alert');
+        if (alert) {
+            bootstrap.Alert.getOrCreateInstance(alert).close();
+        }
+    }, 5000);
+}
+
+function createAlertsContainer() {
+    const container = document.createElement('div');
+    container.id = 'alerts-container';
+    container.className = 'position-fixed top-0 end-0 p-3';
+    container.style.zIndex = '9999';
+    document.body.appendChild(container);
+    return container;
+}
+</script>
+
+<!-- Modales de IA -->
+
+<!-- Modal de Generación de Contenido IA -->
+<div class="modal fade" id="aiGenerateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-magic"></i> Generar Contenido con IA
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="aiContentType" class="form-label">Tipo de contenido a generar:</label>
+                    <select class="form-select" id="aiContentType">
+                        <option value="comprehensive">Protocolo Completo (Detallado)</option>
+                        <option value="summary">Resumen Ejecutivo</option>
+                        <option value="checklist">Lista de Verificación</option>
+                    </select>
+                </div>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> La IA generará contenido basado en el título y empresa del protocolo. 
+                    Esto reemplazará el contenido actual.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="executeGenerateBtn" onclick="executeAIGeneration()">
+                    <i class="bi bi-magic"></i> Generar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Mejora de Contenido IA -->
+<div class="modal fade" id="aiImproveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-arrow-up-circle"></i> Mejorar Contenido con IA
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="aiImprovementType" class="form-label">Tipo de mejora:</label>
+                    <select class="form-select" id="aiImprovementType">
+                        <option value="general">Mejora General (Claridad + Estructura)</option>
+                        <option value="clarity">Mejorar Claridad del Lenguaje</option>
+                        <option value="structure">Mejorar Estructura y Organización</option>
+                        <option value="professional">Hacer Más Profesional</option>
+                    </select>
+                </div>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i> Esta función mejorará el contenido actual manteniéndolo semejante pero más claro y profesional.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning" id="executeImproveBtn" onclick="executeAIImprovement()">
+                    <i class="bi bi-arrow-up-circle"></i> Mejorar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Análisis de Legibilidad -->
+<div class="modal fade" id="readabilityModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-bar-chart"></i> Análisis de Legibilidad
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <h4>Puntuación de Legibilidad</h4>
+                    <div id="readabilityScore"></div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">Métricas Detalladas</h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="readabilityMetrics"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Sugerencias IA -->
+<div class="modal fade" id="suggestionsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-lightbulb"></i> Sugerencias de Mejora con IA
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="suggestionsList"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Container for alerts -->
+<div id="alerts-container" class="position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>
+</script>
+
+<style>
+.card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.form-label {
+    font-weight: 600;
+}
+
+#content {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+}
+
+ol li, ul li {
+    margin-bottom: 0.25rem;
+}
+</style>
+{% endblock %}

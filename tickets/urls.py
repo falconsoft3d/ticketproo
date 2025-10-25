@@ -15,6 +15,17 @@ urlpatterns = [
     path('tickets/<int:pk>/approve/', views.ticket_approve_view, name='ticket_approve'),
     path('tickets/<int:pk>/unassign/', views.unassign_ticket_view, name='unassign_ticket'),
     
+    # URLs para impresión de tickets
+    path('tickets/print-preview/<int:ticket_id>/', views.ticket_print_preview, name='ticket_print_preview'),
+    path('tickets/print/<int:ticket_id>/', views.ticket_print, name='ticket_print'),
+    path('tickets/<int:pk>/pdf/', views.ticket_print_pdf, name='ticket_print_pdf'),
+    
+    # URL para exportación múltiple de tickets a PDF
+    path('tickets/export/pdf/', views.tickets_export_pdf, name='tickets_export_pdf'),
+    
+    # URL AJAX para obtener IDs de tickets filtrados
+    path('tickets/filtered-ids/', views.get_filtered_ticket_ids, name='get_filtered_ticket_ids'),
+    
     # URLs de TODO List para tickets - COMENTADAS TEMPORALMENTE
     # path('tickets/<int:pk>/todo/add/', views.ticket_todo_add, name='ticket_todo_add'),
     # path('tickets/<int:pk>/todo/<int:item_id>/toggle/', views.ticket_todo_toggle, name='ticket_todo_toggle'),
@@ -877,5 +888,63 @@ urlpatterns += [
     path('internal-agreements/<int:pk>/edit/', views.internal_agreement_edit, name='internal_agreement_edit'),
     path('internal-agreements/<int:pk>/delete/', views.internal_agreement_delete, name='internal_agreement_delete'),
     path('internal-agreements/<int:pk>/sign/', views.internal_agreement_sign, name='internal_agreement_sign'),
+    
+    # URLs de planes de capacitación
+    path('training-plans/', views.training_plan_list, name='training_plan_list'),
+    path('training-plans/create/', views.training_plan_create, name='training_plan_create'),
+    path('training-plans/<int:pk>/', views.training_plan_detail, name='training_plan_detail'),
+    path('training-plans/<int:pk>/edit/', views.training_plan_edit, name='training_plan_edit'),
+    
+    # URLs de enlaces de capacitación
+    path('training-plans/<int:plan_pk>/links/create/', views.training_link_create, name='training_link_create'),
+    path('training-links/<int:pk>/edit/', views.training_link_edit, name='training_link_edit'),
+    path('training-links/<int:pk>/delete/', views.training_link_delete, name='training_link_delete'),
+    path('training-links/<int:pk>/complete/', views.training_link_complete, name='training_link_complete'),
+    path('training-links/<int:pk>/uncomplete/', views.training_link_uncomplete, name='training_link_uncomplete'),
+    
+    # Mi progreso de capacitación
+    path('my-training-progress/', views.my_training_progress, name='my_training_progress'),
+    
+    # URLs de recomendaciones IA
+    path('ai-recommendations/', views.ai_recommendation_list, name='ai_recommendation_list'),
+    path('ai-recommendations/create/', views.ai_recommendation_create, name='ai_recommendation_create'),
+    path('ai-recommendations/<int:pk>/', views.ai_recommendation_detail, name='ai_recommendation_detail'),
+    path('ai-recommendations/<int:pk>/edit/', views.ai_recommendation_edit, name='ai_recommendation_edit'),
+    path('ai-recommendations/<int:pk>/delete/', views.ai_recommendation_delete, name='ai_recommendation_delete'),
+    
+    # URLs de ausencias de empleados
+    path('employee-absences/', views.employee_absence_list, name='employee_absence_list'),
+    path('employee-absences/create/', views.employee_absence_create, name='employee_absence_create'),
+    path('employee-absences/<int:pk>/', views.employee_absence_detail, name='employee_absence_detail'),
+    path('employee-absences/<int:pk>/edit/', views.employee_absence_edit, name='employee_absence_edit'),
+    path('employee-absences/<int:pk>/approve/', views.employee_absence_approve, name='employee_absence_approve'),
+    path('employee-absences/<int:pk>/delete/', views.employee_absence_delete, name='employee_absence_delete'),
+    path('employee-absences/calendar/', views.employee_absence_calendar, name='employee_absence_calendar'),
+    path('employee-absences/report/pdf/', views.employee_absence_report_pdf, name='employee_absence_report_pdf'),
+    
+    # URLs de protocolos de empresa
+    path('company-protocols/', views.company_protocol_list, name='company_protocol_list'),
+    path('company-protocols/create/', views.company_protocol_create, name='company_protocol_create'),
+    path('company-protocols/<int:pk>/', views.company_protocol_detail, name='company_protocol_detail'),
+    path('company-protocols/<int:pk>/edit/', views.company_protocol_edit, name='company_protocol_edit'),
+    path('company-protocols/<int:pk>/delete/', views.company_protocol_delete, name='company_protocol_delete'),
+    path('company-protocols/<int:pk>/print-pdf/', views.company_protocol_print_pdf, name='company_protocol_print_pdf'),
+    
+    # URLs API de IA para protocolos
+    path('company-protocols/<int:pk>/ai/generate-content/', views.company_protocol_ai_generate_content, name='company_protocol_ai_generate_content'),
+    path('company-protocols/<int:pk>/ai/analyze-readability/', views.company_protocol_ai_analyze_readability, name='company_protocol_ai_analyze_readability'),
+    path('company-protocols/<int:pk>/ai/get-suggestions/', views.company_protocol_ai_get_suggestions, name='company_protocol_ai_get_suggestions'),
+    path('company-protocols/<int:pk>/ai/generate-summary/', views.company_protocol_ai_generate_summary, name='company_protocol_ai_generate_summary'),
+    path('company-protocols/<int:pk>/ai/improve-content/', views.company_protocol_ai_improve_content, name='company_protocol_ai_improve_content'),
+    
+    # URLs de QA - Quejas y Sugerencias
+    path('qa/', views.qa_dashboard, name='qa_dashboard'),
+    path('qa/complaints/', views.qa_complaint_list, name='qa_complaint_list'),
+    path('qa/complaints/create/', views.qa_complaint_create, name='qa_complaint_create'),
+    path('qa/complaints/<int:pk>/', views.qa_complaint_detail, name='qa_complaint_detail'),
+    path('qa/complaints/<int:pk>/edit/', views.qa_complaint_edit, name='qa_complaint_edit'),
+    path('qa/complaints/<int:pk>/delete/', views.qa_complaint_delete, name='qa_complaint_delete'),
+    path('qa/complaints/<int:pk>/assign/', views.qa_complaint_assign, name='qa_complaint_assign'),
+    path('qa/complaints/<int:pk>/resolve/', views.qa_complaint_resolve, name='qa_complaint_resolve'),
 ]
 

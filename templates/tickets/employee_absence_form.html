@@ -1,0 +1,399 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'employee_absence_list' %}">
+                        <i class="bi bi-calendar-x"></i> Ausencias
+                    </a>
+                </li>
+                <li class="breadcrumb-item active">{{ page_title }}</li>
+            </ol>
+        </nav>
+        <h2>
+            <i class="bi bi-{% if absence %}pencil{% else %}plus-circle{% endif %}"></i> 
+            {{ page_title }}
+        </h2>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-form"></i> Información de la Ausencia
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="employee" class="form-label">
+                                <i class="bi bi-person"></i> Empleado <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="employee" name="employee" required>
+                                <option value="">Selecciona un empleado</option>
+                                {% for emp in employees %}
+                                <option value="{{ emp.id }}" {% if absence and absence.employee.id == emp.id %}selected{% endif %}>
+                                    {{ emp.get_full_name|default:emp.username }} ({{ emp.username }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="absence_type" class="form-label">
+                                <i class="bi bi-tag"></i> Tipo de Ausencia <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="absence_type" name="absence_type" required>
+                                <option value="">Selecciona un tipo</option>
+                                {% for type in absence_types %}
+                                <option value="{{ type.id }}" 
+                                        data-color="{{ type.color }}"
+                                        data-paid="{{ type.is_paid|yesno:'true,false' }}"
+                                        data-documentation="{{ type.requires_documentation|yesno:'true,false' }}"
+                                        {% if absence and absence.absence_type.id == type.id %}selected{% endif %}>
+                                    {{ type.name }}
+                                    {% if not type.is_paid %} (Sin goce de sueldo){% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text" id="type-info"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="start_date" class="form-label">
+                                <i class="bi bi-calendar-event"></i> Fecha de Inicio <span class="text-danger">*</span>
+                            </label>
+                            <input type="date" 
+                                   class="form-control" 
+                                   id="start_date" 
+                                   name="start_date" 
+                                   value="{% if absence %}{{ absence.start_date|date:'Y-m-d' }}{% endif %}"
+                                   required>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="end_date" class="form-label">
+                                <i class="bi bi-calendar-event"></i> Fecha de Fin <span class="text-danger">*</span>
+                            </label>
+                            <input type="date" 
+                                   class="form-control" 
+                                   id="end_date" 
+                                   name="end_date" 
+                                   value="{% if absence %}{{ absence.end_date|date:'Y-m-d' }}{% endif %}"
+                                   required>
+                            <div class="form-text">
+                                <span id="duration-display"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="lost_hours" class="form-label">
+                                <i class="bi bi-clock-history"></i> Horas Perdidas
+                            </label>
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="lost_hours" 
+                                   name="lost_hours" 
+                                   step="0.5"
+                                   min="0"
+                                   max="999.99"
+                                   value="{% if absence %}{{ absence.lost_hours|floatformat:1 }}{% else %}0{% endif %}"
+                                   placeholder="0.0">
+                            <div class="form-text">
+                                Total de horas laborales perdidas por la ausencia. 
+                                <button type="button" class="btn btn-link btn-sm p-0" id="calculate-hours">
+                                    Calcular automáticamente
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-calculator"></i> Cálculo Sugerido
+                            </label>
+                            <div class="card bg-light">
+                                <div class="card-body p-2">
+                                    <small>
+                                        <div>Días: <span id="calculated-days">-</span></div>
+                                        <div>Horas/día: <span id="hours-per-day">8</span></div>
+                                        <div><strong>Total: <span id="calculated-hours">-</span> horas</strong></div>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">
+                            <i class="bi bi-chat-text"></i> Motivo de la Ausencia <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" 
+                                  id="reason" 
+                                  name="reason" 
+                                  rows="4"
+                                  placeholder="Explica detalladamente el motivo de la ausencia..."
+                                  required>{% if absence %}{{ absence.reason }}{% endif %}</textarea>
+                    </div>
+                    
+                    <div class="mb-4" id="documentation-field" style="display: none;">
+                        <label for="documentation_file" class="form-label">
+                            <i class="bi bi-file-earmark-arrow-up"></i> Documentación de Respaldo
+                        </label>
+                        <input type="file" 
+                               class="form-control" 
+                               id="documentation_file" 
+                               name="documentation_file"
+                               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                        {% if absence and absence.documentation_file %}
+                        <div class="form-text">
+                            Archivo actual: 
+                            <a href="{{ absence.documentation_file.url }}" target="_blank">
+                                {{ absence.documentation_file.name }}
+                            </a>
+                        </div>
+                        {% endif %}
+                        <div class="form-text">Formatos permitidos: PDF, imágenes, documentos de Word</div>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> 
+                            {% if absence %}Actualizar Ausencia{% else %}Registrar Ausencia{% endif %}
+                        </button>
+                        <a href="{% url 'employee_absence_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver
+                        </a>
+                        {% if absence %}
+                        <a href="{% url 'employee_absence_detail' absence.pk %}" class="btn btn-outline-info">
+                            <i class="bi bi-eye"></i> Ver Detalle
+                        </a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-info-circle"></i> Información
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="small">
+                    <h6 class="text-primary">Tipos de Ausencias:</h6>
+                    {% for type in absence_types %}
+                    <div class="mb-2">
+                        <span class="badge" style="background-color: {{ type.color }}; color: white;">
+                            {{ type.name }}
+                        </span>
+                        {% if not type.is_paid %}
+                        <small class="text-warning">(Sin goce)</small>
+                        {% endif %}
+                        {% if type.requires_documentation %}
+                        <small class="text-info">(Requiere doc.)</small>
+                        {% endif %}
+                        {% if type.max_days_per_year %}
+                        <small class="text-muted">(Max: {{ type.max_days_per_year }} días/año)</small>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        {% if absence %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-clock-history"></i> Historial
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="small">
+                    <div class="mb-2">
+                        <strong>Creada:</strong> {{ absence.created_at|date:"d/m/Y H:i" }}
+                    </div>
+                    <div class="mb-2">
+                        <strong>Estado:</strong> 
+                        <span class="badge bg-{{ absence.get_status_display_class }}">
+                            {{ absence.get_status_display }}
+                        </span>
+                    </div>
+                    {% if absence.approved_by %}
+                    <div class="mb-2">
+                        <strong>Gestionada por:</strong> {{ absence.approved_by.get_full_name|default:absence.approved_by.username }}
+                    </div>
+                    <div class="mb-2">
+                        <strong>Fecha:</strong> {{ absence.approved_at|date:"d/m/Y H:i" }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const absenceTypeSelect = document.getElementById('absence_type');
+    const documentationField = document.getElementById('documentation-field');
+    const typeInfo = document.getElementById('type-info');
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+    const durationDisplay = document.getElementById('duration-display');
+    const lostHoursInput = document.getElementById('lost_hours');
+    const calculateHoursBtn = document.getElementById('calculate-hours');
+    const calculatedDaysSpan = document.getElementById('calculated-days');
+    const hoursPerDaySpan = document.getElementById('hours-per-day');
+    const calculatedHoursSpan = document.getElementById('calculated-hours');
+    
+    // Manejar cambio de tipo de ausencia
+    absenceTypeSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const requiresDoc = selectedOption.dataset.documentation === 'true';
+        const isPaid = selectedOption.dataset.paid === 'true';
+        
+        // Mostrar/ocultar campo de documentación
+        documentationField.style.display = requiresDoc ? 'block' : 'none';
+        
+        // Mostrar información del tipo
+        if (selectedOption.value) {
+            let info = '';
+            if (!isPaid) {
+                info += '<i class="bi bi-exclamation-triangle text-warning"></i> Sin goce de sueldo ';
+            }
+            if (requiresDoc) {
+                info += '<i class="bi bi-file-earmark text-info"></i> Requiere documentación';
+            }
+            typeInfo.innerHTML = info;
+        } else {
+            typeInfo.innerHTML = '';
+        }
+    });
+    
+    // Calcular duración
+    function calculateDuration() {
+        const startDate = new Date(startDateInput.value);
+        const endDate = new Date(endDateInput.value);
+        
+        if (startDate && endDate && !isNaN(startDate) && !isNaN(endDate)) {
+            if (endDate >= startDate) {
+                const diffTime = Math.abs(endDate - startDate);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                durationDisplay.innerHTML = `<i class="bi bi-calendar3"></i> Duración: ${diffDays} día${diffDays !== 1 ? 's' : ''}`;
+                
+                // Actualizar cálculo de horas
+                updateHoursCalculation(diffDays);
+            } else {
+                durationDisplay.innerHTML = '<i class="bi bi-exclamation-triangle text-danger"></i> La fecha de fin debe ser posterior a la de inicio';
+                updateHoursCalculation(0);
+            }
+        } else {
+            durationDisplay.innerHTML = '';
+            updateHoursCalculation(0);
+        }
+    }
+    
+    // Actualizar cálculo de horas perdidas
+    function updateHoursCalculation(days) {
+        const hoursPerDay = parseFloat(hoursPerDaySpan.textContent) || 8;
+        const totalHours = days * hoursPerDay;
+        
+        calculatedDaysSpan.textContent = days || '-';
+        calculatedHoursSpan.textContent = days ? totalHours.toFixed(1) : '-';
+    }
+    
+    // Calcular horas automáticamente
+    calculateHoursBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const days = parseInt(calculatedDaysSpan.textContent) || 0;
+        const hoursPerDay = parseFloat(hoursPerDaySpan.textContent) || 8;
+        const totalHours = days * hoursPerDay;
+        
+        if (days > 0) {
+            lostHoursInput.value = totalHours.toFixed(1);
+        }
+    });
+    
+    // Permitir editar horas por día
+    hoursPerDaySpan.addEventListener('click', function() {
+        const currentValue = this.textContent;
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.value = currentValue;
+        input.min = '0.5';
+        input.max = '24';
+        input.step = '0.5';
+        input.style.width = '60px';
+        input.style.fontSize = 'inherit';
+        
+        const span = this;
+        this.parentNode.replaceChild(input, this);
+        input.focus();
+        input.select();
+        
+        function saveValue() {
+            const newValue = parseFloat(input.value) || 8;
+            span.textContent = newValue;
+            input.parentNode.replaceChild(span, input);
+            
+            // Recalcular horas
+            const days = parseInt(calculatedDaysSpan.textContent) || 0;
+            updateHoursCalculation(days);
+        }
+        
+        input.addEventListener('blur', saveValue);
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                saveValue();
+            }
+        });
+    });
+    
+    startDateInput.addEventListener('change', calculateDuration);
+    endDateInput.addEventListener('change', calculateDuration);
+    
+    // Ejecutar al cargar la página
+    absenceTypeSelect.dispatchEvent(new Event('change'));
+    calculateDuration();
+});
+</script>
+
+<style>
+.card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.form-label {
+    font-weight: 500;
+}
+
+.badge {
+    font-size: 0.75em;
+}
+
+#type-info {
+    margin-top: 0.25rem;
+}
+</style>
+{% endblock %}

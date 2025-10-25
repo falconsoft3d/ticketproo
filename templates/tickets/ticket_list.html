@@ -2,7 +2,67 @@
 
 {% block title %}Lista de Tickets - TicketProo{% endblock %}
 
+{% block extra_head %}
+<style>
+.ticket-table {
+    font-size: 0.9rem;
+}
+
+.ticket-table th {
+    background-color: #f8f9fa !important;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+    padding: 12px 8px !important;
+    vertical-align: middle;
+}
+
+.ticket-table td {
+    padding: 10px 8px !important;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.ticket-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.badge {
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+/* Alineación específica para columnas */
+.ticket-table .col-checkbox { text-align: center; width: 4%; }
+.ticket-table .col-number { text-align: center; width: 7%; }
+.ticket-table .col-title { text-align: left; width: 20%; }
+.ticket-table .col-category { text-align: center; width: 10%; }
+.ticket-table .col-type { text-align: center; width: 8%; }
+.ticket-table .col-company { text-align: center; width: 12%; }
+.ticket-table .col-creator { text-align: center; width: 8%; }
+.ticket-table .col-status { text-align: center; width: 8%; }
+.ticket-table .col-approval { text-align: center; width: 8%; }
+.ticket-table .col-age { text-align: center; width: 8%; }
+.ticket-table .col-date { text-align: center; width: 10%; }
+.ticket-table .col-actions { text-align: center; width: 7%; }
+
+@media (max-width: 768px) {
+    .ticket-table {
+        font-size: 0.8rem;
+    }
+    
+    .ticket-table th, .ticket-table td {
+        padding: 8px 4px !important;
+    }
+}
+</style>
+{% endblock %}
+
 {% block content %}
+{% csrf_token %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h1>
@@ -23,10 +83,16 @@
         {% endif %}
     </div>
     <div class="d-flex gap-2">
-        <a href="{% url 'ticket_export_excel' %}{% if search or status_filter or priority_filter or assigned_filter %}?{% endif %}{% if search %}search={{ search|urlencode }}{% endif %}{% if status_filter %}{% if search %}&{% endif %}status={{ status_filter }}{% endif %}{% if priority_filter %}{% if search or status_filter %}&{% endif %}priority={{ priority_filter }}{% endif %}{% if assigned_filter %}{% if search or status_filter or priority_filter %}&{% endif %}assigned_to={{ assigned_filter }}{% endif %}" 
+        <a href="{% url 'ticket_export_excel' %}{% if search or status_filter or priority_filter or assigned_filter or company_filter %}?{% endif %}{% if search %}search={{ search|urlencode }}{% endif %}{% if status_filter %}{% if search %}&{% endif %}status={{ status_filter }}{% endif %}{% if company_filter %}{% if search or status_filter %}&{% endif %}company={{ company_filter }}{% endif %}{% if priority_filter %}{% if search or status_filter or company_filter %}&{% endif %}priority={{ priority_filter }}{% endif %}{% if assigned_filter %}{% if search or status_filter or priority_filter or company_filter %}&{% endif %}assigned_to={{ assigned_filter }}{% endif %}" 
            class="btn btn-success" title="Exportar a Excel">
             <i class="bi bi-file-earmark-excel"></i> Exportar Excel
         </a>
+        <button type="button" class="btn btn-warning" id="selectAllFiltered" onclick="selectAllFilteredTickets()" title="Seleccionar todos los tickets del filtro actual (todas las páginas)">
+            <i class="bi bi-check2-all"></i> Seleccionar Filtro Completo
+        </button>
+        <button type="button" class="btn btn-danger" id="exportSelectedPDF" onclick="exportSelectedTicketsToPDF()" disabled title="Exportar tickets seleccionados a PDF">
+            <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
+        </button>
         <a href="{% url 'ticket_create' %}" class="btn btn-primary">
             <i class="bi bi-plus"></i> Nuevo Ticket
         </a>
@@ -37,13 +103,13 @@
 <div class="card mb-4">
     <div class="card-body">
         <form method="get" class="row g-3">
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label for="search" class="form-label">Buscar</label>
                 <input type="text" class="form-control" id="search" name="search" 
                        value="{{ search|default:'' }}" placeholder="Título o descripción...">
             </div>
             
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label for="status" class="form-label">Estado</label>
                 <select class="form-select" id="status" name="status">
                     <option value="">Todos los estados</option>
@@ -55,7 +121,31 @@
                 </select>
             </div>
             
-            <div class="col-md-3 d-flex align-items-end">
+            <div class="col-md-2">
+                <label for="company" class="form-label">Empresa</label>
+                <select class="form-select" id="company" name="company">
+                    <option value="">Todas las empresas</option>
+                    {% for company in companies %}
+                        <option value="{{ company.id }}" {% if company_filter == company.id|stringformat:"s" %}selected{% endif %}>
+                            {{ company.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-2">
+                <label for="priority" class="form-label">Prioridad</label>
+                <select class="form-select" id="priority" name="priority">
+                    <option value="">Todas las prioridades</option>
+                    {% for priority_value, priority_label in priority_choices %}
+                        <option value="{{ priority_value }}" {% if priority_filter == priority_value %}selected{% endif %}>
+                            {{ priority_label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-4 d-flex align-items-end">
                 <div class="filter-buttons">
                     <button type="submit" class="btn btn-outline-primary">
                         <i class="bi bi-search"></i> Filtrar
@@ -77,32 +167,38 @@
             <table class="table table-hover ticket-table mb-0" style="table-layout: fixed; width: 100%;">
                 <thead class="table-light">
                     <tr>
-                        <th style="width: 8%; min-width: 80px;">Número</th>
-                        <th style="width: 18%; min-width: 160px;">Título</th>
-                        <th style="width: 10%; min-width: 100px;">Categoría</th>
-                        <th style="width: 8%; min-width: 80px;">Tipo</th>
-                        <th style="width: 10%; min-width: 100px;">Empresa</th>
-                        {% if is_agent %}<th style="width: 8%; min-width: 80px;">Creador</th>{% endif %}
-                        <th style="width: 8%; min-width: 80px;">Estado</th>
-                        <th style="width: 8%; min-width: 80px;">Aprobación</th>
-                        <th style="width: 8%; min-width: 80px;">Antigüedad</th>
-                        <th style="width: 10%; min-width: 100px;">Fecha Creación</th>
-                        <th style="width: 12%; min-width: 120px;">Acciones</th>
+                        <th class="col-checkbox">
+                            <input type="checkbox" id="selectAll" class="form-check-input" onchange="toggleAllTickets()">
+                        </th>
+                        <th class="col-number">Número</th>
+                        <th class="col-title">Título</th>
+                        <th class="col-category">Categoría</th>
+                        <th class="col-type">Tipo</th>
+                        <th class="col-company">Empresa</th>
+                        {% if is_agent %}<th class="col-creator">Creador</th>{% endif %}
+                        <th class="col-status">Estado</th>
+                        <th class="col-approval">Aprobación</th>
+                        <th class="col-age">Antigüedad</th>
+                        <th class="col-date">Fecha Creación</th>
+                        <th class="col-actions">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for ticket in page_obj %}
                     <tr>
-                        <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        <td class="col-checkbox">
+                            <input type="checkbox" class="form-check-input ticket-checkbox" 
+                                   value="{{ ticket.pk }}" onchange="updateExportButton()">
+                        </td>
+                        <td class="col-number">
                             <a href="{% url 'ticket_detail' ticket.pk %}" class="text-decoration-none fw-bold">
                                 #{{ ticket.ticket_number }}
                             </a>
                         </td>
-                        <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px;">
+                        <td class="col-title" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                             <a href="{% url 'ticket_detail' ticket.pk %}" 
                                class="text-decoration-none" 
-                               title="{{ ticket.title }}"
-                               style="display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                               title="{{ ticket.title }}">
                                 {% if not is_agent %}
                                     {% if ticket.created_by == user %}
                                         <i class="bi bi-person-circle text-primary me-1" title="Tu ticket"></i>
@@ -115,7 +211,7 @@
                                 {{ ticket.title }}
                             </a>
                         </td>
-                        <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        <td class="col-category">
                             {% if ticket.category %}
                                 <span class="badge" style="background-color: {{ ticket.category.color }}; color: white;">
                                     <i class="fas fa-tag me-1"></i>{{ ticket.category.name }}
@@ -124,7 +220,7 @@
                                 <span class="text-muted">Sin categoría</span>
                             {% endif %}
                         </td>
-                        <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        <td class="col-type">
                             <span class="badge {{ ticket.get_type_badge_class }}">
                                 {% if ticket.ticket_type == 'desarrollo' %}
                                     <i class="bi bi-code-slash me-1"></i>{{ ticket.get_ticket_type_display }}
@@ -133,7 +229,7 @@
                                 {% endif %}
                             </span>
                         </td>
-                        <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        <td class="col-company">
                             {% if ticket.company %}
                                 <span class="badge" style="background-color: {{ ticket.company.color }}; color: white;">
                                     <i class="bi bi-building me-1"></i>{{ ticket.company.name }}
@@ -143,19 +239,19 @@
                             {% endif %}
                         </td>
                         {% if is_agent %}
-                        <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        <td class="col-creator">
                             <small class="text-muted">
                                 <i class="bi bi-person"></i> 
                                 {{ ticket.created_by.get_full_name|default:ticket.created_by.username }}
                             </small>
                         </td>
                         {% endif %}
-                        <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        <td class="col-status">
                             <span class="badge {{ ticket.get_status_badge_class }}">
                                 {{ ticket.get_status_display }}
                             </span>
                         </td>
-                        <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        <td class="col-approval">
                             {% if ticket.is_approved %}
                                 <span class="badge bg-success">
                                     <i class="bi bi-check-circle me-1"></i>Aprobado
@@ -166,23 +262,19 @@
                                 </span>
                             {% endif %}
                         </td>
-                        <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center;">
+                        <td class="col-age">
                             <span class="badge {{ ticket.get_age_badge_class }}" title="{{ ticket.get_age_in_hours|floatformat:1 }} horas">
                                 <i class="bi bi-clock-history me-1"></i>{{ ticket.get_age_display }}
                             </span>
                         </td>
-                        <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" class="text-muted">
+                        <td class="col-date text-muted">
                             {{ ticket.created_at|date:"d/m/Y H:i" }}
                         </td>
-                        <td style="text-align: center;">
+                        <td class="col-actions">
                             <div class="btn-group btn-group-sm">
                                 <a href="{% url 'ticket_detail' ticket.pk %}" 
                                    class="btn btn-outline-primary" title="Ver detalles">
                                     <i class="bi bi-eye"></i>
-                                </a>
-                                <a href="{% url 'ticket_edit' ticket.pk %}" 
-                                   class="btn btn-outline-warning" title="Editar">
-                                    <i class="bi bi-pencil"></i>
                                 </a>
                             </div>
                         </td>
@@ -253,4 +345,226 @@
     </div>
 </div>
 {% endif %}
+
+<script>
+function selectAllFilteredTickets() {
+    const selectButton = document.getElementById('selectAllFiltered');
+    const originalText = selectButton.innerHTML;
+    
+    // Mostrar indicador de carga
+    selectButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Cargando...';
+    selectButton.disabled = true;
+    
+    // Obtener parámetros de filtro actuales
+    const urlParams = new URLSearchParams(window.location.search);
+    const filterParams = new URLSearchParams();
+    
+    // Copiar solo los parámetros de filtro (no de paginación)
+    ['search', 'status', 'company', 'priority', 'assigned_to'].forEach(param => {
+        if (urlParams.has(param)) {
+            filterParams.set(param, urlParams.get(param));
+        }
+    });
+    
+    // Hacer petición AJAX para obtener todos los IDs del filtro
+    fetch(`{% url "get_filtered_ticket_ids" %}?${filterParams.toString()}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Limpiar selección actual
+                document.querySelectorAll('.ticket-checkbox').forEach(cb => cb.checked = false);
+                
+                // Marcar tickets visibles que están en la lista completa
+                const visibleCheckboxes = document.querySelectorAll('.ticket-checkbox');
+                visibleCheckboxes.forEach(checkbox => {
+                    if (data.ticket_ids.includes(parseInt(checkbox.value))) {
+                        checkbox.checked = true;
+                    }
+                });
+                
+                // Guardar todos los IDs seleccionados en un atributo del documento
+                document.body.setAttribute('data-selected-all-ids', JSON.stringify(data.ticket_ids));
+                document.body.setAttribute('data-filter-selection', 'true');
+                
+                // Actualizar botón de exportar
+                updateExportButtonForFilterSelection(data.ticket_ids.length);
+                
+                // Mostrar mensaje de confirmación
+                const toast = document.createElement('div');
+                toast.className = 'toast show position-fixed';
+                toast.style.cssText = 'top: 20px; right: 20px; z-index: 1050;';
+                toast.innerHTML = `
+                    <div class="toast-body bg-success text-white">
+                        <i class="bi bi-check-circle me-2"></i>
+                        Seleccionados ${data.ticket_ids.length} tickets del filtro completo
+                        <button type="button" class="btn-close btn-close-white ms-auto" onclick="this.parentElement.parentElement.remove()"></button>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                
+                // Remover toast después de 5 segundos
+                setTimeout(() => {
+                    if (toast.parentElement) {
+                        toast.remove();
+                    }
+                }, 5000);
+                
+            } else {
+                alert('Error al obtener los tickets del filtro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al conectar con el servidor');
+        })
+        .finally(() => {
+            // Restaurar botón
+            selectButton.innerHTML = originalText;
+            selectButton.disabled = false;
+        });
+}
+
+function updateExportButtonForFilterSelection(totalCount) {
+    const exportButton = document.getElementById('exportSelectedPDF');
+    exportButton.disabled = false;
+    exportButton.title = `Exportar ${totalCount} tickets seleccionados del filtro completo a PDF`;
+    
+    // Actualizar el checkbox "seleccionar todo" de la página actual
+    const visibleCheckboxes = document.querySelectorAll('.ticket-checkbox');
+    const checkedVisible = document.querySelectorAll('.ticket-checkbox:checked');
+    const selectAllCheckbox = document.getElementById('selectAll');
+    
+    if (checkedVisible.length === visibleCheckboxes.length && visibleCheckboxes.length > 0) {
+        selectAllCheckbox.checked = true;
+        selectAllCheckbox.indeterminate = false;
+    } else if (checkedVisible.length > 0) {
+        selectAllCheckbox.indeterminate = true;
+        selectAllCheckbox.checked = false;
+    } else {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = false;
+    }
+}
+
+function toggleAllTickets() {
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const ticketCheckboxes = document.querySelectorAll('.ticket-checkbox');
+    
+    // Limpiar selección de filtro completo
+    document.body.removeAttribute('data-selected-all-ids');
+    document.body.removeAttribute('data-filter-selection');
+    
+    ticketCheckboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+    });
+    
+    updateExportButton();
+}
+
+function updateExportButton() {
+    const checkedBoxes = document.querySelectorAll('.ticket-checkbox:checked');
+    const exportButton = document.getElementById('exportSelectedPDF');
+    const isFilterSelection = document.body.getAttribute('data-filter-selection') === 'true';
+    
+    if (isFilterSelection) {
+        // Si hay selección de filtro completo, mantener ese estado
+        const allIds = JSON.parse(document.body.getAttribute('data-selected-all-ids') || '[]');
+        exportButton.disabled = allIds.length === 0;
+        exportButton.title = allIds.length > 0 ? 
+            `Exportar ${allIds.length} tickets seleccionados del filtro completo a PDF` :
+            'Selecciona tickets para exportar a PDF';
+        return;
+    }
+    
+    if (checkedBoxes.length > 0) {
+        exportButton.disabled = false;
+        exportButton.title = `Exportar ${checkedBoxes.length} tickets seleccionados a PDF`;
+    } else {
+        exportButton.disabled = true;
+        exportButton.title = 'Selecciona tickets para exportar a PDF';
+    }
+    
+    // Actualizar el estado del checkbox "seleccionar todo"
+    const allCheckboxes = document.querySelectorAll('.ticket-checkbox');
+    const selectAllCheckbox = document.getElementById('selectAll');
+    
+    if (checkedBoxes.length === 0) {
+        selectAllCheckbox.indeterminate = false;
+        selectAllCheckbox.checked = false;
+    } else if (checkedBoxes.length === allCheckboxes.length) {
+        selectAllCheckbox.indeterminate = false;
+        selectAllCheckbox.checked = true;
+    } else {
+        selectAllCheckbox.indeterminate = true;
+        selectAllCheckbox.checked = false;
+    }
+}
+
+function exportSelectedTicketsToPDF() {
+    const isFilterSelection = document.body.getAttribute('data-filter-selection') === 'true';
+    let ticketIds = [];
+    
+    if (isFilterSelection) {
+        // Usar todos los IDs del filtro
+        ticketIds = JSON.parse(document.body.getAttribute('data-selected-all-ids') || '[]');
+    } else {
+        // Usar solo los checkboxes marcados visualmente
+        const checkedBoxes = document.querySelectorAll('.ticket-checkbox:checked');
+        ticketIds = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
+    }
+    
+    if (ticketIds.length === 0) {
+        alert('Por favor selecciona al menos un ticket para exportar.');
+        return;
+    }
+    
+    // Cambiar el texto del botón mientras se procesa
+    const exportButton = document.getElementById('exportSelectedPDF');
+    const originalText = exportButton.innerHTML;
+    exportButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generando PDF...';
+    exportButton.disabled = true;
+    
+    // Crear formulario para enviar los IDs
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{% url "tickets_export_pdf" %}';
+    form.target = '_blank'; // Abrir en nueva ventana
+    
+    // Agregar CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (csrfToken) {
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = csrfToken.value;
+        form.appendChild(csrfInput);
+    }
+    
+    // Agregar los IDs de tickets
+    ticketIds.forEach(id => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'ticket_ids';
+        input.value = id;
+        form.appendChild(input);
+    });
+    
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+    
+    // Restaurar el botón después de un delay
+    setTimeout(() => {
+        exportButton.innerHTML = originalText;
+        exportButton.disabled = false;
+        updateExportButton();
+    }, 2000);
+}
+
+// Inicializar el estado del botón al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    updateExportButton();
+});
+</script>
+
 {% endblock %}

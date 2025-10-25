@@ -1,12 +1,3 @@
-# Local
-
-```
-source .venv/bin/activate
-python manage.py runserver 8000
-```
-
-
-
 # CONFIGURACIÓN DEL CRON JOB EN PRODUCCIÓN
 # 1. Editar el crontab del usuario
 crontab -e

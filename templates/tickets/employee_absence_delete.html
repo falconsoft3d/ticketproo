@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'employee_absence_list' %}">
+                        <i class="bi bi-calendar-x"></i> Ausencias
+                    </a>
+                </li>
+                <li class="breadcrumb-item active">{{ page_title }}</li>
+            </ol>
+        </nav>
+        <h2>
+            <i class="bi bi-trash"></i> {{ page_title }}
+        </h2>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning" role="alert">
+                    <h6 class="alert-heading">
+                        <i class="bi bi-exclamation-triangle"></i> ¡Atención!
+                    </h6>
+                    <p>Estás a punto de eliminar la siguiente ausencia:</p>
+                    <hr>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <strong>Empleado:</strong><br>
+                                {{ absence.employee.get_full_name|default:absence.employee.username }}
+                                <small class="text-muted d-block">{{ absence.employee.username }}</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <strong>Tipo:</strong><br>
+                                <span class="badge" style="background-color: {{ absence.absence_type.color }}; color: white;">
+                                    {{ absence.absence_type.name }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <strong>Fechas:</strong><br>
+                                {{ absence.start_date|date:"d/m/Y" }} - {{ absence.end_date|date:"d/m/Y" }}
+                                <small class="text-muted d-block">{{ absence.get_duration_days }} día{{ absence.get_duration_days|pluralize }}</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <strong>Estado:</strong><br>
+                                <span class="badge bg-{{ absence.get_status_display_class }}">
+                                    {{ absence.get_status_display }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Motivo:</strong><br>
+                        <div class="bg-light p-2 rounded mt-1">
+                            {{ absence.reason|truncatechars:200 }}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Creada:</strong> {{ absence.created_at|date:"d/m/Y H:i" }}
+                        {% if absence.approved_by %}
+                        <br><strong>Gestionada por:</strong> {{ absence.approved_by.get_full_name|default:absence.approved_by.username }} 
+                        el {{ absence.approved_at|date:"d/m/Y H:i" }}
+                        {% endif %}
+                    </div>
+                    
+                    {% if absence.documentation_file %}
+                    <div class="mb-3">
+                        <strong>Documentación adjunta:</strong> {{ absence.documentation_file.name }}
+                        <br><small class="text-warning">⚠️ El archivo también será eliminado</small>
+                    </div>
+                    {% endif %}
+                    
+                    <hr>
+                    <p class="mb-0">
+                        <strong>Esta acción no se puede deshacer.</strong> 
+                        Se perderá todo el historial y documentación asociada.
+                    </p>
+                </div>
+                
+                <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Sí, eliminar ausencia
+                        </button>
+                        <a href="{% url 'employee_absence_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancelar
+                        </a>
+                        <a href="{% url 'employee_absence_detail' absence.pk %}" class="btn btn-outline-primary">
+                            <i class="bi bi-eye"></i> Ver detalle
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

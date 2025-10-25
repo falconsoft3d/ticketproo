@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-mortarboard"></i> {{ page_title }}</h2>
+    
+    <!-- Solo mostrar botón de crear para Agentes -->
+    {% if user.is_staff or user.groups.all and user.groups.first.name == 'Agentes' %}
+    <div>
+        <a href="{% url 'training_plan_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Crear Plan
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+{% if plans %}
+<div class="row">
+    {% for plan in plans %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 {% if plan.is_completed %}border-success{% elif plan.user_progress > 0 %}border-warning{% endif %}">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="bi bi-book"></i> Plan #{{ plan.sequence }}
+                </h6>
+                {% if plan.is_completed %}
+                    <span class="badge bg-success">
+                        <i class="bi bi-check-circle"></i> Completado
+                    </span>
+                {% elif plan.user_progress > 0 %}
+                    <span class="badge bg-warning">
+                        <i class="bi bi-clock"></i> En Progreso
+                    </span>
+                {% else %}
+                    <span class="badge bg-secondary">
+                        <i class="bi bi-circle"></i> Pendiente
+                    </span>
+                {% endif %}
+            </div>
+            
+            <div class="card-body">
+                <h5 class="card-title">{{ plan.title }}</h5>
+                <p class="card-text text-muted">{{ plan.description|truncatechars:100 }}</p>
+                
+                <!-- Barra de progreso -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-muted">Progreso</small>
+                        <small class="text-muted">{{ plan.user_progress|floatformat:0 }}%</small>
+                    </div>
+                    <div style="height: 8px; background-color: #e9ecef; border-radius: 0.375rem; overflow: hidden;">
+                        <div style="width: {{ plan.user_progress|floatformat:0 }}%; height: 100%; background-color: {% if plan.is_completed %}#28a745{% elif plan.user_progress > 0 %}#ffc107{% else %}#6c757d{% endif %}; transition: width 0.3s ease;"
+                             role="progressbar" 
+                             aria-valuenow="{{ plan.user_progress }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-muted small mb-3">
+                    <i class="bi bi-link-45deg"></i> {{ plan.get_total_links }} recurso{{ plan.get_total_links|pluralize }}
+                </div>
+            </div>
+            
+            <div class="card-footer bg-transparent">
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'training_plan_detail' plan.pk %}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-eye"></i> Ver Plan
+                    </a>
+                    
+                    {% if user.is_staff or user.groups.all and user.groups.first.name == 'Agentes' %}
+                    <a href="{% url 'training_plan_edit' plan.pk %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5">
+    <i class="bi bi-mortarboard" style="font-size: 4rem; color: #dee2e6;"></i>
+    <h4 class="text-muted mt-3">No hay planes de capacitación disponibles</h4>
+    <p class="text-muted">Los planes de capacitación aparecerán aquí cuando sean creados.</p>
+    
+    {% if user.is_staff or user.groups.all and user.groups.first.name == 'Agentes' %}
+    <a href="{% url 'training_plan_create' %}" class="btn btn-primary mt-3">
+        <i class="bi bi-plus-circle"></i> Crear el primer plan
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
+<style>
+.card {
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.progress {
+    border-radius: 10px;
+}
+
+.progress-bar {
+    border-radius: 10px;
+}
+</style>
+{% endblock %}

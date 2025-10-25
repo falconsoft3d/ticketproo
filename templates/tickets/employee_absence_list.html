@@ -1,0 +1,329 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'dashboard' %}">
+                        <i class="bi bi-house"></i> Dashboard
+                    </a>
+                </li>
+                <li class="breadcrumb-item active">{{ page_title }}</li>
+            </ol>
+        </nav>
+        <h2><i class="bi bi-calendar-x"></i> {{ page_title }}</h2>
+        <p class="text-muted">Registro y seguimiento de ausencias de empleados</p>
+    </div>
+    
+    <div class="btn-group" role="group">
+        <a href="{% url 'employee_absence_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nueva Ausencia
+        </a>
+        <a href="{% url 'employee_absence_calendar' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-calendar3"></i> Calendario
+        </a>
+    </div>
+</div>
+
+<!-- Estadísticas rápidas -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card bg-warning text-dark">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="mb-0">{{ current_absences }}</h4>
+                        <small>Empleados ausentes hoy</small>
+                    </div>
+                    <i class="bi bi-person-x" style="font-size: 2rem; opacity: 0.7;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="mb-0">{{ pending_approvals }}</h4>
+                        <small>Solicitudes pendientes</small>
+                    </div>
+                    <i class="bi bi-clock-history" style="font-size: 2rem; opacity: 0.7;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h6 class="mb-0">
+            <i class="bi bi-funnel"></i> Filtros
+        </h6>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label for="employee" class="form-label">Empleado</label>
+                <input type="text" class="form-control" id="employee" name="employee" 
+                       value="{{ employee_filter }}" placeholder="Nombre del empleado">
+            </div>
+            <div class="col-md-2">
+                <label for="type" class="form-label">Tipo</label>
+                <select class="form-select" id="type" name="type">
+                    <option value="">Todos</option>
+                    {% for absence_type in absence_types %}
+                    <option value="{{ absence_type.id }}" {% if type_filter == absence_type.id|stringformat:"s" %}selected{% endif %}>
+                        {{ absence_type.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="status" class="form-label">Estado</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">Todos</option>
+                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pendiente</option>
+                    <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Aprobada</option>
+                    <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rechazada</option>
+                    <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelada</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="date_from" class="form-label">Desde</label>
+                <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+            </div>
+            <div class="col-md-2">
+                <label for="date_to" class="form-label">Hasta</label>
+                <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+                <button type="submit" class="btn btn-outline-primary w-100">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Reportes PDF -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h6 class="mb-0">
+            <i class="bi bi-file-earmark-pdf"></i> Reportes PDF
+        </h6>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-3">Generar reportes de ausencias por empleado y período</p>
+        <form method="get" action="{% url 'employee_absence_report_pdf' %}" class="row g-3" id="pdfReportForm">
+            <div class="col-md-4">
+                <label for="pdf_employee" class="form-label">Empleado *</label>
+                <select class="form-select" id="pdf_employee" name="employee_id" required>
+                    <option value="">Seleccionar empleado...</option>
+                    {% for emp in all_employees %}
+                    <option value="{{ emp.id }}">{{ emp.get_full_name|default:emp.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="pdf_year" class="form-label">Año *</label>
+                <select class="form-select" id="pdf_year" name="year" required>
+                    {% for year in years_range %}
+                    <option value="{{ year }}" {% if year == current_year %}selected{% endif %}>{{ year }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="pdf_month" class="form-label">Mes *</label>
+                <select class="form-select" id="pdf_month" name="month" required>
+                    <option value="1" {% if current_month == 1 %}selected{% endif %}>Enero</option>
+                    <option value="2" {% if current_month == 2 %}selected{% endif %}>Febrero</option>
+                    <option value="3" {% if current_month == 3 %}selected{% endif %}>Marzo</option>
+                    <option value="4" {% if current_month == 4 %}selected{% endif %}>Abril</option>
+                    <option value="5" {% if current_month == 5 %}selected{% endif %}>Mayo</option>
+                    <option value="6" {% if current_month == 6 %}selected{% endif %}>Junio</option>
+                    <option value="7" {% if current_month == 7 %}selected{% endif %}>Julio</option>
+                    <option value="8" {% if current_month == 8 %}selected{% endif %}>Agosto</option>
+                    <option value="9" {% if current_month == 9 %}selected{% endif %}>Septiembre</option>
+                    <option value="10" {% if current_month == 10 %}selected{% endif %}>Octubre</option>
+                    <option value="11" {% if current_month == 11 %}selected{% endif %}>Noviembre</option>
+                    <option value="12" {% if current_month == 12 %}selected{% endif %}>Diciembre</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-success w-100">
+                    <i class="bi bi-download"></i> Generar PDF
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista de ausencias -->
+{% if absences %}
+<div class="card">
+    <div class="card-header">
+        <h6 class="mb-0">
+            <i class="bi bi-list-ul"></i> Ausencias Registradas
+        </h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th>Empleado</th>
+                        <th>Tipo</th>
+                        <th>Fechas</th>
+                        <th>Días</th>
+                        <th>Horas Perdidas</th>
+                        <th>Estado</th>
+                        <th>Motivo</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for absence in absences %}
+                    <tr class="{% if absence.is_current %}table-warning{% endif %}">
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div>
+                                    <strong>{{ absence.employee.get_full_name|default:absence.employee.username }}</strong>
+                                    <br><small class="text-muted">{{ absence.employee.username }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge" style="background-color: {{ absence.absence_type.color }}; color: white;">
+                                {{ absence.absence_type.name }}
+                            </span>
+                        </td>
+                        <td>
+                            <div>
+                                <strong>{{ absence.start_date|date:"d/m/Y" }}</strong>
+                                {% if absence.start_date != absence.end_date %}
+                                    <br><small class="text-muted">hasta {{ absence.end_date|date:"d/m/Y" }}</small>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">
+                                {{ absence.get_duration_days }} día{{ absence.get_duration_days|pluralize }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="text-center">
+                                <strong class="text-danger">{{ absence.lost_hours|floatformat:1 }}</strong>
+                                <br><small class="text-muted">horas</small>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-{{ absence.get_status_display_class }}">
+                                {{ absence.get_status_display }}
+                            </span>
+                            {% if absence.is_current %}
+                                <br><small class="text-warning"><i class="bi bi-exclamation-circle"></i> En curso</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="max-width: 200px;">
+                                {{ absence.reason|truncatechars:50 }}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{% url 'employee_absence_detail' absence.pk %}" 
+                                   class="btn btn-outline-primary" title="Ver detalle">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'employee_absence_edit' absence.pk %}" 
+                                   class="btn btn-outline-secondary" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                {% if absence.status == 'pending' %}
+                                <button type="button" class="btn btn-outline-success" 
+                                        onclick="approveAbsence({{ absence.pk }})" title="Aprobar">
+                                    <i class="bi bi-check"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="text-center py-5">
+    <i class="bi bi-calendar-x" style="font-size: 4rem; color: #dee2e6;"></i>
+    <h4 class="text-muted mt-3">No se encontraron ausencias</h4>
+    <p class="text-muted">No hay ausencias registradas con los filtros seleccionados.</p>
+    
+    <a href="{% url 'employee_absence_create' %}" class="btn btn-primary mt-3">
+        <i class="bi bi-plus-circle"></i> Registrar Primera Ausencia
+    </a>
+</div>
+{% endif %}
+
+<!-- Modal para aprobación rápida -->
+<div class="modal fade" id="approvalModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Aprobar Ausencia</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas aprobar esta ausencia?</p>
+                <form id="approvalForm" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="approve">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="document.getElementById('approvalForm').submit();">
+                    <i class="bi bi-check"></i> Aprobar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function approveAbsence(absenceId) {
+    const form = document.getElementById('approvalForm');
+    form.action = `/employee-absences/${absenceId}/approve/`;
+    
+    const modal = new bootstrap.Modal(document.getElementById('approvalModal'));
+    modal.show();
+}
+</script>
+
+<style>
+.table td, .table th {
+    vertical-align: middle;
+}
+
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.table-warning {
+    background-color: #fff3cd !important;
+}
+</style>
+{% endblock %}

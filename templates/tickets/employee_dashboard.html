@@ -338,6 +338,20 @@
                             </a>
                         </div>
                     </div>
+                    
+                    <!-- Segunda fila de acciones -->
+                    <div class="row">
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <button onclick="showTicketPrintModal()" class="btn btn-outline-info w-100 quick-action-btn d-flex align-items-center justify-content-center" style="height: 65px;">
+                                <i class="bi bi-printer me-2" style="font-size: 1.8rem;"></i>
+                                <div class="text-start">
+                                    <div style="font-weight: 600;">Imprimir Ticket</div>
+                                    <small class="text-muted">Por número</small>
+                                </div>
+                            </button>
+                        </div>
+                        <div class="col-lg-9 col-md-6"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -415,6 +429,47 @@
         </div>
     </div>
 </div>
+
+<!-- Modal para imprimir ticket -->
+<div class="modal fade" id="ticketPrintModal" tabindex="-1" aria-labelledby="ticketPrintModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ticketPrintModalLabel">
+                    <i class="bi bi-printer"></i> Imprimir Ticket
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="ticketNumber" class="form-label">Número de Ticket</label>
+                    <input type="number" class="form-control" id="ticketNumber" placeholder="Ej: 123" min="1">
+                    <div class="form-text">Ingresa el número del ticket que deseas imprimir</div>
+                </div>
+                <div id="ticketPreview" class="d-none">
+                    <div class="alert alert-info">
+                        <strong>Vista previa del ticket:</strong>
+                        <div id="ticketInfo"></div>
+                    </div>
+                </div>
+                <div id="ticketError" class="d-none">
+                    <div class="alert alert-danger">
+                        <span id="ticketErrorMessage"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="loadTicketPreview()" id="previewBtn">
+                    <i class="bi bi-eye"></i> Vista Previa
+                </button>
+                <button type="button" class="btn btn-success d-none" onclick="printTicket()" id="printBtn">
+                    <i class="bi bi-printer"></i> Imprimir
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -480,6 +535,83 @@ document.addEventListener('DOMContentLoaded', function() {
             this.closest('form').submit();
         });
     }
+
+    // Función para mostrar el modal de impresión de tickets
+    function showTicketPrintModal() {
+        const modal = new bootstrap.Modal(document.getElementById('ticketPrintModal'));
+        // Limpiar el modal al abrirlo
+        document.getElementById('ticketNumber').value = '';
+        document.getElementById('ticketPreview').classList.add('d-none');
+        document.getElementById('ticketError').classList.add('d-none');
+        document.getElementById('previewBtn').classList.remove('d-none');
+        document.getElementById('printBtn').classList.add('d-none');
+        modal.show();
+    }
+
+    // Función para cargar vista previa del ticket
+    async function loadTicketPreview() {
+        const ticketNumber = document.getElementById('ticketNumber').value;
+        const previewDiv = document.getElementById('ticketPreview');
+        const errorDiv = document.getElementById('ticketError');
+        const previewBtn = document.getElementById('previewBtn');
+        const printBtn = document.getElementById('printBtn');
+
+        if (!ticketNumber) {
+            showError('Por favor ingresa un número de ticket');
+            return;
+        }
+
+        try {
+            previewBtn.disabled = true;
+            previewBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Cargando...';
+
+            const response = await fetch(`/tickets/print-preview/${ticketNumber}/`);
+            const data = await response.json();
+
+            if (data.success) {
+                document.getElementById('ticketInfo').innerHTML = `
+                    <strong>Título:</strong> ${data.ticket.title}<br>
+                    <strong>Fecha:</strong> ${data.ticket.created_at}<br>
+                    <strong>Creado por:</strong> ${data.ticket.created_by}<br>
+                    <strong>Estado:</strong> ${data.ticket.status}<br>
+                    <strong>Categoría:</strong> ${data.ticket.category}
+                `;
+                previewDiv.classList.remove('d-none');
+                errorDiv.classList.add('d-none');
+                printBtn.classList.remove('d-none');
+            } else {
+                showError(data.message || 'Ticket no encontrado');
+            }
+        } catch (error) {
+            showError('Error al cargar el ticket. Intenta nuevamente.');
+        } finally {
+            previewBtn.disabled = false;
+            previewBtn.innerHTML = '<i class="bi bi-eye"></i> Vista Previa';
+        }
+    }
+
+    // Función para mostrar errores
+    function showError(message) {
+        document.getElementById('ticketErrorMessage').textContent = message;
+        document.getElementById('ticketError').classList.remove('d-none');
+        document.getElementById('ticketPreview').classList.add('d-none');
+        document.getElementById('printBtn').classList.add('d-none');
+    }
+
+    // Función para imprimir el ticket
+    function printTicket() {
+        const ticketNumber = document.getElementById('ticketNumber').value;
+        if (ticketNumber) {
+            window.open(`/tickets/print/${ticketNumber}/`, '_blank');
+        }
+    }
+
+    // Permitir buscar con Enter
+    document.getElementById('ticketNumber').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            loadTicketPreview();
+        }
+    });
 });
 </script>
 {% endblock %}

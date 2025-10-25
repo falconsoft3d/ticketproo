@@ -414,6 +414,10 @@
                         <i class="bi bi-pencil"></i> Editar Ticket
                     </a>
                     
+                    <a href="{% url 'ticket_print_pdf' ticket.pk %}" class="btn btn-info" target="_blank">
+                        <i class="bi bi-file-earmark-pdf"></i> Imprimir PDF
+                    </a>
+                    
                     <a href="{% url 'ticket_delete' ticket.pk %}" class="btn btn-danger">
                         <i class="bi bi-trash"></i> Eliminar Ticket
                     </a>

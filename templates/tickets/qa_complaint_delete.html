@@ -1,0 +1,298 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Eliminar Reporte QA{% endblock %}
+
+{% block extra_css %}
+<style>
+    .delete-warning {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+    }
+    
+    .complaint-info {
+        background-color: #f8f9fa;
+        border-left: 4px solid #dc3545;
+        padding: 1.5rem;
+        border-radius: 0 8px 8px 0;
+        margin-bottom: 2rem;
+    }
+    
+    .danger-icon {
+        font-size: 4rem;
+        color: #dc3545;
+        opacity: 0.7;
+    }
+    
+    .confirmation-section {
+        background-color: #fff5f5;
+        border: 1px solid #fecaca;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .btn-danger:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+    }
+    
+    .btn-secondary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Encabezado de Advertencia -->
+            <div class="delete-warning text-center">
+                <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                <h2 class="mb-3">¿Eliminar Reporte QA?</h2>
+                <p class="mb-0 opacity-75">
+                    Esta acción no se puede deshacer. Se eliminará permanentemente el reporte y todos sus comentarios asociados.
+                </p>
+            </div>
+
+            <!-- Información del Reporte -->
+            <div class="complaint-info">
+                <h5 class="text-danger mb-3">
+                    <i class="fas fa-file-alt"></i> Información del Reporte
+                </h5>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <strong>ID:</strong> #{{ complaint.id }}
+                        </div>
+                        <div class="mb-3">
+                            <strong>Título:</strong><br>
+                            {{ complaint.title }}
+                        </div>
+                        <div class="mb-3">
+                            <strong>Tipo:</strong>
+                            <span class="badge 
+                                       {% if complaint.type == 'complaint' %}bg-danger
+                                       {% elif complaint.type == 'suggestion' %}bg-info
+                                       {% elif complaint.type == 'feedback' %}bg-success
+                                       {% elif complaint.type == 'improvement' %}bg-primary
+                                       {% else %}bg-warning{% endif %}">
+                                {{ complaint.get_type_display }}
+                            </span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Empresa:</strong><br>
+                            {{ complaint.company.name }}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <strong>Estado:</strong>
+                            <span class="badge 
+                                       {% if complaint.status == 'open' %}bg-danger
+                                       {% elif complaint.status == 'in_progress' %}bg-warning
+                                       {% elif complaint.status == 'resolved' %}bg-success
+                                       {% else %}bg-secondary{% endif %}">
+                                {{ complaint.get_status_display }}
+                            </span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Prioridad:</strong>
+                            <span class="badge 
+                                       {% if complaint.priority == 'critical' %}bg-danger
+                                       {% elif complaint.priority == 'high' %}bg-warning
+                                       {% elif complaint.priority == 'medium' %}bg-info
+                                       {% else %}bg-success{% endif %}">
+                                {{ complaint.get_priority_display }}
+                            </span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Reportado por:</strong><br>
+                            {{ complaint.reported_by.get_full_name|default:complaint.reported_by.username }}
+                        </div>
+                        <div class="mb-3">
+                            <strong>Fecha de creación:</strong><br>
+                            {{ complaint.created_at|date:"d/m/Y H:i" }}
+                        </div>
+                    </div>
+                </div>
+                
+                {% if complaint.description %}
+                    <div class="mt-3">
+                        <strong>Descripción:</strong><br>
+                        <div class="bg-white p-3 rounded border mt-2">
+                            {{ complaint.description|truncatechars:200|linebreaks }}
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- Información adicional sobre datos relacionados -->
+                <div class="mt-4">
+                    <h6 class="text-danger">
+                        <i class="fas fa-database"></i> Datos que se eliminarán:
+                    </h6>
+                    <ul class="mb-0">
+                        <li>El reporte QA completo</li>
+                        {% if complaint.comments.count > 0 %}
+                            <li>{{ complaint.comments.count }} comentario{{ complaint.comments.count|pluralize }} asociado{{ complaint.comments.count|pluralize }}</li>
+                        {% endif %}
+                        {% if complaint.attachment %}
+                            <li>Archivo adjunto: {{ complaint.attachment.name }}</li>
+                        {% endif %}
+                        {% if complaint.resolution %}
+                            <li>Resolución documentada</li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Sección de Confirmación -->
+            <div class="confirmation-section">
+                <div class="row align-items-center">
+                    <div class="col-md-2 text-center">
+                        <i class="danger-icon fas fa-trash-alt"></i>
+                    </div>
+                    <div class="col-md-10">
+                        <h5 class="text-danger mb-2">Confirmación Requerida</h5>
+                        <p class="mb-3">
+                            Para confirmar la eliminación de este reporte QA, haz clic en el botón "Eliminar Definitivamente".
+                            Recuerda que esta acción es <strong>irreversible</strong>.
+                        </p>
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="confirmDelete">
+                            <label class="form-check-label" for="confirmDelete">
+                                <strong>Confirmo que deseo eliminar este reporte QA permanentemente</strong>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'qa_complaint_detail' complaint.pk %}" class="btn btn-secondary btn-lg">
+                    <i class="fas fa-arrow-left"></i> Cancelar y Volver
+                </a>
+                
+                <form method="POST" id="deleteForm" style="display: none;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger btn-lg" id="deleteButton" disabled>
+                        <i class="fas fa-trash-alt"></i> Eliminar Definitivamente
+                    </button>
+                </form>
+                
+                <button type="button" class="btn btn-danger btn-lg" id="showDeleteButton" disabled>
+                    <i class="fas fa-trash-alt"></i> Eliminar Definitivamente
+                </button>
+            </div>
+
+            <!-- Información de Seguridad -->
+            <div class="text-center mt-4">
+                <small class="text-muted">
+                    <i class="fas fa-shield-alt"></i>
+                    Solo los administradores y usuarios autorizados pueden eliminar reportes QA.
+                    Esta acción queda registrada en los logs del sistema.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmCheckbox = document.getElementById('confirmDelete');
+    const showDeleteButton = document.getElementById('showDeleteButton');
+    const deleteForm = document.getElementById('deleteForm');
+    const deleteButton = document.getElementById('deleteButton');
+    
+    // Habilitar/deshabilitar botón según checkbox
+    confirmCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            showDeleteButton.disabled = false;
+            showDeleteButton.classList.remove('btn-danger');
+            showDeleteButton.classList.add('btn-danger');
+        } else {
+            showDeleteButton.disabled = true;
+        }
+    });
+    
+    // Mostrar formulario real al hacer clic en el botón
+    showDeleteButton.addEventListener('click', function() {
+        if (confirmCheckbox.checked) {
+            // Mostrar confirmación final
+            const confirmFinal = confirm(
+                '¿ESTÁS COMPLETAMENTE SEGURO?\n\n' +
+                'Esta es tu última oportunidad para cancelar.\n' +
+                'El reporte QA "' + '{{ complaint.title|escapejs }}' + '" será eliminado permanentemente.\n\n' +
+                'Haz clic en "Aceptar" para proceder con la eliminación.'
+            );
+            
+            if (confirmFinal) {
+                // Ocultar botón ficticio y mostrar formulario real
+                showDeleteButton.style.display = 'none';
+                deleteForm.style.display = 'block';
+                deleteButton.disabled = false;
+                
+                // Cambiar el texto del botón para indicar que se está procesando
+                deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Eliminando...';
+                
+                // Enviar formulario automáticamente
+                setTimeout(function() {
+                    deleteForm.submit();
+                }, 1000);
+            }
+        }
+    });
+    
+    // Prevenir envío accidental del formulario
+    deleteForm.addEventListener('submit', function(e) {
+        if (!confirmCheckbox.checked) {
+            e.preventDefault();
+            alert('Debes confirmar la eliminación marcando la casilla de verificación.');
+            return false;
+        }
+        
+        // Deshabilitar botón para evitar doble envío
+        deleteButton.disabled = true;
+        deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Eliminando...';
+    });
+    
+    // Advertencia al intentar salir de la página
+    let formSubmitted = false;
+    
+    deleteForm.addEventListener('submit', function() {
+        formSubmitted = true;
+    });
+    
+    window.addEventListener('beforeunload', function(e) {
+        if (confirmCheckbox.checked && !formSubmitted) {
+            e.preventDefault();
+            e.returnValue = '';
+            return '';
+        }
+    });
+    
+    // Efecto visual en el checkbox
+    confirmCheckbox.addEventListener('change', function() {
+        const label = document.querySelector('label[for="confirmDelete"]');
+        if (this.checked) {
+            label.style.color = '#dc3545';
+            label.style.fontWeight = 'bold';
+        } else {
+            label.style.color = '';
+            label.style.fontWeight = '';
+        }
+    });
+});
+</script>
+{% endblock %}

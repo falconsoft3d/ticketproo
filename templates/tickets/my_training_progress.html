@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'training_plan_list' %}">
+                        <i class="bi bi-mortarboard"></i> Planes de Capacitación
+                    </a>
+                </li>
+                <li class="breadcrumb-item active">Mi Progreso</li>
+            </ol>
+        </nav>
+        <h2><i class="bi bi-graph-up"></i> {{ page_title }}</h2>
+    </div>
+</div>
+
+<!-- Resumen general -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-bar-chart"></i> Resumen General
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="border-end">
+                            <h3 class="text-primary">{{ total_plans }}</h3>
+                            <p class="text-muted mb-0">Planes Totales</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border-end">
+                            <h3 class="text-success">{{ completed_plans }}</h3>
+                            <p class="text-muted mb-0">Completados</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border-end">
+                            <h3 class="text-warning">{{ in_progress_plans }}</h3>
+                            <p class="text-muted mb-0">En Progreso</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <h3 class="text-info">{{ completion_rate|floatformat:0 }}%</h3>
+                        <p class="text-muted mb-0">Tasa de Finalización</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de planes con progreso -->
+{% if progress_data %}
+<div class="row">
+    {% for data in progress_data %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 {% if data.is_completed %}border-success{% elif data.progress_percent > 0 %}border-warning{% endif %}">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="bi bi-book"></i> Plan #{{ data.plan.sequence }}
+                </h6>
+                {% if data.is_completed %}
+                    <span class="badge bg-success">
+                        <i class="bi bi-check-circle"></i> Completado
+                    </span>
+                {% elif data.progress_percent > 0 %}
+                    <span class="badge bg-warning">
+                        <i class="bi bi-clock"></i> {{ data.progress_percent|floatformat:0 }}%
+                    </span>
+                {% else %}
+                    <span class="badge bg-secondary">
+                        <i class="bi bi-circle"></i> Sin Empezar
+                    </span>
+                {% endif %}
+            </div>
+            
+            <div class="card-body">
+                <h5 class="card-title">{{ data.plan.title }}</h5>
+                <p class="card-text text-muted">{{ data.plan.description|truncatechars:80 }}</p>
+                
+                <!-- Barra de progreso detallada -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-muted">Progreso</small>
+                        <small class="text-muted">{{ data.completed_links }}/{{ data.total_links }}</small>
+                    </div>
+                    <div style="height: 10px; background-color: #e9ecef; border-radius: 0.375rem; overflow: hidden;">
+                        <div style="width: {{ data.progress_percent|floatformat:0 }}%; height: 100%; background-color: {% if data.is_completed %}#28a745{% elif data.progress_percent > 0 %}#ffc107{% else %}#6c757d{% endif %}; transition: width 0.3s ease;"
+                             role="progressbar" 
+                             aria-valuenow="{{ data.progress_percent }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                        </div>
+                    </div>
+                    <div class="text-center mt-1">
+                        <small class="{% if data.is_completed %}text-success{% elif data.progress_percent > 0 %}text-warning{% else %}text-muted{% endif %} fw-bold">
+                            {{ data.progress_percent|floatformat:0 }}%
+                        </small>
+                    </div>
+                </div>
+                
+                <!-- Estadísticas del plan -->
+                <div class="row text-center small text-muted">
+                    <div class="col">
+                        <div class="border-end">
+                            <div class="fw-bold text-dark">{{ data.total_links }}</div>
+                            <div>Total</div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="border-end">
+                            <div class="fw-bold text-success">{{ data.completed_links }}</div>
+                            <div>Completados</div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="fw-bold text-warning">{{ data.pending_links }}</div>
+                        <div>Pendientes</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-footer bg-transparent">
+                <div class="d-grid">
+                    <a href="{% url 'training_plan_detail' data.plan.pk %}" 
+                       class="btn {% if data.is_completed %}btn-outline-success{% elif data.progress_percent > 0 %}btn-outline-warning{% else %}btn-outline-primary{% endif %}">
+                        {% if data.is_completed %}
+                            <i class="bi bi-check-circle"></i> Revisar Plan
+                        {% elif data.progress_percent > 0 %}
+                            <i class="bi bi-play-circle"></i> Continuar
+                        {% else %}
+                            <i class="bi bi-play"></i> Comenzar
+                        {% endif %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5">
+    <i class="bi bi-graph-up" style="font-size: 4rem; color: #dee2e6;"></i>
+    <h4 class="text-muted mt-3">No hay planes de capacitación disponibles</h4>
+    <p class="text-muted">Tu progreso aparecerá aquí cuando haya planes disponibles.</p>
+    <a href="{% url 'training_plan_list' %}" class="btn btn-primary mt-3">
+        <i class="bi bi-mortarboard"></i> Ver Planes Disponibles
+    </a>
+</div>
+{% endif %}
+
+<style>
+.card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.progress {
+    border-radius: 10px;
+}
+
+.progress-bar {
+    border-radius: 10px;
+}
+
+.border-end:last-child {
+    border-right: none !important;
+}
+</style>
+{% endblock %}
