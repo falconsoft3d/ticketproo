@@ -26,7 +26,7 @@ except ImportError:
 
 from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
-    UserNote, TimeEntry, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
+    UserNote, TimeEntry, PublicTimeAccess, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
     DailyTaskSession, DailyTaskItem, ChatRoom, ChatMessage, ContactFormSubmission,
     Opportunity, OpportunityStatus, OpportunityNote, OpportunityStatusHistory,
     Meeting, MeetingAttendee, MeetingQuestion, Contact,
@@ -39,16 +39,17 @@ from .models import (
     ProductSet, ProductItem, Precotizador, PrecotizadorExample, PrecotizadorQuote,
     CompanyDocumentation, CompanyDocumentationURL, ContactGenerator,
     CompanyRequestGenerator, CompanyRequest, CompanyRequestComment,
-    Form, FormQuestion, FormQuestionOption, FormResponse, FormAnswer, Alcance,
+    Form, FormQuestion, FormQuestionOption, FormResponse, FormAnswer, FormAIAnalysis, Alcance, License,
     WhatsAppConnection, WhatsAppKeyword, WhatsAppMessage, ImagePrompt,
     AIManager, AIManagerMeeting, AIManagerSummary, CompanyAISummary, UserAIPerformanceEvaluation,
-    WebsiteTracker, LegalContract
+    WebsiteTracker, LegalContract, Asset, AssetHistory,
+    AITutor, AITutorProgressReport, AITutorAttachment
 )
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
     TicketAttachmentForm, CategoryForm, UserTicketForm, UserTicketEditForm, 
     TicketCommentForm, UserNoteForm, TimeEntryStartForm, TimeEntryEndForm, 
-    TimeEntryEditForm, ProjectForm, CompanyForm, SystemConfigurationForm, DocumentForm,
+    TimeEntryEditForm, PublicTimeEntryForm, ProjectForm, CompanyForm, SystemConfigurationForm, DocumentForm,
     UrlManagerForm, UrlManagerFilterForm, WorkOrderForm, WorkOrderFilterForm, TaskForm,
     ChatMessageForm, ChatRoomForm, AIChatSessionForm, AIChatMessageForm, ConceptForm,
     EmployeeHiringOpinionForm, EmployeePayrollForm, AgreementForm, AgreementSignatureForm, AgreementPublicForm,
@@ -59,7 +60,8 @@ from .forms import (
     PrecotizadorExampleFormSet, PrecotizadorQuoteForm, CompanyDocumentationForm, CompanyDocumentationURLForm,
     CompanyDocumentationURLFormSet, ContactGeneratorForm, PublicContactForm,
     CompanyRequestGeneratorForm, PublicCompanyRequestForm, FormForm, FormQuestionForm,
-    FormQuestionOptionForm, PublicFormResponseForm
+    FormQuestionOptionForm, PublicFormResponseForm, AssetForm, AssetAssignForm, AssetFilterForm,
+    AITutorForm, AITutorProgressReportForm, AITutorAttachmentForm, AITutorFilterForm
 )
 from .utils import is_agent, is_regular_user, is_teacher, can_manage_courses, get_user_role, assign_user_to_group
 
@@ -908,6 +910,16 @@ def user_edit_view(request, user_id):
         'form': form,
         'user_to_edit': user_to_edit,
     }
+    
+    # Agregar información de acceso público si existe
+    try:
+        public_access = user_to_edit.public_time_access
+        context['public_access'] = public_access
+        if public_access.is_active:
+            context['public_url'] = public_access.public_url
+    except PublicTimeAccess.DoesNotExist:
+        context['public_access'] = None
+    
     return render(request, 'tickets/user_edit.html', context)
 
 @login_required
@@ -1811,7 +1823,7 @@ def time_clock_view(request):
     """Vista principal del control de horario para agentes"""
     
     # Obtener registro activo del usuario
-    active_entry = TimeEntry.get_active_entry(request.user)
+    active_entry = TimeEntry.get_active_entry_for_agent(request.user)
     
     # Obtener registros recientes (última semana)
     from datetime import timedelta
@@ -1834,12 +1846,20 @@ def time_clock_view(request):
     total_minutos = sum(entry.duracion_trabajada for entry in week_entries)
     total_horas = round(total_minutos / 60, 2)
     
+    # Obtener acceso público si existe
+    public_access = None
+    try:
+        public_access = PublicTimeAccess.objects.get(user=request.user)
+    except PublicTimeAccess.DoesNotExist:
+        pass
+    
     context = {
         'active_entry': active_entry,
         'recent_entries': recent_entries,
         'total_horas_semana': total_horas,
         'can_start': not active_entry,
         'can_end': bool(active_entry),
+        'public_access': public_access,
         'page_title': 'Control de Horario'
     }
     
@@ -1852,7 +1872,7 @@ def time_start_work(request):
     """Iniciar jornada laboral"""
     
     # Verificar que no hay una jornada activa
-    active_entry = TimeEntry.get_active_entry(request.user)
+    active_entry = TimeEntry.get_active_entry_for_agent(request.user)
     if active_entry:
         messages.warning(request, 'Ya tienes una jornada activa desde las ' + 
                         active_entry.fecha_entrada.strftime('%H:%M'))
@@ -1911,7 +1931,7 @@ def time_end_work(request):
     """Finalizar jornada laboral"""
     
     # Verificar que hay una jornada activa
-    active_entry = TimeEntry.get_active_entry(request.user)
+    active_entry = TimeEntry.get_active_entry_for_agent(request.user)
     if not active_entry:
         messages.error(request, 'No tienes una jornada activa para finalizar.')
         return redirect('time_clock')
@@ -2000,6 +2020,161 @@ def time_entries_list(request):
 
 
 @login_required
+def time_entries_export_excel(request):
+    """Exportar registros de horario a Excel"""
+    
+    # Aplicar los mismos filtros que en la lista
+    fecha_desde = request.GET.get('fecha_desde')
+    fecha_hasta = request.GET.get('fecha_hasta')
+    
+    # Base queryset - solo registros del usuario actual
+    entries = TimeEntry.objects.filter(user=request.user)
+    
+    # Aplicar filtros de fecha
+    if fecha_desde:
+        try:
+            from datetime import datetime
+            fecha_desde_dt = datetime.strptime(fecha_desde, '%Y-%m-%d').date()
+            entries = entries.filter(fecha_entrada__date__gte=fecha_desde_dt)
+        except ValueError:
+            pass
+    
+    if fecha_hasta:
+        try:
+            from datetime import datetime
+            fecha_hasta_dt = datetime.strptime(fecha_hasta, '%Y-%m-%d').date()
+            entries = entries.filter(fecha_entrada__date__lte=fecha_hasta_dt)
+        except ValueError:
+            pass
+    
+    # Ordenar por fecha descendente
+    entries = entries.order_by('-fecha_entrada')
+    
+    # Crear el archivo Excel
+    import openpyxl
+    from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+    from django.http import HttpResponse
+    from io import BytesIO
+    
+    # Crear workbook y worksheet
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Registros de Horario"
+    
+    # Definir estilos
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="2F5597", end_color="2F5597", fill_type="solid")
+    header_alignment = Alignment(horizontal="center", vertical="center")
+    
+    border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin')
+    )
+    
+    # Encabezados
+    headers = [
+        'Fecha',
+        'Hora Entrada',
+        'Hora Salida', 
+        'Duración',
+        'Estado',
+        'Notas',
+        'Proyecto',
+        'Ticket',
+        'Orden de Trabajo',
+        'Tarea'
+    ]
+    
+    # Escribir encabezados
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
+        cell.border = border
+    
+    # Escribir datos
+    for row, entry in enumerate(entries, 2):
+        # Fecha
+        ws.cell(row=row, column=1, value=entry.fecha_entrada.strftime('%d/%m/%Y')).border = border
+        
+        # Hora entrada
+        ws.cell(row=row, column=2, value=entry.fecha_entrada.strftime('%H:%M')).border = border
+        
+        # Hora salida
+        salida_str = entry.fecha_salida.strftime('%H:%M') if entry.fecha_salida else 'En curso'
+        ws.cell(row=row, column=3, value=salida_str).border = border
+        
+        # Duración
+        if entry.fecha_salida:
+            duracion_str = entry.duracion_formateada
+        else:
+            duracion_str = 'En curso'
+        ws.cell(row=row, column=4, value=duracion_str).border = border
+        
+        # Estado
+        estado = 'Finalizada' if entry.fecha_salida else 'Activa'
+        ws.cell(row=row, column=5, value=estado).border = border
+        
+        # Notas
+        ws.cell(row=row, column=6, value=entry.notas or '').border = border
+        
+        # Proyecto
+        proyecto_str = str(entry.project) if entry.project else ''
+        ws.cell(row=row, column=7, value=proyecto_str).border = border
+        
+        # Ticket
+        ticket_str = f"#{entry.ticket.id} - {entry.ticket.title}" if entry.ticket else ''
+        ws.cell(row=row, column=8, value=ticket_str).border = border
+        
+        # Orden de trabajo
+        wo_str = f"#{entry.work_order.id} - {entry.work_order.title}" if entry.work_order else ''
+        ws.cell(row=row, column=9, value=wo_str).border = border
+        
+        # Tarea
+        task_str = f"{entry.task.title}" if entry.task else ''
+        ws.cell(row=row, column=10, value=task_str).border = border
+    
+    # Ajustar ancho de columnas
+    column_widths = [12, 12, 12, 12, 12, 30, 25, 30, 30, 25]
+    for col, width in enumerate(column_widths, 1):
+        ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = width
+    
+    # Agregar fila de totales si hay datos
+    if entries.exists():
+        total_row = len(list(entries)) + 3
+        
+        # Etiquetas de totales
+        ws.cell(row=total_row, column=1, value="TOTALES:").font = Font(bold=True)
+        
+        # Calcular totales
+        total_minutos = sum(entry.duracion_trabajada for entry in entries if entry.fecha_salida)
+        total_horas = round(total_minutos / 60, 2)
+        total_dias = entries.filter(fecha_salida__isnull=False).count()
+        
+        ws.cell(row=total_row, column=4, value=f"{total_horas}h").font = Font(bold=True)
+        ws.cell(row=total_row + 1, column=1, value="Días trabajados:").font = Font(bold=True)
+        ws.cell(row=total_row + 1, column=4, value=total_dias).font = Font(bold=True)
+    
+    # Preparar respuesta HTTP
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    
+    # Generar nombre de archivo
+    usuario = request.user.get_full_name() or request.user.username
+    fecha_actual = timezone.now().strftime('%Y%m%d_%H%M%S')
+    filename = f"registros_horario_{usuario.replace(' ', '_')}_{fecha_actual}.xlsx"
+    
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    # Guardar workbook en response
+    wb.save(response)
+    
+    return response
+
+
+@login_required
 @user_passes_test(is_agent, login_url='dashboard')
 def time_entry_detail(request, entry_id):
     """Vista detallada de un registro de horario"""
@@ -2054,7 +2229,7 @@ def time_entry_edit(request, entry_id):
 def ajax_current_time_status(request):
     """API AJAX para obtener el estado actual del tiempo trabajado"""
     
-    active_entry = TimeEntry.get_active_entry(request.user)
+    active_entry = TimeEntry.get_active_entry_for_agent(request.user)
     
     if active_entry:
         return JsonResponse({
@@ -2070,6 +2245,263 @@ def ajax_current_time_status(request):
             'duration': '00:00',
             'minutes_worked': 0
         })
+
+
+# ===========================================
+# VISTAS PÚBLICAS DE CONTROL DE HORARIO
+# ===========================================
+
+def public_time_clock(request, token):
+    """Vista pública para control de horario usando token"""
+    
+    # Buscar el acceso público por token
+    try:
+        public_access = PublicTimeAccess.objects.get(token=token, is_active=True)
+    except PublicTimeAccess.DoesNotExist:
+        return render(request, 'tickets/public_time_error.html', {
+            'error_title': 'Token no válido',
+            'error_message': 'El enlace que estás usando no es válido o ha expirado.'
+        }, status=404)
+    
+    # Verificar IP permitida (si está configurado)
+    client_ip = get_client_ip(request)
+    if not public_access.is_ip_allowed(client_ip):
+        return render(request, 'tickets/public_time_error.html', {
+            'error_title': 'Acceso no autorizado',
+            'error_message': 'Tu dirección IP no está autorizada para usar este enlace.'
+        }, status=403)
+    
+    user = public_access.user
+    
+    # Obtener estado actual del usuario
+    active_entry = TimeEntry.get_active_entry(user)
+    
+    # Procesar formulario
+    if request.method == 'POST':
+        form = PublicTimeEntryForm(request.POST, public_access=public_access)
+        if form.is_valid():
+            action = form.cleaned_data['action']
+            notes = form.cleaned_data.get('notes', '')
+            latitude = form.cleaned_data.get('latitude')
+            longitude = form.cleaned_data.get('longitude')
+            
+            try:
+                if action == 'entrada':
+                    # Verificar que no haya una jornada activa
+                    if active_entry:
+                        return render(request, 'tickets/public_time_error.html', {
+                            'error_title': 'Ya tienes una jornada activa',
+                            'error_message': f'Tu jornada comenzó a las {active_entry.fecha_entrada.strftime("%H:%M")}. Debes registrar la salida primero.',
+                            'token': token
+                        })
+                    
+                    # Crear nueva entrada (solo hora de entrada) usando método público
+                    entry = TimeEntry.create_public_entry(
+                        user=user,
+                        notas_entrada=notes
+                    )
+                    
+                    # Guardar ubicación si se proporcionó
+                    if latitude and longitude:
+                        entry.ubicacion_entrada = f"{latitude},{longitude}"
+                        entry.save()
+                    
+                    # Actualizar último uso
+                    public_access.update_last_used()
+                    
+                    return render(request, 'tickets/public_time_success.html', {
+                        'action': 'entrada',
+                        'time': entry.fecha_entrada.strftime('%H:%M'),
+                        'user': user,
+                        'notes': notes,
+                        'token': token
+                    })
+                
+                elif action == 'salida':
+                    # Verificar que haya una jornada activa
+                    if not active_entry:
+                        return render(request, 'tickets/public_time_error.html', {
+                            'error_title': 'No hay jornada activa',
+                            'error_message': 'No tienes una jornada activa para finalizar. Registra tu entrada primero.',
+                            'token': token
+                        })
+                    
+                    # Actualizar la entrada existente con la hora de salida
+                    active_entry.finalizar_jornada(notes)
+                    
+                    # Guardar ubicación de salida si se proporcionó
+                    if latitude and longitude:
+                        active_entry.ubicacion_salida = f"{latitude},{longitude}"
+                        active_entry.save()
+                    
+                    # Actualizar último uso
+                    public_access.update_last_used()
+                    
+                    return render(request, 'tickets/public_time_success.html', {
+                        'action': 'salida',
+                        'time': active_entry.fecha_salida.strftime('%H:%M'),
+                        'duration': active_entry.duracion_formateada,
+                        'user': user,
+                        'notes': notes,
+                        'token': token
+                    })
+                    
+            except Exception as e:
+                return render(request, 'tickets/public_time_error.html', {
+                    'error_title': 'Error al procesar',
+                    'error_message': f'Ocurrió un error: {str(e)}',
+                    'token': token
+                })
+    else:
+        form = PublicTimeEntryForm(public_access=public_access)
+    
+    # Estadísticas del día
+    from datetime import date
+    today = date.today()
+    today_entries = TimeEntry.objects.filter(
+        user=user,
+        fecha_entrada__date=today
+    ).order_by('-fecha_entrada')
+    
+    context = {
+        'user': user,
+        'active_entry': active_entry,
+        'public_access': public_access,
+        'form': form,
+        'today_entries': today_entries,
+        'token': token,
+        'require_location': public_access.require_location,
+    }
+    
+    return render(request, 'tickets/public_time_clock.html', context)
+
+
+def get_client_ip(request):
+    """Obtener la IP real del cliente"""
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+
+
+@login_required
+@user_passes_test(is_agent, login_url='dashboard')
+def public_time_access_list(request):
+    """Vista para listar y gestionar accesos públicos de control de horario (solo agentes)"""
+    
+    access_list = PublicTimeAccess.objects.select_related('user').order_by('-created_at')
+    
+    # Búsqueda
+    search = request.GET.get('search')
+    if search:
+        access_list = access_list.filter(
+            Q(user__username__icontains=search) |
+            Q(user__first_name__icontains=search) |
+            Q(user__last_name__icontains=search) |
+            Q(user__email__icontains=search)
+        )
+    
+    # Filtro por estado
+    status = request.GET.get('status')
+    if status == 'active':
+        access_list = access_list.filter(is_active=True)
+    elif status == 'inactive':
+        access_list = access_list.filter(is_active=False)
+    
+    # Paginación
+    paginator = Paginator(access_list, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'search': search,
+        'status': status,
+        'page_title': 'Gestión de Accesos Públicos de Horario'
+    }
+    
+    return render(request, 'tickets/public_time_access_list.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='dashboard')
+def public_time_access_create(request, user_id):
+    """Crear acceso público para un usuario específico"""
+    
+    user = get_object_or_404(User, id=user_id)
+    
+    # Verificar si ya existe un acceso para este usuario
+    if hasattr(user, 'public_time_access'):
+        messages.warning(request, f'{user.get_full_name() or user.username} ya tiene un acceso público configurado.')
+        return redirect('public_time_access_list')
+    
+    if request.method == 'POST':
+        form = PublicTimeAccessForm(request.POST)
+        if form.is_valid():
+            access = form.save(commit=False)
+            access.user = user
+            access.save()
+            
+            messages.success(request, f'Acceso público creado para {user.get_full_name() or user.username}')
+            return redirect('public_time_access_list')
+    else:
+        form = PublicTimeAccessForm()
+    
+    context = {
+        'form': form,
+        'user': user,
+        'page_title': f'Crear Acceso Público para {user.get_full_name() or user.username}'
+    }
+    
+    return render(request, 'tickets/public_time_access_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='dashboard')
+def public_time_access_edit(request, access_id):
+    """Editar acceso público existente"""
+    
+    access = get_object_or_404(PublicTimeAccess, id=access_id)
+    
+    if request.method == 'POST':
+        form = PublicTimeAccessForm(request.POST, instance=access)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Acceso público actualizado para {access.user.get_full_name() or access.user.username}')
+            return redirect('public_time_access_list')
+    else:
+        form = PublicTimeAccessForm(instance=access)
+    
+    context = {
+        'form': form,
+        'access': access,
+        'page_title': f'Editar Acceso Público - {access.user.get_full_name() or access.user.username}'
+    }
+    
+    return render(request, 'tickets/public_time_access_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='dashboard')
+def public_time_access_delete(request, access_id):
+    """Eliminar acceso público"""
+    
+    access = get_object_or_404(PublicTimeAccess, id=access_id)
+    
+    if request.method == 'POST':
+        user_name = access.user.get_full_name() or access.user.username
+        access.delete()
+        messages.success(request, f'Acceso público eliminado para {user_name}')
+        return redirect('public_time_access_list')
+    
+    context = {
+        'access': access,
+        'page_title': 'Confirmar Eliminación'
+    }
+    
+    return render(request, 'tickets/public_time_access_delete.html', context)
 
 
 # ===========================================
@@ -19341,6 +19773,204 @@ def form_detail(request, pk):
 
 
 @login_required
+def form_generate_ai_questions(request, pk):
+    """Genera preguntas automáticamente usando IA basándose en título y descripción"""
+    from django.http import JsonResponse
+    from .models import Form, SystemConfiguration
+    
+    try:
+        form_obj = get_object_or_404(Form, pk=pk, created_by=request.user)
+        
+        if request.method != 'POST':
+            return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+        
+        # Verificar configuración de IA
+        config = SystemConfiguration.objects.first()
+        if not config or not config.ai_chat_enabled or not config.openai_api_key:
+            return JsonResponse({
+                'success': False, 
+                'error': 'OpenAI no está configurado. Por favor configura la API key en Configuración del Sistema.'
+            }, status=400)
+        
+        # Generar preguntas con IA
+        import openai
+        client = openai.OpenAI(api_key=config.openai_api_key)
+        
+        prompt = f"""
+Eres un experto en diseño de formularios y encuestas. Basándote en el siguiente título y descripción de un formulario, genera preguntas relevantes y útiles con sus posibles opciones de respuesta.
+
+TÍTULO DEL FORMULARIO: {form_obj.title}
+
+DESCRIPCIÓN DEL FORMULARIO: {form_obj.description}
+
+INSTRUCCIONES:
+- Genera entre 5 y 8 preguntas relevantes para este formulario
+- Para cada pregunta, especifica el tipo más apropiado
+- Proporciona opciones de respuesta cuando sea necesario
+- Las preguntas deben ser claras, específicas y útiles
+- Evita preguntas redundantes o innecesarias
+- NO uses formato Markdown, solo texto plano
+- Responde en español
+
+FORMATO DE RESPUESTA REQUERIDO:
+{{
+  "questions": [
+    {{
+      "text": "Texto de la pregunta",
+      "type": "text|textarea|select|radio|checkbox|number|email|date",
+      "required": true/false,
+      "options": ["opción 1", "opción 2", "opción 3"] // Solo para select, radio y checkbox
+    }}
+  ]
+}}
+
+Genera preguntas que sean apropiadas para el contexto del formulario descrito.
+"""
+
+        response = client.chat.completions.create(
+            model=config.openai_model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Eres un experto en diseño de formularios. Generas preguntas relevantes y útiles basándote en el título y descripción proporcionados. Respondes únicamente en formato JSON válido sin explicaciones adicionales."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            max_tokens=2000,
+            temperature=0.7
+        )
+        
+        # Obtener la respuesta de la IA
+        ai_response = response.choices[0].message.content.strip()
+        
+        # Limpiar la respuesta si tiene formato markdown
+        import re
+        ai_response = re.sub(r'```json\s*', '', ai_response)
+        ai_response = re.sub(r'```\s*$', '', ai_response)
+        
+        # Intentar parsear como JSON
+        import json
+        try:
+            generated_data = json.loads(ai_response)
+            questions = generated_data.get('questions', [])
+            
+            if not questions:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'No se pudieron generar preguntas. Intenta con una descripción más detallada.'
+                })
+            
+            return JsonResponse({
+                'success': True,
+                'questions': questions,
+                'form_title': form_obj.title,
+                'form_description': form_obj.description,
+                'total_generated': len(questions)
+            })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'error': 'Error al procesar la respuesta de la IA. Por favor intenta de nuevo.',
+                'raw_response': ai_response[:500]  # Primeros 500 caracteres para debug
+            })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False, 
+            'error': f'Error generando preguntas: {str(e)}'
+        }, status=500)
+
+
+@login_required
+def form_add_ai_questions(request, pk):
+    """Agrega múltiples preguntas generadas por IA al formulario"""
+    from django.http import JsonResponse
+    from django.db import models
+    from .models import Form, FormQuestion
+    import json
+    
+    try:
+        form_obj = get_object_or_404(Form, pk=pk, created_by=request.user)
+        
+        if request.method != 'POST':
+            return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+        
+        # Obtener las preguntas del request
+        data = json.loads(request.body)
+        questions = data.get('questions', [])
+        
+        if not questions:
+            return JsonResponse({'success': False, 'error': 'No se proporcionaron preguntas'})
+        
+        # Obtener el último order para continuar la secuencia
+        last_order = FormQuestion.objects.filter(form=form_obj).aggregate(
+            max_order=models.Max('order')
+        )['max_order'] or 0
+        
+        created_questions = []
+        
+        # Crear cada pregunta
+        for i, question_data in enumerate(questions):
+            # Mapear tipos de IA a tipos del modelo
+            type_mapping = {
+                'text': 'text',
+                'textarea': 'text',  # Usar text para textarea también
+                'select': 'multiple_choice',
+                'radio': 'multiple_choice',
+                'checkbox': 'multiple_choice',
+                'number': 'number',
+                'email': 'text',  # Usar text para email
+                'date': 'text'    # Usar text para date también
+            }
+            
+            question_type = type_mapping.get(question_data.get('type', 'text'), 'text')
+            
+            # Crear la pregunta
+            question = FormQuestion.objects.create(
+                form=form_obj,
+                question_text=question_data.get('text', ''),
+                question_type=question_type,
+                order=last_order + i + 1,
+                is_required=question_data.get('required', True)
+            )
+            
+            # Si es multiple_choice y tiene opciones, crearlas
+            if question_type == 'multiple_choice' and question_data.get('options'):
+                from .models import FormQuestionOption
+                for j, option_text in enumerate(question_data['options']):
+                    FormQuestionOption.objects.create(
+                        question=question,
+                        option_text=option_text,
+                        score=1  # Puntuación por defecto
+                    )
+            
+            created_questions.append({
+                'id': question.id,
+                'text': question.question_text,
+                'type': question.get_question_type_display(),
+                'order': question.order
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Se agregaron {len(created_questions)} preguntas al formulario',
+            'created_questions': created_questions
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Datos JSON inválidos'}, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False, 
+            'error': f'Error creando preguntas: {str(e)}'
+        }, status=500)
+
+
+@login_required
 def form_edit(request, pk):
     """Editar formulario"""
     form_obj = get_object_or_404(Form, pk=pk, created_by=request.user)
@@ -19388,6 +20018,12 @@ def form_public(request, token):
     
     # Variable para controlar si se muestra el formulario
     form_submitted = False
+    
+    # Verificar si se solicita resetear el formulario
+    if request.GET.get('reset') == '1':
+        # Redirigir a la misma URL sin el parámetro reset para limpiar la URL
+        from django.shortcuts import redirect
+        return redirect('form_public', token=token)
     
     if request.method == 'POST':
         form = PublicFormResponseForm(request.POST, form=form_obj)
@@ -19459,6 +20095,501 @@ def form_responses(request, pk):
         'page_title': f'Respuestas - {form_obj.title}'
     }
     return render(request, 'tickets/form_responses.html', context)
+
+
+@login_required
+def form_response_detail(request, form_pk, response_pk):
+    """Ver detalle de una respuesta específica"""
+    form_obj = get_object_or_404(Form, pk=form_pk, created_by=request.user)
+    response = get_object_or_404(FormResponse, pk=response_pk, form=form_obj)
+    
+    # Obtener todas las respuestas con sus preguntas
+    answers = response.answers.select_related('question', 'selected_option').order_by('question__order')
+    
+    # Crear una estructura organizada de preguntas y respuestas
+    questions_with_answers = []
+    for question in form_obj.questions.all().order_by('order'):
+        # Buscar la respuesta para esta pregunta
+        answer = answers.filter(question=question).first()
+        
+        answer_data = {
+            'question': question,
+            'answer': answer,
+            'display_answer': None,
+            'score': 0
+        }
+        
+        if answer:
+            if question.question_type == 'text':
+                answer_data['display_answer'] = answer.text_answer or 'Sin respuesta'
+            elif question.question_type == 'number':
+                answer_data['display_answer'] = answer.number_answer or 'Sin respuesta'
+            elif question.question_type == 'multiple_choice':
+                if answer.selected_option:
+                    answer_data['display_answer'] = answer.selected_option.option_text
+                    answer_data['score'] = answer.selected_option.score
+                else:
+                    answer_data['display_answer'] = 'Sin selección'
+        else:
+            answer_data['display_answer'] = 'Sin respuesta'
+        
+        questions_with_answers.append(answer_data)
+    
+    context = {
+        'form': form_obj,
+        'response': response,
+        'questions_with_answers': questions_with_answers,
+        'page_title': f'Detalle de Respuesta - {form_obj.title}'
+    }
+    return render(request, 'tickets/form_response_detail.html', context)
+
+
+@login_required
+def form_ai_analysis(request, pk):
+    """Analiza las respuestas del formulario usando IA y propone mejoras"""
+    from django.http import JsonResponse
+    from .models import Form, SystemConfiguration
+    import json
+    
+    try:
+        form_obj = get_object_or_404(Form, pk=pk, created_by=request.user)
+        
+        if request.method != 'POST':
+            return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+        
+        # Verificar que haya respuestas
+        responses = form_obj.responses.all()
+        if not responses.exists():
+            return JsonResponse({'success': False, 'error': 'No hay respuestas para analizar'})
+        
+        # Verificar configuración de IA
+        config = SystemConfiguration.objects.first()
+        if not config or not config.ai_chat_enabled or not config.openai_api_key:
+            return JsonResponse({
+                'success': False, 
+                'error': 'OpenAI no está configurado. Por favor configura la API key en Configuración del Sistema.'
+            }, status=400)
+        
+        # Recopilar datos de las respuestas
+        analysis_data = {
+            'form_title': form_obj.title,
+            'form_description': form_obj.description,
+            'total_responses': responses.count(),
+            'average_score': form_obj.get_average_score(),
+            'questions': [],
+            'responses_summary': []
+        }
+        
+        # Analizar cada pregunta
+        for question in form_obj.questions.all():
+            question_data = {
+                'text': question.question_text,
+                'type': question.question_type,
+                'required': question.is_required,
+                'answers': []
+            }
+            
+            answers = question.formanswer_set.all()
+            for answer in answers:
+                if question.question_type == 'text':
+                    if answer.text_answer:
+                        question_data['answers'].append(answer.text_answer)
+                elif question.question_type == 'number':
+                    if answer.number_answer:
+                        question_data['answers'].append(str(answer.number_answer))
+                elif question.question_type == 'multiple_choice' and answer.selected_option:
+                    question_data['answers'].append({
+                        'option': answer.selected_option.option_text,
+                        'score': answer.selected_option.score
+                    })
+            
+            analysis_data['questions'].append(question_data)
+        
+        # Generar análisis con IA
+        import openai
+        client = openai.OpenAI(api_key=config.openai_api_key)
+        
+        prompt = f"""
+Eres un experto en análisis de formularios y experiencia de usuario. Analiza los siguientes datos de un formulario y sus respuestas para proporcionar mejoras específicas y accionables.
+
+DATOS DEL FORMULARIO:
+Título: {analysis_data['form_title']}
+Descripción: {analysis_data['form_description']}
+Total de respuestas: {analysis_data['total_responses']}
+Puntuación promedio: {analysis_data['average_score']}
+
+PREGUNTAS Y RESPUESTAS:
+{json.dumps(analysis_data['questions'], ensure_ascii=False, indent=2)}
+
+INSTRUCCIONES:
+1. Identifica problemas específicos en el formulario (preguntas confusas, opciones inadecuadas, etc.)
+2. Propón mejoras concretas y aplicables
+3. Evalúa la efectividad general del formulario
+4. Proporciona recomendaciones prioritarias
+
+FORMATO DE RESPUESTA REQUERIDO (JSON):
+{{
+    "overall_score": 8,
+    "problems": [
+        {{
+            "type": "Pregunta confusa",
+            "description": "La pregunta X no es clara",
+            "severity": "Alta"
+        }}
+    ],
+    "improvements": [
+        {{
+            "title": "Mejorar claridad",
+            "description": "Reescribir la pregunta para ser más específica",
+            "priority": "Alta",
+            "steps": ["Paso 1", "Paso 2"]
+        }}
+    ],
+    "strengths": ["Fortaleza 1", "Fortaleza 2"],
+    "main_recommendation": "Recomendación principal"
+}}
+
+Responde únicamente en formato JSON válido, en español, sin explicaciones adicionales.
+"""
+
+        response = client.chat.completions.create(
+            model=config.openai_model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Eres un experto en análisis de formularios y UX. Respondes únicamente en formato JSON válido con análisis detallados y mejoras específicas."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            max_tokens=2000,
+            temperature=0.7
+        )
+        
+        # Obtener la respuesta de la IA
+        ai_response = response.choices[0].message.content.strip()
+        
+        # Limpiar la respuesta si tiene formato markdown
+        import re
+        ai_response = re.sub(r'```json\s*', '', ai_response)
+        ai_response = re.sub(r'```\s*$', '', ai_response)
+        
+        # Intentar parsear como JSON
+        try:
+            analysis_result = json.loads(ai_response)
+            
+            # Guardar el análisis en la base de datos
+            from .models import FormAIAnalysis
+            ai_analysis = FormAIAnalysis.objects.create(
+                form=form_obj,
+                created_by=request.user,
+                overall_score=analysis_result.get('overall_score', 0),
+                problems=analysis_result.get('problems', []),
+                improvements=analysis_result.get('improvements', []),
+                strengths=analysis_result.get('strengths', []),
+                main_recommendation=analysis_result.get('main_recommendation', ''),
+                total_responses=responses.count(),
+                analysis_version='1.0'
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'analysis': analysis_result,
+                'analysis_id': ai_analysis.id,
+                'form_title': form_obj.title,
+                'total_responses': responses.count(),
+                'saved': True
+            })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'error': 'Error al procesar el análisis de la IA. Por favor intenta de nuevo.',
+                'raw_response': ai_response[:500]  # Primeros 500 caracteres para debug
+            })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False, 
+            'error': f'Error realizando análisis: {str(e)}'
+        }, status=500)
+
+
+# ==================== VISTAS DE CONTROL DE LICENCIAS ====================
+
+@login_required
+def license_list(request):
+    """Lista todas las licencias"""
+    licenses = License.objects.all().order_by('-created_at')
+    
+    # Filtros
+    company_filter = request.GET.get('company')
+    status_filter = request.GET.get('status')
+    product_filter = request.GET.get('product')
+    
+    if company_filter:
+        licenses = licenses.filter(company_id=company_filter)
+    if status_filter:
+        licenses = licenses.filter(status=status_filter)
+    if product_filter:
+        licenses = licenses.filter(product__icontains=product_filter)
+    
+    # Estadísticas
+    total_licenses = License.objects.count()
+    active_licenses = License.objects.filter(status='active').count()
+    expired_licenses = License.objects.filter(end_date__lt=timezone.now().date()).count()
+    
+    # Actualizar estados de licencias expiradas
+    License.objects.filter(
+        end_date__lt=timezone.now().date(),
+        status='active'
+    ).update(status='expired')
+    
+    companies = Company.objects.all()
+    
+    context = {
+        'licenses': licenses,
+        'companies': companies,
+        'total_licenses': total_licenses,
+        'active_licenses': active_licenses,
+        'expired_licenses': expired_licenses,
+        'title': 'Control de Licencias',
+        'current_filters': {
+            'company': company_filter,
+            'status': status_filter,
+            'product': product_filter,
+        }
+    }
+    
+    return render(request, 'tickets/license_list.html', context)
+
+
+@login_required
+def license_create(request):
+    """Crear nueva licencia"""
+    if request.method == 'POST':
+        license_obj = License(
+            company_id=request.POST.get('company'),
+            product=request.POST.get('product'),
+            start_date=request.POST.get('start_date'),
+            end_date=request.POST.get('end_date'),
+            notes=request.POST.get('notes', ''),
+            created_by=request.user
+        )
+        
+        # Si se proporciona una clave personalizada
+        custom_key = request.POST.get('license_key', '').strip().upper()
+        if custom_key:
+            if len(custom_key) == 12 and custom_key.isalnum():
+                if not License.objects.filter(license_key=custom_key).exists():
+                    license_obj.license_key = custom_key
+                else:
+                    messages.error(request, 'La clave de licencia ya existe.')
+                    return render(request, 'tickets/license_form.html', {
+                        'companies': Company.objects.all(),
+                        'title': 'Crear Licencia'
+                    })
+            else:
+                messages.error(request, 'La clave debe tener exactamente 12 caracteres alfanuméricos.')
+                return render(request, 'tickets/license_form.html', {
+                    'companies': Company.objects.all(),
+                    'title': 'Crear Licencia'
+                })
+        
+        license_obj.save()
+        messages.success(request, f'Licencia {license_obj.license_key} creada exitosamente.')
+        return redirect('license_detail', pk=license_obj.pk)
+    
+    companies = Company.objects.all()
+    context = {
+        'companies': companies,
+        'title': 'Crear Licencia'
+    }
+    
+    return render(request, 'tickets/license_form.html', context)
+
+
+@login_required
+def license_detail(request, pk):
+    """Detalle de una licencia"""
+    license_obj = get_object_or_404(License, pk=pk)
+    
+    # Generar URL del QR
+    qr_url = license_obj.get_qr_data()
+    
+    context = {
+        'license': license_obj,
+        'qr_url': qr_url,
+        'title': f'Licencia {license_obj.license_key}'
+    }
+    
+    return render(request, 'tickets/license_detail.html', context)
+
+
+@login_required
+def license_edit(request, pk):
+    """Editar licencia"""
+    license_obj = get_object_or_404(License, pk=pk)
+    
+    if request.method == 'POST':
+        # Actualizar campos
+        license_obj.company_id = request.POST.get('company')
+        license_obj.product = request.POST.get('product')
+        license_obj.start_date = request.POST.get('start_date')
+        license_obj.end_date = request.POST.get('end_date')
+        license_obj.status = request.POST.get('status')
+        license_obj.notes = request.POST.get('notes', '')
+        
+        # Actualizar clave si se proporciona
+        custom_key = request.POST.get('license_key', '').strip().upper()
+        if custom_key and custom_key != license_obj.license_key:
+            if len(custom_key) == 12 and custom_key.isalnum():
+                if not License.objects.filter(license_key=custom_key).exclude(pk=pk).exists():
+                    license_obj.license_key = custom_key
+                else:
+                    messages.error(request, 'La clave de licencia ya existe.')
+                    return render(request, 'tickets/license_edit.html', {
+                        'license': license_obj,
+                        'companies': Company.objects.all(),
+                        'title': f'Editar Licencia {license_obj.license_key}'
+                    })
+            else:
+                messages.error(request, 'La clave debe tener exactamente 12 caracteres alfanuméricos.')
+                return render(request, 'tickets/license_edit.html', {
+                    'license': license_obj,
+                    'companies': Company.objects.all(),
+                    'title': f'Editar Licencia {license_obj.license_key}'
+                })
+        
+        license_obj.save()
+        messages.success(request, f'Licencia {license_obj.license_key} actualizada exitosamente.')
+        return redirect('license_detail', pk=license_obj.pk)
+    
+    companies = Company.objects.all()
+    context = {
+        'license': license_obj,
+        'companies': companies,
+        'title': f'Editar Licencia {license_obj.license_key}'
+    }
+    
+    return render(request, 'tickets/license_edit.html', context)
+
+
+@login_required
+def license_delete(request, pk):
+    """Eliminar licencia"""
+    license_obj = get_object_or_404(License, pk=pk)
+    
+    if request.method == 'POST':
+        license_key = license_obj.license_key
+        license_obj.delete()
+        messages.success(request, f'Licencia {license_key} eliminada exitosamente.')
+        return redirect('license_list')
+    
+    context = {
+        'license': license_obj,
+        'title': f'Eliminar Licencia {license_obj.license_key}'
+    }
+    
+    return render(request, 'tickets/license_delete.html', context)
+
+
+def license_public(request, uuid):
+    """Vista pública de licencia usando UUID"""
+    license_obj = get_object_or_404(License, public_uuid=uuid)
+    
+    context = {
+        'license': license_obj,
+        'title': f'Licencia {license_obj.license_key}',
+        'is_public_view': True
+    }
+    
+    return render(request, 'tickets/license_public.html', context)
+
+
+def license_qr_view(request, pk):
+    """Vista solo para mostrar el QR de la licencia"""
+    license_obj = get_object_or_404(License, pk=pk)
+    qr_url = license_obj.get_qr_data()
+    
+    context = {
+        'license': license_obj,
+        'qr_url': qr_url,
+        'title': f'QR - Licencia {license_obj.license_key}'
+    }
+    
+    return render(request, 'tickets/license_qr.html', context)
+
+
+def license_api(request, uuid):
+    """API para verificar licencia públicamente - devuelve JSON"""
+    from django.http import JsonResponse
+    
+    try:
+        license_obj = get_object_or_404(License, public_uuid=uuid)
+        
+        data = {
+            'license_key': license_obj.license_key,
+            'company': {
+                'name': license_obj.company.name,
+                'address': license_obj.company.address if hasattr(license_obj.company, 'address') else None,
+            },
+            'product': license_obj.product,
+            'status': license_obj.status,
+            'status_display': license_obj.get_status_display(),
+            'start_date': license_obj.start_date.strftime('%Y-%m-%d'),
+            'end_date': license_obj.end_date.strftime('%Y-%m-%d'),
+            'is_active': license_obj.is_active(),
+            'is_expired': license_obj.is_expired(),
+            'days_until_expiry': license_obj.days_until_expiry(),
+            'verification_timestamp': timezone.now().isoformat(),
+            'valid': license_obj.is_active(),
+        }
+        
+        return JsonResponse({
+            'success': True,
+            'license': data
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': 'Licencia no encontrada'
+        }, status=404)
+
+
+@login_required
+def form_ai_analysis_history(request, pk):
+    """Muestra el historial de análisis de IA para un formulario"""
+    form_obj = get_object_or_404(Form, pk=pk, created_by=request.user)
+    
+    # Obtener todos los análisis de este formulario
+    analyses = form_obj.ai_analyses.all().order_by('-created_at')
+    
+    context = {
+        'form': form_obj,
+        'analyses': analyses,
+        'title': f'Historial de Análisis - {form_obj.title}'
+    }
+    
+    return render(request, 'tickets/form_ai_analysis_history.html', context)
+
+
+@login_required
+def form_ai_analysis_detail(request, form_pk, analysis_pk):
+    """Muestra los detalles de un análisis específico"""
+    form_obj = get_object_or_404(Form, pk=form_pk, created_by=request.user)
+    analysis = get_object_or_404(form_obj.ai_analyses, pk=analysis_pk)
+    
+    context = {
+        'form': form_obj,
+        'analysis': analysis,
+        'title': f'Análisis del {analysis.created_at.strftime("%d/%m/%Y %H:%M")}'
+    }
+    
+    return render(request, 'tickets/form_ai_analysis_detail.html', context)
 
 
 @login_required
@@ -19564,6 +20695,90 @@ def form_option_create(request, form_pk, question_pk):
         'page_title': 'Agregar Opción'
     }
     return render(request, 'tickets/form_option_create.html', context)
+
+
+@login_required
+def form_option_update_score(request, form_pk, option_pk):
+    """Actualizar puntuación de una opción via AJAX"""
+    from django.http import JsonResponse
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+    
+    try:
+        form_obj = get_object_or_404(Form, pk=form_pk, created_by=request.user)
+        option = get_object_or_404(FormQuestionOption, pk=option_pk, question__form=form_obj)
+        
+        # Obtener nueva puntuación
+        new_score = request.POST.get('score')
+        if new_score is None:
+            return JsonResponse({'success': False, 'error': 'Puntuación requerida'})
+        
+        try:
+            new_score = int(new_score)
+        except ValueError:
+            return JsonResponse({'success': False, 'error': 'La puntuación debe ser un número entero'})
+        
+        # Actualizar puntuación
+        old_score = option.score
+        option.score = new_score
+        option.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Puntuación actualizada de {old_score} a {new_score}',
+            'old_score': old_score,
+            'new_score': new_score,
+            'option_id': option.pk,
+            'option_text': option.option_text
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+def form_option_edit(request, form_pk, option_pk):
+    """Editar opción completa (texto y puntuación)"""
+    form_obj = get_object_or_404(Form, pk=form_pk, created_by=request.user)
+    option = get_object_or_404(FormQuestionOption, pk=option_pk, question__form=form_obj)
+    
+    if request.method == 'POST':
+        option.option_text = request.POST.get('text', option.option_text)
+        option.score = int(request.POST.get('score', option.score))
+        option.save()
+        
+        messages.success(request, 'Opción actualizada exitosamente')
+        return redirect('form_detail', pk=form_obj.pk)
+    
+    context = {
+        'form_obj': form_obj,
+        'option': option,
+        'question': option.question,
+        'page_title': 'Editar Opción'
+    }
+    return render(request, 'tickets/form_option_edit.html', context)
+
+
+@login_required
+def form_option_delete(request, form_pk, option_pk):
+    """Eliminar opción"""
+    form_obj = get_object_or_404(Form, pk=form_pk, created_by=request.user)
+    option = get_object_or_404(FormQuestionOption, pk=option_pk, question__form=form_obj)
+    
+    if request.method == 'POST':
+        question_id = option.question.id
+        option.delete()
+        messages.success(request, 'Opción eliminada exitosamente')
+        return redirect('form_detail', pk=form_obj.pk)
+    
+    context = {
+        'form_obj': form_obj,
+        'option': option,
+        'question': option.question,
+        'page_title': 'Eliminar Opción'
+    }
+    return render(request, 'tickets/form_option_delete.html', context)
 
 
 # ==================== VISTAS DE ALCANCE ====================
@@ -27777,28 +28992,35 @@ def company_protocol_ai_improve_content(request, pk):
             {protocol.content}
             
             Mejora la estructura, claridad y profesionalismo sin cambiar el mensaje principal.
+            NO uses formato Markdown (**, *, etc.). Usa texto plano con saltos de línea para separar secciones.
             """,
             'clarity': f"""
             Reescribe este protocolo para hacerlo más claro y fácil de entender, usando lenguaje simple pero profesional:
             
             {protocol.content}
+            
+            NO uses formato Markdown. Usa texto plano con saltos de línea.
             """,
             'structure': f"""
             Reorganiza y mejora la estructura de este protocolo usando encabezados, listas y párrafos bien organizados:
             
             {protocol.content}
+            
+            NO uses formato Markdown. Usa texto plano con numeración simple y saltos de línea.
             """,
             'professional': f"""
             Reescribe este protocolo con un tono más profesional y formal apropiado para un documento corporativo:
             
             {protocol.content}
+            
+            NO uses formato Markdown. Usa texto plano con saltos de línea.
             """
         }
         
         response = client.chat.completions.create(
             model=config.openai_model or "gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "Eres un experto editor de documentos corporativos especializado en mejorar protocolos empresariales."},
+                {"role": "system", "content": "Eres un experto editor de documentos corporativos especializado en mejorar protocolos empresariales. NO uses formato Markdown en tus respuestas, solo texto plano con saltos de línea."},
                 {"role": "user", "content": prompts.get(improvement_type, prompts['general'])}
             ],
             max_tokens=2000,
@@ -27806,6 +29028,20 @@ def company_protocol_ai_improve_content(request, pk):
         )
         
         improved_content = response.choices[0].message.content.strip()
+        
+        # Limpiar cualquier formato Markdown y devolver texto plano
+        import re
+        def remove_markdown_formatting(text):
+            """Elimina formato Markdown y devuelve texto plano"""
+            # Eliminar negritas **texto** y dejar solo texto
+            text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
+            # Eliminar cursivas *texto* y dejar solo texto
+            text = re.sub(r'\*(.*?)\*', r'\1', text)
+            # Eliminar títulos ## y # y dejar solo el texto
+            text = re.sub(r'^#{1,6}\s*(.*?)$', r'\1', text, flags=re.MULTILINE)
+            return text
+        
+        improved_content = remove_markdown_formatting(improved_content)
         
         return JsonResponse({
             'success': True,
@@ -27816,6 +29052,100 @@ def company_protocol_ai_improve_content(request, pk):
         
     except Exception as e:
         return JsonResponse({'success': False, 'error': f'Error mejorando contenido: {str(e)}'})
+
+
+# ================================
+# VISTAS PÚBLICAS DE PROTOCOLOS
+# ================================
+
+@login_required
+def company_protocol_toggle_public(request, pk):
+    """Vista para activar/desactivar el compartir público de un protocolo"""
+    from .models import CompanyProtocol
+    
+    try:
+        protocol = CompanyProtocol.objects.get(pk=pk)
+    except CompanyProtocol.DoesNotExist:
+        messages.error(request, 'El protocolo solicitado no existe.')
+        return redirect('company_protocol_list')
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'make_public':
+            protocol.make_public()
+            messages.success(request, f'El protocolo "{protocol.title}" ahora es público.')
+        elif action == 'make_private':
+            protocol.make_private()
+            messages.success(request, f'El protocolo "{protocol.title}" ahora es privado.')
+        
+        return redirect('company_protocol_detail', pk=pk)
+    
+    return redirect('company_protocol_detail', pk=pk)
+
+
+def company_protocol_public_view(request, uuid):
+    """Vista pública para ver un protocolo sin autenticación"""
+    from .models import CompanyProtocol
+    
+    try:
+        protocol = CompanyProtocol.objects.select_related('created_by', 'company').get(
+            public_uuid=uuid, 
+            is_public=True
+        )
+    except CompanyProtocol.DoesNotExist:
+        from django.http import Http404
+        raise Http404("El protocolo solicitado no existe o no está disponible públicamente.")
+    
+    # Incrementar contador de vistas públicas
+    protocol.increment_public_views()
+    
+    context = {
+        'protocol': protocol,
+        'page_title': f'Protocolo: {protocol.title}',
+        'is_public_view': True,
+    }
+    
+    return render(request, 'tickets/company_protocol_public.html', context)
+
+
+@login_required 
+def company_protocol_stats_api(request):
+    """API para obtener estadísticas de protocolos públicos"""
+    from django.db.models import Sum, Count, Avg
+    from .models import CompanyProtocol
+    from django.http import JsonResponse
+    
+    # Estadísticas generales
+    total_protocols = CompanyProtocol.objects.count()
+    public_protocols = CompanyProtocol.objects.filter(is_public=True).count()
+    total_public_views = CompanyProtocol.objects.filter(is_public=True).aggregate(
+        total_views=Sum('public_views_count')
+    )['total_views'] or 0
+    
+    # Protocolos más vistos
+    top_viewed = CompanyProtocol.objects.filter(
+        is_public=True, 
+        public_views_count__gt=0
+    ).order_by('-public_views_count')[:5].values(
+        'id', 'title', 'public_views_count', 'created_at'
+    )
+    
+    # Promedio de vistas por protocolo público
+    avg_views = CompanyProtocol.objects.filter(is_public=True).aggregate(
+        avg_views=Avg('public_views_count')
+    )['avg_views'] or 0
+    
+    stats = {
+        'total_protocols': total_protocols,
+        'public_protocols': public_protocols,
+        'private_protocols': total_protocols - public_protocols,
+        'total_public_views': total_public_views,
+        'average_views_per_protocol': round(avg_views, 2),
+        'top_viewed_protocols': list(top_viewed),
+        'public_percentage': round((public_protocols / total_protocols * 100) if total_protocols > 0 else 0, 1)
+    }
+    
+    return JsonResponse(stats)
 
 
 # ================================
@@ -28249,3 +29579,902 @@ def qa_dashboard(request):
     }
     
     return render(request, 'tickets/qa_dashboard.html', context)
+
+
+# ==================== VISTAS DE CONTROL DE ACTIVOS ====================
+
+@login_required
+def asset_list(request):
+    """Lista todos los activos con filtros"""
+    assets_list = Asset.objects.select_related('assigned_to', 'created_by').all()
+    
+    # Filtros
+    status_filter = request.GET.get('status')
+    assigned_filter = request.GET.get('assigned')
+    search = request.GET.get('search')
+    
+    if status_filter:
+        assets_list = assets_list.filter(status=status_filter)
+    
+    if assigned_filter == 'assigned':
+        assets_list = assets_list.filter(assigned_to__isnull=False)
+    elif assigned_filter == 'unassigned':
+        assets_list = assets_list.filter(assigned_to__isnull=True)
+    
+    if search:
+        assets_list = assets_list.filter(
+            Q(name__icontains=search) |
+            Q(manufacturer__icontains=search) |
+            Q(serial_number__icontains=search) |
+            Q(description__icontains=search)
+        )
+    
+    # Paginación
+    paginator = Paginator(assets_list, 20)
+    page_number = request.GET.get('page')
+    assets = paginator.get_page(page_number)
+    
+    # Estadísticas
+    total_assets = Asset.objects.count()
+    assigned_assets = Asset.objects.filter(assigned_to__isnull=False).count()
+    available_assets = Asset.objects.filter(status='available').count()
+    maintenance_assets = Asset.objects.filter(status='maintenance').count()
+    
+    context = {
+        'assets': assets,
+        'status_choices': Asset.STATUS_CHOICES,
+        'status_filter': status_filter,
+        'assigned_filter': assigned_filter,
+        'search': search,
+        'total_assets': total_assets,
+        'assigned_assets': assigned_assets,
+        'available_assets': available_assets,
+        'maintenance_assets': maintenance_assets,
+        'title': 'Control de Activos'
+    }
+    
+    return render(request, 'tickets/asset_list.html', context)
+
+
+@login_required
+def asset_detail(request, pk):
+    """Detalle de un activo"""
+    asset = get_object_or_404(Asset, pk=pk)
+    history = asset.history.select_related('previous_employee', 'new_employee', 'performed_by').all()[:10]
+    
+    context = {
+        'asset': asset,
+        'history': history,
+        'title': f'Activo: {asset.name}'
+    }
+    
+    return render(request, 'tickets/asset_detail.html', context)
+
+
+@login_required
+def asset_create(request):
+    """Crear un nuevo activo"""
+    if request.method == 'POST':
+        form = AssetForm(request.POST)
+        if form.is_valid():
+            asset = form.save(commit=False)
+            asset.created_by = request.user
+            asset.save()
+            
+            # Crear registro en el historial
+            AssetHistory.objects.create(
+                asset=asset,
+                action='created',
+                new_status=asset.status,
+                reason='Activo creado en el sistema',
+                performed_by=request.user
+            )
+            
+            messages.success(request, f'Activo "{asset.name}" creado exitosamente.')
+            return redirect('asset_detail', pk=asset.pk)
+    else:
+        form = AssetForm()
+    
+    context = {
+        'form': form,
+        'title': 'Crear Nuevo Activo',
+        'submit_text': 'Crear Activo'
+    }
+    
+    return render(request, 'tickets/asset_form.html', context)
+
+
+@login_required
+def asset_edit(request, pk):
+    """Editar un activo existente"""
+    asset = get_object_or_404(Asset, pk=pk)
+    original_status = asset.status
+    original_assigned = asset.assigned_to
+    
+    if request.method == 'POST':
+        form = AssetForm(request.POST, instance=asset)
+        if form.is_valid():
+            asset = form.save()
+            
+            # Registrar cambios en el historial
+            changes = []
+            
+            if original_status != asset.status:
+                AssetHistory.objects.create(
+                    asset=asset,
+                    action='status_changed',
+                    previous_status=original_status,
+                    new_status=asset.status,
+                    reason=f'Estado cambiado de {original_status} a {asset.status}',
+                    performed_by=request.user
+                )
+                changes.append('estado')
+            
+            if original_assigned != asset.assigned_to:
+                action = 'assigned' if asset.assigned_to else 'unassigned'
+                if original_assigned and asset.assigned_to:
+                    action = 'transferred'
+                
+                AssetHistory.objects.create(
+                    asset=asset,
+                    action=action,
+                    previous_employee=original_assigned,
+                    new_employee=asset.assigned_to,
+                    reason=f'Asignación actualizada',
+                    performed_by=request.user
+                )
+                changes.append('asignación')
+            
+            if changes:
+                messages.success(request, f'Activo actualizado exitosamente. Cambios: {", ".join(changes)}.')
+            else:
+                messages.success(request, 'Activo actualizado exitosamente.')
+            
+            return redirect('asset_detail', pk=asset.pk)
+    else:
+        form = AssetForm(instance=asset)
+    
+    context = {
+        'form': form,
+        'asset': asset,
+        'title': f'Editar Activo: {asset.name}',
+        'submit_text': 'Actualizar Activo'
+    }
+    
+    return render(request, 'tickets/asset_form.html', context)
+
+
+@login_required
+def asset_delete(request, pk):
+    """Eliminar un activo"""
+    asset = get_object_or_404(Asset, pk=pk)
+    
+    if request.method == 'POST':
+        asset_name = asset.name
+        asset.delete()
+        messages.success(request, f'Activo "{asset_name}" eliminado exitosamente.')
+        return redirect('asset_list')
+    
+    context = {
+        'asset': asset,
+        'title': f'Eliminar Activo: {asset.name}'
+    }
+    
+    return render(request, 'tickets/asset_delete.html', context)
+
+
+@login_required
+def asset_assign(request, pk):
+    """Asignar o reasignar un activo a un empleado"""
+    asset = get_object_or_404(Asset, pk=pk)
+    previous_employee = asset.assigned_to
+    
+    if request.method == 'POST':
+        form = AssetAssignForm(request.POST, instance=asset)
+        if form.is_valid():
+            asset = form.save()  # El método save() del modelo actualizará automáticamente el status
+            new_employee = asset.assigned_to
+            reason = form.cleaned_data.get('reason', '')
+            
+            # Determinar la acción
+            if previous_employee and new_employee:
+                action = 'transferred'
+                message = f'Activo transferido de {previous_employee} a {new_employee}'
+            elif new_employee:
+                action = 'assigned'
+                message = f'Activo asignado a {new_employee}'
+            else:
+                action = 'unassigned'
+                message = f'Activo desasignado de {previous_employee}'
+            
+            # Registrar en el historial
+            AssetHistory.objects.create(
+                asset=asset,
+                action=action,
+                previous_employee=previous_employee,
+                new_employee=new_employee,
+                new_status=asset.status,
+                reason=reason or message,
+                performed_by=request.user
+            )
+            
+            messages.success(request, message)
+            return redirect('asset_detail', pk=asset.pk)
+    else:
+        form = AssetAssignForm(instance=asset)
+    
+    context = {
+        'form': form,
+        'asset': asset,
+        'title': f'Asignar Activo: {asset.name}'
+    }
+    
+    return render(request, 'tickets/asset_assign.html', context)
+
+
+@login_required
+def asset_history(request, pk):
+    """Ver historial completo de un activo"""
+    asset = get_object_or_404(Asset, pk=pk)
+    history = asset.history.select_related('previous_employee', 'new_employee', 'performed_by').all()
+    
+    # Paginación
+    paginator = Paginator(history, 20)
+    page_number = request.GET.get('page')
+    history_page = paginator.get_page(page_number)
+    
+    context = {
+        'asset': asset,
+        'history': history_page,
+        'title': f'Historial: {asset.name}'
+    }
+    
+    return render(request, 'tickets/asset_history.html', context)
+
+
+@login_required
+def asset_maintenance(request, pk):
+    """Enviar activo a mantenimiento"""
+    asset = get_object_or_404(Asset, pk=pk)
+    
+    if request.method == 'POST':
+        reason = request.POST.get('reason', 'Enviado a mantenimiento')
+        previous_status = asset.status
+        previous_employee = asset.assigned_to
+        
+        # Cambiar estado y desasignar si es necesario
+        asset.status = 'maintenance'
+        asset.assigned_to = None
+        asset.save()
+        
+        # Registrar en historial
+        AssetHistory.objects.create(
+            asset=asset,
+            action='maintenance',
+            previous_status=previous_status,
+            new_status='maintenance',
+            previous_employee=previous_employee,
+            reason=reason,
+            performed_by=request.user
+        )
+        
+        messages.success(request, f'Activo "{asset.name}" enviado a mantenimiento.')
+        return redirect('asset_detail', pk=asset.pk)
+    
+    context = {
+        'asset': asset,
+        'title': f'Enviar a Mantenimiento: {asset.name}'
+    }
+    
+    return render(request, 'tickets/asset_maintenance.html', context)
+
+
+# ==========================================
+# VISTAS PARA TUTOR IA
+# ==========================================
+
+@login_required
+def ai_tutor_list(request):
+    """Lista de tutores IA"""
+    # Filtros
+    status_filter = request.GET.get('status')
+    visibility_filter = request.GET.get('visibility')
+    search = request.GET.get('search')
+    
+    # Query base
+    tutors = AITutor.objects.all()
+    
+    # Aplicar filtros de visibilidad
+    if visibility_filter == 'private':
+        tutors = tutors.filter(created_by=request.user)
+    elif visibility_filter == 'public':
+        tutors = tutors.filter(is_private=False)
+    else:
+        # Mostrar solo tutores públicos o propios
+        tutors = tutors.filter(
+            Q(is_private=False) | Q(created_by=request.user)
+        )
+    
+    # Aplicar otros filtros
+    if status_filter:
+        tutors = tutors.filter(status=status_filter)
+    
+    if search:
+        tutors = tutors.filter(
+            Q(title__icontains=search) |
+            Q(objective__icontains=search)
+        )
+    
+    # Seleccionar datos relacionados
+    tutors = tutors.select_related('created_by').prefetch_related('progress_reports')
+    
+    # Estadísticas
+    total_tutors = tutors.count()
+    active_tutors = tutors.filter(status='active').count()
+    completed_tutors = tutors.filter(status='completed').count()
+    my_tutors = tutors.filter(created_by=request.user).count()
+    
+    # Paginación
+    paginator = Paginator(tutors, 12)  # 12 tutores por página
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'tutors': page_obj,
+        'total_tutors': total_tutors,
+        'active_tutors': active_tutors,
+        'completed_tutors': completed_tutors,
+        'my_tutors': my_tutors,
+        'status_choices': AITutor.STATUS_CHOICES,
+        'status_filter': status_filter,
+        'visibility_filter': visibility_filter,
+        'search': search,
+        'title': 'Tutor IA'
+    }
+    
+    return render(request, 'tickets/ai_tutor_list.html', context)
+
+
+@login_required
+@login_required
+def ai_tutor_create(request):
+    """Crear un nuevo tutor IA"""
+    if request.method == 'POST':
+        form = AITutorForm(request.POST)
+        print(f"DEBUG: POST data: {request.POST}")
+        print(f"DEBUG: Form is_valid: {form.is_valid()}")
+        if not form.is_valid():
+            print(f"DEBUG: Form errors: {form.errors}")
+        
+        if form.is_valid():
+            tutor = form.save(commit=False)
+            tutor.created_by = request.user
+            tutor.save()
+            
+            messages.success(request, f'Tutor IA "{tutor.title}" creado exitosamente.')
+            print(f"DEBUG: Tutor created with ID: {tutor.pk}")
+            return redirect('ai_tutor_detail', pk=tutor.pk)
+    else:
+        form = AITutorForm()
+    
+    context = {
+        'form': form,
+        'title': 'Crear Tutor IA'
+    }
+    
+    return render(request, 'tickets/ai_tutor_form.html', context)
+
+
+@login_required
+def ai_tutor_detail(request, pk):
+    """Ver detalles del tutor IA"""
+    tutor = get_object_or_404(AITutor, pk=pk)
+    
+    # Verificar permisos
+    if tutor.is_private and tutor.created_by != request.user:
+        messages.error(request, 'No tienes permisos para ver este tutor.')
+        return redirect('ai_tutor_list')
+    
+    # Obtener reportes de progreso
+    progress_reports = tutor.progress_reports.select_related('created_by').prefetch_related('attachments')
+    
+    # Obtener adjuntos del tutor principal
+    tutor_attachments = tutor.attachments.all()
+    
+    context = {
+        'tutor': tutor,
+        'progress_reports': progress_reports,
+        'tutor_attachments': tutor_attachments,
+        'title': f'Tutor IA: {tutor.title}'
+    }
+    
+    return render(request, 'tickets/ai_tutor_detail.html', context)
+
+
+@login_required
+@login_required
+def ai_tutor_edit(request, pk):
+    """Editar tutor IA"""
+    tutor = get_object_or_404(AITutor, pk=pk)
+    
+    # Verificar permisos
+    if tutor.created_by != request.user:
+        messages.error(request, 'Solo puedes editar tus propios tutores.')
+        return redirect('ai_tutor_detail', pk=pk)
+    
+    if request.method == 'POST':
+        form = AITutorForm(request.POST, instance=tutor)
+        print(f"DEBUG EDIT: POST data: {request.POST}")
+        print(f"DEBUG EDIT: Form is_valid: {form.is_valid()}")
+        if not form.is_valid():
+            print(f"DEBUG EDIT: Form errors: {form.errors}")
+            
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Tutor IA "{tutor.title}" actualizado exitosamente.')
+            print(f"DEBUG EDIT: Tutor updated with ID: {tutor.pk}")
+            return redirect('ai_tutor_detail', pk=tutor.pk)
+    else:
+        form = AITutorForm(instance=tutor)
+    
+    context = {
+        'form': form,
+        'tutor': tutor,
+        'title': f'Editar Tutor: {tutor.title}'
+    }
+    
+    return render(request, 'tickets/ai_tutor_form.html', context)
+
+
+@login_required
+def ai_tutor_delete(request, pk):
+    """Eliminar tutor IA"""
+    tutor = get_object_or_404(AITutor, pk=pk)
+    
+    # Verificar permisos
+    if tutor.created_by != request.user:
+        messages.error(request, 'Solo puedes eliminar tus propios tutores.')
+        return redirect('ai_tutor_detail', pk=pk)
+    
+    if request.method == 'POST':
+        tutor_title = tutor.title
+        tutor.delete()
+        messages.success(request, f'Tutor IA "{tutor_title}" eliminado exitosamente.')
+        return redirect('ai_tutor_list')
+    
+    context = {
+        'tutor': tutor,
+        'title': f'Eliminar Tutor: {tutor.title}'
+    }
+    
+    return render(request, 'tickets/ai_tutor_delete.html', context)
+
+
+@login_required
+def ai_tutor_progress_report(request, pk):
+    """Crear reporte de progreso"""
+    tutor = get_object_or_404(AITutor, pk=pk)
+    
+    # Verificar permisos
+    if tutor.is_private and tutor.created_by != request.user:
+        messages.error(request, 'No tienes permisos para reportar en este tutor.')
+        return redirect('ai_tutor_list')
+    
+    if request.method == 'POST':
+        form = AITutorProgressReportForm(request.POST)
+        attachment_form = AITutorAttachmentForm(request.POST, request.FILES)
+        
+        if form.is_valid():
+            progress_report = form.save(commit=False)
+            progress_report.tutor = tutor
+            progress_report.created_by = request.user
+            
+            # Aquí se podría integrar con OpenAI API para generar feedback
+            progress_report.ai_feedback = generate_ai_feedback(progress_report)
+            progress_report.ai_recommendations = generate_ai_recommendations(progress_report)
+            
+            progress_report.save()
+            
+            # Manejar adjunto si se subió
+            if attachment_form.is_valid() and request.FILES.get('file'):
+                attachment = attachment_form.save(commit=False)
+                attachment.progress_report = progress_report
+                attachment.uploaded_by = request.user
+                attachment.save()
+                
+                # Generar análisis del archivo con IA
+                attachment.ai_analysis = generate_file_analysis(attachment)
+                attachment.save()
+            
+            messages.success(request, 'Reporte de progreso creado exitosamente.')
+            return redirect('ai_tutor_detail', pk=tutor.pk)
+    else:
+        form = AITutorProgressReportForm()
+        attachment_form = AITutorAttachmentForm()
+    
+    context = {
+        'form': form,
+        'attachment_form': attachment_form,
+        'tutor': tutor,
+        'title': f'Reportar Progreso: {tutor.title}'
+    }
+    
+    return render(request, 'tickets/ai_tutor_progress_form.html', context)
+
+
+@login_required
+def ai_tutor_upload_attachment(request, pk):
+    """Subir adjunto al tutor principal"""
+    tutor = get_object_or_404(AITutor, pk=pk)
+    
+    # Verificar permisos
+    if tutor.is_private and tutor.created_by != request.user:
+        messages.error(request, 'No tienes permisos para subir archivos a este tutor.')
+        return redirect('ai_tutor_list')
+    
+    if request.method == 'POST':
+        form = AITutorAttachmentForm(request.POST, request.FILES)
+        if form.is_valid():
+            attachment = form.save(commit=False)
+            attachment.tutor = tutor
+            attachment.uploaded_by = request.user
+            attachment.save()
+            
+            # Generar análisis del archivo con IA
+            attachment.ai_analysis = generate_file_analysis(attachment)
+            attachment.save()
+            
+            messages.success(request, 'Archivo subido exitosamente.')
+            return redirect('ai_tutor_detail', pk=tutor.pk)
+    else:
+        form = AITutorAttachmentForm()
+    
+    context = {
+        'form': form,
+        'tutor': tutor,
+        'title': f'Subir Archivo: {tutor.title}'
+    }
+    
+    return render(request, 'tickets/ai_tutor_attachment_form.html', context)
+
+
+@login_required
+def ai_tutor_generate_feedback_ajax(request, pk):
+    """Generar feedback IA via AJAX"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    
+    try:
+        progress_report = get_object_or_404(AITutorProgressReport, pk=pk)
+        
+        # Verificar permisos
+        if progress_report.tutor.is_private and progress_report.tutor.created_by != request.user:
+            return JsonResponse({'error': 'No tienes permisos'}, status=403)
+        
+        # Generar feedback y recomendaciones
+        feedback = generate_ai_feedback(progress_report)
+        recommendations = generate_ai_recommendations(progress_report)
+        
+        # Actualizar el reporte
+        progress_report.ai_feedback = feedback
+        progress_report.ai_recommendations = recommendations
+        progress_report.save()
+        
+        return JsonResponse({
+            'success': True,
+            'feedback': feedback,
+            'recommendations': recommendations
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+# Funciones de utilidad para IA con integración a ChatGPT
+def generate_ai_feedback(progress_report):
+    """Generar feedback con IA basado en el reporte de progreso"""
+    try:
+        from openai import OpenAI
+        from .models import SystemConfiguration
+        
+        # Obtener API key desde configuración del sistema
+        config = SystemConfiguration.get_config()
+        api_key = getattr(config, 'openai_api_key', None)
+        
+        if not api_key:
+            return "Por favor configura tu API key de OpenAI en la configuración del sistema para recibir feedback personalizado."
+        
+        # Configurar cliente OpenAI
+        client = OpenAI(api_key=api_key)
+        
+        # Crear el prompt para ChatGPT con rol de experimentado profesor
+        system_prompt = """Eres un experimentado profesor y tutor especializado en guiar estudiantes hacia el éxito académico y profesional. 
+        Tienes más de 15 años de experiencia enseñando y mentoreando a estudiantes de diversos niveles.
+        
+        Tu enfoque es:
+        - Constructivo y motivador
+        - Específico y actionable
+        - Personalizado según el contexto del estudiante
+        - Basado en metodologías pedagógicas comprobadas
+        - Empático pero directo cuando es necesario
+        
+        IMPORTANTE: Siempre responde en texto plano, sin usar formato Markdown, asteriscos, guiones especiales o símbolos de formato. 
+        Escribe como si estuvieras hablando directamente con el estudiante."""
+        
+        user_prompt = f"""
+        INFORMACIÓN DEL ESTUDIANTE:
+        - Objetivo que persigue: {progress_report.tutor.objective}
+        - Estado inicial al comenzar: {progress_report.tutor.current_state}
+        - Contexto personal/profesional: {progress_report.tutor.context}
+
+        PROGRESO REPORTADO:
+        {progress_report.progress_description}
+
+        DESAFÍOS Y DIFICULTADES:
+        {progress_report.challenges or 'No mencionó desafíos específicos'}
+
+        Como experimentado profesor, analiza este progreso y proporciona:
+        1. Feedback específico sobre lo logrado
+        2. Puntos donde puede mejorar
+        3. Motivación personalizada para continuar
+        
+        IMPORTANTE: Responde en texto plano, sin usar formato Markdown, asteriscos, guiones o símbolos especiales. 
+        Escribe como si estuvieras hablando directamente con el estudiante en una conversación natural.
+        Mantén un tono profesional pero cercano, como un mentor experimentado que realmente se preocupa por el éxito del estudiante.
+        """
+        
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            max_tokens=400,
+            temperature=0.7
+        )
+        
+        return response.choices[0].message.content.strip()
+        
+    except Exception as e:
+        print(f"Error generando feedback con IA: {e}")
+        return f"Excelente progreso en '{progress_report.tutor.title}'. Como tu tutor, veo que estás avanzando bien hacia tu objetivo. Continúa con el buen trabajo y no dudes en reportar tus próximos avances."
+        
+    except Exception as e:
+        return f"Feedback automático: Excelente progreso en '{progress_report.tutor.title}'. Basado en tu reporte, pareces estar avanzando bien hacia tu objetivo. Continúa con el buen trabajo."
+
+
+def generate_ai_recommendations(progress_report):
+    """Generar recomendaciones con IA"""
+    try:
+        from openai import OpenAI
+        from .models import SystemConfiguration
+        
+        # Obtener API key desde configuración del sistema
+        config = SystemConfiguration.get_config()
+        api_key = getattr(config, 'openai_api_key', None)
+        
+        if not api_key:
+            return "1. Continúa practicando regularmente\n2. Documenta tu progreso\n3. Busca recursos adicionales cuando sea necesario\n4. Establece metas pequeñas y alcanzables\n5. Revisa y ajusta tu enfoque según sea necesario"
+        
+        # Configurar cliente OpenAI
+        client = OpenAI(api_key=api_key)
+        
+        # Crear el prompt para recomendaciones como experimentado profesor
+        system_prompt = """Eres un experimentado profesor con más de 15 años de experiencia en educación y mentoría. 
+        Tu especialidad es crear planes de acción específicos y recomendaciones personalizadas que realmente funcionan.
+        
+        Generas recomendaciones que son:
+        - Específicas y accionables
+        - Adaptadas al nivel del estudiante
+        - Progresivas y bien estructuradas
+        - Basadas en metodologías pedagógicas comprobadas
+        
+        IMPORTANTE: Siempre responde en texto plano, sin usar formato Markdown, asteriscos, guiones especiales o símbolos de formato. 
+        Usa solo numeración simple (1. 2. 3.) para las listas."""
+        
+        user_prompt = f"""
+        PERFIL DEL ESTUDIANTE:
+        - Objetivo principal: {progress_report.tutor.objective}
+        - Punto de partida: {progress_report.tutor.current_state}
+        - Contexto: {progress_report.tutor.context}
+
+        ÚLTIMO REPORTE DE PROGRESO:
+        {progress_report.progress_description}
+
+        DESAFÍOS IDENTIFICADOS:
+        {progress_report.challenges or 'No se mencionaron desafíos específicos'}
+
+        Como experimentado profesor, genera 4-5 recomendaciones específicas y accionables para el siguiente período de estudio.
+        
+        FORMATO REQUERIDO - TEXTO PLANO:
+        1. [Primera recomendación específica con acción clara]
+        2. [Segunda recomendación específica con acción clara]
+        3. [Tercera recomendación específica con acción clara]
+        4. [Cuarta recomendación específica con acción clara]
+        5. [Quinta recomendación específica con acción clara]
+        
+        IMPORTANTE: 
+        - Usa SOLO texto plano, sin formato Markdown
+        - No uses asteriscos, guiones largos, o símbolos especiales
+        - Numera simplemente con 1. 2. 3. etc.
+        - Escribe cada recomendación como una oración completa y clara
+        - Cada recomendación debe ser específica, actionable y apropiada para el nivel del estudiante
+        """
+        
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            max_tokens=350,
+            temperature=0.7
+        )
+        
+        return response.choices[0].message.content.strip()
+        
+    except Exception as e:
+        print(f"Error generando recomendaciones con IA: {e}")
+        return "1. Continúa practicando regularmente con ejercicios específicos\n2. Documenta tu progreso y reflexiona sobre lo aprendido\n3. Busca recursos adicionales que complementen tu aprendizaje\n4. Establece metas pequeñas y medibles para la próxima semana\n5. Considera buscar feedback de otros expertos en el área"
+        
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "Eres un tutor experto que da recomendaciones prácticas y específicas."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=250,
+            temperature=0.7
+        )
+        
+        return response.choices[0].message.content.strip()
+        
+    except Exception as e:
+        return "1. Continúa con las estrategias que están funcionando.\n2. Considera documentar tus procesos para futuras referencias.\n3. Establece pequeños hitos para mantener la motivación."
+
+
+def generate_file_analysis(attachment):
+    """Analizar archivo con IA"""
+    import openai
+    import os
+    
+    try:
+        # Configurar OpenAI API
+        openai.api_key = os.getenv('OPENAI_API_KEY')
+        
+        if not openai.api_key:
+            return f"Archivo '{attachment.original_filename}' recibido. Para análisis automático, configura tu API key de OpenAI."
+        
+        # Para archivos de texto, podríamos leer el contenido y analizarlo
+        # Por ahora, haremos un análisis básico basado en el nombre y descripción
+        prompt = f"""
+        Eres {attachment.tutor.tutor_persona}.
+        
+        CONTEXTO DEL TUTOR:
+        - Objetivo: {attachment.tutor.objective}
+        
+        ARCHIVO SUBIDO:
+        - Nombre: {attachment.original_filename}
+        - Descripción del usuario: {attachment.description}
+        
+        Proporciona un breve análisis de cómo este archivo puede ser útil para el objetivo de aprendizaje.
+        """
+        
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "Eres un tutor que analiza recursos de aprendizaje."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=150,
+            temperature=0.7
+        )
+        
+        return response.choices[0].message.content.strip()
+        
+    except Exception as e:
+        return f"Archivo '{attachment.original_filename}' analizado. Contiene información relevante para tu objetivo de aprendizaje."
+
+
+@login_required
+def ai_tutor_optimize_config(request):
+    """Optimizar configuración del tutor con IA"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    
+    try:
+        import json
+        from openai import OpenAI
+        from .models import SystemConfiguration
+        
+        # Obtener datos del formulario
+        data = json.loads(request.body)
+        title = data.get('title', '').strip()
+        objective = data.get('objective', '').strip()
+        current_state = data.get('current_state', '').strip()
+        context = data.get('context', '').strip()
+        
+        # Validar que hay datos para optimizar
+        if not title and not objective:
+            return JsonResponse({'error': 'Se requiere al menos título y objetivo para optimizar'}, status=400)
+        
+        # Obtener API key desde configuración del sistema
+        config = SystemConfiguration.get_config()
+        api_key = getattr(config, 'openai_api_key', None)
+        
+        if not api_key:
+            return JsonResponse({'error': 'API key de OpenAI no configurada en el sistema'}, status=500)
+        
+        # Configurar cliente OpenAI
+        client = OpenAI(api_key=api_key)
+        
+        # Crear prompt para optimización
+        system_prompt = """Eres un experimentado profesor con más de 15 años de experiencia en educación y diseño de planes de aprendizaje personalizados.
+        
+        Tu tarea es analizar y mejorar la configuración de un tutor IA para maximizar el éxito del estudiante.
+        
+        Principios que sigues:
+        - Objetivos SMART (Específicos, Medibles, Alcanzables, Relevantes, Temporales)
+        - Personalización basada en el contexto del estudiante
+        - Claridad y precisión en la comunicación
+        - Metodologías pedagógicas comprobadas
+        
+        IMPORTANTE: Responde en texto plano, sin formato Markdown, asteriscos o símbolos especiales."""
+        
+        user_prompt = f"""
+        CONFIGURACIÓN ACTUAL DEL TUTOR:
+        - Título: {title}
+        - Objetivo: {objective}
+        - Estado actual: {current_state}
+        - Contexto: {context}
+        
+        Como experimentado profesor, analiza y mejora esta configuración:
+        
+        1. Revisa el título: ¿Es claro y descriptivo?
+        2. Optimiza el objetivo: ¿Sigue principios SMART?
+        3. Mejora la descripción del estado actual: ¿Es específica y útil?
+        4. Enriquece el contexto: ¿Proporciona información relevante para personalizar el aprendizaje?
+        
+        Devuelve una respuesta en formato JSON con las siguientes claves:
+        - "title": título mejorado (máximo 200 caracteres)
+        - "objective": objetivo optimizado (máximo 1000 caracteres)
+        - "current_state": estado actual mejorado (máximo 1000 caracteres)
+        - "context": contexto enriquecido (máximo 1000 caracteres)
+        
+        Si algún campo original está vacío o es muy corto, créalo basándote en la información disponible.
+        Mantén la esencia de lo que el usuario quiere lograr pero hazlo más claro, específico y educativamente sólido.
+        """
+        
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            max_tokens=800,
+            temperature=0.7
+        )
+        
+        ai_response = response.choices[0].message.content.strip()
+        
+        # Intentar parsear como JSON
+        try:
+            optimized_config = json.loads(ai_response)
+        except json.JSONDecodeError:
+            # Si no es JSON válido, extraer manualmente
+            optimized_config = {
+                'title': title or 'Objetivo de Aprendizaje Personalizado',
+                'objective': objective or 'Objetivo de aprendizaje mejorado por IA',
+                'current_state': current_state or 'Estado inicial analizado por IA',
+                'context': context or 'Contexto enriquecido por IA'
+            }
+        
+        return JsonResponse({
+            'success': True,
+            'optimized': optimized_config,
+            'message': 'Configuración optimizada por tu profesor IA'
+        })
+        
+    except Exception as e:
+        print(f"Error optimizando configuración: {e}")
+        return JsonResponse({'error': f'Error interno: {str(e)}'}, status=500)

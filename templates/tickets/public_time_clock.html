@@ -1,0 +1,506 @@
+{% extends 'mobile_base.html' %}
+{% load static %}
+
+{% block title %}Control de Horario - {{ user.get_full_name|default:user.username }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .time-clock-container {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        margin: 0;
+        padding: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .time-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        padding: 25px;
+        width: 100%;
+        max-width: 450px;
+    }
+    
+    .user-header {
+        text-align: center;
+        margin-bottom: 25px;
+    }
+    
+    .user-avatar {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+        color: white;
+        font-size: 1.8rem;
+        font-weight: bold;
+    }
+    
+    .user-name {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: #333;
+        margin: 0;
+    }
+    
+    .user-subtitle {
+        color: #666;
+        font-size: 0.9rem;
+        margin: 5px 0 0 0;
+    }
+    
+    .current-time {
+        font-size: 2.8rem;
+        font-weight: bold;
+        text-align: center;
+        color: #333;
+        margin: 20px 0;
+        font-family: 'SF Mono', Monaco, monospace;
+    }
+    
+    .status-display {
+        text-align: center;
+        padding: 18px;
+        border-radius: 15px;
+        margin: 20px 0;
+        font-size: 1.1rem;
+        font-weight: 500;
+    }
+    
+    .status-working {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+    }
+    
+    .status-not-working {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        color: white;
+    }
+    
+    .action-buttons {
+        text-align: center;
+        margin: 25px 0;
+    }
+    
+    .btn-time-action {
+        font-size: 1.3rem;
+        font-weight: bold;
+        padding: 18px;
+        border-radius: 50px;
+        border: none;
+        margin: 8px 0;
+        width: 100%;
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        min-height: 70px;
+    }
+    
+    .btn-entrada {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+    }
+    
+    .btn-entrada:hover, .btn-entrada:active {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
+        color: white;
+    }
+    
+    .btn-salida {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+    }
+    
+    .btn-salida:hover, .btn-salida:active {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(220, 53, 69, 0.4);
+        color: white;
+    }
+    
+    .btn:disabled {
+        opacity: 0.6;
+        transform: none !important;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    .notes-section {
+        margin: 20px 0 15px 0;
+    }
+    
+    .notes-section label {
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: #495057;
+        margin-bottom: 8px;
+    }
+    
+    .form-control {
+        border-radius: 12px;
+        border: 2px solid #e9ecef;
+        font-size: 16px;
+        padding: 12px 15px;
+    }
+    
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    .today-summary {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 18px;
+        margin: 20px 0 0 0;
+    }
+    
+    .today-summary h5 {
+        font-size: 1.1rem;
+        margin-bottom: 15px;
+        color: #495057;
+    }
+    
+    .entry-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .entry-item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+    
+    .entry-time {
+        font-weight: 600;
+        color: #495057;
+        font-size: 0.95rem;
+    }
+    
+    .entry-status {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .status-active {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .status-completed {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+    
+    .location-info {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 12px;
+        padding: 12px;
+        margin: 15px 0;
+        text-align: center;
+        font-size: 0.85rem;
+        color: #856404;
+    }
+    
+    .elapsed-time {
+        font-size: 0.9rem;
+        margin-top: 5px;
+    }
+    
+    /* Optimizaciones específicas para móviles */
+    @media (max-width: 576px) {
+        .time-clock-container {
+            padding: 5px;
+        }
+        
+        .time-card {
+            margin: 0;
+            padding: 20px;
+            border-radius: 15px;
+        }
+        
+        .current-time {
+            font-size: 2.5rem;
+        }
+        
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            font-size: 1.5rem;
+        }
+        
+        .btn-time-action {
+            font-size: 1.2rem;
+            padding: 16px;
+            min-height: 65px;
+        }
+        
+        .user-name {
+            font-size: 1.2rem;
+        }
+    }
+    
+    /* Optimizaciones para pantallas muy pequeñas */
+    @media (max-width: 375px) {
+        .time-card {
+            padding: 15px;
+        }
+        
+        .current-time {
+            font-size: 2.2rem;
+        }
+        
+        .status-display {
+            padding: 15px;
+            font-size: 1rem;
+        }
+        
+        .btn-time-action {
+            font-size: 1.1rem;
+            padding: 14px;
+            min-height: 60px;
+        }
+    }
+    
+    /* Prevenir zoom en inputs en iOS */
+    @supports (-webkit-touch-callout: none) {
+        .form-control {
+            font-size: 16px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="time-clock-container">
+    <div class="time-card">
+        <!-- Header del Usuario -->
+        <div class="user-header">
+            <div class="user-avatar">
+                {{ user.first_name.0|default:user.username.0|upper }}
+            </div>
+            <h3 class="user-name">{{ user.get_full_name|default:user.username }}</h3>
+            <p class="user-subtitle">Control de Horario</p>
+        </div>
+        
+        <!-- Hora Actual -->
+        <div class="current-time" id="current-time">
+            --:--
+        </div>
+        
+        <!-- Estado Actual -->
+        {% if active_entry %}
+            <div class="status-display status-working">
+                <i class="fas fa-play-circle me-2"></i>
+                Trabajando desde las {{ active_entry.fecha_entrada|date:"H:i" }}
+                <div class="elapsed-time">
+                    <small>Tiempo: <strong id="elapsed-time">{{ active_entry.duracion_formateada }}</strong></small>
+                </div>
+            </div>
+        {% endif %}
+        
+        <!-- Información de ubicación si es requerida -->
+        {% if require_location %}
+            <div class="location-info">
+                <i class="fas fa-map-marker-alt me-2"></i>
+                <strong>Ubicación requerida:</strong> Se registrará tu ubicación
+            </div>
+        {% endif %}
+        
+        <!-- Formulario de Acción -->
+        <form method="post" id="time-form">
+            {% csrf_token %}
+            
+            <!-- Campo oculto para la acción -->
+            <input type="hidden" name="action" id="action-field" value="">
+            
+            <!-- Botones de Acción -->
+            <div class="action-buttons">
+                {% if not active_entry %}
+                    <!-- Solo mostrar botón de entrada si no hay jornada activa -->
+                    <button type="submit" data-action="entrada" class="btn btn-entrada btn-time-action" id="btn-entrada">
+                        <i class="fas fa-play me-2"></i>
+                        Registrar Entrada
+                    </button>
+                {% else %}
+                    <!-- Solo mostrar botón de salida si hay jornada activa -->
+                    <button type="submit" data-action="salida" class="btn btn-salida btn-time-action" id="btn-salida">
+                        <i class="fas fa-stop me-2"></i>
+                        Registrar Salida
+                    </button>
+                {% endif %}
+            </div>
+            
+            <!-- Notas -->
+            <div class="notes-section">
+                <label for="{{ form.notes.id_for_label }}" class="form-label">
+                    <i class="fas fa-sticky-note me-2"></i>Notas (opcional)
+                </label>
+                {{ form.notes }}
+            </div>
+            
+            <!-- Campos ocultos para ubicación -->
+            {{ form.latitude }}
+            {{ form.longitude }}
+        </form>
+        
+        <!-- Resumen del Día -->
+        {% if today_entries %}
+            <div class="today-summary">
+                <h5><i class="fas fa-calendar-day me-2"></i>Resumen de Hoy</h5>
+                {% for entry in today_entries %}
+                    <div class="entry-item">
+                        <div>
+                            <div class="entry-time">
+                                {{ entry.fecha_entrada|date:"H:i" }}
+                                {% if entry.fecha_salida %}
+                                    - {{ entry.fecha_salida|date:"H:i" }}
+                                {% endif %}
+                            </div>
+                            {% if entry.notas %}
+                                <small class="text-muted">{{ entry.notas|truncatechars:40 }}</small>
+                            {% endif %}
+                        </div>
+                        <div>
+                            {% if entry.fecha_salida %}
+                                <span class="entry-status status-completed">
+                                    {{ entry.duracion_formateada }}
+                                </span>
+                            {% else %}
+                                <span class="entry-status status-active">
+                                    Activo
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Actualizar hora actual cada segundo
+    function updateCurrentTime() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('es-ES', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+        document.getElementById('current-time').textContent = timeString;
+    }
+    
+    // Actualizar inmediatamente y cada segundo
+    updateCurrentTime();
+    setInterval(updateCurrentTime, 1000);
+    
+    // Actualizar tiempo transcurrido si está trabajando
+    {% if active_entry %}
+    function updateElapsedTime() {
+        const startTime = new Date('{{ active_entry.fecha_entrada|date:"c" }}');
+        const now = new Date();
+        const diff = now - startTime;
+        
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        
+        const elapsedString = hours.toString().padStart(2, '0') + ':' + 
+                             minutes.toString().padStart(2, '0');
+        
+        const elapsedElement = document.getElementById('elapsed-time');
+        if (elapsedElement) {
+            elapsedElement.textContent = elapsedString;
+        }
+    }
+    
+    // Actualizar cada minuto
+    updateElapsedTime();
+    setInterval(updateElapsedTime, 60000);
+    {% endif %}
+    
+    // Manejar geolocalización si es requerida
+    {% if require_location %}
+    const form = document.getElementById('time-form');
+    const actionField = document.getElementById('action-field');
+    const latitudeField = document.getElementById('{{ form.latitude.id_for_label }}');
+    const longitudeField = document.getElementById('{{ form.longitude.id_for_label }}');
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Establecer el valor de action basado en el botón presionado
+        const submitBtn = e.submitter;
+        actionField.value = submitBtn.getAttribute('data-action');
+        
+        if (navigator.geolocation) {
+            // Deshabilitar botón mientras obtenemos ubicación
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Obteniendo ubicación...';
+            
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    latitudeField.value = position.coords.latitude;
+                    longitudeField.value = position.coords.longitude;
+                    
+                    // Restaurar botón y enviar formulario
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                    form.submit();
+                },
+                function(error) {
+                    // Restaurar botón
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                    
+                    alert('Error al obtener la ubicación: ' + error.message + '\nPor favor, permite el acceso a la ubicación e inténtalo de nuevo.');
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 60000
+                }
+            );
+        } else {
+            alert('Tu navegador no soporta geolocalización. Contacta al administrador.');
+        }
+    });
+    {% else %}
+    // Si no se requiere ubicación, enviar formulario normalmente
+    const form = document.getElementById('time-form');
+    const actionField = document.getElementById('action-field');
+    
+    form.addEventListener('submit', function(e) {
+        // Establecer el valor de action basado en el botón presionado
+        const submitBtn = e.submitter;
+        actionField.value = submitBtn.getAttribute('data-action');
+        
+        const originalText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Procesando...';
+        
+        // Re-habilitar después de 3 segundos para evitar múltiples envíos
+        setTimeout(function() {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }, 3000);
+    });
+    {% endif %}
+});
+</script>
+{% endblock %}

@@ -8,17 +8,36 @@
         </div>
         <div class="card-body">
             <div class="row mb-3">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="bg-light rounded p-3 mb-2">
                         <i class="bi bi-people-fill text-primary"></i>
                         <strong>Total de respuestas:</strong> <span class="fs-5">{{ total_responses }}</span>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="bg-light rounded p-3 mb-2">
                         <i class="bi bi-bar-chart-fill text-success"></i>
                         <strong>Puntuación promedio:</strong> <span class="fs-5">{{ average_score }}</span>
                     </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-grid">
+                        <button type="button" class="btn btn-success btn-sm" onclick="analyzeWithAI()" 
+                                {% if total_responses == 0 %}disabled title="Necesitas al menos una respuesta para el análisis"{% endif %}>
+                            <i class="bi bi-robot"></i> Análisis con IA
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sección de análisis de IA -->
+            <div id="aiAnalysisSection" class="alert alert-info" style="display: none;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0"><i class="bi bi-robot text-success"></i> Análisis y Mejoras Sugeridas por IA</h5>
+                    <button type="button" class="btn-close" onclick="closeAIAnalysis()"></button>
+                </div>
+                <div id="aiAnalysisContent">
+                    <!-- El contenido del análisis se cargará aquí -->
                 </div>
             </div>
             <div class="table-responsive">
@@ -29,6 +48,7 @@
                             <th><i class="bi bi-person"></i> Nombre</th>
                             <th><i class="bi bi-envelope"></i> Email</th>
                             <th><i class="bi bi-star-fill text-warning"></i> Puntuación</th>
+                            <th><i class="bi bi-eye"></i> Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -38,10 +58,16 @@
                             <td>{{ response.respondent_name|default:'-' }}</td>
                             <td>{{ response.respondent_email|default:'-' }}</td>
                             <td><span class="badge bg-success fs-6">{{ response.total_score }}</span></td>
+                            <td>
+                                <a href="{% url 'form_response_detail' form.pk response.pk %}" 
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-eye"></i> Ver detalle
+                                </a>
+                            </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="4" class="text-center text-muted">No hay respuestas registradas.</td>
+                            <td colspan="5" class="text-center text-muted">No hay respuestas registradas.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -59,4 +85,172 @@
         </div>
     </div>
 </div>
+
+<script>
+function analyzeWithAI() {
+    const button = event.target;
+    const originalText = button.innerHTML;
+    
+    // Mostrar indicador de carga
+    button.innerHTML = '<i class="bi bi-hourglass-split"></i> Analizando...';
+    button.disabled = true;
+    
+    // Hacer petición AJAX
+    fetch(`{% url 'form_ai_analysis' form.pk %}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            displayAIAnalysis(data.analysis);
+            document.getElementById('aiAnalysisSection').style.display = 'block';
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al realizar el análisis. Por favor intenta de nuevo.');
+    })
+    .finally(() => {
+        // Restaurar botón
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+function displayAIAnalysis(analysis) {
+    const container = document.getElementById('aiAnalysisContent');
+    
+    container.innerHTML = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6><i class="bi bi-exclamation-triangle text-warning"></i> Problemas Identificados:</h6>
+                <div class="mb-3">
+                    ${analysis.problems.map(problem => `
+                        <div class="alert alert-warning alert-sm py-2">
+                            <strong>${problem.type}:</strong> ${problem.description}
+                            ${problem.severity ? `<span class="badge bg-warning ms-2">${problem.severity}</span>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h6><i class="bi bi-lightbulb text-success"></i> Mejoras Sugeridas:</h6>
+                <div class="mb-3">
+                    ${analysis.improvements.map((improvement, index) => `
+                        <div class="alert alert-success alert-sm py-2">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <strong>${improvement.title}:</strong> ${improvement.description}
+                                    ${improvement.priority ? `<span class="badge bg-success ms-2">${improvement.priority}</span>` : ''}
+                                </div>
+                                <button class="btn btn-outline-success btn-sm ms-2" onclick="applyImprovement(${index})" 
+                                        title="Aplicar esta mejora">
+                                    <i class="bi bi-check-circle"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+        
+        <div class="border-top pt-3">
+            <h6><i class="bi bi-graph-up text-info"></i> Resumen del Análisis:</h6>
+            <div class="bg-light p-3 rounded">
+                <p class="mb-2"><strong>Puntuación General:</strong> <span class="badge bg-info">${analysis.overall_score}/10</span></p>
+                <p class="mb-2"><strong>Principales Fortalezas:</strong> ${analysis.strengths.join(', ')}</p>
+                <p class="mb-0"><strong>Recomendación Principal:</strong> ${analysis.main_recommendation}</p>
+            </div>
+        </div>
+    `;
+    
+    // Guardar el análisis globalmente para uso posterior
+    window.currentAnalysis = analysis;
+}
+
+function applyImprovement(improvementIndex) {
+    const improvement = window.currentAnalysis.improvements[improvementIndex];
+    
+    if (confirm(`¿Aplicar la mejora: "${improvement.title}"?\n\n${improvement.description}`)) {
+        // Aquí se puede implementar la aplicación automática de mejoras
+        // Por ahora mostraremos instrucciones al usuario
+        
+        const instructions = `
+            <div class="modal fade" id="improvementModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title"><i class="bi bi-gear"></i> Aplicar Mejora: ${improvement.title}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-info">
+                                <h6>Descripción de la Mejora:</h6>
+                                <p>${improvement.description}</p>
+                            </div>
+                            
+                            ${improvement.steps ? `
+                                <h6>Pasos para Implementar:</h6>
+                                <ol>
+                                    ${improvement.steps.map(step => `<li>${step}</li>`).join('')}
+                                </ol>
+                            ` : ''}
+                            
+                            <div class="d-flex gap-2 mt-3">
+                                <a href="{% url 'form_edit' form.pk %}" class="btn btn-primary">
+                                    <i class="bi bi-pencil"></i> Editar Formulario
+                                </a>
+                                <button type="button" class="btn btn-success" onclick="markAsApplied(${improvementIndex})">
+                                    <i class="bi bi-check"></i> Marcar como Aplicada
+                                </button>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Agregar modal al DOM si no existe
+        if (!document.getElementById('improvementModal')) {
+            document.body.insertAdjacentHTML('beforeend', instructions);
+        }
+        
+        // Mostrar modal
+        const modal = new bootstrap.Modal(document.getElementById('improvementModal'));
+        modal.show();
+    }
+}
+
+function markAsApplied(improvementIndex) {
+    // Marcar la mejora como aplicada visualmente
+    const improvementElement = document.querySelectorAll('.alert-success')[improvementIndex];
+    if (improvementElement) {
+        improvementElement.style.opacity = '0.6';
+        improvementElement.querySelector('.btn').innerHTML = '<i class="bi bi-check-circle-fill"></i>';
+        improvementElement.querySelector('.btn').disabled = true;
+        improvementElement.querySelector('.btn').classList.replace('btn-outline-success', 'btn-success');
+    }
+    
+    // Cerrar modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('improvementModal'));
+    if (modal) {
+        modal.hide();
+    }
+    
+    alert('Mejora marcada como aplicada. ¡Excelente trabajo!');
+}
+
+function closeAIAnalysis() {
+    document.getElementById('aiAnalysisSection').style.display = 'none';
+}
+</script>
 {% endblock %}

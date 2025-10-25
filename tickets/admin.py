@@ -3,7 +3,7 @@ from django.utils.html import format_html
 from django.utils import timezone
 from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserNote, 
-    TimeEntry, Project, Company, SystemConfiguration, Document, UserProfile,
+    TimeEntry, PublicTimeAccess, Project, Company, SystemConfiguration, Document, UserProfile,
     WorkOrder, WorkOrderAttachment, Task, Opportunity, OpportunityStatus, 
     OpportunityNote, OpportunityStatusHistory, Concept, Exam, ExamQuestion, 
     ExamAttempt, ExamAnswer, ContactoWeb, Employee, JobApplicationToken,
@@ -14,11 +14,11 @@ from .models import (
     TaskSchedule, ScheduleTask, ScheduleComment, TicketApproval, SatisfactionSurvey, FinancialAction,
     FinancialPriceHistory, Product, ClientProjectAccess, ClientTimeEntry, CompanyDocumentation, CompanyDocumentationURL, ContactGenerator,
     CompanyRequestGenerator, CompanyRequest, CompanyRequestComment,
-    Form, FormQuestion, FormQuestionOption, FormResponse, FormAnswer, Alcance,
+    Form, FormQuestion, FormQuestionOption, FormResponse, FormAnswer, FormAIAnalysis, Alcance, License,
     WhatsAppConnection, WhatsAppKeyword, WhatsAppMessage, ImagePrompt,
     AIManager, AIManagerMeeting, AIManagerMeetingAttachment, AIManagerSummary, CompanyAISummary, UserAIPerformanceEvaluation,
     WebsiteTracker, LegalContract, SupplierContractReview, PayPalPaymentLink, PayPalOrder, TodoItem,
-    AIBook, AIBookChapter, EmployeeRequest, InternalAgreement
+    AIBook, AIBookChapter, EmployeeRequest, InternalAgreement, Asset, AssetHistory
 )
 
 # Configuración del sitio de administración
@@ -376,6 +376,74 @@ class TimeEntryAdmin(admin.ModelAdmin):
     
     def has_delete_permission(self, request, obj=None):
         """Solo administradores pueden eliminar registros de tiempo"""
+        return request.user.is_superuser
+
+
+@admin.register(PublicTimeAccess)
+class PublicTimeAccessAdmin(admin.ModelAdmin):
+    list_display = ('user', 'get_user_full_name', 'is_active', 'token_display', 'last_used', 'created_at')
+    list_filter = ('is_active', 'require_location', 'created_at', 'last_used')
+    search_fields = ('user__username', 'user__first_name', 'user__last_name', 'user__email', 'token')
+    readonly_fields = ('token', 'created_at', 'last_used', 'public_url_display')
+    ordering = ('-created_at',)
+    date_hierarchy = 'created_at'
+    
+    fieldsets = (
+        ('Usuario', {
+            'fields': ('user',)
+        }),
+        ('Configuración de Acceso', {
+            'fields': ('is_active', 'token', 'public_url_display')
+        }),
+        ('Configuración de Seguridad', {
+            'fields': ('require_location', 'allowed_ip_addresses'),
+            'classes': ('collapse',)
+        }),
+        ('Información de Uso', {
+            'fields': ('created_at', 'last_used'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_user_full_name(self, obj):
+        """Mostrar nombre completo del usuario"""
+        return obj.user.get_full_name() or obj.user.username
+    get_user_full_name.short_description = 'Nombre Completo'
+    get_user_full_name.admin_order_field = 'user__first_name'
+    
+    def token_display(self, obj):
+        """Mostrar token truncado para seguridad"""
+        if obj.token:
+            return f"{obj.token[:8]}...{obj.token[-8:]}"
+        return "-"
+    token_display.short_description = 'Token'
+    
+    def public_url_display(self, obj):
+        """Mostrar URL pública completa"""
+        if obj.token:
+            from django.utils.html import format_html
+            from django.urls import reverse
+            from django.contrib.sites.models import Site
+            
+            try:
+                current_site = Site.objects.get_current()
+                url = f"http://{current_site.domain}{obj.public_url}"
+                return format_html('<a href="{}" target="_blank">{}</a>', url, url)
+            except:
+                return obj.public_url
+        return "-"
+    public_url_display.short_description = 'URL Pública'
+    
+    def has_add_permission(self, request):
+        """Solo admin puede crear accesos públicos"""
+        return request.user.is_superuser
+    
+    def has_change_permission(self, request, obj=None):
+        """Solo admin puede modificar accesos públicos"""
+        return request.user.is_superuser
+    
+    def has_delete_permission(self, request, obj=None):
+        """Solo admin puede eliminar accesos públicos"""
         return request.user.is_superuser
 
 
@@ -2555,6 +2623,43 @@ class FormAnswerAdmin(admin.ModelAdmin):
         return False
 
 
+@admin.register(FormAIAnalysis)
+class FormAIAnalysisAdmin(admin.ModelAdmin):
+    list_display = ['form', 'overall_score', 'problems_count', 'improvements_count', 'created_by', 'created_at']
+    list_filter = ['overall_score', 'created_at', 'form__company', 'analysis_version']
+    search_fields = ['form__title', 'created_by__username', 'main_recommendation']
+    readonly_fields = ['form', 'created_by', 'created_at', 'overall_score', 'problems', 'improvements', 
+                      'strengths', 'main_recommendation', 'total_responses', 'analysis_version']
+    ordering = ['-created_at']
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('form', 'created_by', 'created_at', 'analysis_version')
+        }),
+        ('Resultados del Análisis', {
+            'fields': ('overall_score', 'total_responses', 'main_recommendation')
+        }),
+        ('Detalles del Análisis', {
+            'fields': ('problems', 'improvements', 'strengths'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def problems_count(self, obj):
+        return obj.get_problems_count()
+    problems_count.short_description = 'Problemas'
+    
+    def improvements_count(self, obj):
+        return obj.get_improvements_count()
+    improvements_count.short_description = 'Mejoras'
+    
+    def has_add_permission(self, request):
+        return False  # Solo se crean desde la aplicación
+    
+    def has_delete_permission(self, request, obj=None):
+        return True  # Permitir eliminar análisis antiguos
+
+
 @admin.register(Alcance)
 class AlcanceAdmin(admin.ModelAdmin):
     list_display = ['titulo', 'categoria', 'publico', 'creado_por', 'creado_en']
@@ -2579,6 +2684,59 @@ class AlcanceAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         if not change:  # Si es un nuevo objeto
             obj.creado_por = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(License)
+class LicenseAdmin(admin.ModelAdmin):
+    list_display = ['license_key', 'company', 'product', 'status_badge', 'start_date', 'end_date', 'days_left', 'created_by']
+    list_filter = ['status', 'start_date', 'end_date', 'company', 'created_at']
+    search_fields = ['license_key', 'company__name', 'product', 'notes']
+    readonly_fields = ['license_key', 'public_uuid', 'created_at', 'updated_at', 'days_left']
+    ordering = ['-created_at']
+    
+    fieldsets = (
+        ('Información de la Licencia', {
+            'fields': ('license_key', 'company', 'product', 'public_uuid')
+        }),
+        ('Fechas', {
+            'fields': ('start_date', 'end_date', 'days_left')
+        }),
+        ('Estado y Notas', {
+            'fields': ('status', 'notes')
+        }),
+        ('Metadata', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def status_badge(self, obj):
+        color = obj.get_status_display_color()
+        color_map = {
+            'success': '#28a745',
+            'warning': '#ffc107', 
+            'danger': '#dc3545'
+        }
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 8px; border-radius: 3px; font-size: 11px;">{}</span>',
+            color_map.get(color, '#6c757d'),
+            obj.get_status_display()
+        )
+    status_badge.short_description = 'Estado'
+    
+    def days_left(self, obj):
+        if obj.is_expired():
+            return format_html('<span style="color: red;">Expirada</span>')
+        days = obj.days_until_expiry()
+        if days <= 30:
+            return format_html('<span style="color: orange;">{} días</span>', days)
+        return f"{days} días"
+    days_left.short_description = 'Días Restantes'
+    
+    def save_model(self, request, obj, form, change):
+        if not change:  # Si es un nuevo objeto
+            obj.created_by = request.user
         super().save_model(request, obj, form, change)
 
 
@@ -3468,4 +3626,202 @@ class InternalAgreementAdmin(admin.ModelAdmin):
         return super().get_queryset(request).select_related(
             'created_by', 
             'approved_by'
+        )
+
+
+# ==========================================
+# ADMINISTRACIÓN DE CONTROL DE ACTIVOS
+# ==========================================
+
+class AssetHistoryInline(admin.TabularInline):
+    """Inline para el historial de activos"""
+    model = AssetHistory
+    extra = 0
+    readonly_fields = ('action', 'reason', 'performed_by', 'date')
+    ordering = ('-date',)
+    can_delete = False
+
+
+@admin.register(Asset)
+class AssetAdmin(admin.ModelAdmin):
+    """Administración de activos"""
+    
+    list_display = (
+        'name',
+        'manufacturer',
+        'serial_number',
+        'status_badge',
+        'assigned_to',
+        'purchase_date',
+        'created_by',
+        'created_at'
+    )
+    
+    list_filter = (
+        'status',
+        'manufacturer',
+        'purchase_date',
+        'created_at',
+        'assigned_to',
+        'created_by'
+    )
+    
+    search_fields = (
+        'name',
+        'manufacturer',
+        'description',
+        'serial_number',
+        'assigned_to__first_name',
+        'assigned_to__last_name',
+        'assigned_to__username'
+    )
+    
+    readonly_fields = ('created_at', 'updated_at')
+    
+    fieldsets = (
+        ('Información del Activo', {
+            'fields': ('name', 'manufacturer', 'description', 'serial_number')
+        }),
+        ('Estado y Asignación', {
+            'fields': ('status', 'assigned_to')
+        }),
+        ('Información Financiera', {
+            'fields': ('purchase_date', 'purchase_price', 'warranty_expiry'),
+            'classes': ('collapse',)
+        }),
+        ('Ubicación y Notas', {
+            'fields': ('location', 'notes'),
+            'classes': ('collapse',)
+        }),
+        ('Información de Sistema', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    inlines = [AssetHistoryInline]
+    
+    def status_badge(self, obj):
+        """Mostrar estado con badge de color"""
+        colors = {
+            'available': 'success',
+            'assigned': 'primary',
+            'maintenance': 'warning',
+            'repair': 'danger',
+            'decommissioned': 'dark'
+        }
+        color = colors.get(obj.status, 'secondary')
+        return format_html(
+            '<span class="badge badge-{}">{}</span>',
+            color,
+            obj.get_status_display()
+        )
+    status_badge.short_description = 'Estado'
+    
+    def save_model(self, request, obj, form, change):
+        """Override save_model para asignar el usuario creador y manejar historial"""
+        if not change:  # Si es nuevo
+            obj.created_by = request.user
+        
+        super().save_model(request, obj, form, change)
+    
+    def get_queryset(self, request):
+        """Optimizar consultas con select_related"""
+        return super().get_queryset(request).select_related(
+            'assigned_to',
+            'created_by'
+        ).prefetch_related('history')
+
+
+@admin.register(AssetHistory)
+class AssetHistoryAdmin(admin.ModelAdmin):
+    """Administración del historial de activos"""
+    
+    list_display = (
+        'asset',
+        'action_badge',
+        'new_employee',
+        'performed_by',
+        'date'
+    )
+    
+    list_filter = (
+        'action',
+        'date',
+        'performed_by',
+        'asset__status'
+    )
+    
+    search_fields = (
+        'asset__name',
+        'asset__serial_number',
+        'new_employee__first_name',
+        'new_employee__last_name',
+        'new_employee__username',
+        'performed_by__username',
+        'reason'
+    )
+    
+    readonly_fields = (
+        'asset',
+        'action',
+        'previous_employee',
+        'new_employee',
+        'previous_status',
+        'new_status',
+        'reason',
+        'performed_by',
+        'date'
+    )
+    
+    fieldsets = (
+        ('Información de la Acción', {
+            'fields': ('asset', 'action')
+        }),
+        ('Empleados', {
+            'fields': ('previous_employee', 'new_employee')
+        }),
+        ('Estados', {
+            'fields': ('previous_status', 'new_status')
+        }),
+        ('Detalles', {
+            'fields': ('reason', 'performed_by', 'date')
+        }),
+    )
+    
+    def action_badge(self, obj):
+        """Mostrar acción con badge de color"""
+        colors = {
+            'assigned': 'primary',
+            'unassigned': 'secondary',
+            'status_changed': 'info',
+            'maintenance': 'warning'
+        }
+        color = colors.get(obj.action, 'secondary')
+        return format_html(
+            '<span class="badge badge-{}">{}</span>',
+            color,
+            obj.get_action_display()
+        )
+    action_badge.short_description = 'Acción'
+    
+    def has_add_permission(self, request):
+        """No permitir agregar historial manualmente"""
+        return False
+    
+    def has_change_permission(self, request, obj=None):
+        """No permitir editar historial"""
+        return False
+    
+    def has_delete_permission(self, request, obj=None):
+        """Solo superusuarios pueden eliminar historial"""
+        return request.user.is_superuser
+    
+    def get_queryset(self, request):
+        """Optimizar consultas con select_related"""
+        return super().get_queryset(request).select_related(
+            'asset',
+            'previous_employee',
+            'new_employee',
+            'performed_by'
         )

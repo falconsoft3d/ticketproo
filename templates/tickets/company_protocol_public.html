@@ -1,0 +1,161 @@
+{% extends 'public_base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <!-- Header público -->
+    <div class="text-center mb-5">
+        <div class="d-inline-flex align-items-center justify-content-center bg-primary text-white rounded-circle mb-3" style="width: 80px; height: 80px;">
+            <i class="bi bi-file-text fs-1"></i>
+        </div>
+        <h1 class="display-5 fw-bold text-primary">{{ protocol.title }}</h1>
+        <p class="lead text-muted">Versión {{ protocol.version }}</p>
+        {% if protocol.company %}
+        <p class="text-muted">
+            <i class="bi bi-building"></i> {{ protocol.company.name }}
+        </p>
+        {% endif %}
+    </div>
+
+    <!-- Contenido del protocolo -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-file-earmark-text text-primary"></i> Contenido del Protocolo
+                        </h5>
+                        <div class="d-flex gap-2">
+                            <span class="badge bg-success fs-6">Público</span>
+                            <span class="badge bg-primary fs-6">v{{ protocol.version }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="protocol-content">
+                        {% if protocol.content %}
+                            <div class="content-display" style="line-height: 1.8; font-size: 1.1rem;">
+                                {{ protocol.content|linebreaks }}
+                            </div>
+                        {% else %}
+                            <div class="text-center text-muted py-5">
+                                <i class="bi bi-file-text fs-1 mb-3"></i>
+                                <p>Este protocolo no tiene contenido disponible.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información adicional -->
+            <div class="card mt-4 shadow-sm">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="bi bi-info-circle text-primary"></i> Información del Protocolo
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <small class="text-muted d-block">Versión</small>
+                            <span class="fw-bold">{{ protocol.version }}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted d-block">Palabras</small>
+                            <span class="fw-bold">{{ protocol.get_word_count }} palabras</span>
+                        </div>
+                        <div class="col-md-6 mt-3">
+                            <small class="text-muted d-block">Creado</small>
+                            <span class="fw-bold">{{ protocol.created_at|date:"d/m/Y H:i" }}</span>
+                        </div>
+                        <div class="col-md-6 mt-3">
+                            <small class="text-muted d-block">Última actualización</small>
+                            <span class="fw-bold">{{ protocol.updated_at|date:"d/m/Y H:i" }}</span>
+                        </div>
+                        {% if protocol.public_shared_at %}
+                        <div class="col-md-6 mt-3">
+                            <small class="text-muted d-block">Compartido públicamente</small>
+                            <span class="fw-bold">{{ protocol.public_shared_at|date:"d/m/Y H:i" }}</span>
+                        </div>
+                        <div class="col-md-6 mt-3">
+                            <small class="text-muted d-block">Vistas públicas</small>
+                            <span class="fw-bold">
+                                <i class="bi bi-eye text-success"></i> {{ protocol.public_views_count }} vista{{ protocol.public_views_count|pluralize }}
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer público -->
+            <div class="text-center mt-5 mb-4">
+                <div class="d-flex justify-content-center gap-3">
+                    <button onclick="window.print()" class="btn btn-outline-primary">
+                        <i class="bi bi-printer"></i> Imprimir
+                    </button>
+                    <button onclick="copyUrl()" class="btn btn-outline-secondary" id="copyUrlBtn">
+                        <i class="bi bi-link-45deg"></i> Copiar enlace
+                    </button>
+                </div>
+                <p class="text-muted mt-3 small">
+                    <i class="bi bi-shield-check"></i> Este protocolo se comparte de forma pública y segura
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .btn, .card-header, .breadcrumb, nav {
+        display: none !important;
+    }
+    
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
+    .container {
+        margin: 0 !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+    }
+    
+    .protocol-content {
+        font-size: 12pt !important;
+        line-height: 1.5 !important;
+    }
+}
+
+.content-display {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+</style>
+
+<script>
+function copyUrl() {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(function() {
+        const btn = document.getElementById('copyUrlBtn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check"></i> ¡Copiado!';
+        btn.classList.remove('btn-outline-secondary');
+        btn.classList.add('btn-success');
+        
+        setTimeout(function() {
+            btn.innerHTML = originalText;
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline-secondary');
+        }, 2000);
+    }).catch(function(err) {
+        alert('Error al copiar el enlace: ' + err);
+    });
+}
+</script>
+{% endblock %}

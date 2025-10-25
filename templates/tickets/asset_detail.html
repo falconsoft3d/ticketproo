@@ -1,0 +1,282 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .asset-info {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .status-badge {
+        font-size: 1.1rem;
+        padding: 0.5rem 1rem;
+    }
+    .info-item {
+        margin-bottom: 1rem;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border-left: 4px solid #007bff;
+    }
+    .history-item {
+        border-left: 3px solid #dee2e6;
+        padding-left: 1rem;
+        margin-bottom: 1rem;
+    }
+    .history-item.action-created { border-left-color: #28a745; }
+    .history-item.action-assigned { border-left-color: #007bff; }
+    .history-item.action-transferred { border-left-color: #17a2b8; }
+    .history-item.action-unassigned { border-left-color: #ffc107; }
+    .history-item.action-maintenance { border-left-color: #fd7e14; }
+    .history-item.action-returned { border-left-color: #20c997; }
+    .history-item.action-retired { border-left-color: #6c757d; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-box text-primary"></i> {{ title }}</h2>
+            <p class="text-muted">Información detallada del activo</p>
+        </div>
+        <div>
+            <a href="{% url 'asset_list' %}" class="btn btn-outline-secondary me-2">
+                <i class="bi bi-arrow-left"></i> Volver a Activos
+            </a>
+            <div class="btn-group">
+                <a href="{% url 'asset_edit' asset.pk %}" class="btn btn-primary">
+                    <i class="bi bi-pencil"></i> Editar
+                </a>
+                <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown">
+                    <span class="visually-hidden">Toggle Dropdown</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{% url 'asset_assign' asset.pk %}">
+                        <i class="bi bi-person-plus"></i> Asignar/Reasignar
+                    </a></li>
+                    <li><a class="dropdown-item" href="{% url 'asset_history' asset.pk %}">
+                        <i class="bi bi-clock-history"></i> Ver Historial Completo
+                    </a></li>
+                    {% if asset.status != 'maintenance' %}
+                        <li><a class="dropdown-item" href="{% url 'asset_maintenance' asset.pk %}">
+                            <i class="bi bi-tools"></i> Enviar a Mantenimiento
+                        </a></li>
+                    {% endif %}
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="{% url 'asset_delete' asset.pk %}">
+                        <i class="bi bi-trash"></i> Eliminar
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información Principal -->
+        <div class="col-md-8">
+            <div class="asset-info mb-4">
+                <!-- Nombre y Estado -->
+                <div class="text-center mb-4">
+                    <h3 class="text-primary">{{ asset.name }}</h3>
+                    <span class="badge bg-{{ asset.get_status_display_color }} status-badge">
+                        {{ asset.get_status_display }}
+                    </span>
+                </div>
+
+                <!-- Información Básica -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="info-item">
+                            <h6><i class="bi bi-building text-primary"></i> Fabricante</h6>
+                            <p class="mb-0">{{ asset.manufacturer }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="info-item">
+                            <h6><i class="bi bi-hash text-primary"></i> Número de Serie</h6>
+                            <p class="mb-0">{{ asset.serial_number }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Descripción -->
+                <div class="info-item mb-4">
+                    <h6><i class="bi bi-file-text text-primary"></i> Descripción</h6>
+                    <p class="mb-0">{{ asset.description|linebreaks }}</p>
+                </div>
+
+                <!-- Asignación Actual -->
+                <div class="info-item mb-4">
+                    <h6><i class="bi bi-person-circle text-primary"></i> Asignación Actual</h6>
+                    {% if asset.assigned_to %}
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                <strong>{{ asset.assigned_to.name }}</strong><br>
+                                <small class="text-muted">{{ asset.assigned_to.position }}</small>
+                            </div>
+                            <a href="{% url 'asset_assign' asset.pk %}" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-arrow-repeat"></i> Reasignar
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="d-flex align-items-center">
+                            <span class="text-muted me-3">Sin asignar</span>
+                            <a href="{% url 'asset_assign' asset.pk %}" class="btn btn-primary btn-sm">
+                                <i class="bi bi-person-plus"></i> Asignar
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Información Financiera -->
+                {% if asset.purchase_date or asset.purchase_price or asset.warranty_expiry %}
+                    <div class="row mb-4">
+                        {% if asset.purchase_date %}
+                            <div class="col-md-4">
+                                <div class="info-item">
+                                    <h6><i class="bi bi-calendar-check text-success"></i> Fecha de Compra</h6>
+                                    <p class="mb-0">{{ asset.purchase_date|date:"d F Y" }}</p>
+                                </div>
+                            </div>
+                        {% endif %}
+                        {% if asset.purchase_price %}
+                            <div class="col-md-4">
+                                <div class="info-item">
+                                    <h6><i class="bi bi-currency-dollar text-success"></i> Precio de Compra</h6>
+                                    <p class="mb-0">${{ asset.purchase_price|floatformat:2 }}</p>
+                                </div>
+                            </div>
+                        {% endif %}
+                        {% if asset.warranty_expiry %}
+                            <div class="col-md-4">
+                                <div class="info-item">
+                                    <h6><i class="bi bi-shield-check text-warning"></i> Garantía hasta</h6>
+                                    <p class="mb-0">{{ asset.warranty_expiry|date:"d F Y" }}</p>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+                <!-- Ubicación y Notas -->
+                <div class="row mb-4">
+                    {% if asset.location %}
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <h6><i class="bi bi-geo-alt text-info"></i> Ubicación</h6>
+                                <p class="mb-0">{{ asset.location }}</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                    {% if asset.notes %}
+                        <div class="col-md-{% if asset.location %}6{% else %}12{% endif %}">
+                            <div class="info-item">
+                                <h6><i class="bi bi-chat-text text-info"></i> Notas</h6>
+                                <p class="mb-0">{{ asset.notes|linebreaks }}</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Metadatos -->
+                <div class="border-top pt-3">
+                    <small class="text-muted">
+                        <strong>Creado por:</strong> {{ asset.created_by.get_full_name|default:asset.created_by.username }}<br>
+                        <strong>Fecha de creación:</strong> {{ asset.created_at|date:"d/m/Y H:i" }}<br>
+                        <strong>Última actualización:</strong> {{ asset.updated_at|date:"d/m/Y H:i" }}
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Historial Reciente -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-clock-history"></i> Historial Reciente
+                        <a href="{% url 'asset_history' asset.pk %}" class="btn btn-outline-primary btn-sm float-end">
+                            Ver Todo
+                        </a>
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if history %}
+                        {% for item in history %}
+                            <div class="history-item action-{{ item.action }}">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <strong>{{ item.get_action_display }}</strong>
+                                        <br>
+                                        <small class="text-muted">
+                                            {{ item.date|date:"d/m/Y H:i" }} - {{ item.performed_by.get_full_name|default:item.performed_by.username }}
+                                        </small>
+                                    </div>
+                                    <span class="badge bg-{{ item.get_action_display_color }} badge-sm">
+                                        {{ item.get_action_display }}
+                                    </span>
+                                </div>
+                                
+                                {% if item.previous_employee or item.new_employee %}
+                                    <div class="mt-2 small">
+                                        {% if item.previous_employee and item.new_employee %}
+                                            De: {{ item.previous_employee.name }} → {{ item.new_employee.name }}
+                                        {% elif item.new_employee %}
+                                            Asignado a: {{ item.new_employee.name }}
+                                        {% elif item.previous_employee %}
+                                            Desasignado de: {{ item.previous_employee.name }}
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                                
+                                {% if item.reason %}
+                                    <div class="mt-1 small text-muted">
+                                        {{ item.reason|truncatewords:10 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted text-center">
+                            <i class="bi bi-info-circle"></i><br>
+                            No hay historial disponible
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Acciones Rápidas -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-lightning"></i> Acciones Rápidas</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'asset_assign' asset.pk %}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-person-plus"></i> 
+                            {% if asset.assigned_to %}Reasignar{% else %}Asignar{% endif %}
+                        </a>
+                        {% if asset.status != 'maintenance' %}
+                            <a href="{% url 'asset_maintenance' asset.pk %}" class="btn btn-outline-warning btn-sm">
+                                <i class="bi bi-tools"></i> Mantenimiento
+                            </a>
+                        {% endif %}
+                        <a href="{% url 'asset_edit' asset.pk %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                        <a href="{% url 'asset_delete' asset.pk %}" class="btn btn-outline-danger btn-sm">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

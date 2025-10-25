@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .history-container {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .asset-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    .history-timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+    .history-timeline::before {
+        content: '';
+        position: absolute;
+        left: 0.5rem;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #dee2e6;
+    }
+    .history-item {
+        position: relative;
+        padding: 1rem 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .history-item::before {
+        content: '';
+        position: absolute;
+        left: -2rem;
+        top: 1rem;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #007bff;
+        border: 3px solid white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .history-item.action-created::before { background: #28a745; }
+    .history-item.action-assigned::before { background: #007bff; }
+    .history-item.action-transferred::before { background: #17a2b8; }
+    .history-item.action-unassigned::before { background: #ffc107; }
+    .history-item.action-maintenance::before { background: #fd7e14; }
+    .history-item.action-returned::before { background: #20c997; }
+    .history-item.action-retired::before { background: #6c757d; }
+    .history-item.action-status_changed::before { background: #6f42c1; }
+    
+    .history-content {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 0.5rem;
+    }
+    .action-icon {
+        font-size: 1.2rem;
+        margin-right: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header del Activo -->
+    <div class="asset-header text-center">
+        <h2><i class="bi bi-clock-history"></i> {{ title }}</h2>
+        <div class="row mt-3">
+            <div class="col-md-3">
+                <strong>Nombre:</strong><br>
+                {{ asset.name }}
+            </div>
+            <div class="col-md-3">
+                <strong>Fabricante:</strong><br>
+                {{ asset.manufacturer }}
+            </div>
+            <div class="col-md-3">
+                <strong>Serie:</strong><br>
+                <code>{{ asset.serial_number }}</code>
+            </div>
+            <div class="col-md-3">
+                <strong>Estado:</strong><br>
+                <span class="badge bg-{{ asset.get_status_display_color }} fs-6">
+                    {{ asset.get_status_display }}
+                </span>
+            </div>
+        </div>
+        <div class="mt-3">
+            <a href="{% url 'asset_detail' asset.pk %}" class="btn btn-light">
+                <i class="bi bi-arrow-left"></i> Volver al Detalle
+            </a>
+            <a href="{% url 'asset_list' %}" class="btn btn-outline-light">
+                <i class="bi bi-list"></i> Lista de Activos
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="history-container">
+                {% if history %}
+                    <h5 class="mb-4">
+                        <i class="bi bi-journal-text text-primary"></i> 
+                        Historial Completo de Actividades
+                        <small class="text-muted">({{ history.paginator.count }} registro{{ history.paginator.count|pluralize }})</small>
+                    </h5>
+
+                    <div class="history-timeline">
+                        {% for item in history %}
+                            <div class="history-item action-{{ item.action }}">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">
+                                            {% if item.action == 'created' %}
+                                                <i class="bi bi-plus-circle action-icon text-success"></i>
+                                            {% elif item.action == 'assigned' %}
+                                                <i class="bi bi-person-plus action-icon text-primary"></i>
+                                            {% elif item.action == 'transferred' %}
+                                                <i class="bi bi-arrow-repeat action-icon text-info"></i>
+                                            {% elif item.action == 'unassigned' %}
+                                                <i class="bi bi-person-x action-icon text-warning"></i>
+                                            {% elif item.action == 'maintenance' %}
+                                                <i class="bi bi-tools action-icon text-warning"></i>
+                                            {% elif item.action == 'returned' %}
+                                                <i class="bi bi-arrow-clockwise action-icon text-success"></i>
+                                            {% elif item.action == 'retired' %}
+                                                <i class="bi bi-archive action-icon text-secondary"></i>
+                                            {% elif item.action == 'status_changed' %}
+                                                <i class="bi bi-gear action-icon text-purple"></i>
+                                            {% endif %}
+                                            {{ item.get_action_display }}
+                                        </h6>
+                                        
+                                        <div class="text-muted small mb-2">
+                                            <i class="bi bi-calendar3"></i> {{ item.date|date:"d F Y" }}
+                                            <i class="bi bi-clock ms-2"></i> {{ item.date|date:"H:i" }}
+                                            <i class="bi bi-person ms-2"></i> {{ item.performed_by.get_full_name|default:item.performed_by.username }}
+                                        </div>
+
+                                        <div class="history-content">
+                                            {% if item.action == 'created' %}
+                                                <strong>Activo creado en el sistema</strong>
+                                                {% if item.new_status %}
+                                                    <br><small>Estado inicial: <span class="badge bg-secondary">{{ item.get_new_status_display }}</span></small>
+                                                {% endif %}
+                                                
+                                            {% elif item.action == 'assigned' %}
+                                                <strong>Activo asignado a empleado</strong>
+                                                {% if item.new_employee %}
+                                                    <br><small><i class="bi bi-person-circle"></i> Asignado a: <strong>{{ item.new_employee.name }}</strong></small>
+                                                {% endif %}
+                                                
+                                            {% elif item.action == 'transferred' %}
+                                                <strong>Activo transferido entre empleados</strong>
+                                                {% if item.previous_employee and item.new_employee %}
+                                                    <br><small>
+                                                        <i class="bi bi-arrow-right"></i> 
+                                                        De: <strong>{{ item.previous_employee.name }}</strong> 
+                                                        → A: <strong>{{ item.new_employee.name }}</strong>
+                                                    </small>
+                                                {% endif %}
+                                                
+                                            {% elif item.action == 'unassigned' %}
+                                                <strong>Activo desasignado</strong>
+                                                {% if item.previous_employee %}
+                                                    <br><small><i class="bi bi-person-x"></i> Desasignado de: <strong>{{ item.previous_employee.name }}</strong></small>
+                                                {% endif %}
+                                                
+                                            {% elif item.action == 'maintenance' %}
+                                                <strong>Enviado a mantenimiento</strong>
+                                                {% if item.previous_employee %}
+                                                    <br><small><i class="bi bi-person-x"></i> Desasignado de: <strong>{{ item.previous_employee.name }}</strong></small>
+                                                {% endif %}
+                                                
+                                            {% elif item.action == 'returned' %}
+                                                <strong>Devuelto de mantenimiento</strong>
+                                                
+                                            {% elif item.action == 'retired' %}
+                                                <strong>Activo dado de baja</strong>
+                                                
+                                            {% elif item.action == 'status_changed' %}
+                                                <strong>Estado modificado</strong>
+                                                {% if item.previous_status and item.new_status %}
+                                                    <br><small>
+                                                        <i class="bi bi-arrow-right"></i> 
+                                                        De: <span class="badge bg-secondary">{{ item.get_previous_status_display }}</span> 
+                                                        → A: <span class="badge bg-{{ asset.get_status_display_color }}">{{ item.get_new_status_display }}</span>
+                                                    </small>
+                                                {% endif %}
+                                            {% endif %}
+
+                                            {% if item.reason %}
+                                                <div class="mt-2 p-2 bg-light rounded">
+                                                    <small><i class="bi bi-chat-quote"></i> <strong>Motivo:</strong> {{ item.reason }}</small>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="ms-3">
+                                        <span class="badge bg-{{ item.get_action_display_color }}">
+                                            {{ item.get_action_display }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Paginación -->
+                    {% if history.has_other_pages %}
+                        <nav aria-label="Navegación del historial" class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                {% if history.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ history.previous_page_number }}">
+                                            <i class="bi bi-chevron-left"></i> Anterior
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for num in history.paginator.page_range %}
+                                    {% if history.number == num %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ num }}</span>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if history.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ history.next_page_number }}">
+                                            Siguiente <i class="bi bi-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-clock-history display-1 text-muted"></i>
+                        <h4 class="mt-3">Sin historial</h4>
+                        <p class="text-muted">
+                            Este activo aún no tiene actividades registradas en el historial.
+                        </p>
+                        <a href="{% url 'asset_assign' asset.pk %}" class="btn btn-primary">
+                            <i class="bi bi-person-plus"></i> Asignar Activo
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

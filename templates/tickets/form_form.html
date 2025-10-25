@@ -29,6 +29,22 @@
                         </div>
                         
                         <div class="mb-3">
+                            <label for="{{ form.theme.id_for_label }}" class="form-label">{{ form.theme.label }}</label>
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1 me-3">
+                                    {{ form.theme }}
+                                </div>
+                                <div id="themePreview" class="theme-preview-container" style="width: 80px; height: 40px; border-radius: 10px; border: 2px solid #ddd; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+                            </div>
+                            <small class="form-text text-muted">
+                                <i class="bi bi-info-circle"></i> Este será el aspecto visual del formulario público
+                            </small>
+                            {% if form.theme.errors %}
+                                <div class="text-danger">{{ form.theme.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
                             <label for="{{ form.company.id_for_label }}" class="form-label">{{ form.company.label }}</label>
                             {{ form.company }}
                             {% if form.company.errors %}
@@ -62,4 +78,41 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const themeSelect = document.getElementById('{{ form.theme.id_for_label }}');
+    const themePreview = document.getElementById('themePreview');
+    
+    const themeGradients = {
+        'blue': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        'green': 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
+        'sunset': 'linear-gradient(135deg, #ffeaa7 0%, #fab1a0 50%, #e17055 100%)',
+        'ocean': 'linear-gradient(135deg, #74b9ff 0%, #0984e3 100%)',
+        'purple': 'linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%)',
+        'pink': 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
+        'minimal': '#f8f9fa'
+    };
+    
+    function updateThemePreview() {
+        const selectedTheme = themeSelect.value;
+        const gradient = themeGradients[selectedTheme];
+        
+        if (gradient) {
+            themePreview.style.background = gradient;
+            if (selectedTheme === 'minimal') {
+                themePreview.style.border = '2px solid #6c757d';
+            } else {
+                themePreview.style.border = '2px solid #ddd';
+            }
+        }
+    }
+    
+    // Actualizar vista previa al cambiar tema
+    themeSelect.addEventListener('change', updateThemePreview);
+    
+    // Actualizar vista previa inicial
+    updateThemePreview();
+});
+</script>
 {% endblock %}

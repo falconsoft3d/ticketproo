@@ -1,0 +1,478 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .progress-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .tutor-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .form-section {
+        background: white;
+        border: 1px solid #e3e6f0;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    }
+    
+    .section-title {
+        color: #5a5c69;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e3e6f0;
+    }
+    
+    .char-counter {
+        font-size: 0.75rem;
+        color: #6c757d;
+        text-align: right;
+        margin-top: 0.25rem;
+    }
+    
+    .file-upload-area {
+        border: 2px dashed #e3e6f0;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        background: #f8f9fc;
+    }
+    
+    .file-upload-area:hover {
+        border-color: #4e73df;
+        background: #eaecf4;
+    }
+    
+    .file-upload-area.dragover {
+        border-color: #4e73df;
+        background: #d1ecf1;
+        transform: scale(1.02);
+    }
+    
+    .upload-icon {
+        font-size: 3rem;
+        color: #6c757d;
+        margin-bottom: 1rem;
+    }
+    
+    .ai-preview {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        color: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin: 1rem 0;
+    }
+    
+    .help-tip {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 0.375rem;
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+    
+    .file-preview {
+        background: #f8f9fc;
+        border: 1px solid #e3e6f0;
+        border-radius: 0.375rem;
+        padding: 1rem;
+        margin-top: 1rem;
+        display: none;
+    }
+    
+    .file-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .file-icon {
+        font-size: 2rem;
+        color: #4e73df;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="progress-container">
+        <!-- Header del Tutor -->
+        <div class="tutor-header text-center">
+            <div class="d-flex align-items-center justify-content-center mb-3">
+                <i class="fas fa-robot fa-3x me-3"></i>
+                <div>
+                    <h2 class="mb-1">{{ tutor.title }}</h2>
+                    <p class="mb-0 opacity-75">Reportar tu progreso de aprendizaje</p>
+                </div>
+            </div>
+            
+            <div class="row text-center">
+                <div class="col-md-4">
+                    <div class="border-end border-light">
+                        <div class="h4 mb-0">{{ tutor.progress_reports.count }}</div>
+                        <small>Reportes Anteriores</small>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="border-end border-light">
+                        <div class="h4 mb-0">{{ tutor.attachments.count }}</div>
+                        <small>Archivos Totales</small>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="h4 mb-0">
+                        {% if tutor.status == 'active' %}
+                            <i class="fas fa-play text-success"></i> Activo
+                        {% elif tutor.status == 'paused' %}
+                            <i class="fas fa-pause text-warning"></i> Pausado
+                        {% else %}
+                            <i class="fas fa-check text-info"></i> Completado
+                        {% endif %}
+                    </div>
+                    <small>Estado Actual</small>
+                </div>
+            </div>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+            
+            <!-- Sección de Progreso -->
+            <div class="form-section">
+                <h4 class="section-title">
+                    <i class="fas fa-chart-line text-primary me-2"></i>
+                    Describe tu Progreso
+                </h4>
+                
+                <div class="help-tip">
+                    <h6 class="text-warning mb-2">
+                        <i class="fas fa-lightbulb me-2"></i>Consejos para un buen reporte
+                    </h6>
+                    <ul class="mb-0 small">
+                        <li>Sé específico sobre lo que has logrado desde tu último reporte</li>
+                        <li>Menciona desafíos o dificultades que has enfrentado</li>
+                        <li>Incluye preguntas específicas si necesitas ayuda</li>
+                        <li>Describe qué planeas hacer a continuación</li>
+                    </ul>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.progress_description.id_for_label }}" class="form-label fw-bold">
+                        <i class="fas fa-pen text-success me-2"></i>
+                        ¿Qué progreso has hecho hacia tu objetivo?
+                    </label>
+                    {{ form.progress_description }}
+                    {% if form.progress_description.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.progress_description.errors %}
+                                <div>{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <div class="char-counter" id="progress-counter">0/2000 caracteres</div>
+                </div>
+                
+                <div class="ai-preview">
+                    <h6 class="mb-2">
+                        <i class="fas fa-robot me-2"></i>
+                        Vista Previa del Feedback de IA
+                    </h6>
+                    <p class="mb-0 small">
+                        Basado en tu reporte, la IA generará feedback personalizado y recomendaciones específicas 
+                        para ayudarte a continuar progresando hacia tu objetivo de aprendizaje.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Sección de Archivo (Opcional) -->
+            <div class="form-section">
+                <h4 class="section-title">
+                    <i class="fas fa-paperclip text-info me-2"></i>
+                    Adjuntar Archivo (Opcional)
+                </h4>
+                
+                <p class="text-muted mb-3">
+                    Puedes adjuntar un archivo relacionado con tu progreso para que la IA lo analice y te brinde feedback más específico.
+                </p>
+                
+                <div class="file-upload-area" id="fileUploadArea">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <h5 class="mb-3">Arrastra un archivo aquí o haz clic para seleccionar</h5>
+                    <p class="text-muted mb-3">
+                        Formatos soportados: PDF, DOC, DOCX, TXT, JPG, PNG, XLS, XLSX, PPT, PPTX<br>
+                        Tamaño máximo: 10 MB
+                    </p>
+                    {{ attachment_form.file }}
+                </div>
+                
+                <div class="file-preview" id="filePreview">
+                    <div class="file-info">
+                        <div class="file-icon">
+                            <i class="fas fa-file"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold" id="fileName"></div>
+                            <div class="text-muted small" id="fileSize"></div>
+                        </div>
+                        <button type="button" class="btn btn-outline-danger btn-sm" id="removeFile">
+                            <i class="fas fa-times"></i> Quitar
+                        </button>
+                    </div>
+                </div>
+                
+                {% if attachment_form.file.errors %}
+                    <div class="text-danger small mt-2">
+                        {% for error in attachment_form.file.errors %}
+                            <div>{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                
+                <!-- Descripción del archivo -->
+                <div class="mt-3" id="fileDescriptionSection" style="display: none;">
+                    <label for="{{ attachment_form.description.id_for_label }}" class="form-label fw-bold">
+                        <i class="fas fa-info-circle text-primary me-2"></i>
+                        Descripción del archivo (opcional)
+                    </label>
+                    {{ attachment_form.description }}
+                    <div class="help-text small text-muted mt-1">
+                        Describe brevemente qué contiene este archivo y cómo se relaciona con tu progreso.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Botones de Acción -->
+            <div class="form-section">
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="{% url 'ai_tutor_detail' tutor.pk %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Volver al Tutor
+                    </a>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-primary" id="previewBtn">
+                            <i class="fas fa-eye me-2"></i>Vista Previa
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-paper-plane me-2"></i>Enviar Reporte
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Elementos del DOM
+    const progressField = document.getElementById('{{ form.progress_description.id_for_label }}');
+    const progressCounter = document.getElementById('progress-counter');
+    const fileInput = document.getElementById('{{ attachment_form.file.id_for_label }}');
+    const fileUploadArea = document.getElementById('fileUploadArea');
+    const filePreview = document.getElementById('filePreview');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const removeFileBtn = document.getElementById('removeFile');
+    const fileDescriptionSection = document.getElementById('fileDescriptionSection');
+    
+    // Contador de caracteres
+    if (progressField && progressCounter) {
+        function updateProgressCounter() {
+            const count = progressField.value.length;
+            progressCounter.textContent = count + '/2000 caracteres';
+            
+            if (count > 1800) {
+                progressCounter.className = 'char-counter text-warning';
+            } else if (count > 2000) {
+                progressCounter.className = 'char-counter text-danger';
+            } else {
+                progressCounter.className = 'char-counter';
+            }
+        }
+        
+        progressField.addEventListener('input', updateProgressCounter);
+        updateProgressCounter();
+    }
+    
+    // Funcionalidad de drag & drop para archivos
+    if (fileUploadArea && fileInput) {
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            fileUploadArea.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            fileUploadArea.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            fileUploadArea.addEventListener(eventName, unhighlight, false);
+        });
+        
+        function highlight() {
+            fileUploadArea.classList.add('dragover');
+        }
+        
+        function unhighlight() {
+            fileUploadArea.classList.remove('dragover');
+        }
+        
+        fileUploadArea.addEventListener('drop', handleDrop, false);
+        fileUploadArea.addEventListener('click', () => fileInput.click());
+        
+        function handleDrop(e) {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                handleFileSelect();
+            }
+        }
+        
+        fileInput.addEventListener('change', handleFileSelect);
+        
+        function handleFileSelect() {
+            const file = fileInput.files[0];
+            if (file) {
+                showFilePreview(file);
+            }
+        }
+        
+        function showFilePreview(file) {
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            
+            // Mostrar icono apropiado según el tipo de archivo
+            const fileIcon = filePreview.querySelector('.file-icon i');
+            const fileType = getFileType(file.name);
+            fileIcon.className = getFileIcon(fileType);
+            
+            fileUploadArea.style.display = 'none';
+            filePreview.style.display = 'block';
+            fileDescriptionSection.style.display = 'block';
+        }
+        
+        removeFileBtn.addEventListener('click', function() {
+            fileInput.value = '';
+            fileUploadArea.style.display = 'block';
+            filePreview.style.display = 'none';
+            fileDescriptionSection.style.display = 'none';
+        });
+    }
+    
+    // Funciones auxiliares
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    function getFileType(filename) {
+        const ext = filename.split('.').pop().toLowerCase();
+        if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(ext)) return 'image';
+        if (['pdf'].includes(ext)) return 'pdf';
+        if (['doc', 'docx'].includes(ext)) return 'document';
+        if (['xls', 'xlsx'].includes(ext)) return 'spreadsheet';
+        if (['ppt', 'pptx'].includes(ext)) return 'presentation';
+        if (['txt'].includes(ext)) return 'text';
+        return 'file';
+    }
+    
+    function getFileIcon(type) {
+        const icons = {
+            'image': 'fas fa-image text-info',
+            'pdf': 'fas fa-file-pdf text-danger',
+            'document': 'fas fa-file-word text-primary',
+            'spreadsheet': 'fas fa-file-excel text-success',
+            'presentation': 'fas fa-file-powerpoint text-warning',
+            'text': 'fas fa-file-alt text-secondary',
+            'file': 'fas fa-file text-secondary'
+        };
+        return icons[type] || icons['file'];
+    }
+    
+    // Validación del formulario
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            let isValid = true;
+            
+            // Validar descripción de progreso
+            if (progressField && progressField.value.trim().length < 10) {
+                isValid = false;
+                progressField.classList.add('is-invalid');
+                alert('Por favor, describe tu progreso con al menos 10 caracteres.');
+            } else if (progressField) {
+                progressField.classList.remove('is-invalid');
+            }
+            
+            // Validar tamaño de archivo si se seleccionó uno
+            if (fileInput && fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                const maxSize = 10 * 1024 * 1024; // 10 MB
+                
+                if (file.size > maxSize) {
+                    isValid = false;
+                    alert('El archivo seleccionado es demasiado grande. El tamaño máximo es 10 MB.');
+                }
+            }
+            
+            if (!isValid) {
+                e.preventDefault();
+            }
+        });
+    }
+    
+    // Vista previa del reporte
+    const previewBtn = document.getElementById('previewBtn');
+    if (previewBtn) {
+        previewBtn.addEventListener('click', function() {
+            const progress = progressField ? progressField.value : '';
+            const file = fileInput && fileInput.files.length > 0 ? fileInput.files[0] : null;
+            
+            let previewContent = `
+                <h5>Vista Previa del Reporte</h5>
+                <h6>Progreso:</h6>
+                <p class="border p-2 bg-light">${progress || 'No hay descripción de progreso.'}</p>
+            `;
+            
+            if (file) {
+                previewContent += `
+                    <h6>Archivo Adjunto:</h6>
+                    <p class="border p-2 bg-light">
+                        <i class="fas fa-paperclip me-2"></i>
+                        ${file.name} (${formatFileSize(file.size)})
+                    </p>
+                `;
+            }
+            
+            const modal = new bootstrap.Modal(document.createElement('div'));
+            // Aquí podrías mostrar un modal con la vista previa
+            alert('Vista previa:\n\n' + progress);
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -18,7 +18,7 @@ class DateInput(forms.DateInput):
         return ''
 from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
-    UserNote, TimeEntry, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
+    UserNote, TimeEntry, PublicTimeAccess, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
     ChatRoom, ChatMessage, Command, ContactFormSubmission, Meeting, MeetingAttendee, MeetingQuestion, OpportunityActivity,
     Course, CourseClass, Contact, BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, Concept, ContactoWeb, Employee, EmployeePayroll,
     Agreement, AgreementSignature, LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry, SharedFile, SharedFileDownload,
@@ -27,7 +27,8 @@ from .models import (
     CompanyDocumentation, CompanyDocumentationURL, ContactGenerator,
     CompanyRequestGenerator, CompanyRequest, CompanyRequestComment,
     Form, FormQuestion, FormQuestionOption, FormResponse, FormAnswer,
-    EmployeeRequest, InternalAgreement
+    EmployeeRequest, InternalAgreement, Asset, AssetHistory, 
+    AITutor, AITutorProgressReport, AITutorAttachment
 )
 
 class CategoryForm(forms.ModelForm):
@@ -596,6 +597,36 @@ class UserEditForm(forms.ModelForm):
         help_text='Descripción detallada de las responsabilidades del cargo'
     )
     
+    # Campos para acceso público al control de horario
+    enable_public_time_access = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input'
+        }),
+        label='Habilitar acceso público al control de horario',
+        help_text='Permite al usuario registrar entrada/salida sin iniciar sesión usando un enlace público'
+    )
+    
+    require_location = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input'
+        }),
+        label='Requerir ubicación',
+        help_text='Registra la ubicación GPS al marcar entrada/salida'
+    )
+    
+    allowed_ip_addresses = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 3,
+            'placeholder': 'Ej: 192.168.1.1, 10.0.0.1\nSeparar con comas'
+        }),
+        label='IPs permitidas (opcional)',
+        help_text='Lista de IPs permitidas separadas por comas. Dejar vacío para permitir cualquier IP.'
+    )
+    
     class Meta:
         model = User
         fields = ('username', 'first_name', 'last_name', 'email', 'is_active', 'role', 'company', 'precio_hora', 'coste_hora', 'cargo', 'descripcion_cargo')
@@ -648,6 +679,15 @@ class UserEditForm(forms.ModelForm):
                 self.fields['descripcion_cargo'].initial = profile.descripcion_cargo
             except UserProfile.DoesNotExist:
                 pass
+                
+            # Cargar configuración de acceso público
+            try:
+                public_access = self.instance.public_time_access
+                self.fields['enable_public_time_access'].initial = public_access.is_active
+                self.fields['require_location'].initial = public_access.require_location
+                self.fields['allowed_ip_addresses'].initial = public_access.allowed_ip_addresses
+            except PublicTimeAccess.DoesNotExist:
+                pass
     
     def save(self, commit=True):
         user = super().save(commit=commit)
@@ -667,6 +707,27 @@ class UserEditForm(forms.ModelForm):
             profile.cargo = cargo
             profile.descripcion_cargo = descripcion_cargo
             profile.save()
+            
+            # Manejar configuración de acceso público
+            enable_public_access = self.cleaned_data.get('enable_public_time_access', False)
+            require_location = self.cleaned_data.get('require_location', False)
+            allowed_ip_addresses = self.cleaned_data.get('allowed_ip_addresses', '')
+            
+            if enable_public_access:
+                # Crear o actualizar acceso público
+                public_access, created = PublicTimeAccess.objects.get_or_create(user=user)
+                public_access.is_active = True
+                public_access.require_location = require_location
+                public_access.allowed_ip_addresses = allowed_ip_addresses
+                public_access.save()
+            else:
+                # Desactivar acceso público si existe
+                try:
+                    public_access = user.public_time_access
+                    public_access.is_active = False
+                    public_access.save()
+                except PublicTimeAccess.DoesNotExist:
+                    pass
             
             # Actualizar grupos del usuario
             role = self.cleaned_data['role']
@@ -1257,6 +1318,91 @@ class TimeEntryEditForm(forms.ModelForm):
                 raise forms.ValidationError('Las notas no pueden exceder 500 caracteres.')
         return notas
 
+
+class PublicTimeAccessForm(forms.ModelForm):
+    """Formulario para configurar acceso público al control de horario"""
+    
+    class Meta:
+        model = PublicTimeAccess
+        fields = ['is_active', 'require_location', 'allowed_ip_addresses']
+        widgets = {
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'require_location': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'allowed_ip_addresses': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Ejemplo: 192.168.1.100, 10.0.0.50 (opcional)'
+            }),
+        }
+        help_texts = {
+            'is_active': 'Permite que el usuario acceda al control de horario mediante URL pública',
+            'require_location': 'Registrará la ubicación GPS cuando marque entrada/salida',
+            'allowed_ip_addresses': 'Lista de direcciones IP permitidas, separadas por comas (opcional)',
+        }
+
+
+class PublicTimeEntryForm(forms.Form):
+    """Formulario público para registrar entrada/salida"""
+    
+    action = forms.ChoiceField(
+        choices=[
+            ('entrada', 'Registrar Entrada'),
+            ('salida', 'Registrar Salida')
+        ],
+        widget=forms.HiddenInput(),
+        required=True
+    )
+    
+    notes = forms.CharField(
+        max_length=200,
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 3,
+            'placeholder': 'Notas opcionales sobre tu jornada...'
+        }),
+        label='Notas (opcional)',
+        help_text='Puedes agregar comentarios sobre tu trabajo del día'
+    )
+    
+    # Campos ocultos para ubicación (si se requiere)
+    latitude = forms.FloatField(
+        required=False,
+        widget=forms.HiddenInput()
+    )
+    
+    longitude = forms.FloatField(
+        required=False,
+        widget=forms.HiddenInput()
+    )
+    
+    def __init__(self, *args, **kwargs):
+        self.public_access = kwargs.pop('public_access', None)
+        super().__init__(*args, **kwargs)
+        
+        # Si se requiere ubicación, hacer los campos obligatorios
+        if self.public_access and self.public_access.require_location:
+            self.fields['latitude'].required = True
+            self.fields['longitude'].required = True
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        action = cleaned_data.get('action')
+        latitude = cleaned_data.get('latitude')
+        longitude = cleaned_data.get('longitude')
+        
+        # Validar ubicación si es requerida
+        if self.public_access and self.public_access.require_location:
+            if not latitude or not longitude:
+                raise forms.ValidationError(
+                    'Se requiere proporcionar la ubicación para registrar horario.'
+                )
+        
+        return cleaned_data
 
 
 class CompanyForm(forms.ModelForm):
@@ -5631,10 +5777,11 @@ class FormForm(forms.ModelForm):
 
     class Meta:
         model = Form
-        fields = ['title', 'description', 'company', 'is_active']
+        fields = ['title', 'description', 'theme', 'company', 'is_active']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'theme': forms.Select(attrs={'class': 'form-select'}),
             'company': forms.Select(attrs={'class': 'form-select'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
@@ -5950,3 +6097,357 @@ class InternalAgreementForm(forms.ModelForm):
         if commit:
             instance.save()
         return instance
+
+
+# ==================== FORMULARIOS DE CONTROL DE ACTIVOS ====================
+
+class AssetForm(forms.ModelForm):
+    """Formulario para crear y editar activos"""
+    
+    class Meta:
+        model = Asset
+        fields = [
+            'name', 'manufacturer', 'description', 'serial_number', 
+            'status', 'assigned_to', 'purchase_date', 'purchase_price', 
+            'warranty_expiry', 'location', 'notes'
+        ]
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre del activo'
+            }),
+            'manufacturer': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Fabricante o marca'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción detallada del activo'
+            }),
+            'serial_number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Número de serie único'
+            }),
+            'status': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'assigned_to': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'purchase_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'purchase_price': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'placeholder': '0.00'
+            }),
+            'warranty_expiry': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'location': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ubicación física del activo'
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Notas adicionales (opcional)'
+            }),
+        }
+        labels = {
+            'name': 'Nombre del Activo',
+            'manufacturer': 'Fabricante',
+            'description': 'Descripción',
+            'serial_number': 'Número de Serie',
+            'status': 'Estado',
+            'assigned_to': 'Asignado a',
+            'purchase_date': 'Fecha de Compra',
+            'purchase_price': 'Precio de Compra',
+            'warranty_expiry': 'Vencimiento de Garantía',
+            'location': 'Ubicación',
+            'notes': 'Notas',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Filtrar solo usuarios activos que son staff o tienen perfil
+        self.fields['assigned_to'].queryset = User.objects.filter(
+            is_active=True
+        ).order_by('first_name', 'last_name', 'username')
+        
+        # Hacer campo assigned_to opcional visualmente
+        self.fields['assigned_to'].empty_label = "-- Sin asignar --"
+    
+    def clean_serial_number(self):
+        """Validar que el número de serie sea único"""
+        serial_number = self.cleaned_data.get('serial_number')
+        if serial_number:
+            # Excluir la instancia actual si estamos editando
+            queryset = Asset.objects.filter(serial_number=serial_number)
+            if self.instance.pk:
+                queryset = queryset.exclude(pk=self.instance.pk)
+            
+            if queryset.exists():
+                raise forms.ValidationError(
+                    'Ya existe un activo con este número de serie.'
+                )
+        return serial_number
+    
+    def clean(self):
+        """Validaciones personalizadas"""
+        cleaned_data = super().clean()
+        purchase_date = cleaned_data.get('purchase_date')
+        warranty_expiry = cleaned_data.get('warranty_expiry')
+        
+        # Validar fechas
+        if purchase_date and warranty_expiry:
+            if warranty_expiry < purchase_date:
+                raise forms.ValidationError(
+                    'La fecha de vencimiento de garantía no puede ser anterior a la fecha de compra.'
+                )
+        
+        return cleaned_data
+
+
+class AssetAssignForm(forms.ModelForm):
+    """Formulario específico para asignar activos a empleados"""
+    
+    reason = forms.CharField(
+        max_length=500,
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 3,
+            'placeholder': 'Motivo de la asignación/reasignación (opcional)'
+        }),
+        label='Motivo'
+    )
+    
+    class Meta:
+        model = Asset
+        fields = ['assigned_to']
+        widgets = {
+            'assigned_to': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+        }
+        labels = {
+            'assigned_to': 'Asignar a Usuario',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Filtrar solo usuarios activos
+        self.fields['assigned_to'].queryset = User.objects.filter(
+            is_active=True
+        ).order_by('first_name', 'last_name', 'username')
+        
+        # Opción para desasignar
+        self.fields['assigned_to'].empty_label = "-- Desasignar activo --"
+
+
+class AssetFilterForm(forms.Form):
+    """Formulario para filtrar activos"""
+    
+    status = forms.ChoiceField(
+        choices=[('', 'Todos los estados')] + Asset.STATUS_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Estado'
+    )
+    
+    assigned = forms.ChoiceField(
+        choices=[
+            ('', 'Todos'),
+            ('assigned', 'Asignados'),
+            ('unassigned', 'Sin asignar')
+        ],
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Asignación'
+    )
+    
+    search = forms.CharField(
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Buscar por nombre, fabricante, serie...'
+        }),
+        label='Buscar'
+    )
+
+
+# ==========================================
+# FORMULARIOS PARA TUTOR IA
+# ==========================================
+
+class AITutorForm(forms.ModelForm):
+    """Formulario para crear y editar tutores IA"""
+    
+    class Meta:
+        model = AITutor
+        fields = [
+            'title', 'objective', 'current_state', 'context', 
+            'tutor_persona', 'status', 'is_private'
+        ]
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título descriptivo de tu objetivo'
+            }),
+            'objective': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Describe claramente qué quieres lograr...'
+            }),
+            'current_state': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Describe dónde estás ahora en relación a tu objetivo...'
+            }),
+            'context': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Proporciona contexto adicional: experiencia, recursos, limitaciones...'
+            }),
+            'tutor_persona': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Ej: Un experimentado profesor de Django, un mentor senior de desarrollo web...'
+            }),
+            'status': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'is_private': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'title': 'Título del Objetivo',
+            'objective': 'Objetivo',
+            'current_state': 'Estado Actual',
+            'context': 'Contexto',
+            'tutor_persona': 'Tipo de Tutor',
+            'status': 'Estado',
+            'is_private': 'Tutor Privado',
+        }
+        help_texts = {
+            'title': 'Un título claro y descriptivo',
+            'objective': 'Sé específico sobre lo que quieres lograr',
+            'current_state': 'Honesto assessment de tu situación actual',
+            'context': 'Cualquier información relevante para personalizar la ayuda',
+            'tutor_persona': 'Define qué tipo de tutor quieres (profesor, mentor, coach, etc.)',
+            'is_private': 'Solo tú podrás ver este tutor si está marcado como privado'
+        }
+
+
+class AITutorProgressReportForm(forms.ModelForm):
+    """Formulario para reportar progreso al Tutor IA"""
+    
+    class Meta:
+        model = AITutorProgressReport
+        fields = ['progress_description', 'challenges']
+        widgets = {
+            'progress_description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 5,
+                'placeholder': 'Describe qué has logrado desde tu último reporte...'
+            }),
+            'challenges': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Describe los obstáculos o dificultades que has enfrentado (opcional)...'
+            }),
+        }
+        labels = {
+            'progress_description': 'Descripción del Avance',
+            'challenges': 'Desafíos Encontrados',
+        }
+        help_texts = {
+            'progress_description': 'Sé detallado sobre tus logros y acciones tomadas',
+            'challenges': 'Incluye cualquier dificultad para recibir ayuda específica'
+        }
+
+
+class AITutorAttachmentForm(forms.ModelForm):
+    """Formulario para subir adjuntos al Tutor IA"""
+    
+    class Meta:
+        model = AITutorAttachment
+        fields = ['file', 'description']
+        widgets = {
+            'file': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': '.pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.xlsx,.xls,.ppt,.pptx'
+            }),
+            'description': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Descripción opcional del archivo...'
+            }),
+        }
+        labels = {
+            'file': 'Archivo',
+            'description': 'Descripción',
+        }
+        help_texts = {
+            'file': 'Sube documentos, imágenes o archivos relevantes para obtener recomendaciones',
+            'description': 'Explica brevemente qué contiene el archivo'
+        }
+    
+    def clean_file(self):
+        """Validar el archivo subido"""
+        file = self.cleaned_data.get('file')
+        if file:
+            # Validar tamaño (máximo 10MB)
+            if file.size > 10 * 1024 * 1024:
+                raise forms.ValidationError('El archivo no puede ser mayor a 10MB.')
+            
+            # Validar tipo de archivo
+            allowed_extensions = [
+                'pdf', 'doc', 'docx', 'txt', 'jpg', 'jpeg', 'png', 
+                'xlsx', 'xls', 'ppt', 'pptx'
+            ]
+            file_extension = file.name.split('.')[-1].lower()
+            if file_extension not in allowed_extensions:
+                raise forms.ValidationError(
+                    f'Tipo de archivo no permitido. Tipos permitidos: {", ".join(allowed_extensions)}'
+                )
+        
+        return file
+
+
+class AITutorFilterForm(forms.Form):
+    """Formulario para filtrar tutores IA"""
+    
+    status = forms.ChoiceField(
+        choices=[('', 'Todos los estados')] + AITutor.STATUS_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Estado'
+    )
+    
+    visibility = forms.ChoiceField(
+        choices=[
+            ('', 'Todos'),
+            ('private', 'Solo mis tutores'),
+            ('public', 'Tutores públicos')
+        ],
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Visibilidad'
+    )
+    
+    search = forms.CharField(
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Buscar por título u objetivo...'
+        }),
+        label='Buscar'
+    )

@@ -1,0 +1,584 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .tutor-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 0.5rem 0.5rem 0 0;
+        padding: 2rem;
+    }
+    
+    .status-badge {
+        font-size: 0.875rem;
+        padding: 0.5rem 1rem;
+        border-radius: 0.375rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .status-active {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    
+    .status-paused {
+        background-color: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+    }
+    
+    .status-completed {
+        background-color: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+    }
+    
+    .progress-card {
+        border-left: 4px solid #4e73df;
+        transition: transform 0.2s ease;
+    }
+    
+    .progress-card:hover {
+        transform: translateX(5px);
+    }
+    
+    .attachment-item {
+        background: #f8f9fc;
+        border: 1px solid #e3e6f0;
+        border-radius: 0.375rem;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+        transition: all 0.2s ease;
+    }
+    
+    .attachment-item:hover {
+        background: #eaecf4;
+        border-color: #d1d3e2;
+    }
+    
+    .file-icon {
+        font-size: 2rem;
+        color: #5a5c69;
+    }
+    
+    .ai-feedback {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        color: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin: 1rem 0;
+    }
+    
+    .ai-recommendations {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 0.375rem;
+        padding: 1rem;
+    }
+    
+    .info-card {
+        background: #f8f9fc;
+        border: 1px solid #e3e6f0;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+    }
+    
+    .progress-timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+    
+    .progress-timeline::before {
+        content: '';
+        position: absolute;
+        left: 0.75rem;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #e3e6f0;
+    }
+    
+    .progress-item {
+        position: relative;
+        margin-bottom: 2rem;
+    }
+    
+    .progress-item::before {
+        content: '';
+        position: absolute;
+        left: -1.75rem;
+        top: 0.5rem;
+        width: 1rem;
+        height: 1rem;
+        background: #4e73df;
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 0 0 2px #4e73df;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header del Tutor -->
+    <div class="card mb-4">
+        <div class="tutor-header">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-robot fa-3x me-3"></i>
+                        <div>
+                            <h2 class="mb-1">{{ tutor.title }}</h2>
+                            <p class="mb-1 opacity-75">
+                                <i class="fas fa-user me-2"></i>{{ tutor.created_by.get_full_name|default:tutor.created_by.username }}
+                                <span class="mx-2">•</span>
+                                <i class="fas fa-calendar me-2"></i>{{ tutor.created_at|date:"d/m/Y" }}
+                            </p>
+                            <p class="mb-0 opacity-90">
+                                <i class="fas fa-graduation-cap me-2"></i>
+                                <strong>Tu tutor IA:</strong> Experimentado profesor con más de 15 años de experiencia en educación y mentoría
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {% if tutor.status == 'active' %}
+                            <span class="status-badge status-active">
+                                <i class="fas fa-play"></i> Activo
+                            </span>
+                        {% elif tutor.status == 'paused' %}
+                            <span class="status-badge status-paused">
+                                <i class="fas fa-pause"></i> Pausado
+                            </span>
+                        {% else %}
+                            <span class="status-badge status-completed">
+                                <i class="fas fa-check"></i> Completado
+                            </span>
+                        {% endif %}
+                        
+                        {% if tutor.is_private %}
+                            <span class="badge bg-warning ms-2">
+                                <i class="fas fa-lock"></i> Privado
+                            </span>
+                        {% else %}
+                            <span class="badge bg-success ms-2">
+                                <i class="fas fa-globe"></i> Público
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <div class="btn-group" role="group">
+                        {% if tutor.created_by == request.user %}
+                            <a href="{% url 'ai_tutor_edit' tutor.pk %}" class="btn btn-light">
+                                <i class="fas fa-edit"></i> Editar
+                            </a>
+                        {% endif %}
+                        {% if not tutor.is_private or tutor.created_by == request.user %}
+                            <a href="{% url 'ai_tutor_progress_report' tutor.pk %}" class="btn btn-success">
+                                <i class="fas fa-plus"></i> Reportar Progreso
+                            </a>
+                            <a href="{% url 'ai_tutor_upload_attachment' tutor.pk %}" class="btn btn-info">
+                                <i class="fas fa-paperclip"></i> Subir Archivo
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            <h5 class="mb-3">
+                <i class="fas fa-bullseye text-primary me-2"></i>Objetivo de Aprendizaje
+            </h5>
+            <p class="text-gray-700 mb-4">{{ tutor.objective|linebreaks }}</p>
+            
+            <h5 class="mb-3">
+                <i class="fas fa-user-graduate text-success me-2"></i>Tipo de Tutor
+            </h5>
+            <p class="text-gray-700 mb-4">{{ tutor.tutor_persona|linebreaks }}</p>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="mb-2">
+                        <i class="fas fa-map-marker-alt text-warning me-2"></i>Estado Actual
+                    </h6>
+                    <p class="text-gray-600 small">{{ tutor.current_state|linebreaks }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="mb-2">
+                        <i class="fas fa-info-circle text-info me-2"></i>Contexto
+                    </h6>
+                    <p class="text-gray-600 small">{{ tutor.context|linebreaks }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Columna Principal -->
+        <div class="col-lg-8">
+            <!-- Reportes de Progreso -->
+            <div class="card mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-line me-2"></i>Historial de Progreso
+                        <span class="badge bg-primary ms-2">{{ progress_reports.count }}</span>
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if progress_reports %}
+                        <div class="progress-timeline">
+                            {% for report in progress_reports %}
+                                <div class="progress-item">
+                                    <div class="progress-card card">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                                <h6 class="mb-0">
+                                                    <i class="fas fa-user-circle text-primary me-2"></i>
+                                                    {{ report.created_by.get_full_name|default:report.created_by.username }}
+                                                </h6>
+                                                <small class="text-muted">{{ report.created_at|date:"d/m/Y H:i" }}</small>
+                                            </div>
+                                            
+                                            <p class="mb-3">{{ report.progress_description|linebreaks }}</p>
+                                            
+                                            {% if report.ai_feedback %}
+                                                <div class="ai-feedback">
+                                                    <h6 class="mb-2">
+                                                        <i class="fas fa-user-tie me-2 text-primary"></i>Feedback de tu Profesor IA
+                                                    </h6>
+                                                    <div class="bg-light p-3 rounded border-start border-primary border-3">
+                                                        <p class="mb-0 fst-italic">{{ report.ai_feedback }}</p>
+                                                        <small class="text-muted d-block mt-2">
+                                                            <i class="fas fa-graduation-cap me-1"></i>
+                                                            Tu experimentado profesor con 15+ años de experiencia
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                            
+                                            {% if report.ai_recommendations %}
+                                                <div class="ai-recommendations mt-3">
+                                                    <h6 class="mb-2 text-warning">
+                                                        <i class="fas fa-lightbulb me-2"></i>Recomendaciones del Profesor
+                                                    </h6>
+                                                    <div class="bg-warning bg-opacity-10 p-3 rounded border-start border-warning border-3">
+                                                        <div>{{ report.ai_recommendations|linebreaks }}</div>
+                                                        <small class="text-muted d-block mt-2">
+                                                            <i class="fas fa-chalkboard-teacher me-1"></i>
+                                                            Basado en metodologías pedagógicas comprobadas
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                            
+                                            <!-- Botón para regenerar feedback con IA -->
+                                            <div class="mt-3 text-end">
+                                                <button class="btn btn-outline-primary btn-sm regenerate-feedback-btn" 
+                                                        data-report-id="{{ report.id }}" 
+                                                        data-bs-toggle="tooltip" 
+                                                        title="Obtener feedback personalizado de tu profesor IA">
+                                                    <i class="fas fa-user-tie me-1"></i>
+                                                    <span class="btn-text">Consultar Profesor IA</span>
+                                                    <span class="spinner-border spinner-border-sm d-none" role="status">
+                                                        <span class="visually-hidden">Generando feedback...</span>
+                                                    </span>
+                                                </button>
+                                            </div>
+                                            
+                                            <!-- Adjuntos del reporte -->
+                                            {% if report.attachments.exists %}
+                                                <div class="mt-3">
+                                                    <h6 class="mb-2">
+                                                        <i class="fas fa-paperclip me-2"></i>Archivos Adjuntos
+                                                    </h6>
+                                                    {% for attachment in report.attachments.all %}
+                                                        <div class="attachment-item d-flex align-items-center justify-content-between">
+                                                            <div class="d-flex align-items-center">
+                                                                <div class="file-icon me-3">
+                                                                    {% if attachment.file_type == 'image' %}
+                                                                        <i class="fas fa-image"></i>
+                                                                    {% elif attachment.file_type == 'document' %}
+                                                                        <i class="fas fa-file-alt"></i>
+                                                                    {% elif attachment.file_type == 'spreadsheet' %}
+                                                                        <i class="fas fa-file-excel"></i>
+                                                                    {% elif attachment.file_type == 'presentation' %}
+                                                                        <i class="fas fa-file-powerpoint"></i>
+                                                                    {% else %}
+                                                                        <i class="fas fa-file"></i>
+                                                                    {% endif %}
+                                                                </div>
+                                                                <div>
+                                                                    <div class="fw-bold">{{ attachment.original_filename }}</div>
+                                                                    <small class="text-muted">
+                                                                        {{ attachment.get_file_size_display }} • 
+                                                                        {{ attachment.uploaded_at|date:"d/m/Y H:i" }}
+                                                                    </small>
+                                                                    {% if attachment.ai_analysis %}
+                                                                        <div class="small text-info mt-1">
+                                                                            <i class="fas fa-robot me-1"></i>{{ attachment.ai_analysis }}
+                                                                        </div>
+                                                                    {% endif %}
+                                                                </div>
+                                                            </div>
+                                                            <a href="{{ attachment.file.url }}" class="btn btn-outline-primary btn-sm" download>
+                                                                <i class="fas fa-download"></i>
+                                                            </a>
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-chart-line fa-3x text-gray-300 mb-3"></i>
+                            <h5 class="text-gray-600">No hay reportes de progreso</h5>
+                            <p class="text-gray-500 mb-3">Comienza reportando tu progreso para que la IA pueda ayudarte mejor.</p>
+                            {% if not tutor.is_private or tutor.created_by == request.user %}
+                                <a href="{% url 'ai_tutor_progress_report' tutor.pk %}" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Crear Primer Reporte
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna Lateral -->
+        <div class="col-lg-4">
+            <!-- Información del Tutor -->
+            <div class="info-card mb-4">
+                <h6 class="mb-3">
+                    <i class="fas fa-info-circle text-primary me-2"></i>Información del Tutor
+                </h6>
+                
+                <div class="row text-center mb-3">
+                    <div class="col-6">
+                        <div class="border-end">
+                            <div class="h4 mb-0 text-primary">{{ progress_reports.count }}</div>
+                            <small class="text-muted">Reportes</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="h4 mb-0 text-success">{{ tutor_attachments.count }}</div>
+                        <small class="text-muted">Archivos</small>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="mb-2">
+                    <strong>Creado por:</strong><br>
+                    <small class="text-muted">{{ tutor.created_by.get_full_name|default:tutor.created_by.username }}</small>
+                </div>
+                
+                <div class="mb-2">
+                    <strong>Fecha de creación:</strong><br>
+                    <small class="text-muted">{{ tutor.created_at|date:"d/m/Y H:i" }}</small>
+                </div>
+                
+                <div class="mb-2">
+                    <strong>Última actualización:</strong><br>
+                    <small class="text-muted">{{ tutor.updated_at|date:"d/m/Y H:i" }}</small>
+                </div>
+                
+                <div>
+                    <strong>Visibilidad:</strong><br>
+                    {% if tutor.is_private %}
+                        <span class="badge bg-warning">
+                            <i class="fas fa-lock"></i> Privado
+                        </span>
+                    {% else %}
+                        <span class="badge bg-success">
+                            <i class="fas fa-globe"></i> Público
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Archivos del Tutor Principal -->
+            {% if tutor_attachments %}
+                <div class="card">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-folder me-2"></i>Archivos del Tutor
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        {% for attachment in tutor_attachments %}
+                            <div class="attachment-item d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                    <div class="file-icon me-3">
+                                        {% if attachment.file_type == 'image' %}
+                                            <i class="fas fa-image text-info"></i>
+                                        {% elif attachment.file_type == 'document' %}
+                                            <i class="fas fa-file-alt text-primary"></i>
+                                        {% elif attachment.file_type == 'spreadsheet' %}
+                                            <i class="fas fa-file-excel text-success"></i>
+                                        {% elif attachment.file_type == 'presentation' %}
+                                            <i class="fas fa-file-powerpoint text-warning"></i>
+                                        {% else %}
+                                            <i class="fas fa-file text-secondary"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold small">{{ attachment.original_filename|truncatechars:20 }}</div>
+                                        <small class="text-muted">{{ attachment.get_file_size_display }}</small>
+                                        {% if attachment.ai_analysis %}
+                                            <div class="small text-info mt-1">
+                                                <i class="fas fa-robot me-1"></i>Analizado por IA
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <a href="{{ attachment.file.url }}" class="btn btn-outline-primary btn-sm" download>
+                                    <i class="fas fa-download"></i>
+                                </a>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+            
+            <!-- Acciones Adicionales -->
+            {% if tutor.created_by == request.user %}
+                <div class="card mt-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Zona de Peligro
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3">
+                            Una vez eliminado, este tutor y todos sus reportes de progreso se perderán permanentemente.
+                        </p>
+                        <a href="{% url 'ai_tutor_delete' tutor.pk %}" class="btn btn-danger btn-sm">
+                            <i class="fas fa-trash"></i> Eliminar Tutor
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Inicializar tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Manejar clic en botón de regenerar feedback
+    $('.regenerate-feedback-btn').click(function() {
+        const button = $(this);
+        const reportId = button.data('report-id');
+        const btnText = button.find('.btn-text');
+        const spinner = button.find('.spinner-border');
+        const icon = button.find('.fas');
+        
+        // Mostrar loading
+        button.prop('disabled', true);
+        btnText.text('Consultando...');
+        spinner.removeClass('d-none');
+        icon.addClass('d-none');
+        
+        // Hacer llamada AJAX
+        $.ajax({
+            url: '/ai-tutor/feedback/' + reportId + '/generate/',
+            type: 'POST',
+            headers: {
+                'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Actualizar el feedback en la interfaz
+                    const reportCard = button.closest('.progress-card');
+                    
+                    // Actualizar feedback
+                    let feedbackDiv = reportCard.find('.ai-feedback');
+                    if (feedbackDiv.length === 0) {
+                        // Crear div si no existe
+                        const newFeedbackHtml = `
+                            <div class="ai-feedback">
+                                <h6 class="mb-2">
+                                    <i class="fas fa-user-tie me-2 text-primary"></i>Feedback de tu Profesor IA
+                                </h6>
+                                <div class="bg-light p-3 rounded border-start border-primary border-3">
+                                    <p class="mb-0 fst-italic">${response.feedback}</p>
+                                    <small class="text-muted d-block mt-2">
+                                        <i class="fas fa-graduation-cap me-1"></i>
+                                        Tu experimentado profesor con 15+ años de experiencia
+                                    </small>
+                                </div>
+                            </div>
+                        `;
+                        button.closest('.card-body').find('p:first').after(newFeedbackHtml);
+                    } else {
+                        feedbackDiv.find('p').html(response.feedback);
+                    }
+                    
+                    // Actualizar recomendaciones
+                    let recommendationsDiv = reportCard.find('.ai-recommendations');
+                    if (recommendationsDiv.length === 0) {
+                        // Crear div si no existe
+                        const newRecommendationsHtml = `
+                            <div class="ai-recommendations mt-3">
+                                <h6 class="mb-2 text-warning">
+                                    <i class="fas fa-lightbulb me-2"></i>Recomendaciones del Profesor
+                                </h6>
+                                <div class="bg-warning bg-opacity-10 p-3 rounded border-start border-warning border-3">
+                                    <div>${response.recommendations.replace(/\n/g, '<br>')}</div>
+                                    <small class="text-muted d-block mt-2">
+                                        <i class="fas fa-chalkboard-teacher me-1"></i>
+                                        Basado en metodologías pedagógicas comprobadas
+                                    </small>
+                                </div>
+                            </div>
+                        `;
+                        reportCard.find('.ai-feedback').after(newRecommendationsHtml);
+                    } else {
+                        recommendationsDiv.find('div').html(response.recommendations.replace(/\n/g, '<br>'));
+                    }
+                    
+                    // Mostrar mensaje de éxito
+                    toastr.success('¡Feedback de tu profesor IA generado exitosamente!');
+                } else {
+                    toastr.error('Error al generar feedback: ' + response.error);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error:', error);
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    toastr.error('Error: ' + xhr.responseJSON.error);
+                } else {
+                    toastr.error('Error al conectar con el servicio de IA. Inténtalo de nuevo.');
+                }
+            },
+            complete: function() {
+                // Restaurar botón
+                button.prop('disabled', false);
+                btnText.text('Consultar Profesor IA');
+                spinner.addClass('d-none');
+                icon.removeClass('d-none');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

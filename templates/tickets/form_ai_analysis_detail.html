@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .problem-item {
+        border-left: 4px solid #dc3545;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        background: #fff5f5;
+    }
+    .improvement-item {
+        border-left: 4px solid #198754;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        background: #f0fff4;
+    }
+    .strength-badge {
+        margin: 0.2rem;
+    }
+    .analysis-meta {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="bi bi-robot text-primary"></i> {{ title }}</h2>
+                    <p class="text-muted">
+                        Análisis detallado del formulario: <strong>{{ form.title }}</strong><br>
+                        <small>Realizado el {{ analysis.created_at|date:"d/m/Y" }} a las {{ analysis.created_at|time:"H:i" }} por {{ analysis.created_by.get_full_name|default:analysis.created_by.username }}</small>
+                    </p>
+                </div>
+                <div>
+                    <a href="{% url 'form_ai_analysis_history' form.pk %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver al Historial
+                    </a>
+                    <a href="{% url 'form_ai_analysis' form.pk %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Nuevo Análisis
+                    </a>
+                </div>
+            </div>
+
+            <!-- Resumen del análisis -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="analysis-meta">
+                        <div class="row text-center">
+                            <div class="col-md-2">
+                                <div class="border-end pe-3">
+                                    <h3 class="text-{{ analysis.get_score_color }}">{{ analysis.overall_score }}/10</h3>
+                                    <small class="text-muted">Puntuación General</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="border-end pe-3">
+                                    <h3 class="text-danger">{{ analysis.get_problems_count }}</h3>
+                                    <small class="text-muted">Problemas</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="border-end pe-3">
+                                    <h3 class="text-success">{{ analysis.get_improvements_count }}</h3>
+                                    <small class="text-muted">Mejoras</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="border-end pe-3">
+                                    <h3 class="text-info">{{ analysis.total_responses }}</h3>
+                                    <small class="text-muted">Respuestas</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="border-end pe-3">
+                                    <h3 class="text-primary">{{ analysis.strengths|length }}</h3>
+                                    <small class="text-muted">Fortalezas</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <h3 class="text-secondary">{{ analysis.analysis_version }}</h3>
+                                <small class="text-muted">Versión</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Problemas Identificados -->
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-exclamation-triangle"></i> 
+                                Problemas Identificados ({{ analysis.get_problems_count }})
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if analysis.problems %}
+                                {% for problem in analysis.problems %}
+                                    <div class="problem-item">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h6 class="text-danger mb-0">{{ problem.type }}</h6>
+                                            {% if problem.severity %}
+                                                <span class="badge bg-danger">{{ problem.severity }}</span>
+                                            {% endif %}
+                                        </div>
+                                        <p class="mb-0">{{ problem.description }}</p>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center py-3">
+                                    <i class="bi bi-check-circle display-4 text-success"></i>
+                                    <h5 class="mt-2">¡Excelente!</h5>
+                                    <p class="text-muted">No se identificaron problemas en el formulario.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mejoras Sugeridas -->
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-lightbulb"></i> 
+                                Mejoras Sugeridas ({{ analysis.get_improvements_count }})
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if analysis.improvements %}
+                                {% for improvement in analysis.improvements %}
+                                    <div class="improvement-item">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h6 class="text-success mb-0">{{ improvement.title }}</h6>
+                                            {% if improvement.priority %}
+                                                <span class="badge bg-success">{{ improvement.priority }}</span>
+                                            {% endif %}
+                                        </div>
+                                        <p class="mb-2">{{ improvement.description }}</p>
+                                        {% if improvement.steps %}
+                                            <div class="mt-2">
+                                                <small class="text-muted">Pasos recomendados:</small>
+                                                <ol class="small mt-1">
+                                                    {% for step in improvement.steps %}
+                                                        <li>{{ step }}</li>
+                                                    {% endfor %}
+                                                </ol>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center py-3">
+                                    <i class="bi bi-star display-4 text-warning"></i>
+                                    <h5 class="mt-2">Formulario Óptimo</h5>
+                                    <p class="text-muted">No se sugieren mejoras adicionales.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fortalezas y Recomendación Principal -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-check-circle"></i> 
+                                Fortalezas del Formulario
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if analysis.strengths %}
+                                {% for strength in analysis.strengths %}
+                                    <span class="badge bg-info strength-badge">{{ strength }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted">No se identificaron fortalezas específicas.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0">
+                                <i class="bi bi-star"></i> 
+                                Recomendación Principal
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-0">{{ analysis.main_recommendation }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="row mt-4">
+                <div class="col-12 text-center">
+                    <a href="{% url 'form_edit' form.pk %}" class="btn btn-primary me-2">
+                        <i class="bi bi-pencil"></i> Editar Formulario
+                    </a>
+                    <a href="{% url 'form_responses' form.pk %}" class="btn btn-info me-2">
+                        <i class="bi bi-list-ul"></i> Ver Respuestas
+                    </a>
+                    <a href="{% url 'form_detail' form.pk %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver al Formulario
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -222,6 +222,90 @@
                         </div>
                     </div>
                     
+                    <!-- Configuración de Acceso Público al Control de Horario -->
+                    <div class="card border-primary mb-3">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0">
+                                <i class="bi bi-clock-history me-2"></i>
+                                Acceso Público al Control de Horario
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    {{ form.enable_public_time_access }}
+                                    <label class="form-check-label" for="{{ form.enable_public_time_access.id_for_label }}">
+                                        {{ form.enable_public_time_access.label }}
+                                    </label>
+                                </div>
+                                <small class="form-text text-muted">
+                                    {{ form.enable_public_time_access.help_text }}
+                                </small>
+                                {% if form.enable_public_time_access.errors %}
+                                    <div class="text-danger mt-1">
+                                        {% for error in form.enable_public_time_access.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div id="public-access-config" style="display: none;">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        {{ form.require_location }}
+                                        <label class="form-check-label" for="{{ form.require_location.id_for_label }}">
+                                            {{ form.require_location.label }}
+                                        </label>
+                                    </div>
+                                    <small class="form-text text-muted">
+                                        {{ form.require_location.help_text }}
+                                    </small>
+                                    {% if form.require_location.errors %}
+                                        <div class="text-danger mt-1">
+                                            {% for error in form.require_location.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="{{ form.allowed_ip_addresses.id_for_label }}" class="form-label">
+                                        <i class="bi bi-shield-check me-1"></i>
+                                        {{ form.allowed_ip_addresses.label }}
+                                    </label>
+                                    {{ form.allowed_ip_addresses }}
+                                    {% if form.allowed_ip_addresses.errors %}
+                                        <div class="text-danger mt-1">
+                                            {% for error in form.allowed_ip_addresses.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        {{ form.allowed_ip_addresses.help_text }}
+                                    </small>
+                                </div>
+                                
+                                {% if public_access and public_access.is_active and public_url %}
+                                <div class="alert alert-success">
+                                    <i class="bi bi-link-45deg me-2"></i>
+                                    <strong>URL Pública Activa:</strong><br>
+                                    <code id="public-url">{{ public_url }}</code>
+                                    <button type="button" class="btn btn-sm btn-outline-success ms-2" onclick="copyToClipboard('public-url')">
+                                        <i class="bi bi-clipboard"></i> Copiar
+                                    </button>
+                                    <br>
+                                    <small class="text-muted">
+                                        Esta URL permite al usuario registrar entrada/salida sin iniciar sesión
+                                    </small>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
                     <!-- Información adicional -->
                     <div class="card bg-light mb-3">
                         <div class="card-body">
@@ -276,4 +360,50 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const enablePublicAccess = document.getElementById('{{ form.enable_public_time_access.id_for_label }}');
+    const publicAccessConfig = document.getElementById('public-access-config');
+    
+    function togglePublicAccessConfig() {
+        if (enablePublicAccess.checked) {
+            publicAccessConfig.style.display = 'block';
+        } else {
+            publicAccessConfig.style.display = 'none';
+        }
+    }
+    
+    // Configurar estado inicial
+    togglePublicAccessConfig();
+    
+    // Escuchar cambios en el checkbox
+    enablePublicAccess.addEventListener('change', togglePublicAccessConfig);
+});
+
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    const text = element.textContent;
+    
+    navigator.clipboard.writeText(text).then(function() {
+        // Crear notificación temporal
+        const btn = event.target.closest('button');
+        const originalContent = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check"></i> ¡Copiado!';
+        btn.classList.remove('btn-outline-success');
+        btn.classList.add('btn-success');
+        
+        setTimeout(function() {
+            btn.innerHTML = originalContent;
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline-success');
+        }, 2000);
+    }).catch(function(err) {
+        console.error('Error al copiar: ', err);
+        alert('Error al copiar la URL al portapapeles');
+    });
+}
+</script>
 {% endblock %}

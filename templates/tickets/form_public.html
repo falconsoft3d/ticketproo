@@ -13,6 +13,63 @@
             min-height: 100vh;
             padding: 2rem 0;
         }
+        
+        /* Colores alternativos - descomenta el que prefieras */
+        
+        /* Gradiente Verde Moderno */
+        /*
+        body {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            min-height: 100vh;
+            padding: 2rem 0;
+        }
+        */
+        
+        /* Gradiente Naranja/Rosa */
+        /*
+        body {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+            min-height: 100vh;
+            padding: 2rem 0;
+        }
+        */
+        
+        /* Gradiente Púrpura Oscuro */
+        /*
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem 0;
+        }
+        */
+        
+        /* Gradiente Azul Océano */
+        /*
+        body {
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            min-height: 100vh;
+            padding: 2rem 0;
+        }
+        */
+        
+        /* Gradiente Sunset */
+        /*
+        body {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 50%, #e17055 100%);
+            min-height: 100vh;
+            padding: 2rem 0;
+        }
+        */
+        
+        /* Color sólido - descomenta para usar un color sólido */
+        /*
+        body {
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            padding: 2rem 0;
+        }
+        */
+        
         .form-container {
             background: white;
             border-radius: 15px;
@@ -25,6 +82,16 @@
             padding: 2rem;
             text-align: center;
         }
+        
+        /* Header alternativo - cambia el header para que combine con el fondo */
+        /*
+        .form-header {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        */
         .question-card {
             border: 2px solid #e9ecef;
             border-radius: 10px;
@@ -42,6 +109,18 @@
             font-weight: 600;
             transition: transform 0.3s ease;
         }
+        
+        /* Botón alternativo - combina con el fondo verde */
+        /*
+        .btn-submit {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: transform 0.3s ease;
+        }
+        */
         .btn-submit:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
@@ -82,6 +161,15 @@
             border-color: #667eea;
             box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
         }
+        
+        /* Focus alternativo para tema verde */
+        /*
+        .form-control:focus, .form-select:focus {
+            border-color: #11998e;
+            box-shadow: 0 0 0 0.2rem rgba(17, 153, 142, 0.15);
+        }
+        */
+        
         .form-control-lg {
             padding: 14px 18px;
             font-size: 1.05rem;
@@ -100,6 +188,14 @@
             background-color: #667eea;
             border-color: #667eea;
         }
+        
+        /* Radio buttons alternativos */
+        /*
+        .form-check-input:checked {
+            background-color: #11998e;
+            border-color: #11998e;
+        }
+        */
         .form-check-label {
             margin-left: 8px;
             color: #4a5568;
@@ -107,6 +203,34 @@
         textarea.form-control {
             resize: vertical;
             min-height: 100px;
+        }
+        
+        /* Estilos para el selector de tema */
+        .theme-preview {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        
+        .dropdown-item {
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        
+        .dropdown-item:hover {
+            background-color: rgba(0,0,0,0.05);
+        }
+        
+        .btn-light {
+            background-color: rgba(255,255,255,0.9);
+            border: 1px solid rgba(255,255,255,0.3);
+            backdrop-filter: blur(10px);
+        }
+        
+        .btn-light:hover {
+            background-color: rgba(255,255,255,1);
+            transform: scale(1.05);
         }
     </style>
 </head>
@@ -139,11 +263,14 @@
                                     Gracias por su participación. Sus respuestas han sido registradas correctamente.
                                 </p>
                                 <div class="alert alert-info d-inline-block">
-                                    <i class="bi bi-info-circle"></i> Para enviar otra respuesta, recargue la página
+                                    <i class="bi bi-info-circle"></i> ¡Respuesta registrada exitosamente!
                                 </div>
-                                <div class="mt-4">
-                                    <button onclick="window.location.reload()" class="btn btn-primary btn-submit">
+                                <div class="mt-4 d-flex gap-2 justify-content-center">
+                                    <a href="{% url 'form_public' form_obj.public_token %}" class="btn btn-primary btn-submit">
                                         <i class="bi bi-arrow-clockwise"></i> Responder Nuevamente
+                                    </a>
+                                    <button onclick="reloadPage()" class="btn btn-outline-primary">
+                                        <i class="bi bi-arrow-repeat"></i> Recargar Página
                                     </button>
                                 </div>
                             </div>
@@ -179,7 +306,7 @@
                                 </div>
                                 <!-- Preguntas -->
                                 {% for field in form %}
-                                    {% if not field.name|slice:':10' == 'respondent_' %}
+                                    {% if field.name != 'respondent_name' and field.name != 'respondent_email' %}
                                     <div class="question-card p-4 mb-4">
                                         <label class="form-label fw-bold">
                                             <i class="bi bi-question-circle text-primary"></i> {{ field.label }}
@@ -264,8 +391,28 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Filtro personalizado para obtener item del diccionario -->
     <script>
+        // Aplicar el tema del formulario automáticamente
+        document.addEventListener('DOMContentLoaded', function() {
+            const formTheme = '{{ form_obj.theme }}';
+            if (formTheme) {
+                changeTheme(formTheme);
+            }
+            
+            // Limpiar datos del formulario si se está reseteando
+            if (window.location.search.includes('reset=1')) {
+                // Limpiar todos los campos del formulario
+                const formInputs = document.querySelectorAll('input, textarea, select');
+                formInputs.forEach(input => {
+                    if (input.type === 'checkbox' || input.type === 'radio') {
+                        input.checked = false;
+                    } else {
+                        input.value = '';
+                    }
+                });
+            }
+        });
+        
         // Mejorar la experiencia de usuario
         document.querySelectorAll('.radio-option').forEach(option => {
             option.addEventListener('click', function() {
@@ -282,6 +429,112 @@
                 }
             });
         });
+        
+        // Función para cambiar tema dinámicamente
+        function changeTheme(theme) {
+            const body = document.body;
+            const header = document.querySelector('.form-header');
+            const submitBtn = document.querySelector('.btn-submit');
+            const checkInputs = document.querySelectorAll('.form-check-input');
+            const formControls = document.querySelectorAll('.form-control, .form-select');
+            
+            // Guardar el tema seleccionado en localStorage
+            localStorage.setItem('formTheme', theme);
+            
+            switch(theme) {
+                case 'blue':
+                    body.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                    header.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                    submitBtn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                    updateFocusColors('#667eea', 'rgba(102, 126, 234, 0.15)');
+                    updateCheckColors('#667eea');
+                    break;
+                case 'green':
+                    body.style.background = 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)';
+                    header.style.background = 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)';
+                    submitBtn.style.background = 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)';
+                    updateFocusColors('#11998e', 'rgba(17, 153, 142, 0.15)');
+                    updateCheckColors('#11998e');
+                    break;
+                case 'sunset':
+                    body.style.background = 'linear-gradient(135deg, #ffeaa7 0%, #fab1a0 50%, #e17055 100%)';
+                    header.style.background = 'linear-gradient(135deg, #ffeaa7 0%, #fab1a0 50%, #e17055 100%)';
+                    submitBtn.style.background = 'linear-gradient(135deg, #ffeaa7 0%, #fab1a0 50%, #e17055 100%)';
+                    updateFocusColors('#e17055', 'rgba(225, 112, 85, 0.15)');
+                    updateCheckColors('#e17055');
+                    break;
+                case 'ocean':
+                    body.style.background = 'linear-gradient(135deg, #74b9ff 0%, #0984e3 100%)';
+                    header.style.background = 'linear-gradient(135deg, #74b9ff 0%, #0984e3 100%)';
+                    submitBtn.style.background = 'linear-gradient(135deg, #74b9ff 0%, #0984e3 100%)';
+                    updateFocusColors('#0984e3', 'rgba(9, 132, 227, 0.15)');
+                    updateCheckColors('#0984e3');
+                    break;
+                case 'purple':
+                    body.style.background = 'linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%)';
+                    header.style.background = 'linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%)';
+                    submitBtn.style.background = 'linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%)';
+                    updateFocusColors('#6c5ce7', 'rgba(108, 92, 231, 0.15)');
+                    updateCheckColors('#6c5ce7');
+                    break;
+                case 'pink':
+                    body.style.background = 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)';
+                    header.style.background = 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)';
+                    submitBtn.style.background = 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)';
+                    updateFocusColors('#ff9a9e', 'rgba(255, 154, 158, 0.15)');
+                    updateCheckColors('#ff9a9e');
+                    break;
+                case 'minimal':
+                    body.style.background = '#f8f9fa';
+                    header.style.background = 'linear-gradient(135deg, #6c757d 0%, #495057 100%)';
+                    submitBtn.style.background = 'linear-gradient(135deg, #6c757d 0%, #495057 100%)';
+                    updateFocusColors('#6c757d', 'rgba(108, 117, 125, 0.15)');
+                    updateCheckColors('#6c757d');
+                    break;
+            }
+        }
+        
+        function updateFocusColors(borderColor, shadowColor) {
+            const style = document.createElement('style');
+            style.innerHTML = `
+                .form-control:focus, .form-select:focus {
+                    border-color: ${borderColor} !important;
+                    box-shadow: 0 0 0 0.2rem ${shadowColor} !important;
+                }
+            `;
+            // Remover estilos anteriores
+            document.querySelectorAll('style[data-dynamic="focus"]').forEach(s => s.remove());
+            style.setAttribute('data-dynamic', 'focus');
+            document.head.appendChild(style);
+        }
+        
+        function updateCheckColors(color) {
+            const style = document.createElement('style');
+            style.innerHTML = `
+                .form-check-input:checked {
+                    background-color: ${color} !important;
+                    border-color: ${color} !important;
+                }
+            `;
+            // Remover estilos anteriores
+            document.querySelectorAll('style[data-dynamic="check"]').forEach(s => s.remove());
+            style.setAttribute('data-dynamic', 'check');
+            document.head.appendChild(style);
+        }
+        
+        // Función para resetear completamente el formulario
+        function resetForm() {
+            // Limpiar localStorage de temas anteriores si existe
+            localStorage.removeItem('formTheme');
+            
+            // Redirigir a la misma URL para resetear completamente el estado
+            window.location.href = window.location.pathname + '?reset=1';
+        }
+        
+        // Función alternativa para solo recargar la página
+        function reloadPage() {
+            window.location.reload(true); // true para forzar recarga desde servidor
+        }
     </script>
 </body>
 </html>

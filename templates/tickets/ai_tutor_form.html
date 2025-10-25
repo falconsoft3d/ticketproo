@@ -1,0 +1,502 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        background: #ffffff;
+        border-radius: 0.5rem;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        overflow: hidden;
+    }
+    
+    .form-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1.5rem;
+    }
+    
+    .form-header.private-mode {
+        background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%);
+        color: #212529;
+    }
+    
+    .form-header.public-mode {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+    }
+    
+    .form-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .help-text {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
+    }
+    
+    .char-counter {
+        font-size: 0.75rem;
+        color: #6c757d;
+        text-align: right;
+        margin-top: 0.25rem;
+    }
+    
+    .privacy-info {
+        background-color: #f8f9fc;
+        border: 1px solid #e3e6f0;
+        border-radius: 0.375rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .privacy-info.private-selected {
+        background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 179, 0, 0.1) 100%);
+        border-color: #ffc107;
+    }
+    
+    .privacy-info.public-selected {
+        background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(32, 201, 151, 0.1) 100%);
+        border-color: #28a745;
+    }
+    
+    .privacy-preview {
+        padding: 0.75rem;
+        border-radius: 0.375rem;
+        margin-top: 0.5rem;
+        text-align: center;
+        font-size: 0.875rem;
+        font-weight: 500;
+        display: none;
+    }
+    
+    .privacy-preview.private-preview {
+        background-color: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffc107;
+    }
+    
+    .privacy-preview.public-preview {
+        background-color: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #28a745;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-6">
+            <div class="form-container">
+                <div class="form-header text-center">
+                    <div class="form-icon">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <h2 class="mb-0">{{ title }}</h2>
+                    <p class="mb-0 mt-2">Define tu objetivo de aprendizaje y configura tu tutor IA personalizado</p>
+                </div>
+                
+                <div class="p-4">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Título -->
+                        <div class="mb-3">
+                            <label for="{{ form.title.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-heading text-primary me-2"></i>Título del Tutor
+                            </label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.title.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="help-text">
+                                Dale un nombre descriptivo a tu tutor IA que refleje tu objetivo de aprendizaje.
+                            </div>
+                            <div class="char-counter" id="title-counter">0/200 caracteres</div>
+                        </div>
+                        
+                        <!-- Objetivo -->
+                        <div class="mb-3">
+                            <label for="{{ form.objective.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-bullseye text-success me-2"></i>Objetivo de Aprendizaje
+                                <button type="button" class="btn btn-outline-primary btn-sm ms-2 improve-field-btn" 
+                                        data-field="objective" data-bs-toggle="tooltip" 
+                                        title="Mejorar objetivo con IA">
+                                    <i class="fas fa-magic me-1"></i>
+                                    <span class="btn-text">Mejorar con IA</span>
+                                    <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                                </button>
+                            </label>
+                            {{ form.objective }}
+                            {% if form.objective.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.objective.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="help-text">
+                                Describe claramente qué quieres lograr. Sé específico sobre tus metas y el contexto de tu aprendizaje.
+                            </div>
+                            <div class="char-counter" id="objective-counter">0/1000 caracteres</div>
+                        </div>
+                        
+                        <!-- Estado Actual -->
+                        <div class="mb-3">
+                            <label for="{{ form.current_state.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-map-marker-alt text-warning me-2"></i>Tu Estado Actual
+                            </label>
+                            {{ form.current_state }}
+                            {% if form.current_state.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.current_state.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="help-text">
+                                Describe honestamente dónde estás ahora en relación a tu objetivo. Esto ayuda al tutor a personalizar su ayuda.
+                            </div>
+                        </div>
+                        
+                        <!-- Contexto -->
+                        <div class="mb-3">
+                            <label for="{{ form.context.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-info-circle text-info me-2"></i>Contexto Adicional
+                            </label>
+                            {{ form.context }}
+                            {% if form.context.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.context.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="help-text">
+                                Proporciona información relevante: experiencia previa, recursos disponibles, limitaciones de tiempo, etc.
+                            </div>
+                        </div>
+                        
+                        <!-- Tipo de Tutor -->
+                        <div class="mb-3">
+                            <label for="{{ form.tutor_persona.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-user-graduate text-success me-2"></i>Tipo de Tutor que Necesitas
+                            </label>
+                            {{ form.tutor_persona }}
+                            {% if form.tutor_persona.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.tutor_persona.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="help-text">
+                                Define qué tipo de tutor quieres: un experimentado profesor, un mentor de carrera, un coach técnico, etc.
+                            </div>
+                        </div>
+                        
+                        <!-- Estado -->
+                        <div class="mb-3">
+                            <label for="{{ form.status.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-play-circle text-info me-2"></i>Estado Inicial
+                            </label>
+                            {{ form.status }}
+                            {% if form.status.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.status.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="help-text">
+                                Puedes pausar tu tutor en cualquier momento y reactivarlo cuando estés listo para continuar.
+                            </div>
+                        </div>
+                        
+                        <!-- Privacidad -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-shield-alt text-warning me-2"></i>Configuración de Privacidad
+                            </label>
+                            
+                            <div class="privacy-info" id="privacy-container">
+                                <div class="form-check">
+                                    {{ form.is_private }}
+                                    <label class="form-check-label" for="{{ form.is_private.id_for_label }}">
+                                        <strong>Hacer privado este tutor</strong>
+                                    </label>
+                                </div>
+                                
+                                <div class="mt-3">
+                                    <small class="text-muted" id="privacy-description">
+                                        <i class="fas fa-users me-1"></i>
+                                        <strong>Tutor Público:</strong> Otros usuarios podrán ver tu tutor y reportar su progreso.
+                                    </small>
+                                </div>
+                                
+                                <div class="privacy-preview public-preview" id="public-preview">
+                                    <i class="fas fa-users me-2"></i>Este tutor será visible para toda la comunidad
+                                </div>
+                                
+                                <div class="privacy-preview private-preview" id="private-preview">
+                                    <i class="fas fa-lock me-2"></i>Solo tú podrás ver y usar este tutor
+                                </div>
+                            </div>
+                            
+                            {% if form.is_private.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.is_private.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Botón de optimización con IA -->
+                        <div class="mb-4 text-center">
+                            <button type="button" class="btn btn-outline-success optimize-config-btn">
+                                <i class="fas fa-robot me-2"></i>
+                                <span class="btn-text">Optimizar configuración con IA</span>
+                                <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                            </button>
+                            <div class="small text-muted mt-2">
+                                <i class="fas fa-graduation-cap me-1"></i>
+                                Tu profesor IA analizará y mejorará la configuración de tu tutor
+                            </div>
+                        </div>
+                        
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'ai_tutor_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Cancelar
+                            </a>
+                            
+                            <div>
+                                {% if tutor %}
+                                    <a href="{% url 'ai_tutor_detail' tutor.pk %}" class="btn btn-outline-primary me-2">
+                                        <i class="fas fa-eye me-2"></i>Ver Tutor
+                                    </a>
+                                {% endif %}
+                                
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>
+                                    {% if tutor %}Actualizar Tutor{% else %}Crear Tutor{% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Referencias a elementos
+    const titleField = document.getElementById('{{ form.title.id_for_label }}');
+    const titleCounter = document.getElementById('title-counter');
+    const objectiveField = document.getElementById('{{ form.objective.id_for_label }}');
+    const objectiveCounter = document.getElementById('objective-counter');
+    const privacyCheckbox = document.getElementById('{{ form.is_private.id_for_label }}');
+    const privacyContainer = document.getElementById('privacy-container');
+    const privacyDescription = document.getElementById('privacy-description');
+    const publicPreview = document.getElementById('public-preview');
+    const privatePreview = document.getElementById('private-preview');
+    const formHeader = document.querySelector('.form-header');
+    
+    // Función para actualizar el estado de privacidad
+    function updatePrivacyState() {
+        const isPrivate = privacyCheckbox.checked;
+        
+        // Actualizar container
+        privacyContainer.className = 'privacy-info ' + (isPrivate ? 'private-selected' : 'public-selected');
+        
+        // Actualizar header
+        formHeader.className = 'form-header text-center ' + (isPrivate ? 'private-mode' : 'public-mode');
+        
+        // Actualizar descripción
+        if (isPrivate) {
+            privacyDescription.innerHTML = '<i class="fas fa-lock me-1"></i><strong>Tutor Privado:</strong> Solo tú podrás ver y usar este tutor.';
+            privatePreview.style.display = 'block';
+            publicPreview.style.display = 'none';
+        } else {
+            privacyDescription.innerHTML = '<i class="fas fa-users me-1"></i><strong>Tutor Público:</strong> Otros usuarios podrán ver tu tutor y reportar su progreso.';
+            publicPreview.style.display = 'block';
+            privatePreview.style.display = 'none';
+        }
+    }
+    
+    // Inicializar estado de privacidad
+    if (privacyCheckbox) {
+        updatePrivacyState();
+        privacyCheckbox.addEventListener('change', updatePrivacyState);
+    }
+    
+    // Contador de caracteres para título
+    if (titleField && titleCounter) {
+        function updateTitleCounter() {
+            const count = titleField.value.length;
+            titleCounter.textContent = count + '/200 caracteres';
+            
+            if (count > 180) {
+                titleCounter.className = 'char-counter text-warning';
+            } else if (count > 200) {
+                titleCounter.className = 'char-counter text-danger';
+            } else {
+                titleCounter.className = 'char-counter';
+            }
+        }
+        
+        titleField.addEventListener('input', updateTitleCounter);
+        updateTitleCounter(); // Inicializar
+    }
+    
+    // Contador de caracteres para objetivo
+    if (objectiveField && objectiveCounter) {
+        function updateObjectiveCounter() {
+            const count = objectiveField.value.length;
+            objectiveCounter.textContent = count + '/1000 caracteres';
+            
+            if (count > 900) {
+                objectiveCounter.className = 'char-counter text-warning';
+            } else if (count > 1000) {
+                objectiveCounter.className = 'char-counter text-danger';
+            } else {
+                objectiveCounter.className = 'char-counter';
+            }
+        }
+        
+        objectiveField.addEventListener('input', updateObjectiveCounter);
+        updateObjectiveCounter(); // Inicializar
+    }
+    
+    // Validación del formulario
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            let isValid = true;
+            
+            // Validar título
+            if (titleField && titleField.value.trim().length < 3) {
+                isValid = false;
+                titleField.classList.add('is-invalid');
+            } else if (titleField) {
+                titleField.classList.remove('is-invalid');
+            }
+            
+            // Validar objetivo
+            if (objectiveField && objectiveField.value.trim().length < 10) {
+                isValid = false;
+                objectiveField.classList.add('is-invalid');
+            } else if (objectiveField) {
+                objectiveField.classList.remove('is-invalid');
+            }
+            
+            if (!isValid) {
+                e.preventDefault();
+                alert('Por favor, completa todos los campos requeridos correctamente.');
+            }
+        });
+    }
+    
+    // Optimización con IA
+    const optimizeBtn = document.querySelector('.optimize-config-btn');
+    if (optimizeBtn) {
+        optimizeBtn.addEventListener('click', function() {
+            const btn = this;
+            const btnText = btn.querySelector('.btn-text');
+            const spinner = btn.querySelector('.spinner-border');
+            const icon = btn.querySelector('.fas');
+            
+            // Obtener valores actuales
+            const currentTitle = titleField ? titleField.value.trim() : '';
+            const currentObjective = objectiveField ? objectiveField.value.trim() : '';
+            const currentState = document.getElementById('{{ form.current_state.id_for_label }}')?.value.trim() || '';
+            const currentContext = document.getElementById('{{ form.context.id_for_label }}')?.value.trim() || '';
+            
+            // Validar que hay contenido para optimizar
+            if (!currentTitle && !currentObjective && !currentState && !currentContext) {
+                alert('Por favor, completa al menos el título y objetivo antes de optimizar con IA.');
+                return;
+            }
+            
+            // Mostrar loading
+            btn.disabled = true;
+            btnText.textContent = 'Optimizando...';
+            spinner.classList.remove('d-none');
+            icon.classList.add('d-none');
+            
+            // Datos para enviar
+            const data = {
+                title: currentTitle,
+                objective: currentObjective,
+                current_state: currentState,
+                context: currentContext,
+                csrfmiddlewaretoken: document.querySelector('[name=csrfmiddlewaretoken]').value
+            };
+            
+            // Hacer llamada AJAX
+            fetch('{% url "ai_tutor_optimize_config" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': data.csrfmiddlewaretoken
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Actualizar campos con las sugerencias
+                    if (data.optimized.title && titleField) {
+                        titleField.value = data.optimized.title;
+                        updateTitleCounter();
+                    }
+                    if (data.optimized.objective && objectiveField) {
+                        objectiveField.value = data.optimized.objective;
+                        updateObjectiveCounter();
+                    }
+                    if (data.optimized.current_state) {
+                        const currentStateField = document.getElementById('{{ form.current_state.id_for_label }}');
+                        if (currentStateField) currentStateField.value = data.optimized.current_state;
+                    }
+                    if (data.optimized.context) {
+                        const contextField = document.getElementById('{{ form.context.id_for_label }}');
+                        if (contextField) contextField.value = data.optimized.context;
+                    }
+                    
+                    // Mostrar mensaje de éxito
+                    alert('¡Configuración optimizada exitosamente por tu profesor IA!');
+                } else {
+                    alert('Error al optimizar: ' + (data.error || 'Error desconocido'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al conectar con el servicio de IA. Inténtalo de nuevo.');
+            })
+            .finally(() => {
+                // Restaurar botón
+                btn.disabled = false;
+                btnText.textContent = 'Optimizar configuración con IA';
+                spinner.classList.add('d-none');
+                icon.classList.remove('d-none');
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

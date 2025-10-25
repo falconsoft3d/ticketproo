@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1><i class="bi bi-pencil-square"></i> Editar Opción</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'form_detail' form_obj.pk %}">{{ form_obj.title }}</a></li>
+                    <li class="breadcrumb-item">{{ question.question_text|truncatechars:50 }}</li>
+                    <li class="breadcrumb-item active">Editar Opción</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <a href="{% url 'form_detail' form_obj.pk %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver al formulario
+            </a>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-gear"></i> Editar Opción</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3 p-3 bg-light rounded">
+                        <h6><i class="bi bi-question-circle"></i> Pregunta:</h6>
+                        <p class="mb-0">{{ question.question_text }}</p>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="text" class="form-label">Texto de la opción</label>
+                            <input type="text" 
+                                   class="form-control form-control-lg" 
+                                   id="text" 
+                                   name="text" 
+                                   value="{{ option.option_text }}" 
+                                   required>
+                            <div class="form-text">Escribe el texto que verán los usuarios para esta opción</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="score" class="form-label">Puntuación</label>
+                            <div class="input-group">
+                                <input type="number" 
+                                       class="form-control form-control-lg" 
+                                       id="score" 
+                                       name="score" 
+                                       value="{{ option.score }}" 
+                                       min="0" 
+                                       required>
+                                <span class="input-group-text">puntos</span>
+                            </div>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle"></i> 
+                                Los usuarios obtendrán esta puntuación si seleccionan esta opción
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'form_detail' form_obj.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

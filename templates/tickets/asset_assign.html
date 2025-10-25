@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .assign-container {
+        background: white;
+        border-radius: 10px;
+        padding: 2rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    .asset-info {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        border-left: 4px solid #007bff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="text-center mb-4">
+        <h2><i class="bi bi-person-plus text-primary"></i> {{ title }}</h2>
+        <p class="text-muted">Asignar o reasignar activo a un empleado</p>
+    </div>
+
+    <div class="assign-container">
+        <!-- Información del Activo -->
+        <div class="asset-info">
+            <h5 class="mb-3">
+                <i class="bi bi-box"></i> Información del Activo
+            </h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <strong>Nombre:</strong><br>
+                    <span class="text-primary">{{ asset.name }}</span>
+                </div>
+                <div class="col-md-6">
+                    <strong>Fabricante:</strong><br>
+                    {{ asset.manufacturer }}
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-md-6">
+                    <strong>Número de Serie:</strong><br>
+                    <code>{{ asset.serial_number }}</code>
+                </div>
+                <div class="col-md-6">
+                    <strong>Estado Actual:</strong><br>
+                    <span class="badge bg-{{ asset.get_status_display_color }}">
+                        {{ asset.get_status_display }}
+                    </span>
+                </div>
+            </div>
+            
+            {% if asset.assigned_to %}
+                <div class="mt-3 p-2 bg-warning bg-opacity-10 rounded">
+                    <strong>Asignado actualmente a:</strong>
+                    <i class="bi bi-person-circle"></i> {{ asset.assigned_to.name }}
+                    <small class="text-muted d-block">{{ asset.assigned_to.position }}</small>
+                </div>
+            {% else %}
+                <div class="mt-3 p-2 bg-info bg-opacity-10 rounded">
+                    <i class="bi bi-info-circle"></i> Este activo no está asignado a ningún empleado
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Formulario de Asignación -->
+        <form method="post" novalidate>
+            {% csrf_token %}
+            
+            <div class="mb-4">
+                <label for="{{ form.assigned_to.id_for_label }}" class="form-label">
+                    <i class="bi bi-person-circle"></i> {{ form.assigned_to.label }}
+                </label>
+                {{ form.assigned_to }}
+                {% if form.assigned_to.errors %}
+                    <div class="text-danger small mt-1">{{ form.assigned_to.errors }}</div>
+                {% endif %}
+                <div class="form-text">
+                    Seleccione un empleado para asignar el activo o deje vacío para desasignar
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label for="{{ form.reason.id_for_label }}" class="form-label">
+                    <i class="bi bi-chat-text"></i> {{ form.reason.label }}
+                </label>
+                {{ form.reason }}
+                {% if form.reason.errors %}
+                    <div class="text-danger small mt-1">{{ form.reason.errors }}</div>
+                {% endif %}
+                <div class="form-text">
+                    Explique brevemente el motivo de esta asignación (opcional)
+                </div>
+            </div>
+
+            <!-- Errores no de campo -->
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <!-- Información de Acción -->
+            <div class="alert alert-info" id="action-info">
+                <i class="bi bi-info-circle"></i>
+                <span id="action-text">
+                    {% if asset.assigned_to %}
+                        Seleccione un nuevo empleado para transferir el activo o deje vacío para desasignarlo.
+                    {% else %}
+                        Seleccione un empleado para asignar este activo.
+                    {% endif %}
+                </span>
+            </div>
+
+            <!-- Botones -->
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'asset_detail' asset.pk %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver
+                </a>
+                <div class="gap-2 d-flex">
+                    <button type="button" class="btn btn-outline-warning" onclick="clearAssignment()">
+                        <i class="bi bi-person-x"></i> Desasignar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle"></i> Confirmar Asignación
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const assignedToSelect = document.getElementById('{{ form.assigned_to.id_for_label }}');
+    const actionInfo = document.getElementById('action-info');
+    const actionText = document.getElementById('action-text');
+    const currentAssignee = '{{ asset.assigned_to.pk|default:"" }}';
+    
+    function updateActionInfo() {
+        const selectedValue = assignedToSelect.value;
+        const selectedText = assignedToSelect.options[assignedToSelect.selectedIndex].text;
+        
+        if (!selectedValue) {
+            // Desasignar
+            actionInfo.className = 'alert alert-warning';
+            actionText.textContent = '⚠️ El activo será desasignado y estará disponible para asignación.';
+        } else if (selectedValue === currentAssignee) {
+            // Sin cambios
+            actionInfo.className = 'alert alert-info';
+            actionText.textContent = 'ℹ️ El activo seguirá asignado al mismo empleado.';
+        } else if (currentAssignee) {
+            // Transferir
+            actionInfo.className = 'alert alert-primary';
+            actionText.textContent = `🔄 El activo será transferido a ${selectedText}.`;
+        } else {
+            // Asignar nuevo
+            actionInfo.className = 'alert alert-success';
+            actionText.textContent = `✅ El activo será asignado a ${selectedText}.`;
+        }
+    }
+    
+    // Actualizar info al cambiar selección
+    assignedToSelect.addEventListener('change', updateActionInfo);
+    
+    // Función para limpiar asignación
+    window.clearAssignment = function() {
+        assignedToSelect.selectedIndex = 0; // Seleccionar la opción vacía
+        updateActionInfo();
+    };
+    
+    // Actualizar al cargar
+    updateActionInfo();
+});
+</script>
+{% endblock %}

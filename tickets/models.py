@@ -1214,6 +1214,11 @@ class TimeEntry(models.Model):
     @classmethod
     def get_active_entry(cls, user):
         """Obtiene el registro activo (sin salida) de un usuario"""
+        return cls.objects.filter(user=user, fecha_salida__isnull=True).first()
+    
+    @classmethod
+    def get_active_entry_for_agent(cls, user):
+        """Obtiene el registro activo (sin salida) de un agente"""
         from .utils import is_agent
         if not is_agent(user):
             return None
@@ -1221,7 +1226,7 @@ class TimeEntry(models.Model):
     
     @classmethod
     def create_entry(cls, user, project=None, ticket=None, work_order=None, task=None, notas_entrada=None):
-        """Crea un nuevo registro de entrada"""
+        """Crea un nuevo registro de entrada (para agentes)"""
         from .utils import is_agent
         if not is_agent(user):
             raise ValueError("Solo los agentes pueden registrar horarios")
@@ -1240,6 +1245,101 @@ class TimeEntry(models.Model):
             fecha_entrada=timezone.now(),
             notas=notas_entrada or ''
         )
+    
+    @classmethod
+    def create_public_entry(cls, user, notas_entrada=None):
+        """Crea un nuevo registro de entrada para acceso público (sin restricción de agente)"""
+        # Verificar que no haya una entrada activa
+        active_entry = cls.get_active_entry(user)
+        if active_entry:
+            raise ValueError("Ya tienes una jornada activa. Finalízala antes de crear una nueva.")
+        
+        return cls.objects.create(
+            user=user,
+            project=None,
+            ticket=None,
+            work_order=None,
+            task=None,
+            fecha_entrada=timezone.now(),
+            notas=notas_entrada or ''
+        )
+
+
+class PublicTimeAccess(models.Model):
+    """Modelo para gestionar acceso público al control de horario"""
+    
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='public_time_access',
+        verbose_name='Usuario'
+    )
+    token = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name='Token de Acceso',
+        help_text='Token único para acceso público'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo',
+        help_text='Si está activo, el usuario puede usar el acceso público'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Creado el'
+    )
+    last_used = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Último uso'
+    )
+    
+    # Configuraciones adicionales
+    require_location = models.BooleanField(
+        default=False,
+        verbose_name='Requiere ubicación',
+        help_text='Si está activado, registrará la ubicación GPS al marcar entrada/salida'
+    )
+    allowed_ip_addresses = models.TextField(
+        blank=True,
+        verbose_name='IPs permitidas',
+        help_text='Lista de IPs permitidas separadas por comas (opcional)'
+    )
+    
+    class Meta:
+        verbose_name = 'Acceso Público de Horario'
+        verbose_name_plural = 'Accesos Públicos de Horario'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        status = "Activo" if self.is_active else "Inactivo"
+        return f"{self.user.get_full_name() or self.user.username} - {status}"
+    
+    def save(self, *args, **kwargs):
+        if not self.token:
+            import secrets
+            self.token = secrets.token_urlsafe(32)
+        super().save(*args, **kwargs)
+    
+    @property
+    def public_url(self):
+        """Genera la URL pública para el acceso al control de horario"""
+        from django.urls import reverse
+        return reverse('public_time_clock', kwargs={'token': self.token})
+    
+    def is_ip_allowed(self, ip_address):
+        """Verifica si una IP está permitida"""
+        if not self.allowed_ip_addresses:
+            return True
+        
+        allowed_ips = [ip.strip() for ip in self.allowed_ip_addresses.split(',')]
+        return ip_address in allowed_ips
+    
+    def update_last_used(self):
+        """Actualiza la fecha de último uso"""
+        self.last_used = timezone.now()
+        self.save(update_fields=['last_used'])
 
 
 class SystemConfiguration(models.Model):
@@ -8781,6 +8881,20 @@ class Form(models.Model):
     
     title = models.CharField(max_length=200, verbose_name='Título del formulario')
     description = models.TextField(blank=True, verbose_name='Descripción')
+    theme = models.CharField(
+        max_length=20,
+        choices=[
+            ('blue', 'Azul Clásico'),
+            ('green', 'Verde Moderno'),
+            ('sunset', 'Sunset'),
+            ('ocean', 'Océano'),
+            ('purple', 'Púrpura'),
+            ('pink', 'Rosa'),
+            ('minimal', 'Minimal'),
+        ],
+        default='blue',
+        verbose_name='Tema visual'
+    )
     company = models.ForeignKey(
         'Company',
         on_delete=models.CASCADE,
@@ -8965,6 +9079,86 @@ class FormAnswer(models.Model):
         return ''
 
 
+class FormAIAnalysis(models.Model):
+    """Análisis de IA para formularios"""
+    
+    form = models.ForeignKey(
+        Form,
+        on_delete=models.CASCADE,
+        related_name='ai_analyses',
+        verbose_name='Formulario'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de análisis'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Analizado por'
+    )
+    
+    # Campos del análisis
+    overall_score = models.DecimalField(
+        max_digits=3,
+        decimal_places=1,
+        verbose_name='Puntuación general'
+    )
+    problems = models.JSONField(
+        default=list,
+        verbose_name='Problemas identificados',
+        help_text='Lista de problemas encontrados en formato JSON'
+    )
+    improvements = models.JSONField(
+        default=list,
+        verbose_name='Mejoras sugeridas',
+        help_text='Lista de mejoras sugeridas en formato JSON'
+    )
+    strengths = models.JSONField(
+        default=list,
+        verbose_name='Fortalezas',
+        help_text='Lista de fortalezas identificadas'
+    )
+    main_recommendation = models.TextField(
+        verbose_name='Recomendación principal'
+    )
+    
+    # Metadatos del análisis
+    total_responses = models.IntegerField(
+        verbose_name='Total de respuestas analizadas'
+    )
+    analysis_version = models.CharField(
+        max_length=10,
+        default='1.0',
+        verbose_name='Versión del análisis'
+    )
+    
+    class Meta:
+        verbose_name = 'Análisis de IA'
+        verbose_name_plural = 'Análisis de IA'
+        ordering = ['-created_at']
+        
+    def __str__(self):
+        return f"Análisis de {self.form.title} - {self.created_at.strftime('%d/%m/%Y %H:%M')}"
+    
+    def get_problems_count(self):
+        """Retorna el número de problemas identificados"""
+        return len(self.problems) if self.problems else 0
+    
+    def get_improvements_count(self):
+        """Retorna el número de mejoras sugeridas"""
+        return len(self.improvements) if self.improvements else 0
+    
+    def get_score_color(self):
+        """Retorna el color basado en la puntuación"""
+        if self.overall_score >= 8:
+            return 'success'
+        elif self.overall_score >= 6:
+            return 'warning'
+        else:
+            return 'danger'
+
+
 # Modelo de Alcance
 class Alcance(models.Model):
     titulo = models.CharField(max_length=200, verbose_name='Título')
@@ -8989,6 +9183,162 @@ class Alcance(models.Model):
 
     def __str__(self):
         return self.titulo
+
+
+# ==================== MODELO DE CONTROL DE LICENCIAS ====================
+
+class License(models.Model):
+    """Modelo para gestionar licencias de productos"""
+    
+    STATUS_CHOICES = [
+        ('active', 'Activa'),
+        ('expired', 'Expirada'),
+        ('suspended', 'Suspendida'),
+        ('revoked', 'Revocada'),
+    ]
+    
+    license_key = models.CharField(
+        max_length=12,
+        unique=True,
+        verbose_name='Clave de Licencia',
+        help_text='Clave alfanumérica de 12 caracteres en mayúsculas'
+    )
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        verbose_name='Empresa',
+        related_name='licenses'
+    )
+    product = models.CharField(
+        max_length=200,
+        verbose_name='Producto'
+    )
+    start_date = models.DateField(
+        verbose_name='Fecha de Inicio'
+    )
+    end_date = models.DateField(
+        verbose_name='Fecha de Vencimiento'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='active',
+        verbose_name='Estado'
+    )
+    notes = models.TextField(
+        blank=True,
+        verbose_name='Notas',
+        help_text='Notas adicionales sobre la licencia'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Creado por',
+        related_name='created_licenses'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    # UUID para acceso público
+    public_uuid = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        unique=True,
+        verbose_name='UUID Público'
+    )
+    
+    class Meta:
+        verbose_name = 'Licencia'
+        verbose_name_plural = 'Licencias'
+        ordering = ['-created_at']
+        
+    def __str__(self):
+        return f"{self.license_key} - {self.product} ({self.company.name})"
+    
+    def save(self, *args, **kwargs):
+        # Generar clave automáticamente si no existe
+        if not self.license_key:
+            self.license_key = self.generate_license_key()
+        # Asegurar que la clave esté en mayúsculas
+        self.license_key = self.license_key.upper()
+        super().save(*args, **kwargs)
+    
+    @staticmethod
+    def generate_license_key():
+        """Genera una clave de licencia de 12 caracteres alfanuméricos"""
+        import string
+        import secrets
+        alphabet = string.ascii_uppercase + string.digits
+        while True:
+            key = ''.join(secrets.choice(alphabet) for _ in range(12))
+            # Verificar que no exista ya
+            if not License.objects.filter(license_key=key).exists():
+                return key
+    
+    def is_active(self):
+        """Verifica si la licencia está activa y no ha expirado"""
+        from django.utils import timezone
+        today = timezone.now().date()
+        return (
+            self.status == 'active' and 
+            self.start_date <= today <= self.end_date
+        )
+    
+    def is_expired(self):
+        """Verifica si la licencia ha expirado"""
+        from django.utils import timezone
+        today = timezone.now().date()
+        return today > self.end_date
+    
+    def days_until_expiry(self):
+        """Calcula los días restantes hasta el vencimiento"""
+        from django.utils import timezone
+        today = timezone.now().date()
+        if today > self.end_date:
+            return 0
+        return (self.end_date - today).days
+    
+    def get_status_display_color(self):
+        """Retorna el color para mostrar el estado"""
+        if self.is_expired():
+            return 'danger'
+        elif self.status == 'active':
+            days_left = self.days_until_expiry()
+            if days_left <= 30:
+                return 'warning'
+            return 'success'
+        elif self.status == 'suspended':
+            return 'warning'
+        else:
+            return 'danger'
+    
+    def get_qr_data(self):
+        """Retorna los datos para el código QR"""
+        from django.urls import reverse
+        from django.conf import settings
+        
+        # Usar localhost en desarrollo o el dominio configurado en producción
+        if settings.DEBUG:
+            domain = "http://localhost:8000"
+        else:
+            # En producción, usar el primer host permitido o localhost como fallback
+            domain = "http://localhost:8000"
+            if hasattr(settings, 'ALLOWED_HOSTS') and settings.ALLOWED_HOSTS:
+                for host in settings.ALLOWED_HOSTS:
+                    if host != '*' and host != '' and host != 'localhost':
+                        domain = f"https://{host}"
+                        break
+            
+        public_url = f"{domain}{reverse('license_public', kwargs={'uuid': self.public_uuid})}"
+        return public_url
 
 
 # ==================== MODELOS DE WHATSAPP ====================
@@ -10078,6 +10428,17 @@ class LegalContract(models.Model):
     def generate_with_ai(self):
         """Genera el contenido del contrato usando OpenAI"""
         from tickets.models import SystemConfiguration
+        import re
+        
+        def remove_markdown_formatting(text):
+            """Elimina formato Markdown y devuelve texto plano"""
+            # Eliminar negritas **texto** y dejar solo texto
+            text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
+            # Eliminar cursivas *texto* y dejar solo texto
+            text = re.sub(r'\*(.*?)\*', r'\1', text)
+            # Eliminar títulos ## y # y dejar solo el texto
+            text = re.sub(r'^#{1,6}\s*(.*?)$', r'\1', text, flags=re.MULTILINE)
+            return text
         
         config = SystemConfiguration.objects.first()
         if not config or not config.ai_chat_enabled or not config.openai_api_key:
@@ -10123,20 +10484,22 @@ class LegalContract(models.Model):
             10. Firmas y datos de contacto
             
             Usa un lenguaje legal formal pero comprensible. Incluye cláusulas estándar para este tipo de contrato.
-            Formato en Markdown para mejor legibilidad.
+            NO uses formato Markdown. Usa texto plano con saltos de línea para separar secciones.
             """
             
             response = client.chat.completions.create(
                 model="gpt-4",
                 messages=[
-                    {"role": "system", "content": "Eres un abogado experto en redacción de contratos legales comerciales. Generas contratos profesionales, detallados y legalmente sólidos."},
+                    {"role": "system", "content": "Eres un abogado experto en redacción de contratos legales comerciales. Generas contratos profesionales, detallados y legalmente sólidos. NO uses formato Markdown en tus respuestas, solo texto plano con saltos de línea."},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.7,
                 max_tokens=4000
             )
             
-            self.generated_content = response.choices[0].message.content
+            generated_content = response.choices[0].message.content
+            # Limpiar cualquier formato Markdown y devolver texto plano
+            self.generated_content = remove_markdown_formatting(generated_content)
             self.generated_at = timezone.now()
             self.status = 'generated'
             self.save()
@@ -10145,8 +10508,7 @@ class LegalContract(models.Model):
             
         except Exception as e:
             raise Exception(f"Error al generar contrato: {str(e)}")
-
-
+    
 class SupplierContractReview(models.Model):
     """Modelo para revisar contratos de proveedores con IA"""
     
@@ -12104,6 +12466,28 @@ class CompanyProtocol(models.Model):
         verbose_name='Versión',
         help_text='Versión del protocolo (ej: 1.0, 1.1, 2.0)'
     )
+    is_public = models.BooleanField(
+        default=False,
+        verbose_name='Compartir públicamente',
+        help_text='Permite que este protocolo sea accesible públicamente sin autenticación'
+    )
+    public_uuid = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        verbose_name='UUID público',
+        help_text='Identificador único para acceso público'
+    )
+    public_shared_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Compartido públicamente en',
+        help_text='Fecha cuando se compartió públicamente por primera vez'
+    )
+    public_views_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Vistas públicas',
+        help_text='Número de veces que se ha visto públicamente este protocolo'
+    )
     
     class Meta:
         ordering = ['-created_at']
@@ -12137,9 +12521,62 @@ class CompanyProtocol(models.Model):
         except (ValueError, IndexError):
             self.version = "1.0"
     
+    def make_public(self):
+        """Hace el protocolo público y registra la fecha"""
+        if not self.is_public:
+            self.is_public = True
+            self.public_shared_at = timezone.now()
+            self.save()
+    
+    def make_private(self):
+        """Hace el protocolo privado"""
+        self.is_public = False
+        self.save()
+    
+    def get_public_url(self):
+        """Retorna la URL pública del protocolo"""
+        if self.is_public:
+            return f"/public/protocols/{self.public_uuid}/"
+        return None
+    
+    def increment_public_views(self):
+        """Incrementa el contador de vistas públicas"""
+        self.public_views_count += 1
+        self.save(update_fields=['public_views_count'])
+    
+    def get_public_stats(self):
+        """Retorna estadísticas de visualización pública"""
+        return {
+            'total_views': self.public_views_count,
+            'is_public': self.is_public,
+            'shared_date': self.public_shared_at,
+            'public_url': self.get_public_url()
+        }
+    
     def generate_ai_content(self, content_type="comprehensive"):
         """Genera contenido automático del protocolo usando IA"""
         from tickets.models import SystemConfiguration
+        import re
+        
+        def remove_markdown_formatting(text):
+            """Elimina formato Markdown y devuelve texto plano"""
+            # Eliminar negritas **texto** y dejar solo texto
+            text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
+            # Eliminar cursivas *texto* y dejar solo texto
+            text = re.sub(r'\*(.*?)\*', r'\1', text)
+            # Eliminar títulos ## y # y dejar solo el texto
+            text = re.sub(r'^#{1,6}\s*(.*?)$', r'\1', text, flags=re.MULTILINE)
+            # Eliminar listas numeradas 1. y dejar solo el texto
+            text = re.sub(r'^\d+\.\s*', '', text, flags=re.MULTILINE)
+            # Eliminar listas con viñetas - y * y dejar solo el texto
+            text = re.sub(r'^[-*]\s*', '', text, flags=re.MULTILINE)
+            return text
+            text = re.sub(r'\n(\d+)\.\s+', r'</p><ol><li>', text)
+            # Convertir listas con viñetas
+            text = re.sub(r'\n[-*]\s+', r'</p><ul><li>', text)
+            # Limpiar párrafos vacíos
+            text = re.sub(r'<p>\s*</p>', '', text)
+            return text
         
         config = SystemConfiguration.objects.first()
         if not config or not config.ai_chat_enabled or not config.openai_api_key:
@@ -12166,23 +12603,26 @@ class CompanyProtocol(models.Model):
                 8. Revisión y actualización
                 
                 Escribe en español, usando un lenguaje profesional y claro. El protocolo debe ser práctico y actionable.
+                NO uses formato Markdown (**, *, etc.). Usa texto plano con saltos de línea para separar secciones.
                 """,
                 "summary": f"""
                 Basándote en el título "{self.title}"{company_context}, genera un resumen ejecutivo y puntos clave 
                 para un protocolo empresarial. Incluye objetivos principales, beneficios esperados y requisitos básicos.
                 Máximo 500 palabras.
+                NO uses formato Markdown. Usa texto plano con saltos de línea.
                 """,
                 "checklist": f"""
                 Crea una lista de verificación (checklist) detallada para el protocolo "{self.title}"{company_context}.
                 Incluye todos los pasos necesarios, verificaciones de seguridad, y puntos de control de calidad.
                 Formato de lista numerada y clara.
+                NO uses formato Markdown. Usa texto plano con numeración simple.
                 """
             }
             
             response = client.chat.completions.create(
                 model=config.openai_model or "gpt-3.5-turbo",
                 messages=[
-                    {"role": "system", "content": "Eres un experto consultor empresarial especializado en crear protocolos y procedimientos corporativos de alta calidad."},
+                    {"role": "system", "content": "Eres un experto consultor empresarial especializado en crear protocolos y procedimientos corporativos de alta calidad. NO uses formato Markdown en tus respuestas, solo texto plano con saltos de línea."},
                     {"role": "user", "content": prompts.get(content_type, prompts["comprehensive"])}
                 ],
                 max_tokens=2000,
@@ -12190,6 +12630,8 @@ class CompanyProtocol(models.Model):
             )
             
             generated_content = response.choices[0].message.content.strip()
+            # Limpiar cualquier formato Markdown y devolver texto plano
+            generated_content = remove_markdown_formatting(generated_content)
             
             return {
                 "success": True,
@@ -12278,6 +12720,22 @@ class CompanyProtocol(models.Model):
     def get_ai_suggestions(self):
         """Genera sugerencias de mejora usando IA"""
         from tickets.models import SystemConfiguration
+        import re
+        
+        def remove_markdown_formatting(text):
+            """Elimina formato Markdown y devuelve texto plano"""
+            # Eliminar negritas **texto** y dejar solo texto
+            text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
+            # Eliminar cursivas *texto* y dejar solo texto
+            text = re.sub(r'\*(.*?)\*', r'\1', text)
+            # Eliminar títulos ## y # y dejar solo el texto
+            text = re.sub(r'^#{1,6}\s*(.*?)$', r'\1', text, flags=re.MULTILINE)
+            # Eliminar listas numeradas 1. y dejar solo el texto
+            text = re.sub(r'^\d+\.\s*', '', text, flags=re.MULTILINE)
+            # Eliminar listas con viñetas - y * y dejar solo el texto
+            text = re.sub(r'^[-*]\s*', '', text, flags=re.MULTILINE)
+            return text
+            return text
         
         config = SystemConfiguration.objects.first()
         if not config or not config.ai_chat_enabled or not config.openai_api_key:
@@ -12307,12 +12765,13 @@ class CompanyProtocol(models.Model):
             5. ACCIONABILIDAD: Cómo hacer las instrucciones más específicas
             
             Proporciona máximo 3 sugerencias por categoría, sean concretas y actionables.
+            NO uses formato Markdown. Usa texto plano con saltos de línea.
             """
             
             response = client.chat.completions.create(
                 model=config.openai_model or "gpt-3.5-turbo",
                 messages=[
-                    {"role": "system", "content": "Eres un consultor experto en documentación empresarial y mejora de procesos corporativos."},
+                    {"role": "system", "content": "Eres un consultor experto en documentación empresarial y mejora de procesos corporativos. NO uses formato Markdown en tus respuestas, solo texto plano con saltos de línea."},
                     {"role": "user", "content": prompt}
                 ],
                 max_tokens=1000,
@@ -12320,6 +12779,8 @@ class CompanyProtocol(models.Model):
             )
             
             suggestions = response.choices[0].message.content.strip()
+            # Limpiar cualquier formato Markdown y devolver texto plano
+            suggestions = remove_markdown_formatting(suggestions)
             
             return {
                 "success": True,
@@ -12333,6 +12794,21 @@ class CompanyProtocol(models.Model):
     def generate_executive_summary(self):
         """Genera un resumen ejecutivo del protocolo"""
         from tickets.models import SystemConfiguration
+        import re
+        
+        def remove_markdown_formatting(text):
+            """Elimina formato Markdown y devuelve texto plano"""
+            # Eliminar negritas **texto** y dejar solo texto
+            text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
+            # Eliminar cursivas *texto* y dejar solo texto
+            text = re.sub(r'\*(.*?)\*', r'\1', text)
+            # Eliminar títulos ## y # y dejar solo el texto
+            text = re.sub(r'^#{1,6}\s*(.*?)$', r'\1', text, flags=re.MULTILINE)
+            # Eliminar listas numeradas 1. y dejar solo el texto
+            text = re.sub(r'^\d+\.\s*', '', text, flags=re.MULTILINE)
+            # Eliminar listas con viñetas - y * y dejar solo el texto
+            text = re.sub(r'^[-*]\s*', '', text, flags=re.MULTILINE)
+            return text
         
         config = SystemConfiguration.objects.first()
         if not config or not config.ai_chat_enabled or not config.openai_api_key:
@@ -12359,12 +12835,13 @@ class CompanyProtocol(models.Model):
             5. Cronograma de implementación (si aplica)
             
             Máximo 300 palabras, lenguaje ejecutivo y persuasivo.
+            NO uses formato Markdown. Usa texto plano con saltos de línea.
             """
             
             response = client.chat.completions.create(
                 model=config.openai_model or "gpt-3.5-turbo",
                 messages=[
-                    {"role": "system", "content": "Eres un director ejecutivo escribiendo resúmenes para la junta directiva."},
+                    {"role": "system", "content": "Eres un director ejecutivo escribiendo resúmenes para la junta directiva. NO uses formato Markdown en tus respuestas, solo texto plano con saltos de línea."},
                     {"role": "user", "content": prompt}
                 ],
                 max_tokens=500,
@@ -12372,6 +12849,8 @@ class CompanyProtocol(models.Model):
             )
             
             summary = response.choices[0].message.content.strip()
+            # Limpiar cualquier formato Markdown y devolver texto plano
+            summary = remove_markdown_formatting(summary)
             
             return {
                 "success": True,
@@ -12648,3 +13127,493 @@ class QAComplaintComment(models.Model):
     
     def __str__(self):
         return f"Comentario de {self.author.username} en {self.complaint.title[:50]}"
+
+
+# ==================== MODELOS DE CONTROL DE ACTIVOS ====================
+
+class Asset(models.Model):
+    """Modelo para gestionar activos de la empresa"""
+    STATUS_CHOICES = [
+        ('available', 'Disponible'),
+        ('assigned', 'Asignado'),
+        ('maintenance', 'En Mantenimiento'),
+        ('retired', 'Dado de Baja'),
+        ('lost', 'Perdido'),
+        ('damaged', 'Dañado'),
+    ]
+    
+    name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre del Activo',
+        help_text='Nombre descriptivo del activo'
+    )
+    manufacturer = models.CharField(
+        max_length=100,
+        verbose_name='Fabricante',
+        help_text='Marca o fabricante del activo'
+    )
+    description = models.TextField(
+        verbose_name='Descripción',
+        help_text='Descripción detallada del activo'
+    )
+    serial_number = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name='Número de Serie',
+        help_text='Número de serie único del activo'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='available',
+        verbose_name='Estado'
+    )
+    assigned_to = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assigned_assets',
+        verbose_name='Asignado a'
+    )
+    purchase_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Compra'
+    )
+    purchase_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Precio de Compra'
+    )
+    warranty_expiry = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Vencimiento de Garantía'
+    )
+    location = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Ubicación',
+        help_text='Ubicación física del activo'
+    )
+    notes = models.TextField(
+        blank=True,
+        verbose_name='Notas',
+        help_text='Notas adicionales sobre el activo'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de Creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última Actualización'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='created_assets',
+        verbose_name='Creado por'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Activo'
+        verbose_name_plural = 'Activos'
+        indexes = [
+            models.Index(fields=['serial_number']),
+            models.Index(fields=['status']),
+            models.Index(fields=['assigned_to']),
+        ]
+    
+    def __str__(self):
+        return f"{self.name} ({self.serial_number})"
+    
+    def get_status_display_color(self):
+        """Retorna el color CSS para el estado"""
+        colors = {
+            'available': 'success',
+            'assigned': 'primary',
+            'maintenance': 'warning',
+            'retired': 'secondary',
+            'lost': 'danger',
+            'damaged': 'danger',
+        }
+        return colors.get(self.status, 'secondary')
+    
+    def is_available(self):
+        """Verifica si el activo está disponible para asignación"""
+        return self.status == 'available'
+    
+    def can_be_assigned(self):
+        """Verifica si el activo puede ser asignado"""
+        return self.status in ['available', 'assigned']
+    
+    def save(self, *args, **kwargs):
+        """Override save para actualizar estado automáticamente"""
+        # Si se está asignando a un usuario y el estado es 'available'
+        if self.assigned_to and self.status == 'available':
+            self.status = 'assigned'
+        # Si se desasigna (assigned_to = None) y el estado es 'assigned'
+        elif not self.assigned_to and self.status == 'assigned':
+            self.status = 'available'
+        
+        super().save(*args, **kwargs)
+
+
+class AssetHistory(models.Model):
+    """Modelo para el historial de asignaciones de activos"""
+    ACTION_CHOICES = [
+        ('created', 'Creado'),
+        ('assigned', 'Asignado'),
+        ('unassigned', 'Desasignado'),
+        ('transferred', 'Transferido'),
+        ('maintenance', 'Enviado a Mantenimiento'),
+        ('returned', 'Devuelto de Mantenimiento'),
+        ('retired', 'Dado de Baja'),
+        ('status_changed', 'Cambio de Estado'),
+    ]
+    
+    asset = models.ForeignKey(
+        Asset,
+        on_delete=models.CASCADE,
+        related_name='history',
+        verbose_name='Activo'
+    )
+    action = models.CharField(
+        max_length=20,
+        choices=ACTION_CHOICES,
+        verbose_name='Acción'
+    )
+    previous_employee = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='asset_history_previous',
+        verbose_name='Usuario Anterior'
+    )
+    new_employee = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='asset_history_new',
+        verbose_name='Nuevo Usuario'
+    )
+    previous_status = models.CharField(
+        max_length=20,
+        choices=Asset.STATUS_CHOICES,
+        null=True,
+        blank=True,
+        verbose_name='Estado Anterior'
+    )
+    new_status = models.CharField(
+        max_length=20,
+        choices=Asset.STATUS_CHOICES,
+        null=True,
+        blank=True,
+        verbose_name='Nuevo Estado'
+    )
+    reason = models.TextField(
+        blank=True,
+        verbose_name='Motivo',
+        help_text='Motivo del cambio o acción'
+    )
+    date = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha'
+    )
+    performed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='asset_actions',
+        verbose_name='Realizado por'
+    )
+    
+    class Meta:
+        ordering = ['-date']
+        verbose_name = 'Historial de Activo'
+        verbose_name_plural = 'Historiales de Activos'
+        indexes = [
+            models.Index(fields=['asset', '-date']),
+            models.Index(fields=['action']),
+        ]
+    
+    def __str__(self):
+        return f"{self.asset.name} - {self.get_action_display()} ({self.date.strftime('%d/%m/%Y')})"
+    
+    def get_action_display_color(self):
+        """Retorna el color CSS para la acción"""
+        colors = {
+            'created': 'success',
+            'assigned': 'primary',
+            'unassigned': 'warning',
+            'transferred': 'info',
+            'maintenance': 'warning',
+            'returned': 'success',
+            'retired': 'secondary',
+            'status_changed': 'info',
+        }
+        return colors.get(self.action, 'secondary')
+
+
+# ==========================================
+# MODELOS PARA TUTOR IA
+# ==========================================
+
+class AITutor(models.Model):
+    """Modelo para el sistema de Tutor IA"""
+    
+    STATUS_CHOICES = [
+        ('active', 'Activo'),
+        ('completed', 'Completado'),
+        ('paused', 'Pausado'),
+        ('cancelled', 'Cancelado'),
+    ]
+    
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título del Objetivo',
+        help_text='Título descriptivo de lo que quieres lograr'
+    )
+    
+    objective = models.TextField(
+        verbose_name='Objetivo',
+        help_text='Describe claramente qué quieres lograr'
+    )
+    
+    current_state = models.TextField(
+        verbose_name='Estado Actual',
+        help_text='Describe dónde estás ahora en relación a tu objetivo'
+    )
+    
+    context = models.TextField(
+        verbose_name='Contexto',
+        help_text='Proporciona contexto adicional relevante (experiencia, recursos, limitaciones, etc.)'
+    )
+    
+    tutor_persona = models.TextField(
+        verbose_name='Personalidad del Tutor',
+        help_text='Describe qué tipo de tutor quieres (ej: un experimentado profesor de Django, un mentor de carrera, etc.)',
+        default='Un experimentado mentor y profesor'
+    )
+    
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='active',
+        verbose_name='Estado'
+    )
+    
+    is_private = models.BooleanField(
+        default=False,
+        verbose_name='Privado',
+        help_text='Si está marcado, solo tú podrás ver este tutor'
+    )
+    
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='ai_tutors',
+        verbose_name='Creado por'
+    )
+    
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de Creación'
+    )
+    
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última Actualización'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Tutor IA'
+        verbose_name_plural = 'Tutores IA'
+        indexes = [
+            models.Index(fields=['created_by']),
+            models.Index(fields=['status']),
+            models.Index(fields=['is_private']),
+        ]
+    
+    def __str__(self):
+        return f"{self.title} - {self.created_by.username}"
+    
+    def get_status_display_color(self):
+        """Retorna el color CSS para el estado"""
+        colors = {
+            'active': 'success',
+            'completed': 'primary',
+            'paused': 'warning',
+            'cancelled': 'danger',
+        }
+        return colors.get(self.status, 'secondary')
+    
+    def get_progress_count(self):
+        """Retorna el número de reportes de progreso"""
+        return self.progress_reports.count()
+
+
+class AITutorProgressReport(models.Model):
+    """Modelo para reportar avances al Tutor IA"""
+    
+    tutor = models.ForeignKey(
+        AITutor,
+        on_delete=models.CASCADE,
+        related_name='progress_reports',
+        verbose_name='Tutor IA'
+    )
+    
+    progress_description = models.TextField(
+        verbose_name='Descripción del Avance',
+        help_text='Describe qué has logrado desde tu último reporte'
+    )
+    
+    challenges = models.TextField(
+        blank=True,
+        verbose_name='Desafíos Encontrados',
+        help_text='Describe los obstáculos o dificultades que has enfrentado (opcional)'
+    )
+    
+    ai_feedback = models.TextField(
+        blank=True,
+        verbose_name='Retroalimentación de la IA',
+        help_text='Recomendaciones y consejos generados por la IA'
+    )
+    
+    ai_recommendations = models.TextField(
+        blank=True,
+        verbose_name='Recomendaciones de Mejora',
+        help_text='Sugerencias específicas para mejorar'
+    )
+    
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='tutor_progress_reports',
+        verbose_name='Reportado por'
+    )
+    
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha del Reporte'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Reporte de Progreso'
+        verbose_name_plural = 'Reportes de Progreso'
+        indexes = [
+            models.Index(fields=['tutor']),
+            models.Index(fields=['created_by']),
+        ]
+    
+    def __str__(self):
+        return f"Reporte {self.pk} - {self.tutor.title}"
+
+
+class AITutorAttachment(models.Model):
+    """Modelo para adjuntos del Tutor IA"""
+    
+    tutor = models.ForeignKey(
+        AITutor,
+        on_delete=models.CASCADE,
+        related_name='attachments',
+        verbose_name='Tutor IA',
+        null=True,
+        blank=True
+    )
+    
+    progress_report = models.ForeignKey(
+        AITutorProgressReport,
+        on_delete=models.CASCADE,
+        related_name='attachments',
+        verbose_name='Reporte de Progreso',
+        null=True,
+        blank=True
+    )
+    
+    file = models.FileField(
+        upload_to='tutor_attachments/%Y/%m/',
+        verbose_name='Archivo'
+    )
+    
+    original_filename = models.CharField(
+        max_length=255,
+        verbose_name='Nombre Original'
+    )
+    
+    file_size = models.PositiveIntegerField(
+        verbose_name='Tamaño del Archivo',
+        help_text='Tamaño en bytes'
+    )
+    
+    file_type = models.CharField(
+        max_length=100,
+        verbose_name='Tipo de Archivo'
+    )
+    
+    description = models.CharField(
+        max_length=500,
+        blank=True,
+        verbose_name='Descripción',
+        help_text='Descripción opcional del archivo'
+    )
+    
+    ai_analysis = models.TextField(
+        blank=True,
+        verbose_name='Análisis de la IA',
+        help_text='Análisis del archivo generado por la IA'
+    )
+    
+    uploaded_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='tutor_attachments',
+        verbose_name='Subido por'
+    )
+    
+    uploaded_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de Subida'
+    )
+    
+    class Meta:
+        ordering = ['-uploaded_at']
+        verbose_name = 'Adjunto del Tutor'
+        verbose_name_plural = 'Adjuntos del Tutor'
+        indexes = [
+            models.Index(fields=['tutor']),
+            models.Index(fields=['progress_report']),
+            models.Index(fields=['uploaded_by']),
+        ]
+    
+    def __str__(self):
+        return f"{self.original_filename}"
+    
+    def get_file_size_display(self):
+        """Formato legible del tamaño del archivo"""
+        size_bytes = self.file_size
+        if size_bytes < 1024:
+            return f"{size_bytes} B"
+        elif size_bytes < 1024**2:
+            return f"{size_bytes/1024:.1f} KB"
+        elif size_bytes < 1024**3:
+            return f"{size_bytes/(1024**2):.1f} MB"
+        else:
+            return f"{size_bytes/(1024**3):.1f} GB"
+    
+    def save(self, *args, **kwargs):
+        if self.file:
+            self.original_filename = self.file.name
+            self.file_size = self.file.size
+            self.file_type = self.file.name.split('.')[-1].lower() if '.' in self.file.name else 'unknown'
+        super().save(*args, **kwargs)

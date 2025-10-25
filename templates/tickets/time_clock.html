@@ -90,6 +90,69 @@
         </div>
     </div>
 
+    <!-- Información de Acceso Público -->
+    {% if public_access %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-info">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-phone"></i> Acceso Móvil
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h6><i class="bi bi-link-45deg me-2"></i>URL Pública para Móvil:</h6>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" 
+                                           value="{{ request.scheme }}://{{ request.get_host }}{{ public_access.public_url }}" 
+                                           id="public-url" readonly>
+                                    <button class="btn btn-outline-secondary" type="button" 
+                                            onclick="copyToClipboard('public-url')">
+                                        <i class="bi bi-clipboard"></i> Copiar
+                                    </button>
+                                </div>
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Usa este enlace en tu teléfono para registrar entrada/salida sin necesidad de login.
+                                    {% if not public_access.is_active %}
+                                        <span class="text-warning"><strong>¡Acceso desactivado!</strong></span>
+                                    {% endif %}
+                                </small>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <div class="d-grid gap-2">
+                                    <a href="{{ public_access.public_url }}" 
+                                       class="btn btn-info" target="_blank">
+                                        <i class="bi bi-phone me-2"></i>Abrir en Móvil
+                                    </a>
+                                    {% if public_access.last_used %}
+                                        <small class="text-muted">
+                                            Último uso: {{ public_access.last_used|date:"d/m/Y H:i" }}
+                                        </small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <h6><i class="bi bi-info-circle me-2"></i>Acceso Móvil</h6>
+                    <p class="mb-0">
+                        No tienes configurado un acceso público para móvil. 
+                        Contacta al administrador si necesitas registrar horario desde tu teléfono.
+                    </p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
     <!-- Botones de Acción -->
     <div class="row mb-4">
         <div class="col-12 text-center">
@@ -196,6 +259,32 @@
 </div>
 
 <script>
+// Función para copiar al portapapeles
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    element.select();
+    element.setSelectionRange(0, 99999); // Para móviles
+    
+    try {
+        document.execCommand('copy');
+        
+        // Mostrar feedback visual
+        const button = element.nextElementSibling;
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="bi bi-check"></i> ¡Copiado!';
+        button.classList.remove('btn-outline-secondary');
+        button.classList.add('btn-success');
+        
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-secondary');
+        }, 2000);
+    } catch (err) {
+        alert('No se pudo copiar al portapapeles');
+    }
+}
+
 // Actualizar tiempo en tiempo real si hay jornada activa
 {% if active_entry %}
 function updateCurrentTime() {

@@ -1,0 +1,277 @@
+{% extends 'mobile_base.html' %}
+{% load static %}
+
+{% block title %}Registro Exitoso - Control de Horario{% endblock %}
+
+{% block extra_css %}
+<style>
+    .success-container {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 15px;
+        margin: 0;
+    }
+    
+    .success-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        padding: 30px;
+        text-align: center;
+        width: 100%;
+        max-width: 450px;
+    }
+    
+    .success-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 25px;
+        color: white;
+        font-size: 2.5rem;
+        animation: successPulse 2s infinite;
+    }
+    
+    @keyframes successPulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    .success-title {
+        font-size: 1.8rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 20px;
+    }
+    
+    .time-display {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #28a745;
+        margin: 20px 0;
+        font-family: 'SF Mono', Monaco, monospace;
+    }
+    
+    .action-info {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 18px;
+        margin: 20px 0;
+    }
+    
+    .action-info h5 {
+        font-size: 1.1rem;
+        margin-bottom: 10px;
+        color: #495057;
+    }
+    
+    .duration-highlight {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px;
+        border-radius: 15px;
+        margin: 15px 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+    
+    .btn-return {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        font-weight: 500;
+        margin: 20px 0;
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        width: 100%;
+    }
+    
+    .btn-return:hover, .btn-return:active {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+    
+    .user-info {
+        color: #6c757d;
+        font-size: 1rem;
+        margin: 15px 0;
+    }
+    
+    .notes-display {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 12px;
+        padding: 15px;
+        margin: 15px 0;
+        text-align: left;
+        color: #856404;
+    }
+    
+    .notes-display h6 {
+        color: #856404;
+        font-size: 0.95rem;
+        margin-bottom: 8px;
+    }
+    
+    .countdown-info {
+        color: #6c757d;
+        font-size: 0.85rem;
+        margin-top: 15px;
+    }
+    
+    @media (max-width: 576px) {
+        .success-container {
+            padding: 10px;
+        }
+        
+        .success-card {
+            padding: 25px 20px;
+            border-radius: 15px;
+        }
+        
+        .success-icon {
+            width: 70px;
+            height: 70px;
+            font-size: 2rem;
+        }
+        
+        .success-title {
+            font-size: 1.6rem;
+        }
+        
+        .time-display {
+            font-size: 2.2rem;
+        }
+        
+        .btn-return {
+            padding: 14px 25px;
+            font-size: 1rem;
+        }
+    }
+    
+    @media (max-width: 375px) {
+        .success-card {
+            padding: 20px 15px;
+        }
+        
+        .success-title {
+            font-size: 1.4rem;
+        }
+        
+        .time-display {
+            font-size: 2rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="success-container">
+    <div class="success-card">
+        <!-- Icono de Éxito -->
+        <div class="success-icon">
+            {% if action == 'entrada' %}
+                <i class="fas fa-play"></i>
+            {% else %}
+                <i class="fas fa-stop"></i>
+            {% endif %}
+        </div>
+        
+        <!-- Título Principal -->
+        <h2 class="success-title">
+            {% if action == 'entrada' %}
+                ¡Entrada Registrada!
+            {% else %}
+                ¡Salida Registrada!
+            {% endif %}
+        </h2>
+        
+        <!-- Información del Usuario -->
+        <div class="user-info">
+            <i class="fas fa-user me-2"></i>
+            {{ user.get_full_name|default:user.username }}
+        </div>
+        
+        <!-- Hora del Registro -->
+        <div class="time-display">
+            {{ time }}
+        </div>
+        
+        <!-- Información Específica de la Acción -->
+        <div class="action-info">
+            {% if action == 'entrada' %}
+                <h5><i class="fas fa-clock me-2"></i>Jornada Iniciada</h5>
+                <p class="mb-0">Tu jornada laboral ha comenzado exitosamente.</p>
+                <small class="text-muted">Recuerda registrar tu salida al finalizar.</small>
+            {% else %}
+                <h5><i class="fas fa-check-circle me-2"></i>Jornada Finalizada</h5>
+                <p class="mb-0">Tu jornada laboral ha sido completada.</p>
+                
+                {% if duration %}
+                    <div class="duration-highlight">
+                        <i class="fas fa-stopwatch me-2"></i>
+                        Tiempo total trabajado: {{ duration }}
+                    </div>
+                {% endif %}
+            {% endif %}
+        </div>
+        
+        <!-- Mostrar Notas si las hay -->
+        {% if notes %}
+            <div class="notes-display">
+                <h6><i class="fas fa-sticky-note me-2"></i>Notas:</h6>
+                <p class="mb-0">{{ notes }}</p>
+            </div>
+        {% endif %}
+        
+        <!-- Botones de Acción -->
+        <a href="{% url 'public_time_clock' token %}" class="btn btn-return">
+            <i class="fas fa-arrow-left me-2"></i>
+            Volver al Control de Horario
+        </a>
+        
+        <!-- Información de Auto-redirección -->
+        <div class="countdown-info">
+            <i class="fas fa-clock me-1"></i>
+            Redirigiendo automáticamente en <span id="countdown">8</span> segundos...
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Countdown para auto-redirección
+    let countdown = 8;
+    const countdownElement = document.getElementById('countdown');
+    
+    const timer = setInterval(function() {
+        countdown--;
+        countdownElement.textContent = countdown;
+        
+        if (countdown <= 0) {
+            clearInterval(timer);
+            window.location.href = "{% url 'public_time_clock' token %}";
+        }
+    }, 1000);
+    
+    // Limpiar timer si el usuario navega manualmente
+    document.querySelector('.btn-return').addEventListener('click', function() {
+        clearInterval(timer);
+    });
+});
+</script>
+{% endblock %}

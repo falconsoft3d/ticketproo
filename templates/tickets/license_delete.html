@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> {{ title }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <h6><i class="bi bi-warning"></i> ¿Estás seguro?</h6>
+                        <p class="mb-0">Esta acción no se puede deshacer. Se eliminará permanentemente:</p>
+                    </div>
+
+                    <!-- Información de la licencia -->
+                    <div class="bg-light p-3 rounded mb-3">
+                        <div class="row">
+                            <div class="col-12 text-center mb-3">
+                                <h4 class="text-primary" style="font-family: 'Courier New', monospace; letter-spacing: 2px;">
+                                    {{ license.license_key }}
+                                </h4>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>Empresa:</strong><br>
+                                {{ license.company.name }}
+                            </div>
+                            <div class="col-6">
+                                <strong>Producto:</strong><br>
+                                {{ license.product }}
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-6">
+                                <strong>Estado:</strong><br>
+                                <span class="badge bg-{{ license.get_status_display_color }}">
+                                    {{ license.get_status_display }}
+                                </span>
+                            </div>
+                            <div class="col-6">
+                                <strong>Vencimiento:</strong><br>
+                                {{ license.end_date|date:"d/m/Y" }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-danger">
+                        <small>
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Consecuencias de eliminar esta licencia:</strong>
+                        </small>
+                        <ul class="mb-0 mt-2">
+                            <li>Se perderá todo el historial de la licencia</li>
+                            <li>El código QR y la URL pública dejarán de funcionar</li>
+                            <li>No se podrá verificar la licencia públicamente</li>
+                            <li>Esta acción es irreversible</li>
+                        </ul>
+                    </div>
+
+                    <!-- Formulario de confirmación -->
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'license_detail' license.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Sí, Eliminar Licencia
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

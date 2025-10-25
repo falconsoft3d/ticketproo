@@ -104,8 +104,18 @@ urlpatterns = [
     path('time-clock/start/', views.time_start_work, name='time_start_work'),
     path('time-clock/end/', views.time_end_work, name='time_end_work'),
     path('time-entries/', views.time_entries_list, name='time_entries_list'),
+    path('time-entries/export/excel/', views.time_entries_export_excel, name='time_entries_export_excel'),
     path('time-entries/<int:entry_id>/', views.time_entry_detail, name='time_entry_detail'),
     path('time-entries/<int:entry_id>/edit/', views.time_entry_edit, name='time_entry_edit'),
+    
+    # URLs públicas de control de horario (sin login)
+    path('public-time/<str:token>/', views.public_time_clock, name='public_time_clock'),
+    
+    # Gestión de accesos públicos de horario (solo agentes)
+    path('public-time-access/', views.public_time_access_list, name='public_time_access_list'),
+    path('public-time-access/create/<int:user_id>/', views.public_time_access_create, name='public_time_access_create'),
+    path('public-time-access/<int:access_id>/edit/', views.public_time_access_edit, name='public_time_access_edit'),
+    path('public-time-access/<int:access_id>/delete/', views.public_time_access_delete, name='public_time_access_delete'),
     
     # Control de asistencia general (para agentes)
     path('attendance/', views.attendance_overview, name='attendance_overview'),
@@ -743,9 +753,15 @@ urlpatterns += [
     path('formularios/', views.form_list, name='form_list'),
     path('formularios/crear/', views.form_create, name='form_create'),
     path('formularios/<int:pk>/', views.form_detail, name='form_detail'),
+    path('formularios/<int:pk>/generar-preguntas-ia/', views.form_generate_ai_questions, name='form_generate_ai_questions'),
+    path('formularios/<int:pk>/agregar-preguntas-ia/', views.form_add_ai_questions, name='form_add_ai_questions'),
     path('formularios/<int:pk>/editar/', views.form_edit, name='form_edit'),
     path('formularios/<int:pk>/eliminar/', views.form_delete, name='form_delete'),
     path('formularios/<int:pk>/respuestas/', views.form_responses, name='form_responses'),
+    path('formularios/<int:form_pk>/respuestas/<int:response_pk>/', views.form_response_detail, name='form_response_detail'),
+    path('formularios/<int:pk>/analisis-ia/', views.form_ai_analysis, name='form_ai_analysis'),
+    path('formularios/<int:pk>/analisis-ia/historial/', views.form_ai_analysis_history, name='form_ai_analysis_history'),
+    path('formularios/<int:form_pk>/analisis-ia/<int:analysis_pk>/', views.form_ai_analysis_detail, name='form_ai_analysis_detail'),
     
     # URLs para gestión de preguntas
     path('formularios/<int:form_pk>/preguntas/crear/', views.form_question_create, name='form_question_create'),
@@ -754,6 +770,9 @@ urlpatterns += [
     
     # URLs para gestión de opciones
     path('formularios/<int:form_pk>/preguntas/<int:question_pk>/opciones/crear/', views.form_option_create, name='form_option_create'),
+    path('formularios/<int:form_pk>/opciones/<int:option_pk>/actualizar-puntuacion/', views.form_option_update_score, name='form_option_update_score'),
+    path('formularios/<int:form_pk>/opciones/<int:option_pk>/editar/', views.form_option_edit, name='form_option_edit'),
+    path('formularios/<int:form_pk>/opciones/<int:option_pk>/eliminar/', views.form_option_delete, name='form_option_delete'),
     
     # URLs públicas para responder formularios
     path('form/<uuid:token>/', views.form_public, name='form_public'),
@@ -767,6 +786,28 @@ urlpatterns += [
     path('alcances/crear/', views.alcance_create, name='alcance_create'),
     path('alcances/<int:pk>/editar/', views.alcance_edit, name='alcance_edit'),
     path('alcances/<int:pk>/eliminar/', views.alcance_delete, name='alcance_delete'),
+    
+    # ============= URLs PARA CONTROL DE LICENCIAS =============
+    path('licencias/', views.license_list, name='license_list'),
+    path('licencias/crear/', views.license_create, name='license_create'),
+    path('licencias/<int:pk>/', views.license_detail, name='license_detail'),
+    path('licencias/<int:pk>/editar/', views.license_edit, name='license_edit'),
+    path('licencias/<int:pk>/eliminar/', views.license_delete, name='license_delete'),
+    path('licencias/<int:pk>/qr/', views.license_qr_view, name='license_qr'),
+    
+    # URL pública para licencias (sin autenticación)
+    path('license/<uuid:uuid>/', views.license_public, name='license_public'),
+    path('api/license/<uuid:uuid>/', views.license_api, name='license_api'),
+    
+    # ============= URLs PARA CONTROL DE ACTIVOS =============
+    path('activos/', views.asset_list, name='asset_list'),
+    path('activos/crear/', views.asset_create, name='asset_create'),
+    path('activos/<int:pk>/', views.asset_detail, name='asset_detail'),
+    path('activos/<int:pk>/editar/', views.asset_edit, name='asset_edit'),
+    path('activos/<int:pk>/eliminar/', views.asset_delete, name='asset_delete'),
+    path('activos/<int:pk>/asignar/', views.asset_assign, name='asset_assign'),
+    path('activos/<int:pk>/historial/', views.asset_history, name='asset_history'),
+    path('activos/<int:pk>/mantenimiento/', views.asset_maintenance, name='asset_maintenance'),
     
     # ============= URLs PARA WHATSAPP =============
     path('whatsapp/', views.whatsapp_dashboard, name='whatsapp_dashboard'),
@@ -937,6 +978,11 @@ urlpatterns += [
     path('company-protocols/<int:pk>/ai/generate-summary/', views.company_protocol_ai_generate_summary, name='company_protocol_ai_generate_summary'),
     path('company-protocols/<int:pk>/ai/improve-content/', views.company_protocol_ai_improve_content, name='company_protocol_ai_improve_content'),
     
+    # URLs públicas de protocolos
+    path('company-protocols/<int:pk>/toggle-public/', views.company_protocol_toggle_public, name='company_protocol_toggle_public'),
+    path('public/protocols/<uuid:uuid>/', views.company_protocol_public_view, name='company_protocol_public_view'),
+    path('api/company-protocols/stats/', views.company_protocol_stats_api, name='company_protocol_stats_api'),
+    
     # URLs de QA - Quejas y Sugerencias
     path('qa/', views.qa_dashboard, name='qa_dashboard'),
     path('qa/complaints/', views.qa_complaint_list, name='qa_complaint_list'),
@@ -946,5 +992,16 @@ urlpatterns += [
     path('qa/complaints/<int:pk>/delete/', views.qa_complaint_delete, name='qa_complaint_delete'),
     path('qa/complaints/<int:pk>/assign/', views.qa_complaint_assign, name='qa_complaint_assign'),
     path('qa/complaints/<int:pk>/resolve/', views.qa_complaint_resolve, name='qa_complaint_resolve'),
+    
+    # URLs del Tutor IA
+    path('ai-tutor/', views.ai_tutor_list, name='ai_tutor_list'),
+    path('ai-tutor/create/', views.ai_tutor_create, name='ai_tutor_create'),
+    path('ai-tutor/<int:pk>/', views.ai_tutor_detail, name='ai_tutor_detail'),
+    path('ai-tutor/<int:pk>/edit/', views.ai_tutor_edit, name='ai_tutor_edit'),
+    path('ai-tutor/<int:pk>/delete/', views.ai_tutor_delete, name='ai_tutor_delete'),
+    path('ai-tutor/<int:pk>/progress/', views.ai_tutor_progress_report, name='ai_tutor_progress_report'),
+    path('ai-tutor/<int:pk>/upload/', views.ai_tutor_upload_attachment, name='ai_tutor_upload_attachment'),
+    path('ai-tutor/feedback/<int:pk>/generate/', views.ai_tutor_generate_feedback_ajax, name='ai_tutor_generate_feedback_ajax'),
+    path('ai-tutor/optimize-config/', views.ai_tutor_optimize_config, name='ai_tutor_optimize_config'),
 ]
 

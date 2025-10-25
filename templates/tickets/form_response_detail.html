@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1><i class="bi bi-clipboard-data"></i> Detalle de Respuesta</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'form_detail' form.pk %}">{{ form.title }}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'form_responses' form.pk %}">Respuestas</a></li>
+                    <li class="breadcrumb-item active">Detalle</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <a href="{% url 'form_responses' form.pk %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver a respuestas
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información del encuestado -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-person-circle"></i> Información del Encuestado</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Nombre:</strong> {{ response.respondent_name|default:"Anónimo" }}</p>
+                    <p><strong>Email:</strong> {{ response.respondent_email|default:"No proporcionado" }}</p>
+                    <p><strong>Fecha de respuesta:</strong> {{ response.response_date|date:"d/m/Y H:i" }}</p>
+                    <p><strong>Puntuación total:</strong> 
+                        <span class="badge bg-success fs-6">{{ response.total_score }} puntos</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Resumen de puntuación -->
+            <div class="card">
+                <div class="card-header">
+                    <h6><i class="bi bi-bar-chart"></i> Resumen de Puntuación</h6>
+                </div>
+                <div class="card-body">
+                    {% with total_questions=questions_with_answers|length answered_questions=0 total_possible=0 %}
+                        {% for qa in questions_with_answers %}
+                            {% if qa.answer %}
+                                {% with answered_questions=answered_questions|add:1 %}{% endwith %}
+                            {% endif %}
+                            {% if qa.question.question_type == 'multiple_choice' %}
+                                {% for option in qa.question.options.all %}
+                                    {% if forloop.first %}
+                                        {% with total_possible=total_possible|add:option.score %}{% endwith %}
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        {% endfor %}
+                        
+                        <div class="mb-2">
+                            <small class="text-muted">Preguntas respondidas:</small>
+                            <div class="progress mb-1" style="height: 20px;">
+                                <div class="progress-bar" style="width: {% widthratio answered_questions total_questions 100 %}%">
+                                    {{ answered_questions }}/{{ total_questions }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center">
+                            <h4 class="text-primary">{{ response.total_score }}</h4>
+                            <small class="text-muted">puntos obtenidos</small>
+                        </div>
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Respuestas detalladas -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-question-circle"></i> Respuestas Detalladas</h5>
+                </div>
+                <div class="card-body">
+                    {% for qa in questions_with_answers %}
+                    <div class="border rounded p-3 mb-3 {% if qa.answer %}bg-light{% else %}bg-warning bg-opacity-10{% endif %}">
+                        <!-- Pregunta -->
+                        <div class="mb-3">
+                            <h6 class="mb-2">
+                                <span class="badge bg-primary me-2">{{ qa.question.order }}</span>
+                                {{ qa.question.question_text }}
+                            </h6>
+                            <div class="mb-2">
+                                <span class="badge bg-info">{{ qa.question.get_question_type_display }}</span>
+                                {% if qa.question.is_required %}
+                                    <span class="badge bg-warning">Obligatoria</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Opcional</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Respuesta -->
+                        <div class="ms-4">
+                            {% if qa.answer %}
+                                <div class="mb-2">
+                                    <strong>Respuesta:</strong>
+                                    <div class="p-2 bg-white border rounded">
+                                        {% if qa.question.question_type == 'multiple_choice' %}
+                                            {{ qa.display_answer }}
+                                            {% if qa.score > 0 %}
+                                                <span class="badge bg-success ms-2">+{{ qa.score }} puntos</span>
+                                            {% endif %}
+                                        {% else %}
+                                            {{ qa.display_answer }}
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- Mostrar opciones disponibles para preguntas de selección múltiple -->
+                                {% if qa.question.question_type == 'multiple_choice' %}
+                                    <div class="mt-2">
+                                        <small class="text-muted"><strong>Opciones disponibles:</strong></small>
+                                        <ul class="list-unstyled ms-3 mt-1">
+                                            {% for option in qa.question.options.all %}
+                                            <li class="{% if qa.answer.selected_option.id == option.id %}text-success fw-bold{% else %}text-muted{% endif %}">
+                                                {% if qa.answer.selected_option.id == option.id %}
+                                                    <i class="bi bi-check-circle-fill text-success"></i>
+                                                {% else %}
+                                                    <i class="bi bi-circle text-muted"></i>
+                                                {% endif %}
+                                                {{ option.option_text }}
+                                                <span class="badge bg-secondary ms-1">{{ option.score }} pts</span>
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                <div class="alert alert-warning mb-0">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    <strong>Sin respuesta</strong> - Esta pregunta no fue respondida
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-question-circle display-4 text-muted"></i>
+                        <h5 class="text-muted mt-2">No hay preguntas en este formulario</h5>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.bg-light {
+    background-color: #f8f9fa !important;
+}
+.bg-warning.bg-opacity-10 {
+    background-color: rgba(255, 193, 7, 0.1) !important;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,227 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .license-key-input {
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+    }
+    .key-generator {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="bi bi-key text-primary"></i> {{ title }}</h2>
+                    <p class="text-muted">Información de la licencia del producto</p>
+                </div>
+                <div>
+                    <a href="{% url 'license_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver a Licencias
+                    </a>
+                </div>
+            </div>
+
+            <!-- Formulario -->
+            <div class="card">
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Clave de Licencia -->
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label for="license_key" class="form-label">
+                                    <i class="bi bi-key"></i> Clave de Licencia
+                                </label>
+                                <div class="key-generator">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <input type="text" 
+                                               class="form-control license-key-input me-2" 
+                                               name="license_key" 
+                                               id="license_key"
+                                               maxlength="12"
+                                               placeholder="AUTO-GENERADA"
+                                               value="{% if license %}{{ license.license_key }}{% endif %}">
+                                        <button type="button" class="btn btn-outline-primary" onclick="generateKey()">
+                                            <i class="bi bi-arrow-clockwise"></i> Generar
+                                        </button>
+                                    </div>
+                                    <small class="text-muted">
+                                        <i class="bi bi-info-circle"></i> 
+                                        Deja vacío para generar automáticamente o ingresa una clave personalizada de 12 caracteres alfanuméricos.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Empresa y Producto -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="company" class="form-label">
+                                    <i class="bi bi-building"></i> Empresa *
+                                </label>
+                                <select class="form-select" name="company" id="company" required>
+                                    <option value="">Seleccionar empresa...</option>
+                                    {% for company in companies %}
+                                        <option value="{{ company.pk }}" 
+                                                {% if license and license.company.pk == company.pk %}selected{% endif %}>
+                                            {{ company.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="product" class="form-label">
+                                    <i class="bi bi-box-seam"></i> Producto *
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       name="product" 
+                                       id="product"
+                                       value="{% if license %}{{ license.product }}{% endif %}"
+                                       placeholder="Nombre del producto..."
+                                       required>
+                            </div>
+                        </div>
+
+                        <!-- Fechas -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="start_date" class="form-label">
+                                    <i class="bi bi-calendar-check"></i> Fecha de Inicio *
+                                </label>
+                                <input type="date" 
+                                       class="form-control" 
+                                       name="start_date" 
+                                       id="start_date"
+                                       value="{% if license %}{{ license.start_date|date:'Y-m-d' }}{% endif %}"
+                                       required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="end_date" class="form-label">
+                                    <i class="bi bi-calendar-x"></i> Fecha de Vencimiento *
+                                </label>
+                                <input type="date" 
+                                       class="form-control" 
+                                       name="end_date" 
+                                       id="end_date"
+                                       value="{% if license %}{{ license.end_date|date:'Y-m-d' }}{% endif %}"
+                                       required>
+                            </div>
+                        </div>
+
+                        <!-- Estado (solo en edición) -->
+                        {% if license %}
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="status" class="form-label">
+                                        <i class="bi bi-flag"></i> Estado
+                                    </label>
+                                    <select class="form-select" name="status" id="status">
+                                        <option value="active" {% if license.status == "active" %}selected{% endif %}>Activa</option>
+                                        <option value="expired" {% if license.status == "expired" %}selected{% endif %}>Expirada</option>
+                                        <option value="suspended" {% if license.status == "suspended" %}selected{% endif %}>Suspendida</option>
+                                        <option value="revoked" {% if license.status == "revoked" %}selected{% endif %}>Revocada</option>
+                                    </select>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <!-- Notas -->
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <label for="notes" class="form-label">
+                                    <i class="bi bi-chat-text"></i> Notas
+                                </label>
+                                <textarea class="form-control" 
+                                          name="notes" 
+                                          id="notes" 
+                                          rows="3"
+                                          placeholder="Notas adicionales sobre la licencia...">{% if license %}{{ license.notes }}{% endif %}</textarea>
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'license_list' %}" class="btn btn-secondary">
+                                        <i class="bi bi-x-circle"></i> Cancelar
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-check-circle"></i> 
+                                        {% if license %}Actualizar{% else %}Crear{% endif %} Licencia
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function generateKey() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let key = '';
+    for (let i = 0; i < 12; i++) {
+        key += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    document.getElementById('license_key').value = key;
+}
+
+// Validación de clave en tiempo real
+document.getElementById('license_key').addEventListener('input', function(e) {
+    let value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (value.length > 12) {
+        value = value.substring(0, 12);
+    }
+    e.target.value = value;
+});
+
+// Validación de fechas
+document.getElementById('start_date').addEventListener('change', function() {
+    const startDate = new Date(this.value);
+    const endDateInput = document.getElementById('end_date');
+    
+    if (endDateInput.value) {
+        const endDate = new Date(endDateInput.value);
+        if (endDate <= startDate) {
+            alert('La fecha de vencimiento debe ser posterior a la fecha de inicio.');
+            endDateInput.focus();
+        }
+    }
+});
+
+document.getElementById('end_date').addEventListener('change', function() {
+    const endDate = new Date(this.value);
+    const startDateInput = document.getElementById('start_date');
+    
+    if (startDateInput.value) {
+        const startDate = new Date(startDateInput.value);
+        if (endDate <= startDate) {
+            alert('La fecha de vencimiento debe ser posterior a la fecha de inicio.');
+            this.focus();
+        }
+    }
+});
+</script>
+{% endblock %}

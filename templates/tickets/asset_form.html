@@ -1,0 +1,283 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        background: white;
+        border-radius: 10px;
+        padding: 2rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .section-header {
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+        color: #007bff;
+    }
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-{% if asset %}pencil{% else %}plus-circle{% endif %} text-primary"></i> {{ title }}</h2>
+            <p class="text-muted">
+                {% if asset %}
+                    Editar información del activo existente
+                {% else %}
+                    Agregar un nuevo activo al sistema
+                {% endif %}
+            </p>
+        </div>
+        <div>
+            {% if asset %}
+                <a href="{% url 'asset_detail' asset.pk %}" class="btn btn-outline-secondary me-2">
+                    <i class="bi bi-arrow-left"></i> Volver al Detalle
+                </a>
+            {% endif %}
+            <a href="{% url 'asset_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-list"></i> Lista de Activos
+            </a>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="form-container">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- Información Básica -->
+                    <h5 class="section-header">
+                        <i class="bi bi-info-circle"></i> Información Básica
+                    </h5>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.name.id_for_label }}" class="form-label required-field">
+                                    {{ form.name.label }}
+                                </label>
+                                {{ form.name }}
+                                {% if form.name.errors %}
+                                    <div class="text-danger small">{{ form.name.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.manufacturer.id_for_label }}" class="form-label required-field">
+                                    {{ form.manufacturer.label }}
+                                </label>
+                                {{ form.manufacturer }}
+                                {% if form.manufacturer.errors %}
+                                    <div class="text-danger small">{{ form.manufacturer.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.description.id_for_label }}" class="form-label required-field">
+                            {{ form.description.label }}
+                        </label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="text-danger small">{{ form.description.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.serial_number.id_for_label }}" class="form-label required-field">
+                                    {{ form.serial_number.label }}
+                                </label>
+                                {{ form.serial_number }}
+                                {% if form.serial_number.errors %}
+                                    <div class="text-danger small">{{ form.serial_number.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">Debe ser único en el sistema</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.location.id_for_label }}" class="form-label">
+                                    {{ form.location.label }}
+                                </label>
+                                {{ form.location }}
+                                {% if form.location.errors %}
+                                    <div class="text-danger small">{{ form.location.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Estado y Asignación -->
+                    <h5 class="section-header">
+                        <i class="bi bi-gear"></i> Estado y Asignación
+                    </h5>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.status.id_for_label }}" class="form-label required-field">
+                                    {{ form.status.label }}
+                                </label>
+                                {{ form.status }}
+                                {% if form.status.errors %}
+                                    <div class="text-danger small">{{ form.status.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.assigned_to.id_for_label }}" class="form-label">
+                                    {{ form.assigned_to.label }}
+                                </label>
+                                {{ form.assigned_to }}
+                                {% if form.assigned_to.errors %}
+                                    <div class="text-danger small">{{ form.assigned_to.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">Solo empleados activos</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Información Financiera -->
+                    <h5 class="section-header">
+                        <i class="bi bi-currency-dollar"></i> Información Financiera
+                    </h5>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="{{ form.purchase_date.id_for_label }}" class="form-label">
+                                    {{ form.purchase_date.label }}
+                                </label>
+                                {{ form.purchase_date }}
+                                {% if form.purchase_date.errors %}
+                                    <div class="text-danger small">{{ form.purchase_date.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="{{ form.purchase_price.id_for_label }}" class="form-label">
+                                    {{ form.purchase_price.label }}
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    {{ form.purchase_price }}
+                                </div>
+                                {% if form.purchase_price.errors %}
+                                    <div class="text-danger small">{{ form.purchase_price.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="{{ form.warranty_expiry.id_for_label }}" class="form-label">
+                                    {{ form.warranty_expiry.label }}
+                                </label>
+                                {{ form.warranty_expiry }}
+                                {% if form.warranty_expiry.errors %}
+                                    <div class="text-danger small">{{ form.warranty_expiry.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notas Adicionales -->
+                    <h5 class="section-header">
+                        <i class="bi bi-chat-text"></i> Información Adicional
+                    </h5>
+
+                    <div class="mb-4">
+                        <label for="{{ form.notes.id_for_label }}" class="form-label">
+                            {{ form.notes.label }}
+                        </label>
+                        {{ form.notes }}
+                        {% if form.notes.errors %}
+                            <div class="text-danger small">{{ form.notes.errors }}</div>
+                        {% endif %}
+                        <div class="form-text">Información adicional sobre el activo</div>
+                    </div>
+
+                    <!-- Errores no de campo -->
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+
+                    <!-- Botones -->
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% if asset %}{% url 'asset_detail' asset.pk %}{% else %}{% url 'asset_list' %}{% endif %}" 
+                           class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-{% if asset %}check-circle{% else %}plus-circle{% endif %}"></i> 
+                            {{ submit_text }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-focus en el primer campo
+    const firstInput = document.querySelector('input[type="text"]');
+    if (firstInput) {
+        firstInput.focus();
+    }
+    
+    // Validación en tiempo real del número de serie
+    const serialInput = document.getElementById('{{ form.serial_number.id_for_label }}');
+    if (serialInput) {
+        serialInput.addEventListener('input', function() {
+            const value = this.value.trim();
+            if (value.length > 0 && value.length < 3) {
+                this.setCustomValidity('El número de serie debe tener al menos 3 caracteres');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+    }
+    
+    // Validación de fechas
+    const purchaseDateInput = document.getElementById('{{ form.purchase_date.id_for_label }}');
+    const warrantyInput = document.getElementById('{{ form.warranty_expiry.id_for_label }}');
+    
+    function validateDates() {
+        if (purchaseDateInput && warrantyInput && 
+            purchaseDateInput.value && warrantyInput.value) {
+            const purchaseDate = new Date(purchaseDateInput.value);
+            const warrantyDate = new Date(warrantyInput.value);
+            
+            if (warrantyDate <= purchaseDate) {
+                warrantyInput.setCustomValidity('La fecha de garantía debe ser posterior a la compra');
+            } else {
+                warrantyInput.setCustomValidity('');
+            }
+        }
+    }
+    
+    if (purchaseDateInput) purchaseDateInput.addEventListener('change', validateDates);
+    if (warrantyInput) warrantyInput.addEventListener('change', validateDates);
+});
+</script>
+{% endblock %}

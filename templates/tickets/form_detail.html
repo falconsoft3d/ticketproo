@@ -41,10 +41,35 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5><i class="bi bi-question-circle"></i> Preguntas ({{ form.questions.count }})</h5>
-                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addQuestionModal">
-                        <i class="bi bi-plus-circle"></i> Agregar Pregunta
-                    </button>
+                    <div>
+                        <button type="button" class="btn btn-success btn-sm me-2" onclick="generateAIQuestions()">
+                            <i class="bi bi-robot"></i> Generar con IA
+                        </button>
+                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addQuestionModal">
+                            <i class="bi bi-plus-circle"></i> Agregar Pregunta
+                        </button>
+                    </div>
                 </div>
+                
+                <!-- Sección de preguntas generadas por IA -->
+                <div id="aiGeneratedSection" class="card-body border-bottom bg-light" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0"><i class="bi bi-robot text-success"></i> Preguntas Sugeridas por IA</h6>
+                        <button type="button" class="btn-close" onclick="closeAISection()"></button>
+                    </div>
+                    <div id="aiQuestionsContainer">
+                        <!-- Las preguntas generadas se mostrarán aquí -->
+                    </div>
+                    <div class="text-center mt-3">
+                        <button type="button" class="btn btn-success" onclick="addSelectedQuestions()">
+                            <i class="bi bi-check-circle"></i> Agregar Preguntas Seleccionadas
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary ms-2" onclick="closeAISection()">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+                
                 <div class="card-body">
                     {% if form.questions.all %}
                         {% for question in form.questions.all %}
@@ -64,9 +89,38 @@
                                             <strong>Opciones:</strong>
                                             <ul class="list-unstyled ms-3">
                                                 {% for option in question.options.all %}
-                                                <li>
-                                                    <span class="badge bg-secondary">{{ option.score }} pts</span>
-                                                    {{ option.option_text }}
+                                                <li class="d-flex align-items-center justify-content-between p-2 border rounded mb-1">
+                                                    <div class="flex-grow-1">
+                                                        {{ option.option_text }}
+                                                    </div>
+                                                    <div class="d-flex align-items-center">
+                                                        <input type="number" 
+                                                               class="form-control form-control-sm me-2 score-input" 
+                                                               style="width: 70px;" 
+                                                               value="{{ option.score }}" 
+                                                               data-option-id="{{ option.id }}"
+                                                               data-form-id="{{ form.pk }}"
+                                                               min="0"
+                                                               title="Cambiar puntuación">
+                                                        <span class="text-muted me-2">pts</span>
+                                                        <div class="dropdown">
+                                                            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                                                <i class="bi bi-three-dots-vertical"></i>
+                                                            </button>
+                                                            <ul class="dropdown-menu">
+                                                                <li>
+                                                                    <a class="dropdown-item" href="{% url 'form_option_edit' form.pk option.pk %}">
+                                                                        <i class="bi bi-pencil"></i> Editar opción
+                                                                    </a>
+                                                                </li>
+                                                                <li>
+                                                                    <a class="dropdown-item text-danger" href="{% url 'form_option_delete' form.pk option.pk %}">
+                                                                        <i class="bi bi-trash"></i> Eliminar opción
+                                                                    </a>
+                                                                </li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
                                                 </li>
                                                 {% endfor %}
                                             </ul>
@@ -133,9 +187,51 @@
                         </div>
                     </div>
                     <hr>
-                    <a href="{% url 'form_responses' form.pk %}" class="btn btn-info btn-sm w-100">
-                        <i class="bi bi-list-ul"></i> Ver Todas las Respuestas
-                    </a>
+                    <!-- Último análisis de IA -->
+                    {% with last_analysis=form.ai_analyses.first %}
+                        {% if last_analysis %}
+                            <div class="border rounded p-2 mb-3 bg-light">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <small class="text-muted">
+                                        <i class="bi bi-robot"></i> Último Análisis IA
+                                    </small>
+                                    <span class="badge bg-{{ last_analysis.get_score_color }}">
+                                        {{ last_analysis.overall_score }}/10
+                                    </span>
+                                </div>
+                                <small class="text-muted d-block">
+                                    {{ last_analysis.created_at|date:"d/m/Y H:i" }}
+                                    - {{ last_analysis.get_problems_count }} problemas, 
+                                    {{ last_analysis.get_improvements_count }} mejoras
+                                </small>
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'form_responses' form.pk %}" class="btn btn-info btn-sm">
+                            <i class="bi bi-list-ul"></i> Ver Todas las Respuestas
+                        </a>
+                        
+                        <!-- Botones de análisis IA -->
+                        <div class="btn-group" role="group">
+                            {% if total_responses > 0 %}
+                                <button type="button" class="btn btn-success btn-sm" onclick="analyzeWithAI()">
+                                    <i class="bi bi-robot"></i> Nuevo Análisis IA
+                                </button>
+                                {% if form.ai_analyses.exists %}
+                                    <a href="{% url 'form_ai_analysis_history' form.pk %}" class="btn btn-outline-success btn-sm">
+                                        <i class="bi bi-clock-history"></i> Historial
+                                    </a>
+                                {% endif %}
+                            {% else %}
+                                <button type="button" class="btn btn-outline-secondary btn-sm" disabled 
+                                        title="Necesitas al menos una respuesta para el análisis">
+                                    <i class="bi bi-robot"></i> Análisis con IA
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -163,6 +259,17 @@
                     {% endif %}
                 </div>
             </div>
+        </div>
+    </div>
+    
+    <!-- Sección de análisis de IA -->
+    <div id="aiAnalysisSection" class="alert alert-info mt-4" style="display: none;">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0"><i class="bi bi-robot text-success"></i> Análisis y Mejoras Sugeridas por IA</h5>
+            <button type="button" class="btn-close" onclick="closeAIAnalysis()"></button>
+        </div>
+        <div id="aiAnalysisContent">
+            <!-- El contenido del análisis se cargará aquí -->
         </div>
     </div>
 </div>
@@ -209,6 +316,8 @@
 </div>
 
 <script>
+let selectedQuestions = [];
+
 function addOption(questionId) {
     // Redirigir a la página de agregar opción
     window.location.href = `/formularios/{{ form.pk }}/preguntas/${questionId}/opciones/crear/`;
@@ -223,6 +332,391 @@ function deleteQuestion(questionId) {
     if (confirm('¿Está seguro de eliminar esta pregunta? Se perderán todas las respuestas asociadas.')) {
         window.location.href = `/formularios/{{ form.pk }}/preguntas/${questionId}/eliminar/`;
     }
+}
+
+function generateAIQuestions() {
+    const button = event.target;
+    const originalText = button.innerHTML;
+    
+    // Mostrar indicador de carga
+    button.innerHTML = '<i class="bi bi-hourglass-split"></i> Generando...';
+    button.disabled = true;
+    
+    // Hacer petición AJAX
+    fetch(`{% url 'form_generate_ai_questions' form.pk %}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Guardar la respuesta de IA globalmente
+            window.lastAIResponse = data;
+            displayAIQuestions(data.questions);
+            document.getElementById('aiGeneratedSection').style.display = 'block';
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al generar preguntas. Por favor intenta de nuevo.');
+    })
+    .finally(() => {
+        // Restaurar botón
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+function displayAIQuestions(questions) {
+    const container = document.getElementById('aiQuestionsContainer');
+    selectedQuestions = [];
+    
+    container.innerHTML = questions.map((question, index) => {
+        const questionId = `ai-question-${index}`;
+        const optionsHtml = question.options ? 
+            `<div class="mt-2">
+                <strong>Opciones sugeridas:</strong>
+                <ul class="list-unstyled ms-3">
+                    ${question.options.map(option => `<li><span class="badge bg-secondary">•</span> ${option}</li>`).join('')}
+                </ul>
+            </div>` : '';
+        
+        return `
+            <div class="border rounded p-3 mb-3 ai-question-item" data-question-index="${index}">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="${questionId}" onchange="toggleQuestionSelection(${index})">
+                    <label class="form-check-label" for="${questionId}">
+                        <strong>${question.text}</strong>
+                    </label>
+                </div>
+                <div class="ms-4 mt-2">
+                    <small class="text-muted">
+                        <span class="badge bg-info">${getTypeDisplayName(question.type)}</span>
+                        ${question.required ? '<span class="badge bg-warning">Obligatoria</span>' : '<span class="badge bg-secondary">Opcional</span>'}
+                    </small>
+                    ${optionsHtml}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function getTypeDisplayName(type) {
+    const typeMap = {
+        'text': 'Texto libre',
+        'textarea': 'Texto largo',
+        'select': 'Selección única',
+        'radio': 'Opción múltiple',
+        'checkbox': 'Casillas de verificación',
+        'number': 'Número',
+        'email': 'Email',
+        'date': 'Fecha',
+        'multiple_choice': 'Selección múltiple'
+    };
+    return typeMap[type] || type;
+}
+
+function toggleQuestionSelection(index) {
+    const checkbox = document.getElementById(`ai-question-${index}`);
+    if (checkbox.checked) {
+        selectedQuestions.push(index);
+    } else {
+        selectedQuestions = selectedQuestions.filter(i => i !== index);
+    }
+}
+
+function addSelectedQuestions() {
+    if (selectedQuestions.length === 0) {
+        alert('Por favor selecciona al menos una pregunta.');
+        return;
+    }
+    
+    // Obtener las preguntas seleccionadas de la respuesta de IA
+    const questionsToAdd = selectedQuestions.map(index => {
+        const aiQuestions = window.lastAIResponse.questions; // Guardamos la última respuesta de IA
+        return aiQuestions[index];
+    });
+    
+    const button = event.target;
+    const originalText = button.innerHTML;
+    
+    // Mostrar indicador de carga
+    button.innerHTML = '<i class="bi bi-hourglass-split"></i> Agregando...';
+    button.disabled = true;
+    
+    // Hacer petición AJAX para agregar las preguntas
+    fetch(`{% url 'form_add_ai_questions' form.pk %}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            questions: questionsToAdd
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            closeAISection();
+            // Recargar la página para mostrar las nuevas preguntas
+            window.location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al agregar preguntas. Por favor intenta de nuevo.');
+    })
+    .finally(() => {
+        // Restaurar botón
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+function closeAISection() {
+    document.getElementById('aiGeneratedSection').style.display = 'none';
+    selectedQuestions = [];
+}
+
+// Funcionalidad para actualizar puntuaciones
+document.addEventListener('DOMContentLoaded', function() {
+    // Manejar cambios en las puntuaciones
+    const scoreInputs = document.querySelectorAll('.score-input');
+    
+    scoreInputs.forEach(input => {
+        let originalValue = input.value;
+        
+        input.addEventListener('focus', function() {
+            originalValue = this.value;
+        });
+        
+        input.addEventListener('blur', function() {
+            const newValue = this.value;
+            
+            // Solo actualizar si el valor cambió
+            if (newValue !== originalValue && newValue !== '') {
+                updateScore(this);
+            }
+        });
+        
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                this.blur(); // Esto disparará el evento blur
+            }
+        });
+    });
+});
+
+function updateScore(input) {
+    const optionId = input.dataset.optionId;
+    const formId = input.dataset.formId;
+    const newScore = input.value;
+    const originalValue = input.defaultValue;
+    
+    // Mostrar indicador de carga
+    input.style.backgroundColor = '#fff3cd';
+    input.disabled = true;
+    
+    // Crear FormData
+    const formData = new FormData();
+    formData.append('score', newScore);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    
+    fetch(`/formularios/${formId}/opciones/${optionId}/actualizar-puntuacion/`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Mostrar éxito
+            input.style.backgroundColor = '#d1edff';
+            input.defaultValue = newScore; // Actualizar valor por defecto
+            
+            // Mostrar notificación temporal
+            showNotification(`Puntuación actualizada: ${data.old_score} → ${data.new_score} pts`, 'success');
+            
+            setTimeout(() => {
+                input.style.backgroundColor = '';
+            }, 2000);
+        } else {
+            // Mostrar error y revertir
+            input.style.backgroundColor = '#f8d7da';
+            input.value = originalValue;
+            showNotification('Error: ' + data.error, 'error');
+            
+            setTimeout(() => {
+                input.style.backgroundColor = '';
+            }, 3000);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        input.style.backgroundColor = '#f8d7da';
+        input.value = originalValue;
+        showNotification('Error de conexión. Intenta de nuevo.', 'error');
+        
+        setTimeout(() => {
+            input.style.backgroundColor = '';
+        }, 3000);
+    })
+    .finally(() => {
+        input.disabled = false;
+    });
+}
+
+function showNotification(message, type) {
+    // Crear elemento de notificación
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remover después de 4 segundos
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 4000);
+}
+
+// Funciones para análisis con IA
+function analyzeWithAI() {
+    const button = event.target;
+    const originalText = button.innerHTML;
+    
+    // Mostrar indicador de carga
+    button.innerHTML = '<i class="bi bi-hourglass-split"></i> Analizando...';
+    button.disabled = true;
+    
+    // Hacer petición AJAX
+    fetch(`{% url 'form_ai_analysis' form.pk %}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            displayAIAnalysis(data.analysis);
+            document.getElementById('aiAnalysisSection').style.display = 'block';
+            
+            // Mostrar notificación de que fue guardado
+            if (data.saved) {
+                showNotification('Análisis guardado exitosamente', 'success');
+            }
+            
+            // Scroll hacia el análisis
+            document.getElementById('aiAnalysisSection').scrollIntoView({ 
+                behavior: 'smooth' 
+            });
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al realizar el análisis. Por favor intenta de nuevo.');
+    })
+    .finally(() => {
+        // Restaurar botón
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+function displayAIAnalysis(analysis) {
+    const container = document.getElementById('aiAnalysisContent');
+    
+    container.innerHTML = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6><i class="bi bi-exclamation-triangle text-warning"></i> Problemas Identificados:</h6>
+                <div class="mb-3">
+                    ${analysis.problems.map(problem => `
+                        <div class="alert alert-warning alert-sm py-2">
+                            <strong>${problem.type}:</strong> ${problem.description}
+                            ${problem.severity ? `<span class="badge bg-warning ms-2">${problem.severity}</span>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h6><i class="bi bi-lightbulb text-success"></i> Mejoras Sugeridas:</h6>
+                <div class="mb-3">
+                    ${analysis.improvements.map((improvement, index) => `
+                        <div class="alert alert-success alert-sm py-2">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <strong>${improvement.title}:</strong> ${improvement.description}
+                                    ${improvement.priority ? `<span class="badge bg-success ms-2">${improvement.priority}</span>` : ''}
+                                </div>
+                                <button class="btn btn-outline-success btn-sm ms-2" onclick="applyImprovement(${index})" 
+                                        title="Aplicar esta mejora">
+                                    <i class="bi bi-check-circle"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+        
+        <div class="border-top pt-3">
+            <h6><i class="bi bi-graph-up text-info"></i> Resumen del Análisis:</h6>
+            <div class="bg-light p-3 rounded">
+                <p class="mb-2"><strong>Puntuación General:</strong> <span class="badge bg-info">${analysis.overall_score}/10</span></p>
+                <p class="mb-2"><strong>Principales Fortalezas:</strong> ${analysis.strengths.join(', ')}</p>
+                <p class="mb-0"><strong>Recomendación Principal:</strong> ${analysis.main_recommendation}</p>
+            </div>
+        </div>
+        
+        <div class="mt-3 text-center">
+            <a href="{% url 'form_edit' form.pk %}" class="btn btn-primary me-2">
+                <i class="bi bi-pencil"></i> Editar Formulario
+            </a>
+            <a href="{% url 'form_responses' form.pk %}" class="btn btn-info me-2">
+                <i class="bi bi-list-ul"></i> Ver Respuestas Detalladas
+            </a>
+            <a href="{% url 'form_ai_analysis_history' form.pk %}" class="btn btn-outline-success">
+                <i class="bi bi-clock-history"></i> Ver Historial de Análisis
+            </a>
+        </div>
+    `;
+    
+    // Guardar el análisis globalmente para uso posterior
+    window.currentAnalysis = analysis;
+}
+
+function applyImprovement(improvementIndex) {
+    const improvement = window.currentAnalysis.improvements[improvementIndex];
+    
+    if (confirm(`¿Aplicar la mejora: "${improvement.title}"?\n\n${improvement.description}`)) {
+        // Redirigir directamente al editor del formulario con una notificación
+        sessionStorage.setItem('pendingImprovement', JSON.stringify(improvement));
+        window.location.href = "{% url 'form_edit' form.pk %}";
+    }
+}
+
+function closeAIAnalysis() {
+    document.getElementById('aiAnalysisSection').style.display = 'none';
 }
 </script>
 {% endblock %}

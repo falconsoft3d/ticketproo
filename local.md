@@ -3,7 +3,7 @@
 # Activar entorno virtual y correr servidor
 ```
 source .venv/bin/activate
-python manage.py runserver 8000
+http://localhost:8000/public-time/8qgAxa2JQGID0EQgcjDuwnC-0-WEOaag8Ln7N5-_qJk/
 ```
 
 # Comandos para manejar el servidor en el puerto 8000

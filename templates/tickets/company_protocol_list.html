@@ -29,7 +29,7 @@
 
 <!-- Estadísticas rápidas -->
 <div class="row mb-4">
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card bg-primary text-white">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
@@ -42,28 +42,41 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card bg-success text-white">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h4 class="mb-0">{{ protocols|length|add:0 }}</h4>
-                        <small>Protocolos activos</small>
+                        <h4 class="mb-0" id="public-protocols-count">-</h4>
+                        <small>Protocolos públicos</small>
                     </div>
-                    <i class="bi bi-check-circle" style="font-size: 2rem; opacity: 0.7;"></i>
+                    <i class="bi bi-globe" style="font-size: 2rem; opacity: 0.7;"></i>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card bg-info text-white">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h4 class="mb-0">{{ protocols|length|default:0 }}</h4>
-                        <small>Documentos disponibles</small>
+                        <h4 class="mb-0" id="total-public-views">-</h4>
+                        <small>Vistas públicas totales</small>
                     </div>
-                    <i class="bi bi-download" style="font-size: 2rem; opacity: 0.7;"></i>
+                    <i class="bi bi-eye" style="font-size: 2rem; opacity: 0.7;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="mb-0" id="avg-views-per-protocol">-</h4>
+                        <small>Promedio vistas/protocolo</small>
+                    </div>
+                    <i class="bi bi-bar-chart" style="font-size: 2rem; opacity: 0.7;"></i>
                 </div>
             </div>
         </div>
@@ -131,6 +144,21 @@
                     <div><i class="bi bi-person"></i> {{ protocol.created_by.get_full_name|default:protocol.created_by.username }}</div>
                     <div><i class="bi bi-calendar"></i> {{ protocol.created_at|date:"d/m/Y" }}</div>
                     <div><i class="bi bi-file-word"></i> {{ protocol.get_word_count }} palabras</div>
+                    {% if protocol.is_public %}
+                        <div class="text-success">
+                            <i class="bi bi-globe"></i> Público 
+                            <span class="badge bg-success ms-1">
+                                <i class="bi bi-eye"></i> {{ protocol.public_views_count }}
+                            </span>
+                        </div>
+                    {% elif protocol.public_views_count > 0 %}
+                        <div class="text-muted">
+                            <i class="bi bi-lock"></i> Privado 
+                            <span class="badge bg-secondary ms-1">
+                                <i class="bi bi-eye"></i> {{ protocol.public_views_count }} (histórico)
+                            </span>
+                        </div>
+                    {% endif %}
                 </div>
                 
                 {% if not protocol.is_active %}
@@ -210,6 +238,29 @@ function confirmDelete(protocolId, protocolTitle) {
     const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
     modal.show();
 }
+
+// Cargar estadísticas de protocolos públicos
+async function loadProtocolStats() {
+    try {
+        const response = await fetch('/api/company-protocols/stats/');
+        const stats = await response.json();
+        
+        // Actualizar los KPIs
+        document.getElementById('public-protocols-count').textContent = stats.public_protocols;
+        document.getElementById('total-public-views').textContent = stats.total_public_views.toLocaleString();
+        document.getElementById('avg-views-per-protocol').textContent = stats.average_views_per_protocol;
+        
+    } catch (error) {
+        console.error('Error cargando estadísticas:', error);
+        // Valores por defecto en caso de error
+        document.getElementById('public-protocols-count').textContent = '0';
+        document.getElementById('total-public-views').textContent = '0';
+        document.getElementById('avg-views-per-protocol').textContent = '0';
+    }
+}
+
+// Cargar estadísticas al cargar la página
+document.addEventListener('DOMContentLoaded', loadProtocolStats);
 </script>
 
 <style>

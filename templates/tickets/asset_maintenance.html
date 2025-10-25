@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .maintenance-container {
+        background: white;
+        border-radius: 10px;
+        padding: 2rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    .asset-info {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        border-left: 4px solid #fd7e14;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="text-center mb-4">
+        <h2><i class="bi bi-tools text-warning"></i> {{ title }}</h2>
+        <p class="text-muted">Enviar activo a mantenimiento</p>
+    </div>
+
+    <div class="maintenance-container">
+        <!-- Información del Activo -->
+        <div class="asset-info">
+            <h5 class="mb-3">
+                <i class="bi bi-box"></i> Información del Activo
+            </h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <strong>Nombre:</strong><br>
+                    <span class="text-primary">{{ asset.name }}</span>
+                </div>
+                <div class="col-md-6">
+                    <strong>Fabricante:</strong><br>
+                    {{ asset.manufacturer }}
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-md-6">
+                    <strong>Número de Serie:</strong><br>
+                    <code>{{ asset.serial_number }}</code>
+                </div>
+                <div class="col-md-6">
+                    <strong>Estado Actual:</strong><br>
+                    <span class="badge bg-{{ asset.get_status_display_color }}">
+                        {{ asset.get_status_display }}
+                    </span>
+                </div>
+            </div>
+            
+            {% if asset.assigned_to %}
+                <div class="mt-3 p-2 bg-warning bg-opacity-10 rounded">
+                    <strong>⚠️ Actualmente asignado a:</strong>
+                    <i class="bi bi-person-circle"></i> {{ asset.assigned_to.name }}
+                    <small class="text-muted d-block">{{ asset.assigned_to.position }}</small>
+                    <small class="text-warning">
+                        <i class="bi bi-info-circle"></i> El activo será desasignado automáticamente
+                    </small>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Información de la Acción -->
+        <div class="alert alert-warning">
+            <h6><i class="bi bi-tools"></i> ¿Qué ocurrirá?</h6>
+            <ul class="mb-0">
+                <li>El estado del activo cambiará a <strong>"En Mantenimiento"</strong></li>
+                {% if asset.assigned_to %}
+                    <li>Se desasignará automáticamente de <strong>{{ asset.assigned_to.name }}</strong></li>
+                {% endif %}
+                <li>Se registrará la acción en el historial del activo</li>
+                <li>El activo no estará disponible para nuevas asignaciones</li>
+            </ul>
+        </div>
+
+        <!-- Formulario -->
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="mb-4">
+                <label for="reason" class="form-label">
+                    <i class="bi bi-chat-text"></i> Motivo del Mantenimiento
+                </label>
+                <textarea 
+                    name="reason" 
+                    id="reason" 
+                    class="form-control" 
+                    rows="4" 
+                    placeholder="Describa el motivo por el cual se envía a mantenimiento (problema detectado, mantenimiento preventivo, etc.)"
+                    required
+                ></textarea>
+                <div class="form-text">
+                    Explique brevemente por qué se envía el activo a mantenimiento
+                </div>
+            </div>
+
+            <!-- Información de Garantía -->
+            {% if asset.warranty_expiry %}
+                <div class="alert alert-info">
+                    <i class="bi bi-shield-check"></i> 
+                    <strong>Garantía:</strong> 
+                    {% if asset.warranty_expiry >= "now"|date:"Y-m-d" %}
+                        Válida hasta {{ asset.warranty_expiry|date:"d F Y" }}
+                        <span class="badge bg-success">VIGENTE</span>
+                    {% else %}
+                        Expiró el {{ asset.warranty_expiry|date:"d F Y" }}
+                        <span class="badge bg-danger">VENCIDA</span>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            <!-- Botones -->
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'asset_detail' asset.pk %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Cancelar
+                </a>
+                <button type="submit" class="btn btn-warning">
+                    <i class="bi bi-tools"></i> Enviar a Mantenimiento
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-focus en el textarea
+    document.getElementById('reason').focus();
+    
+    // Validación del formulario
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const reason = document.getElementById('reason').value.trim();
+        if (reason.length < 10) {
+            e.preventDefault();
+            alert('Por favor, proporcione una descripción más detallada del motivo (mínimo 10 caracteres).');
+            return false;
+        }
+        
+        {% if asset.assigned_to %}
+            if (!confirm('¿Confirma que desea enviar este activo a mantenimiento? Se desasignará automáticamente de {{ asset.assigned_to.name }}.')) {
+                e.preventDefault();
+                return false;
+            }
+        {% else %}
+            if (!confirm('¿Confirma que desea enviar este activo a mantenimiento?')) {
+                e.preventDefault();
+                return false;
+            }
+        {% endif %}
+    });
+});
+</script>
+{% endblock %}
