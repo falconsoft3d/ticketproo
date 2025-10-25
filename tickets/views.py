@@ -19109,6 +19109,139 @@ def company_documentation_public(request, token):
 
 
 # ==========================================
+# VISTAS PARA GESTIÓN INDIVIDUAL DE URLs DE DOCUMENTACIÓN
+# ==========================================
+
+@login_required
+def company_documentation_url_create(request, doc_pk):
+    """Crear nueva URL para documentación"""
+    documentation = get_object_or_404(CompanyDocumentation, pk=doc_pk)
+    
+    # Verificar permisos
+    if not (request.user.is_superuser or 
+            request.user.groups.filter(name='Administradores').exists() or
+            (hasattr(request.user, 'profile') and 
+             request.user.profile.company == documentation.company)):
+        messages.error(request, 'No tienes permisos para agregar enlaces a esta documentación.')
+        return redirect('company_documentation_detail', pk=doc_pk)
+    
+    if request.method == 'POST':
+        form = CompanyDocumentationURLForm(request.POST)
+        if form.is_valid():
+            url_obj = form.save(commit=False)
+            url_obj.documentation = documentation
+            
+            # Asignar el siguiente orden disponible
+            max_order = documentation.urls.aggregate(models.Max('order'))['order__max'] or 0
+            url_obj.order = max_order + 1
+            
+            url_obj.save()
+            messages.success(request, f'Enlace "{url_obj.title}" agregado exitosamente.')
+            return redirect('company_documentation_detail', pk=doc_pk)
+    else:
+        form = CompanyDocumentationURLForm()
+    
+    context = {
+        'form': form,
+        'documentation': documentation,
+        'page_title': f'Agregar Enlace - {documentation.title}',
+        'section': 'documentation',
+        'action': 'create'
+    }
+    
+    return render(request, 'tickets/company_documentation_url_form.html', context)
+
+
+@login_required
+def company_documentation_url_edit(request, doc_pk, url_pk):
+    """Editar URL específica de documentación"""
+    documentation = get_object_or_404(CompanyDocumentation, pk=doc_pk)
+    url_obj = get_object_or_404(CompanyDocumentationURL, pk=url_pk, documentation=documentation)
+    
+    # Verificar permisos
+    if not (request.user.is_superuser or 
+            request.user.groups.filter(name='Administradores').exists() or
+            (hasattr(request.user, 'profile') and 
+             request.user.profile.company == documentation.company)):
+        messages.error(request, 'No tienes permisos para editar este enlace.')
+        return redirect('company_documentation_detail', pk=doc_pk)
+    
+    if request.method == 'POST':
+        form = CompanyDocumentationURLForm(request.POST, instance=url_obj)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Enlace "{url_obj.title}" actualizado exitosamente.')
+            return redirect('company_documentation_detail', pk=doc_pk)
+    else:
+        form = CompanyDocumentationURLForm(instance=url_obj)
+    
+    context = {
+        'form': form,
+        'documentation': documentation,
+        'url_obj': url_obj,
+        'page_title': f'Editar Enlace - {url_obj.title}',
+        'section': 'documentation',
+        'action': 'edit'
+    }
+    
+    return render(request, 'tickets/company_documentation_url_form.html', context)
+
+
+@login_required
+def company_documentation_url_delete(request, doc_pk, url_pk):
+    """Eliminar URL específica de documentación"""
+    documentation = get_object_or_404(CompanyDocumentation, pk=doc_pk)
+    url_obj = get_object_or_404(CompanyDocumentationURL, pk=url_pk, documentation=documentation)
+    
+    # Verificar permisos
+    if not (request.user.is_superuser or 
+            request.user.groups.filter(name='Administradores').exists() or
+            (hasattr(request.user, 'profile') and 
+             request.user.profile.company == documentation.company)):
+        messages.error(request, 'No tienes permisos para eliminar este enlace.')
+        return redirect('company_documentation_detail', pk=doc_pk)
+    
+    if request.method == 'POST':
+        title = url_obj.title
+        url_obj.delete()
+        messages.success(request, f'Enlace "{title}" eliminado exitosamente.')
+        return redirect('company_documentation_detail', pk=doc_pk)
+    
+    context = {
+        'documentation': documentation,
+        'url_obj': url_obj,
+        'page_title': f'Eliminar Enlace - {url_obj.title}',
+        'section': 'documentation'
+    }
+    
+    return render(request, 'tickets/company_documentation_url_delete.html', context)
+
+
+@login_required
+def company_documentation_url_toggle(request, doc_pk, url_pk):
+    """Activar/desactivar URL específica de documentación"""
+    documentation = get_object_or_404(CompanyDocumentation, pk=doc_pk)
+    url_obj = get_object_or_404(CompanyDocumentationURL, pk=url_pk, documentation=documentation)
+    
+    # Verificar permisos
+    if not (request.user.is_superuser or 
+            request.user.groups.filter(name='Administradores').exists() or
+            (hasattr(request.user, 'profile') and 
+             request.user.profile.company == documentation.company)):
+        messages.error(request, 'No tienes permisos para modificar este enlace.')
+        return redirect('company_documentation_detail', pk=doc_pk)
+    
+    if request.method == 'POST':
+        url_obj.is_active = not url_obj.is_active
+        url_obj.save()
+        
+        status = 'activado' if url_obj.is_active else 'desactivado'
+        messages.success(request, f'Enlace "{url_obj.title}" {status} exitosamente.')
+    
+    return redirect('company_documentation_detail', pk=doc_pk)
+
+
+# ==========================================
 # VISTAS PARA GENERADORES DE CONTACTOS
 # ==========================================
 

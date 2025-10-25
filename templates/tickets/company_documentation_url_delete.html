@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .delete-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: none;
+    }
+    
+    .delete-header {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        border-radius: 15px 15px 0 0 !important;
+        padding: 1.5rem;
+    }
+    
+    .delete-body {
+        padding: 2rem;
+    }
+    
+    .warning-box {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+    }
+    
+    .url-info {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        border-left: 4px solid #6c757d;
+    }
+    
+    .info-item {
+        display: flex;
+        margin-bottom: 0.5rem;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        min-width: 100px;
+        color: #495057;
+    }
+    
+    .info-value {
+        color: #6c757d;
+        word-break: break-all;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'company_documentation_list' %}">Documentaciones</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'company_documentation_detail' documentation.pk %}">{{ documentation.title }}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Eliminar Enlace</li>
+                </ol>
+            </nav>
+            
+            <!-- Confirmación de Eliminación -->
+            <div class="row justify-content-center">
+                <div class="col-lg-6">
+                    <div class="card delete-card">
+                        <div class="card-header delete-header">
+                            <h4 class="mb-0">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                Confirmar Eliminación
+                            </h4>
+                            <small class="opacity-75">Esta acción no se puede deshacer</small>
+                        </div>
+                        
+                        <div class="card-body delete-body">
+                            <!-- Advertencia -->
+                            <div class="warning-box">
+                                <div class="d-flex">
+                                    <i class="fas fa-exclamation-circle text-warning me-3 mt-1"></i>
+                                    <div>
+                                        <h6 class="text-warning mb-2">¡Atención!</h6>
+                                        <p class="mb-0">
+                                            Estás a punto de eliminar permanentemente este enlace. 
+                                            Esta acción no se puede deshacer y el enlace será removido 
+                                            de la documentación.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Información del Enlace -->
+                            <div class="url-info">
+                                <h6 class="mb-3">
+                                    <i class="fas fa-link me-2"></i>
+                                    Información del Enlace
+                                </h6>
+                                
+                                <div class="info-item">
+                                    <span class="info-label">Título:</span>
+                                    <span class="info-value">{{ url_obj.title }}</span>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <span class="info-label">URL:</span>
+                                    <span class="info-value">{{ url_obj.url }}</span>
+                                </div>
+                                
+                                {% if url_obj.description %}
+                                <div class="info-item">
+                                    <span class="info-label">Descripción:</span>
+                                    <span class="info-value">{{ url_obj.description }}</span>
+                                </div>
+                                {% endif %}
+                                
+                                {% if url_obj.has_credentials %}
+                                <div class="info-item">
+                                    <span class="info-label">Credenciales:</span>
+                                    <span class="info-value">
+                                        <i class="fas fa-key me-1"></i>
+                                        Tiene credenciales guardadas
+                                    </span>
+                                </div>
+                                {% endif %}
+                                
+                                <div class="info-item">
+                                    <span class="info-label">Estado:</span>
+                                    <span class="info-value">
+                                        {% if url_obj.is_active %}
+                                            <span class="badge bg-success">Activo</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactivo</span>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <span class="info-label">Creado:</span>
+                                    <span class="info-value">{{ url_obj.created_at|date:"d/m/Y H:i" }}</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Formulario de Confirmación -->
+                            <form method="post" class="mt-4">
+                                {% csrf_token %}
+                                
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <a href="{% url 'company_documentation_detail' documentation.pk %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-arrow-left me-2"></i>Cancelar
+                                    </a>
+                                    
+                                    <button type="submit" class="btn btn-danger" id="delete-btn">
+                                        <i class="fas fa-trash me-2"></i>Sí, Eliminar Enlace
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Confirmar eliminación con doble clic
+let clickCount = 0;
+const deleteBtn = document.getElementById('delete-btn');
+
+deleteBtn.addEventListener('click', function(e) {
+    clickCount++;
+    
+    if (clickCount === 1) {
+        e.preventDefault();
+        this.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>¿Estás seguro? Haz clic de nuevo';
+        this.classList.remove('btn-danger');
+        this.classList.add('btn-warning');
+        
+        // Reset after 3 seconds
+        setTimeout(() => {
+            clickCount = 0;
+            this.innerHTML = '<i class="fas fa-trash me-2"></i>Sí, Eliminar Enlace';
+            this.classList.remove('btn-warning');
+            this.classList.add('btn-danger');
+        }, 3000);
+    }
+    // El segundo clic permitirá que el formulario se envíe normalmente
+});
+</script>
+{% endblock %}

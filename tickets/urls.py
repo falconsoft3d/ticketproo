@@ -727,6 +727,12 @@ urlpatterns += [
     path('documentaciones/<int:pk>/eliminar/', views.company_documentation_delete, name='company_documentation_delete'),
     path('documentaciones/<int:pk>/toggle-public/', views.company_documentation_toggle_public, name='company_documentation_toggle_public'),
     
+    # URLs para edición individual de enlaces
+    path('documentaciones/<int:doc_pk>/urls/crear/', views.company_documentation_url_create, name='company_documentation_url_create'),
+    path('documentaciones/<int:doc_pk>/urls/<int:url_pk>/editar/', views.company_documentation_url_edit, name='company_documentation_url_edit'),
+    path('documentaciones/<int:doc_pk>/urls/<int:url_pk>/eliminar/', views.company_documentation_url_delete, name='company_documentation_url_delete'),
+    path('documentaciones/<int:doc_pk>/urls/<int:url_pk>/toggle/', views.company_documentation_url_toggle, name='company_documentation_url_toggle'),
+    
     # URL pública para documentaciones (sin autenticación)
     path('documentacion/<str:token>/', views.company_documentation_public, name='company_documentation_public'),
     

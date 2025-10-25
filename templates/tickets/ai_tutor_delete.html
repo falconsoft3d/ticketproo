@@ -126,21 +126,9 @@
                     <div class="col-md-4 mb-3">
                         <div class="stats-item">
                             <div class="h4 text-danger mb-1">
-                                {% with total_attachments=tutor.progress_reports.all|length %}
-                                    {% for report in tutor.progress_reports.all %}
-                                        {{ report.attachments.count|add:0 }}
-                                    {% endfor %}
-                                {% endwith %}
-                                {% if tutor.progress_reports.exists %}
-                                    {% for report in tutor.progress_reports.all %}
-                                        {% if forloop.first %}{{ report.attachments.count }}{% endif %}
-                                        {% if not forloop.first %}{% add report.attachments.count %}{% endif %}
-                                    {% endfor %}
-                                {% else %}
-                                    0
-                                {% endif %}
+                                {{ tutor.progress_reports.count }}
                             </div>
-                            <small class="text-muted">Archivos de reportes</small>
+                            <small class="text-muted">Total de reportes</small>
                         </div>
                     </div>
                 </div>

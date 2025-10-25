@@ -94,16 +94,49 @@
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between align-items-start mb-2">
                                         <h6 class="card-title mb-0">{{ url.title }}</h6>
-                                        {% if url.has_credentials %}
-                                            <span class="badge bg-warning">Con credenciales</span>
-                                        {% endif %}
+                                        <div class="d-flex align-items-center gap-2">
+                                            {% if url.has_credentials %}
+                                                <span class="badge bg-warning">Con credenciales</span>
+                                            {% endif %}
+                                            <!-- Botones de acción individual -->
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a href="{% url 'company_documentation_url_edit' documentation.pk url.pk %}" 
+                                                   class="btn btn-outline-warning btn-sm"
+                                                   title="Editar enlace">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <a href="{% url 'company_documentation_url_delete' documentation.pk url.pk %}" 
+                                                   class="btn btn-outline-danger btn-sm"
+                                                   title="Eliminar enlace">
+                                                    <i class="bi bi-trash"></i>
+                                                </a>
+                                                <!-- Toggle activo/inactivo -->
+                                                <form method="post" 
+                                                      action="{% url 'company_documentation_url_toggle' documentation.pk url.pk %}" 
+                                                      style="display: inline;">
+                                                    {% csrf_token %}
+                                                    <button type="submit" 
+                                                            class="btn btn-outline-{% if url.is_active %}secondary{% else %}success{% endif %} btn-sm"
+                                                            title="{% if url.is_active %}Desactivar{% else %}Activar{% endif %} enlace">
+                                                        <i class="bi bi-{% if url.is_active %}pause{% else %}play{% endif %}"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
                                     </div>
                                     
                                     <p class="card-text">
-                                        <a href="{{ url.url }}" target="_blank" class="text-decoration-none">
-                                            {{ url.url|truncatechars:50 }}
-                                            <i class="bi bi-box-arrow-up-right ms-1"></i>
-                                        </a>
+                                        {% if url.is_active %}
+                                            <a href="{{ url.url }}" target="_blank" class="text-decoration-none">
+                                                {{ url.url|truncatechars:50 }}
+                                                <i class="bi bi-box-arrow-up-right ms-1"></i>
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted text-decoration-line-through">
+                                                {{ url.url|truncatechars:50 }}
+                                                <small class="badge bg-secondary ms-1">Inactivo</small>
+                                            </span>
+                                        {% endif %}
                                     </p>
                                     
                                     {% if url.description %}
@@ -155,8 +188,8 @@
                         <i class="bi bi-link-45deg display-4 text-muted"></i>
                         <h5 class="mt-3">No hay enlaces</h5>
                         <p class="text-muted">Esta documentación aún no tiene enlaces configurados.</p>
-                        <a href="{% url 'company_documentation_edit' documentation.pk %}" class="btn btn-primary">
-                            <i class="bi bi-plus"></i> Agregar enlaces
+                        <a href="{% url 'company_documentation_url_create' documentation.pk %}" class="btn btn-primary">
+                            <i class="bi bi-plus"></i> Agregar primer enlace
                         </a>
                     </div>
                     {% endif %}
@@ -176,6 +209,10 @@
                     <div class="d-grid gap-2 mb-3">
                         <a href="{% url 'company_documentation_edit' documentation.pk %}" class="btn btn-warning">
                             <i class="bi bi-pencil"></i> Editar Documentación
+                        </a>
+                        
+                        <a href="{% url 'company_documentation_url_create' documentation.pk %}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Agregar Nuevo Enlace
                         </a>
                         
                         <!-- Toggle público/privado -->
