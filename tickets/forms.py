@@ -16,6 +16,8 @@ class DateInput(forms.DateInput):
                 return value.strftime('%Y-%m-%d')
             return value
         return ''
+
+
 from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
     UserNote, TimeEntry, PublicTimeAccess, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
@@ -28,7 +30,8 @@ from .models import (
     CompanyRequestGenerator, CompanyRequest, CompanyRequestComment,
     Form, FormQuestion, FormQuestionOption, FormResponse, FormAnswer,
     EmployeeRequest, InternalAgreement, Asset, AssetHistory, 
-    AITutor, AITutorProgressReport, AITutorAttachment
+    AITutor, AITutorProgressReport, AITutorAttachment, ExpenseReport, ExpenseItem, ExpenseComment,
+    VideoMeeting, MeetingNote
 )
 
 class CategoryForm(forms.ModelForm):
@@ -6456,3 +6459,486 @@ class AITutorFilterForm(forms.Form):
         }),
         label='Buscar'
     )
+
+
+class ExpenseReportForm(forms.ModelForm):
+    """Formulario para crear y editar rendiciones de gastos"""
+    
+    class Meta:
+        model = ExpenseReport
+        fields = ['title', 'description', 'start_date', 'end_date']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Gastos viaje de trabajo - Enero 2025'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción general de los gastos...'
+            }),
+            'start_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'end_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+        }
+        labels = {
+            'title': 'Título de la rendición',
+            'description': 'Descripción',
+            'start_date': 'Fecha de inicio',
+            'end_date': 'Fecha de fin',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Si es un nuevo formulario, establecer fechas por defecto
+        if not self.instance.pk:
+            from datetime import date
+            today = date.today()
+            self.fields['start_date'].initial = today
+            self.fields['end_date'].initial = today
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+        
+        if start_date and end_date and start_date > end_date:
+            raise forms.ValidationError('La fecha de inicio no puede ser posterior a la fecha de fin.')
+        
+        return cleaned_data
+
+
+class ExpenseItemForm(forms.ModelForm):
+    """Formulario para crear y editar items de gastos"""
+    
+    currency = forms.ChoiceField(
+        choices=[
+            ('USD', 'USD - Dólar estadounidense'),
+            ('EUR', 'EUR - Euro'),
+            ('CLP', 'CLP - Peso chileno'),
+            ('ARS', 'ARS - Peso argentino'),
+            ('COP', 'COP - Peso colombiano'),
+            ('PEN', 'PEN - Sol peruano'),
+            ('MXN', 'MXN - Peso mexicano'),
+            ('BRL', 'BRL - Real brasileño'),
+        ],
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Moneda',
+        required=True
+    )
+    
+    class Meta:
+        model = ExpenseItem
+        fields = ['date', 'category', 'description', 'amount', 'currency', 'vendor', 'location', 'notes', 'receipt_file', 'is_reimbursable']
+        widgets = {
+            'date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'category': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'description': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Almuerzo con cliente'
+            }),
+            'amount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0'
+            }),
+            'vendor': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Restaurante El Buen Sabor'
+            }),
+            'location': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Santiago, Chile'
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'Notas adicionales...'
+            }),
+            'receipt_file': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*,.pdf'
+            }),
+            'is_reimbursable': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'date': 'Fecha del gasto',
+            'category': 'Categoría',
+            'description': 'Descripción',
+            'amount': 'Monto',
+            'vendor': 'Proveedor/Comercio',
+            'location': 'Ubicación',
+            'notes': 'Notas adicionales',
+            'receipt_file': 'Comprobante/Recibo',
+            'is_reimbursable': 'Reembolsable',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        expense_report = kwargs.pop('expense_report', None)
+        super().__init__(*args, **kwargs)
+        
+        # Obtener la moneda por defecto del sistema
+        from .models import SystemConfiguration
+        try:
+            config = SystemConfiguration.objects.first()
+            default_currency = config.default_currency if config else 'USD'
+        except:
+            default_currency = 'USD'
+        
+        # Establecer la moneda por defecto del sistema para nuevos items
+        if not self.instance.pk:
+            self.fields['currency'].initial = default_currency
+    
+    def clean_amount(self):
+        amount = self.cleaned_data.get('amount')
+        if amount and amount <= 0:
+            raise forms.ValidationError('El monto debe ser mayor a cero.')
+        return amount
+
+
+class ExpenseCommentForm(forms.ModelForm):
+    """Formulario para comentarios en rendiciones"""
+    
+    class Meta:
+        model = ExpenseComment
+        fields = ['comment', 'is_internal']
+        widgets = {
+            'comment': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Escribe tu comentario...'
+            }),
+            'is_internal': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'comment': 'Comentario',
+            'is_internal': 'Comentario interno (solo administradores)',
+        }
+
+
+class ExpenseReportFilterForm(forms.Form):
+    """Formulario para filtrar rendiciones de gastos"""
+    
+    STATUS_CHOICES = [('', 'Todos los estados')] + ExpenseReport.STATUS_CHOICES
+    
+    status = forms.ChoiceField(
+        choices=STATUS_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        }),
+        label='Estado'
+    )
+    
+    employee = forms.ModelChoiceField(
+        queryset=User.objects.filter(is_active=True),
+        required=False,
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        }),
+        label='Empleado',
+        empty_label='Todos los empleados'
+    )
+    
+    start_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={
+            'class': 'form-control',
+            'type': 'date'
+        }),
+        label='Desde'
+    )
+    
+    end_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={
+            'class': 'form-control',
+            'type': 'date'
+        }),
+        label='Hasta'
+    )
+    
+    search = forms.CharField(
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Buscar por título o descripción...'
+        }),
+        label='Buscar'
+    )
+
+
+class VideoMeetingForm(forms.ModelForm):
+    """Formulario para crear y editar reuniones de video"""
+    
+    class Meta:
+        model = VideoMeeting
+        fields = [
+            'title', 'description', 'participants', 'company', 
+            'scheduled_date', 'duration_minutes', 'meeting_url',
+            'recording_file'
+        ]
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Reunión de planificación semanal'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Descripción de la reunión, agenda, objetivos...'
+            }),
+            'participants': forms.SelectMultiple(attrs={
+                'class': 'form-select',
+                'multiple': True
+            }),
+            'company': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'scheduled_date': forms.DateTimeInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local'
+            }),
+            'duration_minutes': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '1',
+                'placeholder': '60'
+            }),
+            'meeting_url': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://zoom.us/j/... o https://meet.google.com/...'
+            }),
+            'recording_file': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': '.mp4,.avi,.mov,.mp3,.wav,.m4a,.webm'
+            }),
+        }
+        labels = {
+            'title': 'Título de la reunión',
+            'description': 'Descripción',
+            'participants': 'Participantes',
+            'company': 'Empresa',
+            'scheduled_date': 'Fecha y hora programada',
+            'duration_minutes': 'Duración (minutos)',
+            'meeting_url': 'URL de la reunión',
+            'recording_file': 'Archivo de grabación',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        # Filtrar participantes por empresa del usuario si no es administrador
+        if user and not user.is_superuser:
+            from .models import User
+            if hasattr(user, 'employee') and user.employee and user.employee.company:
+                company_users = User.objects.filter(
+                    employee__company=user.employee.company
+                ).order_by('first_name', 'last_name', 'username')
+                self.fields['participants'].queryset = company_users
+            else:
+                self.fields['participants'].queryset = User.objects.filter(
+                    id=user.id
+                )
+        
+        # Si es un nuevo formulario, establecer algunos valores por defecto
+        if not self.instance.pk:
+            from datetime import datetime, timedelta
+            from .models import Company
+            
+            # Establecer fecha por defecto (próxima hora)
+            next_hour = datetime.now().replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+            self.fields['scheduled_date'].initial = next_hour.strftime('%Y-%m-%dT%H:%M')
+            
+            # Duración por defecto
+            self.fields['duration_minutes'].initial = 60
+            
+            # Si el usuario tiene empresa, preseleccionarla
+            if user and hasattr(user, 'employee') and user.employee and user.employee.company:
+                self.fields['company'].initial = user.employee.company
+    
+    def clean_recording_file(self):
+        recording_file = self.cleaned_data.get('recording_file')
+        if recording_file:
+            # Verificar tamaño del archivo (máximo 500MB)
+            max_size = 500 * 1024 * 1024  # 500MB
+            if recording_file.size > max_size:
+                raise forms.ValidationError(
+                    f'El archivo es muy grande ({recording_file.size / (1024*1024):.1f}MB). '
+                    f'El tamaño máximo permitido es 500MB.'
+                )
+            
+            # Verificar formato del archivo
+            allowed_extensions = ['.mp4', '.avi', '.mov', '.mp3', '.wav', '.m4a', '.webm']
+            file_extension = recording_file.name.lower()
+            if not any(file_extension.endswith(ext) for ext in allowed_extensions):
+                raise forms.ValidationError(
+                    f'Formato de archivo no soportado. '
+                    f'Formatos permitidos: {", ".join(allowed_extensions)}'
+                )
+        
+        return recording_file
+
+
+class MeetingTranscriptionForm(forms.ModelForm):
+    """Formulario para editar manualmente la transcripción"""
+    
+    class Meta:
+        model = VideoMeeting
+        fields = ['transcription_text', 'ai_summary', 'key_points', 'action_items']
+        widgets = {
+            'transcription_text': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 10,
+                'placeholder': 'Transcripción completa de la reunión...'
+            }),
+            'ai_summary': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Resumen ejecutivo de la reunión...'
+            }),
+            'key_points': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 6,
+                'placeholder': 'Puntos clave discutidos:\n- Punto 1\n- Punto 2\n- Punto 3'
+            }),
+            'action_items': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 6,
+                'placeholder': 'Elementos de acción:\n- [ ] Acción 1 - Responsable: Nombre\n- [ ] Acción 2 - Responsable: Nombre'
+            }),
+        }
+        labels = {
+            'transcription_text': 'Transcripción',
+            'ai_summary': 'Resumen',
+            'key_points': 'Puntos clave',
+            'action_items': 'Elementos de acción',
+        }
+
+
+class MeetingNoteForm(forms.ModelForm):
+    """Formulario para agregar notas a reuniones"""
+    
+    class Meta:
+        model = MeetingNote
+        fields = ['content', 'is_private']
+        widgets = {
+            'content': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Escribe tu nota sobre la reunión...'
+            }),
+            'is_private': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'content': 'Contenido de la nota',
+            'is_private': 'Nota privada (solo yo puedo verla)',
+        }
+
+
+class MeetingFilterForm(forms.Form):
+    """Formulario para filtrar reuniones"""
+    
+    STATUS_CHOICES = [('', 'Todos los estados')] + VideoMeeting.MEETING_STATUS_CHOICES
+    TRANSCRIPTION_STATUS_CHOICES = [('', 'Todos los estados')] + VideoMeeting.TRANSCRIPTION_STATUS_CHOICES
+    
+    search = forms.CharField(
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Buscar por título o descripción...'
+        }),
+        label='Buscar'
+    )
+    
+    status = forms.ChoiceField(
+        choices=STATUS_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Estado'
+    )
+    
+    transcription_status = forms.ChoiceField(
+        choices=TRANSCRIPTION_STATUS_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Estado de transcripción'
+    )
+    
+    company = forms.ModelChoiceField(
+        queryset=None,
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Empresa',
+        empty_label='Todas las empresas'
+    )
+    
+    organizer = forms.ModelChoiceField(
+        queryset=None,
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Organizador',
+        empty_label='Todos los organizadores'
+    )
+    
+    date_from = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={
+            'class': 'form-control',
+            'type': 'date'
+        }),
+        label='Desde'
+    )
+    
+    date_to = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={
+            'class': 'form-control',
+            'type': 'date'
+        }),
+        label='Hasta'
+    )
+    
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        from .models import Company, User
+        
+        if user and not user.is_superuser:
+            # Filtrar por empresa del usuario
+            if hasattr(user, 'employee') and user.employee and user.employee.company:
+                self.fields['company'].queryset = Company.objects.filter(
+                    id=user.employee.company.id
+                )
+                company_users = User.objects.filter(
+                    employee__company=user.employee.company
+                ).order_by('first_name', 'last_name', 'username')
+                self.fields['organizer'].queryset = company_users
+            else:
+                self.fields['company'].queryset = Company.objects.none()
+                self.fields['organizer'].queryset = User.objects.filter(id=user.id)
+        else:
+            # Administradores ven todas las empresas y usuarios
+            self.fields['company'].queryset = Company.objects.all().order_by('name')
+            self.fields['organizer'].queryset = User.objects.all().order_by(
+                'first_name', 'last_name', 'username'
+            )

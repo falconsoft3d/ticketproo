@@ -1,0 +1,269 @@
+{% extends 'base.html' %}
+
+{% block title %}Reuniones de Video - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'employee_dashboard' %}">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">Reuniones de Video</li>
+                </ol>
+            </nav>
+            <h2><i class="bi bi-camera-video text-purple"></i> Reuniones de Video</h2>
+            <p class="text-muted">Gestiona reuniones, grabaciones y transcripciones automáticas</p>
+        </div>
+        
+        <div class="btn-group" role="group">
+            <a href="{% url 'video_meeting_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Nueva Reunión
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-funnel"></i> Filtros</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    {{ filter_form.search }}
+                </div>
+                <div class="col-md-2">
+                    {{ filter_form.status }}
+                </div>
+                <div class="col-md-2">
+                    {{ filter_form.transcription_status }}
+                </div>
+                <div class="col-md-2">
+                    {{ filter_form.date_from }}
+                </div>
+                <div class="col-md-2">
+                    {{ filter_form.date_to }}
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Estadísticas rápidas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h3>{{ total_meetings }}</h3>
+                    <p class="mb-0">Total Reuniones</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h3>{{ page_obj.object_list|length }}</h3>
+                    <p class="mb-0">En Esta Página</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body text-center">
+                    <h3>
+                        {% for meeting in page_obj %}
+                            {% if meeting.transcription_status == 'processing' %}1{% endif %}
+                        {% empty %}0{% endfor %}
+                    </h3>
+                    <p class="mb-0">Transcribiendo</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <h3>
+                        {% for meeting in page_obj %}
+                            {% if meeting.transcription_status == 'completed' %}1{% endif %}
+                        {% empty %}0{% endfor %}
+                    </h3>
+                    <p class="mb-0">Transcritas</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de reuniones -->
+    <div class="row">
+        {% for meeting in page_obj %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 text-truncate" title="{{ meeting.title }}">
+                        <i class="bi bi-camera-video text-purple"></i>
+                        {{ meeting.title }}
+                    </h6>
+                    <span class="badge {{ meeting.get_status_badge_class }}">
+                        {{ meeting.get_status_display }}
+                    </span>
+                </div>
+                
+                <div class="card-body">
+                    <div class="mb-2">
+                        <small class="text-muted">
+                            <i class="bi bi-person"></i> {{ meeting.organizer.get_full_name|default:meeting.organizer.username }}
+                        </small>
+                    </div>
+                    
+                    {% if meeting.scheduled_date %}
+                    <div class="mb-2">
+                        <small class="text-muted">
+                            <i class="bi bi-calendar"></i> {{ meeting.scheduled_date|date:"d/m/Y H:i" }}
+                        </small>
+                    </div>
+                    {% endif %}
+                    
+                    {% if meeting.duration_minutes %}
+                    <div class="mb-2">
+                        <small class="text-muted">
+                            <i class="bi bi-clock"></i> {{ meeting.get_duration_display }}
+                        </small>
+                    </div>
+                    {% endif %}
+                    
+                    {% if meeting.company %}
+                    <div class="mb-2">
+                        <small class="text-muted">
+                            <i class="bi bi-building"></i> {{ meeting.company.name }}
+                        </small>
+                    </div>
+                    {% endif %}
+                    
+                    {% if meeting.recording_file %}
+                    <div class="mb-2">
+                        <small class="text-success">
+                            <i class="bi bi-file-play"></i> Grabación disponible
+                        </small>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <span class="badge {{ meeting.get_transcription_status_badge_class }}">
+                            <i class="bi bi-file-text"></i> {{ meeting.get_transcription_status_display }}
+                        </span>
+                    </div>
+                    
+                    {% if meeting.description %}
+                    <p class="text-muted small">
+                        {{ meeting.description|truncatewords:15 }}
+                    </p>
+                    {% endif %}
+                </div>
+                
+                <div class="card-footer bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            {{ meeting.created_at|date:"d/m/Y" }}
+                        </small>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'video_meeting_detail' meeting.pk %}" 
+                               class="btn btn-outline-primary btn-sm" title="Ver detalles">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            {% if meeting.can_edit and user == meeting.organizer or is_agent %}
+                            <a href="{% url 'video_meeting_edit' meeting.pk %}" 
+                               class="btn btn-outline-warning btn-sm" title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-camera-video display-1 text-muted mb-3"></i>
+                    <h4 class="text-muted">No hay reuniones</h4>
+                    <p class="text-muted">Aún no has creado ninguna reunión de video.</p>
+                    <a href="{% url 'video_meeting_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Crear Primera Reunión
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Paginación -->
+    {% if page_obj.has_other_pages %}
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="Navegación de reuniones">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                                <i class="bi bi-chevron-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                                <i class="bi bi-chevron-double-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.text-purple {
+    color: #6f42c1 !important;
+}
+.card:hover {
+    transform: translateY(-2px);
+    transition: transform 0.2s ease-in-out;
+}
+</style>
+{% endblock %}

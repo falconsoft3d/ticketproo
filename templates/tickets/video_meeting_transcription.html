@@ -1,0 +1,360 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Transcripción - {{ meeting.title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'employee_dashboard' %}">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'video_meeting_list' %}">
+                            <i class="bi bi-camera-video"></i> Reuniones
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'video_meeting_detail' meeting.id %}">
+                            {{ meeting.title }}
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">Editar Transcripción</li>
+                </ol>
+            </nav>
+            <h2><i class="bi bi-file-text text-purple"></i> Editar Transcripción</h2>
+            <p class="text-muted">{{ meeting.title }}</p>
+        </div>
+        
+        <div>
+            <a href="{% url 'video_meeting_detail' meeting.id %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver a Detalles
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Formulario principal -->
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-file-text"></i> Transcripción y Análisis
+                    </h5>
+                </div>
+                
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Transcripción -->
+                        <div class="mb-4">
+                            <label for="{{ form.transcription_text.id_for_label }}" class="form-label">
+                                <i class="bi bi-file-text"></i> {{ form.transcription_text.label }}
+                            </label>
+                            {{ form.transcription_text }}
+                            {% if form.transcription_text.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.transcription_text.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                Transcripción completa de la reunión. Puedes editarla para corregir errores o agregar información adicional.
+                            </div>
+                            <div class="text-muted small mt-1">
+                                <span id="char-count">0</span> caracteres
+                            </div>
+                        </div>
+                        
+                        <!-- Resumen -->
+                        <div class="mb-4">
+                            <label for="{{ form.transcription_summary.id_for_label }}" class="form-label">
+                                <i class="bi bi-card-text"></i> {{ form.transcription_summary.label }}
+                            </label>
+                            {{ form.transcription_summary }}
+                            {% if form.transcription_summary.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.transcription_summary.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                Resumen ejecutivo con los puntos principales discutidos en la reunión.
+                            </div>
+                        </div>
+                        
+                        <!-- Elementos de acción -->
+                        <div class="mb-4">
+                            <label for="{{ form.action_items.id_for_label }}" class="form-label">
+                                <i class="bi bi-list-check"></i> {{ form.action_items.label }}
+                            </label>
+                            {{ form.action_items }}
+                            {% if form.action_items.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.action_items.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                Lista de tareas, compromisos y próximos pasos identificados en la reunión.
+                            </div>
+                        </div>
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'video_meeting_detail' meeting.id %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <div>
+                                {% if meeting.recording_file and not meeting.transcription_text %}
+                                <button type="button" class="btn btn-outline-primary me-2" id="auto-transcribe-btn">
+                                    <i class="bi bi-robot"></i> Generar automáticamente
+                                </button>
+                                {% endif %}
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle"></i> Guardar Transcripción
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar con información y herramientas -->
+        <div class="col-lg-4">
+            <!-- Información de la reunión -->
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-info-circle"></i> Información de la Reunión
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <strong>Título:</strong><br>
+                        <span class="text-muted">{{ meeting.title }}</span>
+                    </div>
+                    
+                    {% if meeting.scheduled_date %}
+                    <div class="mb-2">
+                        <strong>Fecha:</strong><br>
+                        <span class="text-muted">{{ meeting.scheduled_date|date:"d/m/Y H:i" }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if meeting.duration_minutes %}
+                    <div class="mb-2">
+                        <strong>Duración:</strong><br>
+                        <span class="text-muted">{{ meeting.duration_minutes }} minutos</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if meeting.participants.exists %}
+                    <div class="mb-2">
+                        <strong>Participantes:</strong><br>
+                        <span class="text-muted">{{ meeting.participants.count }} personas</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if meeting.recording_file %}
+                    <div class="mb-2">
+                        <strong>Grabación:</strong><br>
+                        <a href="{{ meeting.recording_file.url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-play-circle"></i> Reproducir
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Herramientas de transcripción -->
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-tools"></i> Herramientas de Transcripción
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong><i class="bi bi-robot"></i> IA Automática:</strong><br>
+                        <small class="text-muted">
+                            {% if meeting.recording_file %}
+                                La transcripción automática usa OpenAI Whisper para convertir audio a texto.
+                            {% else %}
+                                Necesitas subir un archivo de grabación para usar la transcripción automática.
+                            {% endif %}
+                        </small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong><i class="bi bi-pencil"></i> Edición Manual:</strong><br>
+                        <small class="text-muted">
+                            Puedes escribir o corregir la transcripción manualmente en cualquier momento.
+                        </small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong><i class="bi bi-card-text"></i> Análisis Inteligente:</strong><br>
+                        <small class="text-muted">
+                            La IA puede generar resúmenes y extraer elementos de acción automáticamente.
+                        </small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Estado de procesamiento -->
+            {% if meeting.transcription_status %}
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-activity"></i> Estado de Procesamiento
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if meeting.transcription_status == 'pending' %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-hourglass-split"></i>
+                            <strong>Procesando...</strong><br>
+                            La transcripción automática está en progreso.
+                        </div>
+                    {% elif meeting.transcription_status == 'completed' %}
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle"></i>
+                            <strong>Completada</strong><br>
+                            Transcripción procesada exitosamente.
+                        </div>
+                    {% elif meeting.transcription_status == 'failed' %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>Error</strong><br>
+                            No se pudo procesar automáticamente.
+                        </div>
+                    {% else %}
+                        <div class="alert alert-secondary">
+                            <i class="bi bi-circle"></i>
+                            <strong>Pendiente</strong><br>
+                            Sin procesar aún.
+                        </div>
+                    {% endif %}
+                    
+                    {% if meeting.transcription_date %}
+                    <small class="text-muted">
+                        Última actualización: {{ meeting.transcription_date|date:"d/m/Y H:i" }}
+                    </small>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.text-purple {
+    color: #6f42c1 !important;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Contador de caracteres
+    const transcriptionField = document.getElementById('{{ form.transcription_text.id_for_label }}');
+    const charCount = document.getElementById('char-count');
+    
+    function updateCharCount() {
+        if (transcriptionField && charCount) {
+            charCount.textContent = transcriptionField.value.length.toLocaleString();
+        }
+    }
+    
+    if (transcriptionField) {
+        transcriptionField.addEventListener('input', updateCharCount);
+        updateCharCount(); // Inicializar
+    }
+    
+    // Botón de transcripción automática
+    const autoTranscribeBtn = document.getElementById('auto-transcribe-btn');
+    if (autoTranscribeBtn) {
+        autoTranscribeBtn.addEventListener('click', function() {
+            if (confirm('¿Quieres generar la transcripción automáticamente? Esto puede tomar algunos minutos.')) {
+                // Deshabilitar el botón
+                this.disabled = true;
+                this.innerHTML = '<i class="bi bi-hourglass-split"></i> Procesando...';
+                
+                // Hacer llamada AJAX para iniciar transcripción
+                fetch('{% url "video_meeting_transcribe" meeting.id %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Mostrar mensaje de éxito
+                        const alert = document.createElement('div');
+                        alert.className = 'alert alert-info';
+                        alert.innerHTML = '<i class="bi bi-info-circle"></i> Transcripción iniciada. La página se actualizará automáticamente cuando esté lista.';
+                        autoTranscribeBtn.parentNode.insertBefore(alert, autoTranscribeBtn);
+                        
+                        // Polling para verificar el estado
+                        checkTranscriptionStatus();
+                    } else {
+                        alert('Error: ' + (data.error || 'No se pudo iniciar la transcripción'));
+                        this.disabled = false;
+                        this.innerHTML = '<i class="bi bi-robot"></i> Generar automáticamente';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error de conexión');
+                    this.disabled = false;
+                    this.innerHTML = '<i class="bi bi-robot"></i> Generar automáticamente';
+                });
+            }
+        });
+    }
+    
+    // Función para verificar el estado de la transcripción
+    function checkTranscriptionStatus() {
+        fetch('{% url "video_meeting_transcription_status" meeting.id %}')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'completed') {
+                    // Recargar la página para mostrar la transcripción
+                    location.reload();
+                } else if (data.status === 'failed') {
+                    alert('Error en la transcripción automática. Puedes agregar la transcripción manualmente.');
+                    location.reload();
+                } else {
+                    // Continuar polling
+                    setTimeout(checkTranscriptionStatus, 5000);
+                }
+            })
+            .catch(error => {
+                console.error('Error checking status:', error);
+                setTimeout(checkTranscriptionStatus, 10000);
+            });
+    }
+});
+</script>
+{% endblock %}

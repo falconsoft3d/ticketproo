@@ -13623,3 +13623,544 @@ class AITutorAttachment(models.Model):
             self.file_size = self.file.size
             self.file_type = self.file.name.split('.')[-1].lower() if '.' in self.file.name else 'unknown'
         super().save(*args, **kwargs)
+
+
+class ExpenseReport(models.Model):
+    """Modelo para rendición de gastos de empleados"""
+    STATUS_CHOICES = [
+        ('draft', 'Borrador'),
+        ('submitted', 'Enviado'),
+        ('approved', 'Aprobado'),
+        ('rejected', 'Rechazado'),
+        ('paid', 'Pagado'),
+    ]
+    
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título de la rendición',
+        help_text='Título descriptivo de la rendición de gastos'
+    )
+    description = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Descripción',
+        help_text='Descripción general de los gastos'
+    )
+    employee = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='expense_reports',
+        verbose_name='Empleado'
+    )
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name='expense_reports',
+        verbose_name='Empresa',
+        blank=True,
+        null=True
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='draft',
+        verbose_name='Estado'
+    )
+    start_date = models.DateField(
+        verbose_name='Fecha inicio',
+        help_text='Fecha de inicio del período de gastos'
+    )
+    end_date = models.DateField(
+        verbose_name='Fecha fin',
+        help_text='Fecha de fin del período de gastos'
+    )
+    total_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name='Monto total'
+    )
+    currency = models.CharField(
+        max_length=3,
+        default='USD',
+        verbose_name='Moneda'
+    )
+    submitted_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Fecha de envío'
+    )
+    approved_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='approved_expense_reports',
+        verbose_name='Aprobado por'
+    )
+    approved_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Fecha de aprobación'
+    )
+    rejection_reason = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Motivo de rechazo'
+    )
+    payment_reference = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='Referencia de pago'
+    )
+    paid_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Fecha de pago'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Rendición de Gastos'
+        verbose_name_plural = 'Rendiciones de Gastos'
+        indexes = [
+            models.Index(fields=['employee', 'status']),
+            models.Index(fields=['company', 'status']),
+            models.Index(fields=['status', 'created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.title} - {self.employee.get_full_name() or self.employee.username}"
+    
+    def can_edit(self):
+        """Verifica si la rendición puede ser editada"""
+        return self.status in ['draft', 'rejected']
+    
+    def can_submit(self):
+        """Verifica si la rendición puede ser enviada"""
+        return self.status == 'draft' and self.expense_items.exists()
+    
+    def can_approve(self):
+        """Verifica si la rendición puede ser aprobada"""
+        return self.status == 'submitted'
+    
+    def calculate_total(self):
+        """Calcula el total de todos los gastos"""
+        total = self.expense_items.aggregate(
+            total=models.Sum('amount')
+        )['total'] or 0
+        return total
+    
+    def save(self, *args, **kwargs):
+        # Actualizar total automáticamente
+        super().save(*args, **kwargs)
+        self.total_amount = self.calculate_total()
+        if self.total_amount != 0:
+            super().save(update_fields=['total_amount'])
+
+
+class ExpenseItem(models.Model):
+    """Modelo para items individuales de gastos"""
+    CATEGORY_CHOICES = [
+        ('food', 'Comida'),
+        ('transport', 'Transporte'),
+        ('hotel', 'Hotel/Alojamiento'),
+        ('fuel', 'Combustible'),
+        ('materials', 'Materiales'),
+        ('entertainment', 'Entretenimiento'),
+        ('communication', 'Comunicaciones'),
+        ('office', 'Oficina/Suministros'),
+        ('medical', 'Gastos médicos'),
+        ('training', 'Capacitación'),
+        ('other', 'Otros'),
+    ]
+    
+    expense_report = models.ForeignKey(
+        ExpenseReport,
+        on_delete=models.CASCADE,
+        related_name='expense_items',
+        verbose_name='Rendición de gastos'
+    )
+    date = models.DateField(
+        verbose_name='Fecha del gasto'
+    )
+    category = models.CharField(
+        max_length=20,
+        choices=CATEGORY_CHOICES,
+        verbose_name='Categoría'
+    )
+    description = models.CharField(
+        max_length=200,
+        verbose_name='Descripción del gasto'
+    )
+    amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name='Monto'
+    )
+    currency = models.CharField(
+        max_length=3,
+        default='USD',
+        verbose_name='Moneda'
+    )
+    vendor = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='Proveedor/Comercio'
+    )
+    location = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='Ubicación'
+    )
+    notes = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Notas adicionales'
+    )
+    receipt_file = models.FileField(
+        upload_to='expense_receipts/',
+        blank=True,
+        null=True,
+        verbose_name='Comprobante/Recibo'
+    )
+    is_reimbursable = models.BooleanField(
+        default=True,
+        verbose_name='Reembolsable',
+        help_text='Marcar si este gasto debe ser reembolsado'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        ordering = ['-date', '-created_at']
+        verbose_name = 'Item de Gasto'
+        verbose_name_plural = 'Items de Gastos'
+        indexes = [
+            models.Index(fields=['expense_report', 'category']),
+            models.Index(fields=['date', 'category']),
+        ]
+    
+    def __str__(self):
+        return f"{self.description} - {self.amount} {self.currency}"
+    
+    def get_category_display_icon(self):
+        """Retorna el icono correspondiente a la categoría"""
+        icons = {
+            'food': 'bi-cup-hot',
+            'transport': 'bi-bus-front',
+            'hotel': 'bi-building',
+            'fuel': 'bi-fuel-pump',
+            'materials': 'bi-tools',
+            'entertainment': 'bi-music-note',
+            'communication': 'bi-telephone',
+            'office': 'bi-file-text',
+            'medical': 'bi-heart-pulse',
+            'training': 'bi-book',
+            'other': 'bi-three-dots',
+        }
+        return icons.get(self.category, 'bi-receipt')
+    
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Actualizar el total de la rendición
+        if self.expense_report:
+            self.expense_report.save()
+
+
+class ExpenseComment(models.Model):
+    """Modelo para comentarios en rendiciones de gastos"""
+    expense_report = models.ForeignKey(
+        ExpenseReport,
+        on_delete=models.CASCADE,
+        related_name='comments',
+        verbose_name='Rendición de gastos'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Usuario'
+    )
+    comment = models.TextField(
+        verbose_name='Comentario'
+    )
+    is_internal = models.BooleanField(
+        default=False,
+        verbose_name='Comentario interno',
+        help_text='Solo visible para administradores'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Comentario de Gasto'
+        verbose_name_plural = 'Comentarios de Gastos'
+    
+    def __str__(self):
+        return f"Comentario de {self.user.get_full_name() or self.user.username} - {self.created_at.strftime('%d/%m/%Y')}"
+
+
+class VideoMeeting(models.Model):
+    """Modelo para gestionar reuniones de video y transcripciones"""
+    MEETING_STATUS_CHOICES = [
+        ('scheduled', 'Programada'),
+        ('in_progress', 'En progreso'),
+        ('completed', 'Completada'),
+        ('cancelled', 'Cancelada'),
+    ]
+    
+    TRANSCRIPTION_STATUS_CHOICES = [
+        ('pending', 'Pendiente'),
+        ('processing', 'Procesando'),
+        ('completed', 'Completada'),
+        ('failed', 'Falló'),
+    ]
+    
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título de la reunión'
+    )
+    description = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Descripción'
+    )
+    organizer = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='organized_video_meetings',
+        verbose_name='Organizador'
+    )
+    participants = models.ManyToManyField(
+        User,
+        related_name='attended_meetings',
+        blank=True,
+        verbose_name='Participantes'
+    )
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        verbose_name='Empresa'
+    )
+    scheduled_date = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Fecha programada'
+    )
+    duration_minutes = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        verbose_name='Duración en minutos'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=MEETING_STATUS_CHOICES,
+        default='scheduled',
+        verbose_name='Estado'
+    )
+    meeting_url = models.URLField(
+        blank=True,
+        null=True,
+        verbose_name='URL de la reunión'
+    )
+    
+    # Archivo de video/audio
+    recording_file = models.FileField(
+        upload_to='meeting_recordings/',
+        blank=True,
+        null=True,
+        verbose_name='Archivo de grabación',
+        help_text='Formatos soportados: MP4, AVI, MOV, MP3, WAV, M4A, WebM'
+    )
+    
+    # Transcripción
+    transcription_status = models.CharField(
+        max_length=20,
+        choices=TRANSCRIPTION_STATUS_CHOICES,
+        default='pending',
+        verbose_name='Estado de transcripción'
+    )
+    transcription_text = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Transcripción'
+    )
+    transcription_confidence = models.FloatField(
+        blank=True,
+        null=True,
+        verbose_name='Confianza de transcripción (%)'
+    )
+    transcription_date = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Fecha de transcripción'
+    )
+    
+    # Resumen automático generado por IA
+    transcription_summary = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Resumen de transcripción'
+    )
+    
+    # Resumen automático generado por IA
+    ai_summary = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Resumen generado por IA'
+    )
+    
+    # Puntos clave extraídos por IA
+    key_points = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Puntos clave'
+    )
+    
+    # Acciones identificadas por IA
+    action_items = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Elementos de acción'
+    )
+    
+    # Metadatos
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Fecha de actualización'
+    )
+    
+    class Meta:
+        ordering = ['-scheduled_date', '-created_at']
+        verbose_name = 'Reunión de Video'
+        verbose_name_plural = 'Reuniones de Video'
+    
+    def __str__(self):
+        return f"{self.title} - {self.organizer.get_full_name() or self.organizer.username}"
+    
+    def get_status_badge_class(self):
+        """Retorna la clase CSS para el badge de estado"""
+        status_classes = {
+            'scheduled': 'bg-primary',
+            'in_progress': 'bg-warning',
+            'completed': 'bg-success',
+            'cancelled': 'bg-danger',
+        }
+        return status_classes.get(self.status, 'bg-secondary')
+    
+    def get_status_color(self):
+        """Retorna el color del badge para Bootstrap"""
+        color_map = {
+            'scheduled': 'primary',
+            'in_progress': 'warning',
+            'completed': 'success',
+            'cancelled': 'danger',
+        }
+        return color_map.get(self.status, 'secondary')
+    
+    def get_transcription_status_badge_class(self):
+        """Retorna la clase CSS para el badge de estado de transcripción"""
+        status_classes = {
+            'pending': 'bg-secondary',
+            'processing': 'bg-warning',
+            'completed': 'bg-success',
+            'failed': 'bg-danger',
+        }
+        return status_classes.get(self.transcription_status, 'bg-secondary')
+    
+    def can_edit(self):
+        """Verifica si la reunión puede ser editada"""
+        return self.status in ['scheduled', 'in_progress']
+    
+    def get_file_size_display(self):
+        """Retorna el tamaño del archivo en formato legible"""
+        if self.recording_file:
+            try:
+                size = self.recording_file.size
+                if size < 1024:
+                    return f"{size} B"
+                elif size < 1024 * 1024:
+                    return f"{size / 1024:.1f} KB"
+                elif size < 1024 * 1024 * 1024:
+                    return f"{size / (1024 * 1024):.1f} MB"
+                else:
+                    return f"{size / (1024 * 1024 * 1024):.1f} GB"
+            except:
+                return "Tamaño desconocido"
+        return None
+    
+    def get_duration_display(self):
+        """Retorna la duración en formato legible"""
+        if self.duration_minutes:
+            hours = self.duration_minutes // 60
+            minutes = self.duration_minutes % 60
+            if hours > 0:
+                return f"{hours}h {minutes}m"
+            else:
+                return f"{minutes}m"
+        return "Sin duración especificada"
+
+
+class MeetingNote(models.Model):
+    """Modelo para notas adicionales de reuniones"""
+    meeting = models.ForeignKey(
+        VideoMeeting,
+        on_delete=models.CASCADE,
+        related_name='notes',
+        verbose_name='Reunión'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Usuario'
+    )
+    content = models.TextField(
+        verbose_name='Contenido de la nota'
+    )
+    is_private = models.BooleanField(
+        default=False,
+        verbose_name='Nota privada',
+        help_text='Solo visible para el autor'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Fecha de actualización'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Nota de Reunión'
+        verbose_name_plural = 'Notas de Reunión'
+    
+    def __str__(self):
+        return f"Nota de {self.user.get_full_name() or self.user.username} - {self.meeting.title}"

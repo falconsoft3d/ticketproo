@@ -1,0 +1,286 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.expense-item-card {
+    border-left: 4px solid #007bff;
+}
+.expense-item-card.food { border-left-color: #28a745; }
+.expense-item-card.transport { border-left-color: #ffc107; }
+.expense-item-card.hotel { border-left-color: #6f42c1; }
+.expense-item-card.others { border-left-color: #6c757d; }
+
+.status-badge {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+}
+
+.comment-card {
+    border-left: 3px solid #dee2e6;
+}
+.comment-card.internal {
+    border-left-color: #ffc107;
+    background-color: #fffbf0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Encabezado -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="mb-0">{{ expense_report.title }}</h4>
+                        <small class="text-muted">
+                            Creado por {{ expense_report.employee.get_full_name|default:expense_report.employee.username }}
+                            el {{ expense_report.created_at|date:"d/m/Y H:i" }}
+                        </small>
+                    </div>
+                    <div class="d-flex gap-2">
+                        {% if expense_report.status == 'draft' %}
+                            <span class="badge bg-secondary status-badge">Borrador</span>
+                        {% elif expense_report.status == 'submitted' %}
+                            <span class="badge bg-warning status-badge">Enviado</span>
+                        {% elif expense_report.status == 'approved' %}
+                            <span class="badge bg-success status-badge">Aprobado</span>
+                        {% elif expense_report.status == 'rejected' %}
+                            <span class="badge bg-danger status-badge">Rechazado</span>
+                        {% elif expense_report.status == 'paid' %}
+                            <span class="badge bg-info status-badge">Pagado</span>
+                        {% endif %}
+                        <a href="{% url 'expense_report_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Volver
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            {% if expense_report.description %}
+                            <h6>Descripción:</h6>
+                            <p class="text-muted">{{ expense_report.description }}</p>
+                            {% endif %}
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Propósito:</strong> {{ expense_report.get_purpose_display }}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Período:</strong> 
+                                    {% if expense_report.start_date %}
+                                        {{ expense_report.start_date|date:"d/m/Y" }}
+                                        {% if expense_report.end_date %} - {{ expense_report.end_date|date:"d/m/Y" }}{% endif %}
+                                    {% else %}
+                                        No especificado
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            {% if expense_report.rejection_reason %}
+                            <div class="alert alert-danger mt-3">
+                                <strong>Motivo de rechazo:</strong> {{ expense_report.rejection_reason }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h2 class="text-primary mb-0">${{ expense_report.total_amount|floatformat:2 }}</h2>
+                                    <small class="text-muted">Total de gastos</small>
+                                    <div class="mt-2">
+                                        <small class="text-muted">{{ expense_items.count }} gasto{{ expense_items.count|pluralize }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Acciones -->
+                    <div class="mt-3 d-flex gap-2 flex-wrap">
+                        {% if can_edit %}
+                        <a href="{% url 'expense_report_edit' expense_report.pk %}" class="btn btn-outline-primary">
+                            <i class="fas fa-edit"></i> Editar
+                        </a>
+                        <a href="{% url 'expense_item_create' expense_report.pk %}" class="btn btn-outline-success">
+                            <i class="fas fa-plus"></i> Agregar Gasto
+                        </a>
+                        {% endif %}
+                        
+                        {% if can_submit %}
+                        <a href="{% url 'expense_report_submit' expense_report.pk %}" class="btn btn-warning">
+                            <i class="fas fa-paper-plane"></i> Enviar para Aprobación
+                        </a>
+                        {% endif %}
+                        
+                        {% if can_approve %}
+                        <a href="{% url 'expense_report_approve' expense_report.pk %}" class="btn btn-success">
+                            <i class="fas fa-check"></i> Aprobar
+                        </a>
+                        <a href="{% url 'expense_report_reject' expense_report.pk %}" class="btn btn-danger">
+                            <i class="fas fa-times"></i> Rechazar
+                        </a>
+                        {% endif %}
+                        
+                        {% if expense_report.status == 'approved' and is_agent %}
+                        <a href="{% url 'expense_report_mark_paid' expense_report.pk %}" class="btn btn-info">
+                            <i class="fas fa-dollar-sign"></i> Marcar como Pagado
+                        </a>
+                        {% endif %}
+                        
+                        {% if can_edit %}
+                        <a href="{% url 'expense_report_delete' expense_report.pk %}" class="btn btn-outline-danger">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Lista de gastos -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Gastos Detallados</h5>
+                    {% if can_edit %}
+                    <a href="{% url 'expense_item_create' expense_report.pk %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus"></i> Agregar Gasto
+                    </a>
+                    {% endif %}
+                </div>
+                
+                <div class="card-body">
+                    {% if expense_items %}
+                    <div class="row">
+                        {% for item in expense_items %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card expense-item-card {{ item.category }}">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <h6 class="card-title mb-1">{{ item.description }}</h6>
+                                            <p class="text-muted small mb-1">
+                                                <i class="fas fa-tag"></i> {{ item.get_category_display }}
+                                                <span class="ms-2">
+                                                    <i class="fas fa-calendar"></i> {{ item.date|date:"d/m/Y" }}
+                                                </span>
+                                            </p>
+                                            {% if item.vendor %}
+                                            <p class="text-muted small mb-1">
+                                                <i class="fas fa-store"></i> {{ item.vendor }}
+                                            </p>
+                                            {% endif %}
+                                            {% if item.notes %}
+                                            <p class="small text-muted mb-0">{{ item.notes|truncatechars:100 }}</p>
+                                            {% endif %}
+                                        </div>
+                                        <div class="text-end">
+                                            <h5 class="text-primary mb-2">${{ item.amount|floatformat:2 }}</h5>
+                                            {% if can_edit %}
+                                            <div class="btn-group" role="group">
+                                                <a href="{% url 'expense_item_edit' item.pk %}" 
+                                                   class="btn btn-sm btn-outline-secondary" 
+                                                   title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <a href="{% url 'expense_item_delete' item.pk %}" 
+                                                   class="btn btn-sm btn-outline-danger" 
+                                                   title="Eliminar">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    {% if item.receipt_file %}
+                                    <div class="mt-2">
+                                        <a href="{{ item.receipt_file.url }}" target="_blank" class="btn btn-sm btn-outline-info">
+                                            <i class="fas fa-receipt"></i> Ver Comprobante
+                                        </a>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-receipt fa-2x text-muted mb-3"></i>
+                        <h6 class="text-muted">No hay gastos registrados</h6>
+                        <p class="text-muted">Agrega los gastos de esta rendición.</p>
+                        {% if can_edit %}
+                        <a href="{% url 'expense_item_create' expense_report.pk %}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Agregar Primer Gasto
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Comentarios -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Comentarios</h5>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Formulario para nuevo comentario -->
+                    <form method="post" action="{% url 'expense_comment_create' expense_report.pk %}" class="mb-4">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-10">
+                                {{ comment_form.comment }}
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-comment"></i> Comentar
+                                </button>
+                            </div>
+                        </div>
+                        {% if is_agent %}
+                        <div class="form-check mt-2">
+                            {{ comment_form.is_internal }}
+                            {{ comment_form.is_internal.label_tag }}
+                        </div>
+                        {% endif %}
+                    </form>
+                    
+                    <!-- Lista de comentarios -->
+                    {% if comments %}
+                    {% for comment in comments %}
+                    <div class="card comment-card {% if comment.is_internal %}internal{% endif %} mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">
+                                        {{ comment.user.get_full_name|default:comment.user.username }}
+                                        {% if comment.is_internal %}
+                                        <span class="badge bg-warning ms-2">Interno</span>
+                                        {% endif %}
+                                    </h6>
+                                    <small class="text-muted">{{ comment.created_at|date:"d/m/Y H:i" }}</small>
+                                </div>
+                            </div>
+                            <p class="mt-2 mb-0">{{ comment.comment|linebreaks }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="text-center py-3">
+                        <p class="text-muted">No hay comentarios aún.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

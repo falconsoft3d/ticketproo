@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-dollar-sign"></i> {{ title }}
+                    </h4>
+                </div>
+                
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Marcar como Pagado</strong><br>
+                        Esta acción marcará la rendición como pagada y finalizará el proceso.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6>Detalles de la rendición:</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Empleado:</strong> {{ expense_report.employee.get_full_name|default:expense_report.employee.username }}</li>
+                            <li><strong>Título:</strong> {{ expense_report.title }}</li>
+                            <li><strong>Total:</strong> ${{ expense_report.total_amount|floatformat:2 }}</li>
+                            <li><strong>Aprobado por:</strong> {{ expense_report.approved_by.get_full_name|default:expense_report.approved_by.username }}</li>
+                            <li><strong>Fecha aprobación:</strong> {{ expense_report.approved_at|date:"d/m/Y H:i" }}</li>
+                        </ul>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="payment_reference" class="form-label">
+                                Referencia de pago (opcional):
+                            </label>
+                            <input type="text" name="payment_reference" id="payment_reference" 
+                                   class="form-control" 
+                                   placeholder="Ej: Transferencia #12345, Cheque #678, etc.">
+                            <small class="form-text text-muted">
+                                Puedes agregar una referencia del método de pago utilizado.
+                            </small>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'expense_report_detail' expense_report.pk %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-info">
+                                <i class="fas fa-dollar-sign"></i> Marcar como Pagado
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

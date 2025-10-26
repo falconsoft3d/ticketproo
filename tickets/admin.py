@@ -18,7 +18,8 @@ from .models import (
     WhatsAppConnection, WhatsAppKeyword, WhatsAppMessage, ImagePrompt,
     AIManager, AIManagerMeeting, AIManagerMeetingAttachment, AIManagerSummary, CompanyAISummary, UserAIPerformanceEvaluation,
     WebsiteTracker, LegalContract, SupplierContractReview, PayPalPaymentLink, PayPalOrder, TodoItem,
-    AIBook, AIBookChapter, EmployeeRequest, InternalAgreement, Asset, AssetHistory, UrlManager
+    AIBook, AIBookChapter, EmployeeRequest, InternalAgreement, Asset, AssetHistory, UrlManager,
+    ExpenseReport, ExpenseItem, ExpenseComment
 )
 
 # Configuración del sitio de administración
@@ -3871,3 +3872,207 @@ class UrlManagerAdmin(admin.ModelAdmin):
         if not change:
             obj.created_by = request.user
         super().save_model(request, obj, form, change)
+
+
+# ================================
+# ADMINISTRACIÓN DE GASTOS
+# ================================
+
+class ExpenseItemInline(admin.TabularInline):
+    """Inline para items de gastos"""
+    model = ExpenseItem
+    extra = 0
+    readonly_fields = ('created_at',)
+    fields = ('description', 'category', 'amount', 'date', 'vendor', 'receipt_file', 'created_at')
+
+
+class ExpenseCommentInline(admin.TabularInline):
+    """Inline para comentarios de gastos"""
+    model = ExpenseComment
+    extra = 0
+    readonly_fields = ('user', 'created_at')
+    fields = ('user', 'comment', 'is_internal', 'created_at')
+
+
+@admin.register(ExpenseReport)
+class ExpenseReportAdmin(admin.ModelAdmin):
+    """Administración de rendiciones de gastos"""
+    list_display = (
+        'title', 'employee_display', 'status_display', 'total_amount', 
+        'items_count', 'created_at', 'submitted_at', 'approved_by'
+    )
+    list_filter = (
+        'status', 'created_at', 'submitted_at', 
+        'approved_at', 'company', 'approved_by'
+    )
+    search_fields = ('title', 'description', 'employee__username', 'employee__first_name', 'employee__last_name')
+    readonly_fields = ('total_amount', 'created_at', 'updated_at', 'submitted_at', 'approved_at', 'paid_at')
+    list_per_page = 25
+    date_hierarchy = 'created_at'
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('title', 'description', 'employee', 'company')
+        }),
+        ('Detalles', {
+            'fields': ('start_date', 'end_date')
+        }),
+        ('Estado y Aprobación', {
+            'fields': ('status', 'approved_by', 'rejection_reason', 'payment_reference')
+        }),
+        ('Fechas del Sistema', {
+            'fields': ('created_at', 'updated_at', 'submitted_at', 'approved_at', 'paid_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    inlines = [ExpenseItemInline, ExpenseCommentInline]
+    
+    def employee_display(self, obj):
+        """Mostrar nombre completo del empleado"""
+        name = obj.employee.get_full_name() or obj.employee.username
+        if obj.company:
+            return f"{name} ({obj.company.name})"
+        return name
+    employee_display.short_description = 'Empleado'
+    
+    def status_display(self, obj):
+        """Mostrar estado con colores"""
+        colors = {
+            'draft': '#6c757d',
+            'submitted': '#ffc107', 
+            'approved': '#28a745',
+            'rejected': '#dc3545',
+            'paid': '#17a2b8'
+        }
+        color = colors.get(obj.status, '#6c757d')
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{}</span>',
+            color, obj.get_status_display()
+        )
+    status_display.short_description = 'Estado'
+    
+    def items_count(self, obj):
+        """Contar items de gastos"""
+        return obj.expense_items.count()
+    items_count.short_description = 'Items'
+    
+    def get_queryset(self, request):
+        """Optimizar consultas"""
+        return super().get_queryset(request).select_related(
+            'employee', 'company', 'approved_by'
+        ).prefetch_related('expense_items')
+
+
+@admin.register(ExpenseItem)
+class ExpenseItemAdmin(admin.ModelAdmin):
+    """Administración de items de gastos"""
+    list_display = (
+        'description', 'expense_report_display', 'category_display', 
+        'amount', 'date', 'vendor', 'has_receipt', 'created_at'
+    )
+    list_filter = ('category', 'date', 'created_at', 'expense_report__status')
+    search_fields = (
+        'description', 'vendor', 'notes', 
+        'expense_report__title', 'expense_report__employee__username'
+    )
+    readonly_fields = ('created_at', 'updated_at')
+    list_per_page = 25
+    date_hierarchy = 'date'
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('expense_report', 'description', 'category', 'amount', 'date')
+        }),
+        ('Detalles', {
+            'fields': ('vendor', 'receipt_file', 'notes')
+        }),
+        ('Metadatos', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def expense_report_display(self, obj):
+        """Mostrar título de la rendición"""
+        return f"{obj.expense_report.title} - {obj.expense_report.employee.username}"
+    expense_report_display.short_description = 'Rendición'
+    
+    def category_display(self, obj):
+        """Mostrar categoría con colores"""
+        colors = {
+            'food': '#28a745',
+            'transport': '#ffc107',
+            'hotel': '#6f42c1',
+            'others': '#6c757d'
+        }
+        color = colors.get(obj.category, '#6c757d')
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{}</span>',
+            color, obj.get_category_display()
+        )
+    category_display.short_description = 'Categoría'
+    
+    def has_receipt(self, obj):
+        """Indicar si tiene comprobante"""
+        if obj.receipt_file:
+            return format_html('<span style="color: green;">✓ Sí</span>')
+        return format_html('<span style="color: red;">✗ No</span>')
+    has_receipt.short_description = 'Comprobante'
+    
+    def get_queryset(self, request):
+        """Optimizar consultas"""
+        return super().get_queryset(request).select_related(
+            'expense_report', 'expense_report__employee'
+        )
+
+
+@admin.register(ExpenseComment)
+class ExpenseCommentAdmin(admin.ModelAdmin):
+    """Administración de comentarios de gastos"""
+    list_display = (
+        'expense_report_display', 'user_display', 'comment_preview', 
+        'is_internal', 'created_at'
+    )
+    list_filter = ('is_internal', 'created_at', 'expense_report__status')
+    search_fields = (
+        'comment', 'user__username', 'user__first_name', 'user__last_name',
+        'expense_report__title'
+    )
+    readonly_fields = ('created_at',)
+    list_per_page = 25
+    date_hierarchy = 'created_at'
+    
+    fieldsets = (
+        ('Información', {
+            'fields': ('expense_report', 'user', 'comment', 'is_internal')
+        }),
+        ('Metadatos', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def expense_report_display(self, obj):
+        """Mostrar título de la rendición"""
+        return obj.expense_report.title
+    expense_report_display.short_description = 'Rendición'
+    
+    def user_display(self, obj):
+        """Mostrar nombre del usuario"""
+        return obj.user.get_full_name() or obj.user.username
+    user_display.short_description = 'Usuario'
+    
+    def comment_preview(self, obj):
+        """Mostrar preview del comentario"""
+        preview = obj.comment[:100] + '...' if len(obj.comment) > 100 else obj.comment
+        if obj.is_internal:
+            return format_html('<span style="color: #ffc107;">[INTERNO] {}</span>', preview)
+        return preview
+    comment_preview.short_description = 'Comentario'
+    
+    def get_queryset(self, request):
+        """Optimizar consultas"""
+        return super().get_queryset(request).select_related(
+            'expense_report', 'user'
+        )

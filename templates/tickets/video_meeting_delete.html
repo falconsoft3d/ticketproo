@@ -1,0 +1,250 @@
+{% extends 'base.html' %}
+
+{% block title %}Eliminar Reunión - {{ meeting.title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'employee_dashboard' %}">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'video_meeting_list' %}">
+                            <i class="bi bi-camera-video"></i> Reuniones
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'video_meeting_detail' meeting.id %}">
+                            {{ meeting.title }}
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">Eliminar</li>
+                </ol>
+            </nav>
+            <h2><i class="bi bi-exclamation-triangle text-danger"></i> Confirmar Eliminación</h2>
+        </div>
+        
+        <div>
+            <a href="{% url 'video_meeting_detail' meeting.id %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Cancelar
+            </a>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Advertencia principal -->
+            <div class="alert alert-danger border-danger">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-exclamation-triangle-fill fs-1 me-3"></i>
+                    <div>
+                        <h4 class="alert-heading mb-2">¡Atención! Esta acción no se puede deshacer</h4>
+                        <p class="mb-0">
+                            Estás a punto de eliminar permanentemente la reunión <strong>"{{ meeting.title }}"</strong> 
+                            y todos sus datos asociados.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Información de la reunión -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="bi bi-camera-video"></i> Información de la reunión a eliminar
+                    </h5>
+                </div>
+                
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <strong><i class="bi bi-tag"></i> Título:</strong><br>
+                            <span class="text-muted">{{ meeting.title }}</span>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <strong><i class="bi bi-calendar-event"></i> Fecha programada:</strong><br>
+                            <span class="text-muted">
+                                {% if meeting.scheduled_date %}
+                                    {{ meeting.scheduled_date|date:"d/m/Y H:i" }}
+                                {% else %}
+                                    No programada
+                                {% endif %}
+                            </span>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <strong><i class="bi bi-building"></i> Empresa:</strong><br>
+                            <span class="text-muted">{{ meeting.company.name }}</span>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <strong><i class="bi bi-person"></i> Creado por:</strong><br>
+                            <span class="text-muted">{{ meeting.organizer.get_full_name|default:meeting.organizer.username }}</span>
+                        </div>
+                        
+                        {% if meeting.participants.exists %}
+                        <div class="col-md-6 mb-3">
+                            <strong><i class="bi bi-people"></i> Participantes:</strong><br>
+                            <span class="text-muted">{{ meeting.participants.count }} personas</span>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="col-md-6 mb-3">
+                            <strong><i class="bi bi-clock"></i> Creado:</strong><br>
+                            <span class="text-muted">{{ meeting.created_at|date:"d/m/Y H:i" }}</span>
+                        </div>
+                        
+                        {% if meeting.description %}
+                        <div class="col-md-12 mb-3">
+                            <strong><i class="bi bi-file-text"></i> Descripción:</strong><br>
+                            <div class="bg-light p-2 rounded">
+                                <small class="text-muted">{{ meeting.description|truncatewords:20 }}</small>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Datos que se eliminarán -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-warning bg-opacity-10">
+                    <h5 class="mb-0 text-warning">
+                        <i class="bi bi-trash"></i> Los siguientes datos se eliminarán permanentemente:
+                    </h5>
+                </div>
+                
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="bi bi-check text-danger"></i> Información básica de la reunión
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-check text-danger"></i> Lista de participantes
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-check text-danger"></i> Fechas y programación
+                                </li>
+                                {% if meeting.meeting_url %}
+                                <li class="mb-2">
+                                    <i class="bi bi-check text-danger"></i> Enlace de reunión
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                {% if meeting.recording_file %}
+                                <li class="mb-2">
+                                    <i class="bi bi-check text-danger"></i> 
+                                    <strong>Archivo de grabación</strong>
+                                    <br><small class="text-muted">{{ meeting.recording_file.name|default:"grabacion.mp4" }}</small>
+                                </li>
+                                {% endif %}
+                                
+                                {% if meeting.transcription_text %}
+                                <li class="mb-2">
+                                    <i class="bi bi-check text-danger"></i> 
+                                    <strong>Transcripción completa</strong>
+                                    <br><small class="text-muted">{{ meeting.transcription_text|length }} caracteres</small>
+                                </li>
+                                {% endif %}
+                                
+                                {% if meeting.transcription_summary %}
+                                <li class="mb-2">
+                                    <i class="bi bi-check text-danger"></i> Resumen automático
+                                </li>
+                                {% endif %}
+                                
+                                {% if meeting.action_items %}
+                                <li class="mb-2">
+                                    <i class="bi bi-check text-danger"></i> Elementos de acción
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Confirmación -->
+            <div class="card shadow">
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="alert alert-warning">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="confirm-delete" required>
+                                <label class="form-check-label" for="confirm-delete">
+                                    <strong>Confirmo que entiendo que esta acción es irreversible</strong> y que todos los datos asociados 
+                                    a esta reunión se eliminarán permanentemente.
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a href="{% url 'video_meeting_detail' meeting.id %}" class="btn btn-secondary btn-lg">
+                                <i class="bi bi-arrow-left"></i> No, mantener reunión
+                            </a>
+                            
+                            <button type="submit" class="btn btn-danger btn-lg" id="delete-btn" disabled>
+                                <i class="bi bi-trash"></i> Sí, eliminar permanentemente
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.text-danger {
+    color: #dc3545 !important;
+}
+
+.border-danger {
+    border-color: #dc3545 !important;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmCheckbox = document.getElementById('confirm-delete');
+    const deleteBtn = document.getElementById('delete-btn');
+    
+    if (confirmCheckbox && deleteBtn) {
+        confirmCheckbox.addEventListener('change', function() {
+            deleteBtn.disabled = !this.checked;
+        });
+        
+        deleteBtn.addEventListener('click', function(e) {
+            if (confirmCheckbox.checked) {
+                if (!confirm('¿Estás completamente seguro? Esta reunión se eliminará para siempre.')) {
+                    e.preventDefault();
+                    return false;
+                }
+                
+                // Mostrar indicador de carga
+                this.disabled = true;
+                this.innerHTML = '<i class="bi bi-hourglass-split"></i> Eliminando...';
+            } else {
+                e.preventDefault();
+                alert('Debes confirmar que entiendes que esta acción es irreversible.');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

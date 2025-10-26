@@ -43,7 +43,8 @@ from .models import (
     WhatsAppConnection, WhatsAppKeyword, WhatsAppMessage, ImagePrompt,
     AIManager, AIManagerMeeting, AIManagerSummary, CompanyAISummary, UserAIPerformanceEvaluation,
     WebsiteTracker, LegalContract, Asset, AssetHistory,
-    AITutor, AITutorProgressReport, AITutorAttachment
+    AITutor, AITutorProgressReport, AITutorAttachment,
+    ExpenseReport, ExpenseItem, ExpenseComment, VideoMeeting, MeetingNote
 )
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
@@ -61,7 +62,9 @@ from .forms import (
     CompanyDocumentationURLFormSet, ContactGeneratorForm, PublicContactForm,
     CompanyRequestGeneratorForm, PublicCompanyRequestForm, FormForm, FormQuestionForm,
     FormQuestionOptionForm, PublicFormResponseForm, AssetForm, AssetAssignForm, AssetFilterForm,
-    AITutorForm, AITutorProgressReportForm, AITutorAttachmentForm, AITutorFilterForm
+    AITutorForm, AITutorProgressReportForm, AITutorAttachmentForm, AITutorFilterForm,
+    ExpenseReportForm, ExpenseItemForm, ExpenseCommentForm, ExpenseReportFilterForm,
+    VideoMeetingForm, MeetingTranscriptionForm, MeetingFilterForm
 )
 from .utils import is_agent, is_regular_user, is_teacher, can_manage_courses, get_user_role, assign_user_to_group
 
@@ -200,6 +203,22 @@ def dashboard_view(request):
         # Agregar URLs principales
         principal_urls = UrlManager.objects.filter(is_principal=True, is_active=True).order_by('title')[:10]
         context['principal_urls'] = principal_urls
+        
+        # Estadísticas de gastos para agentes
+        expense_reports = ExpenseReport.objects.all()
+        context.update({
+            'expense_stats': {
+                'total_reports': expense_reports.count(),
+                'pending_approval': expense_reports.filter(status='submitted').count(),
+                'approved_reports': expense_reports.filter(status='approved').count(),
+                'total_pending_amount': expense_reports.filter(status__in=['submitted', 'approved']).aggregate(
+                    total=Sum('expense_items__amount'))['total'] or 0,
+            }
+        })
+        
+        # Reuniones de video recientes para agentes (solo de empresas existentes)
+        recent_video_meetings = VideoMeeting.objects.filter(company__isnull=False).order_by('-created_at')[:5]
+        context['recent_video_meetings'] = recent_video_meetings
     else:
         # Estadísticas para usuarios regulares (sus tickets + tickets de empresa + proyectos)
         user_projects = request.user.assigned_projects.all()
@@ -262,6 +281,28 @@ def dashboard_view(request):
         # Agregar URLs principales
         principal_urls = UrlManager.objects.filter(is_principal=True, is_active=True).order_by('title')[:10]
         context['principal_urls'] = principal_urls
+        
+        # Estadísticas de gastos para usuarios normales (solo sus propios gastos)
+        user_expense_reports = ExpenseReport.objects.filter(employee=request.user)
+        context.update({
+            'expense_stats': {
+                'total_reports': user_expense_reports.count(),
+                'draft_reports': user_expense_reports.filter(status='draft').count(),
+                'pending_reports': user_expense_reports.filter(status='submitted').count(),
+                'approved_reports': user_expense_reports.filter(status='approved').count(),
+                'my_total_amount': user_expense_reports.aggregate(
+                    total=Sum('expense_items__amount'))['total'] or 0,
+            }
+        })
+        
+        # Reuniones de video recientes para usuarios normales (solo de su empresa)
+        video_meetings_query = Q(organizer=request.user)  # Sus propias reuniones
+        if user_company:
+            # Agregar reuniones de su empresa (usando el campo company directamente)
+            video_meetings_query |= Q(company=user_company)
+        
+        recent_video_meetings = VideoMeeting.objects.filter(video_meetings_query).distinct().order_by('-created_at')[:5]
+        context['recent_video_meetings'] = recent_video_meetings
     
     return render(request, 'tickets/dashboard.html', context)
 
@@ -30618,4 +30659,874 @@ def ai_tutor_optimize_config(request):
         
     except Exception as e:
         print(f"Error optimizando configuración: {e}")
-        return JsonResponse({'error': f'Error interno: {str(e)}'}, status=500)
+        return JsonResponse({
+            'success': False,
+            'error': 'Error al optimizar la configuración'
+        })
+
+
+# ================================
+# VISTAS PARA RENDICIÓN DE GASTOS
+# ================================
+
+@login_required
+def expense_report_list(request):
+    """Lista de rendiciones de gastos"""
+    # Filtrar por rol de usuario
+    if is_agent(request.user):
+        # Los agentes ven todas las rendiciones
+        queryset = ExpenseReport.objects.all()
+    else:
+        # Los empleados solo ven sus propias rendiciones
+        queryset = ExpenseReport.objects.filter(employee=request.user)
+    
+    # Aplicar filtros
+    form = ExpenseReportFilterForm(request.GET)
+    if form.is_valid():
+        if form.cleaned_data.get('status'):
+            queryset = queryset.filter(status=form.cleaned_data['status'])
+        if form.cleaned_data.get('employee') and is_agent(request.user):
+            queryset = queryset.filter(employee=form.cleaned_data['employee'])
+        if form.cleaned_data.get('start_date'):
+            queryset = queryset.filter(created_at__gte=form.cleaned_data['start_date'])
+        if form.cleaned_data.get('end_date'):
+            queryset = queryset.filter(created_at__lte=form.cleaned_data['end_date'])
+        if form.cleaned_data.get('search'):
+            search = form.cleaned_data['search']
+            queryset = queryset.filter(
+                Q(title__icontains=search) | 
+                Q(description__icontains=search)
+            )
+    
+    queryset = queryset.select_related('employee', 'company', 'approved_by').order_by('-created_at')
+    
+    # Paginación
+    from django.core.paginator import Paginator
+    paginator = Paginator(queryset, 20)
+    page_number = request.GET.get('page')
+    expense_reports = paginator.get_page(page_number)
+    
+    context = {
+        'expense_reports': expense_reports,
+        'form': form,
+        'title': 'Rendiciones de Gastos',
+        'is_agent': is_agent(request.user),
+    }
+    
+    return render(request, 'tickets/expense_report_list.html', context)
+
+
+@login_required
+def expense_report_create(request):
+    """Crear nueva rendición de gastos"""
+    if request.method == 'POST':
+        form = ExpenseReportForm(request.POST)
+        if form.is_valid():
+            expense_report = form.save(commit=False)
+            expense_report.employee = request.user
+            # Asignar empresa del usuario si tiene
+            try:
+                expense_report.company = request.user.profile.company
+            except:
+                pass
+            expense_report.save()
+            messages.success(request, 'Rendición de gastos creada exitosamente.')
+            return redirect('expense_report_detail', pk=expense_report.pk)
+    else:
+        form = ExpenseReportForm()
+    
+    context = {
+        'form': form,
+        'title': 'Nueva Rendición de Gastos',
+        'action': 'Crear'
+    }
+    
+    return render(request, 'tickets/expense_report_form.html', context)
+
+
+@login_required
+def expense_report_detail(request, pk):
+    """Detalle de rendición de gastos"""
+    expense_report = get_object_or_404(ExpenseReport, pk=pk)
+    
+    # Verificar permisos
+    if not is_agent(request.user) and expense_report.employee != request.user:
+        messages.error(request, 'No tienes permisos para ver esta rendición.')
+        return redirect('expense_report_list')
+    
+    # Obtener items de gastos
+    expense_items = expense_report.expense_items.all().order_by('-date', '-created_at')
+    
+    # Obtener comentarios
+    comments = expense_report.comments.all().order_by('-created_at')
+    if not is_agent(request.user):
+        # Los empleados no ven comentarios internos
+        comments = comments.filter(is_internal=False)
+    
+    # Formulario de comentarios
+    comment_form = ExpenseCommentForm()
+    
+    context = {
+        'expense_report': expense_report,
+        'expense_items': expense_items,
+        'comments': comments,
+        'comment_form': comment_form,
+        'title': f'Rendición: {expense_report.title}',
+        'is_agent': is_agent(request.user),
+        'can_edit': expense_report.can_edit() and (
+            expense_report.employee == request.user or is_agent(request.user)
+        ),
+        'can_submit': expense_report.can_submit() and expense_report.employee == request.user,
+        'can_approve': expense_report.can_approve() and is_agent(request.user),
+    }
+    
+    return render(request, 'tickets/expense_report_detail.html', context)
+
+
+@login_required
+def expense_report_edit(request, pk):
+    """Editar rendición de gastos"""
+    expense_report = get_object_or_404(ExpenseReport, pk=pk)
+    
+    # Verificar permisos
+    if not expense_report.can_edit():
+        messages.error(request, 'Esta rendición no puede ser editada.')
+        return redirect('expense_report_detail', pk=pk)
+    
+    if not is_agent(request.user) and expense_report.employee != request.user:
+        messages.error(request, 'No tienes permisos para editar esta rendición.')
+        return redirect('expense_report_detail', pk=pk)
+    
+    if request.method == 'POST':
+        form = ExpenseReportForm(request.POST, instance=expense_report)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Rendición actualizada exitosamente.')
+            return redirect('expense_report_detail', pk=pk)
+    else:
+        form = ExpenseReportForm(instance=expense_report)
+    
+    context = {
+        'form': form,
+        'expense_report': expense_report,
+        'title': f'Editar: {expense_report.title}',
+        'action': 'Actualizar'
+    }
+    
+    return render(request, 'tickets/expense_report_form.html', context)
+
+
+@login_required
+def expense_report_delete(request, pk):
+    """Eliminar rendición de gastos"""
+    expense_report = get_object_or_404(ExpenseReport, pk=pk)
+    
+    # Verificar permisos
+    if not expense_report.can_edit():
+        messages.error(request, 'Esta rendición no puede ser eliminada.')
+        return redirect('expense_report_detail', pk=pk)
+    
+    if not is_agent(request.user) and expense_report.employee != request.user:
+        messages.error(request, 'No tienes permisos para eliminar esta rendición.')
+        return redirect('expense_report_detail', pk=pk)
+    
+    if request.method == 'POST':
+        expense_report.delete()
+        messages.success(request, 'Rendición eliminada exitosamente.')
+        return redirect('expense_report_list')
+    
+    context = {
+        'expense_report': expense_report,
+        'title': f'Eliminar: {expense_report.title}'
+    }
+    
+    return render(request, 'tickets/expense_report_delete.html', context)
+
+
+@login_required
+def expense_report_submit(request, pk):
+    """Enviar rendición para aprobación"""
+    expense_report = get_object_or_404(ExpenseReport, pk=pk)
+    
+    # Verificar permisos
+    if not expense_report.can_submit() or expense_report.employee != request.user:
+        messages.error(request, 'No puedes enviar esta rendición.')
+        return redirect('expense_report_detail', pk=pk)
+    
+    if request.method == 'POST':
+        expense_report.status = 'submitted'
+        expense_report.submitted_at = timezone.now()
+        expense_report.save()
+        
+        messages.success(request, 'Rendición enviada para aprobación.')
+        return redirect('expense_report_detail', pk=pk)
+    
+    context = {
+        'expense_report': expense_report,
+        'title': f'Enviar: {expense_report.title}'
+    }
+    
+    return render(request, 'tickets/expense_report_submit.html', context)
+
+
+@login_required
+def expense_report_approve(request, pk):
+    """Aprobar rendición de gastos"""
+    if not is_agent(request.user):
+        messages.error(request, 'No tienes permisos para aprobar rendiciones.')
+        return redirect('expense_report_detail', pk=pk)
+    
+    expense_report = get_object_or_404(ExpenseReport, pk=pk)
+    
+    if not expense_report.can_approve():
+        messages.error(request, 'Esta rendición no puede ser aprobada.')
+        return redirect('expense_report_detail', pk=pk)
+    
+    if request.method == 'POST':
+        expense_report.status = 'approved'
+        expense_report.approved_by = request.user
+        expense_report.approved_at = timezone.now()
+        expense_report.save()
+        
+        messages.success(request, 'Rendición aprobada exitosamente.')
+        return redirect('expense_report_detail', pk=pk)
+    
+    context = {
+        'expense_report': expense_report,
+        'title': f'Aprobar: {expense_report.title}'
+    }
+    
+    return render(request, 'tickets/expense_report_approve.html', context)
+
+
+@login_required
+def expense_report_reject(request, pk):
+    """Rechazar rendición de gastos"""
+    if not is_agent(request.user):
+        messages.error(request, 'No tienes permisos para rechazar rendiciones.')
+        return redirect('expense_report_detail', pk=pk)
+    
+    expense_report = get_object_or_404(ExpenseReport, pk=pk)
+    
+    if not expense_report.can_approve():
+        messages.error(request, 'Esta rendición no puede ser rechazada.')
+        return redirect('expense_report_detail', pk=pk)
+    
+    if request.method == 'POST':
+        reason = request.POST.get('reason', '')
+        if not reason:
+            messages.error(request, 'Debes proporcionar un motivo de rechazo.')
+            return redirect('expense_report_detail', pk=pk)
+        
+        expense_report.status = 'rejected'
+        expense_report.rejection_reason = reason
+        expense_report.save()
+        
+        messages.success(request, 'Rendición rechazada.')
+        return redirect('expense_report_detail', pk=pk)
+    
+    context = {
+        'expense_report': expense_report,
+        'title': f'Rechazar: {expense_report.title}'
+    }
+    
+    return render(request, 'tickets/expense_report_reject.html', context)
+
+
+@login_required
+def expense_report_mark_paid(request, pk):
+    """Marcar rendición como pagada"""
+    if not is_agent(request.user):
+        messages.error(request, 'No tienes permisos para marcar como pagado.')
+        return redirect('expense_report_detail', pk=pk)
+    
+    expense_report = get_object_or_404(ExpenseReport, pk=pk)
+    
+    if expense_report.status != 'approved':
+        messages.error(request, 'Solo se pueden marcar como pagadas las rendiciones aprobadas.')
+        return redirect('expense_report_detail', pk=pk)
+    
+    if request.method == 'POST':
+        payment_reference = request.POST.get('payment_reference', '')
+        expense_report.status = 'paid'
+        expense_report.payment_reference = payment_reference
+        expense_report.paid_at = timezone.now()
+        expense_report.save()
+        
+        messages.success(request, 'Rendición marcada como pagada.')
+        return redirect('expense_report_detail', pk=pk)
+    
+    context = {
+        'expense_report': expense_report,
+        'title': f'Marcar como Pagado: {expense_report.title}'
+    }
+    
+    return render(request, 'tickets/expense_report_mark_paid.html', context)
+
+
+@login_required
+def expense_item_create(request, report_pk):
+    """Crear nuevo item de gasto"""
+    expense_report = get_object_or_404(ExpenseReport, pk=report_pk)
+    
+    # Verificar permisos
+    if not expense_report.can_edit():
+        messages.error(request, 'No se pueden agregar gastos a esta rendición.')
+        return redirect('expense_report_detail', pk=report_pk)
+    
+    if not is_agent(request.user) and expense_report.employee != request.user:
+        messages.error(request, 'No tienes permisos para agregar gastos a esta rendición.')
+        return redirect('expense_report_detail', pk=report_pk)
+    
+    if request.method == 'POST':
+        form = ExpenseItemForm(request.POST, request.FILES, expense_report=expense_report)
+        print(f"DEBUG - Errores del formulario: {form.errors}")
+        print(f"DEBUG - Datos POST: {request.POST}")
+        print(f"DEBUG - Currency field: {form['currency']}")
+        print(f"DEBUG - Currency choices: {form.fields['currency'].choices}")
+        if form.is_valid():
+            expense_item = form.save(commit=False)
+            expense_item.expense_report = expense_report
+            expense_item.save()
+            messages.success(request, 'Gasto agregado exitosamente.')
+            return redirect('expense_report_detail', pk=report_pk)
+    else:
+        form = ExpenseItemForm(expense_report=expense_report)
+        print(f"DEBUG - Currency field GET: {form['currency']}")
+        print(f"DEBUG - Currency choices GET: {form.fields['currency'].choices}")
+        print(f"DEBUG - Currency initial GET: {form.fields['currency'].initial}")
+    
+    context = {
+        'form': form,
+        'expense_report': expense_report,
+        'title': f'Agregar Gasto - {expense_report.title}',
+        'action': 'Agregar'
+    }
+    
+    return render(request, 'tickets/expense_item_form.html', context)
+
+
+@login_required
+def expense_item_edit(request, pk):
+    """Editar item de gasto"""
+    expense_item = get_object_or_404(ExpenseItem, pk=pk)
+    expense_report = expense_item.expense_report
+    
+    # Verificar permisos
+    if not expense_report.can_edit():
+        messages.error(request, 'Esta rendición no puede ser editada.')
+        return redirect('expense_report_detail', pk=expense_report.pk)
+    
+    if not is_agent(request.user) and expense_report.employee != request.user:
+        messages.error(request, 'No tienes permisos para editar este gasto.')
+        return redirect('expense_report_detail', pk=expense_report.pk)
+    
+    if request.method == 'POST':
+        form = ExpenseItemForm(request.POST, request.FILES, instance=expense_item, expense_report=expense_report)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Gasto actualizado exitosamente.')
+            return redirect('expense_report_detail', pk=expense_report.pk)
+    else:
+        form = ExpenseItemForm(instance=expense_item, expense_report=expense_report)
+    
+    context = {
+        'form': form,
+        'expense_item': expense_item,
+        'expense_report': expense_report,
+        'title': f'Editar Gasto - {expense_item.description}',
+        'action': 'Actualizar'
+    }
+    
+    return render(request, 'tickets/expense_item_form.html', context)
+
+
+@login_required
+def expense_item_delete(request, pk):
+    """Eliminar item de gasto"""
+    expense_item = get_object_or_404(ExpenseItem, pk=pk)
+    expense_report = expense_item.expense_report
+    
+    # Verificar permisos
+    if not expense_report.can_edit():
+        messages.error(request, 'Esta rendición no puede ser editada.')
+        return redirect('expense_report_detail', pk=expense_report.pk)
+    
+    if not is_agent(request.user) and expense_report.employee != request.user:
+        messages.error(request, 'No tienes permisos para eliminar este gasto.')
+        return redirect('expense_report_detail', pk=expense_report.pk)
+    
+    if request.method == 'POST':
+        expense_item.delete()
+        messages.success(request, 'Gasto eliminado exitosamente.')
+        return redirect('expense_report_detail', pk=expense_report.pk)
+    
+    context = {
+        'expense_item': expense_item,
+        'expense_report': expense_report,
+        'title': f'Eliminar Gasto - {expense_item.description}'
+    }
+    
+    return render(request, 'tickets/expense_item_delete.html', context)
+
+
+@login_required
+def expense_comment_create(request, report_pk):
+    """Crear comentario en rendición"""
+    expense_report = get_object_or_404(ExpenseReport, pk=report_pk)
+    
+    # Verificar permisos de lectura
+    if not is_agent(request.user) and expense_report.employee != request.user:
+        messages.error(request, 'No tienes permisos para comentar en esta rendición.')
+        return redirect('expense_report_detail', pk=report_pk)
+    
+    if request.method == 'POST':
+        form = ExpenseCommentForm(request.POST)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.expense_report = expense_report
+            comment.user = request.user
+            # Solo agentes pueden crear comentarios internos
+            if not is_agent(request.user):
+                comment.is_internal = False
+            comment.save()
+            messages.success(request, 'Comentario agregado exitosamente.')
+        else:
+            messages.error(request, 'Error al agregar el comentario.')
+    
+    return redirect('expense_report_detail', pk=report_pk)
+
+
+# ============================================
+# VISTAS PARA REUNIONES DE VIDEO
+# ============================================
+
+@login_required
+def video_meeting_list(request):
+    """Lista de reuniones de video"""
+    from .models import VideoMeeting
+    from .forms import MeetingFilterForm
+    
+    # Obtener todas las reuniones del usuario
+    meetings = VideoMeeting.objects.all()
+    
+    # Filtrar por permisos
+    if not is_agent(request.user):
+        # Los empleados solo ven sus reuniones (organizadas o participan)
+        meetings = meetings.filter(
+            models.Q(organizer=request.user) | 
+            models.Q(participants=request.user)
+        ).distinct()
+    
+    # Aplicar filtros
+    filter_form = MeetingFilterForm(request.GET, user=request.user)
+    if filter_form.is_valid():
+        if filter_form.cleaned_data.get('search'):
+            search = filter_form.cleaned_data['search']
+            meetings = meetings.filter(
+                models.Q(title__icontains=search) |
+                models.Q(description__icontains=search)
+            )
+        
+        if filter_form.cleaned_data.get('status'):
+            meetings = meetings.filter(status=filter_form.cleaned_data['status'])
+        
+        if filter_form.cleaned_data.get('transcription_status'):
+            meetings = meetings.filter(
+                transcription_status=filter_form.cleaned_data['transcription_status']
+            )
+        
+        if filter_form.cleaned_data.get('company'):
+            meetings = meetings.filter(company=filter_form.cleaned_data['company'])
+        
+        if filter_form.cleaned_data.get('organizer'):
+            meetings = meetings.filter(organizer=filter_form.cleaned_data['organizer'])
+        
+        if filter_form.cleaned_data.get('date_from'):
+            meetings = meetings.filter(scheduled_date__gte=filter_form.cleaned_data['date_from'])
+        
+        if filter_form.cleaned_data.get('date_to'):
+            from datetime import datetime, time
+            date_to = datetime.combine(filter_form.cleaned_data['date_to'], time.max)
+            meetings = meetings.filter(scheduled_date__lte=date_to)
+    
+    # Ordenar
+    meetings = meetings.order_by('-scheduled_date', '-created_at')
+    
+    # Paginación
+    from django.core.paginator import Paginator
+    paginator = Paginator(meetings, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'filter_form': filter_form,
+        'total_meetings': meetings.count(),
+    }
+    
+    return render(request, 'tickets/video_meeting_list.html', context)
+
+
+@login_required
+def video_meeting_create(request):
+    """Crear nueva reunión de video"""
+    from .forms import VideoMeetingForm
+    
+    if request.method == 'POST':
+        form = VideoMeetingForm(request.POST, request.FILES, user=request.user)
+        if form.is_valid():
+            meeting = form.save(commit=False)
+            meeting.organizer = request.user
+            
+            # Si el usuario tiene empresa y no se especificó una, asignar la del usuario
+            if not meeting.company and hasattr(request.user, 'employee') and request.user.employee and request.user.employee.company:
+                meeting.company = request.user.employee.company
+            
+            meeting.save()
+            form.save_m2m()  # Guardar participantes (ManyToMany)
+            
+            # Si hay archivo de grabación, iniciar transcripción automática
+            if meeting.recording_file:
+                meeting.transcription_status = 'pending'
+                meeting.save()
+                
+                # Iniciar transcripción en background (si OpenAI está configurado)
+                try:
+                    from .ai_utils import transcribe_meeting_async
+                    transcribe_meeting_async(meeting.id)
+                    messages.success(request, 'Reunión creada exitosamente. La transcripción se procesará automáticamente.')
+                except:
+                    messages.success(request, 'Reunión creada exitosamente. Puedes transcribir manualmente o configurar OpenAI para transcripción automática.')
+            else:
+                messages.success(request, 'Reunión creada exitosamente.')
+            
+            return redirect('video_meeting_detail', pk=meeting.pk)
+    else:
+        form = VideoMeetingForm(user=request.user)
+    
+    context = {
+        'form': form,
+        'title': 'Nueva Reunión de Video',
+        'action': 'Crear'
+    }
+    
+    return render(request, 'tickets/video_meeting_form.html', context)
+
+
+@login_required
+def video_meeting_detail(request, pk):
+    """Detalle de reunión de video"""
+    from .models import VideoMeeting, MeetingNote
+    from .forms import MeetingNoteForm
+    
+    meeting = get_object_or_404(VideoMeeting, pk=pk)
+    
+    # Verificar permisos
+    if not is_agent(request.user):
+        if request.user != meeting.organizer and request.user not in meeting.participants.all():
+            messages.error(request, 'No tienes permisos para ver esta reunión.')
+            return redirect('video_meeting_list')
+    
+    # Manejar formulario de notas
+    if request.method == 'POST':
+        if 'add_note' in request.POST:
+            note_form = MeetingNoteForm(request.POST)
+            if note_form.is_valid():
+                note = note_form.save(commit=False)
+                note.meeting = meeting
+                note.user = request.user
+                note.save()
+                messages.success(request, 'Nota agregada exitosamente.')
+                return redirect('video_meeting_detail', pk=pk)
+        
+        elif 'transcribe_now' in request.POST:
+            # Iniciar transcripción manual
+            if meeting.recording_file:
+                meeting.transcription_status = 'pending'
+                meeting.save()
+                
+                try:
+                    from .ai_utils import transcribe_meeting_async
+                    transcribe_meeting_async(meeting.id)
+                    messages.success(request, 'Transcripción iniciada. Se procesará en segundo plano.')
+                except:
+                    messages.error(request, 'Error al iniciar la transcripción. Verifica la configuración de OpenAI.')
+            else:
+                messages.error(request, 'No hay archivo de grabación para transcribir.')
+            
+            return redirect('video_meeting_detail', pk=pk)
+    
+    # Obtener notas (filtrar privadas si no es el autor)
+    notes = meeting.notes.all()
+    if not is_agent(request.user):
+        notes = notes.filter(
+            models.Q(is_private=False) | models.Q(user=request.user)
+        )
+    notes = notes.order_by('-created_at')
+    
+    note_form = MeetingNoteForm()
+    
+    context = {
+        'meeting': meeting,
+        'notes': notes,
+        'note_form': note_form,
+        'can_edit': meeting.can_edit() and (is_agent(request.user) or meeting.organizer == request.user),
+    }
+    
+    return render(request, 'tickets/video_meeting_detail.html', context)
+
+
+@login_required
+def video_meeting_edit(request, pk):
+    """Editar reunión de video"""
+    from .forms import VideoMeetingForm
+    
+    meeting = get_object_or_404(VideoMeeting, pk=pk)
+    
+    # Verificar permisos
+    if not is_agent(request.user) and meeting.organizer != request.user:
+        messages.error(request, 'No tienes permisos para editar esta reunión.')
+        return redirect('video_meeting_detail', pk=pk)
+    
+    if not meeting.can_edit():
+        messages.error(request, 'Esta reunión no puede ser editada.')
+        return redirect('video_meeting_detail', pk=pk)
+    
+    if request.method == 'POST':
+        form = VideoMeetingForm(request.POST, request.FILES, instance=meeting, user=request.user)
+        if form.is_valid():
+            # Verificar si se subió un nuevo archivo de grabación
+            old_file = meeting.recording_file
+            meeting = form.save()
+            
+            # Si hay nuevo archivo, reiniciar transcripción
+            if meeting.recording_file and meeting.recording_file != old_file:
+                meeting.transcription_status = 'pending'
+                meeting.transcription_text = ''
+                meeting.ai_summary = ''
+                meeting.key_points = ''
+                meeting.action_items = ''
+                meeting.save()
+                
+                try:
+                    from .ai_utils import transcribe_meeting_async
+                    transcribe_meeting_async(meeting.id)
+                    messages.success(request, 'Reunión actualizada. La nueva grabación se transcribirá automáticamente.')
+                except:
+                    messages.success(request, 'Reunión actualizada exitosamente.')
+            else:
+                messages.success(request, 'Reunión actualizada exitosamente.')
+            
+            return redirect('video_meeting_detail', pk=meeting.pk)
+    else:
+        form = VideoMeetingForm(instance=meeting, user=request.user)
+    
+    context = {
+        'form': form,
+        'meeting': meeting,
+        'title': f'Editar - {meeting.title}',
+        'action': 'Guardar Cambios'
+    }
+    
+    return render(request, 'tickets/video_meeting_form.html', context)
+
+
+@login_required
+def video_meeting_transcription(request, pk):
+    """Editar transcripción manualmente"""
+    from .forms import MeetingTranscriptionForm
+    
+    meeting = get_object_or_404(VideoMeeting, pk=pk)
+    
+    # Verificar permisos
+    if not is_agent(request.user):
+        if request.user != meeting.organizer and request.user not in meeting.participants.all():
+            messages.error(request, 'No tienes permisos para editar la transcripción.')
+            return redirect('video_meeting_detail', pk=pk)
+    
+    if request.method == 'POST':
+        form = MeetingTranscriptionForm(request.POST, instance=meeting)
+        if form.is_valid():
+            form.save()
+            # Si se editó manualmente, marcar como completada
+            if meeting.transcription_text:
+                meeting.transcription_status = 'completed'
+                meeting.save()
+            
+            messages.success(request, 'Transcripción actualizada exitosamente.')
+            return redirect('video_meeting_detail', pk=meeting.pk)
+    else:
+        form = MeetingTranscriptionForm(instance=meeting)
+    
+    context = {
+        'form': form,
+        'meeting': meeting,
+        'title': f'Transcripción - {meeting.title}',
+    }
+    
+    return render(request, 'tickets/video_meeting_transcription.html', context)
+
+
+@login_required
+def video_meeting_delete(request, pk):
+    """Eliminar reunión de video"""
+    meeting = get_object_or_404(VideoMeeting, pk=pk)
+    
+    # Verificar permisos
+    if not is_agent(request.user) and meeting.organizer != request.user:
+        messages.error(request, 'No tienes permisos para eliminar esta reunión.')
+        return redirect('video_meeting_detail', pk=pk)
+    
+    if request.method == 'POST':
+        meeting_title = meeting.title
+        
+        # Eliminar archivo de grabación si existe
+        if meeting.recording_file:
+            try:
+                import os
+                if os.path.exists(meeting.recording_file.path):
+                    os.remove(meeting.recording_file.path)
+            except:
+                pass
+        
+        meeting.delete()
+        messages.success(request, f'Reunión "{meeting_title}" eliminada exitosamente.')
+        return redirect('video_meeting_list')
+    
+    context = {
+        'meeting': meeting,
+        'title': f'Eliminar Reunión - {meeting.title}',
+    }
+    
+    return render(request, 'tickets/video_meeting_delete.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def video_meeting_transcribe(request, pk):
+    """Iniciar transcripción automática de reunión"""
+    from django.http import JsonResponse
+    from .ai_utils import transcribe_meeting_async
+    
+    meeting = get_object_or_404(VideoMeeting, pk=pk)
+    
+    # Verificar permisos
+    if not is_agent(request.user) and meeting.organizer != request.user:
+        return JsonResponse({'success': False, 'error': 'Sin permisos'})
+    
+    # Verificar que hay archivo
+    if not meeting.recording_file:
+        return JsonResponse({'success': False, 'error': 'No hay archivo para transcribir'})
+    
+    # Verificar que no esté ya procesando
+    if meeting.transcription_status == 'pending':
+        return JsonResponse({'success': False, 'error': 'Ya se está procesando la transcripción'})
+    
+    try:
+        # Iniciar transcripción asíncrona
+        transcribe_meeting_async(meeting.id)
+        
+        # Actualizar estado
+        meeting.transcription_status = 'pending'
+        meeting.save(update_fields=['transcription_status'])
+        
+        return JsonResponse({'success': True, 'message': 'Transcripción iniciada'})
+    
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@login_required
+def video_meeting_transcription_status(request, pk):
+    """Obtener estado de transcripción de reunión"""
+    from django.http import JsonResponse
+    
+    meeting = get_object_or_404(VideoMeeting, pk=pk)
+    
+    # Verificar permisos
+    if not is_agent(request.user) and meeting.organizer != request.user:
+        return JsonResponse({'error': 'Sin permisos'}, status=403)
+    
+    return JsonResponse({
+        'status': meeting.transcription_status or 'none',
+        'has_transcription': bool(meeting.transcription_text),
+        'transcription_date': meeting.transcription_date.isoformat() if meeting.transcription_date else None,
+    })
+
+
+@login_required
+def meeting_note_delete(request, meeting_pk, note_pk):
+    """Eliminar nota de reunión"""
+    from .models import MeetingNote
+    
+    meeting = get_object_or_404(VideoMeeting, pk=meeting_pk)
+    note = get_object_or_404(MeetingNote, pk=note_pk, meeting=meeting)
+    
+    # Verificar permisos
+    if not is_agent(request.user) and note.user != request.user:
+        messages.error(request, 'No tienes permisos para eliminar esta nota.')
+        return redirect('video_meeting_detail', pk=meeting_pk)
+    
+    if request.method == 'POST':
+        note.delete()
+        messages.success(request, 'Nota eliminada exitosamente.')
+    
+    return redirect('video_meeting_detail', pk=meeting_pk)
+
+
+@login_required
+def video_meeting_download_transcription(request, pk):
+    """Descargar transcripción de reunión de video como archivo de texto"""
+    meeting = get_object_or_404(VideoMeeting, pk=pk)
+    
+    # Verificar que la transcripción esté completa y disponible
+    if meeting.transcription_status != 'completed' or not meeting.transcription_text:
+        messages.error(request, 'La transcripción no está disponible para descarga.')
+        return redirect('dashboard')
+    
+    # Verificar permisos (organizador, participantes o agentes)
+    if not is_agent(request.user) and meeting.organizer != request.user and request.user not in meeting.participants.all():
+        messages.error(request, 'No tienes permisos para descargar esta transcripción.')
+        return redirect('dashboard')
+    
+    # Crear el contenido del archivo
+    content = f"""TRANSCRIPCIÓN DE REUNIÓN DE VIDEO
+========================================
+
+Título: {meeting.title}
+Organizador: {meeting.organizer.get_full_name() or meeting.organizer.username}
+Fecha: {meeting.created_at.strftime('%d/%m/%Y %H:%M')}
+Duración: {meeting.duration_minutes or 'No especificada'} minutos
+Estado: {meeting.get_status_display()}
+
+DESCRIPCIÓN:
+{meeting.description or 'Sin descripción'}
+
+TRANSCRIPCIÓN:
+==============
+{meeting.transcription_text}
+
+RESUMEN DE IA:
+==============
+{meeting.ai_summary or 'No disponible'}
+
+PUNTOS CLAVE:
+=============
+{meeting.key_points or 'No disponibles'}
+
+ELEMENTOS DE ACCIÓN:
+===================
+{meeting.action_items or 'No disponibles'}
+
+---
+Generado automáticamente por TicketProo
+Fecha de descarga: {timezone.now().strftime('%d/%m/%Y %H:%M')}
+"""
+    
+    # Crear la respuesta HTTP
+    response = HttpResponse(content, content_type='text/plain; charset=utf-8')
+    filename = f"transcripcion_{meeting.title.replace(' ', '_')}_{meeting.created_at.strftime('%Y%m%d')}.txt"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    return response

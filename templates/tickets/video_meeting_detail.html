@@ -1,0 +1,334 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ meeting.title }} - Reunión - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'employee_dashboard' %}">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'video_meeting_list' %}">
+                            <i class="bi bi-camera-video"></i> Reuniones
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">{{ meeting.title }}</li>
+                </ol>
+            </nav>
+            <h2><i class="bi bi-camera-video text-purple"></i> {{ meeting.title }}</h2>
+        </div>
+        
+        <div class="btn-group">
+            <a href="{% url 'video_meeting_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+            {% if meeting.organizer == request.user or request.user.is_staff %}
+                <a href="{% url 'video_meeting_edit' meeting.id %}" class="btn btn-primary">
+                    <i class="bi bi-pencil"></i> Editar
+                </a>
+                <a href="{% url 'video_meeting_delete' meeting.id %}" class="btn btn-danger">
+                    <i class="bi bi-trash"></i> Eliminar
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información principal -->
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle"></i> Información de la Reunión
+                    </h5>
+                    <span class="badge bg-{{ meeting.get_status_color }} badge-lg">
+                        {{ meeting.get_status_display }}
+                    </span>
+                </div>
+                
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <strong><i class="bi bi-calendar-event"></i> Fecha programada:</strong><br>
+                            {% if meeting.scheduled_date %}
+                                <span class="text-muted">{{ meeting.scheduled_date|date:"d/m/Y H:i" }}</span>
+                            {% else %}
+                                <span class="text-muted">No programada</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <strong><i class="bi bi-clock"></i> Duración:</strong><br>
+                            <span class="text-muted">
+                                {% if meeting.duration_minutes %}
+                                    {{ meeting.duration_minutes }} minutos
+                                {% else %}
+                                    No especificada
+                                {% endif %}
+                            </span>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <strong><i class="bi bi-building"></i> Empresa:</strong><br>
+                            <span class="text-muted">{{ meeting.company.name }}</span>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <strong><i class="bi bi-person"></i> Creado por:</strong><br>
+                            <span class="text-muted">{{ meeting.organizer.get_full_name|default:meeting.organizer.username }}</span>
+                        </div>
+                        
+                        {% if meeting.meeting_url %}
+                        <div class="col-md-12 mb-3">
+                            <strong><i class="bi bi-link-45deg"></i> Enlace de reunión:</strong><br>
+                            <a href="{{ meeting.meeting_url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-box-arrow-up-right"></i> Abrir reunión
+                            </a>
+                        </div>
+                        {% endif %}
+                        
+                        {% if meeting.description %}
+                        <div class="col-md-12 mb-3">
+                            <strong><i class="bi bi-file-text"></i> Descripción:</strong><br>
+                            <div class="bg-light p-3 rounded">
+                                {{ meeting.description|linebreaks }}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Participantes -->
+            {% if meeting.participants.exists %}
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-people"></i> Participantes ({{ meeting.participants.count }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for participant in meeting.participants.all %}
+                        <div class="col-md-6 mb-2">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-2" 
+                                     style="width: 32px; height: 32px;">
+                                    <small class="text-white fw-bold">
+                                        {{ participant.first_name|first|default:participant.username|first }}{{ participant.last_name|first }}
+                                    </small>
+                                </div>
+                                <div>
+                                    <div class="fw-bold">{{ participant.get_full_name|default:participant.username }}</div>
+                                    <small class="text-muted">{{ participant.email }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Grabación y transcripción -->
+            {% if meeting.recording_file or meeting.transcription_text %}
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-file-play"></i> Grabación y Transcripción
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if meeting.recording_file %}
+                    <div class="mb-3">
+                        <strong><i class="bi bi-download"></i> Archivo de grabación:</strong><br>
+                        <div class="d-flex align-items-center mt-2">
+                            <a href="{{ meeting.recording_file.url }}" target="_blank" class="btn btn-outline-primary btn-sm me-2">
+                                <i class="bi bi-play-circle"></i> Reproducir/Descargar
+                            </a>
+                            <small class="text-muted">
+                                {{ meeting.recording_file.name|default:"grabacion.mp4" }} 
+                                ({{ meeting.get_file_size_display }})
+                            </small>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if meeting.transcription_text %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <strong><i class="bi bi-file-text"></i> Transcripción automática:</strong>
+                            {% if meeting.organizer == request.user or request.user.is_staff %}
+                                <a href="{% url 'video_meeting_transcription_edit' meeting.id %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-pencil"></i> Editar transcripción
+                                </a>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="bg-light p-3 rounded mb-3">
+                            <div class="transcription-text" style="max-height: 300px; overflow-y: auto;">
+                                {{ meeting.transcription_text|linebreaks }}
+                            </div>
+                        </div>
+                        
+                        {% if meeting.transcription_summary %}
+                        <div class="mb-3">
+                            <strong><i class="bi bi-card-text"></i> Resumen:</strong>
+                            <div class="bg-info bg-opacity-10 p-3 rounded mt-2">
+                                {{ meeting.transcription_summary|linebreaks }}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if meeting.action_items %}
+                        <div class="mb-3">
+                            <strong><i class="bi bi-list-check"></i> Elementos de acción:</strong>
+                            <div class="bg-warning bg-opacity-10 p-3 rounded mt-2">
+                                {{ meeting.action_items|linebreaks }}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="text-muted small">
+                            <i class="bi bi-robot"></i> Transcripción procesada automáticamente con IA
+                            {% if meeting.transcription_date %}
+                                el {{ meeting.transcription_date|date:"d/m/Y H:i" }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% elif meeting.recording_file and meeting.transcription_status == 'pending' %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-hourglass-split"></i>
+                        <strong>Procesando transcripción...</strong><br>
+                        La transcripción automática está en proceso. Esto puede tomar algunos minutos.
+                        <div class="mt-2">
+                            <button class="btn btn-sm btn-outline-primary" onclick="location.reload()">
+                                <i class="bi bi-arrow-clockwise"></i> Actualizar estado
+                            </button>
+                        </div>
+                    </div>
+                    {% elif meeting.recording_file and meeting.transcription_status == 'failed' %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Error en la transcripción</strong><br>
+                        No se pudo procesar la transcripción automática. Puedes intentar nuevamente o agregar la transcripción manualmente.
+                        <div class="mt-2">
+                            <a href="{% url 'video_meeting_transcription_edit' meeting.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil"></i> Agregar transcripción manual
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Sidebar con información adicional -->
+        <div class="col-lg-4">
+            <!-- Estado y fechas -->
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-info-circle"></i> Estado y Fechas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Estado:</strong><br>
+                        <span class="badge bg-{{ meeting.get_status_color }} mt-1">
+                            {{ meeting.get_status_display }}
+                        </span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Creado:</strong><br>
+                        <small class="text-muted">{{ meeting.created_at|date:"d/m/Y H:i" }}</small>
+                    </div>
+                    
+                    {% if meeting.updated_at != meeting.created_at %}
+                    <div class="mb-3">
+                        <strong>Última actualización:</strong><br>
+                        <small class="text-muted">{{ meeting.updated_at|date:"d/m/Y H:i" }}</small>
+                    </div>
+                    {% endif %}
+                    
+                    {% if meeting.transcription_date %}
+                    <div class="mb-3">
+                        <strong>Transcripción procesada:</strong><br>
+                        <small class="text-muted">{{ meeting.transcription_date|date:"d/m/Y H:i" }}</small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Acciones rápidas -->
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-lightning"></i> Acciones Rápidas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if meeting.meeting_url %}
+                    <a href="{{ meeting.meeting_url }}" target="_blank" class="btn btn-primary btn-sm w-100 mb-2">
+                        <i class="bi bi-camera-video"></i> Unirse a reunión
+                    </a>
+                    {% endif %}
+                    
+                    {% if meeting.recording_file %}
+                    <a href="{{ meeting.recording_file.url }}" target="_blank" class="btn btn-outline-primary btn-sm w-100 mb-2">
+                        <i class="bi bi-download"></i> Descargar grabación
+                    </a>
+                    {% endif %}
+                    
+                    {% if meeting.organizer == request.user or request.user.is_staff %}
+                    <a href="{% url 'video_meeting_transcription_edit' meeting.id %}" class="btn btn-outline-secondary btn-sm w-100 mb-2">
+                        <i class="bi bi-file-text"></i> {% if meeting.transcription_text %}Editar{% else %}Agregar{% endif %} transcripción
+                    </a>
+                    {% endif %}
+                    
+                    <button class="btn btn-outline-secondary btn-sm w-100" onclick="window.print()">
+                        <i class="bi bi-printer"></i> Imprimir
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.text-purple {
+    color: #6f42c1 !important;
+}
+
+.badge-lg {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+@media print {
+    .btn-group, .card-header, .breadcrumb {
+        display: none !important;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-refresh si la transcripción está pendiente
+    {% if meeting.transcription_status == 'pending' %}
+    setTimeout(function() {
+        location.reload();
+    }, 30000); // Refrescar cada 30 segundos
+    {% endif %}
+});
+</script>
+{% endblock %}

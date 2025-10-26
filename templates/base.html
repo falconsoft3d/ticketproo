@@ -90,7 +90,7 @@
                     {% if user.is_authenticated %}
                         {% if user.is_staff or user.is_superuser or user.groups.all and user.groups.first.name == 'Agentes' %}
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if 'employee_request' in request.resolver_match.url_name or 'ai_manager' in request.resolver_match.url_name or 'employee_dashboard' in request.resolver_match.url_name or 'internal_agreement' in request.resolver_match.url_name or 'training_plan' in request.resolver_match.url_name or 'my_training_progress' in request.resolver_match.url_name or 'ai_recommendation' in request.resolver_match.url_name or 'employee_absence' in request.resolver_match.url_name or 'company_protocol' in request.resolver_match.url_name or 'ai_tutor' in request.resolver_match.url_name %}active{% endif %}" 
+                        <a class="nav-link dropdown-toggle {% if 'employee_request' in request.resolver_match.url_name or 'ai_manager' in request.resolver_match.url_name or 'employee_dashboard' in request.resolver_match.url_name or 'internal_agreement' in request.resolver_match.url_name or 'training_plan' in request.resolver_match.url_name or 'my_training_progress' in request.resolver_match.url_name or 'ai_recommendation' in request.resolver_match.url_name or 'employee_absence' in request.resolver_match.url_name or 'company_protocol' in request.resolver_match.url_name or 'ai_tutor' in request.resolver_match.url_name or 'video_meeting' in request.resolver_match.url_name or 'expense_report' in request.resolver_match.url_name %}active{% endif %}" 
                            href="#" id="navbarDropdownEmployee" role="button" data-bs-toggle="dropdown">
                             <i class="bi bi-person-badge"></i> Empleado
                         </a>
@@ -115,6 +115,18 @@
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item {% if 'expense_report' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'expense_report_list' %}">
+                                    <i class="bi bi-receipt"></i> Rendición de Gastos
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'video_meeting' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'video_meeting_list' %}">
+                                    <i class="bi bi-camera-video"></i> Reuniones de Video
+                                </a>
+                            </li>
                             <li>
                                 <a class="dropdown-item {% if 'ai_manager' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'ai_manager_list' %}">

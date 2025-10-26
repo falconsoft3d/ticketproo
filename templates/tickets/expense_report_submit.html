@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">
+                        <i class="fas fa-paper-plane"></i> {{ title }}
+                    </h4>
+                </div>
+                
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>¿Estás seguro?</strong><br>
+                        Esta acción enviará la rendición para aprobación y no podrás editarla hasta que sea procesada.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6>Detalles de la rendición:</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Título:</strong> {{ expense_report.title }}</li>
+                            <li><strong>Total:</strong> ${{ expense_report.total_amount|floatformat:2 }}</li>
+                            <li><strong>Gastos:</strong> {{ expense_report.expense_items.count }} item{{ expense_report.expense_items.count|pluralize }}</li>
+                            <li><strong>Período:</strong> 
+                                {% if expense_report.start_date %}
+                                    {{ expense_report.start_date|date:"d/m/Y" }}
+                                    {% if expense_report.end_date %} - {{ expense_report.end_date|date:"d/m/Y" }}{% endif %}
+                                {% else %}
+                                    No especificado
+                                {% endif %}
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    {% if expense_report.expense_items.count == 0 %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Atención:</strong> Esta rendición no tiene gastos registrados. 
+                        ¿Estás seguro de que quieres enviarla?
+                    </div>
+                    {% endif %}
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'expense_report_detail' expense_report.pk %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-paper-plane"></i> Confirmar Envío
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

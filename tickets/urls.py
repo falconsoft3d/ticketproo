@@ -1009,5 +1009,38 @@ urlpatterns += [
     path('ai-tutor/<int:pk>/upload/', views.ai_tutor_upload_attachment, name='ai_tutor_upload_attachment'),
     path('ai-tutor/feedback/<int:pk>/generate/', views.ai_tutor_generate_feedback_ajax, name='ai_tutor_generate_feedback_ajax'),
     path('ai-tutor/optimize-config/', views.ai_tutor_optimize_config, name='ai_tutor_optimize_config'),
+    
+    # URLs de Rendición de Gastos
+    path('expense-reports/', views.expense_report_list, name='expense_report_list'),
+    path('expense-reports/create/', views.expense_report_create, name='expense_report_create'),
+    path('expense-reports/<int:pk>/', views.expense_report_detail, name='expense_report_detail'),
+    path('expense-reports/<int:pk>/edit/', views.expense_report_edit, name='expense_report_edit'),
+    path('expense-reports/<int:pk>/delete/', views.expense_report_delete, name='expense_report_delete'),
+    path('expense-reports/<int:pk>/submit/', views.expense_report_submit, name='expense_report_submit'),
+    path('expense-reports/<int:pk>/approve/', views.expense_report_approve, name='expense_report_approve'),
+    path('expense-reports/<int:pk>/reject/', views.expense_report_reject, name='expense_report_reject'),
+    path('expense-reports/<int:pk>/mark-paid/', views.expense_report_mark_paid, name='expense_report_mark_paid'),
+    
+    # URLs de Items de Gastos
+    path('expense-reports/<int:report_pk>/items/create/', views.expense_item_create, name='expense_item_create'),
+    path('expense-items/<int:pk>/edit/', views.expense_item_edit, name='expense_item_edit'),
+    path('expense-items/<int:pk>/delete/', views.expense_item_delete, name='expense_item_delete'),
+    
+    # URLs de Comentarios de Gastos
+    path('expense-reports/<int:report_pk>/comments/create/', views.expense_comment_create, name='expense_comment_create'),
+    
+    # URLs de Reuniones de Video
+    path('video-meetings/', views.video_meeting_list, name='video_meeting_list'),
+    path('video-meetings/create/', views.video_meeting_create, name='video_meeting_create'),
+    path('video-meetings/<int:pk>/', views.video_meeting_detail, name='video_meeting_detail'),
+    path('video-meetings/<int:pk>/edit/', views.video_meeting_edit, name='video_meeting_edit'),
+    path('video-meetings/<int:pk>/delete/', views.video_meeting_delete, name='video_meeting_delete'),
+    path('video-meetings/<int:pk>/transcription/', views.video_meeting_transcription, name='video_meeting_transcription_edit'),
+    path('video-meetings/<int:pk>/transcribe/', views.video_meeting_transcribe, name='video_meeting_transcribe'),
+    path('video-meetings/<int:pk>/transcription-status/', views.video_meeting_transcription_status, name='video_meeting_transcription_status'),
+    path('video-meetings/<int:pk>/download-transcription/', views.video_meeting_download_transcription, name='video_meeting_download_transcription'),
+    
+    # URLs de Notas de Reunión
+    path('video-meetings/<int:meeting_pk>/notes/<int:note_pk>/delete/', views.meeting_note_delete, name='meeting_note_delete'),
 ]
 

@@ -885,3 +885,224 @@ Extrae la información del ticket en formato JSON válido."""
         except Exception as e:
             logger.error(f"Error creando ticket: {str(e)}")
             return {"success": False, "error": str(e)}
+
+
+# ============================================
+# FUNCIONES DE TRANSCRIPCIÓN DE REUNIONES
+# ============================================
+
+def transcribe_meeting_async(meeting_id):
+    """
+    Transcribir reunión de forma asíncrona
+    """
+    import threading
+    thread = threading.Thread(target=transcribe_meeting, args=(meeting_id,))
+    thread.daemon = True
+    thread.start()
+
+
+def transcribe_meeting(meeting_id):
+    """
+    Transcribir archivo de reunión usando OpenAI Whisper
+    """
+    from .models import VideoMeeting, SystemConfiguration
+    
+    try:
+        meeting = VideoMeeting.objects.get(id=meeting_id)
+        config = SystemConfiguration.objects.first()
+        
+        if not config or not config.openai_api_key:
+            logger.error("OpenAI API key no configurada")
+            meeting.transcription_status = 'failed'
+            meeting.save()
+            return False
+        
+        if not meeting.recording_file:
+            logger.error("No hay archivo de grabación")
+            meeting.transcription_status = 'failed'
+            meeting.save()
+            return False
+        
+        # Marcar como procesando
+        meeting.transcription_status = 'processing'
+        meeting.save()
+        
+        # Preparar archivo para OpenAI
+        file_path = meeting.recording_file.path
+        
+        # Verificar si el archivo existe
+        if not os.path.exists(file_path):
+            logger.error(f"Archivo no encontrado: {file_path}")
+            meeting.transcription_status = 'failed'
+            meeting.save()
+            return False
+        
+        # Transcribir con OpenAI Whisper
+        headers = {
+            "Authorization": f"Bearer {config.openai_api_key}"
+        }
+        
+        with open(file_path, 'rb') as audio_file:
+            files = {
+                'file': audio_file,
+                'model': (None, 'whisper-1'),
+                'language': (None, 'es'),  # Español
+                'response_format': (None, 'json')
+            }
+            
+            response = requests.post(
+                'https://api.openai.com/v1/audio/transcriptions',
+                headers=headers,
+                files=files,
+                timeout=300  # 5 minutos timeout
+            )
+        
+        if response.status_code == 200:
+            transcription_data = response.json()
+            transcription_text = transcription_data.get('text', '')
+            
+            # Guardar transcripción
+            meeting.transcription_text = transcription_text
+            meeting.transcription_status = 'completed'
+            
+            # Generar resumen y puntos clave con IA
+            if transcription_text:
+                try:
+                    ai_analysis = analyze_meeting_content(transcription_text, config.openai_api_key)
+                    if ai_analysis:
+                        meeting.ai_summary = ai_analysis.get('summary', '')
+                        meeting.key_points = ai_analysis.get('key_points', '')
+                        meeting.action_items = ai_analysis.get('action_items', '')
+                except Exception as e:
+                    logger.error(f"Error generando análisis de IA: {str(e)}")
+            
+            meeting.save()
+            logger.info(f"Transcripción completada para reunión {meeting_id}")
+            return True
+            
+        else:
+            logger.error(f"Error en transcripción: {response.status_code} - {response.text}")
+            meeting.transcription_status = 'failed'
+            meeting.save()
+            return False
+            
+    except VideoMeeting.DoesNotExist:
+        logger.error(f"Reunión {meeting_id} no encontrada")
+        return False
+    except Exception as e:
+        logger.error(f"Error transcribiendo reunión {meeting_id}: {str(e)}")
+        try:
+            meeting = VideoMeeting.objects.get(id=meeting_id)
+            meeting.transcription_status = 'failed'
+            meeting.save()
+        except:
+            pass
+        return False
+
+
+def analyze_meeting_content(transcription_text, api_key):
+    """
+    Analizar contenido de la transcripción para generar resumen y puntos clave
+    """
+    try:
+        prompt = f"""
+Analiza la siguiente transcripción de reunión y proporciona:
+
+1. Un resumen ejecutivo conciso (máximo 200 palabras)
+2. Los puntos clave discutidos (formato de lista con viñetas)
+3. Los elementos de acción identificados (formato de checklist con responsables cuando sea posible)
+
+Transcripción:
+{transcription_text}
+
+Por favor, responde en formato JSON con las siguientes claves:
+- summary: resumen ejecutivo
+- key_points: puntos clave (formato markdown con viñetas)
+- action_items: elementos de acción (formato markdown con checkboxes)
+"""
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}"
+        }
+        
+        data = {
+            "model": "gpt-3.5-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "Eres un asistente especializado en análisis de reuniones. Genera resúmenes claros y actionables."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            "max_tokens": 1500,
+            "temperature": 0.3
+        }
+        
+        response = requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers=headers,
+            json=data,
+            timeout=60
+        )
+        
+        if response.status_code == 200:
+            response_data = response.json()
+            content = response_data['choices'][0]['message']['content']
+            
+            # Intentar parsear como JSON
+            try:
+                return json.loads(content)
+            except json.JSONDecodeError:
+                # Si no es JSON válido, estructurar manualmente
+                return {
+                    'summary': content[:500] + '...' if len(content) > 500 else content,
+                    'key_points': '- Análisis disponible en el contenido de respuesta',
+                    'action_items': '- [ ] Revisar transcripción completa'
+                }
+        else:
+            logger.error(f"Error en análisis de IA: {response.status_code} - {response.text}")
+            return None
+            
+    except Exception as e:
+        logger.error(f"Error analizando contenido de reunión: {str(e)}")
+        return None
+
+
+def extract_audio_from_video(video_path):
+    """
+    Extraer audio de archivo de video para transcripción
+    Nota: Requiere ffmpeg instalado en el sistema
+    """
+    try:
+        import subprocess
+        import tempfile
+        
+        # Crear archivo temporal para el audio
+        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_audio:
+            audio_path = temp_audio.name
+        
+        # Usar ffmpeg para extraer audio
+        cmd = [
+            'ffmpeg', '-i', video_path,
+            '-vn',  # No video
+            '-acodec', 'pcm_s16le',  # Audio codec
+            '-ar', '16000',  # Sample rate
+            '-ac', '1',  # Mono
+            audio_path
+        ]
+        
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        
+        if result.returncode == 0:
+            return audio_path
+        else:
+            logger.error(f"Error extrayendo audio: {result.stderr}")
+            return None
+            
+    except Exception as e:
+        logger.error(f"Error extrayendo audio de video: {str(e)}")
+        return None

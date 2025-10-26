@@ -350,7 +350,25 @@
                                 </div>
                             </button>
                         </div>
-                        <div class="col-lg-9 col-md-6"></div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <a href="{% url 'video_meeting_list' %}" class="btn btn-outline-purple w-100 quick-action-btn d-flex align-items-center justify-content-center" style="height: 65px; border-color: #6f42c1; color: #6f42c1;">
+                                <i class="bi bi-camera-video me-2" style="font-size: 1.8rem;"></i>
+                                <div class="text-start">
+                                    <div style="font-weight: 600;">Reuniones</div>
+                                    <small class="text-muted">Video y transcripción</small>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <a href="{% url 'expense_report_list' %}" class="btn btn-outline-secondary w-100 quick-action-btn d-flex align-items-center justify-content-center" style="height: 65px;">
+                                <i class="bi bi-receipt me-2" style="font-size: 1.8rem;"></i>
+                                <div class="text-start">
+                                    <div style="font-weight: 600;">Gastos</div>
+                                    <small class="text-muted">Rendición</small>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-lg-3 col-md-6"></div>
                     </div>
                 </div>
             </div>

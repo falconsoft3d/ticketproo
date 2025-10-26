@@ -1,0 +1,296 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">{{ title }}</h4>
+                    <a href="{% url 'expense_report_detail' expense_report.pk %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Volver a Rendición
+                    </a>
+                </div>
+                
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.description.label_tag }}
+                                    {{ form.description }}
+                                    {% if form.description.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.description.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    {{ form.category.label_tag }}
+                                    {{ form.category }}
+                                    {% if form.category.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.category.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-2">
+                                <div class="mb-3">
+                                    {{ form.amount.label_tag }}
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        {{ form.amount }}
+                                    </div>
+                                    {% if form.amount.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.amount.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-1">
+                                <div class="mb-3">
+                                    {{ form.currency.label_tag }}
+                                    {{ form.currency }}
+                                    {% if form.currency.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.currency.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    {{ form.date.label_tag }}
+                                    {{ form.date }}
+                                    {% if form.date.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.date.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    {{ form.vendor.label_tag }}
+                                    {{ form.vendor }}
+                                    {% if form.vendor.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.vendor.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    {{ form.location.label_tag }}
+                                    {{ form.location }}
+                                    {% if form.location.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.location.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-2">
+                                <div class="mb-3">
+                                    {{ form.receipt_file.label_tag }}
+                                    {{ form.receipt_file }}
+                                    {% if form.receipt_file.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.receipt_file.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        Formatos aceptados: PDF, JPG, PNG (máx. 5MB)
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-10">
+                                <div class="mb-3">
+                                    {{ form.notes.label_tag }}
+                                    {{ form.notes }}
+                                    {% if form.notes.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.notes.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-2">
+                                <div class="mb-3">
+                                    <label class="form-label">&nbsp;</label>
+                                    <div class="form-check">
+                                        {{ form.is_reimbursable }}
+                                        {{ form.is_reimbursable.label_tag }}
+                                    </div>
+                                    {% if form.is_reimbursable.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.is_reimbursable.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if expense_item.receipt_file %}
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <h6>Comprobante actual:</h6>
+                                    <a href="{{ expense_item.receipt_file.url }}" target="_blank" class="btn btn-sm btn-outline-info">
+                                        <i class="fas fa-file"></i> Ver comprobante actual
+                                    </a>
+                                    <small class="d-block mt-1 text-muted">
+                                        Sube un nuevo archivo para reemplazar el actual
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'expense_report_detail' expense_report.pk %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> {{ action }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Configurar campo de fecha
+    const dateField = document.getElementById('id_date');
+    if (dateField) {
+        dateField.classList.add('form-control');
+        // Establecer fecha máxima como hoy
+        const today = new Date().toISOString().split('T')[0];
+        dateField.max = today;
+        
+        // Si no tiene valor, establecer fecha de hoy
+        if (!dateField.value) {
+            dateField.value = today;
+        }
+    }
+    
+    // Configurar campo de monto
+    const amountField = document.getElementById('id_amount');
+    if (amountField) {
+        amountField.addEventListener('input', function() {
+            // Validar que sea un número positivo
+            if (this.value < 0) {
+                this.value = 0;
+            }
+        });
+    }
+    
+    // Mostrar preview del archivo seleccionado
+    const receiptField = document.getElementById('id_receipt_file');
+    if (receiptField) {
+        receiptField.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const fileSize = (file.size / 1024 / 1024).toFixed(2);
+                const maxSize = 5;
+                
+                if (fileSize > maxSize) {
+                    alert(`El archivo es muy grande (${fileSize}MB). El tamaño máximo permitido es ${maxSize}MB.`);
+                    this.value = '';
+                    return;
+                }
+                
+                // Mostrar información del archivo
+                const info = document.createElement('small');
+                info.className = 'text-info d-block mt-1';
+                info.textContent = `Archivo seleccionado: ${file.name} (${fileSize}MB)`;
+                
+                // Remover info anterior si existe
+                const existingInfo = this.parentNode.querySelector('.text-info');
+                if (existingInfo) {
+                    existingInfo.remove();
+                }
+                
+                this.parentNode.appendChild(info);
+            }
+        });
+    }
+    
+    // Actualizar descripción basada en categoría seleccionada
+    const categoryField = document.getElementById('id_category');
+    const descriptionField = document.getElementById('id_description');
+    
+    if (categoryField && descriptionField) {
+        categoryField.addEventListener('change', function() {
+            if (!descriptionField.value) {
+                const categoryText = this.options[this.selectedIndex].text;
+                const suggestions = {
+                    'food': 'Almuerzo de trabajo',
+                    'transport': 'Taxi/Uber',
+                    'hotel': 'Hospedaje',
+                    'others': 'Gasto varios'
+                };
+                
+                if (suggestions[this.value]) {
+                    descriptionField.placeholder = `Ej: ${suggestions[this.value]}`;
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

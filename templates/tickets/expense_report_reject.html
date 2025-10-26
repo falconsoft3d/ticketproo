@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-times"></i> {{ title }}
+                    </h4>
+                </div>
+                
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Rechazar Rendición</strong><br>
+                        Esta acción rechazará la rendición y la regresará al empleado para revisión.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6>Detalles de la rendición:</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Empleado:</strong> {{ expense_report.employee.get_full_name|default:expense_report.employee.username }}</li>
+                            <li><strong>Título:</strong> {{ expense_report.title }}</li>
+                            <li><strong>Total:</strong> ${{ expense_report.total_amount|floatformat:2 }}</li>
+                            <li><strong>Gastos:</strong> {{ expense_report.expense_items.count }} item{{ expense_report.expense_items.count|pluralize }}</li>
+                        </ul>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="reason" class="form-label">
+                                <strong>Motivo del rechazo: *</strong>
+                            </label>
+                            <textarea name="reason" id="reason" class="form-control" rows="4" 
+                                      placeholder="Explica el motivo del rechazo para que el empleado pueda corregir la rendición..."
+                                      required></textarea>
+                            <small class="form-text text-muted">
+                                Este motivo será visible para el empleado.
+                            </small>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'expense_report_detail' expense_report.pk %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-times"></i> Confirmar Rechazo
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const reasonField = document.getElementById('reason');
+    
+    form.addEventListener('submit', function(e) {
+        if (!reasonField.value.trim()) {
+            e.preventDefault();
+            alert('Debes proporcionar un motivo de rechazo.');
+            reasonField.focus();
+        }
+    });
+});
+</script>
+{% endblock %}
