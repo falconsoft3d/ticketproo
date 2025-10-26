@@ -31,6 +31,58 @@
     </div>
 </div>
 
+<!-- URLs Principales -->
+{% if principal_urls %}
+<div class="row mb-4">
+    <div class="col">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-link-45deg me-2"></i>
+                    Enlaces Principales
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for url in principal_urls %}
+                    <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body text-center p-3">
+                                <div class="mb-2">
+                                    <i class="bi bi-globe2 fs-2 text-primary"></i>
+                                </div>
+                                <h6 class="card-title mb-2">{{ url.title|truncatechars:20 }}</h6>
+                                {% if url.description %}
+                                    <p class="card-text small text-muted mb-3">{{ url.description|truncatechars:50 }}</p>
+                                {% endif %}
+                                <div class="d-grid gap-2">
+                                    <a href="{{ url.url }}" target="_blank" class="btn btn-primary btn-sm">
+                                        <i class="bi bi-box-arrow-up-right me-1"></i>
+                                        Acceder
+                                    </a>
+                                    {% if url.username %}
+                                        <small class="text-muted">
+                                            <i class="bi bi-person me-1"></i>{{ url.username }}
+                                        </small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="text-end mt-3">
+                    <a href="{% url 'url_manager_list' %}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-gear me-1"></i>
+                        Gestionar URLs
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- Órdenes de trabajo pendientes de aprobación (solo para agentes) -->
 {% if is_agent and pending_work_orders %}
 <div class="row mb-4">

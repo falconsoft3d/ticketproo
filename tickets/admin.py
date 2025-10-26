@@ -18,7 +18,7 @@ from .models import (
     WhatsAppConnection, WhatsAppKeyword, WhatsAppMessage, ImagePrompt,
     AIManager, AIManagerMeeting, AIManagerMeetingAttachment, AIManagerSummary, CompanyAISummary, UserAIPerformanceEvaluation,
     WebsiteTracker, LegalContract, SupplierContractReview, PayPalPaymentLink, PayPalOrder, TodoItem,
-    AIBook, AIBookChapter, EmployeeRequest, InternalAgreement, Asset, AssetHistory
+    AIBook, AIBookChapter, EmployeeRequest, InternalAgreement, Asset, AssetHistory, UrlManager
 )
 
 # Configuración del sitio de administración
@@ -3825,3 +3825,49 @@ class AssetHistoryAdmin(admin.ModelAdmin):
             'new_employee',
             'performed_by'
         )
+
+
+@admin.register(UrlManager)
+class UrlManagerAdmin(admin.ModelAdmin):
+    """Administración de URLs con credenciales"""
+    list_display = ('title', 'url_display', 'username', 'category', 'is_active', 'is_principal', 'created_by', 'created_at')
+    list_filter = ('is_active', 'is_principal', 'category', 'created_by', 'created_at')
+    search_fields = ('title', 'url', 'username', 'description', 'category')
+    readonly_fields = ('created_at', 'updated_at', 'last_accessed')
+    list_editable = ('is_active', 'is_principal')
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('title', 'url', 'description', 'category')
+        }),
+        ('Credenciales', {
+            'fields': ('username', 'encrypted_password'),
+            'description': 'Las contraseñas se almacenan encriptadas por seguridad'
+        }),
+        ('Configuración', {
+            'fields': ('is_active', 'is_principal', 'created_by')
+        }),
+        ('Metadatos', {
+            'fields': ('created_at', 'updated_at', 'last_accessed'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def url_display(self, obj):
+        """Mostrar URL truncada con enlace"""
+        url_text = obj.url[:50] + '...' if len(obj.url) > 50 else obj.url
+        return format_html(
+            '<a href="{}" target="_blank" title="{}">{}</a>',
+            obj.url, obj.url, url_text
+        )
+    url_display.short_description = 'URL'
+    
+    def get_queryset(self, request):
+        """Optimizar consultas"""
+        return super().get_queryset(request).select_related('created_by')
+    
+    def save_model(self, request, obj, form, change):
+        """Asignar usuario creador si es nuevo"""
+        if not change:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)

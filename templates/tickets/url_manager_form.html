@@ -153,6 +153,22 @@
                                     {% endif %}
                                     <small class="form-text text-muted">{{ form.is_active.help_text }}</small>
                                 </div>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        {{ form.is_principal }}
+                                        <label class="form-check-label" for="{{ form.is_principal.id_for_label }}">
+                                            <i class="bi bi-star text-warning me-1"></i>
+                                            {{ form.is_principal.label }}
+                                        </label>
+                                    </div>
+                                    {% if form.is_principal.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.is_principal.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">{{ form.is_principal.help_text }}</small>
+                                </div>
                             </div>
                         </div>
 

@@ -1838,7 +1838,7 @@ class UrlManagerForm(forms.ModelForm):
     
     class Meta:
         model = UrlManager
-        fields = ['title', 'url', 'username', 'password', 'description', 'category', 'is_active']
+        fields = ['title', 'url', 'username', 'password', 'description', 'category', 'is_active', 'is_principal']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -1864,6 +1864,9 @@ class UrlManagerForm(forms.ModelForm):
             'is_active': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
+            'is_principal': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
         }
         labels = {
             'title': 'Título',
@@ -1872,6 +1875,7 @@ class UrlManagerForm(forms.ModelForm):
             'description': 'Descripción',
             'category': 'Categoría',
             'is_active': 'Activo',
+            'is_principal': 'URL Principal',
         }
         help_texts = {
             'title': 'Nombre descriptivo para identificar esta URL',
@@ -1880,6 +1884,7 @@ class UrlManagerForm(forms.ModelForm):
             'description': 'Información adicional sobre el propósito de esta URL',
             'category': 'Categoría para organizar las URLs',
             'is_active': 'Desmarcar si la URL ya no está en uso',
+            'is_principal': 'Marcar para mostrar esta URL en el dashboard principal',
         }
     
     def __init__(self, *args, **kwargs):

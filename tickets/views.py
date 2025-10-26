@@ -196,6 +196,10 @@ def dashboard_view(request):
         # Agregar conceptos activos
         concepts = Concept.objects.filter(is_active=True)[:10]
         context['concepts'] = concepts
+        
+        # Agregar URLs principales
+        principal_urls = UrlManager.objects.filter(is_principal=True, is_active=True).order_by('title')[:10]
+        context['principal_urls'] = principal_urls
     else:
         # Estadísticas para usuarios regulares (sus tickets + tickets de empresa + proyectos)
         user_projects = request.user.assigned_projects.all()
@@ -254,6 +258,10 @@ def dashboard_view(request):
             'is_agent': False,
             'daily_hours': daily_hours,
         }
+        
+        # Agregar URLs principales
+        principal_urls = UrlManager.objects.filter(is_principal=True, is_active=True).order_by('title')[:10]
+        context['principal_urls'] = principal_urls
     
     return render(request, 'tickets/dashboard.html', context)
 

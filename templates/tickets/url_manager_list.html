@@ -80,6 +80,11 @@
                                                         <i class="bi bi-x-circle"></i> Inactivo
                                                     </span>
                                                 {% endif %}
+                                                {% if url.is_principal %}
+                                                    <span class="badge bg-warning text-dark me-2">
+                                                        <i class="bi bi-star"></i> Principal
+                                                    </span>
+                                                {% endif %}
                                                 {% if url.category %}
                                                     <span class="badge bg-info me-2">
                                                         <i class="bi bi-tag"></i> {{ url.category }}

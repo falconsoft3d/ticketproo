@@ -1749,6 +1749,11 @@ class UrlManager(models.Model):
         verbose_name='Activo',
         help_text='Indica si la URL está activa o no'
     )
+    is_principal = models.BooleanField(
+        default=False,
+        verbose_name='URL Principal',
+        help_text='Marcar como URL principal para mostrar en el dashboard'
+    )
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -1776,6 +1781,7 @@ class UrlManager(models.Model):
         indexes = [
             models.Index(fields=['category', 'is_active']),
             models.Index(fields=['created_by', 'is_active']),
+            models.Index(fields=['is_principal', 'is_active']),
         ]
     
     def __str__(self):
