@@ -130,6 +130,10 @@
                                                class="btn btn-sm btn-outline-primary">
                                                 <i class="bi bi-eye"></i> Ver
                                             </a>
+                                            <a href="{% url 'note_pdf' note.id %}" 
+                                               class="btn btn-sm btn-outline-success" target="_blank">
+                                                <i class="bi bi-file-earmark-pdf"></i> PDF
+                                            </a>
                                             <a href="{% url 'note_edit' note.id %}" 
                                                class="btn btn-sm btn-outline-secondary">
                                                 <i class="bi bi-pencil"></i> Editar

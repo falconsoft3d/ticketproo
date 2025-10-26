@@ -85,6 +85,16 @@ urlpatterns = [
     path('notes/<int:note_id>/', views.note_detail_view, name='note_detail'),
     path('notes/<int:note_id>/edit/', views.note_edit_view, name='note_edit'),
     path('notes/<int:note_id>/delete/', views.note_delete_view, name='note_delete'),
+    path('notes/<int:note_id>/pdf/', views.note_pdf_view, name='note_pdf'),
+    
+    # URLs para compartir notas
+    path('notes/<int:note_id>/generate-share-link/', views.note_generate_share_link, name='note_generate_share_link'),
+    path('notes/<int:note_id>/disable-sharing/', views.note_disable_sharing, name='note_disable_sharing'),
+    path('notes/<int:note_id>/regenerate-share-link/', views.note_regenerate_share_link, name='note_regenerate_share_link'),
+    
+    # URLs públicas para notas compartidas (sin login)
+    path('shared/note/<str:token>/', views.shared_note_view, name='shared_note'),
+    path('shared/note/<str:token>/pdf/', views.shared_note_pdf, name='shared_note_pdf'),
     
     # URL para ver notas de un usuario específico
     path('users/<int:user_id>/notes/', views.user_notes_view, name='user_notes'),
@@ -1049,5 +1059,12 @@ urlpatterns += [
     path('quote-generator/<int:pk>/', views.quote_generator_detail, name='quote_generator_detail'),
     path('quote-generator/<int:pk>/edit/', views.quote_generator_edit, name='quote_generator_edit'),
     path('quote-generator/<int:pk>/regenerate/', views.quote_generator_regenerate, name='quote_generator_regenerate'),
+    
+    # URLs para cuentas regresivas
+    path('countdown-timer/', views.countdown_timer_list, name='countdown_timer_list'),
+    path('countdown-timer/create/', views.countdown_timer_create, name='countdown_timer_create'),
+    path('countdown-timer/<int:pk>/', views.countdown_timer_detail, name='countdown_timer_detail'),
+    path('countdown-timer/<int:pk>/edit/', views.countdown_timer_edit, name='countdown_timer_edit'),
+    path('countdown-timer/<int:pk>/delete/', views.countdown_timer_delete, name='countdown_timer_delete'),
 ]
 

@@ -339,6 +339,32 @@ def dashboard_view(request):
     context['dashboard_quotes'] = all_quotes
     context['dashboard_quotes_json'] = json.dumps(all_quotes, ensure_ascii=False)
     
+    # Agregar notas de la empresa al dashboard
+    user_company = None
+    try:
+        user_company = request.user.profile.company
+    except:
+        pass
+    
+    if user_company:
+        if is_agent(request.user):
+            # Agentes ven notas públicas de su empresa + sus propias notas privadas
+            recent_notes = UserNote.objects.filter(
+                models.Q(company=user_company, is_private=False) | models.Q(created_by=request.user)
+            ).select_related('user', 'created_by', 'company').order_by('-created_at')[:5]
+        else:
+            # Usuarios normales ven solo notas públicas de su empresa + sus propias notas privadas
+            recent_notes = UserNote.objects.filter(
+                models.Q(company=user_company, is_private=False) | models.Q(created_by=request.user)
+            ).select_related('user', 'created_by', 'company').order_by('-created_at')[:5]
+    else:
+        # Solo sus propias notas si no tiene empresa (tanto agentes como usuarios)
+        recent_notes = UserNote.objects.filter(
+            created_by=request.user
+        ).select_related('user', 'created_by', 'company').order_by('-created_at')[:5]
+    
+    context['recent_notes'] = recent_notes
+    
     return render(request, 'tickets/dashboard.html', context)
 
 @login_required
@@ -1655,17 +1681,29 @@ def user_profile_view(request):
 # =====================================
 
 @login_required
-@user_passes_test(is_agent, login_url='dashboard')
 def notes_list_view(request):
-    """Lista todas las notas internas (solo para agentes)"""
+    """Lista todas las notas internas"""
     
     # Obtener parámetros de filtro
     search_query = request.GET.get('search', '')
     user_filter = request.GET.get('user', '')
     privacy_filter = request.GET.get('privacy', '')
     
-    # Base queryset
-    notes = UserNote.objects.select_related('user', 'created_by').prefetch_related('tickets')
+    # Obtener la empresa del usuario
+    user_company = getattr(request.user.profile, 'company', None) if hasattr(request.user, 'profile') else None
+    
+    # Base queryset con filtrado de privacidad y empresa
+    if is_agent(request.user):
+        # Los agentes ven notas públicas de su empresa + sus propias notas privadas
+        notes = UserNote.objects.filter(
+            Q(company=user_company) & (Q(is_private=False) | Q(created_by=request.user))
+        ).select_related('user', 'created_by', 'company').prefetch_related('tickets')
+    else:
+        # Los usuarios normales solo ven sus propias notas de su empresa
+        notes = UserNote.objects.filter(
+            created_by=request.user,
+            company=user_company
+        ).select_related('user', 'created_by', 'company').prefetch_related('tickets')
     
     # Aplicar filtros
     if search_query:
@@ -1705,20 +1743,29 @@ def notes_list_view(request):
 
 
 @login_required
-@user_passes_test(is_agent, login_url='dashboard')
 def note_detail_view(request, note_id):
-    """Vista detallada de una nota (solo para agentes)"""
+    """Vista detallada de una nota"""
     
-    note = get_object_or_404(UserNote, id=note_id)
+    # Obtener la empresa del usuario
+    user_company = getattr(request.user.profile, 'company', None) if hasattr(request.user, 'profile') else None
     
-    # Verificar permisos
+    # Filtrar por empresa también
+    if is_agent(request.user):
+        # Los agentes pueden ver notas de su empresa
+        note = get_object_or_404(UserNote, id=note_id, company=user_company)
+    else:
+        # Los usuarios normales solo sus propias notas de su empresa
+        note = get_object_or_404(UserNote, id=note_id, created_by=request.user, company=user_company)
+    
+    # Verificar permisos usando el método del modelo
     if not note.can_view(request.user):
         messages.error(request, 'No tienes permisos para ver esta nota.')
         return redirect('notes_list')
     
     context = {
         'note': note,
-        'page_title': f'Nota: {note.title}'
+        'page_title': f'Nota: {note.title}',
+        'can_edit': note.can_edit(request.user)
     }
     return render(request, 'tickets/note_detail.html', context)
 
@@ -1731,11 +1778,23 @@ def note_create_view(request):
     if request.method == 'POST':
         form = UserNoteForm(request.POST, current_user=request.user)
         if form.is_valid():
-            note = form.save(created_by=request.user)
+            note = form.save(commit=False)
+            note.created_by = request.user
+            
+            # Asignar empresa del usuario si no es agente
+            if hasattr(request.user, 'profile') and request.user.profile.company and not note.company:
+                note.company = request.user.profile.company
+            
+            note.save()
+            form.save_m2m()  # Guardar relaciones many-to-many
             messages.success(request, f'Nota "{note.title}" creada exitosamente.')
             return redirect('note_detail', note_id=note.id)
     else:
         form = UserNoteForm(current_user=request.user)
+        
+        # Preseleccionar la empresa del usuario si tiene una
+        if hasattr(request.user, 'profile') and request.user.profile.company:
+            form.fields['company'].initial = request.user.profile.company
         
         # Si se pasa un usuario por parámetro, preseleccionarlo
         user_id = request.GET.get('user')
@@ -1758,13 +1817,21 @@ def note_create_view(request):
 
 
 @login_required
-@user_passes_test(is_agent, login_url='dashboard')
 def note_edit_view(request, note_id):
-    """Editar nota interna existente (solo para agentes)"""
+    """Editar nota interna existente"""
     
-    note = get_object_or_404(UserNote, id=note_id)
+    # Obtener la empresa del usuario
+    user_company = getattr(request.user.profile, 'company', None) if hasattr(request.user, 'profile') else None
     
-    # Verificar permisos
+    # Filtrar por empresa también
+    if is_agent(request.user):
+        # Los agentes pueden editar notas de su empresa
+        note = get_object_or_404(UserNote, id=note_id, company=user_company)
+    else:
+        # Los usuarios normales solo sus propias notas de su empresa
+        note = get_object_or_404(UserNote, id=note_id, created_by=request.user, company=user_company)
+    
+    # Verificar permisos usando el método del modelo
     if not note.can_edit(request.user):
         messages.error(request, 'No tienes permisos para editar esta nota.')
         return redirect('note_detail', note_id=note.id)
@@ -1772,9 +1839,16 @@ def note_edit_view(request, note_id):
     if request.method == 'POST':
         form = UserNoteForm(request.POST, instance=note, current_user=request.user)
         if form.is_valid():
-            note = form.save()
-            messages.success(request, f'Nota "{note.title}" actualizada exitosamente.')
-            return redirect('note_detail', note_id=note.id)
+            updated_note = form.save(commit=False)
+            
+            # Asignar empresa del usuario si no hay empresa asignada
+            if hasattr(request.user, 'profile') and request.user.profile.company and not updated_note.company:
+                updated_note.company = request.user.profile.company
+            
+            updated_note.save()
+            form.save_m2m()  # Guardar relaciones many-to-many
+            messages.success(request, f'Nota "{updated_note.title}" actualizada exitosamente.')
+            return redirect('note_detail', note_id=updated_note.id)
     else:
         form = UserNoteForm(instance=note, current_user=request.user)
     
@@ -1787,13 +1861,21 @@ def note_edit_view(request, note_id):
 
 
 @login_required
-@user_passes_test(is_agent, login_url='dashboard')
 def note_delete_view(request, note_id):
-    """Eliminar nota interna (solo para agentes)"""
+    """Eliminar nota interna"""
     
-    note = get_object_or_404(UserNote, id=note_id)
+    # Obtener la empresa del usuario
+    user_company = getattr(request.user.profile, 'company', None) if hasattr(request.user, 'profile') else None
     
-    # Verificar permisos
+    # Filtrar por empresa también
+    if is_agent(request.user):
+        # Los agentes pueden eliminar notas de su empresa
+        note = get_object_or_404(UserNote, id=note_id, company=user_company)
+    else:
+        # Los usuarios normales solo sus propias notas de su empresa
+        note = get_object_or_404(UserNote, id=note_id, created_by=request.user, company=user_company)
+    
+    # Verificar permisos usando el método del modelo
     if not note.can_delete(request.user):
         messages.error(request, 'No tienes permisos para eliminar esta nota.')
         return redirect('note_detail', note_id=note.id)
@@ -1809,6 +1891,329 @@ def note_delete_view(request, note_id):
         'page_title': f'Eliminar Nota: {note.title}'
     }
     return render(request, 'tickets/note_delete.html', context)
+
+
+@login_required
+def note_pdf_view(request, note_id):
+    """Generar PDF de una nota"""
+    from django.http import HttpResponse
+    from reportlab.lib.pagesizes import letter, A4
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+    from io import BytesIO
+    import datetime
+    
+    # Obtener la empresa del usuario
+    user_company = getattr(request.user.profile, 'company', None) if hasattr(request.user, 'profile') else None
+    
+    # Filtrar por empresa también
+    if is_agent(request.user):
+        # Los agentes pueden ver PDFs de notas de su empresa
+        note = get_object_or_404(UserNote, id=note_id, company=user_company)
+    else:
+        # Los usuarios normales solo sus propias notas de su empresa
+        note = get_object_or_404(UserNote, id=note_id, created_by=request.user, company=user_company)
+    
+    # Verificar permisos usando el método del modelo
+    if not note.can_view(request.user):
+        messages.error(request, 'No tienes permisos para ver esta nota.')
+        return redirect('notes_list')
+    
+    # Crear el PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{note.title.replace(" ", "_")}.pdf"'
+    
+    # Crear el documento PDF
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=20, leftMargin=20, topMargin=72, bottomMargin=72)
+    
+    # Estilos
+    styles = getSampleStyleSheet()
+    
+    # Estilo personalizado para el título
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=20,
+        spaceAfter=30,
+        alignment=TA_CENTER,
+        textColor=colors.darkblue
+    )
+    
+    # Estilo para información
+    info_style = ParagraphStyle(
+        'InfoStyle',
+        parent=styles['Normal'],
+        fontSize=12,
+        spaceAfter=8,
+        alignment=TA_LEFT,
+        textColor=colors.grey
+    )
+    
+    # Estilo para el contenido
+    content_style = ParagraphStyle(
+        'CustomContent',
+        parent=styles['Normal'],
+        fontSize=11,
+        spaceAfter=12,
+        alignment=TA_LEFT,
+        leftIndent=20,
+        rightIndent=20
+    )
+    
+    # Contenido del PDF
+    story = []
+    
+    # Título de la nota (no "NOTA INTERNA")
+    story.append(Paragraph(note.title.upper(), title_style))
+    story.append(Spacer(1, 20))
+    
+    # Fecha
+    story.append(Paragraph(f"Fecha: {note.created_at.strftime('%d/%m/%Y')}", info_style))
+    story.append(Spacer(1, 10))
+    
+    # Empresa (si existe)
+    if note.company:
+        story.append(Paragraph(f"Empresa: {note.company.name}", info_style))
+        story.append(Spacer(1, 20))
+    else:
+        story.append(Spacer(1, 10))
+    
+    # Línea separadora
+    story.append(Spacer(1, 20))
+    
+    # Descripción (contenido de la nota)
+    description_lines = note.description.split('\n')
+    for line in description_lines:
+        if line.strip():
+            story.append(Paragraph(line.strip(), content_style))
+        else:
+            story.append(Spacer(1, 8))
+    
+    # Construir el PDF
+    doc.build(story)
+    
+    # Obtener el valor del buffer y escribirlo en la respuesta
+    pdf = buffer.getvalue()
+    buffer.close()
+    response.write(pdf)
+    
+    return response
+
+
+@login_required
+def note_generate_share_link(request, note_id):
+    """Generar enlace para compartir nota públicamente"""
+    
+    # Obtener la empresa del usuario
+    user_company = getattr(request.user.profile, 'company', None) if hasattr(request.user, 'profile') else None
+    
+    # Filtrar por empresa también
+    if is_agent(request.user):
+        # Los agentes pueden generar enlaces para notas de su empresa
+        note = get_object_or_404(UserNote, id=note_id, company=user_company)
+    else:
+        # Los usuarios normales solo para sus propias notas de su empresa
+        note = get_object_or_404(UserNote, id=note_id, created_by=request.user, company=user_company)
+    
+    # Verificar permisos usando el método del modelo
+    if not note.can_edit(request.user):
+        messages.error(request, 'No tienes permisos para generar enlace de esta nota.')
+        return redirect('note_detail', note_id=note_id)
+    
+    if request.method == 'POST':
+        if not note.share_token:
+            # Generar token si no existe
+            note.generate_share_token()
+            messages.success(request, 'Enlace para compartir generado exitosamente.')
+        else:
+            # Si ya existe, solo activar compartir
+            note.is_shareable = True
+            note.save()
+            messages.info(request, 'Enlace para compartir activado.')
+    
+    return redirect('note_detail', note_id=note_id)
+
+
+@login_required
+def note_disable_sharing(request, note_id):
+    """Deshabilitar compartir nota públicamente"""
+    
+    # Obtener la empresa del usuario
+    user_company = getattr(request.user.profile, 'company', None) if hasattr(request.user, 'profile') else None
+    
+    # Filtrar por empresa también
+    if is_agent(request.user):
+        # Los agentes pueden deshabilitar enlaces para notas de su empresa
+        note = get_object_or_404(UserNote, id=note_id, company=user_company)
+    else:
+        # Los usuarios normales solo para sus propias notas de su empresa
+        note = get_object_or_404(UserNote, id=note_id, created_by=request.user, company=user_company)
+    
+    # Verificar permisos usando el método del modelo
+    if not note.can_edit(request.user):
+        messages.error(request, 'No tienes permisos para deshabilitar enlace de esta nota.')
+        return redirect('note_detail', note_id=note_id)
+    
+    if request.method == 'POST':
+        note.disable_sharing()
+        messages.warning(request, 'Enlace para compartir deshabilitado.')
+    
+    return redirect('note_detail', note_id=note_id)
+
+
+@login_required
+def note_regenerate_share_link(request, note_id):
+    """Regenerar enlace para compartir nota públicamente"""
+    
+    # Obtener la empresa del usuario
+    user_company = getattr(request.user.profile, 'company', None) if hasattr(request.user, 'profile') else None
+    
+    # Filtrar por empresa también
+    if is_agent(request.user):
+        # Los agentes pueden regenerar enlaces para notas de su empresa
+        note = get_object_or_404(UserNote, id=note_id, company=user_company)
+    else:
+        # Los usuarios normales solo para sus propias notas de su empresa
+        note = get_object_or_404(UserNote, id=note_id, created_by=request.user, company=user_company)
+    
+    # Verificar permisos usando el método del modelo
+    if not note.can_edit(request.user):
+        messages.error(request, 'No tienes permisos para regenerar enlace de esta nota.')
+        return redirect('note_detail', note_id=note_id)
+    
+    if request.method == 'POST':
+        # Generar nuevo token
+        note.generate_share_token()
+        messages.info(request, 'Enlace para compartir regenerado. El enlace anterior ya no es válido.')
+    
+    return redirect('note_detail', note_id=note_id)
+
+
+def shared_note_view(request, token):
+    """Vista pública para mostrar una nota mediante su token único"""
+    try:
+        note = get_object_or_404(UserNote, share_token=token, is_shareable=True)
+    except:
+        # Si la nota no existe o no está habilitada para compartir
+        context = {
+            'error_message': 'El enlace de la nota no es válido o ha expirado.',
+            'error_type': 'not_found'
+        }
+        return render(request, 'tickets/shared_note.html', context, status=404)
+    
+    # Incrementar contador de visualizaciones
+    note.increment_view_count()
+    
+    context = {
+        'note': note,
+        'token': token,
+        'page_title': f'Nota Compartida: {note.title}',
+    }
+    return render(request, 'tickets/shared_note.html', context)
+
+
+def shared_note_pdf(request, token):
+    """Vista pública para descargar PDF de una nota mediante su token único"""
+    try:
+        note = get_object_or_404(UserNote, share_token=token, is_shareable=True)
+    except:
+        raise Http404("La nota no existe o no está disponible para compartir")
+    
+    # Incrementar contador de visualizaciones (también cuenta como descarga)
+    note.increment_view_count()
+    
+    # Reutilizar la lógica de generación de PDF existente
+    from django.http import HttpResponse
+    from reportlab.lib.pagesizes import letter, A4
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+    from io import BytesIO
+    import datetime
+    
+    # Crear el PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{note.title.replace(" ", "_")}.pdf"'
+    
+    # Crear el documento PDF con márgenes reducidos
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=20, leftMargin=20, topMargin=72, bottomMargin=72)
+    
+    # Estilos
+    styles = getSampleStyleSheet()
+    
+    # Estilo personalizado para el título
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=20,
+        spaceAfter=30,
+        alignment=TA_CENTER,
+        textColor=colors.darkblue
+    )
+    
+    # Estilo para información
+    info_style = ParagraphStyle(
+        'InfoStyle',
+        parent=styles['Normal'],
+        fontSize=12,
+        spaceAfter=8,
+        alignment=TA_LEFT,
+        textColor=colors.grey
+    )
+    
+    # Estilo para el contenido
+    content_style = ParagraphStyle(
+        'CustomContent',
+        parent=styles['Normal'],
+        fontSize=11,
+        spaceAfter=12,
+        alignment=TA_LEFT,
+        leftIndent=20,
+        rightIndent=20
+    )
+    
+    # Contenido del PDF
+    story = []
+    
+    # Título de la nota
+    story.append(Paragraph(note.title.upper(), title_style))
+    
+    # Información de la nota
+    story.append(Paragraph(f"Fecha: {note.created_at.strftime('%d/%m/%Y')}", info_style))
+    
+    if note.company:
+        story.append(Paragraph(f"Empresa: {note.company.name}", info_style))
+        story.append(Spacer(1, 20))
+    else:
+        story.append(Spacer(1, 10))
+    
+    # Línea separadora
+    story.append(Spacer(1, 20))
+    
+    # Descripción (contenido de la nota)
+    description_lines = note.description.split('\n')
+    for line in description_lines:
+        if line.strip():
+            story.append(Paragraph(line.strip(), content_style))
+        else:
+            story.append(Spacer(1, 8))
+    
+    # Construir el PDF
+    doc.build(story)
+    
+    # Obtener el valor del buffer y escribirlo en la respuesta
+    pdf = buffer.getvalue()
+    buffer.close()
+    response.write(pdf)
+    
+    return response
 
 
 @login_required
@@ -31827,3 +32232,155 @@ Responde únicamente con un JSON válido en este formato exacto:
     except Exception as e:
         print(f"Error generando citas: {e}")
         return False
+
+
+# =============================================
+# VISTAS PARA CUENTAS REGRESIVAS
+# =============================================
+
+@login_required
+def countdown_timer_list(request):
+    """Lista todas las cuentas regresivas"""
+    from .models import CountdownTimer
+    
+    # Filtrar por empresa si el usuario no es agente
+    if is_agent(request.user):
+        # Los agentes ven todas las cuentas regresivas no privadas + las propias privadas
+        countdowns = CountdownTimer.objects.filter(
+            models.Q(is_private=False) | models.Q(created_by=request.user)
+        )
+    else:
+        # Solo mostrar cuentas regresivas de la empresa del usuario
+        user_company = None
+        if hasattr(request.user, 'profile') and request.user.profile.company:
+            user_company = request.user.profile.company
+        
+        if user_company:
+            # Mostrar solo las públicas de la empresa + las privadas propias
+            countdowns = CountdownTimer.objects.filter(
+                company=user_company
+            ).filter(
+                models.Q(is_private=False) | models.Q(created_by=request.user)
+            )
+        else:
+            # Solo las propias (privadas y públicas)
+            countdowns = CountdownTimer.objects.filter(created_by=request.user)
+    
+    # Ordenar por fecha objetivo
+    countdowns = countdowns.filter(is_active=True).order_by('target_date')
+    
+    return render(request, 'tickets/countdown_timer_list.html', {
+        'countdowns': countdowns,
+        'page_title': 'Cuentas Regresivas'
+    })
+
+
+@login_required
+def countdown_timer_create(request):
+    """Crear una nueva cuenta regresiva"""
+    from .models import CountdownTimer
+    from .forms import CountdownTimerForm
+    
+    if request.method == 'POST':
+        form = CountdownTimerForm(request.POST, user=request.user)
+        if form.is_valid():
+            countdown = form.save(commit=False)
+            countdown.created_by = request.user
+            
+            # Asignar empresa del usuario si no es agente
+            if hasattr(request.user, 'profile') and request.user.profile.company:
+                countdown.company = request.user.profile.company
+            
+            countdown.save()
+            messages.success(request, f'Cuenta regresiva "{countdown.title}" creada exitosamente.')
+            return redirect('countdown_timer_list')
+    else:
+        form = CountdownTimerForm(user=request.user)
+    
+    return render(request, 'tickets/countdown_timer_form.html', {
+        'form': form,
+        'page_title': 'Nueva Cuenta Regresiva',
+        'submit_text': 'Crear Cuenta Regresiva'
+    })
+
+
+@login_required
+def countdown_timer_detail(request, pk):
+    """Ver detalles de una cuenta regresiva"""
+    from .models import CountdownTimer
+    
+    countdown = get_object_or_404(CountdownTimer, pk=pk)
+    
+    # Verificar permisos de privacidad
+    if countdown.is_private and countdown.created_by != request.user:
+        messages.error(request, 'Esta cuenta regresiva es privada y no tienes permisos para verla.')
+        return redirect('countdown_timer_list')
+    
+    # Verificar permisos de empresa (solo si no es privada)
+    if not countdown.is_private and not is_agent(request.user):
+        user_company = None
+        if hasattr(request.user, 'profile') and request.user.profile.company:
+            user_company = request.user.profile.company
+        
+        if countdown.company != user_company and countdown.created_by != request.user:
+            messages.error(request, 'No tienes permisos para ver esta cuenta regresiva.')
+            return redirect('countdown_timer_list')
+    
+    return render(request, 'tickets/countdown_timer_detail.html', {
+        'countdown': countdown,
+        'page_title': f'Cuenta Regresiva: {countdown.title}'
+    })
+
+
+@login_required
+def countdown_timer_edit(request, pk):
+    """Editar una cuenta regresiva"""
+    from .models import CountdownTimer
+    from .forms import CountdownTimerForm
+    
+    countdown = get_object_or_404(CountdownTimer, pk=pk)
+    
+    # Verificar permisos
+    if not is_agent(request.user) and countdown.created_by != request.user:
+        messages.error(request, 'No tienes permisos para editar esta cuenta regresiva.')
+        return redirect('countdown_timer_list')
+    
+    if request.method == 'POST':
+        form = CountdownTimerForm(request.POST, user=request.user, instance=countdown)
+        if form.is_valid():
+            countdown = form.save()
+            messages.success(request, f'Cuenta regresiva "{countdown.title}" actualizada exitosamente.')
+            return redirect('countdown_timer_detail', pk=countdown.pk)
+    else:
+        form = CountdownTimerForm(user=request.user, instance=countdown)
+    
+    return render(request, 'tickets/countdown_timer_form.html', {
+        'form': form,
+        'countdown': countdown,
+        'page_title': f'Editar: {countdown.title}',
+        'submit_text': 'Actualizar Cuenta Regresiva'
+    })
+
+
+@login_required
+def countdown_timer_delete(request, pk):
+    """Eliminar una cuenta regresiva"""
+    from .models import CountdownTimer
+    
+    countdown = get_object_or_404(CountdownTimer, pk=pk)
+    
+    # Verificar permisos
+    if not is_agent(request.user) and countdown.created_by != request.user:
+        messages.error(request, 'No tienes permisos para eliminar esta cuenta regresiva.')
+        return redirect('countdown_timer_list')
+    
+    if request.method == 'POST':
+        title = countdown.title
+        countdown.delete()
+        messages.success(request, f'Cuenta regresiva "{title}" eliminada exitosamente.')
+        return redirect('countdown_timer_list')
+    
+    return render(request, 'tickets/countdown_timer_delete.html', {
+        'countdown': countdown,
+        'page_title': f'Eliminar: {countdown.title}'
+    })

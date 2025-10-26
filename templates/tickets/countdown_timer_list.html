@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1>
+                    <i class="bi bi-stopwatch"></i> {{ page_title }}
+                </h1>
+                <a href="{% url 'countdown_timer_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Nueva Cuenta Regresiva
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {% if countdowns %}
+    <div class="row">
+        {% for countdown in countdowns %}
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card h-100 {% if countdown.is_expired %}border-danger{% else %}border-primary{% endif %}">
+                <div class="card-header {% if countdown.is_expired %}bg-danger text-white{% else %}bg-primary text-white{% endif %}">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-{% if countdown.is_expired %}exclamation-triangle{% else %}calendar-event{% endif %}"></i>
+                        {{ countdown.title }}
+                        {% if countdown.is_private %}
+                            <i class="bi bi-lock-fill ms-2" title="Cuenta regresiva privada"></i>
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if countdown.description %}
+                    <p class="card-text">{{ countdown.description|truncatechars:100 }}</p>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <strong>Fecha objetivo:</strong><br>
+                        <span class="text-muted">
+                            <i class="bi bi-calendar3"></i> 
+                            {{ countdown.target_date|date:"d/m/Y" }} a las {{ countdown.target_date|date:"H:i" }}
+                        </span>
+                    </div>
+                    
+                    {% if not countdown.is_expired %}
+                    <div class="text-center mb-3">
+                        <div class="countdown-display" data-target="{{ countdown.target_date|date:'c' }}">
+                            <div class="row">
+                                <div class="col-3">
+                                    <div class="countdown-number days">0</div>
+                                    <small class="text-muted">días</small>
+                                </div>
+                                <div class="col-3">
+                                    <div class="countdown-number hours">0</div>
+                                    <small class="text-muted">horas</small>
+                                </div>
+                                <div class="col-3">
+                                    <div class="countdown-number minutes">0</div>
+                                    <small class="text-muted">min</small>
+                                </div>
+                                <div class="col-3">
+                                    <div class="countdown-number seconds">0</div>
+                                    <small class="text-muted">seg</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center mb-3">
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            ¡Evento finalizado!
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="text-muted small">
+                        <i class="bi bi-person"></i> {{ countdown.created_by.get_full_name|default:countdown.created_by.username }}
+                        {% if countdown.company %}
+                        <br><i class="bi bi-building"></i> {{ countdown.company.name }}
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="btn-group w-100" role="group">
+                        <a href="{% url 'countdown_timer_detail' countdown.pk %}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-eye"></i> Ver
+                        </a>
+                        {% if countdown.created_by == user or user.is_superuser %}
+                        <a href="{% url 'countdown_timer_edit' countdown.pk %}" class="btn btn-outline-warning btn-sm">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                        <a href="{% url 'countdown_timer_delete' countdown.pk %}" class="btn btn-outline-danger btn-sm">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-stopwatch display-4 text-muted mb-3"></i>
+                    <h5 class="text-muted">No hay cuentas regresivas</h5>
+                    <p class="text-muted">Comienza creando tu primera cuenta regresiva.</p>
+                    <a href="{% url 'countdown_timer_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Crear Primera Cuenta Regresiva
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.countdown-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #007bff;
+}
+
+.countdown-display {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+</style>
+
+<script>
+// Función para actualizar las cuentas regresivas en tiempo real
+function updateCountdowns() {
+    const countdownElements = document.querySelectorAll('.countdown-display');
+    
+    countdownElements.forEach(element => {
+        const targetDate = new Date(element.dataset.target);
+        const now = new Date();
+        const difference = targetDate - now;
+        
+        if (difference > 0) {
+            const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+            
+            element.querySelector('.days').textContent = days;
+            element.querySelector('.hours').textContent = hours;
+            element.querySelector('.minutes').textContent = minutes;
+            element.querySelector('.seconds').textContent = seconds;
+        } else {
+            // Si el tiempo se agotó, mostrar ceros
+            element.querySelector('.days').textContent = 0;
+            element.querySelector('.hours').textContent = 0;
+            element.querySelector('.minutes').textContent = 0;
+            element.querySelector('.seconds').textContent = 0;
+        }
+    });
+}
+
+// Actualizar inmediatamente
+updateCountdowns();
+
+// Actualizar cada segundo
+setInterval(updateCountdowns, 1000);
+</script>
+{% endblock %}

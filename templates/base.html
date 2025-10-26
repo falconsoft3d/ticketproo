@@ -849,6 +849,12 @@
                                 </a>
                             </li>
                             <li>
+                                <a class="dropdown-item {% if 'countdown_timer' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'countdown_timer_list' %}">
+                                    <i class="bi bi-stopwatch"></i> Cuentas Regresivas
+                                </a>
+                            </li>
+                            <li>
                                 <a class="dropdown-item {% if 'supplier_contract_review' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'supplier_contract_review_list' %}">
                                     <i class="bi bi-shield-check"></i> Revisar Contratos de Proveedores
@@ -949,6 +955,12 @@
                                 <a class="dropdown-item {% if 'license' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'license_list' %}">
                                     <i class="bi bi-key"></i> Control de Licencias
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'countdown_timer' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'countdown_timer_list' %}">
+                                    <i class="bi bi-stopwatch"></i> Cuentas Regresivas
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>

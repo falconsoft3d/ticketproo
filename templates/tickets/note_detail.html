@@ -36,7 +36,60 @@
                 </div>
                 
                 <!-- Botones de acción -->
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="{% url 'note_pdf' note.id %}" class="btn btn-outline-success" target="_blank">
+                        <i class="bi bi-file-earmark-pdf"></i> PDF
+                    </a>
+                    
+                    <!-- Botones de compartir -->
+                    {% if can_edit %}
+                        {% if note.is_shareable and note.share_token %}
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-outline-info dropdown-toggle" data-bs-toggle="dropdown">
+                                    <i class="bi bi-share"></i> Compartido
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item" href="#" onclick="copyShareLink()">
+                                            <i class="bi bi-copy"></i> Copiar enlace
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'shared_note' note.share_token %}" target="_blank">
+                                            <i class="bi bi-eye"></i> Ver enlace público
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form method="post" action="{% url 'note_regenerate_share_link' note.id %}" style="display: inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="dropdown-item text-warning" 
+                                                    onclick="return confirm('¿Regenerar enlace? El enlace actual dejará de funcionar.')">
+                                                <i class="bi bi-arrow-clockwise"></i> Regenerar enlace
+                                            </button>
+                                        </form>
+                                    </li>
+                                    <li>
+                                        <form method="post" action="{% url 'note_disable_sharing' note.id %}" style="display: inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="dropdown-item text-danger" 
+                                                    onclick="return confirm('¿Deshabilitar compartir? El enlace dejará de funcionar.')">
+                                                <i class="bi bi-x-circle"></i> Deshabilitar compartir
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        {% else %}
+                            <form method="post" action="{% url 'note_generate_share_link' note.id %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-info">
+                                    <i class="bi bi-share"></i> Generar enlace
+                                </button>
+                            </form>
+                        {% endif %}
+                    {% endif %}
+                    
                     <a href="{% url 'note_edit' note.id %}" class="btn btn-outline-primary">
                         <i class="bi bi-pencil"></i> Editar
                     </a>
@@ -45,6 +98,29 @@
                     </a>
                 </div>
             </div>
+            
+            <!-- Información de enlace compartido -->
+            {% if note.is_shareable and note.share_token %}
+                <div class="alert alert-info d-flex align-items-center mb-4">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <div class="flex-grow-1">
+                        <strong>Esta nota está siendo compartida públicamente</strong>
+                        <div class="mt-1">
+                            <small class="text-muted">
+                                Enlace: <span id="shareLink">{{ request.scheme }}://{{ request.get_host }}{% url 'shared_note' note.share_token %}</span>
+                                <button class="btn btn-sm btn-outline-secondary ms-2" onclick="copyShareLink()">
+                                    <i class="bi bi-copy"></i> Copiar
+                                </button>
+                            </small>
+                        </div>
+                        <div class="mt-1">
+                            <small class="text-muted">
+                                <i class="bi bi-eye"></i> Visto {{ note.view_count }} vez{{ note.view_count|pluralize:"es" }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
 
             <!-- Contenido de la nota -->
             <div class="card mb-4">
@@ -241,4 +317,48 @@
     margin-bottom: 1rem;
 }
 </style>
+
+<script>
+function copyShareLink() {
+    const shareLink = document.getElementById('shareLink');
+    if (shareLink) {
+        const link = shareLink.textContent;
+        navigator.clipboard.writeText(link).then(function() {
+            // Mostrar mensaje de éxito
+            const button = event.target.closest('button') || event.target.closest('a');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="bi bi-check"></i> Copiado';
+            button.classList.add('btn-success');
+            button.classList.remove('btn-outline-secondary', 'btn-outline-info');
+            
+            setTimeout(function() {
+                button.innerHTML = originalText;
+                button.classList.remove('btn-success');
+                button.classList.add('btn-outline-secondary');
+            }, 2000);
+        }).catch(function(err) {
+            console.error('Error al copiar: ', err);
+            // Fallback para navegadores más antiguos
+            const textArea = document.createElement('textarea');
+            textArea.value = link;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            
+            const button = event.target.closest('button') || event.target.closest('a');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="bi bi-check"></i> Copiado';
+            button.classList.add('btn-success');
+            button.classList.remove('btn-outline-secondary', 'btn-outline-info');
+            
+            setTimeout(function() {
+                button.innerHTML = originalText;
+                button.classList.remove('btn-success');
+                button.classList.add('btn-outline-secondary');
+            }, 2000);
+        });
+    }
+}
+</script>
 {% endblock %}

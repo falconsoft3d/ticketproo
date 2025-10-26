@@ -1013,6 +1013,14 @@ class UserNote(models.Model):
         verbose_name='Creado por',
         help_text='Agente que creó la nota'
     )
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        verbose_name='Empresa',
+        help_text='Empresa asociada a esta nota'
+    )
     tickets = models.ManyToManyField(
         Ticket,
         blank=True,
@@ -1021,9 +1029,27 @@ class UserNote(models.Model):
         help_text='Tickets asociados a esta nota'
     )
     is_private = models.BooleanField(
-        default=True,
+        default=False,
         verbose_name='Nota privada',
-        help_text='Si está marcada, solo será visible para agentes'
+        help_text='Si está marcada, solo tú podrás ver, editar y eliminar esta nota'
+    )
+    share_token = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        unique=True,
+        verbose_name='Token de compartir',
+        help_text='Token único para compartir la nota públicamente'
+    )
+    is_shareable = models.BooleanField(
+        default=False,
+        verbose_name='Compartible públicamente',
+        help_text='Si la nota puede ser compartida mediante un enlace público'
+    )
+    view_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Número de visualizaciones',
+        help_text='Veces que la nota ha sido vista mediante enlace público'
     )
     created_at = models.DateTimeField(
         default=timezone.now,
@@ -1045,25 +1071,93 @@ class UserNote(models.Model):
     def can_view(self, user):
         """Verifica si un usuario puede ver esta nota"""
         from .utils import is_agent
-        # Los agentes pueden ver todas las notas
+        
+        # Verificar si es de la misma empresa
+        user_company = getattr(user.profile, 'company', None) if hasattr(user, 'profile') else None
+        if self.company != user_company:
+            return False
+        
+        # Si la nota es privada, solo el creador puede verla
+        if self.is_private and self.created_by != user:
+            return False
+            
+        # Los agentes pueden ver notas públicas de su empresa
         if is_agent(user):
             return True
+            
+        # El creador puede ver sus propias notas (privadas y públicas)
+        if self.created_by == user:
+            return True
+            
         # Si la nota no es privada, el usuario asociado puede verla
         if not self.is_private and self.user == user:
             return True
+            
         return False
     
     def can_edit(self, user):
         """Verifica si un usuario puede editar esta nota"""
         from .utils import is_agent
-        # Solo los agentes pueden crear/editar notas
-        return is_agent(user)
+        
+        # Verificar si es de la misma empresa
+        user_company = getattr(user.profile, 'company', None) if hasattr(user, 'profile') else None
+        if self.company != user_company:
+            return False
+        
+        # Si la nota es privada, solo el creador puede editarla
+        if self.is_private and self.created_by != user:
+            return False
+            
+        # Solo los agentes pueden crear/editar notas (para notas públicas)
+        # O el creador puede editar sus propias notas privadas
+        return is_agent(user) or (self.is_private and self.created_by == user)
     
     def can_delete(self, user):
         """Verifica si un usuario puede eliminar esta nota"""
         from .utils import is_agent
-        # Solo los agentes pueden eliminar notas
-        return is_agent(user)
+        
+        # Verificar si es de la misma empresa
+        user_company = getattr(user.profile, 'company', None) if hasattr(user, 'profile') else None
+        if self.company != user_company:
+            return False
+        
+        # Si la nota es privada, solo el creador puede eliminarla
+        if self.is_private and self.created_by != user:
+            return False
+            
+        # Solo los agentes pueden eliminar notas (para notas públicas)
+        # O el creador puede eliminar sus propias notas privadas
+        return is_agent(user) or (self.is_private and self.created_by == user)
+    
+    def generate_share_token(self):
+        """Genera un token único para compartir la nota"""
+        import uuid
+        self.share_token = str(uuid.uuid4())[:12]
+        self.is_shareable = True
+        self.save()
+        return self.share_token
+    
+    def get_public_url(self, request=None):
+        """Obtiene la URL pública de la nota si es compartible"""
+        if not self.is_shareable or not self.share_token:
+            return None
+        
+        if request:
+            protocol = 'https' if request.is_secure() else 'http'
+            domain = request.get_host()
+            return f"{protocol}://{domain}/shared/note/{self.share_token}/"
+        else:
+            return f"/shared/note/{self.share_token}/"
+    
+    def disable_sharing(self):
+        """Deshabilita el compartir público de la nota"""
+        self.is_shareable = False
+        self.save()
+    
+    def increment_view_count(self):
+        """Incrementa el contador de visualizaciones"""
+        self.view_count += 1
+        self.save(update_fields=['view_count'])
     
     def get_related_tickets_count(self):
         """Retorna el número de tickets relacionados"""
@@ -14230,3 +14324,99 @@ class QuoteGenerator(models.Model):
         """Guarda las citas como JSON"""
         import json
         self.generated_quotes = json.dumps(quotes_list, ensure_ascii=False)
+
+
+class CountdownTimer(models.Model):
+    """Modelo para gestionar cuentas regresivas"""
+    
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título',
+        help_text='Nombre descriptivo para la cuenta regresiva'
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción',
+        help_text='Descripción opcional del evento'
+    )
+    target_date = models.DateTimeField(
+        verbose_name='Fecha objetivo',
+        help_text='Fecha y hora del evento'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Creado por'
+    )
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        verbose_name='Empresa'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo',
+        help_text='Si está activo, la cuenta regresiva será visible'
+    )
+    is_private = models.BooleanField(
+        default=False,
+        verbose_name='Privada',
+        help_text='Si está marcada como privada, solo el creador podrá verla'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Fecha de actualización'
+    )
+    
+    class Meta:
+        ordering = ['target_date']
+        verbose_name = 'Cuenta Regresiva'
+        verbose_name_plural = 'Cuentas Regresivas'
+    
+    def __str__(self):
+        return f"{self.title} - {self.target_date.strftime('%d/%m/%Y')}"
+    
+    def days_remaining(self):
+        """Calcula los días restantes hasta la fecha objetivo"""
+        from datetime import datetime
+        now = timezone.now()
+        if self.target_date > now:
+            delta = self.target_date - now
+            return delta.days
+        else:
+            return 0
+    
+    def is_expired(self):
+        """Verifica si la fecha objetivo ya pasó"""
+        return timezone.now() > self.target_date
+    
+    def time_remaining(self):
+        """Retorna un diccionario con días, horas, minutos y segundos restantes"""
+        from datetime import datetime
+        now = timezone.now()
+        if self.target_date > now:
+            delta = self.target_date - now
+            days = delta.days
+            hours, remainder = divmod(delta.seconds, 3600)
+            minutes, seconds = divmod(remainder, 60)
+            return {
+                'days': days,
+                'hours': hours,
+                'minutes': minutes,
+                'seconds': seconds,
+                'total_seconds': delta.total_seconds()
+            }
+        else:
+            return {
+                'days': 0,
+                'hours': 0,
+                'minutes': 0,
+                'seconds': 0,
+                'total_seconds': 0
+            }

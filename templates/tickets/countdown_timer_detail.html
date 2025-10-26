@@ -1,0 +1,266 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1>
+                    <i class="bi bi-stopwatch"></i> {{ countdown.title }}
+                    {% if countdown.is_private %}
+                        <span class="badge bg-warning text-dark ms-2">
+                            <i class="bi bi-lock-fill"></i> Privada
+                        </span>
+                    {% endif %}
+                </h1>
+                <div>
+                    {% if countdown.created_by == user or user.is_superuser %}
+                    <a href="{% url 'countdown_timer_edit' countdown.pk %}" class="btn btn-warning">
+                        <i class="bi bi-pencil-square"></i> Editar
+                    </a>
+                    <a href="{% url 'countdown_timer_delete' countdown.pk %}" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Eliminar
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'countdown_timer_list' %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header {% if countdown.is_expired %}bg-danger text-white{% else %}bg-primary text-white{% endif %}">
+                    <h5 class="mb-0">
+                        <i class="bi bi-{% if countdown.is_expired %}exclamation-triangle{% else %}calendar-event{% endif %}"></i>
+                        Información de la Cuenta Regresiva
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if countdown.description %}
+                    <div class="mb-4">
+                        <h6><i class="bi bi-card-text"></i> Descripción:</h6>
+                        <p class="text-muted">{{ countdown.description }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-4">
+                        <h6><i class="bi bi-calendar3"></i> Fecha objetivo:</h6>
+                        <p class="text-muted">
+                            {{ countdown.target_date|date:"l, d \d\e F \d\e Y" }} a las {{ countdown.target_date|date:"H:i" }}
+                        </p>
+                    </div>
+                    
+                    {% if not countdown.is_expired %}
+                    <div class="text-center">
+                        <h4 class="mb-3">Tiempo restante:</h4>
+                        <div class="countdown-display-large" data-target="{{ countdown.target_date|date:'c' }}">
+                            <div class="row">
+                                <div class="col-md-3 col-6">
+                                    <div class="countdown-box">
+                                        <div class="countdown-number-large days">0</div>
+                                        <div class="countdown-label">Días</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <div class="countdown-box">
+                                        <div class="countdown-number-large hours">0</div>
+                                        <div class="countdown-label">Horas</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <div class="countdown-box">
+                                        <div class="countdown-number-large minutes">0</div>
+                                        <div class="countdown-label">Minutos</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <div class="countdown-box">
+                                        <div class="countdown-number-large seconds">0</div>
+                                        <div class="countdown-label">Segundos</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center">
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle fs-1"></i>
+                            <h4 class="mt-3">¡Evento finalizado!</h4>
+                            <p>La fecha objetivo ya ha pasado.</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle"></i> Detalles
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Creado por:</strong><br>
+                        <span class="text-muted">
+                            <i class="bi bi-person"></i> 
+                            {{ countdown.created_by.get_full_name|default:countdown.created_by.username }}
+                        </span>
+                    </div>
+                    
+                    {% if countdown.company %}
+                    <div class="mb-3">
+                        <strong>Empresa:</strong><br>
+                        <span class="text-muted">
+                            <i class="bi bi-building"></i> 
+                            {{ countdown.company.name }}
+                        </span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <strong>Estado:</strong><br>
+                        {% if countdown.is_active %}
+                            <span class="badge bg-success">Activo</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Inactivo</span>
+                        {% endif %}
+                        {% if countdown.is_private %}
+                            <span class="badge bg-warning text-dark ms-1">
+                                <i class="bi bi-lock-fill"></i> Privada
+                            </span>
+                        {% else %}
+                            <span class="badge bg-info text-dark ms-1">
+                                <i class="bi bi-unlock-fill"></i> Pública
+                            </span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Creado:</strong><br>
+                        <span class="text-muted">
+                            <i class="bi bi-calendar-plus"></i> 
+                            {{ countdown.created_at|date:"d/m/Y H:i" }}
+                        </span>
+                    </div>
+                    
+                    {% if countdown.updated_at != countdown.created_at %}
+                    <div class="mb-3">
+                        <strong>Actualizado:</strong><br>
+                        <span class="text-muted">
+                            <i class="bi bi-clock-history"></i> 
+                            {{ countdown.updated_at|date:"d/m/Y H:i" }}
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.countdown-number-large {
+    font-size: 3rem;
+    font-weight: bold;
+    color: #007bff;
+    line-height: 1;
+}
+
+.countdown-label {
+    font-size: 1rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.countdown-box {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.countdown-box:hover {
+    border-color: #007bff;
+    box-shadow: 0 4px 8px rgba(0,123,255,0.1);
+}
+
+.countdown-display-large {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 30px;
+    border-radius: 15px;
+    border: 1px solid #dee2e6;
+}
+
+@media (max-width: 768px) {
+    .countdown-number-large {
+        font-size: 2rem;
+    }
+    
+    .countdown-box {
+        padding: 15px;
+    }
+}
+</style>
+
+<script>
+// Función para actualizar la cuenta regresiva en tiempo real
+function updateCountdown() {
+    const countdownElement = document.querySelector('.countdown-display-large');
+    
+    if (countdownElement) {
+        const targetDate = new Date(countdownElement.dataset.target);
+        const now = new Date();
+        const difference = targetDate - now;
+        
+        if (difference > 0) {
+            const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+            
+            countdownElement.querySelector('.days').textContent = days;
+            countdownElement.querySelector('.hours').textContent = hours;
+            countdownElement.querySelector('.minutes').textContent = minutes;
+            countdownElement.querySelector('.seconds').textContent = seconds;
+            
+            // Efecto visual cuando quedan pocas horas
+            if (difference < 24 * 60 * 60 * 1000) { // Menos de 24 horas
+                countdownElement.querySelectorAll('.countdown-box').forEach(box => {
+                    box.style.borderColor = '#ffc107';
+                    box.style.backgroundColor = '#fff3cd';
+                });
+            }
+            
+            if (difference < 60 * 60 * 1000) { // Menos de 1 hora
+                countdownElement.querySelectorAll('.countdown-box').forEach(box => {
+                    box.style.borderColor = '#dc3545';
+                    box.style.backgroundColor = '#f8d7da';
+                });
+            }
+        } else {
+            // Si el tiempo se agotó, recargar la página para mostrar el mensaje de finalizado
+            location.reload();
+        }
+    }
+}
+
+// Actualizar inmediatamente
+updateCountdown();
+
+// Actualizar cada segundo
+setInterval(updateCountdown, 1000);
+</script>
+{% endblock %}

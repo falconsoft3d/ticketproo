@@ -31,7 +31,7 @@ from .models import (
     Form, FormQuestion, FormQuestionOption, FormResponse, FormAnswer,
     EmployeeRequest, InternalAgreement, Asset, AssetHistory, 
     AITutor, AITutorProgressReport, AITutorAttachment, ExpenseReport, ExpenseItem, ExpenseComment,
-    VideoMeeting, MeetingNote, QuoteGenerator
+    VideoMeeting, MeetingNote, QuoteGenerator, CountdownTimer
 )
 
 class CategoryForm(forms.ModelForm):
@@ -1000,10 +1000,14 @@ class UserNoteForm(forms.ModelForm):
             created_tickets__isnull=False
         ).distinct().order_by('username')
         self.fields['user'].queryset = users_with_tickets
+        
+        # Configurar queryset de empresas (mostrar todas las empresas activas)
+        self.fields['company'].queryset = Company.objects.filter(is_active=True).order_by('name')
+        self.fields['company'].empty_label = "Seleccionar empresa (opcional)"
     
     class Meta:
         model = UserNote
-        fields = ['title', 'description', 'user', 'tickets', 'is_private']
+        fields = ['title', 'description', 'user', 'company', 'tickets', 'is_private']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -1018,6 +1022,9 @@ class UserNoteForm(forms.ModelForm):
                 'class': 'form-select',
                 'id': 'id_user_select'
             }),
+            'company': forms.Select(attrs={
+                'class': 'form-select'
+            }),
             'is_private': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
@@ -1026,15 +1033,17 @@ class UserNoteForm(forms.ModelForm):
             'title': 'Título de la Nota',
             'description': 'Descripción',
             'user': 'Usuario Asociado',
+            'company': 'Empresa',
             'tickets': 'Tickets Relacionados',
-            'is_private': 'Nota Privada (solo visible para agentes)',
+            'is_private': 'Nota Privada',
         }
         help_texts = {
             'title': 'Breve descripción del motivo de la nota',
             'description': 'Detalle completo de la interacción, observaciones o comentarios internos',
             'user': 'Usuario al que se asocia esta nota',
+            'company': 'Empresa asociada a esta nota (opcional)',
             'tickets': 'Selecciona los tickets relacionados con esta nota (opcional)',
-            'is_private': 'Si está marcada, solo los agentes podrán ver esta nota',
+            'is_private': 'Si está marcada, solo tú podrás ver, editar y eliminar esta nota',
         }
     
     def clean_title(self):
@@ -6969,3 +6978,46 @@ class QuoteGeneratorForm(forms.ModelForm):
         # Campos requeridos
         self.fields['title'].required = True
         self.fields['topic'].required = True
+
+
+class CountdownTimerForm(forms.ModelForm):
+    """Formulario para crear y editar cuentas regresivas"""
+    
+    class Meta:
+        model = CountdownTimer
+        fields = ['title', 'description', 'target_date', 'is_active', 'is_private']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Lanzamiento del nuevo producto'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': 'Descripción opcional del evento...',
+                'rows': 3
+            }),
+            'target_date': forms.DateTimeInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local'
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'is_private': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            })
+        }
+        
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        # Campos requeridos
+        self.fields['title'].required = True
+        self.fields['target_date'].required = True
+        
+        # Ayuda para los campos
+        self.fields['title'].help_text = 'Nombre descriptivo para la cuenta regresiva'
+        self.fields['target_date'].help_text = 'Fecha y hora del evento objetivo'
+        self.fields['is_active'].help_text = 'Si está activo, la cuenta regresiva será visible'
+        self.fields['is_private'].help_text = 'Si está marcada como privada, solo tú podrás verla'
