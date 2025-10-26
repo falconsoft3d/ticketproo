@@ -31,7 +31,7 @@ from .models import (
     Form, FormQuestion, FormQuestionOption, FormResponse, FormAnswer,
     EmployeeRequest, InternalAgreement, Asset, AssetHistory, 
     AITutor, AITutorProgressReport, AITutorAttachment, ExpenseReport, ExpenseItem, ExpenseComment,
-    VideoMeeting, MeetingNote
+    VideoMeeting, MeetingNote, QuoteGenerator
 )
 
 class CategoryForm(forms.ModelForm):
@@ -6942,3 +6942,30 @@ class MeetingFilterForm(forms.Form):
             self.fields['organizer'].queryset = User.objects.all().order_by(
                 'first_name', 'last_name', 'username'
             )
+
+
+class QuoteGeneratorForm(forms.ModelForm):
+    """Formulario para generar citas temáticas con IA"""
+    
+    class Meta:
+        model = QuoteGenerator
+        fields = ['title', 'topic']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Citas Motivacionales del Día'
+            }),
+            'topic': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: "Dame citas que ha dicho Einstein sobre el amor", "Frases motivacionales de líderes empresariales", "Citas sobre el éxito y la perseverancia"',
+                'rows': 3
+            }),
+        }
+        
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        # Campos requeridos
+        self.fields['title'].required = True
+        self.fields['topic'].required = True

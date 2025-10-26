@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>
+                <i class="bi bi-chat-quote"></i> {{ page_title }}
+            </h1>
+            <p class="text-muted">Define el tema y genera 10 citas personalizadas con inteligencia artificial</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-gear"></i> Configuración del Generador
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">
+                                <i class="bi bi-tag"></i> {{ form.title.label }}
+                            </label>
+                            {{ form.title }}
+                            {% if form.title.help_text %}
+                                <div class="form-text">{{ form.title.help_text }}</div>
+                            {% endif %}
+                            {% if form.title.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.title.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.topic.id_for_label }}" class="form-label">
+                                <i class="bi bi-lightbulb"></i> {{ form.topic.label }}
+                            </label>
+                            {{ form.topic }}
+                            {% if form.topic.help_text %}
+                                <div class="form-text">{{ form.topic.help_text }}</div>
+                            {% endif %}
+                            {% if form.topic.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.topic.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'quote_generator_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Volver
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-magic"></i> {{ submit_text }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle"></i> Ejemplos de Temas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <strong>Personas famosas:</strong><br>
+                            <small class="text-muted">"Dame citas que ha dicho Einstein sobre el amor"</small>
+                        </li>
+                        <li class="mb-2">
+                            <strong>Motivación:</strong><br>
+                            <small class="text-muted">"Frases motivacionales sobre el éxito empresarial"</small>
+                        </li>
+                        <li class="mb-2">
+                            <strong>Liderazgo:</strong><br>
+                            <small class="text-muted">"Citas de grandes líderes sobre el trabajo en equipo"</small>
+                        </li>
+                        <li class="mb-2">
+                            <strong>Filosofía:</strong><br>
+                            <small class="text-muted">"Reflexiones filosóficas sobre la vida y la felicidad"</small>
+                        </li>
+                        <li class="mb-2">
+                            <strong>Tecnología:</strong><br>
+                            <small class="text-muted">"Citas sobre innovación y tecnología de Steve Jobs"</small>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-gear-wide-connected"></i> Funcionamiento
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ol class="mb-0">
+                        <li class="mb-2">La IA genera <strong>10 citas</strong> basadas en tu tema</li>
+                        <li class="mb-2">Las citas se muestran en el <strong>dashboard</strong> con rotación automática</li>
+                        <li class="mb-2">Puedes <strong>regenerar</strong> citas cuando quieras</li>
+                        <li>Solo se muestran citas de tu empresa o las que creaste</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

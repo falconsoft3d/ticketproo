@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="mb-0">
+                    <i class="bi bi-chat-quote"></i> {{ page_title }}
+                </h1>
+                <a href="{% url 'quote_generator_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Nuevo Generador
+                </a>
+            </div>
+            <p class="text-muted mt-2">Genera citas temáticas personalizadas con inteligencia artificial</p>
+        </div>
+    </div>
+
+    {% if generators %}
+    <div class="row">
+        {% for generator in generators %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ generator.title|truncatechars:30 }}</h5>
+                    {% if generator.is_active %}
+                        <span class="badge bg-success">Activo</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Inactivo</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <p class="card-text text-muted">{{ generator.topic|truncatechars:100 }}</p>
+                    
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            <i class="bi bi-person"></i> {{ generator.created_by.get_full_name|default:generator.created_by.username }}
+                        </small><br>
+                        <small class="text-muted">
+                            <i class="bi bi-calendar"></i> {{ generator.created_at|date:"d/m/Y H:i" }}
+                        </small><br>
+                        {% if generator.company %}
+                        <small class="text-muted">
+                            <i class="bi bi-building"></i> {{ generator.company.name }}
+                        </small>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {% with quotes_count=generator.get_quotes_list|length %}
+                        <span class="badge bg-info">
+                            <i class="bi bi-chat-square-quote"></i> {{ quotes_count }} citas
+                        </span>
+                        {% endwith %}
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="btn-group w-100" role="group">
+                        <a href="{% url 'quote_generator_detail' generator.pk %}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-eye"></i> Ver
+                        </a>
+                        {% if generator.created_by == user or user.is_superuser %}
+                        <form method="post" action="{% url 'quote_generator_regenerate' generator.pk %}" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-warning btn-sm" 
+                                    onclick="return confirm('¿Regenerar todas las citas? Esta acción no se puede deshacer.')">
+                                <i class="bi bi-arrow-clockwise"></i> Regenerar
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-chat-quote display-4 text-muted mb-3"></i>
+                    <h5 class="text-muted">No hay generadores de citas aún</h5>
+                    <p class="text-muted">Crea tu primer generador para comenzar a generar citas personalizadas con IA.</p>
+                    <a href="{% url 'quote_generator_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Crear Primer Generador
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

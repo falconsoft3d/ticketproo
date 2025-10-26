@@ -1042,5 +1042,12 @@ urlpatterns += [
     
     # URLs de Notas de Reunión
     path('video-meetings/<int:meeting_pk>/notes/<int:note_pk>/delete/', views.meeting_note_delete, name='meeting_note_delete'),
+    
+    # URLs de Generador de Citas IA
+    path('quote-generator/', views.quote_generator_list, name='quote_generator_list'),
+    path('quote-generator/create/', views.quote_generator_create, name='quote_generator_create'),
+    path('quote-generator/<int:pk>/', views.quote_generator_detail, name='quote_generator_detail'),
+    path('quote-generator/<int:pk>/edit/', views.quote_generator_edit, name='quote_generator_edit'),
+    path('quote-generator/<int:pk>/regenerate/', views.quote_generator_regenerate, name='quote_generator_regenerate'),
 ]
 

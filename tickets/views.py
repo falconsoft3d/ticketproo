@@ -44,7 +44,7 @@ from .models import (
     AIManager, AIManagerMeeting, AIManagerSummary, CompanyAISummary, UserAIPerformanceEvaluation,
     WebsiteTracker, LegalContract, Asset, AssetHistory,
     AITutor, AITutorProgressReport, AITutorAttachment,
-    ExpenseReport, ExpenseItem, ExpenseComment, VideoMeeting, MeetingNote
+    ExpenseReport, ExpenseItem, ExpenseComment, VideoMeeting, MeetingNote, QuoteGenerator
 )
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
@@ -64,7 +64,7 @@ from .forms import (
     FormQuestionOptionForm, PublicFormResponseForm, AssetForm, AssetAssignForm, AssetFilterForm,
     AITutorForm, AITutorProgressReportForm, AITutorAttachmentForm, AITutorFilterForm,
     ExpenseReportForm, ExpenseItemForm, ExpenseCommentForm, ExpenseReportFilterForm,
-    VideoMeetingForm, MeetingTranscriptionForm, MeetingFilterForm
+    VideoMeetingForm, MeetingTranscriptionForm, MeetingFilterForm, QuoteGeneratorForm
 )
 from .utils import is_agent, is_regular_user, is_teacher, can_manage_courses, get_user_role, assign_user_to_group
 
@@ -303,6 +303,41 @@ def dashboard_view(request):
         
         recent_video_meetings = VideoMeeting.objects.filter(video_meetings_query).distinct().order_by('-created_at')[:5]
         context['recent_video_meetings'] = recent_video_meetings
+    
+    # Agregar citas activas para mostrar en el dashboard
+    user_company = None
+    try:
+        user_company = request.user.profile.company
+    except:
+        pass
+    
+    if is_agent(request.user):
+        # Agentes ven todas las citas activas
+        active_quotes = QuoteGenerator.objects.filter(is_active=True).order_by('-created_at')
+    else:
+        # Usuarios regulares ven solo las de su empresa
+        if user_company:
+            active_quotes = QuoteGenerator.objects.filter(
+                models.Q(created_by=request.user) | models.Q(company=user_company),
+                is_active=True
+            ).distinct().order_by('-created_at')
+        else:
+            active_quotes = QuoteGenerator.objects.filter(created_by=request.user, is_active=True).order_by('-created_at')
+    
+    # Obtener todas las citas de todos los generadores activos
+    all_quotes = []
+    for generator in active_quotes:
+        quotes_list = generator.get_quotes_list()
+        for quote in quotes_list:
+            all_quotes.append({
+                'quote': quote.get('quote', ''),
+                'author': quote.get('author', 'Anónimo'),
+                'generator_title': generator.title
+            })
+    
+    import json
+    context['dashboard_quotes'] = all_quotes
+    context['dashboard_quotes_json'] = json.dumps(all_quotes, ensure_ascii=False)
     
     return render(request, 'tickets/dashboard.html', context)
 
@@ -31530,3 +31565,265 @@ Fecha de descarga: {timezone.now().strftime('%d/%m/%Y %H:%M')}
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     
     return response
+
+
+# ==================== VISTAS DE GENERADOR DE CITAS ====================
+
+@login_required
+def quote_generator_list(request):
+    """Lista de generadores de citas"""
+    if is_agent(request.user):
+        generators = QuoteGenerator.objects.all().order_by('-created_at')
+    else:
+        # Usuarios regulares ven solo los de su empresa
+        user_company = None
+        try:
+            user_company = request.user.profile.company
+        except:
+            pass
+        
+        if user_company:
+            generators = QuoteGenerator.objects.filter(
+                models.Q(created_by=request.user) | models.Q(company=user_company)
+            ).distinct().order_by('-created_at')
+        else:
+            generators = QuoteGenerator.objects.filter(created_by=request.user).order_by('-created_at')
+    
+    return render(request, 'tickets/quote_generator_list.html', {
+        'generators': generators,
+        'page_title': 'Generadores de Citas IA'
+    })
+
+
+@login_required
+def quote_generator_create(request):
+    """Crear un nuevo generador de citas"""
+    if request.method == 'POST':
+        form = QuoteGeneratorForm(request.POST, user=request.user)
+        if form.is_valid():
+            generator = form.save(commit=False)
+            generator.created_by = request.user
+            
+            # Asignar empresa del usuario
+            try:
+                generator.company = request.user.profile.company
+            except:
+                pass
+                
+            generator.save()
+            
+            # Generar las citas con IA
+            success = generate_quotes_with_ai(generator)
+            
+            if success:
+                messages.success(request, f'Generador "{generator.title}" creado exitosamente. Se generaron las citas automáticamente.')
+                return redirect('quote_generator_detail', pk=generator.pk)
+            else:
+                messages.warning(request, f'Generador "{generator.title}" creado, pero hubo un error al generar las citas. Puedes intentar generar nuevamente.')
+                return redirect('quote_generator_detail', pk=generator.pk)
+    else:
+        form = QuoteGeneratorForm(user=request.user)
+    
+    return render(request, 'tickets/quote_generator_form.html', {
+        'form': form,
+        'page_title': 'Crear Generador de Citas',
+        'submit_text': 'Generar Citas'
+    })
+
+
+@login_required
+def quote_generator_detail(request, pk):
+    """Detalle de un generador de citas"""
+    generator = get_object_or_404(QuoteGenerator, pk=pk)
+    
+    # Verificar permisos
+    if not is_agent(request.user) and generator.created_by != request.user:
+        user_company = None
+        try:
+            user_company = request.user.profile.company
+        except:
+            pass
+        
+        if not user_company or generator.company != user_company:
+            messages.error(request, 'No tienes permisos para ver este generador.')
+            return redirect('quote_generator_list')
+    
+    quotes_list = generator.get_quotes_list()
+    
+    return render(request, 'tickets/quote_generator_detail.html', {
+        'generator': generator,
+        'quotes_list': quotes_list,
+        'page_title': f'Generador: {generator.title}'
+    })
+
+
+@login_required
+def quote_generator_regenerate(request, pk):
+    """Regenerar citas de un generador"""
+    generator = get_object_or_404(QuoteGenerator, pk=pk)
+    
+    # Verificar permisos
+    if not is_agent(request.user) and generator.created_by != request.user:
+        messages.error(request, 'No tienes permisos para regenerar estas citas.')
+        return redirect('quote_generator_list')
+    
+    if request.method == 'POST':
+        success = generate_quotes_with_ai(generator)
+        
+        if success:
+            messages.success(request, 'Citas regeneradas exitosamente.')
+        else:
+            messages.error(request, 'Error al regenerar las citas. Inténtalo de nuevo.')
+    
+    return redirect('quote_generator_detail', pk=pk)
+
+
+@login_required
+def quote_generator_edit(request, pk):
+    """Editar un generador de citas"""
+    generator = get_object_or_404(QuoteGenerator, pk=pk)
+    
+    # Verificar permisos
+    if not is_agent(request.user) and generator.created_by != request.user:
+        messages.error(request, 'No tienes permisos para editar este generador.')
+        return redirect('quote_generator_list')
+    
+    if request.method == 'POST':
+        form = QuoteGeneratorForm(request.POST, user=request.user, instance=generator)
+        if form.is_valid():
+            # Verificar si cambió el tema
+            old_topic = generator.topic
+            generator = form.save()
+            
+            # Si cambió el tema, regenerar citas automáticamente
+            if old_topic != generator.topic:
+                success = generate_quotes_with_ai(generator)
+                if success:
+                    messages.success(request, f'Generador "{generator.title}" actualizado exitosamente. Se regeneraron las citas automáticamente debido al cambio de tema.')
+                else:
+                    messages.warning(request, f'Generador "{generator.title}" actualizado, pero hubo un error al regenerar las citas.')
+            else:
+                messages.success(request, f'Generador "{generator.title}" actualizado exitosamente.')
+            
+            return redirect('quote_generator_detail', pk=generator.pk)
+    else:
+        form = QuoteGeneratorForm(user=request.user, instance=generator)
+    
+    return render(request, 'tickets/quote_generator_form.html', {
+        'form': form,
+        'generator': generator,
+        'page_title': f'Editar Generador: {generator.title}',
+        'submit_text': 'Actualizar Generador'
+    })
+
+
+def generate_quotes_with_ai(generator):
+    """Función para generar citas con IA usando OpenAI"""
+    try:
+        from .models import SystemConfiguration
+        import json
+        import requests
+        
+        # Obtener configuración de OpenAI
+        config = SystemConfiguration.objects.first()
+        if not config or not config.openai_api_key:
+            print("Error: No hay API key de OpenAI configurada")
+            return False
+        
+        # Configurar la petición a OpenAI
+        headers = {
+            "Authorization": f"Bearer {config.openai_api_key}",
+            "Content-Type": "application/json"
+        }
+        
+        # Crear el prompt para generar citas
+        prompt = f"""Genera exactamente 10 citas sobre el siguiente tema: {generator.topic}
+
+Requisitos:
+- Deben ser citas reales o inspiradas en el tema solicitado
+- Cada cita debe tener máximo 150 caracteres (aproximadamente 2-3 líneas cuando se muestre)
+- IMPORTANTE: Las citas deben ser cortas y concisas, que no excedan 3 líneas al mostrarse
+- Incluye el autor cuando sea posible
+- Si no hay autor conocido, usa "Anónimo"
+- Las citas deben ser inspiradoras, motivacionales o reflexivas
+- Evita citas muy largas o con múltiples frases
+
+Responde únicamente con un JSON válido en este formato exacto:
+[
+  {{"quote": "texto de la cita", "author": "nombre del autor"}},
+  {{"quote": "texto de la cita", "author": "nombre del autor"}}
+]"""
+
+        data = {
+            "model": "gpt-3.5-turbo",
+            "messages": [
+                {"role": "system", "content": "Eres un experto en citas famosas y motivacionales. Generas únicamente citas cortas y concisas que no excedan 150 caracteres. Respondes únicamente con JSON válido, sin texto adicional antes o después del JSON."},
+                {"role": "user", "content": prompt}
+            ],
+            "max_tokens": 1500,
+            "temperature": 0.7
+        }
+        
+        # Hacer la petición a OpenAI
+        response = requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers=headers,
+            json=data,
+            timeout=30
+        )
+        
+        if response.status_code != 200:
+            print(f"Error en respuesta de OpenAI: {response.status_code} - {response.text}")
+            return False
+        
+        response_data = response.json()
+        
+        # Procesar respuesta
+        content = response_data['choices'][0]['message']['content'].strip()
+        print(f"Respuesta de OpenAI: {content}")
+        
+        # Limpiar el contenido para extraer solo el JSON
+        if content.startswith('```json'):
+            content = content[7:]
+        if content.endswith('```'):
+            content = content[:-3]
+        content = content.strip()
+        
+        # Parsear JSON
+        quotes_data = json.loads(content)
+        
+        # Validar que tenemos citas
+        if not isinstance(quotes_data, list) or len(quotes_data) == 0:
+            print(f"Error: Respuesta no es una lista válida: {quotes_data}")
+            return False
+            
+        # Asegurar que cada cita tenga los campos necesarios
+        valid_quotes = []
+        for quote in quotes_data:
+            if isinstance(quote, dict) and 'quote' in quote:
+                valid_quotes.append({
+                    'quote': quote.get('quote', ''),
+                    'author': quote.get('author', 'Anónimo')
+                })
+        
+        if len(valid_quotes) == 0:
+            print("Error: No se encontraron citas válidas")
+            return False
+        
+        # Guardar las citas en el generador
+        generator.set_quotes_list(valid_quotes)
+        generator.save()
+        
+        print(f"Éxito: Se generaron {len(valid_quotes)} citas")
+        return True
+        
+    except json.JSONDecodeError as e:
+        print(f"Error parseando JSON: {e}")
+        print(f"Contenido recibido: {content}")
+        return False
+    except requests.exceptions.RequestException as e:
+        print(f"Error en petición AI: {e}")
+        return False
+    except Exception as e:
+        print(f"Error generando citas: {e}")
+        return False

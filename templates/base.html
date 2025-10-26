@@ -128,6 +128,12 @@
                                 </a>
                             </li>
                             <li>
+                                <a class="dropdown-item {% if 'quote_generator' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'quote_generator_list' %}">
+                                    <i class="bi bi-chat-quote"></i> Generador de Citas IA
+                                </a>
+                            </li>
+                            <li>
                                 <a class="dropdown-item {% if 'ai_manager' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'ai_manager_list' %}">
                                     <i class="bi bi-robot"></i> AI Managers

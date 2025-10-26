@@ -14164,3 +14164,69 @@ class MeetingNote(models.Model):
     
     def __str__(self):
         return f"Nota de {self.user.get_full_name() or self.user.username} - {self.meeting.title}"
+
+
+class QuoteGenerator(models.Model):
+    """Modelo para generar citas temáticas con IA"""
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título del generador'
+    )
+    topic = models.CharField(
+        max_length=500,
+        verbose_name='Tema de las citas',
+        help_text='Ej: "citas de Einstein sobre el amor", "frases motivacionales de líderes", etc.'
+    )
+    generated_quotes = models.TextField(
+        blank=True,
+        verbose_name='Citas generadas (JSON)',
+        help_text='Almacena las citas en formato JSON'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Creado por'
+    )
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        verbose_name='Empresa'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo',
+        help_text='Si está activo, las citas aparecerán en el dashboard'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Fecha de actualización'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Generador de Citas'
+        verbose_name_plural = 'Generadores de Citas'
+    
+    def __str__(self):
+        return f"{self.title} - {self.topic[:50]}"
+    
+    def get_quotes_list(self):
+        """Obtiene las citas como lista de Python"""
+        if self.generated_quotes:
+            try:
+                import json
+                return json.loads(self.generated_quotes)
+            except:
+                return []
+        return []
+    
+    def set_quotes_list(self, quotes_list):
+        """Guarda las citas como JSON"""
+        import json
+        self.generated_quotes = json.dumps(quotes_list, ensure_ascii=False)
