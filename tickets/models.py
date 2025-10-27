@@ -14260,6 +14260,55 @@ class MeetingNote(models.Model):
         return f"Nota de {self.user.get_full_name() or self.user.username} - {self.meeting.title}"
 
 
+class MeetingAttachment(models.Model):
+    """Modelo para archivos adjuntos de reuniones"""
+    meeting = models.ForeignKey(
+        VideoMeeting,
+        on_delete=models.CASCADE,
+        related_name='attachments',
+        verbose_name='Reunión'
+    )
+    file = models.FileField(
+        upload_to='meeting_recordings/',
+        verbose_name='Archivo adjunto'
+    )
+    filename = models.CharField(
+        max_length=255,
+        verbose_name='Nombre del archivo'
+    )
+    file_size = models.BigIntegerField(
+        default=0,
+        verbose_name='Tamaño del archivo (bytes)'
+    )
+    uploaded_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name='Subido por'
+    )
+    uploaded_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de subida'
+    )
+    
+    class Meta:
+        ordering = ['-uploaded_at']
+        verbose_name = 'Adjunto de Reunión'
+        verbose_name_plural = 'Adjuntos de Reunión'
+    
+    def __str__(self):
+        return f"{self.filename} - {self.meeting.title}"
+    
+    def get_file_size_display(self):
+        """Retorna el tamaño del archivo en formato legible"""
+        size = self.file_size
+        for unit in ['B', 'KB', 'MB', 'GB']:
+            if size < 1024.0:
+                return f"{size:.1f} {unit}"
+            size /= 1024.0
+        return f"{size:.1f} TB"
+
+
 class QuoteGenerator(models.Model):
     """Modelo para generar citas temáticas con IA"""
     title = models.CharField(

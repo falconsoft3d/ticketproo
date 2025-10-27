@@ -201,7 +201,7 @@
                                                        value="{{ form.username.value|default:'' }}" 
                                                        class="form-control{% if form.username.errors %} is-invalid{% endif %}"
                                                        id="{{ form.username.id_for_label }}"
-                                                       placeholder="Usuario opcional">
+                                                       placeholder="Usuario (opcional)">
                                                 {% if form.username.help_text %}
                                                     <div class="form-text">{{ form.username.help_text }}</div>
                                                 {% endif %}
@@ -223,7 +223,7 @@
                                                            value="{{ form.password.value|default:'' }}" 
                                                            class="form-control{% if form.password.errors %} is-invalid{% endif %}"
                                                            id="{{ form.password.id_for_label }}"
-                                                           placeholder="Contraseña opcional">
+                                                           placeholder="Contraseña (opcional)">
                                                     <button class="btn btn-outline-secondary password-toggle" 
                                                             type="button" 
                                                             id="togglePassword">

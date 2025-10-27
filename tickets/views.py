@@ -31846,11 +31846,11 @@ def video_meeting_list(request):
 
 @login_required
 def video_meeting_create(request):
-    """Crear nueva reunión de video"""
+    """Crear nueva reunión de video (sin archivos)"""
     from .forms import VideoMeetingForm
     
     if request.method == 'POST':
-        form = VideoMeetingForm(request.POST, request.FILES, user=request.user)
+        form = VideoMeetingForm(request.POST, user=request.user)
         if form.is_valid():
             meeting = form.save(commit=False)
             meeting.organizer = request.user
@@ -31862,29 +31862,16 @@ def video_meeting_create(request):
             meeting.save()
             form.save_m2m()  # Guardar participantes (ManyToMany)
             
-            # Si hay archivo de grabación, iniciar transcripción automática
-            if meeting.recording_file:
-                meeting.transcription_status = 'pending'
-                meeting.save()
-                
-                # Iniciar transcripción en background (si OpenAI está configurado)
-                try:
-                    from .ai_utils import transcribe_meeting_async
-                    transcribe_meeting_async(meeting.id)
-                    messages.success(request, 'Reunión creada exitosamente. La transcripción se procesará automáticamente.')
-                except:
-                    messages.success(request, 'Reunión creada exitosamente. Puedes transcribir manualmente o configurar OpenAI para transcripción automática.')
-            else:
-                messages.success(request, 'Reunión creada exitosamente.')
-            
-            return redirect('video_meeting_detail', pk=meeting.pk)
+            messages.success(request, 'Reunión creada exitosamente. Ahora puedes subir archivos en la edición.')
+            return redirect('video_meeting_edit', pk=meeting.pk)
     else:
         form = VideoMeetingForm(user=request.user)
     
     context = {
         'form': form,
         'title': 'Nueva Reunión de Video',
-        'action': 'Crear'
+        'action': 'Crear',
+        'is_create': True
     }
     
     return render(request, 'tickets/video_meeting_form.html', context)
@@ -31916,20 +31903,39 @@ def video_meeting_detail(request, pk):
                 messages.success(request, 'Nota agregada exitosamente.')
                 return redirect('video_meeting_detail', pk=pk)
         
-        elif 'transcribe_now' in request.POST:
-            # Iniciar transcripción manual
-            if meeting.recording_file:
+        elif 'transcribe_now' in request.POST or 'force_transcription' in request.POST:
+            # Iniciar/forzar transcripción
+            if meeting.recording_file or meeting.attachments.exists():
                 meeting.transcription_status = 'pending'
                 meeting.save()
                 
                 try:
-                    from .ai_utils import transcribe_meeting_async
-                    transcribe_meeting_async(meeting.id)
-                    messages.success(request, 'Transcripción iniciada. Se procesará en segundo plano.')
-                except:
-                    messages.error(request, 'Error al iniciar la transcripción. Verifica la configuración de OpenAI.')
+                    from .tasks import process_meeting_recordings_async
+                    from .models import MeetingAttachment
+                    
+                    # Recolectar todas las rutas de archivos
+                    file_paths = []
+                    
+                    # Agregar archivo principal si existe
+                    if meeting.recording_file:
+                        file_paths.append(meeting.recording_file.path)
+                    
+                    # Agregar archivos adjuntos
+                    for attachment in meeting.attachments.all():
+                        file_paths.append(attachment.file.path)
+                    
+                    # Procesar en segundo plano
+                    process_meeting_recordings_async(meeting.id, file_paths)
+                    
+                    messages.success(
+                        request, 
+                        f'Procesamiento iniciado para {len(file_paths)} archivo(s). '
+                        'La transcripción y análisis se realizarán en segundo plano.'
+                    )
+                except Exception as e:
+                    messages.error(request, f'Error al iniciar el procesamiento: {str(e)}')
             else:
-                messages.error(request, 'No hay archivo de grabación para transcribir.')
+                messages.error(request, 'No hay archivos para transcribir.')
             
             return redirect('video_meeting_detail', pk=pk)
     
@@ -31955,8 +31961,8 @@ def video_meeting_detail(request, pk):
 
 @login_required
 def video_meeting_edit(request, pk):
-    """Editar reunión de video"""
-    from .forms import VideoMeetingForm
+    """Editar reunión de video con subida de múltiples archivos"""
+    from .forms import VideoMeetingEditForm
     
     meeting = get_object_or_404(VideoMeeting, pk=pk)
     
@@ -31970,39 +31976,59 @@ def video_meeting_edit(request, pk):
         return redirect('video_meeting_detail', pk=pk)
     
     if request.method == 'POST':
-        form = VideoMeetingForm(request.POST, request.FILES, instance=meeting, user=request.user)
+        form = VideoMeetingEditForm(request.POST, request.FILES, instance=meeting, user=request.user)
         if form.is_valid():
-            # Verificar si se subió un nuevo archivo de grabación
-            old_file = meeting.recording_file
             meeting = form.save()
             
-            # Si hay nuevo archivo, reiniciar transcripción
-            if meeting.recording_file and meeting.recording_file != old_file:
-                meeting.transcription_status = 'pending'
-                meeting.transcription_text = ''
-                meeting.ai_summary = ''
-                meeting.key_points = ''
-                meeting.action_items = ''
-                meeting.save()
+            # Manejar múltiples archivos
+            uploaded_files = request.FILES.getlist('recording_files')
+            
+            if uploaded_files:
+                # Iniciar procesamiento en thread separado (sin Celery)
+                from .tasks import process_meeting_recordings_async
+                from .models import MeetingAttachment
                 
-                try:
-                    from .ai_utils import transcribe_meeting_async
-                    transcribe_meeting_async(meeting.id)
-                    messages.success(request, 'Reunión actualizada. La nueva grabación se transcribirá automáticamente.')
-                except:
-                    messages.success(request, 'Reunión actualizada exitosamente.')
+                # Guardar archivos como adjuntos y crear lista de rutas
+                file_paths = []
+                from django.core.files.storage import default_storage
+                import os
+                
+                for uploaded_file in uploaded_files:
+                    # Guardar archivo
+                    file_path = f'meeting_recordings/{meeting.id}_{uploaded_file.name}'
+                    saved_path = default_storage.save(file_path, uploaded_file)
+                    file_paths.append(saved_path)
+                    
+                    # Crear registro de adjunto
+                    MeetingAttachment.objects.create(
+                        meeting=meeting,
+                        file=saved_path,
+                        filename=uploaded_file.name,
+                        file_size=uploaded_file.size,
+                        uploaded_by=request.user
+                    )
+                
+                # Procesar en segundo plano usando threading
+                process_meeting_recordings_async(meeting.id, file_paths)
+                
+                messages.success(
+                    request, 
+                    f'Reunión actualizada. {len(uploaded_files)} archivo(s) se procesarán en segundo plano. '
+                    'El análisis de IA se generará automáticamente.'
+                )
             else:
                 messages.success(request, 'Reunión actualizada exitosamente.')
             
             return redirect('video_meeting_detail', pk=meeting.pk)
     else:
-        form = VideoMeetingForm(instance=meeting, user=request.user)
+        form = VideoMeetingEditForm(instance=meeting, user=request.user)
     
     context = {
         'form': form,
         'meeting': meeting,
         'title': f'Editar - {meeting.title}',
-        'action': 'Guardar Cambios'
+        'action': 'Guardar Cambios',
+        'is_create': False
     }
     
     return render(request, 'tickets/video_meeting_form.html', context)

@@ -169,36 +169,54 @@
                             </div>
                         </div>
                         
-                        <!-- Archivo de grabación -->
+                        <!-- Archivos de grabación - Solo en edición -->
+                        {% if not is_create %}
                         <div class="row">
                             <div class="col-md-12 mb-3">
-                                <label for="{{ form.recording_file.id_for_label }}" class="form-label">
-                                    <i class="bi bi-file-play"></i> {{ form.recording_file.label }}
+                                <label for="{{ form.recording_files.id_for_label }}" class="form-label">
+                                    <i class="bi bi-file-play"></i> Subir archivos de grabación
                                 </label>
-                                {{ form.recording_file }}
-                                {% if form.recording_file.errors %}
+                                {{ form.recording_files }}
+                                {% if form.recording_files.errors %}
                                     <div class="text-danger small">
-                                        {% for error in form.recording_file.errors %}
+                                        {% for error in form.recording_files.errors %}
                                             {{ error }}
                                         {% endfor %}
                                     </div>
                                 {% endif %}
                                 <div class="form-text">
-                                    <strong>Formatos soportados:</strong> MP4, AVI, MOV, MP3, WAV, M4A, WebM (máx. 500MB)<br>
-                                    <strong>Transcripción automática:</strong> Si subes un archivo, se transcribirá automáticamente con IA
+                                    <strong>Formatos soportados:</strong> MP4, AVI, MOV, MP3, WAV, M4A, WebM (máx. 500MB c/u)<br>
+                                    <strong>Múltiples archivos:</strong> Puedes seleccionar varios archivos a la vez<br>
+                                    <strong>Procesamiento automático:</strong> Los archivos se procesarán en segundo plano sin bloquear la interfaz
                                 </div>
                                 
                                 {% if meeting and meeting.recording_file %}
                                 <div class="alert alert-info mt-2">
                                     <i class="bi bi-info-circle"></i>
                                     <strong>Archivo actual:</strong> {{ meeting.recording_file.name|default:"archivo.mp4" }}
-                                    ({{ meeting.get_file_size_display }})
+                                    {% if meeting.get_file_size_display %}
+                                        ({{ meeting.get_file_size_display }})
+                                    {% endif %}
                                     <br>
-                                    <small>Sube un nuevo archivo para reemplazar el actual</small>
+                                    <small>Los nuevos archivos se agregarán y procesarán adicionalmente</small>
+                                </div>
+                                {% endif %}
+                                
+                                {% if meeting.transcription_status == 'processing' %}
+                                <div class="alert alert-warning mt-2">
+                                    <i class="bi bi-hourglass-split"></i>
+                                    <strong>Procesamiento en curso...</strong> Los archivos se están transcribiendo y analizando en segundo plano.
                                 </div>
                                 {% endif %}
                             </div>
                         </div>
+                        {% else %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Nota:</strong> Los archivos de grabación se pueden subir después de crear la reunión.
+                            Esto permite cargar múltiples archivos y procesarlos en segundo plano sin timeouts.
+                        </div>
+                        {% endif %}
                         
                         {% if form.non_field_errors %}
                             <div class="alert alert-danger">
@@ -238,50 +256,57 @@ document.addEventListener('DOMContentLoaded', function() {
         participantsSelect.style.height = '120px';
     }
     
-    // Validación del archivo
-    const fileInput = document.getElementById('{{ form.recording_file.id_for_label }}');
+    // Añadir atributo multiple al input de archivos (solo en edición)
+    {% if not is_create %}
+    const fileInput = document.getElementById('{{ form.recording_files.id_for_label }}');
     if (fileInput) {
+        fileInput.setAttribute('multiple', 'multiple');
+        
         fileInput.addEventListener('change', function() {
-            const file = this.files[0];
-            if (file) {
-                const maxSize = 500 * 1024 * 1024; // 500MB
+            const files = Array.from(this.files);
+            if (files.length > 0) {
+                const maxSize = 500 * 1024 * 1024; // 500MB por archivo
                 const allowedTypes = [
                     'video/mp4', 'video/avi', 'video/quicktime',
-                    'audio/mpeg', 'audio/wav', 'audio/mp4', 'video/webm'
+                    'audio/mpeg', 'audio/wav', 'audio/mp4', 'video/webm', 'audio/x-m4a'
                 ];
                 
-                if (file.size > maxSize) {
-                    alert('El archivo es muy grande. El tamaño máximo permitido es 500MB.');
+                let invalidFiles = [];
+                let totalSize = 0;
+                
+                files.forEach(file => {
+                    if (file.size > maxSize) {
+                        invalidFiles.push(`${file.name} (muy grande: ${(file.size / (1024*1024)).toFixed(2)}MB)`);
+                    }
+                    totalSize += file.size;
+                });
+                
+                if (invalidFiles.length > 0) {
+                    alert('Los siguientes archivos superan el límite de 500MB:\n' + invalidFiles.join('\n'));
                     this.value = '';
                     return;
                 }
                 
-                if (!allowedTypes.includes(file.type)) {
-                    alert('Formato de archivo no soportado. Use MP4, AVI, MOV, MP3, WAV, M4A o WebM.');
-                    this.value = '';
-                    return;
-                }
-                
-                // Mostrar información del archivo
-                const fileSize = (file.size / (1024 * 1024)).toFixed(2);
+                // Mostrar información de los archivos
+                const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(2);
                 const info = document.createElement('div');
-                info.className = 'alert alert-success mt-2';
+                info.className = 'alert alert-success mt-2 file-info';
                 info.innerHTML = `
                     <i class="bi bi-check-circle"></i>
-                    <strong>Archivo seleccionado:</strong> ${file.name} (${fileSize} MB)
-                    <br><small>Se transcribirá automáticamente después de guardar</small>
+                    <strong>${files.length} archivo(s) seleccionado(s)</strong><br>
+                    <small>Tamaño total: ${totalSizeMB} MB</small><br>
+                    <small class="text-muted">Los archivos se procesarán en segundo plano después de guardar</small>
                 `;
                 
-                // Remover información anterior
-                const existingInfo = this.parentNode.querySelector('.alert');
-                if (existingInfo && existingInfo.classList.contains('alert-success')) {
-                    existingInfo.remove();
-                }
+                // Remover info anterior si existe
+                const oldInfo = document.querySelector('.file-info');
+                if (oldInfo) oldInfo.remove();
                 
-                this.parentNode.appendChild(info);
+                this.parentElement.appendChild(info);
             }
         });
     }
+    {% endif %}
 });
 </script>
 {% endblock %}

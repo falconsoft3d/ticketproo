@@ -1841,11 +1841,11 @@ class UrlManagerForm(forms.ModelForm):
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Ingrese la contraseña'
+            'placeholder': 'Ingrese la contraseña (opcional)'
         }),
-        label='Contraseña',
+        label='Contraseña (opcional)',
         help_text='La contraseña se almacenará de forma segura y encriptada',
-        required=True
+        required=False
     )
     
     class Meta:
@@ -1862,7 +1862,7 @@ class UrlManagerForm(forms.ModelForm):
             }),
             'username': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'nombre_usuario'
+                'placeholder': 'nombre_usuario (opcional)'
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
@@ -1883,7 +1883,7 @@ class UrlManagerForm(forms.ModelForm):
         labels = {
             'title': 'Título',
             'url': 'URL',
-            'username': 'Usuario',
+            'username': 'Usuario (opcional)',
             'description': 'Descripción',
             'category': 'Categoría',
             'is_active': 'Activo',
@@ -1892,7 +1892,7 @@ class UrlManagerForm(forms.ModelForm):
         help_texts = {
             'title': 'Nombre descriptivo para identificar esta URL',
             'url': 'Dirección web completa (debe incluir http:// o https://)',
-            'username': 'Nombre de usuario para acceder a esta URL',
+            'username': 'Nombre de usuario para acceder a esta URL (opcional)',
             'description': 'Información adicional sobre el propósito de esta URL',
             'category': 'Categoría para organizar las URLs',
             'is_active': 'Desmarcar si la URL ya no está en uso',
@@ -1902,6 +1902,10 @@ class UrlManagerForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.instance_pk = kwargs.get('instance', None)
         super().__init__(*args, **kwargs)
+        
+        # Hacer username y password opcionales
+        self.fields['username'].required = False
+        self.fields['password'].required = False
         
         # Si estamos editando, cambiar el help text de la contraseña
         if self.instance_pk and hasattr(self.instance_pk, 'pk'):
@@ -5572,7 +5576,8 @@ class CompanyDocumentationURLForm(forms.ModelForm):
             }),
             'password': forms.PasswordInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Contraseña (opcional)'
+                'placeholder': 'Contraseña (opcional)',
+                'required': False
             }),
             'notes': forms.Textarea(attrs={
                 'class': 'form-control',
@@ -5591,12 +5596,20 @@ class CompanyDocumentationURLForm(forms.ModelForm):
             'title': 'Título del enlace',
             'url': 'URL',
             'description': 'Descripción',
-            'username': 'Usuario',
-            'password': 'Contraseña',
+            'username': 'Usuario (opcional)',
+            'password': 'Contraseña (opcional)',
             'notes': 'Notas adicionales',
             'is_active': 'Está activo',
             'order': 'Orden'
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Hacer los campos username y password opcionales
+        self.fields['username'].required = False
+        self.fields['password'].required = False
+        self.fields['description'].required = False
+        self.fields['notes'].required = False
 
 
 # Formset para manejar múltiples URLs
@@ -6693,7 +6706,102 @@ class ExpenseReportFilterForm(forms.Form):
 
 
 class VideoMeetingForm(forms.ModelForm):
-    """Formulario para crear y editar reuniones de video"""
+    """Formulario para crear reuniones de video (sin archivos)"""
+    
+    class Meta:
+        model = VideoMeeting
+        fields = [
+            'title', 'description', 'participants', 'company', 
+            'scheduled_date', 'duration_minutes', 'meeting_url'
+        ]
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Reunión de planificación semanal'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Descripción de la reunión, agenda, objetivos...'
+            }),
+            'participants': forms.SelectMultiple(attrs={
+                'class': 'form-select',
+                'multiple': True
+            }),
+            'company': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'scheduled_date': forms.DateTimeInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local'
+            }),
+            'duration_minutes': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '1',
+                'placeholder': '60'
+            }),
+            'meeting_url': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://zoom.us/j/... o https://meet.google.com/...'
+            }),
+        }
+        labels = {
+            'title': 'Título de la reunión',
+            'description': 'Descripción',
+            'participants': 'Participantes',
+            'company': 'Empresa',
+            'scheduled_date': 'Fecha y hora programada',
+            'duration_minutes': 'Duración (minutos)',
+            'meeting_url': 'URL de la reunión',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        # Filtrar participantes por empresa del usuario si no es administrador
+        if user and not user.is_superuser:
+            from .models import User
+            if hasattr(user, 'employee') and user.employee and user.employee.company:
+                company_users = User.objects.filter(
+                    employee__company=user.employee.company
+                ).order_by('first_name', 'last_name', 'username')
+                self.fields['participants'].queryset = company_users
+            else:
+                self.fields['participants'].queryset = User.objects.filter(
+                    id=user.id
+                )
+        
+        # Si es un nuevo formulario, establecer algunos valores por defecto
+        if not self.instance.pk:
+            from datetime import datetime, timedelta
+            from .models import Company
+            
+            # Establecer fecha por defecto (próxima hora)
+            next_hour = datetime.now().replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+            self.fields['scheduled_date'].initial = next_hour.strftime('%Y-%m-%dT%H:%M')
+            
+            # Duración por defecto
+            self.fields['duration_minutes'].initial = 60
+            
+            # Si el usuario tiene empresa, preseleccionarla
+            if user and hasattr(user, 'employee') and user.employee and user.employee.company:
+                self.fields['company'].initial = user.employee.company
+
+
+class VideoMeetingEditForm(forms.ModelForm):
+    """Formulario para editar reuniones de video con subida de múltiples archivos"""
+    
+    # Campo adicional para múltiples archivos (se manejará en la vista)
+    recording_files = forms.FileField(
+        required=False,
+        widget=forms.FileInput(attrs={
+            'class': 'form-control',
+            'accept': '.mp4,.avi,.mov,.mp3,.wav,.m4a,.webm',
+        }),
+        label='Archivos de grabación',
+        help_text='Puedes subir múltiples archivos. Formatos: MP4, AVI, MOV, MP3, WAV, M4A, WebM (máx. 500MB c/u)'
+    )
     
     class Meta:
         model = VideoMeeting
@@ -6745,7 +6853,7 @@ class VideoMeetingForm(forms.ModelForm):
             'scheduled_date': 'Fecha y hora programada',
             'duration_minutes': 'Duración (minutos)',
             'meeting_url': 'URL de la reunión',
-            'recording_file': 'Archivo de grabación',
+            'recording_file': 'Archivo de grabación principal',
         }
     
     def __init__(self, *args, **kwargs):
@@ -6764,44 +6872,20 @@ class VideoMeetingForm(forms.ModelForm):
                 self.fields['participants'].queryset = User.objects.filter(
                     id=user.id
                 )
-        
-        # Si es un nuevo formulario, establecer algunos valores por defecto
-        if not self.instance.pk:
-            from datetime import datetime, timedelta
-            from .models import Company
-            
-            # Establecer fecha por defecto (próxima hora)
-            next_hour = datetime.now().replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
-            self.fields['scheduled_date'].initial = next_hour.strftime('%Y-%m-%dT%H:%M')
-            
-            # Duración por defecto
-            self.fields['duration_minutes'].initial = 60
-            
-            # Si el usuario tiene empresa, preseleccionarla
-            if user and hasattr(user, 'employee') and user.employee and user.employee.company:
-                self.fields['company'].initial = user.employee.company
     
-    def clean_recording_file(self):
-        recording_file = self.cleaned_data.get('recording_file')
-        if recording_file:
-            # Verificar tamaño del archivo (máximo 500MB)
-            max_size = 500 * 1024 * 1024  # 500MB
-            if recording_file.size > max_size:
+    def clean_recording_files(self):
+        """Validar múltiples archivos"""
+        files = self.files.getlist('recording_files')
+        max_size = 500 * 1024 * 1024  # 500MB por archivo
+        
+        for file in files:
+            if file.size > max_size:
                 raise forms.ValidationError(
-                    f'El archivo es muy grande ({recording_file.size / (1024*1024):.1f}MB). '
-                    f'El tamaño máximo permitido es 500MB.'
-                )
-            
-            # Verificar formato del archivo
-            allowed_extensions = ['.mp4', '.avi', '.mov', '.mp3', '.wav', '.m4a', '.webm']
-            file_extension = recording_file.name.lower()
-            if not any(file_extension.endswith(ext) for ext in allowed_extensions):
-                raise forms.ValidationError(
-                    f'Formato de archivo no soportado. '
-                    f'Formatos permitidos: {", ".join(allowed_extensions)}'
+                    f'El archivo "{file.name}" es muy grande ({file.size / (1024*1024):.1f}MB). '
+                    f'El tamaño máximo permitido es 500MB por archivo.'
                 )
         
-        return recording_file
+        return files
 
 
 class MeetingTranscriptionForm(forms.ModelForm):

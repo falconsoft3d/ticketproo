@@ -138,7 +138,7 @@
             {% endif %}
             
             <!-- Grabación y transcripción -->
-            {% if meeting.recording_file or meeting.transcription_text %}
+            {% if meeting.recording_file or meeting.transcription_text or meeting.attachments.exists %}
             <div class="card shadow mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">
@@ -148,7 +148,7 @@
                 <div class="card-body">
                     {% if meeting.recording_file %}
                     <div class="mb-3">
-                        <strong><i class="bi bi-download"></i> Archivo de grabación:</strong><br>
+                        <strong><i class="bi bi-download"></i> Archivo de grabación principal:</strong><br>
                         <div class="d-flex align-items-center mt-2">
                             <a href="{{ meeting.recording_file.url }}" target="_blank" class="btn btn-outline-primary btn-sm me-2">
                                 <i class="bi bi-play-circle"></i> Reproducir/Descargar
@@ -157,6 +157,104 @@
                                 {{ meeting.recording_file.name|default:"grabacion.mp4" }} 
                                 ({{ meeting.get_file_size_display }})
                             </small>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if meeting.attachments.exists %}
+                    <div class="mb-3">
+                        <strong><i class="bi bi-paperclip"></i> Archivos adjuntos ({{ meeting.attachments.count }}):</strong>
+                        <div class="list-group mt-2">
+                            {% for attachment in meeting.attachments.all %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center flex-grow-1">
+                                    <i class="bi bi-file-earmark me-2 text-primary"></i>
+                                    <div>
+                                        <strong>{{ attachment.filename }}</strong><br>
+                                        <small class="text-muted">
+                                            {{ attachment.get_file_size_display }} - 
+                                            Subido por {{ attachment.uploaded_by.get_full_name|default:attachment.uploaded_by.username }} 
+                                            el {{ attachment.uploaded_at|date:"d/m/Y H:i" }}
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="btn-group" role="group">
+                                    <a href="{{ attachment.file.url }}" target="_blank" class="btn btn-sm btn-outline-primary" title="Ver/Reproducir">
+                                        <i class="bi bi-play-circle"></i>
+                                    </a>
+                                    <a href="{{ attachment.file.url }}" download="{{ attachment.filename }}" class="btn btn-sm btn-outline-success" title="Descargar">
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Estado de transcripción -->
+                    {% if meeting.attachments.exists or meeting.recording_file %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <strong><i class="bi bi-cpu"></i> Estado de procesamiento IA:</strong>
+                            {% if meeting.transcription_status != 'processing' and meeting.transcription_status != 'completed' %}
+                                <form method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" name="force_transcription" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-play-fill"></i> Forzar transcripción
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+                        <div class="mt-2">
+                            {% if meeting.transcription_status == 'pending' %}
+                                <div class="alert alert-info mb-0">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="bi bi-clock-history"></i> 
+                                            <strong>Pendiente:</strong> Los archivos están en cola para ser procesados.
+                                        </div>
+                                        <button class="btn btn-sm btn-outline-primary" onclick="location.reload()">
+                                            <i class="bi bi-arrow-clockwise"></i> Actualizar
+                                        </button>
+                                    </div>
+                                </div>
+                            {% elif meeting.transcription_status == 'processing' %}
+                                <div class="alert alert-warning mb-0">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="bi bi-hourglass-split"></i> 
+                                            <strong>Procesando:</strong> Se está transcribiendo y analizando los archivos con IA.
+                                            <div class="spinner-border spinner-border-sm ms-2" role="status">
+                                                <span class="visually-hidden">Procesando...</span>
+                                            </div>
+                                        </div>
+                                        <button class="btn btn-sm btn-outline-warning" onclick="location.reload()">
+                                            <i class="bi bi-arrow-clockwise"></i> Actualizar
+                                        </button>
+                                    </div>
+                                    <div class="mt-2">
+                                        <small class="text-muted">
+                                            <i class="bi bi-info-circle"></i> 
+                                            El proceso puede tomar varios minutos dependiendo del tamaño de los archivos.
+                                        </small>
+                                    </div>
+                                </div>
+                            {% elif meeting.transcription_status == 'completed' %}
+                                <div class="alert alert-success mb-0">
+                                    <i class="bi bi-check-circle"></i> 
+                                    <strong>Completado:</strong> Transcripción y análisis finalizados.
+                                    {% if meeting.transcription_date %}
+                                        <br><small>Procesado el {{ meeting.transcription_date|date:"d/m/Y H:i" }}</small>
+                                    {% endif %}
+                                </div>
+                            {% elif meeting.transcription_status == 'failed' %}
+                                <div class="alert alert-danger mb-0">
+                                    <i class="bi bi-exclamation-triangle"></i> 
+                                    <strong>Error:</strong> No se pudo procesar los archivos. 
+                                    Verifica la configuración de OpenAI o intenta nuevamente.
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                     {% endif %}

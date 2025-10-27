@@ -54,9 +54,176 @@ class AIContentOptimizer:
         except requests.exceptions.RequestException as e:
             logger.error(f"Error en petición AI: {e}")
             return {"error": f"Error de conexión: {str(e)}"}
-        except Exception as e:
-            logger.error(f"Error inesperado en AI: {e}")
-            return {"error": f"Error inesperado: {str(e)}"}
+
+
+# Funciones auxiliares para tareas de Celery
+def transcribe_audio_file(audio_file_path, language='es'):
+    """
+    Transcribe un archivo de audio usando OpenAI Whisper
+    
+    Args:
+        audio_file_path: Ruta al archivo de audio
+        language: Código de idioma (default: 'es')
+    
+    Returns:
+        str: Texto transcrito o None si falla
+    """
+    from tickets.models import SystemConfiguration
+    import openai
+    
+    try:
+        config = SystemConfiguration.objects.first()
+        if not config or not config.ai_chat_enabled or not config.openai_api_key:
+            logger.error("Configuración de IA no disponible o API key no configurada")
+            return None
+        
+        client = openai.OpenAI(api_key=config.openai_api_key)
+        
+        with open(audio_file_path, 'rb') as audio_file:
+            transcript = client.audio.transcriptions.create(
+                model="whisper-1",
+                file=audio_file,
+                language=language
+            )
+            
+        return transcript.text
+            
+    except Exception as e:
+        logger.error(f"Error transcribiendo archivo: {str(e)}")
+        return None
+
+
+def generate_meeting_summary(transcription_text):
+    """
+    Genera un resumen estructurado de una reunión usando IA
+    
+    Args:
+        transcription_text: Texto completo de la transcripción
+    
+    Returns:
+        dict: {
+            'summary': Resumen general,
+            'key_points': Puntos clave,
+            'action_items': Items de acción
+        }
+    """
+    from tickets.models import SystemConfiguration
+    import openai
+    
+    try:
+        config = SystemConfiguration.objects.first()
+        if not config or not config.ai_chat_enabled or not config.openai_api_key:
+            logger.error("Configuración de IA no disponible o API key no configurada")
+            return None
+        
+        client = openai.OpenAI(api_key=config.openai_api_key)
+        
+        prompt = f"""Analiza la siguiente transcripción de una reunión y genera:
+
+1. RESUMEN (máximo 3 párrafos): Resumen ejecutivo de la reunión
+2. PUNTOS CLAVE (lista numerada): Los puntos más importantes discutidos
+3. ITEMS DE ACCIÓN (lista con responsables): Tareas y compromisos acordados
+
+TRANSCRIPCIÓN:
+{transcription_text}
+
+Formatea tu respuesta exactamente así:
+
+RESUMEN:
+[tu resumen aquí]
+
+PUNTOS CLAVE:
+1. [punto 1]
+2. [punto 2]
+...
+
+ITEMS DE ACCIÓN:
+1. [acción 1]
+2. [acción 2]
+..."""
+
+        response = client.chat.completions.create(
+            model=config.openai_model or "gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "Eres un asistente experto en analizar reuniones y generar resúmenes estructurados."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=1500
+        )
+        
+        content = response.choices[0].message.content
+        
+        # Parsear respuesta
+        summary = ""
+        key_points = ""
+        action_items = ""
+        
+        parts = content.split("PUNTOS CLAVE:")
+        if len(parts) > 1:
+            summary = parts[0].replace("RESUMEN:", "").strip()
+            
+            action_parts = parts[1].split("ITEMS DE ACCIÓN:")
+            if len(action_parts) > 1:
+                key_points = action_parts[0].strip()
+                action_items = action_parts[1].strip()
+            else:
+                key_points = parts[1].strip()
+        else:
+            summary = content
+        
+        return {
+            'summary': summary,
+            'key_points': key_points,
+            'action_items': action_items
+        }
+            
+    except Exception as e:
+        logger.error(f"Error generando resumen: {str(e)}")
+        return None
+
+
+# Clase OpenAIAssistant para otras funciones del sistema
+class OpenAIAssistant:
+    """Asistente de IA con OpenAI para diversas tareas"""
+    
+    def __init__(self):
+        self.base_url = "https://api.openai.com/v1/chat/completions"
+        self.api_key = self._get_openai_api_key()
+    
+    def _get_openai_api_key(self):
+        """Obtener la API key de OpenAI desde la configuración del sistema"""
+        try:
+            from tickets.models import SystemConfiguration
+            config = SystemConfiguration.objects.first()
+            return getattr(config, 'openai_api_key', None)
+        except:
+            return None
+    
+    def _make_ai_request(self, messages, max_tokens=500, temperature=0.7):
+        """Hacer petición a la API de OpenAI"""
+        if not self.api_key:
+            return {"error": "API key de OpenAI no configurada"}
+        
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+        
+        data = {
+            "model": "gpt-3.5-turbo",
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": temperature
+        }
+        
+        try:
+            response = requests.post(self.base_url, headers=headers, json=data, timeout=30)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error en petición AI: {e}")
+            return {"error": f"Error de conexión: {str(e)}"}
     
     def improve_content(self, title, content):
         """Mejorar el contenido del artículo"""

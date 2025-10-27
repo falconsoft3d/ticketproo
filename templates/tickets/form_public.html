@@ -280,12 +280,12 @@
                                 {% csrf_token %}
                                 <!-- Información del encuestado -->
                                 <div class="question-card p-4 mb-4">
-                                    <h5 class="mb-3"><i class="bi bi-person"></i> Información Personal (Opcional)</h5>
+                                    <h5 class="mb-3"><i class="bi bi-person"></i> Información Personal</h5>
                                     <div class="row">
                                         <div class="col-md-6 mb-3">
                                             <label class="form-label fw-bold">{{ form.respondent_name.label }}</label>
                                             <input type="text" name="{{ form.respondent_name.name }}" 
-                                                   class="form-control" 
+                                                   class="form-control required" 
                                                    value="{{ form.respondent_name.value|default:'' }}"
                                                    placeholder="Tu nombre completo">
                                             {% if form.respondent_name.errors %}
@@ -295,7 +295,7 @@
                                         <div class="col-md-6 mb-3">
                                             <label class="form-label fw-bold">{{ form.respondent_email.label }}</label>
                                             <input type="email" name="{{ form.respondent_email.name }}" 
-                                                   class="form-control" 
+                                                   class="form-control required" 
                                                    value="{{ form.respondent_email.value|default:'' }}"
                                                    placeholder="tu@email.com">
                                             {% if form.respondent_email.errors %}
