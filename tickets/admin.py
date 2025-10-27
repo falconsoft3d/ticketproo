@@ -12,7 +12,7 @@ from .models import (
     PageVisit, MultipleDocumentation, MultipleDocumentationItem, MultipleDocumentationStats,
     MultipleDocumentationItemStats, MultipleDocumentationVisit, MultipleDocumentationDownload,
     TaskSchedule, ScheduleTask, ScheduleComment, TicketApproval, SatisfactionSurvey, FinancialAction,
-    FinancialPriceHistory, Product, ClientProjectAccess, ClientTimeEntry, CompanyDocumentation, CompanyDocumentationURL, ContactGenerator,
+    FinancialPriceHistory, Product, ClientProjectAccess, ClientTimeEntry, CompanyDocumentation, CompanyDocumentationURL, TermsOfUse, ContactGenerator,
     CompanyRequestGenerator, CompanyRequest, CompanyRequestComment,
     Form, FormQuestion, FormQuestionOption, FormResponse, FormAnswer, FormAIAnalysis, Alcance, License,
     WhatsAppConnection, WhatsAppKeyword, WhatsAppMessage, ImagePrompt,
@@ -2374,6 +2374,34 @@ class CompanyDocumentationURLAdmin(admin.ModelAdmin):
         return obj.has_credentials()
     has_credentials.boolean = True
     has_credentials.short_description = 'Tiene credenciales'
+
+
+@admin.register(TermsOfUse)
+class TermsOfUseAdmin(admin.ModelAdmin):
+    list_display = ['title', 'version', 'effective_date', 'is_active', 'created_by', 'created_at']
+    list_filter = ['is_active', 'effective_date', 'created_at']
+    search_fields = ['title', 'content', 'version']
+    list_editable = ['is_active']
+    ordering = ['-effective_date', '-created_at']
+    readonly_fields = ['created_by', 'created_at', 'updated_at']
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('title', 'version', 'effective_date', 'is_active')
+        }),
+        ('Contenido', {
+            'fields': ('content',)
+        }),
+        ('Información del Sistema', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
 
 
 @admin.register(ContactGenerator)

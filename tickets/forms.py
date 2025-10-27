@@ -26,7 +26,7 @@ from .models import (
     Agreement, AgreementSignature, LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry, SharedFile, SharedFileDownload,
     Recording, RecordingPlayback, MultipleDocumentation, TaskSchedule, ScheduleTask, ScheduleComment, FinancialAction,
     ClientProjectAccess, ClientTimeEntry, ProductSet, ProductItem, Precotizador, PrecotizadorExample, PrecotizadorQuote,
-    CompanyDocumentation, CompanyDocumentationURL, ContactGenerator,
+    CompanyDocumentation, CompanyDocumentationURL, TermsOfUse, ContactGenerator,
     CompanyRequestGenerator, CompanyRequest, CompanyRequestComment,
     Form, FormQuestion, FormQuestionOption, FormResponse, FormAnswer,
     EmployeeRequest, InternalAgreement, Asset, AssetHistory, 
@@ -3106,7 +3106,7 @@ class ContactForm(forms.ModelForm):
     class Meta:
         model = Contact
         fields = [
-            'name', 'email', 'phone', 'position', 'company', 
+            'name', 'email', 'phone', 'position', 'company', 'erp',
             'status', 'source', 'notes', 'contact_date',
             'contacted_by_phone', 'contacted_by_web', 
             'contact_tracking_notes', 'last_contact_date'
@@ -3131,6 +3131,10 @@ class ContactForm(forms.ModelForm):
             'company': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Nombre de la empresa'
+            }),
+            'erp': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'SAP, Odoo, Navision, etc.'
             }),
             'status': forms.Select(attrs={
                 'class': 'form-select'
@@ -5620,6 +5624,50 @@ CompanyDocumentationURLFormSet = forms.inlineformset_factory(
     extra=3,
     can_delete=True
 )
+
+
+class TermsOfUseForm(forms.ModelForm):
+    """Formulario para crear y editar Condiciones de Uso"""
+    
+    class Meta:
+        model = TermsOfUse
+        fields = ['title', 'content', 'effective_date', 'version', 'is_active']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título de las condiciones de uso'
+            }),
+            'content': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 15,
+                'placeholder': 'Contenido completo de las condiciones de uso...'
+            }),
+            'effective_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'version': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: v1.0, v2.0'
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            })
+        }
+        labels = {
+            'title': 'Título',
+            'content': 'Contenido',
+            'effective_date': 'Fecha de vigencia',
+            'version': 'Versión',
+            'is_active': 'Está activo'
+        }
+        help_texts = {
+            'is_active': 'Solo puede haber una condición de uso activa a la vez'
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['version'].required = False
 
 
 class ContactGeneratorForm(forms.ModelForm):

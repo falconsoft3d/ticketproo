@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="h3 mb-1">
+                        <i class="bi bi-file-text text-primary"></i>
+                        {{ page_title }}
+                    </h2>
+                    <p class="text-muted mb-0">Gestiona las condiciones de uso de la aplicación</p>
+                </div>
+                <div>
+                    <a href="{% url 'terms_of_use_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Nueva Condición de Uso
+                    </a>
+                </div>
+            </div>
+
+            <!-- Lista de Condiciones de Uso -->
+            {% if terms %}
+                <div class="row">
+                    {% for term in terms %}
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card h-100 {% if term.is_active %}border-success{% endif %}">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <h5 class="card-title mb-0">{{ term.title }}</h5>
+                                        {% if term.is_active %}
+                                            <span class="badge bg-success">Activo</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactivo</span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <small class="text-muted">
+                                            <i class="bi bi-calendar3"></i>
+                                            Vigencia: {{ term.effective_date|date:"d/m/Y" }}
+                                        </small>
+                                    </div>
+                                    
+                                    {% if term.version %}
+                                        <div class="mb-3">
+                                            <span class="badge bg-info">{{ term.version }}</span>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <p class="card-text text-truncate-3">
+                                        {{ term.content|truncatewords:30 }}
+                                    </p>
+                                    
+                                    <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                                        <small class="text-muted">
+                                            <i class="bi bi-person"></i>
+                                            {{ term.created_by.get_full_name|default:term.created_by.username }}
+                                        </small>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'terms_of_use_detail' term.pk %}" 
+                                               class="btn btn-outline-primary" 
+                                               title="Ver detalles">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{% url 'terms_of_use_edit' term.pk %}" 
+                                               class="btn btn-outline-secondary" 
+                                               title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <form method="post" 
+                                                  action="{% url 'terms_of_use_toggle' term.pk %}" 
+                                                  class="d-inline"
+                                                  onsubmit="return confirm('¿Estás seguro de cambiar el estado de esta condición de uso?');">
+                                                {% csrf_token %}
+                                                <button type="submit" 
+                                                        class="btn btn-outline-{% if term.is_active %}warning{% else %}success{% endif %}" 
+                                                        title="{% if term.is_active %}Desactivar{% else %}Activar{% endif %}">
+                                                    <i class="bi bi-{% if term.is_active %}toggle-on{% else %}toggle-off{% endif %}"></i>
+                                                </button>
+                                            </form>
+                                            <a href="{% url 'terms_of_use_delete' term.pk %}" 
+                                               class="btn btn-outline-danger" 
+                                               title="Eliminar">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    No hay condiciones de uso registradas. 
+                    <a href="{% url 'terms_of_use_create' %}" class="alert-link">Crear la primera condición de uso</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.text-truncate-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+</style>
+{% endblock %}

@@ -4148,6 +4148,13 @@ class Contact(models.Model):
         null=True,
         verbose_name='Empresa'
     )
+    erp = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='ERP',
+        help_text='Sistema ERP actual del contacto'
+    )
     status = models.CharField(
         max_length=10,
         choices=STATUS_CHOICES,
@@ -8732,6 +8739,39 @@ class CompanyDocumentationURL(models.Model):
     def has_credentials(self):
         """Verifica si tiene credenciales (usuario y/o contraseña)"""
         return bool(self.username or self.password)
+
+
+class TermsOfUse(models.Model):
+    """Condiciones de uso de la aplicación"""
+    
+    title = models.CharField(max_length=200, verbose_name="Título")
+    content = models.TextField(verbose_name="Contenido")
+    effective_date = models.DateField(verbose_name="Fecha de vigencia")
+    is_active = models.BooleanField(default=True, verbose_name="Está activo")
+    version = models.CharField(max_length=50, blank=True, verbose_name="Versión")
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='terms_created',
+        verbose_name="Creado por"
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de creación")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Última actualización")
+    
+    class Meta:
+        verbose_name = "Condición de Uso"
+        verbose_name_plural = "Condiciones de Uso"
+        ordering = ['-effective_date', '-created_at']
+    
+    def __str__(self):
+        return f"{self.title} - {self.effective_date}"
+    
+    def save(self, *args, **kwargs):
+        # Si se marca como activo, desactivar las demás
+        if self.is_active:
+            TermsOfUse.objects.filter(is_active=True).exclude(pk=self.pk).update(is_active=False)
+        super().save(*args, **kwargs)
 
 
 class ContactGenerator(models.Model):

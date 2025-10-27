@@ -748,6 +748,14 @@ urlpatterns += [
     # URL pública para documentaciones (sin autenticación)
     path('documentacion/<str:token>/', views.company_documentation_public, name='company_documentation_public'),
     
+    # ============= URLs PARA CONDICIONES DE USO =============
+    path('condiciones-uso/', views.terms_of_use_list, name='terms_of_use_list'),
+    path('condiciones-uso/crear/', views.terms_of_use_create, name='terms_of_use_create'),
+    path('condiciones-uso/<int:pk>/', views.terms_of_use_detail, name='terms_of_use_detail'),
+    path('condiciones-uso/<int:pk>/editar/', views.terms_of_use_edit, name='terms_of_use_edit'),
+    path('condiciones-uso/<int:pk>/eliminar/', views.terms_of_use_delete, name='terms_of_use_delete'),
+    path('condiciones-uso/<int:pk>/toggle/', views.terms_of_use_toggle, name='terms_of_use_toggle'),
+    
     # ============= URLs PARA GENERADORES DE CONTACTOS =============
     # URLs privadas (requieren autenticación)
     path('generadores-contacto/', views.contact_generator_list, name='contact_generator_list'),

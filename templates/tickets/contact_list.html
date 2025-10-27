@@ -73,7 +73,7 @@
                     <label for="search" class="form-label">Buscar</label>
                     <input type="text" class="form-control" id="search" name="search" 
                            value="{{ request.GET.search }}" 
-                           placeholder="Nombre, email, empresa, teléfono...">
+                           placeholder="Nombre, email, empresa, teléfono, ERP...">
                 </div>
                 <div class="col-md-2 mb-3">
                     <label for="status" class="form-label">Estado</label>
@@ -122,6 +122,7 @@
                                 <th>Contacto</th>
                                 <th>Estado</th>
                                 <th>Empresa</th>
+                                <th>ERP</th>
                                 <th>Fecha Contacto</th>
                                 <th>Fuente</th>
                                 <th>Creado por</th>
@@ -163,6 +164,13 @@
                                     </span>
                                 </td>
                                 <td>{{ contact.company|default:"-" }}</td>
+                                <td>
+                                    {% if contact.erp %}
+                                        <span class="badge bg-info">{{ contact.erp }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
                                 <td>
                                     <div>
                                         <strong>{{ contact.contact_date|date:"d/m/Y" }}</strong>

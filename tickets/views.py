@@ -119,7 +119,7 @@ from .models import (
     Recording, RecordingPlayback, MultipleDocumentation, MultipleDocumentationItem,
     TaskSchedule, ScheduleTask, ScheduleComment, SatisfactionSurvey, ClientProjectAccess, ClientTimeEntry, ShortUrl,
     ProductSet, ProductItem, Precotizador, PrecotizadorExample, PrecotizadorQuote,
-    CompanyDocumentation, CompanyDocumentationURL, ContactGenerator,
+    CompanyDocumentation, CompanyDocumentationURL, TermsOfUse, ContactGenerator,
     CompanyRequestGenerator, CompanyRequest, CompanyRequestComment,
     Form, FormQuestion, FormQuestionOption, FormResponse, FormAnswer, FormAIAnalysis, Alcance, License,
     WhatsAppConnection, WhatsAppKeyword, WhatsAppMessage, ImagePrompt,
@@ -141,7 +141,7 @@ from .forms import (
     TaskScheduleForm, ScheduleTaskForm, ScheduleCommentForm, ClientProjectAccessForm, ClientTimeEntryForm,
     ProductSetForm, ProductItemForm, ProductItemFormSet, PrecotizadorForm, PrecotizadorExampleForm, 
     PrecotizadorExampleFormSet, PrecotizadorQuoteForm, CompanyDocumentationForm, CompanyDocumentationURLForm,
-    CompanyDocumentationURLFormSet, ContactGeneratorForm, PublicContactForm,
+    CompanyDocumentationURLFormSet, TermsOfUseForm, ContactGeneratorForm, PublicContactForm,
     CompanyRequestGeneratorForm, PublicCompanyRequestForm, FormForm, FormQuestionForm,
     FormQuestionOptionForm, PublicFormResponseForm, AssetForm, AssetAssignForm, AssetFilterForm,
     AITutorForm, AITutorProgressReportForm, AITutorAttachmentForm, AITutorFilterForm,
@@ -8385,7 +8385,8 @@ def contact_list(request):
             Q(name__icontains=search) |
             Q(email__icontains=search) |
             Q(company__icontains=search) |
-            Q(phone__icontains=search)
+            Q(phone__icontains=search) |
+            Q(erp__icontains=search)
         )
     
     date_from = request.GET.get('date_from')
@@ -19913,6 +19914,144 @@ def company_documentation_url_toggle(request, doc_pk, url_pk):
         messages.success(request, f'Enlace "{url_obj.title}" {status} exitosamente.')
     
     return redirect('company_documentation_detail', pk=doc_pk)
+
+
+# ==========================================
+# VISTAS PARA CONDICIONES DE USO
+# ==========================================
+
+@login_required
+def terms_of_use_list(request):
+    """Lista de condiciones de uso"""
+    if not (request.user.is_superuser or request.user.groups.filter(name='Administradores').exists()):
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('dashboard')
+    
+    terms = TermsOfUse.objects.all()
+    
+    context = {
+        'terms': terms,
+        'page_title': 'Condiciones de Uso',
+        'section': 'documentation'
+    }
+    
+    return render(request, 'tickets/terms_of_use_list.html', context)
+
+
+@login_required
+def terms_of_use_create(request):
+    """Crear nueva condición de uso"""
+    if not (request.user.is_superuser or request.user.groups.filter(name='Administradores').exists()):
+        messages.error(request, 'No tienes permisos para crear condiciones de uso.')
+        return redirect('terms_of_use_list')
+    
+    if request.method == 'POST':
+        form = TermsOfUseForm(request.POST)
+        if form.is_valid():
+            term = form.save(commit=False)
+            term.created_by = request.user
+            term.save()
+            messages.success(request, f'Condición de uso "{term.title}" creada exitosamente.')
+            return redirect('terms_of_use_detail', pk=term.pk)
+    else:
+        form = TermsOfUseForm()
+    
+    context = {
+        'form': form,
+        'page_title': 'Nueva Condición de Uso',
+        'section': 'documentation',
+        'action': 'create'
+    }
+    
+    return render(request, 'tickets/terms_of_use_form.html', context)
+
+
+@login_required
+def terms_of_use_detail(request, pk):
+    """Ver detalle de condición de uso"""
+    if not (request.user.is_superuser or request.user.groups.filter(name='Administradores').exists()):
+        messages.error(request, 'No tienes permisos para ver esta condición de uso.')
+        return redirect('dashboard')
+    
+    term = get_object_or_404(TermsOfUse, pk=pk)
+    
+    context = {
+        'term': term,
+        'page_title': f'Condición de Uso: {term.title}',
+        'section': 'documentation'
+    }
+    
+    return render(request, 'tickets/terms_of_use_detail.html', context)
+
+
+@login_required
+def terms_of_use_edit(request, pk):
+    """Editar condición de uso"""
+    if not (request.user.is_superuser or request.user.groups.filter(name='Administradores').exists()):
+        messages.error(request, 'No tienes permisos para editar condiciones de uso.')
+        return redirect('terms_of_use_list')
+    
+    term = get_object_or_404(TermsOfUse, pk=pk)
+    
+    if request.method == 'POST':
+        form = TermsOfUseForm(request.POST, instance=term)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Condición de uso "{term.title}" actualizada exitosamente.')
+            return redirect('terms_of_use_detail', pk=term.pk)
+    else:
+        form = TermsOfUseForm(instance=term)
+    
+    context = {
+        'form': form,
+        'term': term,
+        'page_title': f'Editar: {term.title}',
+        'section': 'documentation',
+        'action': 'edit'
+    }
+    
+    return render(request, 'tickets/terms_of_use_form.html', context)
+
+
+@login_required
+def terms_of_use_delete(request, pk):
+    """Eliminar condición de uso"""
+    if not (request.user.is_superuser or request.user.groups.filter(name='Administradores').exists()):
+        messages.error(request, 'No tienes permisos para eliminar condiciones de uso.')
+        return redirect('terms_of_use_list')
+    
+    term = get_object_or_404(TermsOfUse, pk=pk)
+    
+    if request.method == 'POST':
+        title = term.title
+        term.delete()
+        messages.success(request, f'Condición de uso "{title}" eliminada exitosamente.')
+        return redirect('terms_of_use_list')
+    
+    context = {
+        'term': term,
+        'page_title': f'Eliminar: {term.title}',
+        'section': 'documentation'
+    }
+    
+    return render(request, 'tickets/terms_of_use_delete.html', context)
+
+
+@login_required
+def terms_of_use_toggle(request, pk):
+    """Activar/desactivar condición de uso"""
+    if not (request.user.is_superuser or request.user.groups.filter(name='Administradores').exists()):
+        messages.error(request, 'No tienes permisos para cambiar el estado de condiciones de uso.')
+        return redirect('terms_of_use_list')
+    
+    term = get_object_or_404(TermsOfUse, pk=pk)
+    term.is_active = not term.is_active
+    term.save()
+    
+    status = 'activada' if term.is_active else 'desactivada'
+    messages.success(request, f'Condición de uso "{term.title}" {status} exitosamente.')
+    
+    return redirect('terms_of_use_list')
 
 
 # ==========================================
