@@ -19586,19 +19586,8 @@ DESGLOSE DE TAREAS:
 @login_required
 def company_documentation_list(request):
     """Lista de documentaciones de empresas"""
-    # Filtrar por empresa del usuario si no es administrador
-    if request.user.is_superuser or request.user.groups.filter(name='Administradores').exists():
-        documentations = CompanyDocumentation.objects.all()
-    else:
-        try:
-            user_company = request.user.profile.company
-            if user_company:
-                documentations = CompanyDocumentation.objects.filter(company=user_company)
-            else:
-                documentations = CompanyDocumentation.objects.none()
-        except:
-            documentations = CompanyDocumentation.objects.none()
-    
+    # Mostrar todas las documentaciones
+    documentations = CompanyDocumentation.objects.all()
     documentations = documentations.order_by('-created_at')
     
     # Paginación
@@ -19653,14 +19642,6 @@ def company_documentation_detail(request, pk):
     """Detalle de documentación de empresa"""
     documentation = get_object_or_404(CompanyDocumentation, pk=pk)
     
-    # Verificar permisos
-    if not (request.user.is_superuser or 
-            request.user.groups.filter(name='Administradores').exists() or
-            (hasattr(request.user, 'profile') and 
-             request.user.profile.company == documentation.company)):
-        messages.error(request, 'No tienes permisos para ver esta documentación.')
-        return redirect('company_documentation_list')
-    
     urls = documentation.urls.filter(is_active=True).order_by('order', 'title')
     
     context = {
@@ -19673,21 +19654,12 @@ def company_documentation_detail(request, pk):
     return render(request, 'tickets/company_documentation_detail.html', context)
 
 
-@login_required
 def company_documentation_edit(request, pk):
     """Editar documentación de empresa"""
     documentation = get_object_or_404(CompanyDocumentation, pk=pk)
     
-    # Verificar permisos
-    if not (request.user.is_superuser or 
-            request.user.groups.filter(name='Administradores').exists() or
-            (hasattr(request.user, 'profile') and 
-             request.user.profile.company == documentation.company)):
-        messages.error(request, 'No tienes permisos para editar esta documentación.')
-        return redirect('company_documentation_list')
-    
     if request.method == 'POST':
-        form = CompanyDocumentationForm(request.POST, instance=documentation, user=request.user)
+        form = CompanyDocumentationForm(request.POST, instance=documentation, user=None)
         formset = CompanyDocumentationURLFormSet(request.POST, instance=documentation)
         
         if form.is_valid() and formset.is_valid():
@@ -19697,7 +19669,7 @@ def company_documentation_edit(request, pk):
             messages.success(request, 'Documentación actualizada exitosamente.')
             return redirect('company_documentation_detail', pk=documentation.pk)
     else:
-        form = CompanyDocumentationForm(instance=documentation, user=request.user)
+        form = CompanyDocumentationForm(instance=documentation, user=None)
         formset = CompanyDocumentationURLFormSet(instance=documentation)
     
     context = {
