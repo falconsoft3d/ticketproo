@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h3 mb-0 text-danger">
+                <i class="bi bi-exclamation-triangle"></i> 
+                {{ page_title }}
+            </h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'procedure_list' %}" class="text-decoration-none">Procedimientos</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'procedure_detail' procedure.pk %}" class="text-decoration-none">{{ procedure.title }}</a>
+                    </li>
+                    <li class="breadcrumb-item active">Eliminar</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'procedure_detail' procedure.pk %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Confirmación de eliminación -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Confirmar Eliminación
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <h5 class="alert-heading">
+                            <i class="bi bi-exclamation-triangle"></i> ¡Atención!
+                        </h5>
+                        <p class="mb-0">
+                            Esta acción eliminará permanentemente el procedimiento y no se puede deshacer.
+                            El archivo adjunto también será eliminado del sistema.
+                        </p>
+                    </div>
+
+                    <!-- Información del procedimiento -->
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <h6>Procedimiento a eliminar:</h6>
+                            <div class="border rounded p-3 bg-light">
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="badge bg-primary me-2">{{ procedure.sequence }}</span>
+                                    <strong>{{ procedure.title }}</strong>
+                                </div>
+                                {% if procedure.description %}
+                                <p class="text-muted small mb-2">{{ procedure.description|truncatewords:30 }}</p>
+                                {% endif %}
+                                <div class="row">
+                                    <div class="col-6">
+                                        <small class="text-muted">
+                                            <i class="bi bi-person"></i> 
+                                            {{ procedure.created_by.get_full_name|default:procedure.created_by.username }}
+                                        </small>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted">
+                                            <i class="bi bi-calendar"></i> 
+                                            {{ procedure.created_at|date:"d/m/Y" }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>Archivo adjunto:</h6>
+                            <div class="text-center border rounded p-3 bg-light">
+                                <i class="{{ procedure.get_file_icon }} display-6 text-primary mb-2"></i>
+                                <div class="small">
+                                    <strong>{{ procedure.attachment.name|slice:"11:" }}</strong>
+                                    <br>
+                                    <span class="text-muted">{{ procedure.get_file_size }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formulario de confirmación -->
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'procedure_detail' procedure.pk %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Sí, Eliminar Procedimiento
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -6,6 +6,7 @@ urlpatterns = [
     path('dashboard/', views.dashboard_view, name='dashboard'),
     
     # URLs de tickets
+    path('ticket-show-chart/', views.ticket_chart, name='ticket_chart'),
     path('tickets/', views.ticket_list_view, name='ticket_list'),
     path('tickets/export/excel/', views.ticket_export_excel, name='ticket_export_excel'),
     path('tickets/create/', views.ticket_create_view, name='ticket_create'),
@@ -297,6 +298,7 @@ urlpatterns = [
     
     # ============= URLs CONTACTOS =============
     path('contacts/', views.contact_list, name='contact_list'),
+    path('contacts/chart/', views.contact_chart, name='contact_chart'),
     path('contacts/create/', views.contact_create, name='contact_create'),
     path('contacts/<int:pk>/', views.contact_detail, name='contact_detail'),
     path('contacts/<int:pk>/edit/', views.contact_edit, name='contact_edit'),
@@ -1073,5 +1075,13 @@ urlpatterns += [
     path('countdown-timer/<int:pk>/', views.countdown_timer_detail, name='countdown_timer_detail'),
     path('countdown-timer/<int:pk>/edit/', views.countdown_timer_edit, name='countdown_timer_edit'),
     path('countdown-timer/<int:pk>/delete/', views.countdown_timer_delete, name='countdown_timer_delete'),
+    
+    # URLs de Procedimientos
+    path('procedures/', views.procedure_list, name='procedure_list'),
+    path('procedures/create/', views.procedure_create, name='procedure_create'),
+    path('procedures/<int:pk>/', views.procedure_detail, name='procedure_detail'),
+    path('procedures/<int:pk>/edit/', views.procedure_edit, name='procedure_edit'),
+    path('procedures/<int:pk>/delete/', views.procedure_delete, name='procedure_delete'),
+    path('procedures/<int:pk>/toggle-active/', views.procedure_toggle_active, name='procedure_toggle_active'),
 ]
 

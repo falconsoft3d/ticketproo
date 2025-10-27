@@ -1,0 +1,215 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h3 mb-0">
+                <i class="bi bi-list-columns-reverse text-primary"></i> 
+                Procedimientos
+            </h1>
+            <p class="text-muted mb-0">Gestión de documentos de procedimientos</p>
+        </div>
+        <div class="col-md-4 text-end">
+            {% if user.groups.all and user.groups.first.name == 'Agentes' %}
+            <a href="{% url 'procedure_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Nuevo Procedimiento
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Búsqueda -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <form method="GET" class="d-flex">
+                <input type="text" name="search" class="form-control me-2" 
+                       placeholder="Buscar por título o descripción..." 
+                       value="{{ search }}">
+                <button type="submit" class="btn btn-outline-primary">
+                    <i class="bi bi-search"></i>
+                </button>
+                {% if search %}
+                <a href="{% url 'procedure_list' %}" class="btn btn-outline-secondary ms-2">
+                    <i class="bi bi-x-circle"></i>
+                </a>
+                {% endif %}
+            </form>
+        </div>
+        <div class="col-md-6 text-end">
+            <small class="text-muted">
+                Total: {{ procedures.paginator.count }} procedimiento{{ procedures.paginator.count|pluralize }}
+            </small>
+        </div>
+    </div>
+
+    <!-- Lista de procedimientos -->
+    {% if procedures %}
+    <div class="row">
+        {% for procedure in procedures %}
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-primary me-2">{{ procedure.sequence }}</span>
+                        <i class="{{ procedure.get_file_icon }} text-secondary me-2"></i>
+                        <small class="text-muted">{{ procedure.get_file_size }}</small>
+                    </div>
+                    {% if user.groups.all and user.groups.first.name == 'Agentes' %}
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-three-dots"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="{% url 'procedure_edit' procedure.pk %}">
+                                    <i class="bi bi-pencil"></i> Editar
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'procedure_toggle_active' procedure.pk %}">
+                                    {% if procedure.is_active %}
+                                        <i class="bi bi-eye-slash"></i> Desactivar
+                                    {% else %}
+                                        <i class="bi bi-eye"></i> Activar
+                                    {% endif %}
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="{% url 'procedure_delete' procedure.pk %}">
+                                    <i class="bi bi-trash"></i> Eliminar
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <a href="{% url 'procedure_detail' procedure.pk %}" class="text-decoration-none">
+                            {{ procedure.title }}
+                        </a>
+                    </h5>
+                    {% if procedure.description %}
+                    <p class="card-text text-muted">
+                        {{ procedure.description|truncatewords:20 }}
+                    </p>
+                    {% endif %}
+                    
+                    {% if procedure.company %}
+                    <div class="mb-2">
+                        <span class="badge bg-info">
+                            <i class="bi bi-building"></i> {{ procedure.company.name }}
+                        </span>
+                    </div>
+                    {% else %}
+                    <div class="mb-2">
+                        <span class="badge bg-secondary">
+                            <i class="bi bi-globe"></i> General
+                        </span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="bi bi-person"></i> {{ procedure.created_by.get_full_name|default:procedure.created_by.username }}
+                        </small>
+                        <small class="text-muted">
+                            <i class="bi bi-calendar"></i> {{ procedure.created_at|date:"d/m/Y" }}
+                        </small>
+                    </div>
+                </div>
+                <div class="card-footer bg-white">
+                    <div class="d-flex justify-content-between">
+                        {% if procedure.attachment %}
+                        <a href="{{ procedure.attachment.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-download"></i> Descargar
+                        </a>
+                        {% else %}
+                        <span class="btn btn-sm btn-outline-secondary disabled">
+                            <i class="bi bi-file-earmark-x"></i> Sin archivo
+                        </span>
+                        {% endif %}
+                        {% if procedure.url %}
+                        <a href="{{ procedure.url }}" target="_blank" class="btn btn-sm btn-outline-info">
+                            <i class="bi bi-link-45deg"></i> Enlace
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'procedure_detail' procedure.pk %}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-eye"></i> Ver
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Paginación -->
+    {% if procedures.has_other_pages %}
+    <nav aria-label="Paginación de procedimientos">
+        <ul class="pagination justify-content-center">
+            {% if procedures.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}">Primera</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ procedures.previous_page_number }}{% if search %}&search={{ search }}{% endif %}">Anterior</a>
+                </li>
+            {% endif %}
+
+            <li class="page-item active">
+                <span class="page-link">
+                    Página {{ procedures.number }} de {{ procedures.paginator.num_pages }}
+                </span>
+            </li>
+
+            {% if procedures.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ procedures.next_page_number }}{% if search %}&search={{ search }}{% endif %}">Siguiente</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ procedures.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}">Última</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <!-- Estado vacío -->
+    <div class="text-center py-5">
+        <i class="bi bi-list-columns-reverse display-1 text-muted"></i>
+        <h3 class="text-muted mt-3">
+            {% if search %}
+                No se encontraron procedimientos
+            {% else %}
+                No hay procedimientos registrados
+            {% endif %}
+        </h3>
+        <p class="text-muted">
+            {% if search %}
+                Intenta con otros términos de búsqueda
+            {% else %}
+                {% if user.groups.all and user.groups.first.name == 'Agentes' %}
+                    Crea el primer procedimiento para comenzar
+                {% else %}
+                    Los procedimientos aparecerán aquí cuando sean creados
+                {% endif %}
+            {% endif %}
+        </p>
+        {% if not search and user.groups.all and user.groups.first.name == 'Agentes' %}
+        <a href="{% url 'procedure_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Crear Primer Procedimiento
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

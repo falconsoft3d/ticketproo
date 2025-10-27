@@ -14420,3 +14420,112 @@ class CountdownTimer(models.Model):
                 'seconds': 0,
                 'total_seconds': 0
             }
+
+
+class Procedure(models.Model):
+    """Modelo para gestionar procedimientos/documentos de procesos"""
+    
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título',
+        help_text='Título descriptivo del procedimiento'
+    )
+    url = models.URLField(
+        blank=True,
+        verbose_name='URL',
+        help_text='Enlace externo relacionado al procedimiento (opcional)'
+    )
+    attachment = models.FileField(
+        upload_to='procedures/',
+        blank=True,
+        verbose_name='Adjunto',
+        help_text='Archivo del procedimiento (PDF, DOC, etc.) - Opcional'
+    )
+    sequence = models.PositiveIntegerField(
+        default=1,
+        verbose_name='Secuencia',
+        help_text='Orden de visualización del procedimiento'
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción',
+        help_text='Descripción detallada del procedimiento'
+    )
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        verbose_name='Empresa',
+        help_text='Empresa a la que pertenece el procedimiento (opcional)',
+        related_name='procedures'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo',
+        help_text='Si está marcado, el procedimiento será visible'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Creado por',
+        related_name='created_procedures'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Fecha de actualización'
+    )
+    
+    class Meta:
+        ordering = ['sequence', 'title']
+        verbose_name = 'Procedimiento'
+        verbose_name_plural = 'Procedimientos'
+    
+    def __str__(self):
+        return f"{self.sequence}. {self.title}"
+    
+    def get_file_extension(self):
+        """Retorna la extensión del archivo adjunto"""
+        if self.attachment:
+            return os.path.splitext(self.attachment.name)[1].lower()
+        return ''
+    
+    def get_file_icon(self):
+        """Retorna el icono apropiado según el tipo de archivo"""
+        if not self.attachment:
+            return 'bi-file-earmark'
+        
+        extension = self.get_file_extension()
+        icons = {
+            '.pdf': 'bi-file-earmark-pdf',
+            '.doc': 'bi-file-earmark-word',
+            '.docx': 'bi-file-earmark-word',
+            '.xls': 'bi-file-earmark-excel',
+            '.xlsx': 'bi-file-earmark-excel',
+            '.ppt': 'bi-file-earmark-ppt',
+            '.pptx': 'bi-file-earmark-ppt',
+            '.txt': 'bi-file-earmark-text',
+            '.jpg': 'bi-file-earmark-image',
+            '.jpeg': 'bi-file-earmark-image',
+            '.png': 'bi-file-earmark-image',
+            '.gif': 'bi-file-earmark-image',
+        }
+        return icons.get(extension, 'bi-file-earmark')
+    
+    def get_file_size(self):
+        """Retorna el tamaño del archivo en formato legible"""
+        if not self.attachment:
+            return "Sin archivo"
+        
+        if hasattr(self.attachment, 'size'):
+            size = self.attachment.size
+            for unit in ['B', 'KB', 'MB', 'GB']:
+                if size < 1024.0:
+                    return f"{size:.1f} {unit}"
+                size /= 1024.0
+            return f"{size:.1f} TB"
+        return "N/A"

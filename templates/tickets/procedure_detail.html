@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h3 mb-0">
+                <span class="badge bg-primary me-2">{{ procedure.sequence }}</span>
+                {{ procedure.title }}
+            </h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'procedure_list' %}" class="text-decoration-none">Procedimientos</a>
+                    </li>
+                    <li class="breadcrumb-item active">{{ procedure.title }}</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'procedure_list' %}" class="btn btn-outline-secondary me-2">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+            {% if user.groups.all and user.groups.first.name == 'Agentes' %}
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="bi bi-gear"></i> Acciones
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a class="dropdown-item" href="{% url 'procedure_edit' procedure.pk %}">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'procedure_toggle_active' procedure.pk %}">
+                            {% if procedure.is_active %}
+                                <i class="bi bi-eye-slash"></i> Desactivar
+                            {% else %}
+                                <i class="bi bi-eye"></i> Activar
+                            {% endif %}
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item text-danger" href="{% url 'procedure_delete' procedure.pk %}">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información principal -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-info-circle"></i> Información del Procedimiento
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if procedure.description %}
+                    <div class="mb-4">
+                        <h6><i class="bi bi-card-text"></i> Descripción</h6>
+                        <p class="text-muted">{{ procedure.description|linebreaks }}</p>
+                    </div>
+                    {% endif %}
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-person"></i> Creado por</h6>
+                            <p class="text-muted">{{ procedure.created_by.get_full_name|default:procedure.created_by.username }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-calendar"></i> Fecha de creación</h6>
+                            <p class="text-muted">{{ procedure.created_at|date:"d/m/Y H:i" }}</p>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-building"></i> Empresa</h6>
+                            <p class="text-muted">
+                                {% if procedure.company %}
+                                    <span class="badge bg-info">{{ procedure.company.name }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">General</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-list-ol"></i> Secuencia</h6>
+                            <p class="text-muted">{{ procedure.sequence }}</p>
+                        </div>
+                    </div>
+
+                    {% if procedure.updated_at != procedure.created_at %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-clock-history"></i> Última actualización</h6>
+                            <p class="text-muted">{{ procedure.updated_at|date:"d/m/Y H:i" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-eye"></i> Estado</h6>
+                            <p class="text-muted">
+                                {% if procedure.is_active %}
+                                    <span class="badge bg-success">Activo</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Inactivo</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Archivo y enlaces -->
+        <div class="col-lg-4">
+            <!-- Archivo adjunto -->
+            {% if procedure.attachment %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-paperclip"></i> Archivo Adjunto
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="{{ procedure.get_file_icon }} display-4 text-primary"></i>
+                    </div>
+                    <h6>{{ procedure.attachment.name|slice:"11:" }}</h6>
+                    <p class="text-muted small">{{ procedure.get_file_size }}</p>
+                    <a href="{{ procedure.attachment.url }}" target="_blank" class="btn btn-primary">
+                        <i class="bi bi-download"></i> Descargar
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-file-earmark-x"></i> Sin Archivo Adjunto
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="bi bi-file-earmark-x display-4 text-muted"></i>
+                    </div>
+                    <p class="text-muted">Este procedimiento no tiene archivo adjunto</p>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if procedure.url %}
+            <!-- Enlace externo -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-link-45deg"></i> Enlace Externo
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <p class="text-muted small mb-3">Recurso adicional relacionado</p>
+                    <a href="{{ procedure.url }}" target="_blank" class="btn btn-outline-info">
+                        <i class="bi bi-box-arrow-up-right"></i> Abrir Enlace
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Información técnica -->
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-gear"></i> Información Técnica
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <small class="text-muted">Secuencia:</small>
+                            <div class="fw-bold">{{ procedure.sequence }}</div>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Tipo de archivo:</small>
+                            <div class="fw-bold">{{ procedure.get_file_extension|upper }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -5,6 +5,88 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User, Group
 from django.contrib import messages
 from django.core.paginator import Paginator
+from django.db.models import Q, Sum, F, Count
+from django.db import models
+from django.db.models.functions import TruncHour, TruncDay, TruncMonth
+from django.http import HttpResponse, Http404, JsonResponse
+from django.utils import timezone
+from django.conf import settings
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
+from datetime import datetime, date, timedelta
+import os
+import json
+from django.utils import timezone
+from django.conf import settings
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
+from datetime import datetime, date, timedelta
+import os
+import json
+
+# Imports para OpenAI
+try:
+    from openai import OpenAI
+    OPENAI_AVAILABLE = True
+except ImportError:
+    OPENAI_AVAILABLE = False
+    print("OpenAI library not available")
+
+from .models import (
+    Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
+    UserNote, TimeEntry, PublicTimeAccess, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
+    DailyTaskSession, DailyTaskItem, ChatRoom, ChatMessage, ContactFormSubmission,
+    Opportunity, OpportunityStatus, OpportunityNote, OpportunityStatusHistory,
+    Meeting, MeetingAttendee, MeetingQuestion, Contact,
+    BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, Concept,
+    Exam, ExamQuestion, ExamAttempt, ExamAnswer, ContactoWeb, PublicDocumentUpload,
+    Employee, JobApplicationToken, EmployeePayroll, Agreement, AgreementSignature,
+    LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry, SharedFile, SharedFileDownload,
+    Recording, RecordingPlayback, MultipleDocumentation, MultipleDocumentationItem,
+    TaskSchedule, ScheduleTask, ScheduleComment, SatisfactionSurvey, ClientProjectAccess, ClientTimeEntry, ShortUrl,
+    ProductSet, ProductItem, Precotizador, PrecotizadorExample, PrecotizadorQuote,
+    # ...existing code...
+)
+
+@login_required
+def contact_chart(request):
+    """Vista de gráfico de creación de contactos en el tiempo"""
+    group_by = request.GET.get('group_by', 'hour')
+    if group_by == 'day':
+        trunc = TruncDay('contact_date')
+        label_fmt = '%d/%m/%Y'
+    elif group_by == 'month':
+        trunc = TruncMonth('contact_date')
+        label_fmt = '%m/%Y'
+    else:
+        trunc = TruncHour('contact_date')
+        label_fmt = '%d/%m/%Y %H:00'
+
+    data = (
+        Contact.objects
+        .annotate(grp=trunc)
+        .values('grp')
+        .annotate(count=Count('id'))
+        .order_by('grp')
+    )
+    labels = [item['grp'].strftime(label_fmt) for item in data if item['grp']]
+    counts = [item['count'] for item in data]
+    
+    import json
+    context = {
+        'labels': json.dumps(labels),
+        'counts': json.dumps(counts),
+        'group_by': group_by,
+        'page_title': 'Gráfico de Creación de Contactos'
+    }
+    return render(request, 'tickets/contact_chart.html', context)
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User, Group
+from django.contrib import messages
+from django.core.paginator import Paginator
 from django.db.models import Q, Sum, F
 from django.db import models
 from django.http import HttpResponse, Http404, JsonResponse
@@ -44,7 +126,7 @@ from .models import (
     AIManager, AIManagerMeeting, AIManagerSummary, CompanyAISummary, UserAIPerformanceEvaluation,
     WebsiteTracker, LegalContract, Asset, AssetHistory,
     AITutor, AITutorProgressReport, AITutorAttachment,
-    ExpenseReport, ExpenseItem, ExpenseComment, VideoMeeting, MeetingNote, QuoteGenerator
+    ExpenseReport, ExpenseItem, ExpenseComment, VideoMeeting, MeetingNote, QuoteGenerator, Procedure
 )
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
@@ -387,7 +469,210 @@ def dashboard_view(request):
     
     context['recent_documents'] = recent_documents
     
+    # Agregar procedimientos al dashboard según nueva lógica:
+    # 1. Procedimientos sin empresa: visibles para todos los usuarios
+    # 2. Procedimientos con empresa: solo visibles para usuarios de esa empresa específica
+    procedures_query = models.Q(is_active=True)  # Solo procedimientos activos
+    
+    # Filtrar por empresa
+    if user_company:
+        # Si el usuario tiene empresa, mostrar procedimientos sin empresa Y procedimientos de su empresa
+        procedures_query &= models.Q(
+            models.Q(company__isnull=True) | models.Q(company=user_company)
+        )
+    else:
+        # Si el usuario no tiene empresa, solo mostrar procedimientos sin empresa
+        procedures_query &= models.Q(company__isnull=True)
+    
+    # Aplicar el query y obtener los procedimientos recientes
+    user_procedures = Procedure.objects.filter(procedures_query).select_related(
+        'created_by', 'company'
+    ).distinct().order_by('sequence', '-created_at')[:10]
+    
+    context['user_procedures'] = user_procedures
+    
     return render(request, 'tickets/dashboard.html', context)
+
+@login_required
+def ticket_chart(request):
+    """Vista de gráfico de creación de tickets en el tiempo con filtros"""
+    # Obtener los tickets según permisos del usuario
+    if is_agent(request.user):
+        tickets = Ticket.objects.all()
+    else:
+        user_projects = request.user.assigned_projects.all()
+        user_company = None
+        
+        try:
+            user_company = request.user.profile.company
+        except:
+            pass
+        
+        query_conditions = Q(created_by=request.user)
+        
+        if user_projects.exists():
+            query_conditions |= Q(project__in=user_projects)
+        
+        if user_company:
+            query_conditions |= Q(company=user_company)
+        
+        tickets = Ticket.objects.filter(query_conditions).distinct()
+    
+    # Aplicar filtros de búsqueda
+    status_filter = request.GET.get('status')
+    priority_filter = request.GET.get('priority')
+    search = request.GET.get('search')
+    assigned_filter = request.GET.get('assigned_to')
+    company_filter = request.GET.get('company')
+    
+    if status_filter:
+        tickets = tickets.filter(status=status_filter)
+    
+    if priority_filter:
+        tickets = tickets.filter(priority=priority_filter)
+    
+    if company_filter:
+        try:
+            from .models import Company
+            company = Company.objects.get(pk=company_filter)
+            tickets = tickets.filter(company=company)
+        except (Company.DoesNotExist, ValueError):
+            pass
+    
+    if search:
+        tickets = tickets.filter(
+            Q(title__icontains=search) | 
+            Q(description__icontains=search)
+        )
+    
+    if is_agent(request.user) and assigned_filter:
+        if assigned_filter == 'unassigned':
+            tickets = tickets.filter(assigned_to__isnull=True)
+        elif assigned_filter == 'me':
+            tickets = tickets.filter(assigned_to=request.user)
+    
+    # Agrupar por tiempo
+    group_by = request.GET.get('group_by', 'hour')
+    if group_by == 'day':
+        trunc = TruncDay('created_at')
+        label_fmt = '%d/%m/%Y'
+    elif group_by == 'month':
+        trunc = TruncMonth('created_at')
+        label_fmt = '%m/%Y'
+    else:
+        trunc = TruncHour('created_at')
+        label_fmt = '%d/%m/%Y %H:00'
+
+    data = (
+        tickets
+        .annotate(grp=trunc)
+        .values('grp')
+        .annotate(count=Count('id'))
+        .order_by('grp')
+    )
+    labels = [item['grp'].strftime(label_fmt) for item in data if item['grp']]
+    counts = [item['count'] for item in data]
+    
+    import json
+    context = {
+        'labels': json.dumps(labels),
+        'counts': json.dumps(counts),
+        'group_by': group_by,
+        'page_title': 'Gráfico de Creación de Tickets'
+    }
+    return render(request, 'tickets/ticket_chart.html', context)
+
+@login_required
+def ticket_export_excel(request):
+    """Exportar tickets a Excel"""
+    import openpyxl
+    from django.http import HttpResponse
+    from openpyxl.styles import Font, PatternFill
+    
+    # Obtener tickets según el rol del usuario
+    if is_agent(request.user):
+        tickets = Ticket.objects.all()
+    else:
+        user_projects = request.user.assigned_projects.all()
+        user_company = None
+        try:
+            user_company = request.user.profile.company
+        except:
+            pass
+        
+        query_conditions = Q(created_by=request.user)
+        if user_projects.exists():
+            query_conditions |= Q(project__in=user_projects)
+        if user_company:
+            query_conditions |= Q(company=user_company)
+        
+        tickets = Ticket.objects.filter(query_conditions).distinct()
+    
+    # Aplicar filtros de la URL
+    status_filter = request.GET.get('status')
+    if status_filter:
+        tickets = tickets.filter(status=status_filter)
+    
+    priority_filter = request.GET.get('priority')
+    if priority_filter:
+        tickets = tickets.filter(priority=priority_filter)
+    
+    search = request.GET.get('search')
+    if search:
+        tickets = tickets.filter(
+            Q(title__icontains=search) | 
+            Q(description__icontains=search)
+        )
+    
+    # Crear workbook de Excel
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Tickets"
+    
+    # Definir headers
+    headers = ['ID', 'Título', 'Descripción', 'Estado', 'Prioridad', 'Categoría', 'Empresa', 'Creado por', 'Asignado a', 'Fecha de creación']
+    
+    # Aplicar estilo a headers
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+    
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+    
+    # Agregar datos
+    for row, ticket in enumerate(tickets.order_by('-created_at'), 2):
+        ws.cell(row=row, column=1, value=ticket.id)
+        ws.cell(row=row, column=2, value=ticket.title)
+        ws.cell(row=row, column=3, value=ticket.description[:200] + "..." if len(ticket.description) > 200 else ticket.description)
+        ws.cell(row=row, column=4, value=ticket.get_status_display())
+        ws.cell(row=row, column=5, value=ticket.get_priority_display())
+        ws.cell(row=row, column=6, value=ticket.category.name if ticket.category else "Sin categoría")
+        ws.cell(row=row, column=7, value=ticket.company.name if ticket.company else "Sin empresa")
+        ws.cell(row=row, column=8, value=ticket.created_by.get_full_name() or ticket.created_by.username)
+        ws.cell(row=row, column=9, value=ticket.assigned_to.get_full_name() if ticket.assigned_to else "Sin asignar")
+        ws.cell(row=row, column=10, value=ticket.created_at.strftime('%d/%m/%Y %H:%M'))
+    
+    # Ajustar ancho de columnas
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)
+        ws.column_dimensions[column_letter].width = adjusted_width
+    
+    # Preparar respuesta
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="tickets_{timezone.now().strftime("%Y%m%d_%H%M%S")}.xlsx"'
+    
+    wb.save(response)
+    return response
 
 @login_required
 def ticket_list_view(request):
@@ -476,128 +761,6 @@ def ticket_list_view(request):
         'user_role': get_user_role(request.user),
     }
     return render(request, 'tickets/ticket_list.html', context)
-
-@login_required
-def ticket_export_excel(request):
-    """Vista para exportar tickets a Excel"""
-    from openpyxl import Workbook
-    from openpyxl.styles import Font, PatternFill, Alignment
-    from django.http import HttpResponse
-    from datetime import datetime
-    
-    # Obtener los mismos tickets que se muestran en la lista
-    if is_agent(request.user):
-        tickets = Ticket.objects.all()
-    else:
-        user_projects = request.user.assigned_projects.all()
-        user_company = None
-        
-        try:
-            user_company = request.user.profile.company
-        except:
-            pass
-        
-        query_conditions = Q(created_by=request.user)
-        
-        if user_projects.exists():
-            query_conditions |= Q(project__in=user_projects)
-        
-        if user_company:
-            query_conditions |= Q(company=user_company)
-        
-        tickets = Ticket.objects.filter(query_conditions).distinct()
-    
-    # Aplicar los mismos filtros que en la lista
-    status_filter = request.GET.get('status')
-    priority_filter = request.GET.get('priority')
-    search = request.GET.get('search')
-    assigned_filter = request.GET.get('assigned_to')
-    company_filter = request.GET.get('company')
-    
-    if status_filter:
-        tickets = tickets.filter(status=status_filter)
-    
-    if priority_filter:
-        tickets = tickets.filter(priority=priority_filter)
-    
-    if company_filter:
-        try:
-            from .models import Company
-            company = Company.objects.get(pk=company_filter)
-            tickets = tickets.filter(company=company)
-        except (Company.DoesNotExist, ValueError):
-            pass
-    
-    if search:
-        tickets = tickets.filter(
-            Q(title__icontains=search) | 
-            Q(description__icontains=search)
-        )
-    
-    if is_agent(request.user) and assigned_filter:
-        if assigned_filter == 'unassigned':
-            tickets = tickets.filter(assigned_to__isnull=True)
-        elif assigned_filter == 'me':
-            tickets = tickets.filter(assigned_to=request.user)
-    
-    # Crear el libro de trabajo
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "Tickets"
-    
-    # Configurar estilos
-    header_font = Font(bold=True, color="FFFFFF")
-    header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
-    center_alignment = Alignment(horizontal="center")
-    
-    # Encabezados
-    headers = [
-        'Número', 'Título', 'Descripción', 'Categoría', 'Tipo', 'Empresa', 
-        'Creador', 'Asignado a', 'Prioridad', 'Estado', 'Aprobación', 
-        'Antigüedad (horas)', 'Fecha Creación', 'Fecha Actualización'
-    ]
-    
-    for col, header in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=col, value=header)
-        cell.font = header_font
-        cell.fill = header_fill
-        cell.alignment = center_alignment
-    
-    # Datos de los tickets
-    for row, ticket in enumerate(tickets.order_by('-created_at'), 2):
-        ws.cell(row=row, column=1, value=ticket.ticket_number)
-        ws.cell(row=row, column=2, value=ticket.title)
-        ws.cell(row=row, column=3, value=ticket.description)
-        ws.cell(row=row, column=4, value=ticket.category.name if ticket.category else "Sin categoría")
-        ws.cell(row=row, column=5, value=ticket.get_ticket_type_display())
-        ws.cell(row=row, column=6, value=ticket.company.name if ticket.company else "Sin empresa")
-        ws.cell(row=row, column=7, value=ticket.created_by.get_full_name() if ticket.created_by.get_full_name() else ticket.created_by.username)
-        ws.cell(row=row, column=8, value=ticket.assigned_to.get_full_name() if ticket.assigned_to and ticket.assigned_to.get_full_name() else (ticket.assigned_to.username if ticket.assigned_to else "Sin asignar"))
-        ws.cell(row=row, column=9, value=ticket.get_priority_display())
-        ws.cell(row=row, column=10, value=ticket.get_status_display())
-        ws.cell(row=row, column=11, value="Aprobado" if ticket.is_approved else "Pendiente")
-        ws.cell(row=row, column=12, value=round(ticket.get_age_in_hours(), 1))
-        ws.cell(row=row, column=13, value=ticket.created_at.strftime('%d/%m/%Y %H:%M'))
-        ws.cell(row=row, column=14, value=ticket.updated_at.strftime('%d/%m/%Y %H:%M'))
-    
-    # Ajustar ancho de columnas
-    column_widths = [12, 30, 50, 15, 12, 20, 20, 20, 12, 12, 12, 15, 18, 18]
-    for col, width in enumerate(column_widths, 1):
-        ws.column_dimensions[ws.cell(row=1, column=col).column_letter].width = width
-    
-    # Preparar respuesta HTTP
-    response = HttpResponse(
-        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )
-    
-    # Nombre del archivo con fecha
-    filename = f'tickets_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    
-    # Guardar el libro en la respuesta
-    wb.save(response)
-    
-    return response
 
 @login_required
 def ticket_create_view(request):
@@ -32571,3 +32734,149 @@ def absence_type_toggle_active(request, pk):
     messages.success(request, f'Tipo de ausencia "{absence_type.name}" {status} exitosamente.')
     
     return redirect('absence_type_list')
+
+
+# =====================================
+# VISTAS DE PROCEDIMIENTOS
+# =====================================
+
+@login_required
+def procedure_list(request):
+    """Vista para listar procedimientos"""
+    from .models import Procedure
+    
+    procedures = Procedure.objects.filter(is_active=True).order_by('sequence', 'title')
+    
+    # Búsqueda
+    search = request.GET.get('search', '')
+    if search:
+        procedures = procedures.filter(
+            Q(title__icontains=search) | 
+            Q(description__icontains=search)
+        )
+    
+    # Paginación
+    paginator = Paginator(procedures, 20)
+    page_number = request.GET.get('page')
+    procedures = paginator.get_page(page_number)
+    
+    context = {
+        'procedures': procedures,
+        'search': search,
+        'page_title': 'Procedimientos'
+    }
+    
+    return render(request, 'tickets/procedure_list.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def procedure_create(request):
+    """Vista para crear un nuevo procedimiento"""
+    from .forms import ProcedureForm
+    from .models import Procedure
+    
+    if request.method == 'POST':
+        form = ProcedureForm(request.POST, request.FILES)
+        if form.is_valid():
+            procedure = form.save(commit=False)
+            procedure.created_by = request.user
+            
+            # Auto-generar la secuencia
+            max_sequence = Procedure.objects.aggregate(
+                max_seq=models.Max('sequence')
+            )['max_seq']
+            procedure.sequence = (max_sequence + 1) if max_sequence else 1
+            
+            procedure.save()
+            messages.success(request, f'Procedimiento "{procedure.title}" creado exitosamente.')
+            return redirect('procedure_list')
+    else:
+        form = ProcedureForm()
+    
+    context = {
+        'form': form,
+        'page_title': 'Crear Procedimiento'
+    }
+    
+    return render(request, 'tickets/procedure_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def procedure_edit(request, pk):
+    """Vista para editar un procedimiento"""
+    from .models import Procedure
+    from .forms import ProcedureForm
+    
+    procedure = get_object_or_404(Procedure, pk=pk)
+    
+    if request.method == 'POST':
+        form = ProcedureForm(request.POST, request.FILES, instance=procedure)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Procedimiento "{procedure.title}" actualizado exitosamente.')
+            return redirect('procedure_list')
+    else:
+        form = ProcedureForm(instance=procedure)
+    
+    context = {
+        'form': form,
+        'procedure': procedure,
+        'page_title': f'Editar: {procedure.title}'
+    }
+    
+    return render(request, 'tickets/procedure_form.html', context)
+
+
+@login_required
+def procedure_detail(request, pk):
+    """Vista para ver detalles de un procedimiento"""
+    from .models import Procedure
+    
+    procedure = get_object_or_404(Procedure, pk=pk)
+    
+    context = {
+        'procedure': procedure,
+        'page_title': procedure.title
+    }
+    
+    return render(request, 'tickets/procedure_detail.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def procedure_delete(request, pk):
+    """Vista para eliminar un procedimiento"""
+    from .models import Procedure
+    
+    procedure = get_object_or_404(Procedure, pk=pk)
+    
+    if request.method == 'POST':
+        title = procedure.title
+        procedure.delete()
+        messages.success(request, f'Procedimiento "{title}" eliminado exitosamente.')
+        return redirect('procedure_list')
+    
+    context = {
+        'procedure': procedure,
+        'page_title': f'Eliminar: {procedure.title}'
+    }
+    
+    return render(request, 'tickets/procedure_delete.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def procedure_toggle_active(request, pk):
+    """Alternar el estado activo/inactivo de un procedimiento"""
+    from .models import Procedure
+    
+    procedure = get_object_or_404(Procedure, pk=pk)
+    procedure.is_active = not procedure.is_active
+    procedure.save()
+    
+    status = "activado" if procedure.is_active else "desactivado"
+    messages.success(request, f'Procedimiento "{procedure.title}" {status} exitosamente.')
+    
+    return redirect('procedure_list')

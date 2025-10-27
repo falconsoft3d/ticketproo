@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}Gráfico de Creación de Tickets{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="bi bi-bar-chart-line text-info"></i> Gráfico de Creación de Tickets</h2>
+            <a href="{% url 'ticket_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver a tickets
+            </a>
+        </div>
+    </div>
+    
+    {% if request.GET.search or request.GET.status or request.GET.priority or request.GET.company or request.GET.assigned_to %}
+    <div class="row mb-3">
+        <div class="col">
+            <div class="alert alert-info">
+                <strong><i class="bi bi-funnel"></i> Filtros aplicados:</strong>
+                {% if request.GET.search %}
+                    <span class="badge bg-primary">Búsqueda: {{ request.GET.search }}</span>
+                {% endif %}
+                {% if request.GET.status %}
+                    <span class="badge bg-secondary">Estado: {{ request.GET.status }}</span>
+                {% endif %}
+                {% if request.GET.priority %}
+                    <span class="badge bg-warning">Prioridad: {{ request.GET.priority }}</span>
+                {% endif %}
+                {% if request.GET.company %}
+                    <span class="badge bg-success">Empresa ID: {{ request.GET.company }}</span>
+                {% endif %}
+                {% if request.GET.assigned_to %}
+                    <span class="badge bg-dark">Asignado a: {{ request.GET.assigned_to }}</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-calendar-range"></i> Tickets creados
+                    </h5>
+                    <form method="get" class="d-inline-block">
+                        {% if request.GET.search %}
+                        <input type="hidden" name="search" value="{{ request.GET.search }}">
+                        {% endif %}
+                        {% if request.GET.status %}
+                        <input type="hidden" name="status" value="{{ request.GET.status }}">
+                        {% endif %}
+                        {% if request.GET.priority %}
+                        <input type="hidden" name="priority" value="{{ request.GET.priority }}">
+                        {% endif %}
+                        {% if request.GET.company %}
+                        <input type="hidden" name="company" value="{{ request.GET.company }}">
+                        {% endif %}
+                        {% if request.GET.assigned_to %}
+                        <input type="hidden" name="assigned_to" value="{{ request.GET.assigned_to }}">
+                        {% endif %}
+                        <select name="group_by" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="hour" {% if group_by == 'hour' %}selected{% endif %}>Por hora</option>
+                            <option value="day" {% if group_by == 'day' %}selected{% endif %}>Por día</option>
+                            <option value="month" {% if group_by == 'month' %}selected{% endif %}>Por mes</option>
+                        </select>
+                    </form>
+                </div>
+                <div class="card-body">
+                    <canvas id="ticketsChart" height="120"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const ctx = document.getElementById('ticketsChart').getContext('2d');
+const ticketsChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: {{ labels|safe }},
+        datasets: [{
+            label: 'Tickets creados',
+            data: {{ counts|safe }},
+            backgroundColor: 'rgba(13, 202, 240, 0.2)',
+            borderColor: 'rgba(13, 202, 240, 1)',
+            borderWidth: 2,
+            pointRadius: 4,
+            pointBackgroundColor: 'rgba(13, 202, 240, 1)',
+            fill: true,
+            tension: 0.3
+        }]
+    },
+    options: {
+        scales: {
+            y: {
+                beginAtZero: true,
+                stepSize: 1
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

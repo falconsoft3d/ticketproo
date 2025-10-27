@@ -7074,3 +7074,80 @@ class AbsenceTypeForm(forms.ModelForm):
         self.fields['max_days_per_year'].help_text = 'Límite anual de días (opcional). Dejar vacío si no tiene límite'
         self.fields['color'].help_text = 'Color para mostrar en calendarios y reportes'
         self.fields['is_active'].help_text = 'Solo los tipos activos estarán disponibles para crear ausencias'
+
+
+class ProcedureForm(forms.ModelForm):
+    """Formulario para crear y editar procedimientos"""
+    
+    class Meta:
+        from .models import Procedure
+        model = Procedure
+        fields = [
+            'title', 'description', 'url', 'attachment', 
+            'company', 'is_active'
+        ]
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Proceso de Atención al Cliente'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Descripción detallada del procedimiento...'
+            }),
+            'url': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://ejemplo.com (opcional)'
+            }),
+            'attachment': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif'
+            }),
+            'company': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            })
+        }
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Campos requeridos
+        self.fields['title'].required = True
+        self.fields['attachment'].required = False
+        self.fields['company'].required = False
+        
+        # Ayuda para los campos
+        self.fields['title'].help_text = 'Título descriptivo del procedimiento'
+        self.fields['description'].help_text = 'Descripción detallada del procedimiento (opcional)'
+        self.fields['url'].help_text = 'Enlace externo relacionado (opcional)'
+        self.fields['attachment'].help_text = 'Archivo del procedimiento (PDF, DOC, etc.) - Opcional'
+        self.fields['company'].help_text = 'Empresa a la que pertenece el procedimiento (opcional)'
+        self.fields['is_active'].help_text = 'Solo los procedimientos activos serán visibles'
+        
+    def clean_attachment(self):
+        """Validar el archivo adjunto"""
+        attachment = self.cleaned_data.get('attachment')
+        
+        if attachment:
+            # Validar tamaño del archivo (máximo 50MB)
+            if attachment.size > 50 * 1024 * 1024:
+                raise forms.ValidationError('El archivo no puede ser mayor a 50MB.')
+            
+            # Validar extensiones permitidas
+            allowed_extensions = [
+                '.pdf', '.doc', '.docx', '.xls', '.xlsx', 
+                '.ppt', '.pptx', '.txt', '.jpg', '.jpeg', 
+                '.png', '.gif'
+            ]
+            
+            file_extension = os.path.splitext(attachment.name)[1].lower()
+            if file_extension not in allowed_extensions:
+                raise forms.ValidationError(
+                    f'Tipo de archivo no permitido. Extensiones permitidas: {", ".join(allowed_extensions)}'
+                )
+        
+        return attachment
