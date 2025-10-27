@@ -64,7 +64,7 @@ from .forms import (
     FormQuestionOptionForm, PublicFormResponseForm, AssetForm, AssetAssignForm, AssetFilterForm,
     AITutorForm, AITutorProgressReportForm, AITutorAttachmentForm, AITutorFilterForm,
     ExpenseReportForm, ExpenseItemForm, ExpenseCommentForm, ExpenseReportFilterForm,
-    VideoMeetingForm, MeetingTranscriptionForm, MeetingFilterForm, QuoteGeneratorForm
+    VideoMeetingForm, MeetingTranscriptionForm, MeetingFilterForm, QuoteGeneratorForm, AbsenceTypeForm
 )
 from .utils import is_agent, is_regular_user, is_teacher, can_manage_courses, get_user_role, assign_user_to_group
 
@@ -339,31 +339,53 @@ def dashboard_view(request):
     context['dashboard_quotes'] = all_quotes
     context['dashboard_quotes_json'] = json.dumps(all_quotes, ensure_ascii=False)
     
-    # Agregar notas de la empresa al dashboard
+    # Agregar notas al dashboard según nueva lógica:
+    # 1. Notas sin empresa: visibles para todos los usuarios
+    # 2. Notas con empresa: solo visibles para usuarios de esa empresa específica
     user_company = None
     try:
         user_company = request.user.profile.company
     except:
         pass
     
+    # Construir query para notas recientes
+    notes_query = models.Q()
+    
+    # 1. Siempre incluir notas sin empresa (company=None) que no sean privadas para mostrar a todos
+    notes_query |= models.Q(company__isnull=True, is_private=False)
+    
+    # 2. Si el usuario tiene empresa, incluir notas públicas de su empresa
     if user_company:
-        if is_agent(request.user):
-            # Agentes ven notas públicas de su empresa + sus propias notas privadas
-            recent_notes = UserNote.objects.filter(
-                models.Q(company=user_company, is_private=False) | models.Q(created_by=request.user)
-            ).select_related('user', 'created_by', 'company').order_by('-created_at')[:5]
-        else:
-            # Usuarios normales ven solo notas públicas de su empresa + sus propias notas privadas
-            recent_notes = UserNote.objects.filter(
-                models.Q(company=user_company, is_private=False) | models.Q(created_by=request.user)
-            ).select_related('user', 'created_by', 'company').order_by('-created_at')[:5]
-    else:
-        # Solo sus propias notas si no tiene empresa (tanto agentes como usuarios)
-        recent_notes = UserNote.objects.filter(
-            created_by=request.user
-        ).select_related('user', 'created_by', 'company').order_by('-created_at')[:5]
+        notes_query |= models.Q(company=user_company, is_private=False)
+    
+    # 3. Siempre incluir las notas propias del usuario (privadas y públicas)
+    notes_query |= models.Q(created_by=request.user)
+    
+    # Aplicar el query y obtener las notas recientes
+    recent_notes = UserNote.objects.filter(notes_query).select_related(
+        'user', 'created_by', 'company'
+    ).distinct().order_by('-created_at')[:5]
     
     context['recent_notes'] = recent_notes
+    
+    # Agregar documentos al dashboard según nueva lógica:
+    # 1. Documentos sin empresa: visibles para todos los usuarios
+    # 2. Documentos con empresa: solo visibles para usuarios de esa empresa específica
+    documents_query = models.Q()
+    
+    # 1. Siempre incluir documentos sin empresa (company=None) para mostrar a todos
+    documents_query |= models.Q(company__isnull=True)
+    
+    # 2. Si el usuario tiene empresa, incluir documentos de su empresa
+    if user_company:
+        documents_query |= models.Q(company=user_company)
+    
+    # Aplicar el query y obtener los documentos recientes
+    recent_documents = Document.objects.filter(documents_query).select_related(
+        'created_by', 'company'
+    ).distinct().order_by('-created_at')[:5]
+    
+    context['recent_documents'] = recent_documents
     
     return render(request, 'tickets/dashboard.html', context)
 
@@ -27162,6 +27184,54 @@ def employee_dashboard(request):
         created_at__date__gte=month_start
     ).count()
     
+    # KPIs de Ausencias
+    from .models import EmployeeAbsence
+    
+    # Ausencias de la semana en horas
+    week_absences = EmployeeAbsence.objects.filter(
+        employee=selected_employee,
+        start_date__gte=week_start,
+        start_date__lte=today,
+        status='approved'
+    )
+    
+    absence_hours_week = 0
+    for absence in week_absences:
+        # Calcular días de ausencia que caen en esta semana
+        absence_start = max(absence.start_date, week_start)
+        absence_end = min(absence.end_date, today)
+        if absence_start <= absence_end:
+            absence_days = (absence_end - absence_start).days + 1
+            absence_hours_week += absence_days * 8  # Asumiendo 8 horas por día
+    
+    # Ausencias del mes en horas
+    month_absences = EmployeeAbsence.objects.filter(
+        employee=selected_employee,
+        start_date__gte=month_start,
+        start_date__lte=today,
+        status='approved'
+    )
+    
+    absence_hours_month = 0
+    for absence in month_absences:
+        # Calcular días de ausencia que caen en este mes
+        absence_start = max(absence.start_date, month_start)
+        absence_end = min(absence.end_date, today)
+        if absence_start <= absence_end:
+            absence_days = (absence_end - absence_start).days + 1
+            absence_hours_month += absence_days * 8  # Asumiendo 8 horas por día
+    
+    # Ausencias totales en horas (todas las ausencias aprobadas)
+    total_absences = EmployeeAbsence.objects.filter(
+        employee=selected_employee,
+        status='approved'
+    )
+    
+    absence_hours_total = 0
+    for absence in total_absences:
+        absence_days = (absence.end_date - absence.start_date).days + 1
+        absence_hours_total += absence_days * 8  # Asumiendo 8 horas por día
+    
     # Datos para gráficos (últimos 7 días)
     chart_data = []
     for i in range(7):
@@ -27214,6 +27284,9 @@ def employee_dashboard(request):
         'hours_today': round(hours_today, 2),
         'hours_week': round(hours_week, 2),
         'hours_month': round(hours_month, 2),
+        'absence_hours_week': round(absence_hours_week, 2),
+        'absence_hours_month': round(absence_hours_month, 2),
+        'absence_hours_total': round(absence_hours_total, 2),
         'contacts_month': contacts_month,
         'opportunities_month': opportunities_month,
         'tickets_month': tickets_month,
@@ -32384,3 +32457,117 @@ def countdown_timer_delete(request, pk):
         'countdown': countdown,
         'page_title': f'Eliminar: {countdown.title}'
     })
+
+
+# ========== VISTAS PARA GESTIÓN DE TIPOS DE AUSENCIAS ==========
+
+@login_required
+@user_passes_test(is_agent)
+def absence_type_list(request):
+    """Lista todos los tipos de ausencias"""
+    from .models import AbsenceType
+    
+    absence_types = AbsenceType.objects.all().order_by('name')
+    
+    # Estadísticas
+    total_types = absence_types.count()
+    active_types = absence_types.filter(is_active=True).count()
+    
+    context = {
+        'absence_types': absence_types,
+        'total_types': total_types,
+        'active_types': active_types,
+        'page_title': 'Tipos de Ausencias'
+    }
+    
+    return render(request, 'tickets/absence_type_list.html', context)
+
+
+@login_required
+@user_passes_test(is_agent)
+def absence_type_create(request):
+    """Crear un nuevo tipo de ausencia"""
+    from .models import AbsenceType
+    
+    if request.method == 'POST':
+        form = AbsenceTypeForm(request.POST)
+        if form.is_valid():
+            absence_type = form.save()
+            messages.success(request, f'Tipo de ausencia "{absence_type.name}" creado exitosamente.')
+            return redirect('absence_type_list')
+    else:
+        form = AbsenceTypeForm()
+    
+    return render(request, 'tickets/absence_type_form.html', {
+        'form': form,
+        'page_title': 'Crear Tipo de Ausencia',
+        'submit_text': 'Crear Tipo de Ausencia'
+    })
+
+
+@login_required
+@user_passes_test(is_agent)
+def absence_type_edit(request, pk):
+    """Editar un tipo de ausencia existente"""
+    from .models import AbsenceType
+    
+    absence_type = get_object_or_404(AbsenceType, pk=pk)
+    
+    if request.method == 'POST':
+        form = AbsenceTypeForm(request.POST, instance=absence_type)
+        if form.is_valid():
+            absence_type = form.save()
+            messages.success(request, f'Tipo de ausencia "{absence_type.name}" actualizado exitosamente.')
+            return redirect('absence_type_list')
+    else:
+        form = AbsenceTypeForm(instance=absence_type)
+    
+    return render(request, 'tickets/absence_type_form.html', {
+        'form': form,
+        'absence_type': absence_type,
+        'page_title': f'Editar: {absence_type.name}',
+        'submit_text': 'Actualizar Tipo de Ausencia'
+    })
+
+
+@login_required
+@user_passes_test(is_agent)
+def absence_type_delete(request, pk):
+    """Eliminar un tipo de ausencia"""
+    from .models import AbsenceType
+    
+    absence_type = get_object_or_404(AbsenceType, pk=pk)
+    
+    # Verificar si hay ausencias asociadas
+    usage_count = absence_type.get_usage_count()
+    
+    if request.method == 'POST':
+        if usage_count > 0:
+            messages.error(request, f'No se puede eliminar el tipo "{absence_type.name}" porque tiene {usage_count} ausencias asociadas.')
+        else:
+            name = absence_type.name
+            absence_type.delete()
+            messages.success(request, f'Tipo de ausencia "{name}" eliminado exitosamente.')
+        return redirect('absence_type_list')
+    
+    return render(request, 'tickets/absence_type_delete.html', {
+        'absence_type': absence_type,
+        'usage_count': usage_count,
+        'page_title': f'Eliminar: {absence_type.name}'
+    })
+
+
+@login_required
+@user_passes_test(is_agent)
+def absence_type_toggle_active(request, pk):
+    """Alternar el estado activo/inactivo de un tipo de ausencia"""
+    from .models import AbsenceType
+    
+    absence_type = get_object_or_404(AbsenceType, pk=pk)
+    absence_type.is_active = not absence_type.is_active
+    absence_type.save()
+    
+    status = "activado" if absence_type.is_active else "desactivado"
+    messages.success(request, f'Tipo de ausencia "{absence_type.name}" {status} exitosamente.')
+    
+    return redirect('absence_type_list')

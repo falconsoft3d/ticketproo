@@ -90,7 +90,7 @@
                     {% if user.is_authenticated %}
                         {% if user.is_staff or user.is_superuser or user.groups.all and user.groups.first.name == 'Agentes' %}
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if 'employee_request' in request.resolver_match.url_name or 'ai_manager' in request.resolver_match.url_name or 'employee_dashboard' in request.resolver_match.url_name or 'internal_agreement' in request.resolver_match.url_name or 'training_plan' in request.resolver_match.url_name or 'my_training_progress' in request.resolver_match.url_name or 'ai_recommendation' in request.resolver_match.url_name or 'employee_absence' in request.resolver_match.url_name or 'company_protocol' in request.resolver_match.url_name or 'ai_tutor' in request.resolver_match.url_name or 'video_meeting' in request.resolver_match.url_name or 'expense_report' in request.resolver_match.url_name %}active{% endif %}" 
+                        <a class="nav-link dropdown-toggle {% if 'employee_request' in request.resolver_match.url_name or 'ai_manager' in request.resolver_match.url_name or 'employee_dashboard' in request.resolver_match.url_name or 'internal_agreement' in request.resolver_match.url_name or 'training_plan' in request.resolver_match.url_name or 'my_training_progress' in request.resolver_match.url_name or 'ai_recommendation' in request.resolver_match.url_name or 'employee_absence' in request.resolver_match.url_name or 'absence_type' in request.resolver_match.url_name or 'company_protocol' in request.resolver_match.url_name or 'ai_tutor' in request.resolver_match.url_name or 'video_meeting' in request.resolver_match.url_name or 'expense_report' in request.resolver_match.url_name %}active{% endif %}" 
                            href="#" id="navbarDropdownEmployee" role="button" data-bs-toggle="dropdown">
                             <i class="bi bi-person-badge"></i> Empleado
                         </a>
@@ -183,6 +183,12 @@
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'employee_absence_calendar' %}active{% endif %}" 
                                    href="{% url 'employee_absence_calendar' %}">
                                     <i class="bi bi-calendar3"></i> Calendario de Ausencias
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'absence_type' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'absence_type_list' %}">
+                                    <i class="bi bi-gear"></i> Tipos de Ausencias
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
@@ -1194,6 +1200,77 @@
         {% endif %}
     </script>
     
+    <!-- Script para fecha y hora en tiempo real -->
+    <script>
+        function updateDateTime() {
+            console.log('=== updateDateTime() ejecutándose ===');
+            const now = new Date();
+            
+            // Configurar opciones para fecha y hora en el ticker
+            const dateOptions = { 
+                day: '2-digit', 
+                month: '2-digit', 
+                year: 'numeric' 
+            };
+            
+            const timeOptions = { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: false
+            };
+            
+            // Formatear fecha y hora
+            const formattedDate = now.toLocaleDateString('es-ES', dateOptions);
+            const formattedTime = now.toLocaleTimeString('es-ES', timeOptions);
+            
+            console.log('Fecha formateada:', formattedDate);
+            console.log('Hora formateada:', formattedTime);
+            
+            // Actualizar elementos del DOM
+            const dateElement = document.getElementById('current-date');
+            const timeElement = document.getElementById('current-time');
+            
+            console.log('Elemento fecha encontrado:', !!dateElement, dateElement);
+            console.log('Elemento hora encontrado:', !!timeElement, timeElement);
+            
+            if (dateElement) {
+                dateElement.textContent = formattedDate;
+                console.log('✅ Fecha actualizada:', formattedDate);
+            } else {
+                console.error('❌ Elemento current-date NO encontrado');
+            }
+            
+            if (timeElement) {
+                timeElement.textContent = formattedTime;
+                console.log('✅ Hora actualizada:', formattedTime);
+            } else {
+                console.error('❌ Elemento current-time NO encontrado');
+            }
+            
+            // Verificar si el ticker está visible
+            const tickerElement = document.getElementById('financial-ticker-global');
+            console.log('Ticker visible:', !!tickerElement, tickerElement ? getComputedStyle(tickerElement).display : 'N/A');
+        }
+        
+        // Ejecutar inmediatamente para test
+        console.log('🚀 Iniciando script de fecha/hora...');
+        updateDateTime();
+        
+        // También cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📄 DOM cargado, ejecutando updateDateTime...');
+            updateDateTime();
+            // Actualizar cada minuto
+            setInterval(updateDateTime, 60000);
+        });
+        
+        // Y también después de un delay para asegurar que todo esté cargado
+        setTimeout(function() {
+            console.log('⏰ Timeout ejecutado, ejecutando updateDateTime...');
+            updateDateTime();
+        }, 2000);
+    </script>
+    
     <!-- Widget de Chat Flotante -->
     {% if user.is_authenticated %}
     <div id="chat-widget" class="chat-widget">
@@ -1893,8 +1970,17 @@
                 <a href="{% url 'financial_actions_list' %}" class="btn btn-sm btn-outline-light" title="Configurar Acciones">
                     <i class="bi bi-gear"></i>
                 </a>
+                <button onclick="refreshFinancialTicker()" class="btn btn-sm btn-outline-light ms-2" title="Actualizar Acciones">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
             </div>
             {% endif %}
+            <!-- Fecha y hora minimalista -->
+            <div class="pe-3 text-end">
+                <small class="text-white-50">
+                    Fecha: <span id="current-date"></span> | Hora: <span id="current-time"></span>
+                </small>
+            </div>
         </div>
     </div>
 
@@ -2012,6 +2098,36 @@
             console.log('Ticker element no encontrado');
         }
     });
+    
+    // Función para actualizar manualmente el ticker
+    function refreshFinancialTicker() {
+        console.log('Actualizando ticker manualmente...');
+        const button = event.target.closest('button');
+        const icon = button.querySelector('i');
+        
+        // Cambiar icono a spinner
+        icon.className = 'bi bi-arrow-repeat';
+        icon.style.animation = 'spin 1s linear infinite';
+        
+        // Cargar datos nuevos
+        loadTickerDataGlobal();
+        
+        // Restaurar icono después de 2 segundos
+        setTimeout(() => {
+            icon.className = 'bi bi-arrow-clockwise';
+            icon.style.animation = '';
+        }, 2000);
+    }
+    
+    // CSS para la animación del spinner
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    `;
+    document.head.appendChild(style);
     </script>
     {% endif %}
 </body>

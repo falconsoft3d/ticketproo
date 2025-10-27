@@ -236,58 +236,6 @@
         </div>
     </div>
 
-    <!-- Métricas de Horas -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <h3 class="mb-3"><i class="bi bi-clock"></i> Horas Trabajadas</h3>
-        </div>
-        
-        <div class="col-lg-4 col-md-6 mb-3">
-            <div class="card metric-card h-100 border-0 bg-primary text-white">
-                <div class="card-body text-center">
-                    <div class="metric-icon">
-                        <i class="bi bi-sun"></i>
-                    </div>
-                    <div class="metric-value">{{ hours_today }}</div>
-                    <p class="metric-label text-white-50">Horas Hoy</p>
-                    <div class="period-info text-white-50">
-                        {{ today|date:"d/m/Y" }}
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-lg-4 col-md-6 mb-3">
-            <div class="card metric-card h-100 border-0 bg-success text-white">
-                <div class="card-body text-center">
-                    <div class="metric-icon">
-                        <i class="bi bi-calendar-week"></i>
-                    </div>
-                    <div class="metric-value">{{ hours_week }}</div>
-                    <p class="metric-label text-white-50">Horas Esta Semana</p>
-                    <div class="period-info text-white-50">
-                        Desde {{ week_start|date:"d/m" }}
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-lg-4 col-md-6 mb-3">
-            <div class="card metric-card h-100 border-0 bg-info text-white">
-                <div class="card-body text-center">
-                    <div class="metric-icon">
-                        <i class="bi bi-calendar-month"></i>
-                    </div>
-                    <div class="metric-value">{{ hours_month }}</div>
-                    <p class="metric-label text-white-50">Horas Este Mes</p>
-                    <div class="period-info text-white-50">
-                        Desde {{ month_start|date:"d/m" }}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Acciones Rápidas - Solo para el propio dashboard -->
     {% if selected_employee.id == current_user.id %}
     <div class="row mb-4">
@@ -368,13 +316,131 @@
                                 </div>
                             </a>
                         </div>
-                        <div class="col-lg-3 col-md-6"></div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="btn btn-outline-dark w-100 quick-action-btn d-flex align-items-center justify-content-center" style="height: 65px; cursor: default;">
+                                <i class="bi bi-calendar-clock me-2" style="font-size: 1.8rem;"></i>
+                                <div class="text-start">
+                                    <div style="font-weight: 600;">
+                                        <span id="current-date"></span>
+                                    </div>
+                                    <small class="text-muted">
+                                        <i class="bi bi-clock"></i> <span id="current-time"></span>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
     {% endif %}
+
+    <!-- Métricas de Horas -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="mb-3"><i class="bi bi-clock"></i> Horas Trabajadas</h3>
+        </div>
+        
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="card metric-card h-100 border-0 bg-primary text-white">
+                <div class="card-body text-center">
+                    <div class="metric-icon">
+                        <i class="bi bi-sun"></i>
+                    </div>
+                    <div class="metric-value">{{ hours_today }}</div>
+                    <p class="metric-label text-white-50">Horas Hoy</p>
+                    <div class="period-info text-white-50">
+                        {{ today|date:"d/m/Y" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="card metric-card h-100 border-0 bg-success text-white">
+                <div class="card-body text-center">
+                    <div class="metric-icon">
+                        <i class="bi bi-calendar-week"></i>
+                    </div>
+                    <div class="metric-value">{{ hours_week }}</div>
+                    <p class="metric-label text-white-50">Horas Esta Semana</p>
+                    <div class="period-info text-white-50">
+                        Desde {{ week_start|date:"d/m" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="card metric-card h-100 border-0 bg-info text-white">
+                <div class="card-body text-center">
+                    <div class="metric-icon">
+                        <i class="bi bi-calendar-month"></i>
+                    </div>
+                    <div class="metric-value">{{ hours_month }}</div>
+                    <p class="metric-label text-white-50">Horas Este Mes</p>
+                    <div class="period-info text-white-50">
+                        Desde {{ month_start|date:"d/m" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Métricas de Ausencias -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="mb-3"><i class="bi bi-calendar-x"></i> Métricas de Ausencias</h3>
+        </div>
+        
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="card metric-card h-100 border-0 bg-warning text-white">
+                <div class="card-body text-center">
+                    <div class="metric-icon">
+                        <i class="bi bi-calendar-week"></i>
+                    </div>
+                    <div class="metric-value">{{ absence_hours_week }}</div>
+                    <p class="metric-label text-white-50">Ausencias de la Semana (Horas)</p>
+                    <div class="period-info text-white-50">
+                        Desde {{ week_start|date:"d/m" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="card metric-card h-100 border-0 bg-orange text-white" style="background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);">
+                <div class="card-body text-center">
+                    <div class="metric-icon">
+                        <i class="bi bi-calendar-month"></i>
+                    </div>
+                    <div class="metric-value">{{ absence_hours_month }}</div>
+                    <p class="metric-label text-white-50">Ausencias del Mes (Horas)</p>
+                    <div class="period-info text-white-50">
+                        Desde {{ month_start|date:"d/m" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="card metric-card h-100 border-0 bg-secondary text-white">
+                <div class="card-body text-center">
+                    <div class="metric-icon">
+                        <i class="bi bi-calendar-range"></i>
+                    </div>
+                    <div class="metric-value">{{ absence_hours_total }}</div>
+                    <p class="metric-label text-white-50">Ausencias Totales (Horas)</p>
+                    <div class="period-info text-white-50">
+                        Historial completo
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
 
     <!-- Métricas de Productividad -->
     <div class="row mb-4">

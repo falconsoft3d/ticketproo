@@ -31,7 +31,7 @@ from .models import (
     Form, FormQuestion, FormQuestionOption, FormResponse, FormAnswer,
     EmployeeRequest, InternalAgreement, Asset, AssetHistory, 
     AITutor, AITutorProgressReport, AITutorAttachment, ExpenseReport, ExpenseItem, ExpenseComment,
-    VideoMeeting, MeetingNote, QuoteGenerator, CountdownTimer
+    VideoMeeting, MeetingNote, QuoteGenerator, CountdownTimer, AbsenceType
 )
 
 class CategoryForm(forms.ModelForm):
@@ -7021,3 +7021,56 @@ class CountdownTimerForm(forms.ModelForm):
         self.fields['target_date'].help_text = 'Fecha y hora del evento objetivo'
         self.fields['is_active'].help_text = 'Si está activo, la cuenta regresiva será visible'
         self.fields['is_private'].help_text = 'Si está marcada como privada, solo tú podrás verla'
+
+
+class AbsenceTypeForm(forms.ModelForm):
+    """Formulario para crear y editar tipos de ausencias"""
+    
+    class Meta:
+        model = AbsenceType
+        fields = ['name', 'description', 'requires_documentation', 'is_paid', 'max_days_per_year', 'color', 'is_active']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Vacaciones, Enfermedad, Permiso Personal'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': 'Descripción detallada del tipo de ausencia...',
+                'rows': 3
+            }),
+            'requires_documentation': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'is_paid': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'max_days_per_year': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: 30 días',
+                'min': '1'
+            }),
+            'color': forms.TextInput(attrs={
+                'class': 'form-control',
+                'type': 'color',
+                'value': '#007bff'
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            })
+        }
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Campos requeridos
+        self.fields['name'].required = True
+        
+        # Ayuda para los campos
+        self.fields['name'].help_text = 'Nombre único para identificar el tipo de ausencia'
+        self.fields['description'].help_text = 'Descripción opcional para explicar cuándo usar este tipo'
+        self.fields['requires_documentation'].help_text = 'Marcar si requiere documentos de respaldo (certificado médico, etc.)'
+        self.fields['is_paid'].help_text = 'Marcar si la ausencia es con goce de sueldo'
+        self.fields['max_days_per_year'].help_text = 'Límite anual de días (opcional). Dejar vacío si no tiene límite'
+        self.fields['color'].help_text = 'Color para mostrar en calendarios y reportes'
+        self.fields['is_active'].help_text = 'Solo los tipos activos estarán disponibles para crear ausencias'

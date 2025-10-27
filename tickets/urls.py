@@ -979,6 +979,13 @@ urlpatterns += [
     path('employee-absences/calendar/', views.employee_absence_calendar, name='employee_absence_calendar'),
     path('employee-absences/report/pdf/', views.employee_absence_report_pdf, name='employee_absence_report_pdf'),
     
+    # URLs de tipos de ausencias
+    path('absence-types/', views.absence_type_list, name='absence_type_list'),
+    path('absence-types/create/', views.absence_type_create, name='absence_type_create'),
+    path('absence-types/<int:pk>/edit/', views.absence_type_edit, name='absence_type_edit'),
+    path('absence-types/<int:pk>/delete/', views.absence_type_delete, name='absence_type_delete'),
+    path('absence-types/<int:pk>/toggle-active/', views.absence_type_toggle_active, name='absence_type_toggle_active'),
+    
     # URLs de protocolos de empresa
     path('company-protocols/', views.company_protocol_list, name='company_protocol_list'),
     path('company-protocols/create/', views.company_protocol_create, name='company_protocol_create'),

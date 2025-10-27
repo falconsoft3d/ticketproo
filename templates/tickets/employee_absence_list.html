@@ -27,6 +27,11 @@
         <a href="{% url 'employee_absence_calendar' %}" class="btn btn-outline-secondary">
             <i class="bi bi-calendar3"></i> Calendario
         </a>
+        {% if is_agent %}
+        <a href="{% url 'absence_type_list' %}" class="btn btn-outline-info">
+            <i class="bi bi-gear"></i> Tipos de Ausencias
+        </a>
+        {% endif %}
     </div>
 </div>
 

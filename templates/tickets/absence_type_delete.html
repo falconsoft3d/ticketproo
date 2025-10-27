@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="{% url 'absence_type_list' %}">Tipos de Ausencias</a>
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">Eliminar</li>
+                    </ol>
+                </nav>
+                <h1 class="mb-2">
+                    <i class="bi bi-trash"></i> {{ page_title }}
+                </h1>
+            </div>
+            <a href="{% url 'absence_type_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        {% if usage_count > 0 %}
+        <!-- No se puede eliminar -->
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="bi bi-exclamation-triangle"></i> No se puede eliminar
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <h6 class="alert-heading">
+                        <i class="bi bi-info-circle"></i> Tipo de ausencia en uso
+                    </h6>
+                    <p class="mb-0">
+                        El tipo de ausencia "<strong>{{ absence_type.name }}</strong>" no se puede eliminar 
+                        porque tiene <strong>{{ usage_count }}</strong> ausencias asociadas.
+                    </p>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <h6>Información del tipo:</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Nombre:</strong> {{ absence_type.name }}</li>
+                            <li><strong>Estado:</strong> 
+                                {% if absence_type.is_active %}
+                                    <span class="badge bg-success">Activo</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Inactivo</span>
+                                {% endif %}
+                            </li>
+                            <li><strong>Ausencias registradas:</strong> {{ usage_count }}</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Opciones alternativas:</h6>
+                        <ul>
+                            <li>
+                                <strong>Desactivar:</strong> El tipo no estará disponible para nuevas ausencias, 
+                                pero mantendrá las existentes
+                            </li>
+                            <li>
+                                <strong>Editar:</strong> Modificar el nombre o configuración sin afectar 
+                                las ausencias existentes
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'absence_type_list' %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver a la lista
+                    </a>
+                    <div>
+                        {% if absence_type.is_active %}
+                        <a href="{% url 'absence_type_toggle_active' absence_type.pk %}" 
+                           class="btn btn-warning me-2"
+                           onclick="return confirm('¿Desactivar este tipo de ausencia?')">
+                            <i class="bi bi-pause"></i> Desactivar en su lugar
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'absence_type_edit' absence_type.pk %}" class="btn btn-primary">
+                            <i class="bi bi-pencil"></i> Editar en su lugar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <!-- Se puede eliminar -->
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-exclamation-triangle"></i> Confirmar eliminación
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger">
+                    <h6 class="alert-heading">
+                        <i class="bi bi-warning"></i> ¿Está seguro?
+                    </h6>
+                    <p class="mb-0">
+                        Esta acción eliminará permanentemente el tipo de ausencia 
+                        "<strong>{{ absence_type.name }}</strong>" y no se puede deshacer.
+                    </p>
+                </div>
+
+                <!-- Información del tipo -->
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h6>Información del tipo a eliminar:</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <ul class="list-unstyled">
+                                    <li>
+                                        <strong>Nombre:</strong> 
+                                        <span class="badge me-2" style="background-color: {{ absence_type.color }}; color: white;"></span>
+                                        {{ absence_type.name }}
+                                    </li>
+                                    <li><strong>Descripción:</strong> 
+                                        {% if absence_type.description %}
+                                            {{ absence_type.description|truncatechars:100 }}
+                                        {% else %}
+                                            <span class="text-muted">Sin descripción</span>
+                                        {% endif %}
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <ul class="list-unstyled">
+                                    <li><strong>Es remunerado:</strong> 
+                                        {% if absence_type.is_paid %}
+                                            <span class="badge bg-success">Sí</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">No</span>
+                                        {% endif %}
+                                    </li>
+                                    <li><strong>Requiere documentación:</strong> 
+                                        {% if absence_type.requires_documentation %}
+                                            <span class="badge bg-info">Sí</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">No</span>
+                                        {% endif %}
+                                    </li>
+                                    <li><strong>Límite anual:</strong> 
+                                        {% if absence_type.max_days_per_year %}
+                                            {{ absence_type.max_days_per_year }} días
+                                        {% else %}
+                                            <span class="text-muted">Sin límite</span>
+                                        {% endif %}
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="post" class="mt-4">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'absence_type_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Eliminar Definitivamente
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
