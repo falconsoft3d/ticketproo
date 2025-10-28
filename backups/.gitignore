@@ -1,0 +1,9 @@
+# Directorio de respaldos de base de datos
+# Los respaldos no deben subirse al repositorio por seguridad
+*.zip
+*.sql
+*.db
+*.sqlite3
+
+# Permitir solo este archivo .gitignore
+!.gitignore

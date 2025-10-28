@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">
+                        <i class="bi bi-upload me-2"></i>{{ title }}
+                    </h4>
+                    <small class="text-dark">
+                        {% if is_sqlite %}
+                            <i class="bi bi-database me-1"></i>Base de datos: SQLite
+                        {% elif is_postgresql %}
+                            <i class="bi bi-server me-1"></i>Base de datos: PostgreSQL
+                        {% else %}
+                            <i class="bi bi-question-circle me-1"></i>Base de datos: {{ db_engine }}
+                        {% endif %}
+                    </small>
+                </div>
+                <div class="card-body">
+                    <!-- Advertencia importante -->
+                    <div class="alert alert-danger border-0" role="alert">
+                        <h5 class="alert-heading">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>¡ADVERTENCIA IMPORTANTE!
+                        </h5>
+                        <p class="mb-0">
+                            La restauración de la base de datos reemplazará COMPLETAMENTE todos los datos actuales. 
+                            Se creará automáticamente un respaldo de seguridad antes de proceder con la restauración.
+                        </p>
+                    </div>
+
+                    <!-- Navegación -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <a href="{% url 'database_backup' %}" class="btn btn-success btn-lg">
+                                <i class="bi bi-download me-2"></i>Crear Respaldo
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Formulario de restauración -->
+                    {% if backups %}
+                    <div class="row">
+                        <div class="col-12">
+                            <h5 class="mb-3">Seleccionar Respaldo para Restaurar</h5>
+                            <form method="post" class="border rounded p-4 bg-light">
+                                {% csrf_token %}
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-hover">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th width="50">Seleccionar</th>
+                                                <th>Archivo</th>
+                                                <th>Fecha y Hora</th>
+                                                <th>Tamaño</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for backup in backups %}
+                                            <tr>
+                                                <td class="text-center">
+                                                    <input type="radio" 
+                                                           name="backup_file" 
+                                                           value="{{ backup.filename }}" 
+                                                           id="backup_{{ forloop.counter }}"
+                                                           class="form-check-input"
+                                                           {% if forloop.first %}checked{% endif %}>
+                                                </td>
+                                                <td>
+                                                    <label for="backup_{{ forloop.counter }}" class="form-check-label">
+                                                        <i class="bi bi-file-zip text-primary me-2"></i>
+                                                        {{ backup.filename }}
+                                                    </label>
+                                                </td>
+                                                <td>
+                                                    <span class="text-muted">
+                                                        {{ backup.date|date:"d/m/Y H:i:s" }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-info">
+                                                        {{ backup.size_mb }} MB
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <a href="{% url 'download_backup' backup.filename %}" 
+                                                       class="btn btn-outline-primary btn-sm" 
+                                                       title="Descargar">
+                                                        <i class="bi bi-cloud-download"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <div class="mt-4 text-center">
+                                    <button type="submit" 
+                                            class="btn btn-danger btn-lg"
+                                            onclick="return confirm('¿Está COMPLETAMENTE SEGURO de restaurar este respaldo?\n\nEsta acción:\n- Reemplazará TODOS los datos actuales\n- No se puede deshacer\n- Se creará un respaldo de seguridad automáticamente\n\n¿Desea continuar?')">
+                                        <i class="bi bi-upload me-2"></i>Restaurar Base de Datos Seleccionada
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                No hay respaldos disponibles para restaurar. 
+                                <a href="{% url 'database_backup' %}" class="alert-link">Cree un respaldo primero</a>.
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Información adicional -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="bi bi-info-circle text-info me-2"></i>Proceso de Restauración
+                                    </h6>
+                                    <ol class="mb-0">
+                                        <li><strong>Respaldo Automático:</strong> Se crea automáticamente un respaldo de la base de datos actual.</li>
+                                        {% if is_sqlite %}
+                                            <li><strong>Reemplazo SQLite:</strong> El archivo SQLite actual se reemplaza con el del respaldo.</li>
+                                        {% elif is_postgresql %}
+                                            <li><strong>Recreación PostgreSQL:</strong> Se elimina y recrea la base de datos PostgreSQL.</li>
+                                            <li><strong>Importación SQL:</strong> Se ejecuta el dump SQL del respaldo usando psql.</li>
+                                        {% endif %}
+                                        <li><strong>Restauración de Media:</strong> Se restauran todos los archivos de media incluidos en el respaldo.</li>
+                                        <li><strong>Verificación:</strong> El sistema verifica que la restauración se completó exitosamente.</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Medidas de seguridad -->
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="card border-danger">
+                                <div class="card-body">
+                                    <h6 class="card-title text-danger">
+                                        <i class="bi bi-shield-exclamation me-2"></i>Medidas de Seguridad
+                                    </h6>
+                                    <ul class="mb-0 text-danger">
+                                        <li>Solo los superusuarios pueden realizar restauraciones.</li>
+                                        <li>Se requiere confirmación doble antes de proceder.</li>
+                                        <li>Se crea automáticamente un respaldo de seguridad.</li>
+                                        <li>El proceso puede tomar varios minutos.</li>
+                                        <li>No cierre el navegador durante el proceso.</li>
+                                        {% if is_postgresql %}
+                                            <li><strong>PostgreSQL:</strong> Se eliminará y recreará completamente la base de datos.</li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if is_postgresql %}
+                    <!-- Requisitos para PostgreSQL -->
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="card border-info">
+                                <div class="card-body">
+                                    <h6 class="card-title text-info">
+                                        <i class="bi bi-tools me-2"></i>Requisitos para PostgreSQL
+                                    </h6>
+                                    <ul class="mb-0 text-info">
+                                        <li><strong>pg_dump y psql:</strong> Deben estar instalados y accesibles desde la línea de comandos.</li>
+                                        <li><strong>Permisos:</strong> El usuario debe tener permisos para crear/eliminar bases de datos.</li>
+                                        <li><strong>Conexión:</strong> Debe poder conectarse a PostgreSQL sin solicitar contraseña interactiva.</li>
+                                        <li><strong>Acceso superusuario PostgreSQL:</strong> Para operaciones de DROP/CREATE DATABASE.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-check-label {
+    cursor: pointer;
+    width: 100%;
+}
+.table tbody tr:hover {
+    background-color: var(--bs-table-hover-bg);
+}
+</style>
+{% endblock %}

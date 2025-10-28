@@ -1125,6 +1125,12 @@ urlpatterns += [
     path('api/quick-todos/<int:todo_id>/delete/', views.quick_todo_delete, name='quick_todo_delete'),
     path('api/quick-todos/clear-completed/', views.quick_todo_clear_completed, name='quick_todo_clear_completed'),
     
+    # URLs de Respaldo de Base de Datos
+    path('database/backup/', views.database_backup, name='database_backup'),
+    path('database/restore/', views.database_restore, name='database_restore'),
+    path('database/backup/download/<str:filename>/', views.download_backup, name='download_backup'),
+    path('database/backup/delete/<str:filename>/', views.delete_backup, name='delete_backup'),
+    
     # URLs de API
     path('api/', include('tickets.api_urls')),
 ]

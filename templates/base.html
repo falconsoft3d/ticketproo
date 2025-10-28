@@ -800,6 +800,20 @@
                                     <i class="bi bi-clock"></i> Control de Horario
                                 </a>
                             </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Base de Datos</li>
+                            <li>
+                                <a class="dropdown-item {% if 'database_backup' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'database_backup' %}">
+                                    <i class="bi bi-download"></i> Crear Respaldo
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'database_restore' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'database_restore' %}">
+                                    <i class="bi bi-upload"></i> Restaurar Base de Datos
+                                </a>
+                            </li>
                             <li>
                                 <a class="dropdown-item {% if 'attendance' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'attendance_overview' %}">
@@ -1466,11 +1480,11 @@
     <div id="systemMonitorSidebar" class="shadow-lg" 
          style="position: fixed; right: -500px; top: 0; width: 500px; height: 100vh; 
                 background: #f8f9fa; z-index: 1045; transition: right 0.3s ease; border-left: 3px solid #343a40;
-                overflow: hidden; display: flex; flex-direction: column;">
+                overflow: hidden; display: flex; flex-direction: column; contain: layout style;">
         
         <!-- Header del Monitor del Sistema -->
         <div class="p-3 text-white d-flex justify-content-between align-items-center"
-             style="background: linear-gradient(135deg, #343a40 0%, #6c757d 100%);">
+             style="background: linear-gradient(135deg, #343a40 0%, #6c757d 100%); flex-shrink: 0;">
             <div>
                 <h6 class="mb-0">
                     <i class="bi bi-speedometer2 me-2"></i>
@@ -1664,7 +1678,7 @@
         </div>
 
         <!-- Footer con controles -->
-        <div class="p-3 bg-white border-top">
+        <div class="p-3 bg-white border-top" style="flex-shrink: 0;">
             <div class="d-flex justify-content-between align-items-center">
                 <small class="text-muted">
                     <i class="bi bi-arrow-clockwise me-1"></i>
@@ -3618,6 +3632,28 @@
         main.container {
             padding-bottom: 55px;
         }
+    }
+    
+    /* Estilos específicos para el Monitor del Sistema */
+    #systemMonitorSidebar {
+        box-sizing: border-box !important;
+        contain: layout style paint !important;
+    }
+    
+    #systemMonitorSidebar * {
+        box-sizing: border-box;
+    }
+    
+    #systemMonitorSidebar .p-3.bg-white.border-top {
+        position: relative !important;
+        bottom: 0 !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 12px !important;
+        background: white !important;
+        border-top: 1px solid #dee2e6 !important;
+        flex-shrink: 0 !important;
+        z-index: 1 !important;
     }
     </style>
 

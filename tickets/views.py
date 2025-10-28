@@ -33655,3 +33655,369 @@ def quick_todo_clear_completed(request):
         
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+
+# Views para respaldo de base de datos
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def database_backup(request):
+    """Vista para crear respaldos de la base de datos (compatible con SQLite y PostgreSQL)"""
+    import os
+    import shutil
+    import zipfile
+    import subprocess
+    from datetime import datetime
+    from django.conf import settings
+    from django.db import connection
+    
+    backups = []
+    backup_dir = os.path.join(settings.BASE_DIR, 'backups')
+    
+    # Crear directorio de respaldos si no existe
+    if not os.path.exists(backup_dir):
+        os.makedirs(backup_dir)
+    
+    # Detectar tipo de base de datos
+    db_engine = settings.DATABASES['default']['ENGINE']
+    is_sqlite = 'sqlite' in db_engine.lower()
+    is_postgresql = 'postgresql' in db_engine.lower() or 'psycopg' in db_engine.lower()
+    
+    # Listar respaldos existentes
+    if os.path.exists(backup_dir):
+        for filename in os.listdir(backup_dir):
+            if filename.endswith('.zip'):
+                filepath = os.path.join(backup_dir, filename)
+                try:
+                    # Extraer fecha del nombre del archivo
+                    date_str = filename.replace('backup_', '').replace('.zip', '')
+                    backup_date = datetime.strptime(date_str, '%Y%m%d_%H%M%S')
+                    file_size = os.path.getsize(filepath)
+                    
+                    backups.append({
+                        'filename': filename,
+                        'date': backup_date,
+                        'size': file_size,
+                        'size_mb': round(file_size / (1024 * 1024), 2)
+                    })
+                except:
+                    pass
+    
+    # Ordenar por fecha descendente
+    backups.sort(key=lambda x: x['date'], reverse=True)
+    
+    if request.method == 'POST':
+        try:
+            # Crear nombre de archivo con timestamp
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            backup_filename = f'backup_{timestamp}.zip'
+            backup_path = os.path.join(backup_dir, backup_filename)
+            
+            # Crear el respaldo
+            with zipfile.ZipFile(backup_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                
+                if is_sqlite:
+                    # Respaldo SQLite - copiar archivo directamente
+                    db_path = settings.DATABASES['default']['NAME']
+                    if os.path.exists(db_path):
+                        zipf.write(db_path, 'database.sqlite3')
+                        
+                elif is_postgresql:
+                    # Respaldo PostgreSQL - usar pg_dump
+                    db_config = settings.DATABASES['default']
+                    db_name = db_config['NAME']
+                    db_user = db_config['USER']
+                    db_host = db_config.get('HOST', 'localhost')
+                    db_port = db_config.get('PORT', '5432')
+                    db_password = db_config.get('PASSWORD', '')
+                    
+                    # Crear archivo temporal para el dump
+                    temp_sql_path = os.path.join(backup_dir, f'temp_dump_{timestamp}.sql')
+                    
+                    # Preparar comando pg_dump
+                    env = os.environ.copy()
+                    if db_password:
+                        env['PGPASSWORD'] = db_password
+                    
+                    cmd = [
+                        'pg_dump',
+                        '-h', db_host,
+                        '-p', str(db_port),
+                        '-U', db_user,
+                        '-d', db_name,
+                        '--no-password',
+                        '-f', temp_sql_path
+                    ]
+                    
+                    # Ejecutar pg_dump
+                    result = subprocess.run(cmd, env=env, capture_output=True, text=True)
+                    
+                    if result.returncode == 0:
+                        # Agregar el dump al ZIP
+                        zipf.write(temp_sql_path, 'database.sql')
+                        # Eliminar archivo temporal
+                        os.remove(temp_sql_path)
+                    else:
+                        # Eliminar archivo temporal si existe
+                        if os.path.exists(temp_sql_path):
+                            os.remove(temp_sql_path)
+                        raise Exception(f"Error en pg_dump: {result.stderr}")
+                
+                else:
+                    raise Exception(f"Base de datos no soportada: {db_engine}")
+                
+                # Agregar archivos de media
+                media_root = settings.MEDIA_ROOT
+                if os.path.exists(media_root):
+                    for root, dirs, files in os.walk(media_root):
+                        for file in files:
+                            file_path = os.path.join(root, file)
+                            arc_path = os.path.relpath(file_path, settings.BASE_DIR)
+                            zipf.write(file_path, arc_path)
+            
+            messages.success(request, f'Respaldo creado exitosamente: {backup_filename}')
+            return redirect('database_backup')
+            
+        except Exception as e:
+            messages.error(request, f'Error al crear respaldo: {str(e)}')
+    
+    context = {
+        'backups': backups,
+        'title': 'Respaldo de Base de Datos',
+        'db_engine': db_engine,
+        'is_sqlite': is_sqlite,
+        'is_postgresql': is_postgresql
+    }
+    return render(request, 'tickets/database_backup.html', context)
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def database_restore(request):
+    """Vista para restaurar respaldos de la base de datos (compatible con SQLite y PostgreSQL)"""
+    import os
+    import shutil
+    import zipfile
+    import subprocess
+    from datetime import datetime
+    from django.conf import settings
+    from django.db import connection
+    
+    backups = []
+    backup_dir = os.path.join(settings.BASE_DIR, 'backups')
+    
+    # Detectar tipo de base de datos
+    db_engine = settings.DATABASES['default']['ENGINE']
+    is_sqlite = 'sqlite' in db_engine.lower()
+    is_postgresql = 'postgresql' in db_engine.lower() or 'psycopg' in db_engine.lower()
+    
+    # Listar respaldos disponibles
+    if os.path.exists(backup_dir):
+        for filename in os.listdir(backup_dir):
+            if filename.endswith('.zip'):
+                filepath = os.path.join(backup_dir, filename)
+                try:
+                    date_str = filename.replace('backup_', '').replace('.zip', '')
+                    backup_date = datetime.strptime(date_str, '%Y%m%d_%H%M%S')
+                    file_size = os.path.getsize(filepath)
+                    
+                    backups.append({
+                        'filename': filename,
+                        'date': backup_date,
+                        'size': file_size,
+                        'size_mb': round(file_size / (1024 * 1024), 2)
+                    })
+                except:
+                    pass
+    
+    backups.sort(key=lambda x: x['date'], reverse=True)
+    
+    if request.method == 'POST':
+        backup_filename = request.POST.get('backup_file')
+        if not backup_filename:
+            messages.error(request, 'Debe seleccionar un archivo de respaldo')
+            return redirect('database_restore')
+        
+        backup_path = os.path.join(backup_dir, backup_filename)
+        
+        if not os.path.exists(backup_path):
+            messages.error(request, 'El archivo de respaldo no existe')
+            return redirect('database_restore')
+        
+        try:
+            # Crear respaldo de la base de datos actual antes de restaurar
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            current_backup = f'backup_before_restore_{timestamp}.zip'
+            current_backup_path = os.path.join(backup_dir, current_backup)
+            
+            # Crear respaldo de seguridad según el tipo de base de datos
+            with zipfile.ZipFile(current_backup_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                if is_sqlite:
+                    db_path = settings.DATABASES['default']['NAME']
+                    if os.path.exists(db_path):
+                        zipf.write(db_path, 'database.sqlite3')
+                elif is_postgresql:
+                    # Crear respaldo PostgreSQL de seguridad
+                    db_config = settings.DATABASES['default']
+                    temp_sql_path = os.path.join(backup_dir, f'temp_safety_dump_{timestamp}.sql')
+                    
+                    env = os.environ.copy()
+                    if db_config.get('PASSWORD'):
+                        env['PGPASSWORD'] = db_config['PASSWORD']
+                    
+                    cmd = [
+                        'pg_dump',
+                        '-h', db_config.get('HOST', 'localhost'),
+                        '-p', str(db_config.get('PORT', '5432')),
+                        '-U', db_config['USER'],
+                        '-d', db_config['NAME'],
+                        '--no-password',
+                        '-f', temp_sql_path
+                    ]
+                    
+                    result = subprocess.run(cmd, env=env, capture_output=True, text=True)
+                    if result.returncode == 0:
+                        zipf.write(temp_sql_path, 'database.sql')
+                        os.remove(temp_sql_path)
+                    else:
+                        if os.path.exists(temp_sql_path):
+                            os.remove(temp_sql_path)
+                        raise Exception(f"Error creando respaldo de seguridad: {result.stderr}")
+            
+            # Restaurar desde el respaldo seleccionado
+            with zipfile.ZipFile(backup_path, 'r') as zipf:
+                temp_extract_dir = os.path.join(backup_dir, f'temp_restore_{timestamp}')
+                os.makedirs(temp_extract_dir, exist_ok=True)
+                
+                try:
+                    if is_sqlite:
+                        # Restaurar SQLite
+                        if 'database.sqlite3' in zipf.namelist():
+                            zipf.extract('database.sqlite3', temp_extract_dir)
+                            extracted_db = os.path.join(temp_extract_dir, 'database.sqlite3')
+                            target_db = settings.DATABASES['default']['NAME']
+                            shutil.copy2(extracted_db, target_db)
+                        elif 'db.sqlite3' in zipf.namelist():  # Compatibilidad con formato anterior
+                            zipf.extract('db.sqlite3', temp_extract_dir)
+                            extracted_db = os.path.join(temp_extract_dir, 'db.sqlite3')
+                            target_db = settings.DATABASES['default']['NAME']
+                            shutil.copy2(extracted_db, target_db)
+                        
+                    elif is_postgresql:
+                        # Restaurar PostgreSQL
+                        sql_file = None
+                        if 'database.sql' in zipf.namelist():
+                            sql_file = 'database.sql'
+                        
+                        if sql_file:
+                            zipf.extract(sql_file, temp_extract_dir)
+                            extracted_sql = os.path.join(temp_extract_dir, sql_file)
+                            
+                            # Cerrar todas las conexiones existentes
+                            connection.close()
+                            
+                            # Ejecutar restauración PostgreSQL
+                            db_config = settings.DATABASES['default']
+                            env = os.environ.copy()
+                            if db_config.get('PASSWORD'):
+                                env['PGPASSWORD'] = db_config['PASSWORD']
+                            
+                            # Primero dropear y recrear la base de datos
+                            drop_cmd = [
+                                'psql',
+                                '-h', db_config.get('HOST', 'localhost'),
+                                '-p', str(db_config.get('PORT', '5432')),
+                                '-U', db_config['USER'],
+                                '-d', 'postgres',  # Conectar a postgres para poder dropear la BD
+                                '-c', f'DROP DATABASE IF EXISTS "{db_config["NAME"]}"; CREATE DATABASE "{db_config["NAME"]}";'
+                            ]
+                            
+                            drop_result = subprocess.run(drop_cmd, env=env, capture_output=True, text=True)
+                            if drop_result.returncode != 0:
+                                raise Exception(f"Error recreando base de datos: {drop_result.stderr}")
+                            
+                            # Restaurar el dump
+                            restore_cmd = [
+                                'psql',
+                                '-h', db_config.get('HOST', 'localhost'),
+                                '-p', str(db_config.get('PORT', '5432')),
+                                '-U', db_config['USER'],
+                                '-d', db_config['NAME'],
+                                '-f', extracted_sql
+                            ]
+                            
+                            restore_result = subprocess.run(restore_cmd, env=env, capture_output=True, text=True)
+                            if restore_result.returncode != 0:
+                                raise Exception(f"Error restaurando base de datos: {restore_result.stderr}")
+                    
+                    # Restaurar archivos de media
+                    for member in zipf.namelist():
+                        if member.startswith('media/'):
+                            zipf.extract(member, settings.BASE_DIR)
+                    
+                finally:
+                    # Limpiar directorio temporal
+                    if os.path.exists(temp_extract_dir):
+                        shutil.rmtree(temp_extract_dir)
+            
+            messages.success(request, f'Base de datos restaurada exitosamente desde {backup_filename}')
+            messages.info(request, f'Se creó un respaldo de seguridad en {current_backup}')
+            
+        except Exception as e:
+            messages.error(request, f'Error al restaurar: {str(e)}')
+        
+        return redirect('database_restore')
+    
+    context = {
+        'backups': backups,
+        'title': 'Restaurar Base de Datos',
+        'db_engine': db_engine,
+        'is_sqlite': is_sqlite,
+        'is_postgresql': is_postgresql
+    }
+    return render(request, 'tickets/database_restore.html', context)
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def download_backup(request, filename):
+    """Vista para descargar archivos de respaldo"""
+    import os
+    from django.http import FileResponse, Http404
+    from django.conf import settings
+    
+    backup_dir = os.path.join(settings.BASE_DIR, 'backups')
+    backup_path = os.path.join(backup_dir, filename)
+    
+    if not os.path.exists(backup_path) or not filename.endswith('.zip'):
+        raise Http404("Archivo de respaldo no encontrado")
+    
+    response = FileResponse(
+        open(backup_path, 'rb'),
+        as_attachment=True,
+        filename=filename
+    )
+    response['Content-Type'] = 'application/zip'
+    return response
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def delete_backup(request, filename):
+    """Vista para eliminar archivos de respaldo"""
+    import os
+    from django.conf import settings
+    
+    if request.method == 'POST':
+        backup_dir = os.path.join(settings.BASE_DIR, 'backups')
+        backup_path = os.path.join(backup_dir, filename)
+        
+        if os.path.exists(backup_path) and filename.endswith('.zip'):
+            try:
+                os.remove(backup_path)
+                messages.success(request, f'Respaldo {filename} eliminado exitosamente')
+            except Exception as e:
+                messages.error(request, f'Error al eliminar respaldo: {str(e)}')
+        else:
+            messages.error(request, 'Archivo de respaldo no encontrado')
+    
+    return redirect('database_backup')
