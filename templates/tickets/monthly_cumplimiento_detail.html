@@ -1,0 +1,387 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>
+                <i class="bi bi-calendar-check text-primary"></i>
+                {{ cumplimiento.name }}
+            </h2>
+            <p class="text-muted mb-0">Meta de cumplimiento mensual para {{ cumplimiento.user }}</p>
+        </div>
+        <div class="dropdown">
+            <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="bi bi-gear"></i> Acciones
+            </button>
+            <ul class="dropdown-menu">
+                <li>
+                    <a class="dropdown-item" href="{% url 'monthly_cumplimiento_edit' cumplimiento.pk %}">
+                        <i class="bi bi-pencil"></i> Editar Meta
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="{% url 'monthly_cumplimiento_toggle' cumplimiento.pk %}">
+                        <i class="bi bi-toggle-{% if cumplimiento.is_active %}on{% else %}off{% endif %}"></i> 
+                        {% if cumplimiento.is_active %}Desactivar{% else %}Activar{% endif %}
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item text-danger" href="{% url 'monthly_cumplimiento_delete' cumplimiento.pk %}">
+                        <i class="bi bi-trash"></i> Eliminar Meta
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información de la meta -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle"></i> Información de la Meta
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong><i class="bi bi-bullseye text-primary"></i> Nombre:</strong>
+                        <p class="mb-0">{{ cumplimiento.name }}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong><i class="bi bi-person text-success"></i> Usuario:</strong>
+                        <p class="mb-0">{{ cumplimiento.user }}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong><i class="bi bi-clock text-info"></i> Frecuencia:</strong>
+                        <p class="mb-0">
+                            {% if cumplimiento.frequency_type == 'daily' %}
+                                <span class="badge bg-info">Todos los días</span>
+                            {% else %}
+                                <span class="badge bg-warning">{{ cumplimiento.target_days }} días al mes</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong><i class="bi bi-toggle-{% if cumplimiento.is_active %}on{% else %}off{% endif %} 
+                                  {% if cumplimiento.is_active %}text-success{% else %}text-secondary{% endif %}"></i> Estado:</strong>
+                        <p class="mb-0">
+                            {% if cumplimiento.is_active %}
+                                <span class="badge bg-success">Activo</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inactivo</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    
+                    {% if cumplimiento.description %}
+                    <div class="mb-3">
+                        <strong><i class="bi bi-card-text text-muted"></i> Descripción:</strong>
+                        <p class="mb-0">{{ cumplimiento.description }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <strong><i class="bi bi-calendar text-muted"></i> Creado:</strong>
+                        <p class="mb-0">{{ cumplimiento.created_at|date:"d/m/Y H:i" }}</p>
+                        <small class="text-muted">por {{ cumplimiento.created_by.get_full_name|default:cumplimiento.created_by.username }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progreso del mes -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-graph-up"></i> Progreso del Mes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <div class="progress mb-2" style="height: 20px;">
+                            <div class="progress-bar 
+                                {% if progress.percentage >= 80 %}bg-success
+                                {% elif progress.percentage >= 50 %}bg-warning
+                                {% else %}bg-danger{% endif %}" 
+                                 style="width: {{ progress.percentage|floatformat:0 }}%">
+                                {{ progress.percentage|floatformat:1 }}%
+                            </div>
+                        </div>
+                        <h3 class="
+                            {% if progress.percentage >= 80 %}text-success
+                            {% elif progress.percentage >= 50 %}text-warning
+                            {% else %}text-danger{% endif %}">
+                            {{ progress.completed_days }}/{{ progress.target_days }}
+                        </h3>
+                        <p class="text-muted">días cumplidos</p>
+                    </div>
+                    
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border-end">
+                                <h4 class="text-success mb-0">{{ progress.completed_days }}</h4>
+                                <small class="text-muted">Cumplidos</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-danger mb-0">{{ progress.remaining_days }}</h4>
+                            <small class="text-muted">Restantes</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- URL Pública -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-phone"></i> URL Pública (Móvil)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">URL para {{ cumplimiento.user }}:</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" 
+                                   value="{{ request.scheme }}://{{ request.get_host }}{{ cumplimiento.get_public_url }}" 
+                                   id="publicUrl" readonly>
+                            <button class="btn btn-outline-secondary" type="button" onclick="copyUrl()">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted">Comparte esta URL para acceso desde móvil</small>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <a href="{{ cumplimiento.get_public_url }}" target="_blank" class="btn btn-success">
+                            <i class="bi bi-phone"></i> Abrir Vista Móvil
+                        </a>
+                        <button class="btn btn-outline-primary" onclick="generateQR()">
+                            <i class="bi bi-qr-code"></i> Generar Código QR
+                        </button>
+                        <button class="btn btn-outline-info" onclick="testPublicUrl()">
+                            <i class="bi bi-globe"></i> Probar URL Pública
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendario del mes -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="bi bi-calendar-month"></i> Calendario del Mes Actual
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <!-- Días de la semana -->
+                <div class="col-12 mb-3">
+                    <div class="row text-center">
+                        <div class="col"><strong>Lun</strong></div>
+                        <div class="col"><strong>Mar</strong></div>
+                        <div class="col"><strong>Mié</strong></div>
+                        <div class="col"><strong>Jue</strong></div>
+                        <div class="col"><strong>Vie</strong></div>
+                        <div class="col"><strong>Sáb</strong></div>
+                        <div class="col"><strong>Dom</strong></div>
+                    </div>
+                </div>
+                
+                <!-- Días del mes -->
+                <div class="col-12">
+                    <div class="calendar-grid">
+                        {% for day in days_in_month %}
+                            {% if forloop.counter0|divisibleby:7 %}<div class="row mb-2">{% endif %}
+                            
+                            <div class="col text-center">
+                                <div class="day-box p-2 rounded
+                                    {% if day.is_today %}border border-warning bg-warning bg-opacity-25{% endif %}
+                                    {% if day.completed %}bg-success text-white{% elif day.is_past %}bg-danger text-white{% elif day.is_future %}bg-light text-muted{% endif %}"
+                                    style="min-height: 40px; display: flex; align-items: center; justify-content: center;">
+                                    {{ day.date.day }}
+                                    {% if day.completed %}
+                                        <i class="bi bi-check-lg ms-1"></i>
+                                    {% elif day.is_past and not day.completed %}
+                                        <i class="bi bi-x-lg ms-1"></i>
+                                    {% endif %}
+                                </div>
+                                {% if day.has_notes %}
+                                    <small class="text-info">
+                                        <i class="bi bi-chat-dots" title="Tiene notas"></i>
+                                    </small>
+                                {% endif %}
+                            </div>
+                            
+                            {% if forloop.counter0|add:1|divisibleby:7 %}</div>{% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para QR -->
+<div class="modal fade" id="qrModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Código QR - {{ cumplimiento.name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div id="qrcode" class="mb-3"></div>
+                <p class="text-muted">Escanea este código con el móvil para acceder directamente</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts QR -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
+<script>
+function copyUrl() {
+    const urlInput = document.getElementById('publicUrl');
+    urlInput.select();
+    urlInput.setSelectionRange(0, 99999);
+    document.execCommand('copy');
+    
+    // Mostrar toast
+    const toast = document.createElement('div');
+    toast.className = 'toast align-items-center text-white bg-success border-0';
+    toast.style.position = 'fixed';
+    toast.style.top = '20px';
+    toast.style.right = '20px';
+    toast.style.zIndex = '1000';
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="bi bi-check-circle me-2"></i>
+                URL copiada al portapapeles
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+    
+    setTimeout(() => toast.remove(), 3000);
+}
+
+function generateQR() {
+    const url = document.getElementById('publicUrl').value;
+    const qrContainer = document.getElementById('qrcode');
+    qrContainer.innerHTML = '';
+    
+    // Método 1: Intentar con QRCode.js
+    if (typeof QRCode !== 'undefined') {
+        try {
+            QRCode.toCanvas(qrContainer, url, {
+                width: 256,
+                height: 256,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                margin: 2
+            }, function (error) {
+                if (error) {
+                    console.error('Error con QRCode.js:', error);
+                    fallbackQR(url, qrContainer);
+                }
+            });
+            
+            const modal = new bootstrap.Modal(document.getElementById('qrModal'));
+            modal.show();
+            return;
+        } catch (error) {
+            console.error('Error con QRCode.js:', error);
+        }
+    }
+    
+    // Método 2: Fallback usando QRious si está disponible
+    if (typeof QRious !== 'undefined') {
+        try {
+            const canvas = document.createElement('canvas');
+            const qr = new QRious({
+                element: canvas,
+                value: url,
+                size: 256
+            });
+            qrContainer.appendChild(canvas);
+            
+            const modal = new bootstrap.Modal(document.getElementById('qrModal'));
+            modal.show();
+            return;
+        } catch (error) {
+            console.error('Error con QRious:', error);
+        }
+    }
+    
+    // Método 3: Fallback usando API externa
+    fallbackQR(url, qrContainer);
+}
+
+function fallbackQR(url, container) {
+    // Usar API externa como fallback
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(url)}`;
+    
+    container.innerHTML = `
+        <div class="text-center">
+            <img src="${qrApiUrl}" alt="Código QR" class="img-fluid" style="max-width: 256px;">
+            <p class="mt-2 text-muted small">Código QR generado</p>
+        </div>
+    `;
+    
+    const modal = new bootstrap.Modal(document.getElementById('qrModal'));
+    modal.show();
+}
+
+function testPublicUrl() {
+    const url = document.getElementById('publicUrl').value;
+    console.log('Probando URL:', url);
+    
+    // Crear toast de información
+    const toast = document.createElement('div');
+    toast.className = 'toast align-items-center text-white bg-info border-0';
+    toast.style.position = 'fixed';
+    toast.style.top = '20px';
+    toast.style.right = '20px';
+    toast.style.zIndex = '1000';
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="bi bi-globe me-2"></i>
+                Abriendo URL pública: ${url}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+    
+    setTimeout(() => toast.remove(), 5000);
+    
+    // Abrir en nueva ventana
+    window.open(url, '_blank');
+}
+</script>
+{% endblock %}

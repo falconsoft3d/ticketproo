@@ -19,7 +19,7 @@ from .models import (
     AIManager, AIManagerMeeting, AIManagerMeetingAttachment, AIManagerSummary, CompanyAISummary, UserAIPerformanceEvaluation,
     WebsiteTracker, LegalContract, SupplierContractReview, PayPalPaymentLink, PayPalOrder, TodoItem,
     AIBook, AIBookChapter, EmployeeRequest, InternalAgreement, Asset, AssetHistory, UrlManager,
-    ExpenseReport, ExpenseItem, ExpenseComment
+    ExpenseReport, ExpenseItem, ExpenseComment, MonthlyCumplimiento, DailyCumplimiento, QRCode
 )
 
 # Configuración del sitio de administración
@@ -4104,3 +4104,181 @@ class ExpenseCommentAdmin(admin.ModelAdmin):
         return super().get_queryset(request).select_related(
             'expense_report', 'user'
         )
+
+
+# ================================
+# CUMPLIMIENTO MENSUAL
+# ================================
+
+@admin.register(MonthlyCumplimiento)
+class MonthlyCumplimientoAdmin(admin.ModelAdmin):
+    """Administración de cumplimientos mensuales"""
+    list_display = ['name', 'user', 'frequency_type_display', 'target_days', 'progress_display', 'is_active', 'created_at']
+    list_filter = ['frequency_type', 'is_active', 'created_at', 'created_by']
+    search_fields = ['name', 'user', 'description']
+    readonly_fields = ['public_uuid', 'created_at', 'progress_info']
+    fieldsets = [
+        ('Información Básica', {
+            'fields': ['name', 'user', 'description']
+        }),
+        ('Configuración', {
+            'fields': ['frequency_type', 'target_days', 'is_active']
+        }),
+        ('Sistema', {
+            'fields': ['public_uuid', 'created_by', 'created_at'],
+            'classes': ['collapse']
+        }),
+        ('Progreso Actual', {
+            'fields': ['progress_info'],
+            'classes': ['wide']
+        })
+    ]
+    
+    def frequency_type_display(self, obj):
+        """Mostrar tipo de frecuencia con íconos"""
+        if obj.frequency_type == 'daily':
+            return format_html('<span class="badge bg-info">📅 Diario</span>')
+        else:
+            return format_html('<span class="badge bg-warning">📊 {} días/mes</span>', obj.target_days)
+    frequency_type_display.short_description = 'Frecuencia'
+    
+    def progress_display(self, obj):
+        """Mostrar progreso del mes actual"""
+        progress = obj.get_current_month_progress()
+        percentage = progress['percentage']
+        
+        if percentage >= 80:
+            color = 'success'
+            icon = '✅'
+        elif percentage >= 50:
+            color = 'warning'
+            icon = '⚠️'
+        else:
+            color = 'danger'
+            icon = '❌'
+            
+        return format_html(
+            '<span class="badge bg-{}">{} {}/{} ({}%)</span>',
+            color, icon, progress['completed_days'], progress['target_days'], 
+            round(percentage, 1)
+        )
+    progress_display.short_description = 'Progreso del mes'
+    
+    def progress_info(self, obj):
+        """Información detallada del progreso"""
+        progress = obj.get_current_month_progress()
+        return format_html(
+            '<div style="padding: 10px; background: #f8f9fa; border-radius: 5px;">'
+            '<strong>Progreso del mes actual:</strong><br>'
+            '📊 Completado: {}/{} días ({}%)<br>'
+            '🎯 Meta: {} días<br>'
+            '📅 Días restantes: {}<br>'
+            '🔗 <a href="{}" target="_blank">Ver URL pública</a>'
+            '</div>',
+            progress['completed_days'], progress['target_days'], round(progress['percentage'], 1),
+            progress['target_days'], 
+            progress['target_days'] - progress['completed_days'],
+            obj.get_public_url()
+        )
+    progress_info.short_description = 'Información del progreso'
+
+    def save_model(self, request, obj, form, change):
+        """Asignar usuario creador"""
+        if not change:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(DailyCumplimiento)
+class DailyCumplimientoAdmin(admin.ModelAdmin):
+    """Administración de cumplimientos diarios"""
+    list_display = ['monthly_cumplimiento', 'date', 'completed_display', 'notes_preview', 'updated_at']
+    list_filter = ['completed', 'date', 'monthly_cumplimiento__name', 'monthly_cumplimiento__user']
+    search_fields = ['monthly_cumplimiento__name', 'monthly_cumplimiento__user', 'notes']
+    date_hierarchy = 'date'
+    readonly_fields = ['created_at', 'updated_at']
+    fieldsets = [
+        ('Cumplimiento', {
+            'fields': ['monthly_cumplimiento', 'date', 'completed']
+        }),
+        ('Detalles', {
+            'fields': ['notes']
+        }),
+        ('Sistema', {
+            'fields': ['created_at', 'updated_at'],
+            'classes': ['collapse']
+        })
+    ]
+    
+    def completed_display(self, obj):
+        """Mostrar estado de cumplimiento con íconos"""
+        if obj.completed:
+            return format_html('<span style="color: green; font-size: 16px;">✅ Cumplido</span>')
+        else:
+            return format_html('<span style="color: red; font-size: 16px;">❌ No cumplido</span>')
+    completed_display.short_description = 'Estado'
+    
+    def notes_preview(self, obj):
+        """Vista previa de las notas"""
+        if obj.notes:
+            preview = obj.notes[:50] + '...' if len(obj.notes) > 50 else obj.notes
+            return format_html('<em>{}</em>', preview)
+        return '-'
+    notes_preview.short_description = 'Notas'
+
+
+@admin.register(QRCode)
+class QRCodeAdmin(admin.ModelAdmin):
+    """Administración de códigos QR"""
+    list_display = ['title', 'qr_type_badge', 'content_preview', 'size', 'created_by', 'created_at', 'is_active']
+    list_filter = ['qr_type', 'is_active', 'created_at', 'created_by']
+    search_fields = ['title', 'content', 'description']
+    readonly_fields = ['created_at']
+    ordering = ['-created_at']
+    list_per_page = 20
+    
+    fieldsets = [
+        ('Información básica', {
+            'fields': ['title', 'description', 'qr_type', 'size', 'is_active']
+        }),
+        ('Contenido', {
+            'fields': ['content']
+        }),
+        ('Sistema', {
+            'fields': ['created_by', 'created_at'],
+            'classes': ['collapse']
+        })
+    ]
+    
+    def qr_type_badge(self, obj):
+        """Mostrar tipo de QR con badge"""
+        colors = {
+            'url': 'primary',
+            'text': 'secondary', 
+            'email': 'success',
+            'phone': 'info',
+            'sms': 'warning',
+            'wifi': 'dark',
+            'vcard': 'danger'
+        }
+        color = colors.get(obj.qr_type, 'secondary')
+        return format_html(
+            '<span class="badge bg-{}">{}</span>',
+            color,
+            obj.get_qr_type_display()
+        )
+    qr_type_badge.short_description = 'Tipo'
+    qr_type_badge.admin_order_field = 'qr_type'
+    
+    def content_preview(self, obj):
+        """Vista previa del contenido"""
+        if obj.content:
+            preview = obj.content[:40] + '...' if len(obj.content) > 40 else obj.content
+            return format_html('<code>{}</code>', preview)
+        return '-'
+    content_preview.short_description = 'Contenido'
+    
+    def save_model(self, request, obj, form, change):
+        if not change:  # Si es un nuevo objeto
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)

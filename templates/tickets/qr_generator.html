@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <i class="bi bi-book"></i> Capacitación
+                    </li>
+                    <li class="breadcrumb-item active">Generador QR</li>
+                </ol>
+            </nav>
+            <h2 class="mb-0">
+                <i class="bi bi-qr-code text-primary"></i>
+                Generador de Códigos QR
+            </h2>
+            <p class="text-muted mb-0">Crea y gestiona códigos QR para URLs, texto, contactos y más</p>
+        </div>
+        <div>
+            <a href="{% url 'qr_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Crear Nuevo QR
+            </a>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-0">{{ total_qrs }}</h3>
+                            <p class="mb-0">Total QRs</p>
+                        </div>
+                        <div class="fs-1">
+                            <i class="bi bi-qr-code"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% for qr_type, count in qr_types_stats.items %}
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0">{{ count }}</h4>
+                            <p class="mb-0 small">{{ qr_type }}</p>
+                        </div>
+                        <div class="fs-2">
+                            {% if qr_type == "URL/Enlace" %}
+                                <i class="bi bi-link-45deg"></i>
+                            {% elif qr_type == "Email" %}
+                                <i class="bi bi-envelope"></i>
+                            {% elif qr_type == "Teléfono" %}
+                                <i class="bi bi-telephone"></i>
+                            {% else %}
+                                <i class="bi bi-file-text"></i>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Lista de códigos QR -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="bi bi-list-ul"></i> Mis Códigos QR
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if qr_codes %}
+                <div class="row">
+                    {% for qr_code in qr_codes %}
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span class="badge 
+                                    {% if qr_code.qr_type == 'url' %}bg-primary
+                                    {% elif qr_code.qr_type == 'email' %}bg-success
+                                    {% elif qr_code.qr_type == 'phone' %}bg-info
+                                    {% elif qr_code.qr_type == 'sms' %}bg-warning
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ qr_code.get_qr_type_display }}
+                                </span>
+                                <small class="text-muted">{{ qr_code.created_at|date:"d/m/Y" }}</small>
+                            </div>
+                            <div class="card-body">
+                                <h6 class="card-title">{{ qr_code.title|truncatechars:30 }}</h6>
+                                <p class="card-text small text-muted">
+                                    {{ qr_code.description|default:"Sin descripción"|truncatechars:60 }}
+                                </p>
+                                <div class="text-center mb-3">
+                                    <div id="qr-preview-{{ qr_code.pk }}" class="border rounded p-2" style="min-height: 120px;">
+                                        <!-- QR se genera con JavaScript -->
+                                    </div>
+                                </div>
+                                <div class="text-muted small mb-2">
+                                    <strong>Contenido:</strong><br>
+                                    <span class="font-monospace">{{ qr_code.content|truncatechars:40 }}</span>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <div class="btn-group w-100" role="group">
+                                    <a href="{% url 'qr_detail' qr_code.pk %}" class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-eye"></i> Ver
+                                    </a>
+                                    <a href="{% url 'qr_edit' qr_code.pk %}" class="btn btn-outline-secondary btn-sm">
+                                        <i class="bi bi-pencil"></i> Editar
+                                    </a>
+                                    <a href="{% url 'qr_delete' qr_code.pk %}" class="btn btn-outline-danger btn-sm">
+                                        <i class="bi bi-trash"></i> Eliminar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-qr-code display-1 text-muted"></i>
+                    <h4 class="text-muted mt-3">No hay códigos QR creados</h4>
+                    <p class="text-muted">Crea tu primer código QR para empezar</p>
+                    <a href="{% url 'qr_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Crear Primer QR
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Scripts QR -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Generar previews de QR para cada código
+    {% for qr_code in qr_codes %}
+    generateQRPreview('qr-preview-{{ qr_code.pk }}', '{{ qr_code.get_formatted_content|escapejs }}', 120);
+    {% endfor %}
+});
+
+function generateQRPreview(containerId, content, size) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    container.innerHTML = '<div class="text-center small"><i class="bi bi-arrow-clockwise spin"></i></div>';
+    
+    // Método 1: Intentar con QRCode.js
+    if (typeof QRCode !== 'undefined') {
+        try {
+            // Crear canvas para el QR
+            const canvas = document.createElement('canvas');
+            QRCode.toCanvas(canvas, content, {
+                width: size,
+                height: size,
+                margin: 1,
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                }
+            }, function (error) {
+                if (error) {
+                    console.error('Error con QRCode.js preview:', error);
+                    fallbackQRPreview(container, content, size);
+                } else {
+                    container.innerHTML = '';
+                    container.appendChild(canvas);
+                }
+            });
+            return;
+        } catch (error) {
+            console.error('Error con QRCode.js preview:', error);
+        }
+    }
+    
+    // Método 2: Fallback usando QRious si está disponible
+    if (typeof QRious !== 'undefined') {
+        try {
+            const canvas = document.createElement('canvas');
+            const qr = new QRious({
+                element: canvas,
+                value: content,
+                size: size,
+                level: 'M'
+            });
+            container.innerHTML = '';
+            container.appendChild(canvas);
+            return;
+        } catch (error) {
+            console.error('Error con QRious preview:', error);
+        }
+    }
+    
+    // Método 3: Fallback usando API externa
+    fallbackQRPreview(container, content, size);
+}
+
+function fallbackQRPreview(container, content, size) {
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(content)}`;
+    
+    const img = document.createElement('img');
+    img.src = qrApiUrl;
+    img.alt = 'Código QR';
+    img.className = 'img-fluid';
+    img.style.maxWidth = size + 'px';
+    img.style.borderRadius = '4px';
+    
+    img.onload = function() {
+        container.innerHTML = '';
+        container.appendChild(img);
+    };
+    
+    img.onerror = function() {
+        container.innerHTML = `
+            <div class="text-danger small">
+                <i class="bi bi-exclamation-triangle"></i>
+                Error QR
+            </div>
+        `;
+    };
+}
+</script>
+{% endblock %}

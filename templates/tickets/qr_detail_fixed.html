@@ -1,0 +1,476 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <i class="bi bi-book"></i> Capacitación
+                    </li>
+                    <li class="breadcrumb-item"><a href="{% url 'qr_generator' %}">Generador QR</a></li>
+                    <li class="breadcrumb-item active">{{ qr_code.title }}</li>
+                </ol>
+            </nav>
+            <h2 class="mb-0">
+                <i class="bi bi-qr-code text-primary"></i>
+                {{ qr_code.title }}
+            </h2>
+            <p class="text-muted mb-0">Código QR tipo {{ qr_code.get_qr_type_display }}</p>
+        </div>
+        <div class="dropdown">
+            <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="bi bi-gear"></i> Acciones
+            </button>
+            <ul class="dropdown-menu">
+                <li>
+                    <a class="dropdown-item" href="{% url 'qr_edit' qr_code.pk %}">
+                        <i class="bi bi-pencil"></i> Editar QR
+                    </a>
+                </li>
+                <li>
+                    <button class="dropdown-item" onclick="togglePublic()">
+                        <i class="bi bi-{% if qr_code.is_public %}eye-slash{% else %}eye{% endif %}"></i> 
+                        {% if qr_code.is_public %}Hacer Privado{% else %}Hacer Público{% endif %}
+                    </button>
+                </li>
+                {% if qr_code.is_public %}
+                <li>
+                    <button class="dropdown-item" onclick="copyPublicUrl()">
+                        <i class="bi bi-link-45deg"></i> Copiar URL Pública
+                    </button>
+                </li>
+                {% endif %}
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <button class="dropdown-item" onclick="downloadQR()">
+                        <i class="bi bi-download"></i> Descargar PNG
+                    </button>
+                </li>
+                <li>
+                    <button class="dropdown-item" onclick="copyContent()">
+                        <i class="bi bi-clipboard"></i> Copiar Contenido
+                    </button>
+                </li>
+                <li>
+                    <button class="dropdown-item" onclick="shareQR()">
+                        <i class="bi bi-share"></i> Compartir
+                    </button>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item text-danger" href="{% url 'qr_delete' qr_code.pk %}">
+                        <i class="bi bi-trash"></i> Eliminar QR
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Código QR Generado -->
+        <div class="col-md-8 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-qr-code-scan"></i> Código QR Generado
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <div id="qr-display" class="mb-4 d-flex align-items-center justify-content-center" style="min-height: 280px;">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Generando QR...</span>
+                            </div>
+                            <p class="mt-2 text-muted">Generando código QR...</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <button class="btn btn-primary w-100" onclick="downloadQR()">
+                                <i class="bi bi-download"></i> Descargar PNG
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <button class="btn btn-outline-primary w-100" onclick="copyContent()">
+                                <i class="bi bi-clipboard"></i> Copiar Contenido
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información del QR -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle"></i> Información
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong><i class="bi bi-tag text-primary"></i> Título:</strong>
+                        <p class="mb-0">{{ qr_code.title }}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong><i class="bi bi-list-ul text-success"></i> Tipo:</strong>
+                        <p class="mb-0">
+                            <span class="badge 
+                                {% if qr_code.qr_type == 'url' %}bg-primary
+                                {% elif qr_code.qr_type == 'email' %}bg-success
+                                {% elif qr_code.qr_type == 'phone' %}bg-info
+                                {% elif qr_code.qr_type == 'sms' %}bg-warning
+                                {% elif qr_code.qr_type == 'wifi' %}bg-dark
+                                {% else %}bg-secondary{% endif %}">
+                                {{ qr_code.get_qr_type_display }}
+                            </span>
+                        </p>
+                    </div>
+                    
+                    {% if qr_code.description %}
+                    <div class="mb-3">
+                        <strong><i class="bi bi-card-text text-info"></i> Descripción:</strong>
+                        <p class="mb-0">{{ qr_code.description }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <strong><i class="bi bi-aspect-ratio text-warning"></i> Tamaño:</strong>
+                        <p class="mb-0">{{ qr_code.size }}px × {{ qr_code.size }}px</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong><i class="bi bi-calendar text-secondary"></i> Creado:</strong>
+                        <p class="mb-0">{{ qr_code.created_at|date:"d/m/Y H:i" }}</p>
+                        <small class="text-muted">por {{ qr_code.created_by.get_full_name|default:qr_code.created_by.username }}</small>
+                    </div>
+                    
+                    {% if qr_code.is_public %}
+                    <div class="mb-3">
+                        <strong><i class="bi bi-eye text-success"></i> Visibilidad:</strong>
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-success me-2">Público</span>
+                            <small class="text-muted">
+                                {{ qr_code.public_views }} vista{{ qr_code.public_views|pluralize:"s" }} pública{{ qr_code.public_views|pluralize:"s" }}
+                            </small>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="mb-3">
+                        <strong><i class="bi bi-eye-slash text-muted"></i> Visibilidad:</strong>
+                        <span class="badge bg-secondary">Privado</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenido del QR -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-file-text"></i> Contenido del Código QR
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Contenido Original:</h6>
+                            <div class="bg-light p-3 rounded">
+                                <code id="original-content" class="text-break">{{ qr_code.content }}</code>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Contenido Formateado:</h6>
+                            <div class="bg-light p-3 rounded">
+                                <code id="formatted-content" class="text-break">{{ qr_code.get_formatted_content }}</code>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        {% if qr_code.qr_type == 'url' %}
+                        <a href="{{ qr_code.content }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-box-arrow-up-right"></i> Abrir URL
+                        </a>
+                        {% elif qr_code.qr_type == 'email' %}
+                        <a href="mailto:{{ qr_code.content }}" class="btn btn-outline-success btn-sm">
+                            <i class="bi bi-envelope"></i> Enviar Email
+                        </a>
+                        {% elif qr_code.qr_type == 'phone' %}
+                        <a href="tel:{{ qr_code.content }}" class="btn btn-outline-info btn-sm">
+                            <i class="bi bi-telephone"></i> Llamar
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts QR -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+
+<script>
+// Variables globales
+var QR_CONTENT = '{{ qr_code.get_formatted_content|escapejs }}';
+var QR_SIZE = {{ qr_code.size }};
+var QR_TITLE = '{{ qr_code.title|escapejs }}';
+
+// Funciones globales para eventos onclick
+function generateQRDisplay() {
+    console.log('[QR Detail] Iniciando generación de QR...');
+    var container = document.getElementById('qr-display');
+    
+    console.log('[QR Detail] Contenido:', QR_CONTENT);
+    console.log('[QR Detail] Tamaño:', QR_SIZE);
+    console.log('[QR Detail] Container:', container);
+    
+    if (!container) {
+        console.error('[QR Detail] No se encontró el contenedor qr-display');
+        return;
+    }
+    
+    if (!QR_CONTENT || QR_CONTENT.trim() === '') {
+        console.error('[QR Detail] Contenido vacío');
+        container.innerHTML = '<div class="alert alert-warning">Contenido del QR vacío</div>';
+        return;
+    }
+    
+    container.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Generando QR...</span></div></div>';
+    
+    // Método 1: Intentar con QRCode.js
+    if (typeof QRCode !== 'undefined') {
+        console.log('[QR Detail] Usando QRCode.js');
+        try {
+            QRCode.toCanvas(container, QR_CONTENT, {
+                width: QR_SIZE,
+                height: QR_SIZE,
+                margin: 2,
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                }
+            }, function (error) {
+                if (error) {
+                    console.error('[QR Detail] Error con QRCode.js:', error);
+                    fallbackQRDisplay(container, QR_CONTENT, QR_SIZE);
+                } else {
+                    console.log('[QR Detail] QR generado exitosamente con QRCode.js');
+                }
+            });
+            return;
+        } catch (error) {
+            console.error('[QR Detail] Excepción con QRCode.js:', error);
+        }
+    } else {
+        console.log('[QR Detail] QRCode.js no disponible');
+    }
+    
+    // Método 2: Fallback usando QRious si está disponible
+    if (typeof QRious !== 'undefined') {
+        console.log('[QR Detail] Intentando con QRious.js');
+        try {
+            var canvas = document.createElement('canvas');
+            var qr = new QRious({
+                element: canvas,
+                value: QR_CONTENT,
+                size: QR_SIZE,
+                level: 'M'
+            });
+            console.log('[QR Detail] QR generado con QRious');
+            container.innerHTML = '';
+            container.appendChild(canvas);
+            return;
+        } catch (error) {
+            console.error('[QR Detail] Error con QRious:', error);
+        }
+    } else {
+        console.log('[QR Detail] QRious.js no disponible');
+    }
+    
+    // Método 3: Fallback usando API externa
+    console.log('[QR Detail] Usando API externa como último recurso');
+    fallbackQRDisplay(container, QR_CONTENT, QR_SIZE);
+}
+
+function fallbackQRDisplay(container, content, size) {
+    console.log('[QR Detail] Usando API QR Server');
+    console.log('[QR Detail] Contenido para API:', content);
+    console.log('[QR Detail] Tamaño para API:', size);
+    
+    var qrApiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=' + size + 'x' + size + '&data=' + encodeURIComponent(content);
+    console.log('[QR Detail] URL de API:', qrApiUrl);
+    
+    var img = document.createElement('img');
+    img.src = qrApiUrl;
+    img.alt = 'Código QR';
+    img.className = 'img-fluid';
+    img.style.maxWidth = size + 'px';
+    img.style.border = '1px solid #ddd';
+    img.style.borderRadius = '8px';
+    
+    img.onload = function() {
+        console.log('[QR Detail] QR cargado exitosamente desde API externa');
+        container.innerHTML = '';
+        container.appendChild(img);
+    };
+    
+    img.onerror = function() {
+        console.error('[QR Detail] Error al cargar QR desde API externa');
+        container.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> Error al generar el código QR<br><small>Contenido: ' + content.substring(0, 50) + '...</small><br><small>URL: ' + qrApiUrl.substring(0, 100) + '...</small></div>';
+    };
+}
+
+function downloadQR() {
+    var container = document.getElementById('qr-display');
+    var canvas = container.querySelector('canvas');
+    
+    if (canvas) {
+        var link = document.createElement('a');
+        link.download = QR_TITLE.replace(/[^a-zA-Z0-9]/g, '_') + '-qr.png';
+        link.href = canvas.toDataURL();
+        link.click();
+        
+        showToast('QR descargado exitosamente', 'success');
+    } else {
+        // Fallback para imágenes
+        var img = container.querySelector('img');
+        if (img) {
+            var link = document.createElement('a');
+            link.download = QR_TITLE.replace(/[^a-zA-Z0-9]/g, '_') + '-qr.png';
+            link.href = img.src;
+            link.target = '_blank';
+            link.click();
+            
+            showToast('QR descargado exitosamente', 'success');
+        }
+    }
+}
+
+function copyContent() {
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(QR_CONTENT).then(function() {
+            showToast('Contenido copiado al portapapeles', 'success');
+        });
+    } else {
+        // Fallback para navegadores más antiguos
+        var textArea = document.createElement('textarea');
+        textArea.value = QR_CONTENT;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        showToast('Contenido copiado al portapapeles', 'success');
+    }
+}
+
+function shareQR() {
+    if (navigator.share) {
+        navigator.share({
+            title: 'Código QR: ' + QR_TITLE,
+            text: 'Escanea este QR: ' + QR_CONTENT
+        });
+    } else {
+        // Fallback
+        copyContent();
+        showToast('Contenido copiado para compartir', 'info');
+    }
+}
+
+function showToast(message, type) {
+    var toast = document.createElement('div');
+    toast.className = 'toast align-items-center text-white bg-' + type + ' border-0';
+    toast.style.position = 'fixed';
+    toast.style.top = '20px';
+    toast.style.right = '20px';
+    toast.style.zIndex = '1000';
+    toast.innerHTML = '<div class="d-flex"><div class="toast-body"><i class="bi bi-check-circle me-2"></i>' + message + '</div></div>';
+    
+    document.body.appendChild(toast);
+    var bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+    
+    setTimeout(function() { 
+        toast.remove(); 
+    }, 3000);
+}
+
+function copyPublicUrl() {
+    console.log('[QR Detail] Copiando URL pública...');
+    {% if qr_code.is_public and qr_code.public_token %}
+        var publicUrl = window.location.origin + '{% url "qr_public" qr_code.public_token %}';
+        console.log('[QR Detail] URL a copiar:', publicUrl);
+        navigator.clipboard.writeText(publicUrl).then(function() {
+            showToast('URL pública copiada al portapapeles', 'success');
+            console.log('[QR Detail] URL copiada exitosamente');
+        }, function(err) {
+            console.error('[QR Detail] Error al copiar URL:', err);
+            showToast('Error al copiar URL', 'danger');
+        });
+    {% else %}
+        console.log('[QR Detail] QR no es público o no tiene token');
+        showToast('Este QR no es público o no tiene token generado', 'warning');
+    {% endif %}
+}
+
+function togglePublic() {
+    fetch('{% url "qr_toggle_public" qr_code.pk %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(function(response) { 
+        return response.json(); 
+    })
+    .then(function(data) {
+        if (data.success) {
+            location.reload(); // Recargar para actualizar la interfaz
+        } else {
+            showAlert('Error al cambiar visibilidad', 'danger');
+        }
+    })
+    .catch(function(error) {
+        showAlert('Error de conexión', 'danger');
+    });
+}
+
+function showAlert(message, type) {
+    var alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-' + type + ' alert-dismissible fade show';
+    alertDiv.innerHTML = message + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+    
+    var container = document.querySelector('.container-fluid');
+    container.insertBefore(alertDiv, container.firstChild);
+    
+    // Auto-dismiss after 3 seconds
+    setTimeout(function() {
+        alertDiv.remove();
+    }, 3000);
+}
+
+// Inicializar cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('[QR Detail] DOM cargado, iniciando generación de QR...');
+    generateQRDisplay();
+});
+</script>
+{% endblock %}

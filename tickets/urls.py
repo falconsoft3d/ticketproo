@@ -1026,6 +1026,20 @@ urlpatterns += [
     path('qa/complaints/<int:pk>/assign/', views.qa_complaint_assign, name='qa_complaint_assign'),
     path('qa/complaints/<int:pk>/resolve/', views.qa_complaint_resolve, name='qa_complaint_resolve'),
     
+    # URLs de Cumplimiento Mensual
+    path('qa/cumplimiento/', views.monthly_cumplimiento_list, name='monthly_cumplimiento_list'),
+    path('qa/cumplimiento/create/', views.monthly_cumplimiento_create, name='monthly_cumplimiento_create'),
+    path('qa/cumplimiento/<int:pk>/', views.monthly_cumplimiento_detail, name='monthly_cumplimiento_detail'),
+    path('qa/cumplimiento/<int:pk>/edit/', views.monthly_cumplimiento_edit, name='monthly_cumplimiento_edit'),
+    path('qa/cumplimiento/<int:pk>/delete/', views.monthly_cumplimiento_delete, name='monthly_cumplimiento_delete'),
+    path('qa/cumplimiento/<int:pk>/toggle/', views.monthly_cumplimiento_toggle, name='monthly_cumplimiento_toggle'),
+    
+    # URL pública para cumplimiento mensual (móvil)
+    path('cumplimiento/<uuid:uuid>/', views.monthly_cumplimiento_public, name='monthly_cumplimiento_public'),
+    
+    # URL para menú de cumplimientos de usuario
+    path('cumplimientos/<uuid:uuid>/', views.user_cumplimientos_menu, name='user_cumplimientos_menu'),
+    
     # URLs del Tutor IA
     path('ai-tutor/', views.ai_tutor_list, name='ai_tutor_list'),
     path('ai-tutor/create/', views.ai_tutor_create, name='ai_tutor_create'),
@@ -1091,5 +1105,17 @@ urlpatterns += [
     path('procedures/<int:pk>/edit/', views.procedure_edit, name='procedure_edit'),
     path('procedures/<int:pk>/delete/', views.procedure_delete, name='procedure_delete'),
     path('procedures/<int:pk>/toggle-active/', views.procedure_toggle_active, name='procedure_toggle_active'),
+    
+    # URLs del Generador QR
+    path('qr-generator/', views.qr_generator, name='qr_generator'),
+    path('qr-generator/create/', views.qr_create, name='qr_create'),
+    path('qr-generator/<int:pk>/', views.qr_detail, name='qr_detail'),
+    path('qr-generator/<int:pk>/edit/', views.qr_edit, name='qr_edit'),
+    path('qr-generator/<int:pk>/delete/', views.qr_delete, name='qr_delete'),
+    path('qr-generator/<int:pk>/toggle-public/', views.qr_toggle_public, name='qr_toggle_public'),
+    
+    # URL pública para mostrar QR (sin autenticación)
+    # QR público con token
+    path('qr/<str:token>/', views.qr_public, name='qr_public'),
 ]
 

@@ -33017,3 +33017,493 @@ def procedure_toggle_active(request, pk):
     messages.success(request, f'Procedimiento "{procedure.title}" {status} exitosamente.')
     
     return redirect('procedure_list')
+
+
+# ================================
+# CUMPLIMIENTO MENSUAL - QA
+# ================================
+
+@login_required
+@user_passes_test(lambda user: user.is_staff, login_url='/')
+def monthly_cumplimiento_list(request):
+    """Lista de cumplimientos mensuales"""
+    from .models import MonthlyCumplimiento
+    
+    cumplimientos = MonthlyCumplimiento.objects.all().order_by('-created_at')
+    
+    # Filtros
+    search = request.GET.get('search')
+    if search:
+        cumplimientos = cumplimientos.filter(
+            Q(name__icontains=search) |
+            Q(user__icontains=search) |
+            Q(description__icontains=search)
+        )
+    
+    is_active = request.GET.get('is_active')
+    if is_active in ['true', 'false']:
+        cumplimientos = cumplimientos.filter(is_active=is_active == 'true')
+    
+    # Paginación
+    from django.core.paginator import Paginator
+    paginator = Paginator(cumplimientos, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'page_title': 'Cumplimiento Mensual',
+        'section': 'qa'
+    }
+    
+    return render(request, 'tickets/monthly_cumplimiento_list.html', context)
+
+
+@login_required
+@user_passes_test(lambda user: user.is_staff, login_url='/')
+def monthly_cumplimiento_create(request):
+    """Crear nuevo cumplimiento mensual"""
+    from .forms import MonthlyCumplimientoForm
+    
+    if request.method == 'POST':
+        form = MonthlyCumplimientoForm(request.POST)
+        if form.is_valid():
+            cumplimiento = form.save(commit=False)
+            cumplimiento.created_by = request.user
+            cumplimiento.save()
+            
+            messages.success(request, f'Cumplimiento mensual "{cumplimiento.name}" creado exitosamente.')
+            return redirect('monthly_cumplimiento_detail', pk=cumplimiento.pk)
+    else:
+        form = MonthlyCumplimientoForm()
+    
+    context = {
+        'form': form,
+        'page_title': 'Nuevo Cumplimiento Mensual',
+        'section': 'qa'
+    }
+    
+    return render(request, 'tickets/monthly_cumplimiento_form.html', context)
+
+
+@login_required
+@user_passes_test(lambda user: user.is_staff, login_url='/')
+def monthly_cumplimiento_detail(request, pk):
+    """Detalle del cumplimiento mensual"""
+    from .models import MonthlyCumplimiento
+    
+    cumplimiento = get_object_or_404(MonthlyCumplimiento, pk=pk)
+    progress = cumplimiento.get_current_month_progress()
+    
+    # Obtener cumplimientos del mes actual para mostrar calendario
+    from datetime import date, timedelta
+    today = date.today()
+    current_month_start = today.replace(day=1)
+    
+    # Generar días del mes
+    days_in_month = []
+    current_date = current_month_start
+    while current_date.month == today.month:
+        daily_cumplimiento = cumplimiento.daily_cumplimientos.filter(date=current_date).first()
+        days_in_month.append({
+            'date': current_date,
+            'is_today': current_date == today,
+            'is_past': current_date < today,
+            'is_future': current_date > today,
+            'completed': daily_cumplimiento.completed if daily_cumplimiento else False,
+            'has_notes': daily_cumplimiento.notes if daily_cumplimiento else False
+        })
+        current_date += timedelta(days=1)
+    
+    context = {
+        'cumplimiento': cumplimiento,
+        'progress': progress,
+        'days_in_month': days_in_month,
+        'page_title': f'Cumplimiento - {cumplimiento.name}',
+        'section': 'qa'
+    }
+    
+    return render(request, 'tickets/monthly_cumplimiento_detail.html', context)
+
+
+@login_required
+@user_passes_test(lambda user: user.is_staff, login_url='/')
+def monthly_cumplimiento_edit(request, pk):
+    """Editar cumplimiento mensual"""
+    from .models import MonthlyCumplimiento
+    from .forms import MonthlyCumplimientoForm
+    
+    cumplimiento = get_object_or_404(MonthlyCumplimiento, pk=pk)
+    
+    if request.method == 'POST':
+        form = MonthlyCumplimientoForm(request.POST, instance=cumplimiento)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Cumplimiento mensual "{cumplimiento.name}" actualizado exitosamente.')
+            return redirect('monthly_cumplimiento_detail', pk=cumplimiento.pk)
+    else:
+        form = MonthlyCumplimientoForm(instance=cumplimiento)
+    
+    context = {
+        'form': form,
+        'cumplimiento': cumplimiento,
+        'page_title': f'Editar - {cumplimiento.name}',
+        'section': 'qa'
+    }
+    
+    return render(request, 'tickets/monthly_cumplimiento_form.html', context)
+
+
+@login_required
+@user_passes_test(lambda user: user.is_staff, login_url='/')
+def monthly_cumplimiento_delete(request, pk):
+    """Eliminar cumplimiento mensual"""
+    from .models import MonthlyCumplimiento
+    
+    cumplimiento = get_object_or_404(MonthlyCumplimiento, pk=pk)
+    
+    if request.method == 'POST':
+        name = cumplimiento.name
+        cumplimiento.delete()
+        messages.success(request, f'Cumplimiento mensual "{name}" eliminado exitosamente.')
+        return redirect('monthly_cumplimiento_list')
+    
+    context = {
+        'cumplimiento': cumplimiento,
+        'page_title': f'Eliminar - {cumplimiento.name}',
+        'section': 'qa'
+    }
+    
+    return render(request, 'tickets/monthly_cumplimiento_delete.html', context)
+
+
+@login_required
+@user_passes_test(lambda user: user.is_staff, login_url='/')
+def monthly_cumplimiento_toggle(request, pk):
+    """Activar/desactivar cumplimiento mensual"""
+    from .models import MonthlyCumplimiento
+    
+    cumplimiento = get_object_or_404(MonthlyCumplimiento, pk=pk)
+    cumplimiento.is_active = not cumplimiento.is_active
+    cumplimiento.save()
+    
+    status = "activado" if cumplimiento.is_active else "desactivado"
+    messages.success(request, f'Cumplimiento mensual "{cumplimiento.name}" {status} exitosamente.')
+    
+    return redirect('monthly_cumplimiento_detail', pk=cumplimiento.pk)
+
+
+# Vista pública para móviles
+def monthly_cumplimiento_public(request, uuid):
+    """Vista pública para marcar cumplimientos diarios (optimizada para móvil)"""
+    from .models import MonthlyCumplimiento, DailyCumplimiento
+    from .forms import DailyCumplimientoForm
+    from datetime import date, timedelta
+    
+    cumplimiento = get_object_or_404(MonthlyCumplimiento, public_uuid=uuid, is_active=True)
+    today = date.today()
+    
+    # Verificar si el usuario tiene múltiples cumplimientos
+    user_cumplimientos_count = MonthlyCumplimiento.objects.filter(
+        user=cumplimiento.user, 
+        is_active=True
+    ).count()
+    
+    # Manejar POST (marcar/desmarcar cumplimiento)
+    if request.method == 'POST':
+        target_date_str = request.POST.get('date')
+        if target_date_str:
+            try:
+                target_date = date.fromisoformat(target_date_str)
+                daily_cumplimiento, created = DailyCumplimiento.objects.get_or_create(
+                    monthly_cumplimiento=cumplimiento,
+                    date=target_date,
+                    defaults={'completed': False}
+                )
+                
+                # Toggle estado
+                daily_cumplimiento.completed = not daily_cumplimiento.completed
+                daily_cumplimiento.save()
+                
+                status = "marcado como cumplido" if daily_cumplimiento.completed else "desmarcado"
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Día {target_date.strftime("%d/%m")} {status}',
+                    'completed': daily_cumplimiento.completed
+                })
+            except ValueError:
+                return JsonResponse({'success': False, 'message': 'Fecha inválida'})
+    
+    # Generar calendario del mes actual
+    current_month_start = today.replace(day=1)
+    next_month = (current_month_start + timedelta(days=32)).replace(day=1)
+    
+    # Calcular el primer día de la semana (lunes = 0, domingo = 6)
+    first_weekday = current_month_start.weekday()
+    
+    # Agregar días vacíos del mes anterior si es necesario
+    days_in_month = []
+    
+    # Añadir días vacíos al inicio si el mes no empieza en lunes
+    for i in range(first_weekday):
+        days_in_month.append({
+            'date': None,
+            'day': '',
+            'is_today': False,
+            'is_past': False,
+            'is_future': False,
+            'completed': False,
+            'weekday': '',
+            'iso_date': '',
+            'is_empty': True
+        })
+    
+    # Generar días del mes actual
+    current_date = current_month_start
+    while current_date < next_month:
+        daily_cumplimiento = cumplimiento.daily_cumplimientos.filter(date=current_date).first()
+        
+        # Determinar el estado del día correctamente
+        is_past = current_date < today
+        is_today = current_date == today
+        is_future = current_date > today
+        
+        days_in_month.append({
+            'date': current_date,
+            'day': current_date.day,
+            'is_today': is_today,
+            'is_past': is_past,
+            'is_future': is_future,
+            'completed': daily_cumplimiento.completed if daily_cumplimiento else False,
+            'weekday': current_date.strftime('%a'),
+            'iso_date': current_date.isoformat(),
+            'is_empty': False
+        })
+        current_date += timedelta(days=1)
+    
+    # Completar la última fila con días vacíos si es necesario (para que siempre sean 42 días = 6 semanas)
+    total_cells_needed = 42  # 6 filas x 7 días
+    while len(days_in_month) < total_cells_needed:
+        days_in_month.append({
+            'date': None,
+            'day': '',
+            'is_today': False,
+            'is_past': False,
+            'is_future': False,
+            'completed': False,
+            'weekday': '',
+            'iso_date': '',
+            'is_empty': True
+        })
+    
+    # Progreso del mes
+    progress = cumplimiento.get_current_month_progress()
+    
+    context = {
+        'cumplimiento': cumplimiento,
+        'days_in_month': days_in_month,
+        'progress': progress,
+        'today': today,
+        'current_month': today.strftime('%B %Y'),
+        'page_title': f'{cumplimiento.name} - {cumplimiento.user}',
+        'user_cumplimientos_count': user_cumplimientos_count,
+        'has_multiple_cumplimientos': user_cumplimientos_count > 1
+    }
+    
+    return render(request, 'tickets/monthly_cumplimiento_public.html', context)
+
+
+def user_cumplimientos_menu(request, uuid):
+    """Vista que muestra todos los cumplimientos de un usuario específico"""
+    from .models import MonthlyCumplimiento
+    
+    # Buscar el cumplimiento por UUID para obtener el usuario
+    primary_cumplimiento = get_object_or_404(MonthlyCumplimiento, public_uuid=uuid, is_active=True)
+    
+    # Obtener todos los cumplimientos activos del mismo usuario
+    user_cumplimientos = MonthlyCumplimiento.objects.filter(
+        user=primary_cumplimiento.user, 
+        is_active=True
+    ).order_by('name')
+    
+    # Si solo hay un cumplimiento, redirigir directamente
+    if user_cumplimientos.count() == 1:
+        return redirect('monthly_cumplimiento_public', uuid=uuid)
+    
+    context = {
+        'user': primary_cumplimiento.user,
+        'cumplimientos': user_cumplimientos,
+        'primary_uuid': uuid,
+        'page_title': f'Cumplimientos de {primary_cumplimiento.user.get_full_name() or primary_cumplimiento.user.username}'
+    }
+    
+    return render(request, 'tickets/user_cumplimientos_menu.html', context)
+
+
+# ================================
+# Generador QR Views
+# ================================
+
+@login_required
+def qr_generator(request):
+    """Vista principal del generador de QR"""
+    from .models import QRCode
+    from .forms import QRCodeForm
+    
+    # Obtener códigos QR del usuario
+    qr_codes = QRCode.objects.filter(created_by=request.user, is_active=True).order_by('-created_at')
+    
+    # Estadísticas
+    total_qrs = qr_codes.count()
+    qr_types_stats = {}
+    for qr in qr_codes:
+        qr_type = qr.get_qr_type_display()
+        qr_types_stats[qr_type] = qr_types_stats.get(qr_type, 0) + 1
+    
+    context = {
+        'qr_codes': qr_codes,
+        'total_qrs': total_qrs,
+        'qr_types_stats': qr_types_stats,
+        'page_title': 'Generador de Códigos QR',
+        'section': 'training'
+    }
+    
+    return render(request, 'tickets/qr_generator.html', context)
+
+
+@login_required
+def qr_create(request):
+    """Crear nuevo código QR"""
+    from .models import QRCode
+    from .forms import QRCodeForm
+    
+    if request.method == 'POST':
+        form = QRCodeForm(request.POST, user=request.user)
+        if form.is_valid():
+            qr_code = form.save(commit=False)
+            qr_code.created_by = request.user
+            qr_code.save()
+            messages.success(request, f'Código QR "{qr_code.title}" creado exitosamente.')
+            return redirect('qr_detail', pk=qr_code.pk)
+    else:
+        form = QRCodeForm(user=request.user)
+    
+    context = {
+        'form': form,
+        'page_title': 'Crear Código QR',
+        'section': 'training'
+    }
+    
+    return render(request, 'tickets/qr_form.html', context)
+
+
+@login_required
+def qr_detail(request, pk):
+    """Detalle del código QR"""
+    from .models import QRCode
+    
+    qr_code = get_object_or_404(QRCode, pk=pk, created_by=request.user)
+    
+    context = {
+        'qr_code': qr_code,
+        'page_title': f'QR: {qr_code.title}',
+        'section': 'training'
+    }
+    
+    return render(request, 'tickets/qr_detail.html', context)
+
+
+@login_required
+def qr_edit(request, pk):
+    """Editar código QR"""
+    from .models import QRCode
+    from .forms import QRCodeForm
+    
+    qr_code = get_object_or_404(QRCode, pk=pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        form = QRCodeForm(request.POST, instance=qr_code, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Código QR "{qr_code.title}" actualizado exitosamente.')
+            return redirect('qr_detail', pk=qr_code.pk)
+    else:
+        form = QRCodeForm(instance=qr_code, user=request.user)
+    
+    context = {
+        'form': form,
+        'qr_code': qr_code,
+        'page_title': f'Editar QR: {qr_code.title}',
+        'section': 'training'
+    }
+    
+    return render(request, 'tickets/qr_form.html', context)
+
+
+@login_required
+def qr_delete(request, pk):
+    """Eliminar código QR"""
+    from .models import QRCode
+    
+    qr_code = get_object_or_404(QRCode, pk=pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        title = qr_code.title
+        qr_code.delete()
+        messages.success(request, f'Código QR "{title}" eliminado exitosamente.')
+        return redirect('qr_generator')
+    
+    context = {
+        'qr_code': qr_code,
+        'page_title': f'Eliminar QR: {qr_code.title}',
+        'section': 'training'
+    }
+    
+    return render(request, 'tickets/qr_delete.html', context)
+
+
+@login_required
+def qr_toggle_public(request, pk):
+    """Activar/desactivar acceso público del QR"""
+    from .models import QRCode
+    
+    qr_code = get_object_or_404(QRCode, pk=pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        qr_code.is_public = not qr_code.is_public
+        
+        # Si se está activando público, asegurar que tiene UUID
+        if qr_code.is_public and not qr_code.public_uuid:
+            qr_code.public_uuid = uuid.uuid4()
+        
+        qr_code.save()
+        
+        status = "público" if qr_code.is_public else "privado"
+        messages.success(request, f'QR "{qr_code.title}" ahora es {status}.')
+        
+        return JsonResponse({
+            'success': True,
+            'is_public': qr_code.is_public,
+            'public_url': qr_code.get_public_url() if qr_code.is_public else None
+        })
+    
+    return JsonResponse({'success': False, 'error': 'Método no permitido'})
+
+
+def qr_public(request, token):
+    """Vista pública del código QR (sin autenticación)"""
+    from .models import QRCode
+    
+    qr_code = get_object_or_404(QRCode, public_token=token, is_public=True, is_active=True)
+    
+    # Incrementar contador de vistas
+    qr_code.public_views += 1
+    qr_code.save(update_fields=['public_views'])
+    
+    context = {
+        'qr_code': qr_code,
+        'page_title': f'QR: {qr_code.title}',
+        'is_public_view': True
+    }
+    
+    return render(request, 'tickets/qr_public.html', context)

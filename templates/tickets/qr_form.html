@@ -1,0 +1,431 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <i class="bi bi-book"></i> Capacitación
+                    </li>
+                    <li class="breadcrumb-item"><a href="{% url 'qr_generator' %}">Generador QR</a></li>
+                    <li class="breadcrumb-item active">{% if qr_code %}Editar{% else %}Crear{% endif %}</li>
+                </ol>
+            </nav>
+            <h2 class="mb-0">
+                <i class="bi bi-{% if qr_code %}pencil{% else %}plus-circle{% endif %} text-primary"></i>
+                {% if qr_code %}Editar Código QR{% else %}Crear Nuevo Código QR{% endif %}
+            </h2>
+            <p class="text-muted mb-0">
+                {% if qr_code %}
+                    Modifica los datos del código QR "{{ qr_code.title }}"
+                {% else %}
+                    Completa la información para generar tu código QR
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Formulario -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-form-text"></i> Información del Código QR
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Título -->
+                        <div class="mb-3">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">
+                                <i class="bi bi-tag text-primary"></i> {{ form.title.label }}
+                            </label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.title.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Tipo de QR -->
+                        <div class="mb-3">
+                            <label for="{{ form.qr_type.id_for_label }}" class="form-label">
+                                <i class="bi bi-list-ul text-primary"></i> {{ form.qr_type.label }}
+                            </label>
+                            {{ form.qr_type }}
+                            {% if form.qr_type.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.qr_type.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                Selecciona el tipo de contenido que quieres convertir a QR
+                            </div>
+                        </div>
+
+                        <!-- Contenido -->
+                        <div class="mb-3">
+                            <label for="{{ form.content.id_for_label }}" class="form-label">
+                                <i class="bi bi-file-text text-primary"></i> {{ form.content.label }}
+                                <span id="content-type-indicator" class="badge bg-secondary ms-1"></span>
+                            </label>
+                            {{ form.content }}
+                            {% if form.content.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.content.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text" id="content-help">
+                                {{ form.content.help_text }}
+                            </div>
+                            
+                            <!-- Ejemplos dinámicos -->
+                            <div id="content-examples" class="mt-2">
+                                <small class="text-muted">
+                                    <strong>Ejemplo:</strong> <span id="example-text"></span>
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Descripción -->
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">
+                                <i class="bi bi-chat-text text-primary"></i> {{ form.description.label }}
+                            </label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.description.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Tamaño -->
+                        <div class="mb-3">
+                            <label for="{{ form.size.id_for_label }}" class="form-label">
+                                <i class="bi bi-aspect-ratio text-primary"></i> {{ form.size.label }}
+                            </label>
+                            {{ form.size }}
+                            {% if form.size.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.size.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">{{ form.size.help_text }}</div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-{% if qr_code %}check{% else %}plus{% endif %}-circle"></i>
+                                {% if qr_code %}Actualizar QR{% else %}Crear QR{% endif %}
+                            </button>
+                            <a href="{% if qr_code %}{% url 'qr_detail' qr_code.pk %}{% else %}{% url 'qr_generator' %}{% endif %}" 
+                               class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-eye"></i> Vista Previa
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <div id="qr-preview" class="border rounded p-3 mb-3" style="min-height: 200px;">
+                        <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+                            <div>
+                                <i class="bi bi-qr-code display-4"></i>
+                                <p class="mt-2">El QR aparecerá aquí</p>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" id="download-qr" class="btn btn-success btn-sm" style="display: none;">
+                        <i class="bi bi-download"></i> Descargar QR
+                    </button>
+                </div>
+            </div>
+
+            <!-- Información de tipos -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-info-circle"></i> Tipos de QR Disponibles
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex align-items-center">
+                            <i class="bi bi-link-45deg text-primary me-2"></i>
+                            <div>
+                                <strong>URL/Enlace</strong>
+                                <br><small class="text-muted">Enlaces web completos</small>
+                            </div>
+                        </div>
+                        <div class="list-group-item d-flex align-items-center">
+                            <i class="bi bi-file-text text-success me-2"></i>
+                            <div>
+                                <strong>Texto</strong>
+                                <br><small class="text-muted">Texto plano o mensajes</small>
+                            </div>
+                        </div>
+                        <div class="list-group-item d-flex align-items-center">
+                            <i class="bi bi-envelope text-info me-2"></i>
+                            <div>
+                                <strong>Email</strong>
+                                <br><small class="text-muted">Direcciones de correo</small>
+                            </div>
+                        </div>
+                        <div class="list-group-item d-flex align-items-center">
+                            <i class="bi bi-telephone text-warning me-2"></i>
+                            <div>
+                                <strong>Teléfono</strong>
+                                <br><small class="text-muted">Números telefónicos</small>
+                            </div>
+                        </div>
+                        <div class="list-group-item d-flex align-items-center">
+                            <i class="bi bi-wifi text-primary me-2"></i>
+                            <div>
+                                <strong>WiFi</strong>
+                                <br><small class="text-muted">Credenciales de red</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts QR -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const typeSelect = document.getElementById('qr_type_select');
+    const contentTextarea = document.getElementById('id_content');
+    const contentIndicator = document.getElementById('content-type-indicator');
+    const contentHelp = document.getElementById('content-help');
+    const exampleText = document.getElementById('example-text');
+    const qrPreview = document.getElementById('qr-preview');
+    const downloadBtn = document.getElementById('download-qr');
+    
+    // Configuraciones por tipo
+    const typeConfigs = {
+        'url': {
+            placeholder: 'https://ejemplo.com',
+            example: 'https://www.google.com',
+            help: 'Ingresa una URL completa que comience con http:// o https://',
+            icon: 'link-45deg',
+            label: 'URL'
+        },
+        'text': {
+            placeholder: 'Tu texto aquí...',
+            example: 'Hola mundo!',
+            help: 'Ingresa cualquier texto que desees convertir a QR',
+            icon: 'file-text',
+            label: 'Texto'
+        },
+        'email': {
+            placeholder: 'correo@ejemplo.com',
+            example: 'usuario@gmail.com',
+            help: 'Ingresa una dirección de email válida',
+            icon: 'envelope',
+            label: 'Email'
+        },
+        'phone': {
+            placeholder: '+123456789',
+            example: '+34912345678',
+            help: 'Ingresa un número de teléfono con código de país',
+            icon: 'telephone',
+            label: 'Teléfono'
+        },
+        'sms': {
+            placeholder: '+123456789',
+            example: '+34912345678',
+            help: 'Número de teléfono para enviar SMS',
+            icon: 'chat-dots',
+            label: 'SMS'
+        },
+        'wifi': {
+            placeholder: 'WIFI:T:WPA;S:NombreRed;P:contraseña;;',
+            example: 'WIFI:T:WPA;S:MiWiFi;P:mipassword;;',
+            help: 'Formato: WIFI:T:tipo;S:nombre;P:contraseña;;',
+            icon: 'wifi',
+            label: 'WiFi'
+        },
+        'vcard': {
+            placeholder: 'BEGIN:VCARD\\nVERSION:3.0\\nFN:Nombre\\nEND:VCARD',
+            example: 'BEGIN:VCARD\\nVERSION:3.0\\nFN:Juan Pérez\\nORG:Mi Empresa\\nTEL:+123456789\\nEND:VCARD',
+            help: 'Tarjeta de contacto en formato vCard',
+            icon: 'person-vcard',
+            label: 'Contacto'
+        }
+    };
+    
+    function updateFormForType() {
+        const selectedType = typeSelect.value;
+        const config = typeConfigs[selectedType] || typeConfigs['text'];
+        
+        // Actualizar placeholder
+        contentTextarea.placeholder = config.placeholder;
+        
+        // Actualizar indicador
+        contentIndicator.textContent = config.label;
+        contentIndicator.className = `badge bg-primary ms-1`;
+        
+        // Actualizar ejemplo
+        exampleText.textContent = config.example;
+        
+        // Actualizar ayuda
+        contentHelp.textContent = config.help;
+        
+        // Generar preview si hay contenido
+        generatePreview();
+    }
+    
+    function generatePreview() {
+        console.log('[QR Form] Generando preview...');
+        const content = contentTextarea.value.trim();
+        const type = typeSelect.value;
+        
+        if (!content) {
+            console.log('[QR Form] No hay contenido, mostrando mensaje');
+            qrPreview.innerHTML = `
+                <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+                    <div class="text-center">
+                        <i class="bi bi-qr-code display-4"></i>
+                        <p class="mt-2">El QR aparecerá aquí</p>
+                    </div>
+                </div>
+            `;
+            downloadBtn.style.display = 'none';
+            return;
+        }
+        
+        console.log(`[QR Form] Tipo: ${type}, Contenido: ${content}`);
+        
+        // Formatear contenido según tipo
+        let formattedContent = content;
+        if (type === 'email') {
+            formattedContent = `mailto:${content}`;
+        } else if (type === 'phone') {
+            formattedContent = `tel:${content}`;
+        } else if (type === 'sms') {
+            formattedContent = `sms:${content}`;
+        }
+        
+        console.log(`[QR Form] Contenido formateado: ${formattedContent}`);
+        
+        qrPreview.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Generando QR...</span></div></div>';
+        
+        // Intentar generar QR con QRCode.js
+        if (typeof QRCode !== 'undefined') {
+            console.log('[QR Form] Usando QRCode.js');
+            try {
+                QRCode.toCanvas(qrPreview, formattedContent, {
+                    width: 200,
+                    height: 200,
+                    margin: 2
+                }, function (error) {
+                    if (error) {
+                        console.log('[QR Form] Error con QRCode.js, usando fallback');
+                        fallbackPreview(formattedContent);
+                    } else {
+                        console.log('[QR Form] QR generado exitosamente con QRCode.js');
+                        downloadBtn.style.display = 'inline-block';
+                    }
+                });
+                return;
+            } catch (error) {
+                console.error('[QR Form] Error con QRCode.js:', error);
+            }
+        } else {
+            console.log('[QR Form] QRCode.js no disponible');
+        }
+        
+        // Intentar con QRious
+        if (typeof QRious !== 'undefined') {
+            console.log('[QR Form] Intentando con QRious.js');
+            try {
+                const canvas = document.createElement('canvas');
+                const qr = new QRious({
+                    element: canvas,
+                    value: formattedContent,
+                    size: 200
+                });
+                qrPreview.innerHTML = '';
+                qrPreview.appendChild(canvas);
+                downloadBtn.style.display = 'inline-block';
+                console.log('[QR Form] QR generado exitosamente con QRious.js');
+                return;
+            } catch (error) {
+                console.error('[QR Form] Error con QRious.js:', error);
+            }
+        } else {
+            console.log('[QR Form] QRious.js no disponible');
+        }
+        
+        // Fallback a API externa
+        console.log('[QR Form] Usando API externa como fallback');
+        fallbackPreview(formattedContent);
+    }
+    
+    function fallbackPreview(content) {
+        console.log('[QR Form] Generando QR con API externa');
+        const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(content)}`;
+        qrPreview.innerHTML = `<img src="${qrApiUrl}" alt="Código QR" class="img-fluid">`;
+        downloadBtn.style.display = 'inline-block';
+    }
+    
+    // Event listeners
+    typeSelect.addEventListener('change', updateFormForType);
+    contentTextarea.addEventListener('input', generatePreview);
+    
+    downloadBtn.addEventListener('click', function() {
+        const canvas = qrPreview.querySelector('canvas');
+        if (canvas) {
+            const link = document.createElement('a');
+            link.download = 'codigo-qr.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        } else {
+            // Fallback para imágenes
+            const img = qrPreview.querySelector('img');
+            if (img) {
+                const link = document.createElement('a');
+                link.download = 'codigo-qr.png';
+                link.href = img.src;
+                link.click();
+            }
+        }
+    });
+    
+    // Inicializar
+    updateFormForType();
+    
+    {% if qr_code %}
+    // Si estamos editando, generar preview inicial
+    generatePreview();
+    {% endif %}
+});
+</script>
+{% endblock %}

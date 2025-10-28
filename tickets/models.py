@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.db import transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from datetime import timedelta
 import os
 import uuid
 
@@ -1818,10 +1819,14 @@ class UrlManager(models.Model):
     )
     username = models.CharField(
         max_length=100,
+        blank=True,
+        null=True,
         verbose_name='Usuario',
         help_text='Nombre de usuario para acceder'
     )
     encrypted_password = models.TextField(
+        blank=True,
+        null=True,
         verbose_name='Contraseña encriptada',
         help_text='Contraseña almacenada de forma segura'
     )
@@ -1883,6 +1888,10 @@ class UrlManager(models.Model):
     
     def set_password(self, raw_password):
         """Encripta y guarda la contraseña"""
+        if not raw_password:
+            self.encrypted_password = None
+            return
+            
         from cryptography.fernet import Fernet
         from django.conf import settings
         import base64
@@ -1897,6 +1906,9 @@ class UrlManager(models.Model):
     
     def get_password(self):
         """Desencripta y retorna la contraseña"""
+        if not self.encrypted_password:
+            return ""
+            
         from cryptography.fernet import Fernet
         from django.conf import settings
         import base64
@@ -14618,3 +14630,253 @@ class Procedure(models.Model):
                 size /= 1024.0
             return f"{size:.1f} TB"
         return "N/A"
+
+
+class MonthlyCumplimiento(models.Model):
+    """Modelo para gestionar metas de cumplimiento mensual"""
+    FREQUENCY_CHOICES = [
+        ('daily', 'Todos los días'),
+        ('specific', 'Número específico de días'),
+    ]
+    
+    name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre de la meta',
+        help_text='Ejemplo: Ejercicio diario, Lectura, Meditación'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Usuario',
+        help_text='Usuario que debe cumplir esta meta',
+        related_name='monthly_cumplimientos'
+    )
+    frequency_type = models.CharField(
+        max_length=20,
+        choices=FREQUENCY_CHOICES,
+        default='daily',
+        verbose_name='Tipo de frecuencia'
+    )
+    target_days = models.PositiveIntegerField(
+        default=30,
+        verbose_name='Días objetivo',
+        help_text='Número de días que debe cumplir en el mes (solo para tipo específico)'
+    )
+    description = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Descripción',
+        help_text='Descripción detallada de la meta'
+    )
+    public_uuid = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        verbose_name='ID público',
+        help_text='ID único para acceso público'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Creado por'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Cumplimiento Mensual'
+        verbose_name_plural = 'Cumplimientos Mensuales'
+        indexes = [
+            models.Index(fields=['public_uuid']),
+            models.Index(fields=['created_by', 'is_active']),
+        ]
+    
+    def __str__(self):
+        return f"{self.name} - {self.user}"
+    
+    def get_public_url(self):
+        """Retorna la URL pública para este cumplimiento"""
+        from django.urls import reverse
+        return reverse('monthly_cumplimiento_public', kwargs={'uuid': self.public_uuid})
+    
+    def get_current_month_progress(self):
+        """Retorna el progreso del mes actual"""
+        from datetime import date, timedelta
+        today = date.today()
+        current_month_start = today.replace(day=1)
+        
+        # Obtener cumplimientos del mes actual
+        cumplimientos = self.daily_cumplimientos.filter(
+            date__gte=current_month_start,
+            date__year=today.year,
+            date__month=today.month
+        )
+        
+        completed_days = cumplimientos.filter(completed=True).count()
+        
+        # Calcular días transcurridos del mes (hasta hoy)
+        days_elapsed = today.day
+        
+        # Total de días en el mes
+        if today.month == 12:
+            next_month = today.replace(year=today.year + 1, month=1, day=1)
+        else:
+            next_month = today.replace(month=today.month + 1, day=1)
+        
+        total_days_in_month = (next_month - timedelta(days=1)).day
+        
+        # Meta de días (depende del tipo de frecuencia)
+        if self.frequency_type == 'daily':
+            target_days = days_elapsed  # Días transcurridos hasta hoy
+            progress_base = days_elapsed  # Progreso basado en días transcurridos
+        else:
+            target_days = self.target_days  # Número específico de días
+            progress_base = min(target_days, days_elapsed)  # Lo que menor sea
+        
+        # Calcular porcentaje de progreso
+        if progress_base > 0:
+            percentage = (completed_days / progress_base) * 100
+        else:
+            percentage = 0
+        
+        # Limitar el porcentaje al 100%
+        percentage = min(percentage, 100)
+        
+        return {
+            'completed_days': completed_days,
+            'total_days_in_month': total_days_in_month,
+            'days_elapsed': days_elapsed,
+            'target_days': target_days,
+            'remaining_days': max(target_days - completed_days, 0),
+            'percentage': percentage
+        }
+
+
+class DailyCumplimiento(models.Model):
+    """Modelo para registrar el cumplimiento diario"""
+    monthly_cumplimiento = models.ForeignKey(
+        MonthlyCumplimiento,
+        on_delete=models.CASCADE,
+        related_name='daily_cumplimientos',
+        verbose_name='Cumplimiento mensual'
+    )
+    date = models.DateField(
+        verbose_name='Fecha'
+    )
+    completed = models.BooleanField(
+        default=False,
+        verbose_name='Cumplido'
+    )
+    notes = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Notas',
+        help_text='Notas adicionales sobre el cumplimiento de este día'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Registrado el'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Actualizado el'
+    )
+    
+    class Meta:
+        ordering = ['-date']
+        verbose_name = 'Cumplimiento Diario'
+        verbose_name_plural = 'Cumplimientos Diarios'
+        unique_together = ['monthly_cumplimiento', 'date']
+        indexes = [
+            models.Index(fields=['monthly_cumplimiento', 'date']),
+            models.Index(fields=['date', 'completed']),
+        ]
+
+
+class QRCode(models.Model):
+    """Modelo para generar y almacenar códigos QR"""
+    title = models.CharField(max_length=200, verbose_name='Título')
+    content = models.TextField(verbose_name='Contenido', help_text='URL, texto o datos para generar el QR')
+    description = models.TextField(blank=True, null=True, verbose_name='Descripción')
+    qr_type = models.CharField(
+        max_length=20,
+        choices=[
+            ('url', 'URL/Enlace'),
+            ('text', 'Texto'),
+            ('email', 'Email'),
+            ('phone', 'Teléfono'),
+            ('sms', 'SMS'),
+            ('wifi', 'WiFi'),
+            ('vcard', 'Tarjeta de Contacto'),
+        ],
+        default='text',
+        verbose_name='Tipo de QR'
+    )
+    size = models.IntegerField(default=256, verbose_name='Tamaño (px)')
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Creado por')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')
+    is_active = models.BooleanField(default=True, verbose_name='Activo')
+    
+    # Campos para URL pública
+    is_public = models.BooleanField(default=False, verbose_name='Público')
+    public_uuid = models.UUIDField(default=uuid.uuid4, null=True, blank=True, verbose_name='UUID público')
+    public_token = models.CharField(max_length=32, null=True, blank=True, unique=True, verbose_name='Token público')
+    public_views = models.PositiveIntegerField(default=0, verbose_name='Vistas públicas')
+
+    def __str__(self):
+        return f"{self.title} ({self.qr_type})"
+
+    def get_formatted_content(self):
+        """Retorna el contenido formateado según el tipo"""
+        if self.qr_type == 'email':
+            return f"mailto:{self.content}"
+        elif self.qr_type == 'phone':
+            return f"tel:{self.content}"
+        elif self.qr_type == 'sms':
+            return f"sms:{self.content}"
+        elif self.qr_type == 'wifi':
+            # Formato: WIFI:T:WPA;S:SSID;P:password;;
+            return self.content
+        else:
+            return self.content
+    
+    def save(self, *args, **kwargs):
+        # Generar token si se activa como público y no tiene token
+        if self.is_public and not self.public_token:
+            self.generate_public_token()
+        # Limpiar token si se desactiva como público
+        elif not self.is_public and self.public_token:
+            self.public_token = None
+        super().save(*args, **kwargs)
+    
+    def generate_public_token(self):
+        """Genera un token único para acceso público"""
+        import secrets
+        import string
+        
+        while True:
+            # Generar token de 16 caracteres alfanuméricos
+            token = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(16))
+            # Verificar que no existe otro token igual
+            if not QRCode.objects.filter(public_token=token).exists():
+                self.public_token = token
+                break
+        return token
+    
+    def get_public_url(self):
+        """Retorna la URL pública para mostrar este QR"""
+        from django.urls import reverse
+        if self.is_public and self.public_token:
+            return reverse('qr_public', kwargs={'token': self.public_token})
+        return None
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Código QR'
+        verbose_name_plural = 'Códigos QR'

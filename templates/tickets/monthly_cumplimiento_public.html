@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>{{ page_title }}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #c0c1c5ff 0%, rgba(198, 195, 200, 1)ff 100%);
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+        }
+        
+        .calendar-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin: 10px;
+            padding: 20px;
+        }
+        
+        .calendar-grid {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        
+        .calendar-grid .row {
+            margin-bottom: 8px;
+        }
+        
+        .calendar-grid .col {
+            padding: 2px;
+        }
+        
+        .day-cell {
+            aspect-ratio: 1;
+            border: 2px solid transparent;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 50px;
+            max-height: 50px;
+            width: 50px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        
+        .day-cell:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+        
+        .day-cell.today {
+            border: 3px solid #ffc107;
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            animation: pulse 2s infinite;
+        }
+        
+        .day-cell.completed {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border-color: #28a745;
+        }
+        
+        .day-cell.completed:hover {
+            background: linear-gradient(135deg, #218838 0%, #1ea080 100%);
+        }
+        
+        .day-cell.not-completed {
+            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+            color: white;
+            border-color: #dc3545;
+        }
+        
+        .day-cell.not-completed:hover {
+            background: linear-gradient(135deg, #c82333 0%, #e8631c 100%);
+        }
+        
+        .day-cell.future {
+            background: #f8f9fa;
+            color: #adb5bd;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        
+        .day-cell.future:hover {
+            transform: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Días vacíos (invisible) */
+        .day-cell[style*="visibility: hidden"] {
+            border: none;
+            background: transparent;
+            box-shadow: none;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 193, 7, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
+        }
+        
+        .progress-card {
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header-card {
+            background: #0984e3;
+            
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+        
+        .menu-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white !important;
+            transition: all 0.3s ease;
+        }
+        
+        .menu-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            color: white !important;
+            transform: translateY(-1px);
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .legend-circle {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        
+        .month-header {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2d3436;
+        }
+        
+        .weekday-header {
+            text-align: center;
+            font-weight: 600;
+            color: #636e72;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+        
+        .loading {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 1000;
+        }
+        
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid p-0">
+        <!-- Header -->
+        <div class="header-card">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div class="flex-grow-1">
+                    <h1 class="h3 mb-2">
+                        <i class="bi bi-bullseye"></i> {{ cumplimiento.name }}
+                    </h1>
+                    <p class="mb-1">👤 {{ cumplimiento.user }}</p>
+                    <p class="mb-0 small">
+                        {% if cumplimiento.frequency_type == 'daily' %}
+                            🎯 Meta: Todos los días
+                        {% else %}
+                            🎯 Meta: {{ cumplimiento.target_days }} días al mes
+                        {% endif %}
+                    </p>
+                </div>
+                
+                {% if has_multiple_cumplimientos %}
+                <div class="ms-3">
+                    <a href="{% url 'user_cumplimientos_menu' cumplimiento.public_uuid %}" 
+                       class="btn menu-btn btn-sm"
+                       title="Ver todos los cumplimientos ({{ user_cumplimientos_count }})">
+                        <i class="bi bi-list"></i>
+                        <span class="d-none d-sm-inline">Menú</span>
+                        <span class="badge bg-primary ms-1">{{ user_cumplimientos_count }}</span>
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Progreso -->
+        <div class="calendar-container">
+            <div class="progress-card">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span><i class="bi bi-calendar-month"></i> {{ current_month }}</span>
+                    <span><strong>{{ progress.completed_days }}/{{ progress.target_days }}</strong></span>
+                </div>
+                <div class="progress mb-2" style="height: 10px; background-color: rgba(255,255,255,0.3);">
+                    <div class="progress-bar" 
+                         style="width: {{ progress.percentage|floatformat:0 }}%; background: linear-gradient(90deg, #28a745 0%, #20c997 100%);"></div>
+                </div>
+                <div class="d-flex justify-content-between small">
+                    <span>{{ progress.percentage|floatformat:1 }}% completado</span>
+                    {% if cumplimiento.frequency_type == 'daily' %}
+                        <span>Día {{ progress.days_elapsed }}/{{ progress.total_days_in_month }}</span>
+                    {% else %}
+                        <span>{{ progress.remaining_days }} días restantes</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Leyenda -->
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-circle" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);"></div>
+                    <span>Cumplido</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-circle" style="background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);"></div>
+                    <span>No cumplido</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-circle" style="background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); border: 2px solid #ffc107;"></div>
+                    <span>Hoy</span>
+                </div>
+            </div>
+
+            <!-- Calendario -->
+            <div class="month-header">
+                <i class="bi bi-calendar-month"></i> {{ current_month }}
+            </div>
+
+            <!-- Días de la semana -->
+            <div class="row text-center mb-2">
+                <div class="col weekday-header">L</div>
+                <div class="col weekday-header">M</div>
+                <div class="col weekday-header">X</div>
+                <div class="col weekday-header">J</div>
+                <div class="col weekday-header">V</div>
+                <div class="col weekday-header">S</div>
+                <div class="col weekday-header">D</div>
+            </div>
+
+            <!-- Días del mes -->
+            <div class="calendar-grid">
+                {% for day in days_in_month %}
+                    {% if forloop.counter0|divisibleby:7 %}<div class="row">{% endif %}
+                    
+                    <div class="col p-1">
+                        {% if day.is_empty %}
+                            <div class="day-cell" style="visibility: hidden;"></div>
+                        {% else %}
+                            <div class="day-cell 
+                                {% if day.is_today %}today{% endif %}
+                                {% if day.is_future %}future{% elif day.completed %}completed{% elif day.is_past %}not-completed{% endif %}"
+                                data-date="{{ day.iso_date }}"
+                                {% if not day.is_future %}onclick="toggleDay('{{ day.iso_date }}')"{% endif %}>
+                                {{ day.day }}
+                                {% if day.completed %}
+                                    <i class="bi bi-check-lg position-absolute" style="font-size: 0.8rem; margin-top: -5px;"></i>
+                                {% elif day.is_past and not day.completed %}
+                                    <i class="bi bi-x-lg position-absolute" style="font-size: 0.8rem; margin-top: -5px;"></i>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if forloop.counter|divisibleby:7 or forloop.last %}</div>{% endif %}
+                {% endfor %}
+            </div>
+
+            <!-- Descripción de la meta -->
+            {% if cumplimiento.description %}
+            <div class="mt-4 p-3" style="background: rgba(116, 185, 255, 0.1); border-radius: 10px;">
+                <h6><i class="bi bi-info-circle text-primary"></i> Descripción</h6>
+                <p class="mb-0 small">{{ cumplimiento.description }}</p>
+            </div>
+            {% endif %}
+
+            <!-- QR Code Section -->
+            <div class="mt-4 p-3 text-center" style="background: rgba(255, 255, 255, 0.1); border-radius: 15px; backdrop-filter: blur(10px);">
+                <h6 class="text-white mb-3">
+                    <i class="bi bi-qr-code"></i> Acceso Rápido
+                </h6>
+                <div id="qr-container" class="mb-3" style="display: flex; justify-content: center;">
+                    <!-- QR se generará aquí -->
+                </div>
+                <p class="text-white-50 small mb-0">
+                    <i class="bi bi-phone"></i> 
+                    Escanea este código para acceder desde tu teléfono
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading indicator -->
+    <div class="loading" id="loading">
+        <div class="spinner-border text-light me-2" role="status"></div>
+        Actualizando...
+    </div>
+
+    <!-- Toast container -->
+    <div class="toast-container"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- QR Code Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    
+    <script>
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+        
+        function showToast(message, isSuccess = true) {
+            const toastContainer = document.querySelector('.toast-container');
+            const toastId = 'toast-' + Date.now();
+            
+            const toast = document.createElement('div');
+            toast.className = `toast align-items-center text-white ${isSuccess ? 'bg-success' : 'bg-danger'} border-0`;
+            toast.id = toastId;
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="bi bi-${isSuccess ? 'check-circle' : 'x-circle'} me-2"></i>
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+            
+            // Auto remove after hide
+            toast.addEventListener('hidden.bs.toast', () => {
+                toast.remove();
+            });
+        }
+        
+        function toggleDay(dateStr) {
+            showLoading();
+            
+            fetch('', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: `date=${dateStr}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                
+                if (data.success) {
+                    // Update UI
+                    const dayElement = document.querySelector(`[data-date="${dateStr}"]`);
+                    if (data.completed) {
+                        dayElement.classList.remove('not-completed');
+                        dayElement.classList.add('completed');
+                        dayElement.innerHTML = dayElement.innerHTML.replace(/<i[^>]*><\/i>/g, '') + 
+                            '<i class="bi bi-check-lg position-absolute" style="font-size: 0.8rem; margin-top: -5px;"></i>';
+                    } else {
+                        dayElement.classList.remove('completed');
+                        dayElement.classList.add('not-completed');
+                        dayElement.innerHTML = dayElement.innerHTML.replace(/<i[^>]*><\/i>/g, '') + 
+                            '<i class="bi bi-x-lg position-absolute" style="font-size: 0.8rem; margin-top: -5px;"></i>';
+                    }
+                    
+                    // Update progress (reload page for simplicity)
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                    
+                    showToast(data.message, true);
+                } else {
+                    showToast(data.message || 'Error al actualizar', false);
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                showToast('Error de conexión', false);
+                console.error('Error:', error);
+            });
+        }
+        
+        // Prevent zoom on double tap
+        document.addEventListener('touchend', function(event) {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+        
+        let lastTouchEnd = 0;
+        
+        // Add haptic feedback if available
+        function vibrate() {
+            if (navigator.vibrate) {
+                navigator.vibrate(50);
+            }
+        }
+
+        // Generate QR Code
+        function generateQRCode() {
+            const container = document.getElementById('qr-container');
+            const currentUrl = window.location.href;
+            
+            console.log('[QR Cumplimiento] Generando QR para:', currentUrl);
+            
+            if (!container) {
+                console.error('[QR Cumplimiento] Container no encontrado');
+                return;
+            }
+
+            // Intentar con QRCode.js
+            if (typeof QRCode !== 'undefined') {
+                console.log('[QR Cumplimiento] Usando QRCode.js');
+                try {
+                    QRCode.toCanvas(container, currentUrl, {
+                        width: 150,
+                        height: 150,
+                        margin: 2,
+                        color: {
+                            dark: '#2D3748',
+                            light: '#FFFFFF'
+                        }
+                    }, function (error) {
+                        if (error) {
+                            console.error('[QR Cumplimiento] Error con QRCode.js:', error);
+                            fallbackQR(container, currentUrl);
+                        } else {
+                            console.log('[QR Cumplimiento] QR generado exitosamente');
+                        }
+                    });
+                    return;
+                } catch (error) {
+                    console.error('[QR Cumplimiento] Excepción con QRCode.js:', error);
+                }
+            }
+
+            // Fallback con QRious
+            if (typeof QRious !== 'undefined') {
+                console.log('[QR Cumplimiento] Usando QRious.js');
+                try {
+                    const canvas = document.createElement('canvas');
+                    const qr = new QRious({
+                        element: canvas,
+                        value: currentUrl,
+                        size: 150,
+                        foreground: '#2D3748',
+                        background: '#FFFFFF'
+                    });
+                    container.innerHTML = '';
+                    container.appendChild(canvas);
+                    console.log('[QR Cumplimiento] QR generado con QRious');
+                    return;
+                } catch (error) {
+                    console.error('[QR Cumplimiento] Error con QRious:', error);
+                }
+            }
+
+            // Fallback API externa
+            fallbackQR(container, currentUrl);
+        }
+
+        function fallbackQR(container, url) {
+            console.log('[QR Cumplimiento] Usando API externa');
+            const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}`;
+            
+            const img = document.createElement('img');
+            img.src = qrApiUrl;
+            img.alt = 'Código QR de acceso';
+            img.style.width = '150px';
+            img.style.height = '150px';
+            img.style.border = '3px solid #fff';
+            img.style.borderRadius = '10px';
+            img.style.boxShadow = '0 4px 15px rgba(0,0,0,0.2)';
+            
+            img.onload = function() {
+                console.log('[QR Cumplimiento] QR cargado desde API externa');
+                container.innerHTML = '';
+                container.appendChild(img);
+            };
+            
+            img.onerror = function() {
+                console.error('[QR Cumplimiento] Error al cargar QR desde API');
+                container.innerHTML = '<div class="text-white-50"><i class="bi bi-exclamation-triangle"></i><br>Error al generar QR</div>';
+            };
+        }
+        
+        // Add vibration to day clicks
+        document.querySelectorAll('.day-cell:not(.future)').forEach(cell => {
+            cell.addEventListener('click', vibrate);
+        });
+
+        // Generate QR code when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('[QR Cumplimiento] DOM loaded, generando QR...');
+            generateQRCode();
+        });
+
+        // Also generate QR after a short delay to ensure libraries are loaded
+        setTimeout(function() {
+            const container = document.getElementById('qr-container');
+            if (container && container.innerHTML.trim() === '') {
+                console.log('[QR Cumplimiento] Reintentando generar QR...');
+                generateQRCode();
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

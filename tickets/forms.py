@@ -31,7 +31,8 @@ from .models import (
     Form, FormQuestion, FormQuestionOption, FormResponse, FormAnswer,
     EmployeeRequest, InternalAgreement, Asset, AssetHistory, 
     AITutor, AITutorProgressReport, AITutorAttachment, ExpenseReport, ExpenseItem, ExpenseComment,
-    VideoMeeting, MeetingNote, QuoteGenerator, CountdownTimer, AbsenceType
+    VideoMeeting, MeetingNote, QuoteGenerator, CountdownTimer, AbsenceType,
+    MonthlyCumplimiento, DailyCumplimiento, QRCode
 )
 
 class CategoryForm(forms.ModelForm):
@@ -1943,24 +1944,29 @@ class UrlManagerForm(forms.ModelForm):
     
     def clean_username(self):
         """Validar el usuario"""
-        username = self.cleaned_data.get('username', '').strip()
+        username = self.cleaned_data.get('username')
         
+        # Si es None o vacío, retornar vacío (es opcional)
         if not username:
-            raise forms.ValidationError('El nombre de usuario es requerido.')
+            return ""
+        
+        # Si hay valor, validar que tenga al menos 2 caracteres
+        username = username.strip()
+        if len(username) < 2:
+            raise forms.ValidationError('El nombre de usuario debe tener al menos 2 caracteres.')
         
         return username
     
     def clean_password(self):
         """Validar la contraseña"""
-        password = self.cleaned_data.get('password', '')
+        password = self.cleaned_data.get('password')
         
-        # Si estamos creando un nuevo registro, la contraseña es obligatoria
-        if not self.instance_pk or not hasattr(self.instance_pk, 'pk'):
-            if not password:
-                raise forms.ValidationError('La contraseña es requerida.')
+        # La contraseña es opcional ahora
+        if not password:
+            return ""
         
         # Si hay contraseña, validar longitud mínima
-        if password and len(password) < 3:
+        if len(password) < 3:
             raise forms.ValidationError('La contraseña debe tener al menos 3 caracteres.')
         
         return password
@@ -7283,3 +7289,190 @@ class ProcedureForm(forms.ModelForm):
                 )
         
         return attachment
+
+
+class MonthlyCumplimientoForm(forms.ModelForm):
+    """Formulario para crear y editar cumplimientos mensuales"""
+    
+    user = forms.ModelChoiceField(
+        queryset=User.objects.filter(is_active=True).order_by('first_name', 'last_name', 'username'),
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        }),
+        empty_label="Seleccionar usuario...",
+        to_field_name=None  # Usar la pk
+    )
+    
+    class Meta:
+        model = MonthlyCumplimiento
+        fields = ['name', 'user', 'frequency_type', 'target_days', 'description', 'is_active']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ejercicio diario, Lectura, Meditación, etc.'
+            }),
+            'frequency_type': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'target_days': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 1,
+                'max': 31
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción detallada de la meta...'
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'name': 'Nombre de la meta',
+            'user': 'Usuario',
+            'frequency_type': 'Tipo de frecuencia',
+            'target_days': 'Días objetivo en el mes',
+            'description': 'Descripción',
+            'is_active': 'Activo',
+        }
+        help_texts = {
+            'name': 'Nombre descriptivo para la meta de cumplimiento',
+            'user': 'Usuario que debe cumplir esta meta',
+            'frequency_type': 'Todos los días o un número específico de días',
+            'target_days': 'Solo aplica para tipo "específico". Número de días que debe cumplir en el mes',
+            'description': 'Información adicional sobre la meta',
+            'is_active': 'Desmarcar para desactivar temporalmente esta meta',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Si el tipo es 'daily', deshabilitar target_days
+        if self.initial.get('frequency_type') == 'daily':
+            self.fields['target_days'].widget.attrs['disabled'] = True
+    
+    def clean_target_days(self):
+        """Validar target_days según el tipo de frecuencia"""
+        frequency_type = self.cleaned_data.get('frequency_type')
+        target_days = self.cleaned_data.get('target_days')
+        
+        if frequency_type == 'specific':
+            if not target_days or target_days < 1:
+                raise forms.ValidationError('Debe especificar al menos 1 día objetivo.')
+            if target_days > 31:
+                raise forms.ValidationError('No puede ser más de 31 días.')
+        
+        return target_days
+    
+    class Media:
+        js = ('js/monthly_cumplimiento_form.js',)
+
+
+class DailyCumplimientoForm(forms.ModelForm):
+    """Formulario para marcar cumplimiento diario (vista pública móvil)"""
+    
+    class Meta:
+        model = DailyCumplimiento
+        fields = ['completed', 'notes']
+        widgets = {
+            'completed': forms.CheckboxInput(attrs={
+                'class': 'form-check-input fs-1',
+                'style': 'transform: scale(2);'
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'Notas opcionales sobre este día...'
+            }),
+        }
+        labels = {
+            'completed': '¿Cumplido hoy?',
+            'notes': 'Notas (opcional)',
+        }
+
+
+class QRCodeForm(forms.ModelForm):
+    """Formulario para generar códigos QR"""
+    
+    class Meta:
+        model = QRCode
+        fields = ['title', 'content', 'description', 'qr_type', 'size']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título descriptivo del QR'
+            }),
+            'content': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Ingresa aquí el contenido que deseas convertir a QR...'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'Descripción opcional del código QR'
+            }),
+            'qr_type': forms.Select(attrs={
+                'class': 'form-select',
+                'id': 'qr_type_select'
+            }),
+            'size': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 128,
+                'max': 512,
+                'step': 32
+            })
+        }
+        labels = {
+            'title': 'Título',
+            'content': 'Contenido',
+            'description': 'Descripción',
+            'qr_type': 'Tipo de QR',
+            'size': 'Tamaño (px)'
+        }
+        help_texts = {
+            'content': 'Según el tipo seleccionado, ingresa URL, texto, email, teléfono, etc.',
+            'size': 'Tamaño en píxeles del código QR (recomendado: 256)'
+        }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        if user:
+            self.instance.created_by = user
+        
+        # Personalizar placeholders según el tipo
+        self.fields['content'].widget.attrs.update({
+            'data-url-placeholder': 'https://ejemplo.com',
+            'data-text-placeholder': 'Tu texto aquí...',
+            'data-email-placeholder': 'correo@ejemplo.com',
+            'data-phone-placeholder': '+123456789',
+            'data-sms-placeholder': '+123456789',
+            'data-wifi-placeholder': 'WIFI:T:WPA;S:NombreRed;P:contraseña;;',
+            'data-vcard-placeholder': 'BEGIN:VCARD\nVERSION:3.0\nFN:Nombre Completo\nORG:Empresa\nTEL:+123456789\nEMAIL:correo@ejemplo.com\nEND:VCARD'
+        })
+
+    def clean_content(self):
+        content = self.cleaned_data.get('content')
+        qr_type = self.cleaned_data.get('qr_type')
+        
+        if not content:
+            raise forms.ValidationError('El contenido es obligatorio.')
+        
+        # Validaciones específicas por tipo
+        if qr_type == 'url':
+            if not (content.startswith('http://') or content.startswith('https://')):
+                raise forms.ValidationError('La URL debe comenzar con http:// o https://')
+        elif qr_type == 'email':
+            from django.core.validators import validate_email
+            try:
+                validate_email(content)
+            except forms.ValidationError:
+                raise forms.ValidationError('Ingresa un email válido.')
+        elif qr_type == 'phone' or qr_type == 'sms':
+            if not content.replace('+', '').replace('-', '').replace(' ', '').isdigit():
+                raise forms.ValidationError('Ingresa un número de teléfono válido.')
+        
+        return content

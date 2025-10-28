@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <i class="bi bi-book"></i> Capacitación
+                    </li>
+                    <li class="breadcrumb-item"><a href="{% url 'qr_generator' %}">Generador QR</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'qr_detail' qr_code.pk %}">{{ qr_code.title }}</a></li>
+                    <li class="breadcrumb-item active">Eliminar</li>
+                </ol>
+            </nav>
+            <h2 class="mb-0">
+                <i class="bi bi-trash text-danger"></i>
+                Eliminar Código QR
+            </h2>
+            <p class="text-muted mb-0">¿Estás seguro de que deseas eliminar este código QR?</p>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Información del QR -->
+                        <div class="col-md-8">
+                            <div class="alert alert-warning" role="alert">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <strong>¡Atención!</strong> Esta acción no se puede deshacer. El código QR y toda su información serán eliminados permanentemente.
+                            </div>
+                            
+                            <h6>Código QR a eliminar:</h6>
+                            <div class="border rounded p-3 mb-3">
+                                <div class="mb-2">
+                                    <strong><i class="bi bi-tag text-primary"></i> Título:</strong>
+                                    <span>{{ qr_code.title }}</span>
+                                </div>
+                                
+                                <div class="mb-2">
+                                    <strong><i class="bi bi-list-ul text-success"></i> Tipo:</strong>
+                                    <span class="badge 
+                                        {% if qr_code.qr_type == 'url' %}bg-primary
+                                        {% elif qr_code.qr_type == 'email' %}bg-success
+                                        {% elif qr_code.qr_type == 'phone' %}bg-info
+                                        {% elif qr_code.qr_type == 'sms' %}bg-warning
+                                        {% elif qr_code.qr_type == 'wifi' %}bg-dark
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ qr_code.get_qr_type_display }}
+                                    </span>
+                                </div>
+                                
+                                {% if qr_code.description %}
+                                <div class="mb-2">
+                                    <strong><i class="bi bi-chat-text text-muted"></i> Descripción:</strong>
+                                    <span>{{ qr_code.description }}</span>
+                                </div>
+                                {% endif %}
+                                
+                                <div class="mb-2">
+                                    <strong><i class="bi bi-file-text text-info"></i> Contenido:</strong>
+                                    <code class="text-break">{{ qr_code.content|truncatechars:60 }}</code>
+                                </div>
+                                
+                                <div class="mb-0">
+                                    <strong><i class="bi bi-calendar text-muted"></i> Creado:</strong>
+                                    <span>{{ qr_code.created_at|date:"d/m/Y H:i" }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Preview del QR -->
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h6>Vista previa:</h6>
+                                <div id="qr-preview" class="border rounded p-2 mb-3" style="min-height: 150px;">
+                                    <!-- QR se genera con JavaScript -->
+                                </div>
+                                <small class="text-muted">Este código QR será eliminado</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Formulario de confirmación -->
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="confirmDelete" required>
+                                <label class="form-check-label" for="confirmDelete">
+                                    Confirmo que deseo eliminar este código QR permanentemente
+                                </label>
+                            </div>
+                            
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'qr_detail' qr_code.pk %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-circle"></i> Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-danger" id="deleteBtn" disabled>
+                                    <i class="bi bi-trash"></i> Eliminar QR
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts QR -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Generar preview del QR
+    generateQRPreview();
+    
+    // Manejar checkbox de confirmación
+    const confirmCheckbox = document.getElementById('confirmDelete');
+    const deleteBtn = document.getElementById('deleteBtn');
+    
+    confirmCheckbox.addEventListener('change', function() {
+        deleteBtn.disabled = !this.checked;
+    });
+});
+
+function generateQRPreview() {
+    const container = document.getElementById('qr-preview');
+    const content = '{{ qr_code.get_formatted_content|escapejs }}';
+    const size = 150;
+    
+    container.innerHTML = '';
+    
+    // Método 1: Intentar con QRCode.js
+    if (typeof QRCode !== 'undefined') {
+        try {
+            QRCode.toCanvas(container, content, {
+                width: size,
+                height: size,
+                margin: 1
+            }, function (error) {
+                if (error) {
+                    fallbackQRPreview(container, content, size);
+                }
+            });
+            return;
+        } catch (error) {
+            console.error('Error con QRCode.js:', error);
+        }
+    }
+    
+    // Método 2: Fallback usando QRious si está disponible
+    if (typeof QRious !== 'undefined') {
+        try {
+            const canvas = document.createElement('canvas');
+            const qr = new QRious({
+                element: canvas,
+                value: content,
+                size: size
+            });
+            container.appendChild(canvas);
+            return;
+        } catch (error) {
+            console.error('Error con QRious:', error);
+        }
+    }
+    
+    // Método 3: Fallback usando API externa
+    fallbackQRPreview(container, content, size);
+}
+
+function fallbackQRPreview(container, content, size) {
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(content)}`;
+    container.innerHTML = `<img src="${qrApiUrl}" alt="Código QR" class="img-fluid" style="max-width: ${size}px;">`;
+}
+</script>
+{% endblock %}

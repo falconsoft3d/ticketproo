@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>{{ page_title }}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+        }
+        
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .cumplimiento-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        
+        .cumplimiento-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .cumplimiento-link {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            padding: 20px;
+        }
+        
+        .cumplimiento-link:hover {
+            color: inherit;
+            text-decoration: none;
+        }
+        
+        .cumplimiento-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+        
+        .cumplimiento-desc {
+            color: #718096;
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+        
+        .cumplimiento-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            color: #a0aec0;
+        }
+        
+        .progress-badge {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+        
+        .frequency-badge {
+            background: #e2e8f0;
+            color: #4a5568;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+        }
+        
+        .user-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 0 auto 15px;
+        }
+        
+        .user-name {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+        
+        .user-subtitle {
+            color: #718096;
+            font-size: 1rem;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #718096;
+        }
+        
+        .empty-icon {
+            font-size: 4rem;
+            color: #cbd5e0;
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 576px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header-card {
+                padding: 20px;
+                margin-bottom: 15px;
+            }
+            
+            .cumplimiento-link {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Botón de volver -->
+        <div class="mb-3">
+            <button onclick="history.back()" class="btn btn-outline-light btn-sm" style="border-radius: 15px;">
+                <i class="bi bi-arrow-left"></i> Volver
+            </button>
+        </div>
+        
+        <!-- Header con información del usuario -->
+        <div class="header-card">
+            <div class="user-avatar">
+                {{ user.first_name.0|default:user.username.0|upper }}{{ user.last_name.0|default:""|upper }}
+            </div>
+            <div class="user-name">
+                {{ user.get_full_name|default:user.username }}
+            </div>
+            <div class="user-subtitle">
+                <i class="bi bi-target"></i>
+                {{ cumplimientos.count }} objetivo{{ cumplimientos.count|pluralize:"s" }} de cumplimiento
+            </div>
+        </div>
+        
+        <!-- Lista de cumplimientos -->
+        {% if cumplimientos %}
+            {% for cumplimiento in cumplimientos %}
+                <div class="cumplimiento-card">
+                    <a href="{% url 'monthly_cumplimiento_public' cumplimiento.public_uuid %}" class="cumplimiento-link">
+                        <div class="cumplimiento-title">
+                            <i class="bi bi-target me-2"></i>
+                            {{ cumplimiento.name }}
+                        </div>
+                        
+                        {% if cumplimiento.description %}
+                            <div class="cumplimiento-desc">
+                                {{ cumplimiento.description|truncatechars:100 }}
+                            </div>
+                        {% else %}
+                            <div class="cumplimiento-desc">
+                                {% with progress=cumplimiento.get_current_month_progress %}
+                                    📊 {{ progress.completed_days }}/{{ progress.target_days }} días completados
+                                    {% if progress.remaining_days > 0 %}
+                                        • {{ progress.remaining_days }} días restantes
+                                    {% else %}
+                                        • ¡Meta alcanzada! 🎉
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="cumplimiento-meta">
+                            <div>
+                                {% if cumplimiento.frequency_type == 'daily' %}
+                                    <span class="frequency-badge">
+                                        <i class="bi bi-calendar-check"></i> Diario
+                                    </span>
+                                {% else %}
+                                    <span class="frequency-badge">
+                                        <i class="bi bi-calendar-range"></i> {{ cumplimiento.target_days }} días/mes
+                                    </span>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="d-flex align-items-center">
+                                {% with progress=cumplimiento.get_current_month_progress %}
+                                    {% if progress.percentage >= 100 %}
+                                        <span class="progress-badge" style="background: linear-gradient(45deg, #48bb78, #38a169);">
+                                            <i class="bi bi-check-circle"></i> 100%
+                                        </span>
+                                    {% elif progress.percentage >= 80 %}
+                                        <span class="progress-badge" style="background: linear-gradient(45deg, #ed8936, #dd6b20);">
+                                            <i class="bi bi-graph-up"></i> {{ progress.percentage|floatformat:0 }}%
+                                        </span>
+                                    {% elif progress.percentage >= 50 %}
+                                        <span class="progress-badge" style="background: linear-gradient(45deg, #ecc94b, #d69e2e);">
+                                            <i class="bi bi-graph-up"></i> {{ progress.percentage|floatformat:0 }}%
+                                        </span>
+                                    {% else %}
+                                        <span class="progress-badge" style="background: linear-gradient(45deg, #f56565, #e53e3e);">
+                                            <i class="bi bi-graph-down"></i> {{ progress.percentage|floatformat:0 }}%
+                                        </span>
+                                    {% endif %}
+                                {% endwith %}
+                                <i class="bi bi-chevron-right ms-2" style="font-size: 1.2rem; color: #cbd5e0;"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Barra de progreso visual -->
+                        {% with progress=cumplimiento.get_current_month_progress %}
+                            <div class="progress mt-2" style="height: 6px; background-color: #e2e8f0;">
+                                <div class="progress-bar" 
+                                     style="width: {{ progress.percentage }}%; 
+                                            background: {% if progress.percentage >= 100 %}linear-gradient(45deg, #48bb78, #38a169){% elif progress.percentage >= 80 %}linear-gradient(45deg, #ed8936, #dd6b20){% elif progress.percentage >= 50 %}linear-gradient(45deg, #ecc94b, #d69e2e){% else %}linear-gradient(45deg, #f56565, #e53e3e){% endif %};"
+                                     role="progressbar"></div>
+                            </div>
+                        {% endwith %}
+                    </a>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="cumplimiento-card">
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="bi bi-inbox"></i>
+                    </div>
+                    <h5>No hay cumplimientos</h5>
+                    <p class="mb-0">Este usuario no tiene cumplimientos activos en este momento.</p>
+                </div>
+            </div>
+        {% endif %}
+        
+        <!-- Footer informativo -->
+        <div class="text-center mt-4">
+            <small class="text-white-50">
+                <i class="bi bi-info-circle"></i>
+                Selecciona un cumplimiento para ver tu progreso mensual
+            </small>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Cumplimientos">
+    
+    <script>
+        // Simple analytics para tracking
+        console.log('📊 Menu de cumplimientos cargado para:', '{{ user.username }}');
+        console.log('📋 Total cumplimientos:', {{ cumplimientos.count }});
+        
+        // Mejorar experiencia móvil
+        document.addEventListener('DOMContentLoaded', function() {
+            // Precargar páginas de cumplimiento al hacer hover
+            const links = document.querySelectorAll('.cumplimiento-link');
+            links.forEach(link => {
+                link.addEventListener('mouseenter', function() {
+                    const url = this.href;
+                    const linkElement = document.createElement('link');
+                    linkElement.rel = 'prefetch';
+                    linkElement.href = url;
+                    document.head.appendChild(linkElement);
+                });
+            });
+            
+            // Feedback visual al tocar
+            links.forEach(link => {
+                link.addEventListener('touchstart', function() {
+                    this.style.transform = 'scale(0.98)';
+                });
+                
+                link.addEventListener('touchend', function() {
+                    this.style.transform = 'scale(1)';
+                });
+            });
+        });
+    </script>
+</body>
+</html>
