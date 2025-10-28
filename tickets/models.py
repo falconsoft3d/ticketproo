@@ -14865,3 +14865,41 @@ class QRCode(models.Model):
         ordering = ['-created_at']
         verbose_name = 'Código QR'
         verbose_name_plural = 'Códigos QR'
+
+
+class QuickTodo(models.Model):
+    """Modelo para tareas rápidas (TODO list simple)"""
+    text = models.CharField(
+        max_length=500,
+        verbose_name='Tarea'
+    )
+    completed = models.BooleanField(
+        default=False,
+        verbose_name='Completada'
+    )
+    created_by = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE,
+        verbose_name='Creado por'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        ordering = ['completed', '-created_at']
+        verbose_name = 'Tarea Rápida'
+        verbose_name_plural = 'Tareas Rápidas'
+        indexes = [
+            models.Index(fields=['created_by', 'completed']),
+            models.Index(fields=['created_at']),
+        ]
+    
+    def __str__(self):
+        status = "✓" if self.completed else "○"
+        return f"{status} {self.text[:50]}..."

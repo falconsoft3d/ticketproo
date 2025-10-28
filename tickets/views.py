@@ -33539,3 +33539,119 @@ def qr_public(request, token):
     }
     
     return render(request, 'tickets/qr_public.html', context)
+
+
+# ============= VISTAS PARA QUICK TODO =============
+
+@login_required
+@require_http_methods(["GET"])
+def quick_todo_list(request):
+    """API para obtener la lista de tareas rápidas del usuario"""
+    from .models import QuickTodo
+    
+    todos = QuickTodo.objects.filter(created_by=request.user)
+    
+    data = []
+    for todo in todos:
+        data.append({
+            'id': todo.id,
+            'text': todo.text,
+            'completed': todo.completed,
+            'created_at': todo.created_at.strftime('%H:%M %d/%m/%Y')
+        })
+    
+    return JsonResponse({'todos': data})
+
+
+@login_required
+@require_http_methods(["POST"])
+def quick_todo_create(request):
+    """API para crear una nueva tarea rápida"""
+    from .models import QuickTodo
+    
+    try:
+        data = json.loads(request.body)
+        text = data.get('text', '').strip()
+        
+        if not text:
+            return JsonResponse({'error': 'El texto de la tarea es requerido'}, status=400)
+        
+        if len(text) > 500:
+            return JsonResponse({'error': 'El texto de la tarea es demasiado largo'}, status=400)
+        
+        todo = QuickTodo.objects.create(
+            text=text,
+            created_by=request.user
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'todo': {
+                'id': todo.id,
+                'text': todo.text,
+                'completed': todo.completed,
+                'created_at': todo.created_at.strftime('%H:%M %d/%m/%Y')
+            }
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Datos JSON inválidos'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def quick_todo_toggle(request, todo_id):
+    """API para marcar/desmarcar una tarea como completada"""
+    from .models import QuickTodo
+    
+    try:
+        todo = get_object_or_404(QuickTodo, id=todo_id, created_by=request.user)
+        todo.completed = not todo.completed
+        todo.save()
+        
+        return JsonResponse({
+            'success': True,
+            'completed': todo.completed
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["DELETE"])
+def quick_todo_delete(request, todo_id):
+    """API para eliminar una tarea rápida"""
+    from .models import QuickTodo
+    
+    try:
+        todo = get_object_or_404(QuickTodo, id=todo_id, created_by=request.user)
+        todo.delete()
+        
+        return JsonResponse({'success': True})
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["DELETE"])
+def quick_todo_clear_completed(request):
+    """API para eliminar todas las tareas completadas del usuario"""
+    from .models import QuickTodo
+    
+    try:
+        deleted_count = QuickTodo.objects.filter(
+            created_by=request.user, 
+            completed=True
+        ).delete()[0]
+        
+        return JsonResponse({
+            'success': True,
+            'deleted_count': deleted_count
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

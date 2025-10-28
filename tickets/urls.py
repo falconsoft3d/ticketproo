@@ -1118,6 +1118,13 @@ urlpatterns += [
     # QR público con token
     path('qr/<str:token>/', views.qr_public, name='qr_public'),
     
+    # URLs de Quick TODO
+    path('api/quick-todos/', views.quick_todo_list, name='quick_todo_list'),
+    path('api/quick-todos/create/', views.quick_todo_create, name='quick_todo_create'),
+    path('api/quick-todos/<int:todo_id>/toggle/', views.quick_todo_toggle, name='quick_todo_toggle'),
+    path('api/quick-todos/<int:todo_id>/delete/', views.quick_todo_delete, name='quick_todo_delete'),
+    path('api/quick-todos/clear-completed/', views.quick_todo_clear_completed, name='quick_todo_clear_completed'),
+    
     # URLs de API
     path('api/', include('tickets.api_urls')),
 ]

@@ -1181,8 +1181,11 @@
     <button id="aiChatToggle" class="btn btn-gradient shadow-lg" onclick="window.toggleAIChat()"
             style="position: fixed; right: 0; top: calc(50% - 240px); transform: translateY(-50%); z-index: 1050; 
                    border-radius: 8px 0 0 8px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
-                   border-right: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;" 
-            title="Chat con IA">
+                   border-right: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;
+                   transition: all 0.3s ease;" 
+            title="Chat con IA"
+            onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
+            onmouseout="this.style.transform = 'translateY(-50%) scale(1)'">
         <i class="bi bi-robot" style="color: white; font-size: 1.2em;"></i>
     </button>
 
@@ -1191,8 +1194,10 @@
             onclick="window.location.href='/tickets/create/'"
             style="position: fixed; right: 0; top: calc(50% - 160px); transform: translateY(-50%); z-index: 1050; 
                    border-radius: 8px 0 0 8px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
-                   border-right: none;" 
-            title="Crear Ticket de Soporte">
+                   border-right: none; transition: all 0.3s ease;" 
+            title="Crear Ticket de Soporte"
+            onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
+            onmouseout="this.style.transform = 'translateY(-50%) scale(1)'">
         <i class="bi bi-ticket-perforated"></i>
         <span id="openTicketsBadge" class="position-absolute top-0 start-0 translate-middle badge rounded-pill bg-danger" style="font-size: 0.7em;">
             0
@@ -1203,8 +1208,10 @@
     <button id="quickNoteToggle" class="btn btn-warning shadow-lg" onclick="window.toggleQuickNote()"
             style="position: fixed; right: 0; top: calc(50% - 80px); transform: translateY(-50%); z-index: 1050; 
                    border-radius: 8px 0 0 8px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
-                   border-right: none;" 
-            title="Crear Nota Rápida">
+                   border-right: none; transition: all 0.3s ease;" 
+            title="Crear Nota Rápida"
+            onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
+            onmouseout="this.style.transform = 'translateY(-50%) scale(1)'">
         <i class="bi bi-sticky"></i>
     </button>
 
@@ -1212,7 +1219,9 @@
     <button id="activeUsersSidebarToggle" class="btn btn-success shadow-lg" 
             style="position: fixed; right: 0; top: 50%; transform: translateY(-50%); z-index: 1050; 
                    border-radius: 8px 0 0 8px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
-                   border-right: none;">
+                   border-right: none; transition: all 0.3s ease;"
+            onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
+            onmouseout="this.style.transform = 'translateY(-50%) scale(1)'">
         <i class="bi bi-people-fill"></i>
         <span id="activeUsersBadge" class="position-absolute top-0 start-0 translate-middle badge rounded-pill bg-danger" style="font-size: 0.7em;">
             0
@@ -1223,8 +1232,24 @@
     <button id="calculatorToggle" class="btn btn-info shadow-lg" 
             style="position: fixed; right: 0; top: calc(50% + 80px); transform: translateY(-50%); z-index: 1050; 
                    border-radius: 8px 0 0 8px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
-                   border-right: none;">
+                   border-right: none; transition: all 0.3s ease;"
+            onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
+            onmouseout="this.style.transform = 'translateY(-50%) scale(1)'">
         <i class="bi bi-calculator"></i>
+    </button>
+
+    <!-- Botón flotante para Quick TODO -->
+    <button id="quickTodoToggle" class="btn btn-secondary shadow-lg" onclick="window.toggleQuickTodo()"
+            style="position: fixed; right: 0; top: calc(50% + 160px); transform: translateY(-50%); z-index: 1050; 
+                   border-radius: 8px 0 0 8px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
+                   border-right: none; transition: all 0.3s ease;" 
+            title="Lista de Tareas Rápidas"
+            onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
+            onmouseout="this.style.transform = 'translateY(-50%) scale(1)'">
+        <i class="bi bi-check2-square"></i>
+        <span id="pendingTodosBadge" class="position-absolute top-0 start-0 translate-middle badge rounded-pill bg-danger" style="font-size: 0.7em;">
+            0
+        </span>
     </button>
 
     <!-- Barra lateral deslizante -->
@@ -1359,6 +1384,71 @@
 
     <!-- Overlay para cerrar la calculadora -->
     <div id="calculatorOverlay" class="position-fixed w-100 h-100" 
+         style="top: 0; left: 0; background: rgba(0,0,0,0.3); z-index: 1040; display: none;"></div>
+
+    <!-- Ventana deslizante del Quick TODO -->
+    <div id="quickTodoSidebar" class="shadow-lg" 
+         style="position: fixed; right: -450px; top: 0; width: 450px; height: 100vh; 
+                background: #f8f9fa; z-index: 1045; transition: right 0.3s ease; border-left: 3px solid #6c757d;
+                overflow: hidden; display: flex; flex-direction: column;">
+        
+        <!-- Header del Quick TODO -->
+        <div class="p-3 text-white d-flex justify-content-between align-items-center"
+             style="background: linear-gradient(135deg, #6c757d 0%, #495057 100%);">
+            <div>
+                <h6 class="mb-0">
+                    <i class="bi bi-check2-square me-2"></i>
+                    Lista de Tareas
+                </h6>
+                <small class="opacity-75">Tareas rápidas</small>
+            </div>
+            <button id="closeQuickTodo" class="btn btn-sm btn-outline-light">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <!-- Formulario para agregar nueva tarea -->
+        <div class="p-3 border-bottom bg-white">
+            <div class="input-group">
+                <input type="text" id="newTodoInput" class="form-control" 
+                       placeholder="Agregar nueva tarea..." 
+                       style="border-radius: 20px 0 0 20px; border: 2px solid #e9ecef;">
+                <button id="addTodoButton" class="btn btn-secondary" 
+                        style="border-radius: 0 20px 20px 0; border: 2px solid #6c757d; border-left: none;">
+                    <i class="bi bi-plus-lg"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Lista de tareas -->
+        <div id="todoList" class="flex-fill p-3" style="overflow-y: auto; background: #f8f9fa;">
+            <!-- Loading inicial -->
+            <div id="todoLoading" class="text-center py-4">
+                <div class="spinner-border text-secondary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="mt-2 text-muted">Cargando tareas...</p>
+            </div>
+            
+            <!-- Lista de tareas se carga aquí dinámicamente -->
+        </div>
+
+        <!-- Footer con estadísticas -->
+        <div class="p-3 bg-white border-top">
+            <div class="d-flex justify-content-between align-items-center">
+                <small class="text-muted">
+                    <span id="todoStats">0 tareas</span>
+                </small>
+                <button id="clearCompletedTodos" class="btn btn-sm btn-outline-danger" style="display: none;">
+                    <i class="bi bi-trash me-1"></i>
+                    Limpiar completadas
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay para cerrar el Quick TODO -->
+    <div id="quickTodoOverlay" class="position-fixed w-100 h-100" 
          style="top: 0; left: 0; background: rgba(0,0,0,0.3); z-index: 1040; display: none;"></div>
 
     <!-- Ventana deslizante del Chat IA -->
@@ -1514,6 +1604,50 @@
     
     <!-- Scripts principales del sistema -->
     <script>
+        // Funciones auxiliares para manejar visibilidad de botones flotantes
+        function hideOtherFloatingButtons(except = []) {
+            const floatingButtons = [
+                'aiChatToggle',
+                'createTicketToggle', 
+                'quickNoteToggle',
+                'activeUsersSidebarToggle',
+                'calculatorToggle',
+                'quickTodoToggle'
+            ];
+            
+            floatingButtons.forEach(buttonId => {
+                if (!except.includes(buttonId)) {
+                    const button = document.getElementById(buttonId);
+                    if (button) {
+                        button.style.opacity = '0.3';
+                        button.style.pointerEvents = 'none';
+                        button.style.transform = 'translateY(-50%) translateX(100px) scale(0.8)'; // Mover hacia la derecha
+                    }
+                }
+            });
+        }
+        
+        function showAllFloatingButtons() {
+            const floatingButtons = [
+                'aiChatToggle',
+                'createTicketToggle', 
+                'quickNoteToggle',
+                'activeUsersSidebarToggle',
+                'calculatorToggle',
+                'quickTodoToggle'
+            ];
+            
+            floatingButtons.forEach(buttonId => {
+                const button = document.getElementById(buttonId);
+                if (button) {
+                    button.style.opacity = '1';
+                    button.style.pointerEvents = 'auto';
+                    // Mantener el transform base y permitir que el hover funcione
+                    button.style.transform = 'translateY(-50%) translateX(0) scale(1)';
+                }
+            });
+        }
+
         // Funciones globales para notas rápidas - Asignar al objeto window
         window.toggleQuickNote = function() {
             console.log('toggleQuickNote() llamada');
@@ -1528,8 +1662,20 @@
                 
                 console.log('✅ Modal encontrado:', modalElement);
                 
+                // Ocultar otros botones flotantes al abrir el modal
+                hideOtherFloatingButtons(['quickNoteToggle']);
+                
                 const modal = new bootstrap.Modal(modalElement);
                 modal.show();
+                
+                // Configurar eventos para cuando se cierre el modal
+                modalElement.addEventListener('hidden.bs.modal', function () {
+                    // Mostrar todos los botones flotantes cuando se cierre el modal
+                    showAllFloatingButtons();
+                    // Asegurar que no quede ningún backdrop residual
+                    const backdrops = document.querySelectorAll('.modal-backdrop');
+                    backdrops.forEach(backdrop => backdrop.remove());
+                }, { once: true }); // Solo ejecutar una vez
                 
                 console.log('✅ Modal mostrado exitosamente');
                 
@@ -1552,6 +1698,8 @@
             } catch (error) {
                 console.error('❌ Error en toggleQuickNote():', error);
                 alert('Error al abrir modal de notas: ' + error.message);
+                // Restaurar botones en caso de error
+                showAllFloatingButtons();
             }
         };
 
@@ -1768,10 +1916,19 @@
         function openAIChatSidebar() {
             const sidebar = document.getElementById('aiChatSidebar');
             const overlay = document.getElementById('aiChatOverlay');
+            const toggle = document.getElementById('aiChatToggle');
             
             // Mostrar la barra lateral desde la derecha y el overlay
             sidebar.style.right = '0';
             overlay.style.display = 'block';
+            
+            // Mover el botón junto con la ventana
+            if (toggle) {
+                toggle.style.right = '500px';
+            }
+            
+            // Ocultar todos los demás botones flotantes
+            hideOtherFloatingButtons(['aiChatToggle']);
             
             // Focus en el input de chat
             setTimeout(() => {
@@ -1849,9 +2006,18 @@
             
             const sidebar = document.getElementById('aiChatSidebar');
             const overlay = document.getElementById('aiChatOverlay');
+            const toggle = document.getElementById('aiChatToggle');
             
             if (sidebar) sidebar.style.right = '-500px';
             if (overlay) overlay.style.display = 'none';
+            
+            // Devolver el botón a su posición original
+            if (toggle) {
+                toggle.style.right = '0';
+            }
+            
+            // Mostrar todos los botones flotantes de nuevo
+            showAllFloatingButtons();
         }
 
         function sendAIMessage() {
@@ -2422,6 +2588,109 @@
     
     .chat-toggle-icon.rotated {
         transform: rotate(180deg);
+    }
+    </style>
+    
+    <!-- Estilos específicos para Quick TODO -->
+    <style>
+    /* Checkboxes redondos estilo Mac */
+    .todo-checkbox {
+        width: 18px !important;
+        height: 18px !important;
+        border-radius: 50% !important;
+        border: 2px solid #6c757d !important;
+        background-color: transparent !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease !important;
+        position: relative !important;
+    }
+    
+    .todo-checkbox:checked {
+        background-color: #28a745 !important;
+        border-color: #28a745 !important;
+        box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.2) !important;
+    }
+    
+    .todo-checkbox:checked::before {
+        content: '✓' !important;
+        color: white !important;
+        font-size: 12px !important;
+        font-weight: bold !important;
+        position: absolute !important;
+        top: -1px !important;
+        left: 2px !important;
+        line-height: 1 !important;
+    }
+    
+    .todo-checkbox:hover {
+        border-color: #28a745 !important;
+        box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.1) !important;
+    }
+    
+    .todo-checkbox:focus {
+        box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.25) !important;
+        outline: none !important;
+    }
+    
+    /* Animaciones para los items de TODO */
+    .todo-item {
+        transition: all 0.3s ease !important;
+        border-left: 3px solid #dee2e6 !important;
+    }
+    
+    .todo-item:hover {
+        transform: translateX(5px) !important;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+    }
+    
+    /* Estilos para tareas completadas */
+    .todo-item.completed {
+        opacity: 0.7 !important;
+        border-left-color: #28a745 !important;
+    }
+    
+    .todo-text {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        line-height: 1.4 !important;
+        margin-bottom: 0 !important;
+    }
+    
+    /* Estilo para el input de nueva tarea */
+    #newTodoInput {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    }
+    
+    #newTodoInput:focus {
+        border-color: #6c757d !important;
+        box-shadow: 0 0 0 0.2rem rgba(108, 117, 125, 0.25) !important;
+    }
+    
+    /* Estilo para el botón de agregar */
+    #addTodoButton {
+        transition: all 0.2s ease !important;
+    }
+    
+    #addTodoButton:hover {
+        transform: scale(1.05) !important;
+    }
+    
+    /* Scrollbar personalizado para la lista de tareas */
+    #todoList::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    #todoList::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+    }
+    
+    #todoList::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
+    }
+    
+    #todoList::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
     }
     </style>
     
@@ -3007,6 +3276,9 @@
                 toggle.style.right = '400px'; // Mover el botón al lado de la barra
                 activeUsersSidebarOpen = true;
                 
+                // Ocultar todos los demás botones flotantes
+                hideOtherFloatingButtons(['activeUsersSidebarToggle']);
+                
                 // Cargar usuarios cuando se abre
                 loadActiveUsersSidebar();
                 
@@ -3028,6 +3300,9 @@
             overlay.style.display = 'none';
             toggle.style.right = '0'; // Volver al borde derecho
             activeUsersSidebarOpen = false;
+            
+            // Mostrar todos los botones flotantes de nuevo
+            showAllFloatingButtons();
             
             // Detener auto-refresh
             stopAutoRefresh();
@@ -3383,6 +3658,9 @@
                 overlay.style.display = 'block';
                 toggle.style.right = '320px'; // Mover el botón al lado de la calculadora
                 calculatorOpen = true;
+                
+                // Ocultar todos los demás botones flotantes
+                hideOtherFloatingButtons(['calculatorToggle']);
             } else {
                 // Cerrar calculadora
                 closeCalculatorWidget();
@@ -3399,6 +3677,9 @@
             overlay.style.display = 'none';
             toggle.style.right = '0'; // Volver a la posición original
             calculatorOpen = false;
+            
+            // Mostrar todos los botones flotantes de nuevo
+            showAllFloatingButtons();
         }
 
         // Funciones de la calculadora
@@ -3491,6 +3772,355 @@
             updateDisplay();
         }
 
+        // ============= FUNCIONES QUICK TODO =============
+        
+        let quickTodoSidebarOpen = false;
+        
+        window.toggleQuickTodo = function() {
+            const sidebar = document.getElementById('quickTodoSidebar');
+            const overlay = document.getElementById('quickTodoOverlay');
+            
+            if (quickTodoSidebarOpen) {
+                closeQuickTodo();
+            } else {
+                openQuickTodo();
+            }
+        };
+        
+        function openQuickTodo() {
+            const sidebar = document.getElementById('quickTodoSidebar');
+            const overlay = document.getElementById('quickTodoOverlay');
+            const toggle = document.getElementById('quickTodoToggle');
+            
+            sidebar.style.right = '0';
+            overlay.style.display = 'block';
+            toggle.style.right = '450px'; // Mover el botón al lado de la ventana
+            quickTodoSidebarOpen = true;
+            
+            // Ocultar todos los demás botones flotantes
+            hideOtherFloatingButtons(['quickTodoToggle']);
+            
+            // Cargar tareas al abrir
+            loadTodos();
+        }
+        
+        function closeQuickTodo() {
+            const sidebar = document.getElementById('quickTodoSidebar');
+            const overlay = document.getElementById('quickTodoOverlay');
+            const toggle = document.getElementById('quickTodoToggle');
+            
+            sidebar.style.right = '-450px';
+            overlay.style.display = 'none';
+            toggle.style.right = '0'; // Volver a la posición original
+            quickTodoSidebarOpen = false;
+            
+            // Mostrar todos los botones flotantes de nuevo
+            showAllFloatingButtons();
+        }
+        
+        function loadTodos() {
+            const loading = document.getElementById('todoLoading');
+            const todoList = document.getElementById('todoList');
+            
+            loading.style.display = 'block';
+            
+            fetch('/api/quick-todos/', {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                loading.style.display = 'none';
+                renderTodos(data.todos || []);
+                updateTodoStats(data.todos || []);
+            })
+            .catch(error => {
+                console.error('Error cargando tareas:', error);
+                loading.style.display = 'none';
+                showTodoError('Error al cargar las tareas');
+            });
+        }
+        
+        function renderTodos(todos) {
+            const todoList = document.getElementById('todoList');
+            const loading = document.getElementById('todoLoading');
+            
+            // Limpiar lista excepto el loading
+            const children = Array.from(todoList.children);
+            children.forEach(child => {
+                if (child.id !== 'todoLoading') {
+                    child.remove();
+                }
+            });
+            
+            if (todos.length === 0) {
+                const emptyMessage = document.createElement('div');
+                emptyMessage.className = 'text-center py-4 text-muted';
+                emptyMessage.innerHTML = `
+                    <i class="bi bi-clipboard-check" style="font-size: 3rem; opacity: 0.3;"></i>
+                    <p class="mt-2">No tienes tareas pendientes</p>
+                    <small>Agrega una nueva tarea arriba</small>
+                `;
+                todoList.appendChild(emptyMessage);
+                return;
+            }
+            
+            todos.forEach(todo => {
+                const todoItem = createTodoElement(todo);
+                todoList.appendChild(todoItem);
+            });
+        }
+        
+        function createTodoElement(todo) {
+            const todoItem = document.createElement('div');
+            todoItem.className = `todo-item mb-2 p-3 bg-white rounded shadow-sm border-start border-3 ${todo.completed ? 'border-success' : 'border-secondary'}`;
+            todoItem.style.transition = 'all 0.3s ease';
+            
+            todoItem.innerHTML = `
+                <div class="d-flex align-items-start">
+                    <div class="form-check me-3">
+                        <input class="form-check-input todo-checkbox" type="checkbox" 
+                               id="todo-${todo.id}" ${todo.completed ? 'checked' : ''}
+                               style="border-radius: 50%; transform: scale(1.2);"
+                               onchange="toggleTodo(${todo.id})">
+                        <label class="form-check-label" for="todo-${todo.id}"></label>
+                    </div>
+                    <div class="flex-grow-1">
+                        <p class="mb-1 todo-text ${todo.completed ? 'text-decoration-line-through text-muted' : ''}" 
+                           style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                            ${escapeHtml(todo.text)}
+                        </p>
+                        <small class="text-muted">
+                            <i class="bi bi-clock me-1"></i>
+                            ${todo.created_at}
+                        </small>
+                    </div>
+                    <button class="btn btn-sm btn-outline-danger ms-2" 
+                            onclick="deleteTodo(${todo.id})" 
+                            title="Eliminar tarea">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            `;
+            
+            return todoItem;
+        }
+        
+        function addNewTodo() {
+            const input = document.getElementById('newTodoInput');
+            const text = input.value.trim();
+            
+            if (!text) return;
+            
+            const addButton = document.getElementById('addTodoButton');
+            addButton.disabled = true;
+            addButton.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div>';
+            
+            fetch('/api/quick-todos/create/', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ text: text })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    input.value = '';
+                    loadTodos(); // Recargar lista
+                } else {
+                    showTodoError(data.error || 'Error al crear la tarea');
+                }
+            })
+            .catch(error => {
+                console.error('Error creando tarea:', error);
+                showTodoError('Error al crear la tarea');
+            })
+            .finally(() => {
+                addButton.disabled = false;
+                addButton.innerHTML = '<i class="bi bi-plus-lg"></i>';
+            });
+        }
+        
+        function toggleTodo(todoId) {
+            fetch(`/api/quick-todos/${todoId}/toggle/`, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    loadTodos(); // Recargar lista para actualizar el estado
+                } else {
+                    showTodoError('Error al actualizar la tarea');
+                    loadTodos(); // Recargar para revertir el checkbox
+                }
+            })
+            .catch(error => {
+                console.error('Error actualizando tarea:', error);
+                showTodoError('Error al actualizar la tarea');
+                loadTodos(); // Recargar para revertir el checkbox
+            });
+        }
+        
+        function deleteTodo(todoId) {
+            if (!confirm('¿Estás seguro de que quieres eliminar esta tarea?')) {
+                return;
+            }
+            
+            fetch(`/api/quick-todos/${todoId}/delete/`, {
+                method: 'DELETE',
+                credentials: 'same-origin',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    loadTodos(); // Recargar lista
+                } else {
+                    showTodoError('Error al eliminar la tarea');
+                }
+            })
+            .catch(error => {
+                console.error('Error eliminando tarea:', error);
+                showTodoError('Error al eliminar la tarea');
+            });
+        }
+        
+        function clearCompletedTodos() {
+            if (!confirm('¿Estás seguro de que quieres eliminar todas las tareas completadas?')) {
+                return;
+            }
+            
+            fetch('/api/quick-todos/clear-completed/', {
+                method: 'DELETE',
+                credentials: 'same-origin',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    loadTodos(); // Recargar lista
+                    showTodoSuccess(`Se eliminaron ${data.deleted_count} tarea${data.deleted_count !== 1 ? 's' : ''} completada${data.deleted_count !== 1 ? 's' : ''}`);
+                } else {
+                    showTodoError('Error al limpiar las tareas completadas');
+                }
+            })
+            .catch(error => {
+                console.error('Error limpiando tareas completadas:', error);
+                showTodoError('Error al limpiar las tareas completadas');
+            });
+        }
+        
+        function updateTodoStats(todos) {
+            const statsElement = document.getElementById('todoStats');
+            const clearButton = document.getElementById('clearCompletedTodos');
+            const badge = document.getElementById('pendingTodosBadge');
+            
+            const total = todos.length;
+            const completed = todos.filter(todo => todo.completed).length;
+            const pending = total - completed;
+            
+            // Actualizar badge del botón
+            if (badge) {
+                badge.textContent = pending || 0;
+                
+                // Cambiar color del badge según la cantidad
+                badge.className = 'position-absolute top-0 start-0 translate-middle badge rounded-pill';
+                if (pending === 0) {
+                    badge.classList.add('bg-success');
+                } else if (pending < 3) {
+                    badge.classList.add('bg-warning');
+                } else if (pending < 7) {
+                    badge.classList.add('bg-warning');
+                    badge.style.backgroundColor = '#fd7e14'; // Color naranja
+                } else {
+                    badge.classList.add('bg-danger');
+                }
+                badge.style.fontSize = '0.7em';
+                badge.style.color = 'white'; // Asegurar texto blanco
+                
+                // Actualizar el tooltip del botón
+                const button = document.getElementById('quickTodoToggle');
+                if (button) {
+                    let tooltipText = 'Lista de Tareas Rápidas';
+                    if (pending > 0) {
+                        tooltipText += ` (${pending} pendiente${pending !== 1 ? 's' : ''})`;
+                    }
+                    button.setAttribute('title', tooltipText);
+                }
+            }
+            
+            if (total === 0) {
+                statsElement.textContent = 'Sin tareas';
+                clearButton.style.display = 'none';
+            } else {
+                statsElement.textContent = `${total} tarea${total !== 1 ? 's' : ''} (${pending} pendiente${pending !== 1 ? 's' : ''})`;
+                clearButton.style.display = completed > 0 ? 'inline-block' : 'none';
+            }
+        }
+        
+        function showTodoError(message) {
+            // Simple alert por ahora, se puede mejorar con toast
+            alert('❌ ' + message);
+        }
+        
+        function showTodoSuccess(message) {
+            // Simple alert por ahora, se puede mejorar con toast
+            alert('✅ ' + message);
+        }
+        
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+        
+        function loadPendingTodosCount() {
+            // Función para cargar solo el contador de tareas pendientes sin abrir la ventana
+            fetch('/api/quick-todos/', {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const todos = data.todos || [];
+                updateTodoStats(todos);
+            })
+            .catch(error => {
+                console.error('Error cargando contador de tareas:', error);
+                // En caso de error, mantener el badge en 0
+                const badge = document.getElementById('pendingTodosBadge');
+                if (badge) {
+                    badge.textContent = '0';
+                    badge.className = 'position-absolute top-0 start-0 translate-middle badge rounded-pill bg-secondary';
+                    badge.style.fontSize = '0.7em';
+                }
+            });
+        }
+
         // Funciones de auto-refresh
         function startAutoRefresh() {
             // Refrescar cada 30 segundos
@@ -3523,18 +4153,34 @@
                 document.getElementById('closeCalculator').addEventListener('click', closeCalculatorWidget);
                 document.getElementById('calculatorOverlay').addEventListener('click', closeCalculatorWidget);
 
+                // Event listeners para Quick TODO
+                document.getElementById('closeQuickTodo').addEventListener('click', closeQuickTodo);
+                document.getElementById('quickTodoOverlay').addEventListener('click', closeQuickTodo);
+                document.getElementById('addTodoButton').addEventListener('click', addNewTodo);
+                document.getElementById('clearCompletedTodos').addEventListener('click', clearCompletedTodos);
+                
+                // Enter key para agregar todo
+                document.getElementById('newTodoInput').addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        addNewTodo();
+                    }
+                });
+
                 // Event listeners para chat IA
                 document.getElementById('closeAIChat').addEventListener('click', closeAIChat);
                 document.getElementById('aiChatOverlay').addEventListener('click', closeAIChat);
                 
                 // Cargar conteo inicial
                 loadActiveUsersCount();
+                loadPendingTodosCount();
                 
                 // Recargar conteo cada 2 minutos
                 setInterval(loadActiveUsersCount, 120000);
+                setInterval(loadPendingTodosCount, 120000);
                 
                 console.log('[Barra Lateral] Sistema de usuarios activos inicializado');
                 console.log('[Calculadora] Sistema de calculadora inicializado');
+                console.log('[Quick TODO] Sistema de tareas rápidas inicializado');
             }
         });
 
