@@ -4121,10 +4121,6 @@
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                                <a href="/employee-dashboard/?employee_id=${userId}" class="btn btn-primary" target="_blank">
-                                    <i class="bi bi-arrow-up-right-square me-1"></i>
-                                    Ver Dashboard Completo
-                                </a>
                             </div>
                         </div>
                     </div>
@@ -4777,10 +4773,12 @@
                 // Cargar conteo inicial
                 loadActiveUsersCount();
                 loadPendingTodosCount();
+                loadActiveUsersSidebar(); // Cargar lista inicial de usuarios activos
                 
                 // Recargar conteo cada 2 minutos
                 setInterval(loadActiveUsersCount, 120000);
                 setInterval(loadPendingTodosCount, 120000);
+                setInterval(loadActiveUsersSidebar, 120000); // Recargar lista cada 2 minutos
                 
                 console.log('[Barra Lateral] Sistema de usuarios activos inicializado');
                 console.log('[Calculadora] Sistema de calculadora inicializado');

@@ -403,31 +403,23 @@ def landing_page_contact_click(request, slug):
 def active_users_count(request):
     """
     Devuelve el número de usuarios activos en oficina
+    Usuarios activos = tienen entrada hoy pero no han registrado salida
     """
     try:
         from django.contrib.auth.models import User
-        from .models import MonthlyCumplimiento
+        from .models import TimeEntry
         from django.utils import timezone
         from datetime import datetime
         
         today = timezone.now().date()
         
-        # Buscar usuarios que tengan registro de entrada hoy pero no de salida
-        active_count = MonthlyCumplimiento.objects.filter(
-            year=today.year,
-            month=today.month,
-            calendar_data__has_key=str(today.day)
-        ).extra(
-            where=[
-                "JSON_EXTRACT(calendar_data, %s) LIKE %s AND JSON_EXTRACT(calendar_data, %s) NOT LIKE %s"
-            ],
-            params=[
-                f'$."{today.day}"',
-                '%"entry"%',
-                f'$."{today.day}"',
-                '%"exit"%'
-            ]
-        ).count()
+        # Buscar usuarios que tengan entrada hoy pero no salida
+        active_entries = TimeEntry.objects.filter(
+            fecha_entrada__date=today,
+            fecha_salida__isnull=True
+        ).values('user').distinct()
+        
+        active_count = active_entries.count()
         
         return Response({
             'count': active_count,
@@ -437,9 +429,9 @@ def active_users_count(request):
     except Exception as e:
         # En caso de error, devolver datos de ejemplo
         return Response({
-            'count': 3,
+            'count': 0,
             'date': timezone.now().date().isoformat(),
-            'example': True
+            'error': str(e)
         })
 
 
@@ -448,57 +440,71 @@ def active_users_count(request):
 def active_users_list(request):
     """
     Devuelve la lista de usuarios activos en oficina con detalles
+    Usuarios activos = tienen entrada hoy pero no han registrado salida
     """
     try:
         from django.contrib.auth.models import User
-        from .models import MonthlyCumplimiento
+        from .models import TimeEntry
         from django.utils import timezone
         from datetime import datetime
         import json
         
         today = timezone.now().date()
         
-        # Buscar usuarios activos
-        active_cumplimientos = MonthlyCumplimiento.objects.filter(
-            year=today.year,
-            month=today.month,
-            calendar_data__has_key=str(today.day)
-        ).extra(
-            where=[
-                "JSON_EXTRACT(calendar_data, %s) LIKE %s AND JSON_EXTRACT(calendar_data, %s) NOT LIKE %s"
-            ],
-            params=[
-                f'$."{today.day}"',
-                '%"entry"%',
-                f'$."{today.day}"',
-                '%"exit"%'
-            ]
-        ).select_related('user')
+        # Buscar entradas de tiempo activas (con entrada pero sin salida hoy)
+        active_entries = TimeEntry.objects.filter(
+            fecha_entrada__date=today,
+            fecha_salida__isnull=True
+        ).select_related('user').order_by('fecha_entrada')
         
         users_data = []
-        for cumplimiento in active_cumplimientos:
-            day_data = cumplimiento.calendar_data.get(str(today.day), {})
-            entry_time = None
+        seen_users = set()  # Para evitar duplicados si un usuario tiene múltiples entradas
+        
+        for entry in active_entries:
+            user = entry.user
             
-            # Extraer tiempo de entrada
-            if 'entry' in day_data:
-                entry_time = day_data['entry']
+            # Evitar duplicados
+            if user.id in seen_users:
+                continue
+            seen_users.add(user.id)
             
-            # Obtener información adicional del usuario
+            # Obtener información del perfil del usuario
             phone = ''
-            if hasattr(cumplimiento.user, 'profile') and cumplimiento.user.profile.phone:
-                phone = cumplimiento.user.profile.phone
+            email = user.email or ''
+            
+            if hasattr(user, 'userprofile') and user.userprofile:
+                phone = user.userprofile.phone or ''
+            
+            # Formatear nombre completo
+            full_name = f"{user.first_name} {user.last_name}".strip()
+            if not full_name:
+                full_name = user.username
+            
+            # Formatear hora de entrada
+            entry_time = entry.fecha_entrada.strftime('%H:%M')
             
             users_data.append({
-                'id': cumplimiento.user.id,
-                'name': f"{cumplimiento.user.first_name} {cumplimiento.user.last_name}".strip() or cumplimiento.user.username,
-                'username': cumplimiento.user.username,
-                'email': cumplimiento.user.email or '',
+                'id': user.id,
+                'name': full_name,
+                'username': user.username,
+                'email': email,
                 'phone': phone,
                 'entry_time': entry_time,
-                'avatar_url': f"https://ui-avatars.com/api/?name={cumplimiento.user.first_name}+{cumplimiento.user.last_name}&background=28a745&color=fff&size=40",
-                'status': 'active'
+                'entry_datetime': entry.fecha_entrada.isoformat(),
+                'avatar_url': f"https://ui-avatars.com/api/?name={user.first_name}+{user.last_name}&background=28a745&color=fff&size=40",
+                'status': 'active',
+                'hours_worked': None  # Se podría calcular las horas desde la entrada
             })
+        
+        # Calcular horas trabajadas para cada usuario
+        for user_data in users_data:
+            entry_datetime = datetime.fromisoformat(user_data['entry_datetime'].replace('Z', '+00:00'))
+            if timezone.is_naive(entry_datetime):
+                entry_datetime = timezone.make_aware(entry_datetime)
+            
+            time_diff = timezone.now() - entry_datetime
+            hours_worked = round(time_diff.total_seconds() / 3600, 1)
+            user_data['hours_worked'] = hours_worked
         
         return Response({
             'users': users_data,
@@ -508,44 +514,13 @@ def active_users_list(request):
         })
         
     except Exception as e:
-        # En caso de error, devolver datos de ejemplo
+        # En caso de error, devolver respuesta vacía con información del error
         return Response({
-            'users': [
-                {
-                    'id': 1,
-                    'name': 'María García',
-                    'username': 'mgarcia',
-                    'email': 'maria.garcia@empresa.com',
-                    'phone': '+34 612 345 678',
-                    'entry_time': '08:30',
-                    'avatar_url': 'https://ui-avatars.com/api/?name=Maria+Garcia&background=28a745&color=fff&size=40',
-                    'status': 'active'
-                },
-                {
-                    'id': 2,
-                    'name': 'Juan Pérez',
-                    'username': 'jperez',
-                    'email': 'juan.perez@empresa.com',
-                    'phone': '+34 623 456 789',
-                    'entry_time': '09:15',
-                    'avatar_url': 'https://ui-avatars.com/api/?name=Juan+Perez&background=28a745&color=fff&size=40',
-                    'status': 'active'
-                },
-                {
-                    'id': 3,
-                    'name': 'Ana López',
-                    'username': 'alopez',
-                    'email': 'ana.lopez@empresa.com',
-                    'phone': '+34 634 567 890',
-                    'entry_time': '08:45',
-                    'avatar_url': 'https://ui-avatars.com/api/?name=Ana+Lopez&background=28a745&color=fff&size=40',
-                    'status': 'active'
-                }
-            ],
-            'count': 3,
+            'users': [],
+            'count': 0,
             'date': timezone.now().date().isoformat(),
             'last_update': timezone.now().isoformat(),
-            'example': True
+            'error': str(e)
         })
 
 
