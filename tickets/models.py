@@ -1073,16 +1073,11 @@ class UserNote(models.Model):
         """Verifica si un usuario puede ver esta nota"""
         from .utils import is_agent
         
-        # Verificar si es de la misma empresa
-        user_company = getattr(user.profile, 'company', None) if hasattr(user, 'profile') else None
-        if self.company != user_company:
-            return False
-        
         # Si la nota es privada, solo el creador puede verla
         if self.is_private and self.created_by != user:
             return False
             
-        # Los agentes pueden ver notas públicas de su empresa
+        # Los agentes pueden ver notas públicas
         if is_agent(user):
             return True
             
@@ -1100,11 +1095,6 @@ class UserNote(models.Model):
         """Verifica si un usuario puede editar esta nota"""
         from .utils import is_agent
         
-        # Verificar si es de la misma empresa
-        user_company = getattr(user.profile, 'company', None) if hasattr(user, 'profile') else None
-        if self.company != user_company:
-            return False
-        
         # Si la nota es privada, solo el creador puede editarla
         if self.is_private and self.created_by != user:
             return False
@@ -1116,11 +1106,6 @@ class UserNote(models.Model):
     def can_delete(self, user):
         """Verifica si un usuario puede eliminar esta nota"""
         from .utils import is_agent
-        
-        # Verificar si es de la misma empresa
-        user_company = getattr(user.profile, 'company', None) if hasattr(user, 'profile') else None
-        if self.company != user_company:
-            return False
         
         # Si la nota es privada, solo el creador puede eliminarla
         if self.is_private and self.created_by != user:

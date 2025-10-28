@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 from . import views
 
 urlpatterns = [
@@ -1117,5 +1117,8 @@ urlpatterns += [
     # URL pública para mostrar QR (sin autenticación)
     # QR público con token
     path('qr/<str:token>/', views.qr_public, name='qr_public'),
+    
+    # URLs de API
+    path('api/', include('tickets.api_urls')),
 ]
 

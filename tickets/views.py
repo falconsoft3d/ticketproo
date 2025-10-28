@@ -1877,17 +1877,16 @@ def notes_list_view(request):
     # Obtener la empresa del usuario
     user_company = getattr(request.user.profile, 'company', None) if hasattr(request.user, 'profile') else None
     
-    # Base queryset con filtrado de privacidad y empresa
+    # Base queryset sin filtrado por empresa - mostrar todas las notas
     if is_agent(request.user):
-        # Los agentes ven notas públicas de su empresa + sus propias notas privadas
+        # Los agentes ven todas las notas públicas + sus propias notas privadas
         notes = UserNote.objects.filter(
-            Q(company=user_company) & (Q(is_private=False) | Q(created_by=request.user))
+            Q(is_private=False) | Q(created_by=request.user)
         ).select_related('user', 'created_by', 'company').prefetch_related('tickets')
     else:
-        # Los usuarios normales solo ven sus propias notas de su empresa
+        # Los usuarios normales ven todas sus propias notas
         notes = UserNote.objects.filter(
-            created_by=request.user,
-            company=user_company
+            created_by=request.user
         ).select_related('user', 'created_by', 'company').prefetch_related('tickets')
     
     # Aplicar filtros
@@ -1934,13 +1933,22 @@ def note_detail_view(request, note_id):
     # Obtener la empresa del usuario
     user_company = getattr(request.user.profile, 'company', None) if hasattr(request.user, 'profile') else None
     
-    # Filtrar por empresa también
+    # Sin filtrar por empresa - permitir acceso a todas las notas
     if is_agent(request.user):
-        # Los agentes pueden ver notas de su empresa
-        note = get_object_or_404(UserNote, id=note_id, company=user_company)
+        # Los agentes pueden ver cualquier nota
+        try:
+            note = UserNote.objects.get(id=note_id)
+        except UserNote.DoesNotExist:
+            raise Http404("Nota no encontrada")
     else:
-        # Los usuarios normales solo sus propias notas de su empresa
-        note = get_object_or_404(UserNote, id=note_id, created_by=request.user, company=user_company)
+        # Los usuarios normales solo sus propias notas
+        try:
+            note = UserNote.objects.get(
+                id=note_id,
+                created_by=request.user
+            )
+        except UserNote.DoesNotExist:
+            raise Http404("Nota no encontrada")
     
     # Verificar permisos usando el método del modelo
     if not note.can_view(request.user):
@@ -1961,7 +1969,15 @@ def note_create_view(request):
     """Crear nueva nota interna (solo para agentes)"""
     
     if request.method == 'POST':
+        # Si es una petición AJAX desde widget de notas rápidas, configurar datos automáticamente
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' and request.POST.get('created_via') == 'quick_note_widget':
+            # Crear una copia mutable de POST data
+            post_data = request.POST.copy()
+            post_data['user'] = request.user.id  # Asignar el usuario actual como usuario asociado
+            request.POST = post_data
+        
         form = UserNoteForm(request.POST, current_user=request.user)
+        
         if form.is_valid():
             note = form.save(commit=False)
             note.created_by = request.user
@@ -1972,8 +1988,24 @@ def note_create_view(request):
             
             note.save()
             form.save_m2m()  # Guardar relaciones many-to-many
+            
+            # Si es una petición AJAX, devolver JSON
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Nota "{note.title}" creada exitosamente.',
+                    'note_id': note.id
+                })
+            
             messages.success(request, f'Nota "{note.title}" creada exitosamente.')
             return redirect('note_detail', note_id=note.id)
+        else:
+            # Si hay errores en el formulario y es AJAX
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'errors': form.errors
+                }, status=400)
     else:
         form = UserNoteForm(current_user=request.user)
         

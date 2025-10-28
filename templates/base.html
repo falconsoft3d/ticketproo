@@ -1175,6 +1175,329 @@
         {% endblock %}
     </main>
 
+    <!-- Barra lateral de usuarios activos (disponible en todo el dashboard) -->
+    {% if user.is_authenticated %}
+    <!-- Botón flotante para Chat IA -->
+    <button id="aiChatToggle" class="btn btn-gradient shadow-lg" onclick="window.toggleAIChat()"
+            style="position: fixed; right: 0; top: calc(50% - 240px); transform: translateY(-50%); z-index: 1050; 
+                   border-radius: 8px 0 0 8px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
+                   border-right: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;" 
+            title="Chat con IA">
+        <i class="bi bi-robot" style="color: white; font-size: 1.2em;"></i>
+    </button>
+
+    <!-- Botón flotante para crear ticket de soporte -->
+    <button id="createTicketToggle" class="btn btn-primary shadow-lg" 
+            onclick="window.location.href='/tickets/create/'"
+            style="position: fixed; right: 0; top: calc(50% - 160px); transform: translateY(-50%); z-index: 1050; 
+                   border-radius: 8px 0 0 8px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
+                   border-right: none;" 
+            title="Crear Ticket de Soporte">
+        <i class="bi bi-ticket-perforated"></i>
+        <span id="openTicketsBadge" class="position-absolute top-0 start-0 translate-middle badge rounded-pill bg-danger" style="font-size: 0.7em;">
+            0
+        </span>
+    </button>
+
+    <!-- Botón flotante para notas rápidas -->
+    <button id="quickNoteToggle" class="btn btn-warning shadow-lg" onclick="window.toggleQuickNote()"
+            style="position: fixed; right: 0; top: calc(50% - 80px); transform: translateY(-50%); z-index: 1050; 
+                   border-radius: 8px 0 0 8px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
+                   border-right: none;" 
+            title="Crear Nota Rápida">
+        <i class="bi bi-sticky"></i>
+    </button>
+
+    <!-- Botón flotante para mostrar/ocultar la barra lateral -->
+    <button id="activeUsersSidebarToggle" class="btn btn-success shadow-lg" 
+            style="position: fixed; right: 0; top: 50%; transform: translateY(-50%); z-index: 1050; 
+                   border-radius: 8px 0 0 8px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
+                   border-right: none;">
+        <i class="bi bi-people-fill"></i>
+        <span id="activeUsersBadge" class="position-absolute top-0 start-0 translate-middle badge rounded-pill bg-danger" style="font-size: 0.7em;">
+            0
+        </span>
+    </button>
+
+    <!-- Botón flotante para la calculadora -->
+    <button id="calculatorToggle" class="btn btn-info shadow-lg" 
+            style="position: fixed; right: 0; top: calc(50% + 80px); transform: translateY(-50%); z-index: 1050; 
+                   border-radius: 8px 0 0 8px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
+                   border-right: none;">
+        <i class="bi bi-calculator"></i>
+    </button>
+
+    <!-- Barra lateral deslizante -->
+    <div id="activeUsersSidebar" class="shadow-lg" 
+         style="position: fixed; right: -400px; top: 0; width: 400px; height: 100vh; 
+                background: white; z-index: 1040; transition: right 0.3s ease; border-left: 3px solid #28a745;
+                overflow: hidden; display: flex; flex-direction: column;">
+        
+        <!-- Header de la barra lateral -->
+        <div class="p-3 bg-success text-white d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <i class="bi bi-people-fill me-2"></i>
+                    Usuarios Activos
+                </h6>
+                <small class="opacity-75">En oficina ahora</small>
+            </div>
+            <button id="closeSidebar" class="btn btn-sm btn-outline-light">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <!-- Información de actualización -->
+        <div class="px-3 py-2 bg-light border-bottom">
+            <small class="text-muted d-flex justify-content-between">
+                <span>
+                    <i class="bi bi-clock me-1"></i>
+                    Última actualización
+                </span>
+                <span id="lastUpdateSidebar">--:--</span>
+            </small>
+        </div>
+
+        <!-- Lista de usuarios activos -->
+        <div id="activeUsersListSidebar" class="p-3" style="flex: 1; overflow-y: auto; max-height: calc(100vh - 200px);">
+            <!-- Loading inicial -->
+            <div class="text-center py-4">
+                <div class="spinner-border text-success" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="mt-2 text-muted">Cargando usuarios activos...</p>
+            </div>
+        </div>
+
+        <!-- Footer de la barra lateral -->
+        <div class="position-absolute bottom-0 start-0 end-0 p-3 bg-light border-top">
+            <div class="d-flex justify-content-between align-items-center">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Auto-actualización cada 30s
+                </small>
+                <button id="refreshActiveUsers" class="btn btn-sm btn-outline-success">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay para cerrar la barra lateral -->
+    <div id="sidebarOverlay" class="position-fixed w-100 h-100" 
+         style="top: 0; left: 0; background: rgba(0,0,0,0.5); z-index: 1030; display: none;"></div>
+
+    <!-- Calculadora tipo Windows -->
+    <div id="calculatorWidget" class="shadow-lg" 
+         style="position: fixed; right: -320px; top: 20%; width: 320px; height: 500px; 
+                background: white; z-index: 1045; transition: right 0.3s ease; border-radius: 8px;
+                border: 1px solid #ddd; overflow: hidden; display: flex; flex-direction: column;">
+        
+        <!-- Header de la calculadora -->
+        <div class="p-2 bg-primary text-white d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-calculator me-2"></i>
+                <h6 class="mb-0">Calculadora</h6>
+            </div>
+            <button id="closeCalculator" class="btn btn-sm btn-outline-light">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <!-- Pantalla de la calculadora -->
+        <div class="p-3 bg-light border-bottom">
+            <input type="text" id="calculatorDisplay" class="form-control form-control-lg text-end" 
+                   value="0" readonly style="font-family: 'Courier New', monospace; font-size: 1.5rem; background: #f8f9fa;">
+        </div>
+
+        <!-- Botones de la calculadora -->
+        <div class="flex-grow-1 p-3" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+            <!-- Fila 1 -->
+            <button class="btn btn-outline-secondary calc-btn" onclick="clearCalculator()" style="grid-column: span 2;">
+                <strong>C</strong>
+            </button>
+            <button class="btn btn-outline-secondary calc-btn" onclick="deleteLast()">
+                <i class="bi bi-backspace"></i>
+            </button>
+            <button class="btn btn-outline-warning calc-btn" onclick="appendOperator('/')">
+                ÷
+            </button>
+
+            <!-- Fila 2 -->
+            <button class="btn btn-outline-dark calc-btn" onclick="appendNumber('7')">7</button>
+            <button class="btn btn-outline-dark calc-btn" onclick="appendNumber('8')">8</button>
+            <button class="btn btn-outline-dark calc-btn" onclick="appendNumber('9')">9</button>
+            <button class="btn btn-outline-warning calc-btn" onclick="appendOperator('*')">×</button>
+
+            <!-- Fila 3 -->
+            <button class="btn btn-outline-dark calc-btn" onclick="appendNumber('4')">4</button>
+            <button class="btn btn-outline-dark calc-btn" onclick="appendNumber('5')">5</button>
+            <button class="btn btn-outline-dark calc-btn" onclick="appendNumber('6')">6</button>
+            <button class="btn btn-outline-warning calc-btn" onclick="appendOperator('-')">-</button>
+
+            <!-- Fila 4 -->
+            <button class="btn btn-outline-dark calc-btn" onclick="appendNumber('1')">1</button>
+            <button class="btn btn-outline-dark calc-btn" onclick="appendNumber('2')">2</button>
+            <button class="btn btn-outline-dark calc-btn" onclick="appendNumber('3')">3</button>
+            <button class="btn btn-outline-warning calc-btn" onclick="appendOperator('+')" style="grid-row: span 2;">
+                +
+            </button>
+
+            <!-- Fila 5 -->
+            <button class="btn btn-outline-dark calc-btn" onclick="appendNumber('0')" style="grid-column: span 2;">
+                0
+            </button>
+            <button class="btn btn-outline-dark calc-btn" onclick="appendDecimal()">.</button>
+            <!-- El botón + ocupa dos filas -->
+
+            <!-- Fila 6 - Botón igual -->
+            <button class="btn btn-primary calc-btn" onclick="calculate()" style="grid-column: span 3;">
+                <strong>=</strong>
+            </button>
+        </div>
+    </div>
+
+    <!-- Overlay para cerrar la calculadora -->
+    <div id="calculatorOverlay" class="position-fixed w-100 h-100" 
+         style="top: 0; left: 0; background: rgba(0,0,0,0.3); z-index: 1040; display: none;"></div>
+
+    <!-- Ventana deslizante del Chat IA -->
+    <div id="aiChatSidebar" class="shadow-lg" 
+         style="position: fixed; right: -500px; top: 0; width: 500px; height: 100vh; 
+                background: white; z-index: 1045; transition: right 0.3s ease; border-left: 3px solid #667eea;
+                overflow: hidden; display: flex; flex-direction: column;">
+        
+        <!-- Header del chat IA -->
+        <div class="p-3 text-white d-flex justify-content-between align-items-center"
+             style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <div>
+                <h6 class="mb-0">
+                    <i class="bi bi-robot me-2"></i>
+                    Chat con IA
+                </h6>
+                <small class="opacity-75">Asistente inteligente</small>
+            </div>
+            <button id="closeAIChat" class="btn btn-sm btn-outline-light">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <!-- Área de mensajes del chat -->
+        <div id="aiChatMessages" class="flex-grow-1 p-3" style="overflow-y: auto; max-height: calc(100vh - 200px); background: #f8f9fa;">
+            <!-- Mensaje de bienvenida -->
+            <div class="d-flex mb-3">
+                <div class="me-2">
+                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                         style="width: 40px; height: 40px;">
+                        <i class="bi bi-robot"></i>
+                    </div>
+                </div>
+                <div class="bg-white p-3 rounded-3 shadow-sm flex-grow-1">
+                    <p class="mb-0">¡Hola! Soy tu asistente de IA. ¿En qué puedo ayudarte hoy?</p>
+                    <small class="text-muted">Puedes preguntarme sobre tickets, tareas, o cualquier cosa relacionada con el sistema.</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Área de entrada de texto -->
+        <div class="p-3 border-top bg-white">
+            <div class="d-flex">
+                <input type="text" id="aiChatInput" class="form-control me-2" 
+                       placeholder="Escribe tu mensaje aquí..."
+                       onkeypress="if(event.key==='Enter') sendAIMessage()">
+                <button id="sendAIMessage" class="btn btn-primary" onclick="sendAIMessage()">
+                    <i class="bi bi-send"></i>
+                </button>
+            </div>
+            <small class="text-muted">
+                <i class="bi bi-info-circle me-1"></i>
+                Presiona Enter para enviar tu mensaje
+            </small>
+        </div>
+    </div>
+
+    <!-- Overlay para cerrar el chat IA -->
+    <div id="aiChatOverlay" class="position-fixed w-100 h-100" 
+         style="top: 0; left: 0; background: rgba(0,0,0,0.5); z-index: 1040; display: none;"></div>
+
+    <!-- Modal para crear nota rápida -->
+    <div class="modal fade" id="quickNoteModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title">
+                        <i class="bi bi-sticky me-2"></i>
+                        Crear Nota Rápida
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="quickNoteForm">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="quickNoteTitle" class="form-label">
+                                <i class="bi bi-card-heading me-1"></i>
+                                Título de la nota
+                            </label>
+                            <input type="text" class="form-control" id="quickNoteTitle" 
+                                   placeholder="Título descriptivo (mín. 5 caracteres)..." required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="quickNoteContent" class="form-label">
+                                <i class="bi bi-textarea-t me-1"></i>
+                                Contenido
+                            </label>
+                            <textarea class="form-control" id="quickNoteContent" rows="8" 
+                                      placeholder="Descripción detallada de la nota (mín. 10 caracteres)..." required></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="quickNoteCategory" class="form-label">
+                                        <i class="bi bi-tags me-1"></i>
+                                        Categoría
+                                    </label>
+                                    <select class="form-select" id="quickNoteCategory">
+                                        <option value="personal">Personal</option>
+                                        <option value="trabajo">Trabajo</option>
+                                        <option value="ideas">Ideas</option>
+                                        <option value="recordatorios">Recordatorios</option>
+                                        <option value="reuniones">Reuniones</option>
+                                        <option value="proyectos">Proyectos</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="quickNotePriority" class="form-label">
+                                        <i class="bi bi-exclamation-triangle me-1"></i>
+                                        Prioridad
+                                    </label>
+                                    <select class="form-select" id="quickNotePriority">
+                                        <option value="baja">Baja</option>
+                                        <option value="media" selected>Media</option>
+                                        <option value="alta">Alta</option>
+                                        <option value="urgente">Urgente</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle me-1"></i>
+                            Cancelar
+                        </button>
+                        <button type="button" class="btn btn-warning" id="saveQuickNote" onclick="window.saveQuickNote()">
+                            <i class="bi bi-save me-1"></i>
+                            Guardar Nota
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Footer simple -->
     <footer class="mt-5 py-4 border-top text-center">
         <div class="container">
@@ -1188,6 +1511,521 @@
     </footer>
 
     {% bootstrap_javascript %}
+    
+    <!-- Scripts principales del sistema -->
+    <script>
+        // Funciones globales para notas rápidas - Asignar al objeto window
+        window.toggleQuickNote = function() {
+            console.log('toggleQuickNote() llamada');
+            
+            try {
+                const modalElement = document.getElementById('quickNoteModal');
+                if (!modalElement) {
+                    console.error('❌ Modal quickNoteModal no encontrado');
+                    alert('Error: Modal de notas no encontrado');
+                    return;
+                }
+                
+                console.log('✅ Modal encontrado:', modalElement);
+                
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
+                
+                console.log('✅ Modal mostrado exitosamente');
+                
+                // Limpiar formulario
+                const form = document.getElementById('quickNoteForm');
+                if (form) {
+                    form.reset();
+                    console.log('✅ Formulario limpiado');
+                }
+                
+                // Focus en título después de un pequeño delay
+                setTimeout(() => {
+                    const titleInput = document.getElementById('quickNoteTitle');
+                    if (titleInput) {
+                        titleInput.focus();
+                        console.log('✅ Focus en título establecido');
+                    }
+                }, 100);
+                
+            } catch (error) {
+                console.error('❌ Error en toggleQuickNote():', error);
+                alert('Error al abrir modal de notas: ' + error.message);
+            }
+        };
+
+        window.saveQuickNote = function() {
+            console.log('saveQuickNote() llamada');
+            
+            const title = document.getElementById('quickNoteTitle').value.trim();
+            const content = document.getElementById('quickNoteContent').value.trim();
+            const category = document.getElementById('quickNoteCategory').value;
+            const priority = document.getElementById('quickNotePriority').value;
+            
+            if (!title || !content) {
+                alert('Por favor, completa el título y contenido de la nota.');
+                return;
+            }
+            
+            // Validaciones específicas según el backend
+            if (title.length < 5) {
+                alert('El título debe tener al menos 5 caracteres.');
+                return;
+            }
+            
+            if (content.length < 10) {
+                alert('La descripción debe tener al menos 10 caracteres.');
+                return;
+            }
+            
+            const saveButton = document.getElementById('saveQuickNote');
+            const originalText = saveButton.innerHTML;
+            
+            // Mostrar loading
+            saveButton.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Guardando...';
+            saveButton.disabled = true;
+            
+            // Preparar datos para enviar - mapear a los campos del formulario backend
+            const noteData = {
+                title: title,
+                description: content,  // 'content' se mapea a 'description'
+                category: category,
+                priority: priority,
+                created_via: 'quick_note_widget'  // Campo adicional para tracking
+            };
+            
+            console.log('[Nota Rápida] Enviando nota:', noteData);
+            
+            // Usar fetch para enviar los datos sin redirección
+            fetch('/notes/create/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: new URLSearchParams({
+                    'title': noteData.title,
+                    'description': noteData.description,
+                    'user': '{{ user.id }}', // Usar el usuario actual de Django
+                    'company': '', // Empresa opcional
+                    'is_private': 'false',
+                    'created_via': 'quick_note_widget'
+                })
+            })
+            .then(response => {
+                console.log('Respuesta del servidor:', response.status);
+                
+                if (response.ok) {
+                    // Respuesta exitosa (200)
+                    return response.json().then(data => {
+                        console.log('Datos JSON recibidos:', data);
+                        
+                        if (data.success) {
+                            // Éxito - mostrar confirmación
+                            saveButton.innerHTML = '<i class="bi bi-check-circle me-1"></i>¡Guardada!';
+                            saveButton.classList.remove('btn-warning');
+                            saveButton.classList.add('btn-success');
+                            
+                            // Cerrar modal después de un breve delay
+                            setTimeout(() => {
+                                const modal = bootstrap.Modal.getInstance(document.getElementById('quickNoteModal'));
+                                if (modal) {
+                                    modal.hide();
+                                }
+                                
+                                // Mostrar notificación de éxito
+                                showQuickNotification(data.message || '¡Nota guardada exitosamente!', 'success');
+                                
+                                // Limpiar formulario
+                                document.getElementById('quickNoteForm').reset();
+                                
+                                // Restaurar botón
+                                saveButton.innerHTML = originalText;
+                                saveButton.classList.remove('btn-success');
+                                saveButton.classList.add('btn-warning');
+                                saveButton.disabled = false;
+                            }, 1500);
+                        } else {
+                            throw new Error(data.message || 'Error al guardar la nota');
+                        }
+                    });
+                } else if (response.status === 400) {
+                    // Error de validación (400 Bad Request)
+                    return response.json().then(data => {
+                        console.log('Errores de validación:', data.errors);
+                        
+                        let errorMessages = [];
+                        if (data.errors) {
+                            // Procesar errores de formulario Django
+                            for (const [field, errors] of Object.entries(data.errors)) {
+                                if (Array.isArray(errors)) {
+                                    errorMessages.push(...errors);
+                                } else {
+                                    errorMessages.push(errors);
+                                }
+                            }
+                        }
+                        
+                        const errorMessage = errorMessages.length > 0 
+                            ? errorMessages.join(' ') 
+                            : 'Error de validación en el formulario.';
+                        
+                        // Mostrar error
+                        saveButton.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i>Error';
+                        saveButton.classList.remove('btn-warning');
+                        saveButton.classList.add('btn-danger');
+                        
+                        // Mostrar notificación de error con detalles
+                        showQuickNotification(errorMessage, 'danger');
+                        
+                        // Restaurar botón después de un delay
+                        setTimeout(() => {
+                            saveButton.innerHTML = originalText;
+                            saveButton.classList.remove('btn-danger');
+                            saveButton.classList.add('btn-warning');
+                            saveButton.disabled = false;
+                        }, 4000);
+                    });
+                } else {
+                    throw new Error('Error del servidor: ' + response.status);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                
+                // Mostrar error
+                saveButton.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i>Error';
+                saveButton.classList.remove('btn-warning');
+                saveButton.classList.add('btn-danger');
+                
+                // Mostrar notificación de error
+                showQuickNotification('Error al guardar la nota. Inténtalo de nuevo.', 'danger');
+                
+                // Restaurar botón después de un delay
+                setTimeout(() => {
+                    saveButton.innerHTML = originalText;
+                    saveButton.classList.remove('btn-danger');
+                    saveButton.classList.add('btn-warning');
+                    saveButton.disabled = false;
+                }, 3000);
+            });
+        };
+
+        // Función auxiliar para obtener CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Función para mostrar notificaciones rápidas
+        function showQuickNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto-remover después de 5 segundos
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 5000);
+        }
+
+        // Funciones para el Chat IA
+        window.toggleAIChat = function() {
+            console.log('🤖 toggleAIChat() llamada');
+            
+            const sidebar = document.getElementById('aiChatSidebar');
+            const overlay = document.getElementById('aiChatOverlay');
+            
+            if (!sidebar || !overlay) {
+                console.error('❌ Elementos del chat IA no encontrados');
+                return;
+            }
+            
+            // Abrir directamente el chat
+            openAIChatSidebar();
+        };
+
+        function openAIChatSidebar() {
+            const sidebar = document.getElementById('aiChatSidebar');
+            const overlay = document.getElementById('aiChatOverlay');
+            
+            // Mostrar la barra lateral desde la derecha y el overlay
+            sidebar.style.right = '0';
+            overlay.style.display = 'block';
+            
+            // Focus en el input de chat
+            setTimeout(() => {
+                const input = document.getElementById('aiChatInput');
+                if (input) input.focus();
+            }, 300);
+            
+            console.log('✅ Chat IA abierto');
+        }
+
+        function createAIChatSession() {
+            // Primero verificar si ya existe una sesión disponible
+            return fetch('/ai-chat/', {
+                method: 'GET',
+                credentials: 'same-origin'
+            })
+            .then(response => response.text())
+            .then(html => {
+                // Buscar si hay sesiones existentes en el HTML
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const sessionLinks = doc.querySelectorAll('a[href*="/ai-chat-live/"]');
+                
+                if (sessionLinks.length > 0) {
+                    // Usar la primera sesión existente
+                    const firstLink = sessionLinks[0].getAttribute('href');
+                    const sessionMatch = firstLink.match(/ai-chat-live\/(\d+)/);
+                    if (sessionMatch) {
+                        currentAIChatSession = parseInt(sessionMatch[1]);
+                        console.log('✅ Usando sesión existente:', currentAIChatSession);
+                        return Promise.resolve();
+                    }
+                }
+                
+                // Si no hay sesiones, crear una nueva
+                return fetch('/ai-chat/', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: new URLSearchParams({
+                        'title': 'Chat Rápido - ' + new Date().toLocaleString(),
+                        'ai_model': 'gpt-4o',
+                        'system_prompt': 'Eres un asistente útil para el sistema de tickets TicketProo. Puedes ayudar con consultas sobre tickets, tareas y gestión del sistema.'
+                    })
+                })
+                .then(response => {
+                    if (response.redirected) {
+                        // La respuesta fue una redirección, extraer el session_id de la URL
+                        const redirectUrl = response.url;
+                        const sessionMatch = redirectUrl.match(/ai-chat(?:-live)?\/(\d+)/);
+                        if (sessionMatch) {
+                            currentAIChatSession = parseInt(sessionMatch[1]);
+                            console.log('✅ Nueva sesión de chat creada:', currentAIChatSession);
+                            return Promise.resolve();
+                        }
+                    }
+                    throw new Error('No se pudo crear la sesión de chat');
+                });
+            })
+            .catch(error => {
+                console.error('❌ Error al gestionar sesión:', error);
+                // Usar sesión por defecto si no se puede crear
+                currentAIChatSession = 7; // Usar sesión 7 que veo en los logs
+                console.log('⚠️ Usando sesión por defecto:', currentAIChatSession);
+                return Promise.resolve();
+            });
+        }
+
+        function closeAIChat() {
+            console.log('🤖 Cerrando chat IA');
+            
+            const sidebar = document.getElementById('aiChatSidebar');
+            const overlay = document.getElementById('aiChatOverlay');
+            
+            if (sidebar) sidebar.style.right = '-500px';
+            if (overlay) overlay.style.display = 'none';
+        }
+
+        function sendAIMessage() {
+            const input = document.getElementById('aiChatInput');
+            const messagesContainer = document.getElementById('aiChatMessages');
+            const sendButton = document.getElementById('sendAIMessage');
+            
+            if (!input || !messagesContainer || !sendButton) {
+                console.error('❌ Elementos del chat no encontrados');
+                return;
+            }
+            
+            const message = input.value.trim();
+            if (!message) return;
+            
+            // Agregar mensaje del usuario
+            addChatMessage(message, 'user');
+            
+            // Limpiar input y deshabilitar botón
+            input.value = '';
+            sendButton.disabled = true;
+            sendButton.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+            
+            // Agregar mensaje de "escribiendo..."
+            const typingId = addChatMessage('IA está escribiendo...', 'ai', true);
+            
+            // Enviar mensaje directamente a la API de ChatGPT
+            fetch('/api/ai-chat/direct/', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    'message': message
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Remover mensaje de "escribiendo..."
+                const typingElement = document.getElementById(typingId);
+                if (typingElement) typingElement.remove();
+                
+                // Agregar respuesta de la IA
+                if (data.status === 'success') {
+                    addChatMessage(data.response, 'ai');
+                } else {
+                    const errorMsg = data.error || 'Lo siento, hubo un error al procesar tu mensaje.';
+                    addChatMessage(errorMsg, 'ai');
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error al enviar mensaje:', error);
+                // Remover mensaje de "escribiendo..."
+                const typingElement = document.getElementById(typingId);
+                if (typingElement) typingElement.remove();
+                
+                addChatMessage('Error de conexión. Por favor, inténtalo de nuevo.', 'ai');
+            })
+            .finally(() => {
+                // Rehabilitar botón
+                sendButton.disabled = false;
+                sendButton.innerHTML = '<i class="bi bi-send"></i>';
+                input.focus();
+            });
+        }
+
+        function addChatMessage(message, sender, isTyping = false) {
+            const messagesContainer = document.getElementById('aiChatMessages');
+            if (!messagesContainer) return;
+            
+            const messageId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            const isUser = sender === 'user';
+            
+            // Formatear mensaje para mostrar saltos de línea
+            const formattedMessage = message.replace(/\n/g, '<br>');
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.id = messageId;
+            messageDiv.className = `d-flex mb-3 ${isUser ? 'justify-content-end' : ''}`;
+            
+            if (isUser) {
+                messageDiv.innerHTML = `
+                    <div class="bg-primary text-white p-3 rounded-3 shadow-sm" style="max-width: 80%;">
+                        <div class="mb-0">${formattedMessage}</div>
+                        <small class="opacity-75 d-block mt-2">${new Date().toLocaleTimeString()}</small>
+                    </div>
+                    <div class="ms-2">
+                        <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                             style="width: 40px; height: 40px;">
+                            <i class="bi bi-person"></i>
+                        </div>
+                    </div>
+                `;
+            } else {
+                const content = isTyping ? 
+                    `<span class="text-muted"><i>${formattedMessage}</i></span>` : 
+                    formattedMessage;
+                    
+                messageDiv.innerHTML = `
+                    <div class="me-2">
+                        <div class="text-white rounded-circle d-flex align-items-center justify-content-center" 
+                             style="width: 40px; height: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <i class="bi bi-robot"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white p-3 rounded-3 shadow-sm flex-grow-1" style="max-width: 80%;">
+                        <div class="mb-0">${content}</div>
+                        <small class="text-muted d-block mt-2">${new Date().toLocaleTimeString()}</small>
+                    </div>
+                `;
+            }
+            
+            messagesContainer.appendChild(messageDiv);
+            
+            // Scroll automático al final
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            return messageId;
+        }
+
+        // Test de Bootstrap
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔍 Verificando Bootstrap...');
+            console.log('Bootstrap disponible:', typeof bootstrap !== 'undefined');
+            console.log('Modal de Bootstrap:', typeof bootstrap.Modal !== 'undefined');
+            
+            // Test del modal de notas
+            const modalElement = document.getElementById('quickNoteModal');
+            console.log('Modal quickNoteModal encontrado:', !!modalElement);
+            
+            if (modalElement) {
+                console.log('Modal element:', modalElement);
+            }
+
+            // Verificar funciones globales
+            console.log('Función toggleQuickNote disponible:', typeof window.toggleQuickNote);
+            console.log('Función saveQuickNote disponible:', typeof window.saveQuickNote);
+
+            // Event listener para el botón de notas rápidas
+            const quickNoteBtn = document.getElementById('quickNoteToggle');
+            if (quickNoteBtn) {
+                console.log('✅ Botón de notas encontrado, agregando event listener');
+                quickNoteBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('Event listener: Abriendo modal de nota rápida...');
+                    window.toggleQuickNote();
+                });
+            } else {
+                console.error('❌ Botón quickNoteToggle no encontrado');
+            }
+            
+            // Permitir guardar con Enter en el modal
+            const quickNoteModal = document.getElementById('quickNoteModal');
+            if (quickNoteModal) {
+                quickNoteModal.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                        e.preventDefault();
+                        window.saveQuickNote();
+                    }
+                });
+                
+                // Focus en título cuando se abre el modal
+                quickNoteModal.addEventListener('shown.bs.modal', function() {
+                    const titleInput = document.getElementById('quickNoteTitle');
+                    if (titleInput) {
+                        titleInput.focus();
+                    }
+                });
+            }
+        });
+    </script>
     
     <!-- Script para favicon dinámico -->
     <script>
@@ -2148,6 +2986,740 @@
         }
     `;
     document.head.appendChild(style);
+    </script>
+    
+    <!-- Script para la barra lateral de usuarios activos -->
+    <script>
+        // Variables globales para la barra lateral
+        let activeUsersSidebarOpen = false;
+        let autoRefreshInterval = null;
+
+        // Función para alternar la barra lateral
+        function toggleActiveUsersSidebar() {
+            const sidebar = document.getElementById('activeUsersSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const toggle = document.getElementById('activeUsersSidebarToggle');
+            
+            if (!activeUsersSidebarOpen) {
+                // Abrir barra lateral
+                sidebar.style.right = '0px';
+                overlay.style.display = 'block';
+                toggle.style.right = '400px'; // Mover el botón al lado de la barra
+                activeUsersSidebarOpen = true;
+                
+                // Cargar usuarios cuando se abre
+                loadActiveUsersSidebar();
+                
+                // Iniciar auto-refresh
+                startAutoRefresh();
+            } else {
+                // Cerrar barra lateral
+                closeSidebar();
+            }
+        }
+
+        // Función para cerrar la barra lateral
+        function closeSidebar() {
+            const sidebar = document.getElementById('activeUsersSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const toggle = document.getElementById('activeUsersSidebarToggle');
+            
+            sidebar.style.right = '-400px';
+            overlay.style.display = 'none';
+            toggle.style.right = '0'; // Volver al borde derecho
+            activeUsersSidebarOpen = false;
+            
+            // Detener auto-refresh
+            stopAutoRefresh();
+        }
+
+        // Función para cargar usuarios activos en la barra lateral
+        function loadActiveUsersSidebar() {
+            const listContainer = document.getElementById('activeUsersListSidebar');
+            const lastUpdateElement = document.getElementById('lastUpdateSidebar');
+            
+            // Mostrar loading
+            listContainer.innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-success" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Cargando usuarios activos...</p>
+                </div>
+            `;
+            
+            // Llamada a la API
+            fetch('/api/active-users/')
+                .then(response => response.json())
+                .then(data => {
+                    displayActiveUsersSidebar(data.users);
+                    updateActiveUsersCount(data.count);
+                    
+                    // Actualizar tiempo
+                    const now = new Date();
+                    lastUpdateElement.textContent = now.toLocaleTimeString('es-ES', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                })
+                .catch(error => {
+                    console.log('[Barra Lateral] Error al cargar usuarios:', error);
+                    // Mostrar datos de ejemplo en caso de error
+                    displayActiveUsersSidebar([
+                        {
+                            name: 'María García',
+                            username: 'mgarcia',
+                            email: 'maria.garcia@empresa.com',
+                            phone: '+34 612 345 678',
+                            entry_time: '08:30',
+                            avatar_url: 'https://ui-avatars.com/api/?name=Maria+Garcia&background=28a745&color=fff&size=50',
+                            status: 'active'
+                        },
+                        {
+                            name: 'Juan Pérez',
+                            username: 'jperez',
+                            email: 'juan.perez@empresa.com',
+                            phone: '+34 623 456 789',
+                            entry_time: '09:15',
+                            avatar_url: 'https://ui-avatars.com/api/?name=Juan+Perez&background=28a745&color=fff&size=50',
+                            status: 'active'
+                        },
+                        {
+                            name: 'Ana López',
+                            username: 'alopez',
+                            email: 'ana.lopez@empresa.com',
+                            phone: '+34 634 567 890',
+                            entry_time: '08:45',
+                            avatar_url: 'https://ui-avatars.com/api/?name=Ana+Lopez&background=28a745&color=fff&size=50',
+                            status: 'active'
+                        }
+                    ]);
+                    updateActiveUsersCount(3);
+                });
+        }
+
+        // Función para mostrar usuarios en la barra lateral
+        function displayActiveUsersSidebar(users) {
+            const listContainer = document.getElementById('activeUsersListSidebar');
+            
+            if (users.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="bi bi-person-x text-muted" style="font-size: 3rem;"></i>
+                        <p class="text-muted mt-2">No hay usuarios activos en este momento</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Añadir indicador de scroll si hay muchos usuarios
+            const scrollIndicator = users.length > 3 ? `
+                <div class="text-center py-2 mb-2 border-bottom">
+                    <small class="text-muted">
+                        <i class="bi bi-chevron-down"></i>
+                        ${users.length} usuarios activos - Desliza para ver más
+                    </small>
+                </div>
+            ` : '';
+            
+            const usersHtml = users.map(user => `
+                <div class="d-flex align-items-start p-3 mb-2 border rounded hover-bg-light">
+                    <img src="${user.avatar_url}" alt="${user.name}" 
+                         class="rounded-circle me-3" width="50" height="50">
+                    <div class="flex-grow-1">
+                        <div class="fw-semibold mb-1">${user.name}</div>
+                        
+                        <div class="small text-muted mb-1">
+                            <i class="bi bi-clock me-1"></i>
+                            Entrada: ${user.entry_time || 'N/A'}
+                        </div>
+                        
+                        ${user.email ? `
+                        <div class="small text-muted mb-1">
+                            <i class="bi bi-envelope me-1"></i>
+                            <a href="mailto:${user.email}" class="text-decoration-none text-muted">
+                                ${user.email}
+                            </a>
+                        </div>
+                        ` : ''}
+                        
+                        ${user.phone ? `
+                        <div class="small text-muted mb-2">
+                            <i class="bi bi-telephone me-1"></i>
+                            <a href="tel:${user.phone}" class="text-decoration-none text-muted">
+                                ${user.phone}
+                            </a>
+                        </div>
+                        ` : ''}
+                        
+                        <!-- Botones de acción -->
+                        <div class="d-flex gap-1 mt-2">
+                            ${user.phone ? `
+                            <button class="btn btn-sm btn-outline-success" 
+                                    onclick="openWhatsApp('${user.phone}', '${user.name}')"
+                                    title="WhatsApp">
+                                <i class="bi bi-whatsapp"></i>
+                            </button>
+                            ` : ''}
+                            
+                            <button class="btn btn-sm btn-outline-info" 
+                                    onclick="viewUserProfile('${user.id}', '${user.name}')"
+                                    title="Ver perfil">
+                                <i class="bi bi-person"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="text-end">
+                        <span class="badge bg-success">
+                            <i class="bi bi-circle-fill" style="font-size: 0.6em;"></i>
+                            Activo
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+            
+            listContainer.innerHTML = scrollIndicator + usersHtml;
+            
+            // Añadir efecto de fade-in para nuevos elementos
+            const userElements = listContainer.querySelectorAll('.hover-bg-light');
+            userElements.forEach((element, index) => {
+                element.style.opacity = '0';
+                element.style.transform = 'translateX(10px)';
+                setTimeout(() => {
+                    element.style.transition = 'all 0.3s ease';
+                    element.style.opacity = '1';
+                    element.style.transform = 'translateX(0)';
+                }, index * 50);
+            });
+        }
+
+        // Función para actualizar el conteo en el badge
+        function updateActiveUsersCount(count) {
+            const badge = document.getElementById('activeUsersBadge');
+            if (badge) {
+                badge.textContent = count;
+                badge.style.display = count > 0 ? 'inline' : 'none';
+            }
+        }
+
+        // Función para cargar solo el conteo (más rápido)
+        function loadActiveUsersCount() {
+            fetch('/api/active-users/count/')
+                .then(response => response.json())
+                .then(data => {
+                    updateActiveUsersCount(data.count);
+                })
+                .catch(error => {
+                    console.log('[Barra Lateral] Error al cargar conteo:', error);
+                    // Mostrar conteo de ejemplo
+                    updateActiveUsersCount(3);
+                });
+        }
+
+        // Funciones para acciones de usuario
+        function openWhatsApp(phone, userName) {
+            console.log(`[WhatsApp] Abriendo chat con ${userName} - ${phone}`);
+            
+            // Limpiar el número de teléfono (quitar espacios y caracteres especiales)
+            const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
+            
+            // Mensaje predeterminado
+            const message = `Hola ${userName}, te escribo desde el sistema TicketProo.`;
+            const encodedMessage = encodeURIComponent(message);
+            
+            // URL de WhatsApp
+            const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
+            
+            // Abrir WhatsApp en nueva pestaña
+            window.open(whatsappUrl, '_blank');
+        }
+
+        function viewUserProfile(userId, userName) {
+            console.log(`[Perfil] Viendo perfil de ${userName} (ID: ${userId})`);
+            
+            // Crear y mostrar modal con información del usuario
+            showUserProfileModal(userId, userName);
+        }
+
+        function showUserProfileModal(userId, userName) {
+            // Crear modal dinámicamente
+            const modalHtml = `
+                <div class="modal fade" id="userProfileModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header bg-success text-white">
+                                <h5 class="modal-title">
+                                    <i class="bi bi-person-circle me-2"></i>
+                                    Perfil de ${userName}
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="text-center py-4">
+                                    <div class="spinner-border text-success" role="status">
+                                        <span class="visually-hidden">Cargando perfil...</span>
+                                    </div>
+                                    <p class="mt-2">Cargando información del usuario...</p>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                <a href="/employee-dashboard/?employee_id=${userId}" class="btn btn-primary" target="_blank">
+                                    <i class="bi bi-arrow-up-right-square me-1"></i>
+                                    Ver Dashboard Completo
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Eliminar modal existente si existe
+            const existingModal = document.getElementById('userProfileModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Añadir modal al DOM
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // Mostrar modal
+            const modal = new bootstrap.Modal(document.getElementById('userProfileModal'));
+            modal.show();
+            
+            // Simular carga de datos del perfil
+            setTimeout(() => {
+                loadUserProfileData(userId, userName);
+            }, 1000);
+        }
+
+        function loadUserProfileData(userId, userName) {
+            // Simular datos del perfil (en una implementación real, esto vendría de la API)
+            const profileData = {
+                name: userName,
+                email: 'usuario@empresa.com',
+                phone: '+34 600 000 000',
+                cargo: 'Desarrollador',
+                departamento: 'Tecnología',
+                fechaIngreso: '2023-01-15',
+                ultimaActividad: 'Hace 5 minutos'
+            };
+            
+            const profileHtml = `
+                <div class="row">
+                    <div class="col-md-4 text-center">
+                        <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=28a745&color=fff&size=120" 
+                             class="rounded-circle mb-3" width="120" height="120">
+                        <h5>${profileData.name}</h5>
+                        <p class="text-muted">${profileData.cargo}</p>
+                    </div>
+                    <div class="col-md-8">
+                        <h6>Información de Contacto</h6>
+                        <div class="mb-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="bi bi-envelope me-2 text-primary"></i>
+                                <a href="mailto:${profileData.email}" class="text-decoration-none">
+                                    ${profileData.email}
+                                </a>
+                            </div>
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="bi bi-telephone me-2 text-success"></i>
+                                <a href="tel:${profileData.phone}" class="text-decoration-none">
+                                    ${profileData.phone}
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <h6>Información Laboral</h6>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span><strong>Departamento:</strong></span>
+                                <span>${profileData.departamento}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-1">
+                                <span><strong>Fecha de Ingreso:</strong></span>
+                                <span>${profileData.fechaIngreso}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-1">
+                                <span><strong>Última Actividad:</strong></span>
+                                <span class="text-success">${profileData.ultimaActividad}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex gap-2 mt-3">
+                            <button class="btn btn-sm btn-outline-success" 
+                                    onclick="openWhatsApp('${profileData.phone}', '${userName}')">
+                                <i class="bi bi-whatsapp me-1"></i>
+                                WhatsApp
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            const modalBody = document.querySelector('#userProfileModal .modal-body');
+            if (modalBody) {
+                modalBody.innerHTML = profileHtml;
+            }
+        }
+
+        // Variables globales para la calculadora
+        let calculatorOpen = false;
+        let currentInput = '0';
+        let previousInput = '';
+        let operator = '';
+        let waitingForOperand = false;
+
+        // Función para alternar la calculadora
+        function toggleCalculator() {
+            const calculator = document.getElementById('calculatorWidget');
+            const overlay = document.getElementById('calculatorOverlay');
+            const toggle = document.getElementById('calculatorToggle');
+            
+            if (!calculatorOpen) {
+                // Abrir calculadora
+                calculator.style.right = '0px';
+                overlay.style.display = 'block';
+                toggle.style.right = '320px'; // Mover el botón al lado de la calculadora
+                calculatorOpen = true;
+            } else {
+                // Cerrar calculadora
+                closeCalculatorWidget();
+            }
+        }
+
+        // Función para cerrar la calculadora
+        function closeCalculatorWidget() {
+            const calculator = document.getElementById('calculatorWidget');
+            const overlay = document.getElementById('calculatorOverlay');
+            const toggle = document.getElementById('calculatorToggle');
+            
+            calculator.style.right = '-320px';
+            overlay.style.display = 'none';
+            toggle.style.right = '0'; // Volver a la posición original
+            calculatorOpen = false;
+        }
+
+        // Funciones de la calculadora
+        function updateDisplay() {
+            const display = document.getElementById('calculatorDisplay');
+            display.value = currentInput;
+        }
+
+        function appendNumber(number) {
+            if (waitingForOperand) {
+                currentInput = number;
+                waitingForOperand = false;
+            } else {
+                currentInput = currentInput === '0' ? number : currentInput + number;
+            }
+            updateDisplay();
+        }
+
+        function appendDecimal() {
+            if (waitingForOperand) {
+                currentInput = '0.';
+                waitingForOperand = false;
+            } else if (currentInput.indexOf('.') === -1) {
+                currentInput += '.';
+            }
+            updateDisplay();
+        }
+
+        function appendOperator(nextOperator) {
+            const inputValue = parseFloat(currentInput);
+
+            if (previousInput === '') {
+                previousInput = inputValue;
+            } else if (operator) {
+                const result = performCalculation();
+                currentInput = String(result);
+                previousInput = result;
+                updateDisplay();
+            }
+
+            waitingForOperand = true;
+            operator = nextOperator;
+        }
+
+        function calculate() {
+            if (previousInput === '' || operator === '' || waitingForOperand) {
+                return;
+            }
+
+            const result = performCalculation();
+            currentInput = String(result);
+            previousInput = '';
+            operator = '';
+            waitingForOperand = false;
+            updateDisplay();
+        }
+
+        function performCalculation() {
+            const prev = parseFloat(previousInput);
+            const current = parseFloat(currentInput);
+
+            switch (operator) {
+                case '+':
+                    return prev + current;
+                case '-':
+                    return prev - current;
+                case '*':
+                    return prev * current;
+                case '/':
+                    return current !== 0 ? prev / current : 0;
+                default:
+                    return current;
+            }
+        }
+
+        function clearCalculator() {
+            currentInput = '0';
+            previousInput = '';
+            operator = '';
+            waitingForOperand = false;
+            updateDisplay();
+        }
+
+        function deleteLast() {
+            if (currentInput.length > 1) {
+                currentInput = currentInput.slice(0, -1);
+            } else {
+                currentInput = '0';
+            }
+            updateDisplay();
+        }
+
+        // Funciones de auto-refresh
+        function startAutoRefresh() {
+            // Refrescar cada 30 segundos
+            autoRefreshInterval = setInterval(() => {
+                if (activeUsersSidebarOpen) {
+                    loadActiveUsersSidebar();
+                }
+            }, 30000);
+        }
+
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        }
+
+        // Inicialización cuando se carga la página
+        document.addEventListener('DOMContentLoaded', function() {
+            // Solo si el usuario está autenticado
+            if (document.getElementById('activeUsersSidebarToggle')) {
+                // Event listeners para usuarios activos
+                document.getElementById('activeUsersSidebarToggle').addEventListener('click', toggleActiveUsersSidebar);
+                document.getElementById('closeSidebar').addEventListener('click', closeSidebar);
+                document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar);
+                document.getElementById('refreshActiveUsers').addEventListener('click', loadActiveUsersSidebar);
+                
+                // Event listeners para calculadora
+                document.getElementById('calculatorToggle').addEventListener('click', toggleCalculator);
+                document.getElementById('closeCalculator').addEventListener('click', closeCalculatorWidget);
+                document.getElementById('calculatorOverlay').addEventListener('click', closeCalculatorWidget);
+
+                // Event listeners para chat IA
+                document.getElementById('closeAIChat').addEventListener('click', closeAIChat);
+                document.getElementById('aiChatOverlay').addEventListener('click', closeAIChat);
+                
+                // Cargar conteo inicial
+                loadActiveUsersCount();
+                
+                // Recargar conteo cada 2 minutos
+                setInterval(loadActiveUsersCount, 120000);
+                
+                console.log('[Barra Lateral] Sistema de usuarios activos inicializado');
+                console.log('[Calculadora] Sistema de calculadora inicializado');
+            }
+        });
+
+        // CSS adicional para efectos hover
+        const sidebarStyle = document.createElement('style');
+        sidebarStyle.textContent = `
+            .hover-bg-light:hover {
+                background-color: #f8f9fa !important;
+                cursor: pointer;
+            }
+            
+            #activeUsersSidebarToggle {
+                transition: right 0.3s ease, transform 0.2s ease;
+            }
+            
+            #activeUsersSidebarToggle:hover {
+                transform: translateY(-50%) translateX(-5px);
+                box-shadow: 0 8px 25px rgba(0,0,0,0.3) !important;
+            }
+            
+            #calculatorToggle {
+                transition: right 0.3s ease, transform 0.2s ease;
+            }
+            
+            #calculatorToggle:hover {
+                transform: translateY(-50%) translateX(-5px);
+                box-shadow: 0 8px 25px rgba(0,0,0,0.3) !important;
+            }
+            
+            /* Estilos para el scroll de la lista de usuarios */
+            #activeUsersListSidebar {
+                scrollbar-width: thin;
+                scrollbar-color: rgba(40, 167, 69, 0.3) transparent;
+            }
+            
+            #activeUsersListSidebar::-webkit-scrollbar {
+                width: 6px;
+            }
+            
+            #activeUsersListSidebar::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            
+            #activeUsersListSidebar::-webkit-scrollbar-thumb {
+                background-color: rgba(40, 167, 69, 0.3);
+                border-radius: 3px;
+                transition: background-color 0.2s ease;
+            }
+            
+            #activeUsersListSidebar::-webkit-scrollbar-thumb:hover {
+                background-color: rgba(40, 167, 69, 0.5);
+            }
+            
+            /* Animación suave para los elementos de usuario */
+            .hover-bg-light {
+                transition: all 0.2s ease;
+            }
+            
+            /* Efecto de sombra para los elementos al hacer hover */
+            .hover-bg-light:hover {
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                transform: translateY(-1px);
+            }
+            
+            /* Estilos para la calculadora */
+            .calc-btn {
+                height: 50px;
+                font-size: 1.1rem;
+                font-weight: 500;
+                transition: all 0.2s ease;
+                border-radius: 6px !important;
+            }
+            
+            .calc-btn:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            }
+            
+            .calc-btn:active {
+                transform: translateY(0);
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            
+            /* Botones de números */
+            .btn-outline-dark.calc-btn:hover {
+                background-color: #343a40;
+                border-color: #343a40;
+                color: white;
+            }
+            
+            /* Botones de operadores */
+            .btn-outline-warning.calc-btn:hover {
+                background-color: #ffc107;
+                border-color: #ffc107;
+                color: #212529;
+            }
+            
+            /* Botón igual */
+            .btn-primary.calc-btn:hover {
+                background-color: #0056b3;
+                border-color: #0056b3;
+            }
+        `;
+        document.head.appendChild(sidebarStyle);
+        
+        // ===== SISTEMA DE CONTEO DE TICKETS ABIERTOS =====
+        
+        // Función para cargar el conteo de tickets abiertos
+        function loadOpenTicketsCount() {
+            console.log('🎫 Cargando conteo de tickets abiertos...');
+            
+            fetch('/api/open-tickets/count/', {
+                method: 'GET',
+                credentials: 'same-origin',  // Incluir cookies de sesión
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error en la respuesta del servidor');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('📊 Datos de tickets recibidos:', data);
+                
+                const badge = document.getElementById('openTicketsBadge');
+                if (badge) {
+                    badge.textContent = data.count || 0;
+                    
+                    // Actualizar el tooltip del botón
+                    const button = document.getElementById('createTicketToggle');
+                    if (button) {
+                        const isAgent = data.is_agent;
+                        const userCompany = data.user_company;
+                        let tooltipText = 'Crear Ticket de Soporte';
+                        
+                        if (isAgent) {
+                            tooltipText += ` (${data.count} abiertos en total)`;
+                        } else if (userCompany) {
+                            tooltipText += ` (${data.count} abiertos en ${userCompany})`;
+                        } else {
+                            tooltipText += ` (${data.count} abiertos)`;
+                        }
+                        
+                        button.setAttribute('title', tooltipText);
+                    }
+                    
+                    // Cambiar color del badge según la cantidad
+                    badge.className = 'position-absolute top-0 start-0 translate-middle badge rounded-pill';
+                    if (data.count === 0) {
+                        badge.classList.add('bg-success');
+                    } else if (data.count < 5) {
+                        badge.classList.add('bg-warning');
+                    } else if (data.count < 10) {
+                        badge.classList.add('bg-orange');
+                    } else {
+                        badge.classList.add('bg-danger');
+                    }
+                    badge.style.fontSize = '0.7em';
+                    
+                    console.log(`✅ Conteo actualizado: ${data.count} tickets abiertos`);
+                } else {
+                    console.error('❌ Badge de tickets no encontrado');
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error al cargar conteo de tickets:', error);
+                
+                const badge = document.getElementById('openTicketsBadge');
+                if (badge) {
+                    badge.textContent = '?';
+                    badge.className = 'position-absolute top-0 start-0 translate-middle badge rounded-pill bg-secondary';
+                    badge.style.fontSize = '0.7em';
+                }
+            });
+        }
+        
+        // Auto-actualizar conteo de tickets cada 30 segundos
+        setInterval(loadOpenTicketsCount, 30000);
+        
+        // Cargar conteo inicial
+        setTimeout(loadOpenTicketsCount, 1000);
     </script>
     {% endif %}
 </body>
