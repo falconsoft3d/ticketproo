@@ -4,7 +4,8 @@ from .api_views import (
     TicketViewSet, CategoryViewSet, CompanyViewSet, ProjectViewSet,
     api_status, generate_api_token, toggle_api_access, whatsapp_receive_message,
     landing_page_meeting_click, landing_page_contact_click,
-    active_users_count, active_users_list, open_tickets_count, direct_ai_chat
+    active_users_count, active_users_list, open_tickets_count, direct_ai_chat,
+    system_info_api
 )
 
 # Router para los ViewSets
@@ -39,6 +40,9 @@ api_urlpatterns = [
     
     # URLs de chat directo con IA
     path('ai-chat/direct/', direct_ai_chat, name='api-direct-ai-chat'),
+    
+    # URL para información del sistema
+    path('system-info/', system_info_api, name='api-system-info'),
 ]
 
 # Django espera que la variable se llame urlpatterns
