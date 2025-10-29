@@ -1,0 +1,400 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% csrf_token %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-file-earmark-text text-primary"></i>
+                        Cotizaciones
+                    </h1>
+                    <p class="text-muted mb-0">Gestión de cotizaciones comerciales</p>
+                </div>
+                <a href="{% url 'quotation_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i>
+                    Nueva Cotización
+                </a>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="row mb-4">
+                <div class="col-md-2">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-title">Total</h6>
+                                    <h4 class="mb-0">{{ stats.total }}</h4>
+                                </div>
+                                <i class="bi bi-file-earmark-text fs-1 opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card bg-secondary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-title">Borrador</h6>
+                                    <h4 class="mb-0">{{ stats.draft }}</h4>
+                                </div>
+                                <i class="bi bi-file-earmark fs-1 opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-title">Enviadas</h6>
+                                    <h4 class="mb-0">{{ stats.sent }}</h4>
+                                </div>
+                                <i class="bi bi-send fs-1 opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-title">Aprobadas</h6>
+                                    <h4 class="mb-0">{{ stats.approved }}</h4>
+                                </div>
+                                <i class="bi bi-check-circle fs-1 opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-title">Rechazadas</h6>
+                                    <h4 class="mb-0">{{ stats.rejected }}</h4>
+                                </div>
+                                <i class="bi bi-x-circle fs-1 opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card bg-warning text-dark">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-title">Importe Total</h6>
+                                    <h4 class="mb-0">{{ currency_symbol }}{{ stats.total_amount|floatformat:2 }}</h4>
+                                </div>
+                                
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtros -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="search" class="form-label">Buscar</label>
+                            <input type="text" class="form-control" id="search" name="search" 
+                                   value="{{ current_search }}" placeholder="Secuencia, empresa, vendedor...">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="status" class="form-label">Estado</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">Todos</option>
+                                <option value="draft" {% if current_status == 'draft' %}selected{% endif %}>Borrador</option>
+                                <option value="sent" {% if current_status == 'sent' %}selected{% endif %}>Enviada</option>
+                                <option value="approved" {% if current_status == 'approved' %}selected{% endif %}>Aprobada</option>
+                                <option value="rejected" {% if current_status == 'rejected' %}selected{% endif %}>Rechazada</option>
+                                <option value="expired" {% if current_status == 'expired' %}selected{% endif %}>Expirada</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="company" class="form-label">Empresa</label>
+                            <select class="form-select" id="company" name="company">
+                                <option value="">Todas</option>
+                                {% for company in companies %}
+                                    <option value="{{ company.id }}" {% if current_company == company.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ company.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="salesperson" class="form-label">Vendedor</label>
+                            <select class="form-select" id="salesperson" name="salesperson">
+                                <option value="">Todos</option>
+                                {% for person in salespeople %}
+                                    <option value="{{ person.id }}" {% if current_salesperson == person.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ person.get_full_name|default:person.username }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-search"></i> Filtrar
+                                </button>
+                                <a href="{% url 'quotation_list' %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-circle"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Lista de cotizaciones -->
+            <div class="card">
+                <div class="card-body p-0">
+                    {% if quotations %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Secuencia</th>
+                                        <th>Empresa</th>
+                                        <th>Vendedor</th>
+                                        <th>Fecha</th>
+                                        <th>Vencimiento</th>
+                                        <th>Estado</th>
+                                        <th>Cliente</th>
+                                        <th>Importe</th>
+                                        <th width="150">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for quotation in quotations %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ quotation.sequence }}</strong>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-building text-muted me-2"></i>
+                                                {{ quotation.company.name }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-person text-muted me-2"></i>
+                                                {{ quotation.salesperson.get_full_name|default:quotation.salesperson.username }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <i class="bi bi-calendar text-muted me-1"></i>
+                                            {{ quotation.date|date:"d/m/Y" }}
+                                        </td>
+                                        <td>
+                                            {% if quotation.expiry_date %}
+                                                <div class="{% if quotation.is_expired %}text-danger{% elif quotation.get_days_until_expiry <= 3 %}text-warning{% else %}text-muted{% endif %}">
+                                                    <i class="bi bi-hourglass-split me-1"></i>
+                                                    {{ quotation.expiry_date|date:"d/m/Y" }}
+                                                    <br><small>{{ quotation.get_expiry_status_display }}</small>
+                                                </div>
+                                            {% else %}
+                                                <span class="text-muted">No establecida</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if quotation.status == 'draft' %}
+                                                <span class="badge bg-secondary">Borrador</span>
+                                            {% elif quotation.status == 'sent' %}
+                                                <span class="badge bg-primary">Enviada</span>
+                                            {% elif quotation.status == 'approved' %}
+                                                <span class="badge bg-success">Aprobada</span>
+                                            {% elif quotation.status == 'rejected' %}
+                                                <span class="badge bg-danger">Rechazada</span>
+                                            {% elif quotation.status == 'expired' %}
+                                                <span class="badge bg-warning">Expirada</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if quotation.client_status == 'pending' %}
+                                                <span class="badge bg-warning">Pendiente</span>
+                                            {% elif quotation.client_status == 'accepted' %}
+                                                <span class="badge bg-success">Aceptada</span>
+                                            {% elif quotation.client_status == 'rejected' %}
+                                                <span class="badge bg-danger">Rechazada</span>
+                                            {% endif %}
+                                            {% if quotation.client_response_name %}
+                                                <br><small class="text-muted">{{ quotation.client_response_name }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <strong>
+                                                
+                                                {{ currency_symbol }}{{ quotation.get_total_amount|floatformat:2 }}
+                                            </strong>
+                                            <br><small class="text-muted">
+                                                Creada: {{ quotation.created_at|date:"d/m/Y" }}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{% url 'quotation_detail' quotation.id %}" 
+                                                   class="btn btn-outline-primary" title="Ver">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <td colspan="6" class="text-end"><strong>Total:</strong></td>
+                                        <td>
+                                            <strong class="fs-5">
+                                                
+                                                {{ currency_symbol }}{{ stats.total_amount|floatformat:2 }}
+                                            </strong>
+                                        </td>
+                                        <td colspan="2"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-file-earmark-text display-1 text-muted"></i>
+                            <h5 class="mt-3">No hay cotizaciones</h5>
+                            <p class="text-muted">Comienza creando tu primera cotización</p>
+                            <a href="{% url 'quotation_create' %}" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i>
+                                Nueva Cotización
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para compartir cotización -->
+<div class="modal fade" id="shareModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-share"></i>
+                    Compartir Cotización
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">Comparta esta cotización con su cliente usando el enlace público:</p>
+                
+                <div class="mb-3">
+                    <label for="publicUrl" class="form-label">Enlace Público:</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="publicUrl" readonly>
+                        <button class="btn btn-outline-primary" type="button" onclick="copyToClipboard()">
+                            <i class="bi bi-clipboard"></i>
+                            Copiar
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <h6><i class="bi bi-info-circle"></i> Información importante:</h6>
+                    <ul class="mb-0 small">
+                        <li>Su cliente podrá ver la cotización sin necesidad de registro</li>
+                        <li>Podrá aceptar o rechazar la cotización directamente desde el enlace</li>
+                        <li>Recibirá una notificación cuando el cliente responda</li>
+                        <li>El enlace será válido mientras la cotización esté activa</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <a href="#" id="openPublicUrl" class="btn btn-primary" target="_blank">
+                    <i class="bi bi-eye"></i>
+                    Ver Vista Pública
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function shareQuotation(quotationId) {
+    // Mostrar modal con loading
+    const modal = new bootstrap.Modal(document.getElementById('shareModal'));
+    document.getElementById('publicUrl').value = 'Generando enlace...';
+    document.getElementById('openPublicUrl').href = '#';
+    modal.show();
+    
+    // Obtener CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    // Generar enlace público
+    fetch(`/quotations/${quotationId}/share/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `csrfmiddlewaretoken=${csrfToken}`
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            document.getElementById('publicUrl').value = data.public_url;
+            document.getElementById('openPublicUrl').href = data.public_url;
+        } else {
+            alert('Error al generar enlace público: ' + (data.message || 'Error desconocido'));
+            modal.hide();
+        }
+    })
+    .catch(error => {
+        console.error('Error completo:', error);
+        alert('Error al generar enlace público: ' + error.message);
+        modal.hide();
+    });
+}
+
+function copyToClipboard() {
+    const urlField = document.getElementById('publicUrl');
+    urlField.select();
+    urlField.setSelectionRange(0, 99999); // Para móviles
+    
+    navigator.clipboard.writeText(urlField.value).then(function() {
+        // Cambiar el texto del botón temporalmente
+        const button = event.target.closest('button');
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="bi bi-check"></i> Copiado';
+        button.classList.add('btn-success');
+        button.classList.remove('btn-outline-primary');
+        
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-primary');
+        }, 2000);
+    });
+}
+</script>
+{% endblock %}

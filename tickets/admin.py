@@ -19,7 +19,7 @@ from .models import (
     AIManager, AIManagerMeeting, AIManagerMeetingAttachment, AIManagerSummary, CompanyAISummary, UserAIPerformanceEvaluation,
     WebsiteTracker, LegalContract, SupplierContractReview, PayPalPaymentLink, PayPalOrder, TodoItem,
     AIBook, AIBookChapter, EmployeeRequest, InternalAgreement, Asset, AssetHistory, UrlManager,
-    ExpenseReport, ExpenseItem, ExpenseComment, MonthlyCumplimiento, DailyCumplimiento, QRCode
+    ExpenseReport, ExpenseItem, ExpenseComment, MonthlyCumplimiento, DailyCumplimiento, QRCode, Quotation, QuotationLine
 )
 
 # Configuración del sitio de administración
@@ -4282,3 +4282,121 @@ class QRCodeAdmin(admin.ModelAdmin):
         if not change:  # Si es un nuevo objeto
             obj.created_by = request.user
         super().save_model(request, obj, form, change)
+
+
+class QuotationLineInline(admin.TabularInline):
+    model = QuotationLine
+    extra = 1
+    fields = ('product', 'quantity', 'unit_price', 'discount_percentage', 'description')
+    readonly_fields = ('get_subtotal', 'get_discount_amount', 'get_total')
+    
+    def get_subtotal(self, obj):
+        if obj.id:
+            return f"${obj.get_subtotal():,.2f}"
+        return "-"
+    get_subtotal.short_description = 'Subtotal'
+    
+    def get_discount_amount(self, obj):
+        if obj.id:
+            return f"${obj.get_discount_amount():,.2f}"
+        return "-"
+    get_discount_amount.short_description = 'Descuento'
+    
+    def get_total(self, obj):
+        if obj.id:
+            return f"${obj.get_total():,.2f}"
+        return "-"
+    get_total.short_description = 'Total'
+
+
+@admin.register(Quotation)
+class QuotationAdmin(admin.ModelAdmin):
+    list_display = ('sequence', 'company', 'salesperson', 'date', 'status_badge', 'lines_count', 'total_amount', 'created_at')
+    list_filter = ('status', 'date', 'created_at', 'salesperson')
+    search_fields = ('sequence', 'company__name', 'salesperson__username', 'salesperson__first_name', 'salesperson__last_name')
+    ordering = ('-created_at',)
+    readonly_fields = ('sequence', 'created_at', 'updated_at', 'get_total_amount', 'get_lines_count')
+    inlines = [QuotationLineInline]
+    
+    fieldsets = (
+        ('Información Principal', {
+            'fields': ('sequence', 'company', 'salesperson', 'date', 'status')
+        }),
+        ('Descripción', {
+            'fields': ('description',),
+            'classes': ('collapse',)
+        }),
+        ('Totales', {
+            'fields': ('get_total_amount', 'get_lines_count'),
+            'classes': ('collapse',)
+        }),
+        ('Metadatos', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def status_badge(self, obj):
+        badge_colors = {
+            'draft': 'secondary',
+            'sent': 'primary', 
+            'approved': 'success',
+            'rejected': 'danger',
+            'expired': 'warning'
+        }
+        color = badge_colors.get(obj.status, 'secondary')
+        return format_html(
+            '<span class="badge" style="background-color: var(--bs-{}-rgb); color: white; padding: 4px 8px; border-radius: 4px;">{}</span>',
+            color, obj.get_status_display()
+        )
+    status_badge.short_description = 'Estado'
+    status_badge.admin_order_field = 'status'
+    
+    def lines_count(self, obj):
+        count = obj.get_lines_count()
+        return format_html('<span class="badge bg-info">{}</span>', count)
+    lines_count.short_description = 'Líneas'
+    
+    def total_amount(self, obj):
+        total = obj.get_total_amount()
+        return f"${total:,.2f}"
+    total_amount.short_description = 'Total'
+
+
+@admin.register(QuotationLine)
+class QuotationLineAdmin(admin.ModelAdmin):
+    list_display = ('quotation', 'product', 'quantity', 'unit_price', 'discount_percentage', 'get_total_display')
+    list_filter = ('quotation__status', 'product', 'created_at')
+    search_fields = ('quotation__sequence', 'product__name', 'description')
+    ordering = ('-created_at',)
+    readonly_fields = ('get_subtotal_display', 'get_discount_amount_display', 'get_total_display', 'created_at')
+    
+    fieldsets = (
+        ('Información Principal', {
+            'fields': ('quotation', 'product', 'quantity', 'unit_price', 'discount_percentage')
+        }),
+        ('Descripción', {
+            'fields': ('description',),
+            'classes': ('collapse',)
+        }),
+        ('Cálculos', {
+            'fields': ('get_subtotal_display', 'get_discount_amount_display', 'get_total_display'),
+            'classes': ('collapse',)
+        }),
+        ('Metadatos', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_subtotal_display(self, obj):
+        return f"${obj.get_subtotal():,.2f}"
+    get_subtotal_display.short_description = 'Subtotal'
+    
+    def get_discount_amount_display(self, obj):
+        return f"${obj.get_discount_amount():,.2f}"
+    get_discount_amount_display.short_description = 'Descuento'
+    
+    def get_total_display(self, obj):
+        return f"${obj.get_total():,.2f}"
+    get_total_display.short_description = 'Total'

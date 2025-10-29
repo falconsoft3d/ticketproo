@@ -1218,6 +1218,19 @@ class TimeEntryStartForm(forms.Form):
 class TimeEntryEndForm(forms.Form):
     """Formulario para finalizar jornada laboral"""
     
+    end_reason = forms.ChoiceField(
+        choices=[
+            ('comer', 'Comer'),
+            ('fin_jornada', 'Fin de Jornada'),
+            ('otro', 'Otro'),
+        ],
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+        }),
+        label='Causa de finalización',
+        help_text='Selecciona el motivo por el cual finalizas la jornada'
+    )
+    
     notas_salida = forms.CharField(
         required=False,
         max_length=500,

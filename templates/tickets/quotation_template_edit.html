@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-pencil text-primary"></i>
+                        {{ page_title }}
+                    </h1>
+                    <p class="text-muted mb-0">Modifica la configuración de la plantilla pública</p>
+                </div>
+                <div>
+                    <a href="{% url 'quotation_template_detail' template.id %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i>
+                        Volver a Detalles
+                    </a>
+                </div>
+            </div>
+
+            <!-- Formulario -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Información de la Plantilla</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="title" class="form-label">Título de la Plantilla <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="title" name="title" 
+                                           value="{{ template.title }}" required>
+                                    <div class="form-text">Este título será visible para ti en la administración</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="quotation_id" class="form-label">Cotización Base <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="quotation_id" name="quotation_id" required>
+                                        <option value="">Selecciona una cotización</option>
+                                        {% for quotation in quotations %}
+                                            <option value="{{ quotation.id }}" 
+                                                    {% if quotation.id == template.template_quotation.id %}selected{% endif %}>
+                                                {{ quotation.sequence }} - {{ quotation.company.name }} 
+                                                ({{ quotation.created_at|date:"d/m/Y" }})
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-text">Esta cotización se usará como modelo para generar nuevas cotizaciones</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="description" name="description" rows="3">{{ template.description }}</textarea>
+                            <div class="form-text">Descripción interna para identificar el propósito de esta plantilla</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                                       {% if template.is_active %}checked{% endif %}>
+                                <label class="form-check-label" for="is_active">
+                                    Plantilla activa
+                                </label>
+                                <div class="form-text">Solo las plantillas activas pueden recibir nuevas solicitudes</div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'quotation_template_detail' template.id %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x"></i>
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i>
+                                Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Estadísticas actuales -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-bar-chart text-info"></i>
+                        Estadísticas Actuales
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <div class="border-end">
+                                <h5 class="text-primary mb-0">{{ template.views_count }}</h5>
+                                <small class="text-muted">Visualizaciones</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border-end">
+                                <h5 class="text-success mb-0">{{ template.conversions_count }}</h5>
+                                <small class="text-muted">Conversiones</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border-end">
+                                <h5 class="text-info mb-0">{{ template.requests.count }}</h5>
+                                <small class="text-muted">Solicitudes</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <h5 class="text-warning mb-0">
+                                {% if template.views_count > 0 %}
+                                    {{ template.conversions_count|floatformat:1|add:"%" }}
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </h5>
+                            <small class="text-muted">Tasa Conversión</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información del enlace público -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-link-45deg text-success"></i>
+                        Enlace Público
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="input-group">
+                        <input type="text" class="form-control" 
+                               value="{{ request.build_absolute_uri }}{{ template.get_public_url }}" readonly>
+                        <button class="btn btn-outline-secondary" type="button" 
+                                onclick="copyToClipboard('{{ request.build_absolute_uri }}{{ template.get_public_url }}')">
+                            <i class="bi bi-clipboard"></i>
+                            Copiar
+                        </button>
+                        <a href="{{ template.get_public_url }}" target="_blank" class="btn btn-outline-primary">
+                            <i class="bi bi-box-arrow-up-right"></i>
+                            Abrir
+                        </a>
+                    </div>
+                    <small class="text-muted">
+                        Este enlace permite a los clientes generar cotizaciones automáticamente
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Validación del formulario
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const titleInput = document.getElementById('title');
+    const quotationSelect = document.getElementById('quotation_id');
+    
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        
+        // Validar título
+        if (!titleInput.value.trim()) {
+            titleInput.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            titleInput.classList.remove('is-invalid');
+        }
+        
+        // Validar cotización
+        if (!quotationSelect.value) {
+            quotationSelect.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            quotationSelect.classList.remove('is-invalid');
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+        }
+    });
+    
+    // Limpiar validación al escribir
+    titleInput.addEventListener('input', function() {
+        this.classList.remove('is-invalid');
+    });
+    
+    quotationSelect.addEventListener('change', function() {
+        this.classList.remove('is-invalid');
+    });
+});
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        // Mostrar mensaje temporal
+        const button = event.target.closest('button');
+        const originalContent = button.innerHTML;
+        button.innerHTML = '<i class="bi bi-check"></i> Copiado';
+        button.classList.remove('btn-outline-secondary');
+        button.classList.add('btn-success');
+        
+        setTimeout(function() {
+            button.innerHTML = originalContent;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-secondary');
+        }, 2000);
+    });
+}
+</script>
+{% endblock %}

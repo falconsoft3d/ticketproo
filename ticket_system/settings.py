@@ -73,6 +73,7 @@ TEMPLATES = [
                 'tickets.context_processors.system_config',
                 'tickets.context_processors.time_status',
                 'tickets.context_processors.blog_categories',
+                'tickets.context_processors.crm_counters',
             ],
         },
     },

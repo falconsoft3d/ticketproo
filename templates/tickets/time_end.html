@@ -46,6 +46,10 @@
                         {% csrf_token %}
                         
                         <div class="mb-4">
+                            {% bootstrap_field form.end_reason %}
+                        </div>
+                        
+                        <div class="mb-4">
                             {% bootstrap_field form.notas_salida %}
                         </div>
                         

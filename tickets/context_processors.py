@@ -62,3 +62,49 @@ def blog_categories(request):
     return {
         'blog_categories': categories,
     }
+
+
+def crm_counters(request):
+    """
+    Context processor que proporciona contadores para los menús del CRM
+    """
+    if not request.user.is_authenticated or not is_agent(request.user):
+        return {}
+    
+    try:
+        from tickets.models import Contact, Company, Opportunity, Meeting, Quotation, QuotationTemplate
+        
+        # Contadores básicos
+        contacts_count = Contact.objects.count()
+        companies_count = Company.objects.filter(is_active=True).count()
+        
+        # Oportunidades activas (no ganadas ni perdidas)
+        opportunities_count = Opportunity.objects.exclude(
+            status__name__in=['Ganada', 'Perdida', 'Cancelada']
+        ).count()
+        
+        # Reuniones futuras o de hoy
+        from django.utils import timezone
+        today = timezone.now().date()
+        meetings_count = Meeting.objects.filter(date__gte=today).count()
+        
+        # Cotizaciones activas (draft, sent, approved)
+        quotations_count = Quotation.objects.filter(
+            status__in=['draft', 'sent', 'approved']
+        ).count()
+        
+        # Plantillas públicas activas
+        templates_count = QuotationTemplate.objects.filter(is_active=True).count()
+        
+        return {
+            'crm_counters': {
+                'contacts': contacts_count,
+                'companies': companies_count,
+                'opportunities': opportunities_count,
+                'meetings': meetings_count,
+                'quotations': quotations_count,
+                'templates': templates_count,
+            }
+        }
+    except Exception:
+        return {}

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ template.title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .form-container {
+            max-width: 600px;
+            margin: 2rem auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .header-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .form-section {
+            padding: 2rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 12px 30px;
+            font-weight: 600;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .template-preview {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-container">
+            <!-- Header -->
+            <div class="header-section">
+                <h1 class="h3 mb-2">
+                    <i class="bi bi-file-earmark-text"></i>
+                    {{ template.title }}
+                </h1>
+                <p class="mb-0">Solicitar Cotización Personalizada</p>
+            </div>
+
+            <!-- Contenido principal -->
+            <div class="form-section">
+            
+                <!-- Vista previa de la plantilla -->
+                <div class="template-preview">
+                    
+                    
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Producto</th>
+                                    <th class="text-center">Cantidad</th>
+                                    <th class="text-end">Precio</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for line in template.template_quotation.lines.all %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ line.product.name }}</strong>
+                                        {% if line.description %}
+                                            <br><small class="text-muted">{{ line.description }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">{{ line.quantity|floatformat:0 }}</td>
+                                    <td class="text-end">{{ currency_symbol }}{{ line.get_total|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <td colspan="2" class="text-end"><strong>Total estimado:</strong></td>
+                                    <td class="text-end">
+                                        <strong class="text-primary">{{ currency_symbol }}{{ template.template_quotation.get_total_amount|floatformat:2 }}</strong>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    
+                    
+                </div>
+
+                <!-- Formulario -->
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="client_name" class="form-label">
+                                <i class="bi bi-person"></i>
+                                Nombre Completo <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="client_name" name="client_name" required
+                                   placeholder="Su nombre completo">
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="client_email" class="form-label">
+                                <i class="bi bi-envelope"></i>
+                                Email <span class="text-danger">*</span>
+                            </label>
+                            <input type="email" class="form-control" id="client_email" name="client_email" required
+                                   placeholder="su@email.com">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="client_phone" class="form-label">
+                                <i class="bi bi-telephone"></i>
+                                Teléfono
+                            </label>
+                            <input type="tel" class="form-control" id="client_phone" name="client_phone"
+                                   placeholder="Su número de teléfono">
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="client_company" class="form-label">
+                                <i class="bi bi-building"></i>
+                                Empresa
+                            </label>
+                            <input type="text" class="form-control" id="client_company" name="client_company"
+                                   placeholder="Nombre de su empresa">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="client_comments" class="form-label">
+                            <i class="bi bi-chat-square-text"></i>
+                            Comentarios o Requerimientos Especiales
+                        </label>
+                        <textarea class="form-control" id="client_comments" name="client_comments" rows="4"
+                                  placeholder="Describa cualquier requerimiento específico, modificaciones que necesite, o preguntas sobre la cotización..."></textarea>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-file-earmark-plus"></i>
+                            Generar Mi Cotización Personalizada
+                        </button>
+                    </div>
+
+                    <div class="text-center mt-3">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i>
+                            Al enviar este formulario, se generará una cotización personalizada que podrá revisar y aprobar
+                        </small>
+                    </div>
+
+                    
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

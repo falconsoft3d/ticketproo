@@ -105,6 +105,7 @@
                                         <th>Duración</th>
                                         <th>Horas</th>
                                         <th>Estado</th>
+                                        <th>Motivo de Salida</th>
                                         <th>Notas</th>
                                         <th>Acciones</th>
                                     </tr>
@@ -168,6 +169,29 @@
                                                 <span class="badge bg-secondary">Completado</span>
                                             {% else %}
                                                 <span class="badge bg-success">En Progreso</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if entry.end_reason %}
+                                                {% if entry.end_reason == 'comer' %}
+                                                    <span class="badge bg-warning text-dark">
+                                                        <i class="bi bi-cup-hot"></i> Comer
+                                                    </span>
+                                                {% elif entry.end_reason == 'fin_jornada' %}
+                                                    <span class="badge bg-primary">
+                                                        <i class="bi bi-house"></i> Fin de Jornada
+                                                    </span>
+                                                {% elif entry.end_reason == 'otro' %}
+                                                    <span class="badge bg-info">
+                                                        <i class="bi bi-three-dots"></i> Otro
+                                                    </span>
+                                                {% endif %}
+                                            {% else %}
+                                                {% if entry.fecha_salida %}
+                                                    <span class="text-muted">-</span>
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
                                             {% endif %}
                                         </td>
                                         <td>

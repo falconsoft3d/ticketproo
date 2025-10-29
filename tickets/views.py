@@ -24,6 +24,15 @@ from datetime import datetime, date, timedelta
 import os
 import json
 
+# Imports para PDF
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.pdfgen import canvas
+from io import BytesIO
+
 # Imports para OpenAI
 try:
     from openai import OpenAI
@@ -2647,11 +2656,16 @@ def time_end_work(request):
         if form.is_valid():
             try:
                 notas_salida = form.cleaned_data.get('notas_salida', '')
+                end_reason = form.cleaned_data.get('end_reason')
+                
+                # Actualizar el campo end_reason antes de finalizar
+                active_entry.end_reason = end_reason
                 active_entry.finalizar_jornada(notas_salida)
                 
                 duracion = active_entry.duracion_formateada
+                reason_display = dict(form.fields['end_reason'].choices)[end_reason]
                 messages.success(request, 
-                    f'¡Jornada finalizada! Duración total: {duracion} horas')
+                    f'¡Jornada finalizada! Duración total: {duracion} horas. Causa: {reason_display}')
                 return redirect('time_clock')
             except ValueError as e:
                 messages.error(request, str(e))
@@ -34021,3 +34035,1157 @@ def delete_backup(request, filename):
             messages.error(request, 'Archivo de respaldo no encontrado')
     
     return redirect('database_backup')
+
+
+# === VISTAS DE COTIZACIONES ===
+
+@user_passes_test(is_agent, login_url='/')
+@login_required
+def quotation_list_view(request):
+    """Vista para listar cotizaciones"""
+    from .models import Quotation, SystemConfiguration
+    
+    # Obtener configuración del sistema para la moneda
+    config = SystemConfiguration.get_config()
+    currency_symbol = config.get_currency_symbol() if config else '€'
+    
+    quotations = Quotation.objects.all()
+    
+    # Filtros
+    status = request.GET.get('status')
+    if status:
+        quotations = quotations.filter(status=status)
+    
+    company = request.GET.get('company')
+    if company:
+        quotations = quotations.filter(company_id=company)
+    
+    salesperson = request.GET.get('salesperson')
+    if salesperson:
+        quotations = quotations.filter(salesperson_id=salesperson)
+    
+    search = request.GET.get('search')
+    if search:
+        quotations = quotations.filter(
+            models.Q(sequence__icontains=search) | 
+            models.Q(company__name__icontains=search) |
+            models.Q(salesperson__first_name__icontains=search) |
+            models.Q(salesperson__last_name__icontains=search)
+        )
+    
+    quotations = quotations.order_by('-created_at')
+    
+    # Estadísticas
+    stats = {
+        'total': Quotation.objects.count(),
+        'draft': Quotation.objects.filter(status='draft').count(),
+        'sent': Quotation.objects.filter(status='sent').count(),
+        'approved': Quotation.objects.filter(status='approved').count(),
+        'rejected': Quotation.objects.filter(status='rejected').count(),
+    }
+    
+    # Calcular suma total de todas las cotizaciones mostradas
+    total_amount = sum(quotation.get_total_amount() for quotation in quotations)
+    stats['total_amount'] = total_amount
+    
+    # Para los filtros
+    from .models import Company
+    from django.contrib.auth.models import User
+    companies = Company.objects.filter(is_active=True).order_by('name')
+    salespeople = User.objects.filter(is_active=True).order_by('first_name', 'last_name')
+    
+    context = {
+        'page_title': 'Cotizaciones',
+        'quotations': quotations,
+        'stats': stats,
+        'companies': companies,
+        'salespeople': salespeople,
+        'current_status': status,
+        'current_company': company,
+        'current_salesperson': salesperson,
+        'current_search': search,
+        'currency_symbol': currency_symbol,
+    }
+    
+    return render(request, 'tickets/quotation_list.html', context)
+
+
+@user_passes_test(is_agent, login_url='/')
+def quotation_create_view(request):
+    """Vista para crear una nueva cotización"""
+    from .models import Quotation, Company, Product
+    from django.contrib.auth.models import User
+    
+    if request.method == 'POST':
+        try:
+            quotation = Quotation(
+                company_id=request.POST.get('company'),
+                salesperson_id=request.POST.get('salesperson'),
+                date=request.POST.get('date'),
+                status=request.POST.get('status', 'draft'),
+                client_status=request.POST.get('client_status', 'pending'),
+                description=request.POST.get('description', '')
+            )
+            
+            # Manejar fecha de vencimiento
+            expiry_date = request.POST.get('expiry_date')
+            if expiry_date:
+                quotation.expiry_date = expiry_date
+            # Si no se proporciona, se calculará automáticamente en el método save()
+            
+            quotation.save()
+            messages.success(request, f'Cotización {quotation.sequence} creada exitosamente')
+            return redirect('quotation_list')
+        except Exception as e:
+            messages.error(request, f'Error al crear la cotización: {str(e)}')
+    
+    companies = Company.objects.filter(is_active=True).order_by('name')
+    salespeople = User.objects.filter(is_active=True).order_by('first_name', 'last_name')
+    products = Product.objects.filter(is_active=True).order_by('name')
+    
+    # Obtener configuración del sistema para la moneda
+    from .models import SystemConfiguration
+    config = SystemConfiguration.get_config()
+    currency_symbol = config.get_currency_symbol() if config else '€'
+    
+    context = {
+        'page_title': 'Nueva Cotización',
+        'companies': companies,
+        'salespeople': salespeople,
+        'products': products,
+        'today': timezone.now().date(),
+        'currency_symbol': currency_symbol,
+    }
+    
+    return render(request, 'tickets/quotation_form.html', context)
+
+
+@user_passes_test(is_agent, login_url='/')
+def quotation_detail_view(request, quotation_id):
+    """Vista para ver detalles de una cotización"""
+    from .models import Quotation, SystemConfiguration
+    
+    # Obtener configuración del sistema para la moneda
+    config = SystemConfiguration.get_config()
+    currency_symbol = config.get_currency_symbol() if config else '€'
+    
+    quotation = get_object_or_404(Quotation, id=quotation_id)
+    
+    context = {
+        'page_title': f'Cotización {quotation.sequence}',
+        'quotation': quotation,
+        'currency_symbol': currency_symbol,
+    }
+    
+    return render(request, 'tickets/quotation_detail.html', context)
+
+
+@user_passes_test(is_agent, login_url='/')
+def quotation_edit_view(request, quotation_id):
+    """Vista para editar una cotización"""
+    from .models import Quotation, Company, Product
+    from django.contrib.auth.models import User
+    
+    quotation = get_object_or_404(Quotation, id=quotation_id)
+    
+    if request.method == 'POST':
+        try:
+            quotation.company_id = request.POST.get('company')
+            quotation.salesperson_id = request.POST.get('salesperson')
+            quotation.date = request.POST.get('date')
+            quotation.status = request.POST.get('status')
+            
+            # Manejar fecha de vencimiento
+            expiry_date = request.POST.get('expiry_date')
+            if expiry_date:
+                quotation.expiry_date = expiry_date
+            else:
+                # Si no se proporciona, se calculará automáticamente en el método save()
+                quotation.expiry_date = None
+            
+            new_client_status = request.POST.get('client_status', 'pending')
+            
+            # Si se cambia a 'pending', limpiar datos de respuesta anterior para permitir nueva respuesta
+            if new_client_status == 'pending' and quotation.client_status != 'pending':
+                quotation.client_response_name = ''
+                quotation.client_response_email = ''
+                quotation.client_response_comments = ''
+                quotation.client_response_date = None
+                messages.info(request, f'Estado del cliente cambiado a "Pendiente". Se habilitó nuevamente la respuesta pública.')
+            
+            quotation.client_status = new_client_status
+            quotation.description = request.POST.get('description', '')
+            
+            # Manejar fechas de servicio
+            service_start_date = request.POST.get('service_start_date')
+            service_end_date = request.POST.get('service_end_date')
+            
+            if service_start_date:
+                quotation.service_start_date = service_start_date
+            else:
+                quotation.service_start_date = None
+                
+            if service_end_date:
+                quotation.service_end_date = service_end_date
+            else:
+                quotation.service_end_date = None
+            
+            quotation.save()
+            
+            # Mensaje especial cuando se aprueba
+            if quotation.status == 'approved':
+                messages.success(request, f'¡Excelente! La cotización {quotation.sequence} ha sido APROBADA exitosamente 🎉')
+            else:
+                messages.success(request, f'Cotización {quotation.sequence} actualizada exitosamente')
+                
+            return redirect('quotation_detail', quotation_id=quotation.id)
+        except Exception as e:
+            messages.error(request, f'Error al actualizar la cotización: {str(e)}')
+    
+    companies = Company.objects.filter(is_active=True).order_by('name')
+    salespeople = User.objects.filter(is_active=True).order_by('first_name', 'last_name')
+    products = Product.objects.filter(is_active=True).order_by('name')
+    
+    # Obtener configuración del sistema para la moneda
+    from .models import SystemConfiguration
+    config = SystemConfiguration.get_config()
+    currency_symbol = config.get_currency_symbol() if config else '€'
+    
+    context = {
+        'page_title': f'Editar Cotización {quotation.sequence}',
+        'quotation': quotation,
+        'companies': companies,
+        'salespeople': salespeople,
+        'products': products,
+        'currency_symbol': currency_symbol,
+    }
+    
+    return render(request, 'tickets/quotation_form.html', context)
+
+
+@user_passes_test(is_agent, login_url='/')
+def quotation_duplicate_view(request, quotation_id):
+    """Vista para duplicar una cotización"""
+    from .models import Quotation, QuotationLine
+    from django.utils import timezone
+    
+    # Obtener la cotización original
+    original_quotation = get_object_or_404(Quotation, id=quotation_id)
+    
+    try:
+        # Crear una nueva cotización duplicada
+        new_quotation = Quotation(
+            company=original_quotation.company,
+            salesperson=original_quotation.salesperson,
+            date=timezone.now().date(),  # Fecha actual
+            status='draft',  # Siempre empezar como borrador
+            client_status='pending',  # Estado del cliente pendiente
+            description=f"Duplicada de {original_quotation.sequence} - {original_quotation.description}"
+        )
+        new_quotation.save()  # Esto generará automáticamente la secuencia
+        
+        # Duplicar todas las líneas de la cotización original
+        original_lines = original_quotation.lines.all()
+        for line in original_lines:
+            QuotationLine.objects.create(
+                quotation=new_quotation,
+                product=line.product,
+                quantity=line.quantity,
+                unit_price=line.unit_price,
+                discount_percentage=line.discount_percentage,
+                description=line.description
+            )
+        
+        messages.success(
+            request, 
+            f'Cotización duplicada exitosamente. Nueva cotización: {new_quotation.sequence}'
+        )
+        
+        # Redirigir a la edición de la nueva cotización
+        return redirect('quotation_edit', quotation_id=new_quotation.id)
+        
+    except Exception as e:
+        messages.error(request, f'Error al duplicar la cotización: {str(e)}')
+        return redirect('quotation_detail', quotation_id=quotation_id)
+
+
+@user_passes_test(is_agent, login_url='/')
+def quotation_delete_view(request, quotation_id):
+    """Vista para eliminar una cotización"""
+    from .models import Quotation
+    
+    quotation = get_object_or_404(Quotation, id=quotation_id)
+    
+    if request.method == 'POST':
+        sequence = quotation.sequence
+        quotation.delete()
+        messages.success(request, f'Cotización {sequence} eliminada exitosamente')
+        return redirect('quotation_list')
+    
+    context = {
+        'page_title': f'Eliminar Cotización {quotation.sequence}',
+        'quotation': quotation,
+    }
+    
+    return render(request, 'tickets/quotation_delete.html', context)
+
+
+@user_passes_test(is_agent, login_url='/')
+@user_passes_test(is_agent, login_url='/')
+def quotation_add_line_view(request, quotation_id):
+    """Vista AJAX para agregar línea a cotización"""
+    from .models import Quotation, QuotationLine, Product
+    from django.http import JsonResponse
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Método no permitido'})
+    
+    try:
+        quotation = get_object_or_404(Quotation, id=quotation_id)
+        product_id = request.POST.get('product_id')
+        quantity = request.POST.get('quantity', 1)
+        unit_price = request.POST.get('unit_price')
+        discount_percentage = request.POST.get('discount_percentage', 0)
+        description = request.POST.get('description', '')
+        
+        product = get_object_or_404(Product, id=product_id)
+        
+        # Si no se proporciona precio unitario, usar el del producto
+        if not unit_price:
+            unit_price = product.price
+        
+        line = QuotationLine.objects.create(
+            quotation=quotation,
+            product=product,
+            quantity=float(quantity),
+            unit_price=float(unit_price),
+            discount_percentage=float(discount_percentage),
+            description=description
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'line': {
+                'id': line.id,
+                'product_name': line.product.name,
+                'quantity': float(line.quantity),
+                'unit_price': float(line.unit_price),
+                'discount_percentage': float(line.discount_percentage),
+                'subtotal': float(line.get_subtotal()),
+                'discount_amount': float(line.get_discount_amount()),
+                'total': float(line.get_total()),
+                'description': line.description,
+            },
+            'quotation_total': float(quotation.get_total_amount())
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
+
+@user_passes_test(is_agent, login_url='/')
+def quotation_remove_line_view(request, quotation_id, line_id):
+    """Vista AJAX para remover línea de cotización"""
+    from .models import Quotation, QuotationLine
+    from django.http import JsonResponse
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Método no permitido'})
+    
+    try:
+        quotation = get_object_or_404(Quotation, id=quotation_id)
+        line = get_object_or_404(QuotationLine, id=line_id, quotation=quotation)
+        
+        line.delete()
+        
+        return JsonResponse({
+            'success': True,
+            'quotation_total': float(quotation.get_total_amount())
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
+
+@login_required
+def quotation_pdf_view(request, quotation_id):
+    """Vista para generar PDF de cotización"""
+    from .models import Quotation, SystemConfiguration
+    
+    quotation = get_object_or_404(Quotation, id=quotation_id)
+    
+    # Crear el objeto response con content type PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="cotizacion_{quotation.sequence}.pdf"'
+    
+    # Crear el buffer
+    buffer = BytesIO()
+    
+    # Crear el documento PDF
+    doc = SimpleDocTemplate(buffer, pagesize=A4,
+                           rightMargin=72, leftMargin=72,
+                           topMargin=72, bottomMargin=18)
+    
+    # Crear lista de elementos para el PDF
+    elements = []
+    
+    # Obtener estilos
+    styles = getSampleStyleSheet()
+    
+    # Estilo personalizado para el encabezado
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=18,
+        textColor=colors.darkblue,
+        alignment=1,  # Center
+        spaceAfter=20
+    )
+    
+    # Estilo para información de empresa
+    company_style = ParagraphStyle(
+        'Company',
+        parent=styles['Normal'],
+        fontSize=10,
+        alignment=2,  # Right
+    )
+    
+    # Información de la empresa emisora (parte superior derecha)
+    company_info = """
+    <b>Manufactura y Servicios TACA</b><br/>
+    CALLE 2DA TRANS LOCAL 22 ZONA<br/>
+    INDUSTRIAL 2<br/>
+    ACARIGUA PORTUGUESA ZONA POSTAL<br/>
+    3301<br/><br/>
+    Venezuela<br/>
+    NIF: V-14.677.128
+    """
+    elements.append(Paragraph(company_info, company_style))
+    elements.append(Spacer(1, 20))
+    
+    # Información del cliente (parte inferior izquierda) 
+    client_info = f"""
+    <b>{quotation.company.name}</b><br/>
+    {quotation.company.address or ''}<br/>
+    {quotation.company.phone or ''}<br/>
+    {quotation.company.email or ''}
+    """
+    
+    client_style = ParagraphStyle(
+        'Client',
+        parent=styles['Normal'],
+        fontSize=10,
+        alignment=0,  # Left
+    )
+    elements.append(Paragraph(client_info, client_style))
+    elements.append(Spacer(1, 30))
+    
+    # Título del documento
+    elements.append(Paragraph(f'Pedido # {quotation.sequence}', title_style))
+    
+    # Información del pedido
+    order_data = [
+        ['Fecha orden:', quotation.date.strftime('%d/%m/%Y %H:%M:%S')],
+        ['Comercial:', quotation.salesperson.get_full_name() or quotation.salesperson.username],
+    ]
+    
+    order_table = Table(order_data, colWidths=[2*inch, 3*inch])
+    order_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+    ]))
+    elements.append(order_table)
+    elements.append(Spacer(1, 20))
+    
+    # Tabla de productos
+    lines = quotation.lines.all()
+    table_data = [['Descripción', 'Cantidad', 'Precio unitario', 'Impuestos', 'Importe']]
+    
+    # Obtener configuración del sistema para la moneda
+    config = SystemConfiguration.get_config()
+    currency_symbol = config.get_currency_symbol()
+    
+    for line in lines:
+        table_data.append([
+            line.description or line.product.name,
+            f'{line.quantity:,.0f}',
+            f'{line.unit_price:,.2f}',
+            '',  # Impuestos vacío por ahora
+            f'{line.get_total():,.2f} {currency_symbol}'
+        ])
+    
+    # Crear la tabla
+    product_table = Table(table_data, colWidths=[3*inch, 1*inch, 1.2*inch, 1*inch, 1.2*inch])
+    product_table.setStyle(TableStyle([
+        # Encabezado
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        
+        # Contenido
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ('ALIGN', (0, 1), (0, -1), 'LEFT'),  # Descripción alineada a la izquierda
+        ('ALIGN', (1, 1), (-1, -1), 'RIGHT'), # Números alineados a la derecha
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.beige, colors.white]),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+    elements.append(product_table)
+    elements.append(Spacer(1, 20))
+    
+    # Totales
+    total_amount = quotation.get_total_amount()
+    totals_data = [
+        ['', '', '', 'Subtotal', f'{total_amount:,.2f} {currency_symbol}'],
+        ['', '', '', 'Total', f'{total_amount:,.2f} {currency_symbol}']
+    ]
+    
+    totals_table = Table(totals_data, colWidths=[3*inch, 1*inch, 1.2*inch, 1*inch, 1.2*inch])
+    totals_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
+        ('FONTNAME', (3, 0), (3, -1), 'Helvetica-Bold'),
+        ('FONTNAME', (4, 0), (4, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('LINEBELOW', (3, -1), (4, -1), 2, colors.black),
+    ]))
+    elements.append(totals_table)
+    elements.append(Spacer(1, 40))
+    
+    # Información de pago y QR code
+    payment_info = """
+    <b>Forma Trabajo</b><br/><br/>
+    
+    <b>Datos Pago</b><br/>
+    Banco: CAJAMAR ( https://www.cajamar.es )<br/>
+    Nombre del Beneficiario: Marlon Falcon Hernandez<br/>
+    Dirección Beneficiario: Valencia, España<br/>
+    Numero de Cuenta Bancaria: ES84 3058 2214 0427 2001 3741<br/>
+    BIC ( SWIFT ): CCRIES2AXXX<br/><br/>
+    • mfalconsoft@gmail.com<br/>
+    • www.marlonfalcon.com<br/><br/>
+    - Cubre cualquier error del sistema.<br/>
+    - El valor es por mes.<br/>
+    - Se paga trimestral o semestral.<br/>
+    - Incluye 1 horas de desarrollo al mes que se puede hacer en reunión.
+    """
+    
+    # Crear una tabla con dos columnas: una para el QR (vacío por ahora) y otra para la información de pago
+    payment_table_data = [
+        ['[QR CODE PLACEHOLDER]', payment_info]
+    ]
+    
+    payment_table = Table(payment_table_data, colWidths=[2*inch, 4*inch])
+    payment_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (0, 0), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('FONTNAME', (1, 0), (1, 0), 'Helvetica'),
+        ('FONTSIZE', (1, 0), (1, 0), 9),
+    ]))
+    elements.append(payment_table)
+    
+    # Construir el PDF
+    doc.build(elements)
+    
+    # Obtener el valor del buffer y cerrarlo
+    pdf = buffer.getvalue()
+    buffer.close()
+    response.write(pdf)
+    
+    return response
+
+
+@login_required 
+def quotation_share_view(request, quotation_id):
+    """Vista para generar y compartir enlace público de cotización"""
+    from .models import Quotation
+    
+    quotation = get_object_or_404(Quotation, id=quotation_id)
+    
+    if request.method == 'POST':
+        # Generar token si no existe
+        token = quotation.generate_public_token()
+        public_url = quotation.get_public_url(request)
+        
+        return JsonResponse({
+            'success': True,
+            'public_url': public_url,
+            'token': token
+        })
+    
+    # Si es GET, mostrar modal o redirigir
+    return redirect('quotation_detail', quotation_id=quotation_id)
+
+
+def quotation_public_view(request, token):
+    """Vista pública para mostrar cotización sin autenticación"""
+    from .models import Quotation, SystemConfiguration
+    
+    try:
+        quotation = get_object_or_404(Quotation, public_token=token)
+        
+        # Obtener configuración del sistema para la moneda
+        config = SystemConfiguration.get_config()
+        currency_symbol = config.get_currency_symbol()
+        
+        context = {
+            'quotation': quotation,
+            'currency_symbol': currency_symbol,
+            'can_respond': quotation.can_be_responded(),
+        }
+        
+        return render(request, 'tickets/quotation_public_view.html', context)
+        
+    except Exception as e:
+        return render(request, 'tickets/quotation_public_error.html', {
+            'error': 'Cotización no encontrada o enlace inválido.'
+        })
+
+
+def quotation_public_respond_view(request, token):
+    """Vista pública para que el cliente acepte o rechace la cotización"""
+    from .models import Quotation
+    from django.utils import timezone
+    
+    if request.method == 'POST':
+        try:
+            quotation = get_object_or_404(Quotation, public_token=token)
+            
+            if not quotation.can_be_responded():
+                return JsonResponse({
+                    'success': False, 
+                    'message': 'Esta cotización ya no puede ser modificada.'
+                })
+            
+            action = request.POST.get('action')  # 'accept' o 'reject'
+            client_name = request.POST.get('client_name', '')
+            client_email = request.POST.get('client_email', '')
+            comments = request.POST.get('comments', '')
+            
+            # Registrar información del cliente
+            quotation.client_response_name = client_name
+            quotation.client_response_email = client_email
+            quotation.client_response_comments = comments
+            quotation.client_response_date = timezone.now()
+            
+            if action == 'accept':
+                quotation.client_status = 'accepted'
+                quotation.status = 'approved'  # También actualizar el estado interno
+                message = f"Cotización aceptada por {client_name}"
+            elif action == 'reject':
+                quotation.client_status = 'rejected'
+                quotation.status = 'rejected'  # También actualizar el estado interno
+                message = f"Cotización rechazada por {client_name}"
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Acción no válida.'
+                })
+            
+            quotation.save()
+            
+            # Aquí podrías agregar lógica para enviar notificaciones por email
+            # o crear un registro de la respuesta del cliente
+            
+            return JsonResponse({
+                'success': True,
+                'message': message,
+                'new_status': quotation.get_status_display(),
+                'client_status': quotation.get_client_status_display()
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Error al procesar la respuesta: {str(e)}'
+            })
+    
+    return JsonResponse({'success': False, 'message': 'Método no permitido.'})
+
+
+@user_passes_test(is_agent, login_url='/')
+def quotation_edit_line_view(request, quotation_id, line_id):
+    """Vista AJAX para editar línea de cotización"""
+    from .models import Quotation, QuotationLine
+    from django.http import JsonResponse
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Método no permitido'})
+    
+    try:
+        quotation = get_object_or_404(Quotation, id=quotation_id)
+        line = get_object_or_404(QuotationLine, id=line_id, quotation=quotation)
+        
+        # Actualizar los campos de la línea
+        quantity = request.POST.get('quantity')
+        unit_price = request.POST.get('unit_price')
+        discount_percentage = request.POST.get('discount_percentage')
+        description = request.POST.get('description', '')
+        
+        if quantity:
+            line.quantity = float(quantity)
+        if unit_price:
+            line.unit_price = float(unit_price)
+        if discount_percentage:
+            line.discount_percentage = float(discount_percentage)
+        
+        line.description = description
+        line.save()
+        
+        return JsonResponse({
+            'success': True,
+            'line': {
+                'id': line.id,
+                'product_name': line.product.name,
+                'quantity': float(line.quantity),
+                'unit_price': float(line.unit_price),
+                'discount_percentage': float(line.discount_percentage),
+                'subtotal': float(line.get_subtotal()),
+                'discount_amount': float(line.get_discount_amount()),
+                'total': float(line.get_total()),
+                'description': line.description,
+            },
+            'quotation_total': float(quotation.get_total_amount())
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
+
+@user_passes_test(is_agent, login_url='/')
+def quotation_get_lines_view(request, quotation_id):
+    """Vista AJAX para obtener líneas de una cotización"""
+    from .models import Quotation
+    from django.http import JsonResponse
+    
+    try:
+        quotation = get_object_or_404(Quotation, id=quotation_id)
+        
+        lines = []
+        for line in quotation.lines.all():
+            lines.append({
+                'id': line.id,
+                'product_name': line.product.name,
+                'quantity': float(line.quantity),
+                'unit_price': float(line.unit_price),
+                'discount_percentage': float(line.discount_percentage),
+                'subtotal': float(line.get_subtotal()),
+                'discount_amount': float(line.get_discount_amount()),
+                'total': float(line.get_total()),
+                'description': line.description,
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'lines': lines,
+            'quotation_total': float(quotation.get_total_amount())
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
+
+@user_passes_test(is_agent, login_url='/')
+def get_products_ajax_view(request):
+    """Vista AJAX para obtener productos"""
+    from .models import Product
+    from django.http import JsonResponse
+    
+    try:
+        search = request.GET.get('search', '')
+        products = Product.objects.filter(is_active=True)
+        
+        if search:
+            products = products.filter(
+                models.Q(name__icontains=search) |
+                models.Q(description__icontains=search)
+            )
+        
+        products = products.order_by('name')[:20]  # Limitar a 20 resultados
+        
+        product_list = []
+        for product in products:
+            product_list.append({
+                'id': product.id,
+                'name': product.name,
+                'price': float(product.price),
+                'description': product.description[:100] + '...' if len(product.description) > 100 else product.description
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'products': product_list
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
+
+# =================================
+# VISTAS PARA PLANTILLAS PÚBLICAS
+# =================================
+
+@user_passes_test(is_agent, login_url='/')
+@user_passes_test(is_agent, login_url='/')
+def quotation_template_create_new_view(request):
+    """Vista para crear una nueva plantilla desde cero"""
+    from .models import QuotationTemplate, Quotation
+    from django.contrib import messages
+    
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        description = request.POST.get('description', '')
+        quotation_id = request.POST.get('quotation_id')
+        
+        if not title:
+            messages.error(request, 'El título es obligatorio.')
+        elif not quotation_id:
+            messages.error(request, 'Debes seleccionar una cotización base.')
+        else:
+            try:
+                quotation = Quotation.objects.get(id=quotation_id)
+                
+                # Crear la plantilla
+                template = QuotationTemplate.objects.create(
+                    title=title,
+                    description=description,
+                    template_quotation=quotation,
+                    created_by=request.user,
+                    is_active=True
+                )
+                
+                messages.success(request, f'Plantilla "{title}" creada exitosamente.')
+                return redirect('quotation_template_detail', template_id=template.id)
+                
+            except Quotation.DoesNotExist:
+                messages.error(request, 'La cotización seleccionada no existe.')
+    
+    # Obtener cotizaciones disponibles para usar como plantilla
+    quotations = Quotation.objects.select_related('company').filter(
+        status__in=['sent', 'approved']  # Solo cotizaciones enviadas o aprobadas
+    ).order_by('-created_at')[:50]  # Últimas 50
+    
+    context = {
+        'page_title': 'Crear Nueva Plantilla',
+        'quotations': quotations,
+    }
+    
+    return render(request, 'tickets/quotation_template_create_new.html', context)
+
+
+@user_passes_test(is_agent, login_url='/')
+def quotation_template_edit_view(request, template_id):
+    """Vista para editar una plantilla existente"""
+    from .models import QuotationTemplate, Quotation
+    from django.contrib import messages
+    
+    template = get_object_or_404(QuotationTemplate, id=template_id)
+    
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        description = request.POST.get('description', '')
+        quotation_id = request.POST.get('quotation_id')
+        is_active = request.POST.get('is_active') == 'on'
+        
+        if not title:
+            messages.error(request, 'El título es obligatorio.')
+        elif not quotation_id:
+            messages.error(request, 'Debes seleccionar una cotización base.')
+        else:
+            try:
+                quotation = Quotation.objects.get(id=quotation_id)
+                
+                # Actualizar la plantilla
+                template.title = title
+                template.description = description
+                template.template_quotation = quotation
+                template.is_active = is_active
+                template.save()
+                
+                messages.success(request, f'Plantilla "{title}" actualizada exitosamente.')
+                return redirect('quotation_template_detail', template_id=template.id)
+                
+            except Quotation.DoesNotExist:
+                messages.error(request, 'La cotización seleccionada no existe.')
+    
+    # Obtener cotizaciones disponibles para usar como plantilla
+    quotations = Quotation.objects.select_related('company').filter(
+        status__in=['sent', 'approved']  # Solo cotizaciones enviadas o aprobadas
+    ).order_by('-created_at')[:50]  # Últimas 50
+    
+    context = {
+        'page_title': f'Editar Plantilla: {template.title}',
+        'template': template,
+        'quotations': quotations,
+    }
+    
+    return render(request, 'tickets/quotation_template_edit.html', context)
+
+
+@user_passes_test(is_agent, login_url='/')
+def quotation_template_delete_view(request, template_id):
+    """Vista para eliminar una plantilla"""
+    from .models import QuotationTemplate
+    from django.contrib import messages
+    
+    template = get_object_or_404(QuotationTemplate, id=template_id)
+    
+    if request.method == 'POST':
+        template_title = template.title
+        template.delete()
+        messages.success(request, f'Plantilla "{template_title}" eliminada exitosamente.')
+        return redirect('quotation_template_list')
+    
+    # Si no es POST, redirigir a la lista
+    return redirect('quotation_template_list')
+
+
+@user_passes_test(is_agent, login_url='/')
+def quotation_template_create_view(request, quotation_id):
+    """Vista para crear una plantilla pública desde una cotización"""
+    from .models import Quotation, QuotationTemplate
+    
+    quotation = get_object_or_404(Quotation, id=quotation_id)
+    
+    if request.method == 'POST':
+        try:
+            template = QuotationTemplate.objects.create(
+                template_quotation=quotation,
+                title=request.POST.get('title'),
+                description=request.POST.get('description', ''),
+                created_by=request.user
+            )
+            
+            messages.success(request, f'Plantilla pública creada exitosamente. Token: {template.public_token}')
+            return redirect('quotation_template_detail', template_id=template.id)
+        except Exception as e:
+            messages.error(request, f'Error al crear la plantilla: {str(e)}')
+    
+    # Obtener configuración del sistema para la moneda
+    from .models import SystemConfiguration
+    config = SystemConfiguration.get_config()
+    currency_symbol = config.get_currency_symbol() if config else '€'
+    
+    context = {
+        'page_title': f'Crear Plantilla Pública - {quotation.sequence}',
+        'quotation': quotation,
+        'currency_symbol': currency_symbol,
+    }
+    
+    return render(request, 'tickets/quotation_template_create.html', context)
+
+
+@user_passes_test(is_agent, login_url='/')
+def quotation_template_list_view(request):
+    """Vista para listar todas las plantillas públicas"""
+    from .models import QuotationTemplate
+    
+    templates = QuotationTemplate.objects.select_related(
+        'template_quotation', 'created_by'
+    ).order_by('-created_at')
+    
+    # Filtros opcionales
+    if request.GET.get('active_only'):
+        templates = templates.filter(is_active=True)
+    
+    # Calcular porcentajes de conversión y URLs públicas
+    for template in templates:
+        if template.views_count > 0:
+            template.conversion_rate = round((template.conversions_count * 100) / template.views_count, 1)
+        else:
+            template.conversion_rate = 0
+        # Agregar URL pública completa
+        template.public_url_full = request.build_absolute_uri(template.get_public_url())
+    
+    context = {
+        'page_title': 'Plantillas Públicas',
+        'templates': templates,
+    }
+    
+    return render(request, 'tickets/quotation_template_list.html', context)
+
+
+@user_passes_test(is_agent, login_url='/')
+def quotation_template_detail_view(request, template_id):
+    """Vista para ver detalles de una plantilla pública"""
+    from .models import QuotationTemplate
+    
+    template = get_object_or_404(QuotationTemplate, id=template_id)
+    
+    # Calcular porcentaje de conversión
+    if template.views_count > 0:
+        template.conversion_rate = round((template.conversions_count * 100) / template.views_count, 1)
+    else:
+        template.conversion_rate = 0
+    
+    # Obtener solicitudes recientes
+    recent_requests = template.requests.select_related(
+        'generated_quotation'
+    ).order_by('-created_at')[:10]
+    
+    # Obtener configuración del sistema para la moneda
+    from .models import SystemConfiguration
+    config = SystemConfiguration.get_config()
+    currency_symbol = config.get_currency_symbol() if config else '€'
+    
+    context = {
+        'page_title': f'Plantilla: {template.title}',
+        'template': template,
+        'recent_requests': recent_requests,
+        'currency_symbol': currency_symbol,
+        'public_url': request.build_absolute_uri(template.get_public_url()),
+    }
+    
+    return render(request, 'tickets/quotation_template_detail.html', context)
+
+
+def quotation_template_public_form_view(request, token):
+    """Vista pública para que el cliente llene sus datos"""
+    from .models import QuotationTemplate, QuotationTemplateRequest
+    
+    try:
+        template = QuotationTemplate.objects.select_related(
+            'template_quotation', 'template_quotation__company'
+        ).get(public_token=token, is_active=True)
+    except QuotationTemplate.DoesNotExist:
+        return render(request, 'tickets/quotation_template_error.html', {
+            'error_message': 'El enlace que está intentando acceder no existe o ha expirado.'
+        })
+    
+    # Incrementar contador de vistas
+    template.increment_views()
+    
+    if request.method == 'POST':
+        try:
+            # Crear la solicitud
+            template_request = QuotationTemplateRequest.objects.create(
+                template=template,
+                client_name=request.POST.get('client_name'),
+                client_email=request.POST.get('client_email'),
+                client_phone=request.POST.get('client_phone', ''),
+                client_company=request.POST.get('client_company', ''),
+                client_comments=request.POST.get('client_comments', '')
+            )
+            
+            # Procesar automáticamente la solicitud
+            # Usar el vendedor de la cotización plantilla
+            salesperson = template.template_quotation.salesperson
+            new_quotation = template_request.process_request(salesperson)
+            
+            # Redirigir a la vista pública de la nueva cotización
+            return redirect('quotation_public_view', token=new_quotation.public_token)
+            
+        except Exception as e:
+            messages.error(request, f'Error al procesar su solicitud: {str(e)}')
+    
+    # Obtener configuración del sistema para la moneda
+    from .models import SystemConfiguration
+    config = SystemConfiguration.get_config()
+    currency_symbol = config.get_currency_symbol() if config else '€'
+    
+    context = {
+        'template': template,
+        'currency_symbol': currency_symbol,
+    }
+    
+    return render(request, 'tickets/quotation_template_public_form.html', context)
+
+
+@user_passes_test(is_agent, login_url='/')
+def quotation_template_toggle_active_view(request, template_id):
+    """Vista para activar/desactivar una plantilla"""
+    from .models import QuotationTemplate
+    
+    if request.method == 'POST':
+        template = get_object_or_404(QuotationTemplate, id=template_id)
+        template.is_active = not template.is_active
+        template.save()
+        
+        status = "activada" if template.is_active else "desactivada"
+        messages.success(request, f'Plantilla {status} exitosamente')
+    
+    return redirect('quotation_template_detail', template_id=template_id)
+
+
+@user_passes_test(is_agent, login_url='/')
+def quotation_template_requests_view(request):
+    """Vista para ver todas las solicitudes de plantillas"""
+    from .models import QuotationTemplateRequest, QuotationTemplate
+    from django.core.paginator import Paginator
+    from django.db.models import Q
+    from datetime import datetime
+    
+    # Obtener todas las solicitudes
+    requests = QuotationTemplateRequest.objects.select_related(
+        'template', 'template__template_quotation', 'generated_quotation', 
+        'generated_quotation__company'
+    ).order_by('-created_at')
+    
+    # Filtros
+    template_filter = request.GET.get('template')
+    status_filter = request.GET.get('status')
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    
+    if template_filter:
+        requests = requests.filter(template_id=template_filter)
+    
+    if status_filter == 'processed':
+        requests = requests.filter(status__in=['processed', 'quoted'])
+    elif status_filter == 'pending':
+        requests = requests.filter(status='pending')
+    
+    if date_from:
+        try:
+            date_from_obj = datetime.strptime(date_from, '%Y-%m-%d').date()
+            requests = requests.filter(created_at__date__gte=date_from_obj)
+        except ValueError:
+            pass
+    
+    if date_to:
+        try:
+            date_to_obj = datetime.strptime(date_to, '%Y-%m-%d').date()
+            requests = requests.filter(created_at__date__lte=date_to_obj)
+        except ValueError:
+            pass
+    
+    # Paginación
+    paginator = Paginator(requests, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Estadísticas
+    all_requests = QuotationTemplateRequest.objects.all()
+    total_requests = all_requests.count()
+    processed_requests = all_requests.filter(status__in=['processed', 'quoted']).count()
+    pending_requests = total_requests - processed_requests
+    
+    conversion_rate = 0
+    if total_requests > 0:
+        conversion_rate = round((processed_requests * 100) / total_requests, 1)
+    
+    # Plantillas para filtro
+    templates_for_filter = QuotationTemplate.objects.select_related(
+        'template_quotation'
+    ).order_by('title')
+    
+    context = {
+        'page_title': 'Solicitudes de Plantillas',
+        'requests': page_obj,
+        'templates_for_filter': templates_for_filter,
+        'total_requests': total_requests,
+        'processed_requests': processed_requests,
+        'pending_requests': pending_requests,
+        'conversion_rate': conversion_rate,
+        'is_paginated': page_obj.has_other_pages(),
+        'page_obj': page_obj,
+    }
+    
+    return render(request, 'tickets/quotation_template_requests.html', context)

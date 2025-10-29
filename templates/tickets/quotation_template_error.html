@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enlace No Encontrado</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .error-container {
+            max-width: 500px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+            padding: 3rem 2rem;
+        }
+        
+        .error-icon {
+            font-size: 4rem;
+            color: #dc3545;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <i class="bi bi-exclamation-triangle error-icon"></i>
+        
+        <h2 class="h4 mb-3">Enlace No Encontrado</h2>
+        
+        <p class="text-muted mb-4">
+            {{ error_message|default:"El enlace que está intentando acceder no existe o ha sido desactivado." }}
+        </p>
+        
+        <div class="alert alert-info">
+            <strong>¿Qué puedes hacer?</strong>
+            <ul class="text-start mt-2 mb-0">
+                <li>Verifica que el enlace sea correcto</li>
+                <li>Contacta a la persona que te compartió este enlace</li>
+                <li>El enlace puede haber expirado o sido desactivado</li>
+            </ul>
+        </div>
+        
+        <button onclick="history.back()" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left"></i>
+            Volver Atrás
+        </button>
+    </div>
+</body>
+</html>

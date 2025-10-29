@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <!-- Header -->
+            <div class="d-flex align-items-center mb-4">
+                <a href="{% url 'quotation_detail' quotation.id %}" class="btn btn-outline-secondary me-3">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-trash text-danger"></i>
+                        Eliminar Cotización
+                    </h1>
+                    <p class="text-muted mb-0">Esta acción no se puede deshacer</p>
+                </div>
+            </div>
+
+            <!-- Confirmación -->
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Confirmar Eliminación
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger" role="alert">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>¿Está seguro que desea eliminar esta cotización?</strong>
+                        <br>
+                        Esta acción es <strong>irreversible</strong> y eliminará permanentemente toda la información asociada.
+                    </div>
+
+                    <!-- Información de la cotización -->
+                    <div class="bg-light p-3 rounded mb-4">
+                        <h6 class="fw-bold mb-3">Información de la cotización a eliminar:</h6>
+                        
+                        <div class="row">
+                            <div class="col-sm-4">
+                                <strong>Secuencia:</strong>
+                            </div>
+                            <div class="col-sm-8">
+                                {{ quotation.sequence }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-sm-4">
+                                <strong>Empresa:</strong>
+                            </div>
+                            <div class="col-sm-8">
+                                {{ quotation.company.name }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-sm-4">
+                                <strong>Vendedor:</strong>
+                            </div>
+                            <div class="col-sm-8">
+                                {{ quotation.salesperson.get_full_name|default:quotation.salesperson.username }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-sm-4">
+                                <strong>Fecha:</strong>
+                            </div>
+                            <div class="col-sm-8">
+                                {{ quotation.date|date:"d/m/Y" }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-sm-4">
+                                <strong>Estado:</strong>
+                            </div>
+                            <div class="col-sm-8">
+                                {% if quotation.status == 'draft' %}
+                                    <span class="badge bg-secondary">Borrador</span>
+                                {% elif quotation.status == 'sent' %}
+                                    <span class="badge bg-primary">Enviada</span>
+                                {% elif quotation.status == 'approved' %}
+                                    <span class="badge bg-success">Aprobada</span>
+                                {% elif quotation.status == 'rejected' %}
+                                    <span class="badge bg-danger">Rechazada</span>
+                                {% elif quotation.status == 'expired' %}
+                                    <span class="badge bg-warning">Expirada</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-sm-4">
+                                <strong>Creada:</strong>
+                            </div>
+                            <div class="col-sm-8">
+                                {{ quotation.created_at|date:"d/m/Y H:i" }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botones -->
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash"></i>
+                                Sí, Eliminar Cotización
+                            </button>
+                            <a href="{% url 'quotation_detail' quotation.id %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i>
+                                Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información adicional -->
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-2">
+                        <i class="bi bi-info-circle text-primary"></i>
+                        Qué se eliminará:
+                    </h6>
+                    <ul class="mb-0">
+                        <li>La cotización y toda su información</li>
+                        <li>Los datos asociados (descripción, fechas, etc.)</li>
+                        <li>Referencias en el historial del sistema</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

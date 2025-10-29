@@ -1,0 +1,299 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="d-flex align-items-center">
+                    <a href="{% url 'quotation_template_list' %}" class="btn btn-outline-secondary me-3">
+                        <i class="bi bi-arrow-left"></i>
+                    </a>
+                    <div>
+                        <h1 class="h3 mb-0">
+                            <i class="bi bi-share text-primary"></i>
+                            {{ template.title }}
+                        </h1>
+                        <p class="text-muted mb-0">Plantilla basada en {{ template.template_quotation.sequence }}</p>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <a href="{% url 'quotation_template_edit' template.id %}" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil"></i>
+                        Editar
+                    </a>
+                    <form method="post" action="{% url 'quotation_template_toggle_active' template.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn {% if template.is_active %}btn-warning{% else %}btn-success{% endif %}">
+                            <i class="bi bi-{% if template.is_active %}pause{% else %}play{% endif %}-circle"></i>
+                            {% if template.is_active %}Desactivar{% else %}Activar{% endif %}
+                        </button>
+                    </form>
+                    <button class="btn btn-outline-danger" 
+                            onclick="confirmDelete('{{ template.id }}', '{{ template.title }}')">
+                        <i class="bi bi-trash"></i>
+                        Eliminar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Estado y estadísticas -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-{% if template.is_active %}success{% else %}secondary{% endif %} text-white">
+                        <div class="card-body text-center">
+                            <i class="bi bi-{% if template.is_active %}check-circle{% else %}pause-circle{% endif %} fs-1"></i>
+                            <h6 class="mt-2">Estado</h6>
+                            <p class="mb-0">{% if template.is_active %}Activa{% else %}Inactiva{% endif %}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body text-center">
+                            <i class="bi bi-eye fs-1"></i>
+                            <h6 class="mt-2">Vistas</h6>
+                            <h4 class="mb-0">{{ template.views_count }}</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <i class="bi bi-file-earmark-plus fs-1"></i>
+                            <h6 class="mt-2">Conversiones</h6>
+                            <h4 class="mb-0">{{ template.conversions_count }}</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-dark">
+                        <div class="card-body text-center">
+                            <i class="bi bi-percent fs-1"></i>
+                            <h6 class="mt-2">Tasa de Conversión</h6>
+                            <h4 class="mb-0">
+                                {% if template.views_count > 0 %}
+                                    {{ template.conversion_rate }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enlace público -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-link-45deg"></i>
+                        Enlace Público
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="publicUrl" 
+                               value="{{ public_url }}" readonly>
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard()">
+                            <i class="bi bi-clipboard"></i>
+                            Copiar
+                        </button>
+                        <a href="{{ template.get_public_url }}" target="_blank" class="btn btn-outline-primary">
+                            <i class="bi bi-box-arrow-up-right"></i>
+                            Abrir
+                        </a>
+                    </div>
+                    <div class="form-text">Comparte este enlace con clientes potenciales para que generen cotizaciones automáticamente.</div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Información de la plantilla -->
+                <div class="col-lg-8">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-info-circle"></i>
+                                Información de la Plantilla
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Creado por:</strong> {{ template.created_by.get_full_name|default:template.created_by.username }}</p>
+                                    <p><strong>Fecha de creación:</strong> {{ template.created_at|date:"d/m/Y H:i" }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Cotización base:</strong> {{ template.template_quotation.sequence }}</p>
+                                    <p><strong>Token:</strong> <code>{{ template.public_token }}</code></p>
+                                </div>
+                            </div>
+                            
+                            {% if template.description %}
+                            <div class="mt-3">
+                                <strong>Descripción:</strong>
+                                <div class="bg-light p-3 rounded mt-2">
+                                    {{ template.description|linebreaks }}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Productos incluidos -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-list-ul"></i>
+                                Productos Incluidos
+                            </h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-striped mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Producto</th>
+                                            <th class="text-center">Cantidad</th>
+                                            <th class="text-end">Precio Unit.</th>
+                                            <th class="text-center">Descuento</th>
+                                            <th class="text-end">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for line in template.template_quotation.lines.all %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ line.product.name }}</strong>
+                                                {% if line.description %}
+                                                    <br><small class="text-muted">{{ line.description }}</small>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-center">{{ line.quantity|floatformat:0 }}</td>
+                                            <td class="text-end">{{ currency_symbol }}{{ line.unit_price|floatformat:2 }}</td>
+                                            <td class="text-center">
+                                                {% if line.discount_percentage > 0 %}
+                                                    {{ line.discount_percentage|floatformat:1 }}%
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-end"><strong>{{ currency_symbol }}{{ line.get_total|floatformat:2 }}</strong></td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                    <tfoot class="table-light">
+                                        <tr>
+                                            <td colspan="4" class="text-end"><strong>Total de la Plantilla:</strong></td>
+                                            <td class="text-end">
+                                                <h5 class="mb-0 text-primary">{{ currency_symbol }}{{ template.template_quotation.get_total_amount|floatformat:2 }}</h5>
+                                            </td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Solicitudes recientes -->
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="bi bi-clock-history"></i>
+                                Solicitudes Recientes
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            {% if recent_requests %}
+                                {% for request in recent_requests %}
+                                <div class="border-bottom pb-2 mb-2">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <strong>{{ request.client_name }}</strong>
+                                            <br><small class="text-muted">{{ request.client_email }}</small>
+                                            {% if request.client_company %}
+                                                <br><small class="text-muted">{{ request.client_company }}</small>
+                                            {% endif %}
+                                        </div>
+                                        <small class="text-muted">{{ request.created_at|date:"d/m H:i" }}</small>
+                                    </div>
+                                    {% if request.generated_quotation %}
+                                        <div class="mt-1">
+                                            <a href="{% url 'quotation_detail' request.generated_quotation.id %}" class="btn btn-sm btn-outline-primary">
+                                                Ver Cotización
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                                
+                                <div class="text-center mt-3">
+                                    <a href="{% url 'quotation_template_requests' %}?template={{ template.id }}" class="btn btn-sm btn-outline-secondary">
+                                        Ver Todas las Solicitudes
+                                    </a>
+                                </div>
+                            {% else %}
+                                <div class="text-center text-muted">
+                                    <i class="bi bi-inbox fs-3"></i>
+                                    <p class="mt-2">No hay solicitudes aún</p>
+                                    <small>Comparte el enlace público para empezar a recibir solicitudes.</small>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard() {
+    const urlInput = document.getElementById('publicUrl');
+    urlInput.select();
+    urlInput.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(urlInput.value).then(function() {
+        // Cambiar texto del botón temporalmente
+        const button = event.target.closest('button');
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="bi bi-check"></i> ¡Copiado!';
+        button.classList.remove('btn-outline-secondary');
+        button.classList.add('btn-success');
+        
+        setTimeout(function() {
+            button.innerHTML = originalText;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-secondary');
+        }, 2000);
+    });
+}
+
+function confirmDelete(templateId, templateTitle) {
+    if (confirm('¿Estás seguro de que deseas eliminar la plantilla "' + templateTitle + '"?\n\nEsta acción no se puede deshacer y eliminará también todas las solicitudes asociadas.')) {
+        // Crear un formulario temporal para enviar la petición DELETE
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/quotations/templates/' + templateId + '/delete/';
+        
+        // Agregar el token CSRF
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = csrfToken;
+        form.appendChild(csrfInput);
+        
+        // Enviar el formulario
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+
+<!-- Token CSRF para las peticiones AJAX -->
+{% csrf_token %}
+{% endblock %}

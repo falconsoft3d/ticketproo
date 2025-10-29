@@ -343,6 +343,40 @@ urlpatterns = [
     path('meetings/public/<str:token>/', views.meeting_public_view, name='meeting_public'),
     path('meetings/public/<str:token>/register/', views.meeting_register_view, name='meeting_register'),
     path('meetings/public/<str:token>/questions/', views.meeting_questions_public_view, name='meeting_questions_public'),
+    
+    # URLs de Cotizaciones
+    path('quotations/', views.quotation_list_view, name='quotation_list'),
+    path('quotations/create/', views.quotation_create_view, name='quotation_create'),
+    path('quotations/<int:quotation_id>/', views.quotation_detail_view, name='quotation_detail'),
+    path('quotations/<int:quotation_id>/edit/', views.quotation_edit_view, name='quotation_edit'),
+    path('quotations/<int:quotation_id>/duplicate/', views.quotation_duplicate_view, name='quotation_duplicate'),
+    path('quotations/<int:quotation_id>/delete/', views.quotation_delete_view, name='quotation_delete'),
+    path('quotations/<int:quotation_id>/pdf/', views.quotation_pdf_view, name='quotation_pdf'),
+    path('quotations/<int:quotation_id>/share/', views.quotation_share_view, name='quotation_share'),
+    
+    # URLs públicas para cotizaciones (sin autenticación)
+    path('quotations/public/<str:token>/', views.quotation_public_view, name='quotation_public_view'),
+    path('quotations/public/<str:token>/respond/', views.quotation_public_respond_view, name='quotation_public_respond'),
+    
+    # URLs para plantillas de cotización
+    path('quotations/templates/', views.quotation_template_list_view, name='quotation_template_list'),
+    path('quotations/templates/new/', views.quotation_template_create_new_view, name='quotation_template_create_new'),
+    path('quotations/templates/requests/', views.quotation_template_requests_view, name='quotation_template_requests'),
+    path('quotations/templates/<int:template_id>/', views.quotation_template_detail_view, name='quotation_template_detail'),
+    path('quotations/templates/<int:template_id>/edit/', views.quotation_template_edit_view, name='quotation_template_edit'),
+    path('quotations/templates/<int:template_id>/delete/', views.quotation_template_delete_view, name='quotation_template_delete'),
+    path('quotations/templates/<int:template_id>/toggle/', views.quotation_template_toggle_active_view, name='quotation_template_toggle_active'),
+    path('quotations/<int:quotation_id>/create-template/', views.quotation_template_create_view, name='quotation_template_create'),
+    
+    # URL pública para formulario de plantilla (sin autenticación)
+    path('quotations/template/<str:token>/', views.quotation_template_public_form_view, name='quotation_template_public_form'),
+    
+    # URLs AJAX para líneas de cotización
+    path('quotations/<int:quotation_id>/add-line/', views.quotation_add_line_view, name='quotation_add_line'),
+    path('quotations/<int:quotation_id>/remove-line/<int:line_id>/', views.quotation_remove_line_view, name='quotation_remove_line'),
+    path('quotations/<int:quotation_id>/edit-line/<int:line_id>/', views.quotation_edit_line_view, name='quotation_edit_line'),
+    path('quotations/<int:quotation_id>/lines/', views.quotation_get_lines_view, name='quotation_get_lines'),
+    path('ajax/products/', views.get_products_ajax_view, name='get_products_ajax'),
     path('meetings/public/<str:token>/ask/', views.meeting_ask_question_view, name='meeting_ask_question'),
     
     # AJAX para reuniones

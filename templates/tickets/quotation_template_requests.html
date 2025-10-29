@@ -1,0 +1,285 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-clock-history text-primary"></i>
+                        {{ page_title }}
+                    </h1>
+                    <p class="text-muted mb-0">Historial de solicitudes generadas a través de plantillas públicas</p>
+                </div>
+                <div>
+                    <a href="{% url 'quotation_template_list' %}" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-left"></i>
+                        Volver a Plantillas
+                    </a>
+                </div>
+            </div>
+
+            <!-- Filtros -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="template_filter" class="form-label">Plantilla:</label>
+                            <select name="template" id="template_filter" class="form-select">
+                                <option value="">Todas las plantillas</option>
+                                {% for template in templates_for_filter %}
+                                    <option value="{{ template.id }}" {% if request.GET.template == template.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ template.title }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="status_filter" class="form-label">Estado:</label>
+                            <select name="status" id="status_filter" class="form-select">
+                                <option value="">Todos los estados</option>
+                                <option value="processed" {% if request.GET.status == "processed" %}selected{% endif %}>Procesadas</option>
+                                <option value="pending" {% if request.GET.status == "pending" %}selected{% endif %}>Pendientes</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="date_from" class="form-label">Desde:</label>
+                            <input type="date" name="date_from" id="date_from" class="form-control" value="{{ request.GET.date_from }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="date_to" class="form-label">Hasta:</label>
+                            <input type="date" name="date_to" id="date_to" class="form-control" value="{{ request.GET.date_to }}">
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-funnel"></i>
+                                Filtrar
+                            </button>
+                            <a href="{% url 'quotation_template_requests' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x"></i>
+                                Limpiar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Lista de solicitudes -->
+            <div class="card">
+                <div class="card-body p-0">
+                    {% if requests %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Cliente</th>
+                                        <th>Plantilla</th>
+                                        <th>Estado</th>
+                                        <th>Fecha Solicitud</th>
+                                        <th>Cotización Generada</th>
+                                        <th width="150">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for request in requests %}
+                                    <tr>
+                                        <td>
+                                            <div>
+                                                <strong>{{ request.client_name }}</strong>
+                                                <br><small class="text-muted">{{ request.client_email }}</small>
+                                                {% if request.client_phone %}
+                                                    <br><small class="text-muted">{{ request.client_phone }}</small>
+                                                {% endif %}
+                                                {% if request.client_company %}
+                                                    <br><small class="text-muted">{{ request.client_company }}</small>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'quotation_template_detail' request.template.id %}" class="text-decoration-none">
+                                                {{ request.template.title }}
+                                            </a>
+                                            <br><small class="text-muted">{{ request.template.template_quotation.sequence }}</small>
+                                        </td>
+                                        <td>
+                                            {% if request.status == 'processed' or request.status == 'quoted' %}
+                                                <span class="badge bg-success">
+                                                    <i class="bi bi-check-circle"></i>
+                                                    {% if request.status == 'quoted' %}Cotizada{% else %}Procesada{% endif %}
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-warning">
+                                                    <i class="bi bi-clock"></i>
+                                                    Pendiente
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">
+                                                {{ request.created_at|date:"d/m/Y H:i" }}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            {% if request.generated_quotation %}
+                                                <a href="{% url 'quotation_detail' request.generated_quotation.id %}" class="text-decoration-none">
+                                                    {{ request.generated_quotation.sequence }}
+                                                </a>
+                                                <br><small class="text-muted">{{ request.generated_quotation.company.name }}</small>
+                                            {% else %}
+                                                <span class="text-muted">No generada</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                {% if request.generated_quotation %}
+                                                    <a href="{% url 'quotation_detail' request.generated_quotation.id %}" 
+                                                       class="btn btn-outline-primary" title="Ver Cotización">
+                                                        <i class="bi bi-file-earmark-text"></i>
+                                                    </a>
+                                                    <a href="{% url 'quotation_pdf' request.generated_quotation.id %}" 
+                                                       class="btn btn-outline-danger" title="Descargar PDF">
+                                                        <i class="bi bi-file-pdf"></i>
+                                                    </a>
+                                                {% else %}
+                                                    <button class="btn btn-outline-secondary" disabled title="Sin cotización">
+                                                        <i class="bi bi-dash"></i>
+                                                    </button>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Paginación -->
+                        {% if is_paginated %}
+                        <div class="card-footer">
+                            <nav aria-label="Navegación de solicitudes">
+                                <ul class="pagination pagination-sm justify-content-center mb-0">
+                                    {% if page_obj.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?{% if request.GET.template %}template={{ request.GET.template }}&{% endif %}{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}{% if request.GET.date_from %}date_from={{ request.GET.date_from }}&{% endif %}{% if request.GET.date_to %}date_to={{ request.GET.date_to }}&{% endif %}page=1">
+                                                <i class="bi bi-chevron-double-left"></i>
+                                            </a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?{% if request.GET.template %}template={{ request.GET.template }}&{% endif %}{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}{% if request.GET.date_from %}date_from={{ request.GET.date_from }}&{% endif %}{% if request.GET.date_to %}date_to={{ request.GET.date_to }}&{% endif %}page={{ page_obj.previous_page_number }}">
+                                                <i class="bi bi-chevron-left"></i>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+
+                                    {% for num in page_obj.paginator.page_range %}
+                                        {% if page_obj.number == num %}
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ num }}</span>
+                                            </li>
+                                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?{% if request.GET.template %}template={{ request.GET.template }}&{% endif %}{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}{% if request.GET.date_from %}date_from={{ request.GET.date_from }}&{% endif %}{% if request.GET.date_to %}date_to={{ request.GET.date_to }}&{% endif %}page={{ num }}">{{ num }}</a>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    {% if page_obj.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?{% if request.GET.template %}template={{ request.GET.template }}&{% endif %}{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}{% if request.GET.date_from %}date_from={{ request.GET.date_from }}&{% endif %}{% if request.GET.date_to %}date_to={{ request.GET.date_to }}&{% endif %}page={{ page_obj.next_page_number }}">
+                                                <i class="bi bi-chevron-right"></i>
+                                            </a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?{% if request.GET.template %}template={{ request.GET.template }}&{% endif %}{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}{% if request.GET.date_from %}date_from={{ request.GET.date_from }}&{% endif %}{% if request.GET.date_to %}date_to={{ request.GET.date_to }}&{% endif %}page={{ page_obj.paginator.num_pages }}">
+                                                <i class="bi bi-chevron-double-right"></i>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        </div>
+                        {% endif %}
+
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-inbox fs-1 text-muted"></i>
+                            <h5 class="mt-3 text-muted">No hay solicitudes</h5>
+                            <p class="text-muted">
+                                {% if request.GET.template or request.GET.status or request.GET.date_from or request.GET.date_to %}
+                                    No se encontraron solicitudes que coincidan con los filtros aplicados.
+                                {% else %}
+                                    Aún no se han recibido solicitudes a través de plantillas públicas.
+                                {% endif %}
+                            </p>
+                            <div>
+                                {% if request.GET.template or request.GET.status or request.GET.date_from or request.GET.date_to %}
+                                    <a href="{% url 'quotation_template_requests' %}" class="btn btn-outline-primary">
+                                        <i class="bi bi-x"></i>
+                                        Limpiar Filtros
+                                    </a>
+                                {% endif %}
+                                <a href="{% url 'quotation_template_list' %}" class="btn btn-primary">
+                                    <i class="bi bi-share"></i>
+                                    Ver Plantillas
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Estadísticas rápidas -->
+            {% if total_requests > 0 %}
+            <div class="row mt-4">
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title text-primary">{{ total_requests }}</h5>
+                            <p class="card-text text-muted">Total Solicitudes</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title text-success">{{ processed_requests }}</h5>
+                            <p class="card-text text-muted">Procesadas</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title text-warning">{{ pending_requests }}</h5>
+                            <p class="card-text text-muted">Pendientes</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title text-info">{{ conversion_rate }}%</h5>
+                            <p class="card-text text-muted">Tasa Conversión</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto submit form on filter change
+document.addEventListener('DOMContentLoaded', function() {
+    const filters = document.querySelectorAll('#template_filter, #status_filter');
+    filters.forEach(filter => {
+        filter.addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
+});
+</script>
+{% endblock %}

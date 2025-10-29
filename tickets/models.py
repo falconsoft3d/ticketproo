@@ -1164,6 +1164,12 @@ class UserNote(models.Model):
 class TimeEntry(models.Model):
     """Modelo para registrar entrada y salida de trabajo de empleados (agentes)"""
     
+    END_REASON_CHOICES = [
+        ('comer', 'Comer'),
+        ('fin_jornada', 'Fin de Jornada'),
+        ('otro', 'Otro'),
+    ]
+    
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -1212,6 +1218,14 @@ class TimeEntry(models.Model):
         null=True,
         blank=True,
         verbose_name='Fecha y hora de salida'
+    )
+    end_reason = models.CharField(
+        max_length=20,
+        choices=END_REASON_CHOICES,
+        null=True,
+        blank=True,
+        verbose_name='Causa de finalización',
+        help_text='Motivo por el cual se finaliza la jornada'
     )
     notas = models.TextField(
         blank=True,
@@ -14903,3 +14917,638 @@ class QuickTodo(models.Model):
     def __str__(self):
         status = "✓" if self.completed else "○"
         return f"{status} {self.text[:50]}..."
+
+
+class Quotation(models.Model):
+    """Modelo para gestionar cotizaciones"""
+    
+    STATUS_CHOICES = [
+        ('draft', 'Borrador'),
+        ('sent', 'Enviada'),
+        ('approved', 'Aprobada'),
+        ('rejected', 'Rechazada'),
+        ('expired', 'Expirada'),
+    ]
+    
+    # Secuencia automática
+    sequence = models.CharField(
+        max_length=20, 
+        unique=True, 
+        blank=True,
+        verbose_name='Secuencia'
+    )
+    
+    # Empresa cliente
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.CASCADE,
+        verbose_name='Empresa',
+        related_name='quotations'
+    )
+    
+    # Vendedor (usuario)
+    salesperson = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Vendedor',
+        related_name='quotations'
+    )
+    
+    # Fecha de cotización
+    date = models.DateField(
+        default=timezone.now,
+        verbose_name='Fecha'
+    )
+    
+    # Fecha de vencimiento (por defecto 30 días después de la fecha de cotización)
+    expiry_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name='Fecha de Vencimiento',
+        help_text='Fecha límite para aceptar esta cotización'
+    )
+    
+    # Estado
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='draft',
+        verbose_name='Estado'
+    )
+    
+    # Campos adicionales
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción'
+    )
+    
+    # Fechas del servicio (opcional para servicios con duración específica)
+    service_start_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name='Fecha de Inicio del Servicio',
+        help_text='Fecha en que comenzará el servicio (opcional)'
+    )
+    
+    service_end_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name='Fecha de Fin del Servicio', 
+        help_text='Fecha estimada de finalización del servicio (opcional)'
+    )
+    
+    # Token para acceso público
+    public_token = models.CharField(
+        max_length=50,
+        unique=True,
+        blank=True,
+        null=True,
+        verbose_name='Token Público',
+        help_text='Token único para compartir la cotización públicamente'
+    )
+    
+    # Estado del cliente (respuesta pública)
+    CLIENT_STATUS_CHOICES = [
+        ('pending', 'Pendiente de Respuesta'),
+        ('accepted', 'Aceptada por Cliente'),
+        ('rejected', 'Rechazada por Cliente'),
+    ]
+    
+    client_status = models.CharField(
+        max_length=20,
+        choices=CLIENT_STATUS_CHOICES,
+        default='pending',
+        verbose_name='Estado del Cliente',
+        help_text='Estado de la respuesta del cliente a la cotización'
+    )
+    
+    # Información de respuesta del cliente
+    client_response_name = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Nombre del Cliente',
+        help_text='Nombre de quien respondió a la cotización'
+    )
+    
+    client_response_email = models.EmailField(
+        blank=True,
+        verbose_name='Email del Cliente',
+        help_text='Email de quien respondió a la cotización'
+    )
+    
+    client_response_comments = models.TextField(
+        blank=True,
+        verbose_name='Comentarios del Cliente',
+        help_text='Comentarios adicionales del cliente'
+    )
+    
+    client_response_date = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Fecha de Respuesta del Cliente',
+        help_text='Fecha y hora en que el cliente respondió'
+    )
+    
+    # Metadatos
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Cotización'
+        verbose_name_plural = 'Cotizaciones'
+        indexes = [
+            models.Index(fields=['sequence']),
+            models.Index(fields=['company']),
+            models.Index(fields=['salesperson']),
+            models.Index(fields=['date']),
+            models.Index(fields=['status']),
+            models.Index(fields=['created_at']),
+        ]
+    
+    def save(self, *args, **kwargs):
+        if not self.sequence:
+            # Generar secuencia automática
+            current_year = timezone.now().year
+            last_quotation = Quotation.objects.filter(
+                sequence__startswith=f'COT-{current_year}'
+            ).order_by('-sequence').first()
+            
+            if last_quotation:
+                last_number = int(last_quotation.sequence.split('-')[-1])
+                new_number = last_number + 1
+            else:
+                new_number = 1
+            
+            self.sequence = f'COT-{current_year}-{new_number:04d}'
+        
+        # Calcular fecha de vencimiento si no está establecida
+        if not self.expiry_date and self.date:
+            from datetime import timedelta
+            self.expiry_date = self.date + timedelta(days=30)
+        
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return f"{self.sequence} - {self.company.name}"
+    
+    def get_status_display_badge(self):
+        """Retorna el estado con el badge HTML correspondiente"""
+        badge_colors = {
+            'draft': 'secondary',
+            'sent': 'primary', 
+            'approved': 'success',
+            'rejected': 'danger',
+            'expired': 'warning'
+        }
+        color = badge_colors.get(self.status, 'secondary')
+        return f'<span class="badge bg-{color}">{self.get_status_display()}</span>'
+    
+    def get_total_amount(self):
+        """Calcula el total de la cotización sumando todas las líneas"""
+        total = self.lines.aggregate(
+            total=models.Sum(models.F('quantity') * models.F('unit_price'))
+        )['total']
+        return total or 0
+    
+    def get_lines_count(self):
+        """Retorna el número de líneas de la cotización"""
+        return self.lines.count()
+    
+    def generate_public_token(self):
+        """Genera un token único para acceso público"""
+        import uuid
+        import hashlib
+        
+        if not self.public_token:
+            # Generar token único basado en UUID y timestamp
+            unique_string = f"{self.id}-{self.sequence}-{timezone.now().timestamp()}"
+            token = hashlib.md5(unique_string.encode()).hexdigest()[:32]
+            self.public_token = token
+            self.save(update_fields=['public_token'])
+        return self.public_token
+    
+    def get_public_url(self, request=None):
+        """Retorna la URL pública de la cotización"""
+        if not self.public_token:
+            self.generate_public_token()
+        
+        if request:
+            from django.urls import reverse
+            return request.build_absolute_uri(
+                reverse('quotation_public_view', kwargs={'token': self.public_token})
+            )
+        return f"/quotations/public/{self.public_token}/"
+    
+    def can_be_responded(self):
+        """Verifica si la cotización puede ser respondida (aceptada/rechazada)"""
+        # Si el estado del cliente es 'pending', siempre se permite responder
+        # independientemente del estado interno
+        return self.client_status == 'pending' and not self.is_expired()
+    
+    def is_expired(self):
+        """Verifica si la cotización está vencida"""
+        if not self.expiry_date:
+            return False
+        from datetime import date
+        return date.today() > self.expiry_date
+    
+    def get_days_until_expiry(self):
+        """Retorna los días restantes hasta el vencimiento"""
+        if not self.expiry_date:
+            return None
+        from datetime import date
+        days_left = (self.expiry_date - date.today()).days
+        return days_left if days_left >= 0 else 0
+    
+    def get_expiry_status_display(self):
+        """Retorna el estado de vencimiento con formato"""
+        if not self.expiry_date:
+            return "Sin fecha de vencimiento"
+        
+        days_left = self.get_days_until_expiry()
+        if days_left is None:
+            return "Sin fecha de vencimiento"
+        elif days_left == 0:
+            return "Vence hoy"
+        elif days_left < 0:
+            return f"Vencida hace {abs(days_left)} días"
+        elif days_left <= 3:
+            return f"Vence en {days_left} días (¡Urgente!)"
+        elif days_left <= 7:
+            return f"Vence en {days_left} días"
+        else:
+            return f"Vence en {days_left} días"
+    
+    def get_client_status_display_badge(self):
+        """Retorna el estado del cliente con el badge HTML correspondiente"""
+        badge_colors = {
+            'pending': 'warning',
+            'accepted': 'success',
+            'rejected': 'danger'
+        }
+        color = badge_colors.get(self.client_status, 'secondary')
+        return f'<span class="badge bg-{color}">{self.get_client_status_display()}</span>'
+
+
+class QuotationLine(models.Model):
+    """Modelo para las líneas de productos en una cotización"""
+    
+    quotation = models.ForeignKey(
+        'Quotation',
+        on_delete=models.CASCADE,
+        verbose_name='Cotización',
+        related_name='lines'
+    )
+    
+    product = models.ForeignKey(
+        'Product',
+        on_delete=models.CASCADE,
+        verbose_name='Producto'
+    )
+    
+    quantity = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=1,
+        verbose_name='Cantidad'
+    )
+    
+    unit_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name='Precio Unitario'
+    )
+    
+    discount_percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=0,
+        verbose_name='Descuento (%)',
+        help_text='Porcentaje de descuento sobre el precio unitario'
+    )
+    
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción',
+        help_text='Descripción adicional o personalizada del producto'
+    )
+    
+    # Metadatos
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    
+    class Meta:
+        ordering = ['id']
+        verbose_name = 'Línea de Cotización'
+        verbose_name_plural = 'Líneas de Cotización'
+        indexes = [
+            models.Index(fields=['quotation']),
+            models.Index(fields=['product']),
+        ]
+    
+    def save(self, *args, **kwargs):
+        # Si no se ha establecido el precio unitario, usar el precio del producto
+        if not self.unit_price:
+            self.unit_price = self.product.price
+        super().save(*args, **kwargs)
+    
+    def get_subtotal(self):
+        """Calcula el subtotal de la línea (cantidad × precio unitario)"""
+        return self.quantity * self.unit_price
+    
+    def get_discount_amount(self):
+        """Calcula el monto del descuento"""
+        return self.get_subtotal() * (self.discount_percentage / 100)
+    
+    def get_total(self):
+        """Calcula el total de la línea (subtotal - descuento)"""
+        return self.get_subtotal() - self.get_discount_amount()
+    
+    def __str__(self):
+        return f"{self.quotation.sequence} - {self.product.name} (x{self.quantity})"
+
+
+class QuotationTemplate(models.Model):
+    """Modelo para plantillas de cotización que se pueden compartir públicamente"""
+    
+    # Cotización base que sirve como plantilla
+    template_quotation = models.ForeignKey(
+        'Quotation',
+        on_delete=models.CASCADE,
+        verbose_name='Cotización Plantilla',
+        related_name='public_templates'
+    )
+    
+    # Token público único para acceder al formulario
+    public_token = models.CharField(
+        max_length=50,
+        unique=True,
+        verbose_name='Token Público',
+        help_text='Token único para el enlace público'
+    )
+    
+    # Información del enlace
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título del Enlace',
+        help_text='Título descriptivo para el cliente'
+    )
+    
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción',
+        help_text='Descripción que verá el cliente al acceder al enlace'
+    )
+    
+    # Estado
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo',
+        help_text='Si el enlace está activo y acepta nuevas solicitudes'
+    )
+    
+    # Estadísticas
+    views_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Número de Vistas',
+        help_text='Cuántas veces se ha visitado el enlace'
+    )
+    
+    conversions_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Conversiones',
+        help_text='Cuántas cotizaciones se han generado desde este enlace'
+    )
+    
+    # Metadatos
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Creado por',
+        related_name='quotation_templates'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Plantilla de Cotización Pública'
+        verbose_name_plural = 'Plantillas de Cotización Públicas'
+        indexes = [
+            models.Index(fields=['public_token']),
+            models.Index(fields=['is_active']),
+            models.Index(fields=['created_at']),
+        ]
+    
+    def save(self, *args, **kwargs):
+        if not self.public_token:
+            # Generar token único
+            import uuid
+            import hashlib
+            unique_string = f"{self.template_quotation.id}-{self.title}-{timezone.now().timestamp()}"
+            token = hashlib.md5(unique_string.encode()).hexdigest()[:32]
+            self.public_token = token
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return f"{self.title} - {self.template_quotation.sequence}"
+    
+    def get_public_url(self, request=None):
+        """Retorna la URL pública del formulario"""
+        if request:
+            from django.urls import reverse
+            return request.build_absolute_uri(
+                reverse('quotation_template_public_form', kwargs={'token': self.public_token})
+            )
+        return f"/quotations/template/{self.public_token}/"
+    
+    def increment_views(self):
+        """Incrementa el contador de vistas"""
+        self.views_count += 1
+        self.save(update_fields=['views_count'])
+    
+    def increment_conversions(self):
+        """Incrementa el contador de conversiones"""
+        self.conversions_count += 1
+        self.save(update_fields=['conversions_count'])
+
+
+class QuotationTemplateRequest(models.Model):
+    """Solicitudes generadas desde plantillas públicas"""
+    
+    # Plantilla que generó esta solicitud
+    template = models.ForeignKey(
+        'QuotationTemplate',
+        on_delete=models.CASCADE,
+        verbose_name='Plantilla',
+        related_name='requests'
+    )
+    
+    # Datos del cliente
+    client_name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre del Cliente'
+    )
+    
+    client_email = models.EmailField(
+        verbose_name='Email del Cliente'
+    )
+    
+    client_phone = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name='Teléfono del Cliente'
+    )
+    
+    client_company = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Empresa del Cliente'
+    )
+    
+    # Comentarios del cliente
+    client_comments = models.TextField(
+        blank=True,
+        verbose_name='Comentarios del Cliente'
+    )
+    
+    # Cotización generada
+    generated_quotation = models.ForeignKey(
+        'Quotation',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Cotización Generada',
+        related_name='template_requests'
+    )
+    
+    # Estado
+    STATUS_CHOICES = [
+        ('pending', 'Pendiente'),
+        ('processed', 'Procesada'),
+        ('quoted', 'Cotizada'),
+    ]
+    
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        verbose_name='Estado'
+    )
+    
+    # Metadatos
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de solicitud'
+    )
+    
+    processed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de procesamiento'
+    )
+    
+    processed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Procesado por',
+        related_name='processed_template_requests'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Solicitud de Plantilla'
+        verbose_name_plural = 'Solicitudes de Plantillas'
+        indexes = [
+            models.Index(fields=['template']),
+            models.Index(fields=['status']),
+            models.Index(fields=['created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.client_name} - {self.template.title}"
+    
+    def process_request(self, processed_by_user):
+        """Procesa la solicitud creando una cotización personalizada"""
+        try:
+            # Crear la empresa del cliente si no existe, o actualizar contacto si existe
+            from .models import Company
+            
+            company, created = Company.objects.get_or_create(
+                email=self.client_email,
+                defaults={
+                    'name': self.client_company or f"Empresa de {self.client_name}",
+                    'phone': self.client_phone or '',
+                    'address': '',
+                    'description': f'Cliente generado automáticamente desde plantilla: {self.template.title}. Contacto: {self.client_name}',
+                    'is_active': True,
+                }
+            )
+            
+            # Si la empresa ya existía, actualizar datos de contacto
+            if not created:
+                if self.client_phone:
+                    company.phone = self.client_phone
+                if self.client_company:
+                    company.name = self.client_company
+                # Actualizar descripción para incluir el nuevo contacto
+                company.description = f'Cliente generado automáticamente desde plantilla: {self.template.title}. Contacto: {self.client_name}'
+                company.save()
+            
+            # Crear la nueva cotización basada en la plantilla
+            template_quotation = self.template.template_quotation
+            new_quotation = Quotation.objects.create(
+                company=company,
+                salesperson=processed_by_user,
+                date=timezone.now().date(),
+                status='sent',  # La enviamos directamente
+                client_status='pending',  # Pendiente de respuesta del cliente
+                description=f"Cotización generada automáticamente para {self.client_name}\n\nComentarios del cliente:\n{self.client_comments}" if self.client_comments else f"Cotización generada automáticamente para {self.client_name}",
+            )
+            
+            # Copiar las líneas de la plantilla
+            for line in template_quotation.lines.all():
+                new_quotation.lines.create(
+                    product=line.product,
+                    quantity=line.quantity,
+                    unit_price=line.unit_price,
+                    discount_percentage=line.discount_percentage,
+                    description=line.description
+                )
+            
+            # Generar token público para la nueva cotización
+            new_quotation.generate_public_token()
+            
+            # Actualizar esta solicitud
+            self.generated_quotation = new_quotation
+            self.status = 'quoted'
+            self.processed_at = timezone.now()
+            self.processed_by = processed_by_user
+            self.save()
+            
+            # Incrementar contador de conversiones
+            self.template.increment_conversions()
+            
+            return new_quotation
+            
+        except Exception as e:
+            # Marcar como procesada con error
+            self.status = 'processed'
+            self.processed_at = timezone.now()
+            self.processed_by = processed_by_user
+            self.save()
+            raise e
+
