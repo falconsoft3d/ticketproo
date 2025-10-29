@@ -34116,12 +34116,48 @@ def quotation_create_view(request):
     from .models import Quotation, Company, Product
     from django.contrib.auth.models import User
     
+    def get_form_context():
+        companies = Company.objects.filter(is_active=True).order_by('name')
+        salespeople = User.objects.filter(is_active=True).order_by('first_name', 'last_name')
+        products = Product.objects.filter(is_active=True).order_by('name')
+        
+        # Obtener configuración del sistema para la moneda
+        from .models import SystemConfiguration
+        config = SystemConfiguration.get_config()
+        currency_symbol = config.get_currency_symbol() if config else '€'
+        
+        return {
+            'page_title': 'Nueva Cotización',
+            'companies': companies,
+            'salespeople': salespeople,
+            'products': products,
+            'today': timezone.now().date(),
+            'currency_symbol': currency_symbol,
+        }
+    
     if request.method == 'POST':
         try:
+            # Validar datos requeridos
+            company_id = request.POST.get('company')
+            salesperson_id = request.POST.get('salesperson')
+            date = request.POST.get('date')
+            
+            if not company_id:
+                messages.error(request, 'Debe seleccionar una empresa')
+                return render(request, 'tickets/quotation_form.html', get_form_context())
+            
+            if not salesperson_id:
+                messages.error(request, 'Debe seleccionar un vendedor')
+                return render(request, 'tickets/quotation_form.html', get_form_context())
+            
+            if not date:
+                messages.error(request, 'Debe especificar una fecha')
+                return render(request, 'tickets/quotation_form.html', get_form_context())
+            
             quotation = Quotation(
-                company_id=request.POST.get('company'),
-                salesperson_id=request.POST.get('salesperson'),
-                date=request.POST.get('date'),
+                company_id=company_id,
+                salesperson_id=salesperson_id,
+                date=date,
                 status=request.POST.get('status', 'draft'),
                 client_status=request.POST.get('client_status', 'pending'),
                 description=request.POST.get('description', '')
@@ -34133,31 +34169,25 @@ def quotation_create_view(request):
                 quotation.expiry_date = expiry_date
             # Si no se proporciona, se calculará automáticamente en el método save()
             
+            # Manejar fechas de servicio
+            service_start_date = request.POST.get('service_start_date')
+            service_end_date = request.POST.get('service_end_date')
+            
+            if service_start_date:
+                quotation.service_start_date = service_start_date
+            
+            if service_end_date:
+                quotation.service_end_date = service_end_date
+            
             quotation.save()
             messages.success(request, f'Cotización {quotation.sequence} creada exitosamente')
             return redirect('quotation_list')
         except Exception as e:
+            import traceback
+            traceback.print_exc()  # Imprimir stack trace completo en la consola
             messages.error(request, f'Error al crear la cotización: {str(e)}')
     
-    companies = Company.objects.filter(is_active=True).order_by('name')
-    salespeople = User.objects.filter(is_active=True).order_by('first_name', 'last_name')
-    products = Product.objects.filter(is_active=True).order_by('name')
-    
-    # Obtener configuración del sistema para la moneda
-    from .models import SystemConfiguration
-    config = SystemConfiguration.get_config()
-    currency_symbol = config.get_currency_symbol() if config else '€'
-    
-    context = {
-        'page_title': 'Nueva Cotización',
-        'companies': companies,
-        'salespeople': salespeople,
-        'products': products,
-        'today': timezone.now().date(),
-        'currency_symbol': currency_symbol,
-    }
-    
-    return render(request, 'tickets/quotation_form.html', context)
+    return render(request, 'tickets/quotation_form.html', get_form_context())
 
 
 @user_passes_test(is_agent, login_url='/')

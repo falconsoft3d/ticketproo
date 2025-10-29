@@ -15090,8 +15090,13 @@ class Quotation(models.Model):
         
         # Calcular fecha de vencimiento si no está establecida
         if not self.expiry_date and self.date:
-            from datetime import timedelta
-            self.expiry_date = self.date + timedelta(days=30)
+            from datetime import timedelta, datetime
+            # Convertir self.date a objeto date si es string
+            if isinstance(self.date, str):
+                date_obj = datetime.strptime(self.date, '%Y-%m-%d').date()
+            else:
+                date_obj = self.date
+            self.expiry_date = date_obj + timedelta(days=30)
         
         super().save(*args, **kwargs)
     
