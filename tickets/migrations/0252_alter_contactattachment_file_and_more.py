@@ -8,7 +8,7 @@ import tickets.models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('tickets', '0251_contact_comments_attachments'),
+        ('tickets', '0250_auto_20251030_2004'),
     ]
 
     operations = [
