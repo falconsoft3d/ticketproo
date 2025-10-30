@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from django.utils import timezone
+import os
 from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserNote, 
     TimeEntry, PublicTimeAccess, Project, Company, SystemConfiguration, Document, UserProfile,
@@ -19,7 +20,8 @@ from .models import (
     AIManager, AIManagerMeeting, AIManagerMeetingAttachment, AIManagerSummary, CompanyAISummary, UserAIPerformanceEvaluation,
     WebsiteTracker, LegalContract, SupplierContractReview, PayPalPaymentLink, PayPalOrder, TodoItem,
     AIBook, AIBookChapter, EmployeeRequest, InternalAgreement, Asset, AssetHistory, UrlManager,
-    ExpenseReport, ExpenseItem, ExpenseComment, MonthlyCumplimiento, DailyCumplimiento, QRCode, Quotation, QuotationLine
+    ExpenseReport, ExpenseItem, ExpenseComment, MonthlyCumplimiento, DailyCumplimiento, QRCode, Quotation, QuotationLine,
+    Contact, ContactComment, ContactAttachment
 )
 
 # Configuración del sitio de administración
@@ -4400,3 +4402,84 @@ class QuotationLineAdmin(admin.ModelAdmin):
     def get_total_display(self, obj):
         return f"${obj.get_total():,.2f}"
     get_total_display.short_description = 'Total'
+
+
+# ============= ADMIN PARA CONTACTOS Y RELACIONADOS =============
+
+class ContactCommentInline(admin.TabularInline):
+    model = ContactComment
+    extra = 0
+    readonly_fields = ('created_at', 'updated_at')
+    fields = ('user', 'content', 'created_at')
+
+
+class ContactAttachmentInline(admin.TabularInline):
+    model = ContactAttachment
+    extra = 0
+    readonly_fields = ('uploaded_at', 'file_size', 'original_filename')
+    fields = ('file', 'description', 'uploaded_by', 'uploaded_at', 'file_size')
+
+
+@admin.register(Contact)
+class ContactAdmin(admin.ModelAdmin):
+    list_display = ('name', 'email', 'phone', 'company', 'status_badge', 'contact_date', 'created_by')
+    list_filter = ('status', 'contacted_by_phone', 'contacted_by_web', 'contact_date', 'created_by')
+    search_fields = ('name', 'email', 'phone', 'company', 'position')
+    date_hierarchy = 'contact_date'
+    ordering = ('-contact_date',)
+    inlines = [ContactCommentInline, ContactAttachmentInline]
+    
+    fieldsets = (
+        ('Información Personal', {
+            'fields': ('name', 'email', 'phone', 'position', 'company')
+        }),
+        ('Información Comercial', {
+            'fields': ('erp', 'status', 'source', 'notes')
+        }),
+        ('Seguimiento', {
+            'fields': ('contacted_by_phone', 'contacted_by_web', 'contact_tracking_notes', 'last_contact_date')
+        }),
+        ('Fechas', {
+            'fields': ('contact_date', 'created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    readonly_fields = ('created_at', 'updated_at')
+    
+    def status_badge(self, obj):
+        color = 'success' if obj.status == 'positive' else 'danger'
+        return format_html(
+            '<span class="badge badge-{}"><i class="{}"></i> {}</span>',
+            color, obj.get_status_icon(), obj.get_status_display()
+        )
+    status_badge.short_description = 'Estado'
+    
+    def save_model(self, request, obj, form, change):
+        if not change:  # Si es un objeto nuevo
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(ContactComment)
+class ContactCommentAdmin(admin.ModelAdmin):
+    list_display = ('contact', 'user', 'content_preview', 'created_at')
+    list_filter = ('created_at', 'user')
+    search_fields = ('contact__name', 'content', 'user__username')
+    ordering = ('-created_at',)
+    
+    def content_preview(self, obj):
+        return obj.content[:50] + '...' if len(obj.content) > 50 else obj.content
+    content_preview.short_description = 'Contenido'
+
+
+@admin.register(ContactAttachment)
+class ContactAttachmentAdmin(admin.ModelAdmin):
+    list_display = ('contact', 'original_filename', 'file_size_display', 'uploaded_by', 'uploaded_at')
+    list_filter = ('uploaded_at', 'uploaded_by')
+    search_fields = ('contact__name', 'original_filename', 'description')
+    ordering = ('-uploaded_at',)
+    
+    def file_size_display(self, obj):
+        return obj.get_file_size_display()
+    file_size_display.short_description = 'Tamaño'

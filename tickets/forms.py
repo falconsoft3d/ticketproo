@@ -22,7 +22,7 @@ from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
     UserNote, TimeEntry, PublicTimeAccess, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
     ChatRoom, ChatMessage, Command, ContactFormSubmission, Meeting, MeetingAttendee, MeetingQuestion, OpportunityActivity,
-    Course, CourseClass, Contact, BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, Concept, ContactoWeb, Employee, EmployeePayroll,
+    Course, CourseClass, Contact, ContactComment, ContactAttachment, BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, Concept, ContactoWeb, Employee, EmployeePayroll,
     Agreement, AgreementSignature, LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry, SharedFile, SharedFileDownload,
     Recording, RecordingPlayback, MultipleDocumentation, TaskSchedule, ScheduleTask, ScheduleComment, FinancialAction,
     ClientProjectAccess, ClientTimeEntry, ProductSet, ProductItem, Precotizador, PrecotizadorExample, PrecotizadorQuote,
@@ -7489,3 +7489,93 @@ class QRCodeForm(forms.ModelForm):
                 raise forms.ValidationError('Ingresa un número de teléfono válido.')
         
         return content
+
+
+class ContactCommentForm(forms.ModelForm):
+    """Formulario para agregar comentarios a contactos"""
+    
+    class Meta:
+        model = ContactComment
+        fields = ['content']
+        widgets = {
+            'content': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Escribe tu comentario aquí...',
+                'required': True
+            }),
+        }
+        labels = {
+            'content': 'Comentario'
+        }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        contact = kwargs.pop('contact', None)
+        super().__init__(*args, **kwargs)
+        
+        if user:
+            self.instance.user = user
+        if contact:
+            self.instance.contact = contact
+
+
+class ContactAttachmentForm(forms.ModelForm):
+    """Formulario para subir adjuntos a contactos"""
+    
+    class Meta:
+        model = ContactAttachment
+        fields = ['file', 'description']
+        widgets = {
+            'file': forms.ClearableFileInput(attrs={
+                'class': 'form-control',
+                'accept': '.pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.gif,.xls,.xlsx',
+                'required': True
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'Descripción opcional del archivo...'
+            }),
+        }
+        labels = {
+            'file': 'Archivo',
+            'description': 'Descripción'
+        }
+        help_texts = {
+            'file': 'Tipos permitidos: PDF, DOC, DOCX, TXT, PNG, JPG, JPEG, GIF, XLS, XLSX'
+        }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        contact = kwargs.pop('contact', None)
+        super().__init__(*args, **kwargs)
+        
+        if user:
+            self.instance.uploaded_by = user
+        if contact:
+            self.instance.contact = contact
+
+    def clean_file(self):
+        file = self.cleaned_data.get('file')
+        if file:
+            # Validar tamaño del archivo (max 10MB)
+            if file.size > 10 * 1024 * 1024:
+                raise forms.ValidationError('El archivo no puede ser mayor a 10 MB.')
+            
+            # Validar extensión
+            allowed_extensions = ['.pdf', '.doc', '.docx', '.txt', '.png', '.jpg', '.jpeg', '.gif', '.xls', '.xlsx']
+            file_extension = os.path.splitext(file.name)[1].lower()
+            if file_extension not in allowed_extensions:
+                raise forms.ValidationError('Tipo de archivo no permitido.')
+        
+        return file
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if instance.file:
+            instance.original_filename = instance.file.name
+            instance.file_size = instance.file.size
+        if commit:
+            instance.save()
+        return instance

@@ -34,8 +34,9 @@
     </div>
 
     <div class="row">
-        <!-- Información del contacto -->
+        <!-- Información del contacto, comentarios y adjuntos -->
         <div class="col-md-8">
+            <!-- Información del contacto -->
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">
@@ -185,6 +186,146 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Comentarios -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-chat-text"></i> Comentarios ({{ comments.count }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Formulario para nuevo comentario -->
+                    <form method="POST" class="mb-4">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            {{ comment_form.content }}
+                            {% if comment_form.content.errors %}
+                                <div class="text-danger small mt-1">{{ comment_form.content.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <button type="submit" name="comment_submit" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Agregar Comentario
+                        </button>
+                    </form>
+
+                    <!-- Lista de comentarios -->
+                    {% if comments %}
+                        <div class="comments-list">
+                            {% for comment in comments %}
+                            <div class="comment-item mb-3 p-3 bg-light rounded">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-person-circle me-2 text-primary"></i>
+                                        <strong>{{ comment.user.get_full_name|default:comment.user.username }}</strong>
+                                        <small class="text-muted ms-2">
+                                            {{ comment.created_at|date:"d/m/Y H:i" }}
+                                        </small>
+                                    </div>
+                                    <!-- Solo mostrar el botón de eliminar si el usuario puede eliminar el comentario -->
+                                    <form method="POST" action="{% url 'contact_comment_delete' comment.pk %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                                onclick="return confirm('¿Estás seguro de que quieres eliminar este comentario?')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                                <div class="comment-content">
+                                    {{ comment.content|linebreaks }}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No hay comentarios aún.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Adjuntos -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-paperclip"></i> Archivos Adjuntos ({{ attachments.count }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Formulario para nuevo adjunto -->
+                    <form method="POST" enctype="multipart/form-data" class="mb-4">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label for="{{ attachment_form.file.id_for_label }}" class="form-label">Archivo</label>
+                                {{ attachment_form.file }}
+                                {% if attachment_form.file.errors %}
+                                    <div class="text-danger small mt-1">{{ attachment_form.file.errors.0 }}</div>
+                                {% endif %}
+                                {% if attachment_form.file.help_text %}
+                                    <div class="form-text">{{ attachment_form.file.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ attachment_form.description.id_for_label }}" class="form-label">Descripción</label>
+                                {{ attachment_form.description }}
+                                {% if attachment_form.description.errors %}
+                                    <div class="text-danger small mt-1">{{ attachment_form.description.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <button type="submit" name="attachment_submit" class="btn btn-primary">
+                            <i class="bi bi-upload"></i> Subir Archivo
+                        </button>
+                    </form>
+
+                    <!-- Lista de adjuntos -->
+                    {% if attachments %}
+                        <div class="attachments-list">
+                            {% for attachment in attachments %}
+                            <div class="attachment-item mb-3 p-3 border rounded">
+                                <div class="row align-items-center">
+                                    <div class="col-md-8">
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-file-earmark me-2 text-primary"></i>
+                                            <div>
+                                                <strong>{{ attachment.original_filename }}</strong>
+                                                <br>
+                                                <small class="text-muted">
+                                                    {{ attachment.get_file_size_display }} • 
+                                                    Subido por {{ attachment.uploaded_by.get_full_name|default:attachment.uploaded_by.username }} • 
+                                                    {{ attachment.uploaded_at|date:"d/m/Y H:i" }}
+                                                </small>
+                                                {% if attachment.description %}
+                                                    <br><small class="text-muted">{{ attachment.description }}</small>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 text-end">
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'contact_attachment_download' attachment.pk %}" 
+                                               class="btn btn-sm btn-outline-primary" title="Descargar">
+                                                <i class="bi bi-download"></i>
+                                            </a>
+                                            <form method="POST" action="{% url 'contact_attachment_delete' attachment.pk %}" class="d-inline">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                                        title="Eliminar"
+                                                        onclick="return confirm('¿Estás seguro de que quieres eliminar este archivo?')">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No hay archivos adjuntos aún.</p>
+                    {% endif %}
                 </div>
             </div>
         </div>

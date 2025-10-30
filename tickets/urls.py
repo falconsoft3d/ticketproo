@@ -304,6 +304,13 @@ urlpatterns = [
     path('contacts/<int:pk>/edit/', views.contact_edit, name='contact_edit'),
     path('contacts/<int:pk>/delete/', views.contact_delete, name='contact_delete'),
     
+    # URLs para comentarios de contactos
+    path('contact-comments/<int:pk>/delete/', views.contact_comment_delete, name='contact_comment_delete'),
+    
+    # URLs para adjuntos de contactos
+    path('contact-attachments/<int:pk>/delete/', views.contact_attachment_delete, name='contact_attachment_delete'),
+    path('contact-attachments/<int:pk>/download/', views.contact_attachment_download, name='contact_attachment_download'),
+    
     # ============= URLs CRM =============
     path('crm/', views.crm_dashboard, name='crm_dashboard'),
     path('crm/opportunities/', views.opportunity_list, name='opportunity_list'),

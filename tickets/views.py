@@ -8498,8 +8498,36 @@ def contact_detail(request, pk):
     """Ver detalles de un contacto"""
     contact = get_object_or_404(Contact, pk=pk)
     
+    # Obtener comentarios y adjuntos
+    comments = contact.comments.all().order_by('created_at')
+    attachments = contact.attachments.all().order_by('-uploaded_at')
+    
+    # Formularios para nuevos comentarios y adjuntos
+    from .forms import ContactCommentForm, ContactAttachmentForm
+    comment_form = ContactCommentForm(user=request.user, contact=contact)
+    attachment_form = ContactAttachmentForm(user=request.user, contact=contact)
+    
+    # Procesar formularios si es POST
+    if request.method == 'POST':
+        if 'comment_submit' in request.POST:
+            comment_form = ContactCommentForm(request.POST, user=request.user, contact=contact)
+            if comment_form.is_valid():
+                comment = comment_form.save()
+                messages.success(request, 'Comentario agregado exitosamente.')
+                return redirect('contact_detail', pk=contact.pk)
+        elif 'attachment_submit' in request.POST:
+            attachment_form = ContactAttachmentForm(request.POST, request.FILES, user=request.user, contact=contact)
+            if attachment_form.is_valid():
+                attachment = attachment_form.save()
+                messages.success(request, 'Archivo adjuntado exitosamente.')
+                return redirect('contact_detail', pk=contact.pk)
+    
     context = {
         'contact': contact,
+        'comments': comments,
+        'attachments': attachments,
+        'comment_form': comment_form,
+        'attachment_form': attachment_form,
         'page_title': f'Contacto: {contact.name}'
     }
     
@@ -8549,6 +8577,72 @@ def contact_delete(request, pk):
     }
     
     return render(request, 'tickets/contact_delete.html', context)
+
+
+@login_required
+def contact_comment_delete(request, pk):
+    """Eliminar comentario de contacto"""
+    from .models import ContactComment
+    
+    comment = get_object_or_404(ContactComment, pk=pk)
+    contact = comment.contact
+    
+    # Verificar permisos
+    if not comment.can_delete(request.user):
+        messages.error(request, 'No tienes permisos para eliminar este comentario.')
+        return redirect('contact_detail', pk=contact.pk)
+    
+    if request.method == 'POST':
+        comment.delete()
+        messages.success(request, 'Comentario eliminado exitosamente.')
+        return redirect('contact_detail', pk=contact.pk)
+    
+    return redirect('contact_detail', pk=contact.pk)
+
+
+@login_required
+def contact_attachment_delete(request, pk):
+    """Eliminar adjunto de contacto"""
+    from .models import ContactAttachment
+    
+    attachment = get_object_or_404(ContactAttachment, pk=pk)
+    contact = attachment.contact
+    
+    if request.method == 'POST':
+        filename = attachment.original_filename
+        attachment.delete()
+        messages.success(request, f'Archivo "{filename}" eliminado exitosamente.')
+        return redirect('contact_detail', pk=contact.pk)
+    
+    return redirect('contact_detail', pk=contact.pk)
+
+
+@login_required
+def contact_attachment_download(request, pk):
+    """Descargar adjunto de contacto"""
+    from .models import ContactAttachment
+    from django.http import HttpResponse, Http404
+    import mimetypes
+    
+    attachment = get_object_or_404(ContactAttachment, pk=pk)
+    
+    try:
+        if attachment.file and os.path.exists(attachment.file.path):
+            # Determinar el tipo MIME
+            content_type, encoding = mimetypes.guess_type(attachment.file.path)
+            if content_type is None:
+                content_type = 'application/octet-stream'
+            
+            # Leer el archivo
+            with open(attachment.file.path, 'rb') as f:
+                response = HttpResponse(f.read(), content_type=content_type)
+                response['Content-Disposition'] = f'attachment; filename="{attachment.original_filename}"'
+                return response
+        else:
+            raise Http404("El archivo no existe")
+    except Exception as e:
+        messages.error(request, f'Error al descargar el archivo: {str(e)}')
+        return redirect('contact_detail', pk=attachment.contact.pk)
 
 
 # ===== VISTAS DEL BLOG =====

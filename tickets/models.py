@@ -4245,6 +4245,120 @@ class Contact(models.Model):
         return 'bi-check-circle' if self.status == 'positive' else 'bi-x-circle'
 
 
+def contact_attachment_upload_path(instance, filename):
+    """Ruta de subida para adjuntos de contactos"""
+    return f'contact_attachments/contact_{instance.contact.id}/{filename}'
+
+
+class ContactComment(models.Model):
+    """Modelo para comentarios en contactos"""
+    contact = models.ForeignKey(
+        Contact,
+        on_delete=models.CASCADE,
+        related_name='comments',
+        verbose_name='Contacto'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Usuario'
+    )
+    content = models.TextField(
+        verbose_name='Comentario',
+        help_text='Escribe tu comentario aquí'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        ordering = ['created_at']
+        verbose_name = 'Comentario de Contacto'
+        verbose_name_plural = 'Comentarios de Contacto'
+    
+    def __str__(self):
+        return f"Comentario de {self.user.username} en Contacto {self.contact.name}"
+    
+    def can_edit(self, user):
+        """Verifica si un usuario puede editar este comentario"""
+        from .utils import is_agent
+        return self.user == user or is_agent(user)
+    
+    def can_delete(self, user):
+        """Verifica si un usuario puede eliminar este comentario"""
+        from .utils import is_agent
+        return self.user == user or is_agent(user)
+
+
+class ContactAttachment(models.Model):
+    """Modelo para adjuntos en contactos"""
+    contact = models.ForeignKey(
+        Contact, 
+        on_delete=models.CASCADE, 
+        related_name='attachments',
+        verbose_name='Contacto'
+    )
+    file = models.FileField(
+        upload_to=contact_attachment_upload_path,
+        verbose_name='Archivo'
+    )
+    original_filename = models.CharField(
+        max_length=255,
+        verbose_name='Nombre original'
+    )
+    uploaded_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Subido por'
+    )
+    uploaded_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de subida'
+    )
+    file_size = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Tamaño del archivo (bytes)'
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción',
+        help_text='Descripción opcional del adjunto'
+    )
+    
+    class Meta:
+        ordering = ['-uploaded_at']
+        verbose_name = 'Adjunto de Contacto'
+        verbose_name_plural = 'Adjuntos de Contacto'
+    
+    def __str__(self):
+        return f"{self.original_filename} - Contacto {self.contact.name}"
+    
+    def get_file_size_display(self):
+        """Retorna el tamaño del archivo en formato legible"""
+        if self.file_size < 1024:
+            return f"{self.file_size} bytes"
+        elif self.file_size < 1024 * 1024:
+            return f"{self.file_size / 1024:.1f} KB"
+        else:
+            return f"{self.file_size / (1024 * 1024):.1f} MB"
+    
+    def get_file_extension(self):
+        """Retorna la extensión del archivo"""
+        return os.path.splitext(self.original_filename)[1].lower()
+    
+    def delete(self, *args, **kwargs):
+        """Elimina el archivo físico cuando se elimina el registro"""
+        if self.file:
+            if os.path.isfile(self.file.path):
+                os.remove(self.file.path)
+        super().delete(*args, **kwargs)
+
+
 class BlogCategory(models.Model):
     """Categorías para los artículos del blog"""
     
