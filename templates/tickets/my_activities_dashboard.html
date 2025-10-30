@@ -3,6 +3,74 @@
 
 {% block title %}{{ page_title }}{% endblock %}
 
+{% block extra_css %}
+<style>
+/* Estilos para el calendario simple */
+.simple-calendar {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.calendar-grid .row {
+    margin: 0;
+}
+
+.calendar-day {
+    transition: background-color 0.2s ease;
+    position: relative;
+}
+
+.calendar-day:hover {
+    background-color: #f8f9fa !important;
+}
+
+.activity-item {
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: transform 0.1s ease;
+}
+
+.activity-item:hover {
+    transform: scale(1.02);
+}
+
+.calendar-header h4 {
+    color: #495057;
+    margin: 0;
+}
+
+/* Spinner de carga */
+.loading-spinner {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #007bff;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive para móviles */
+@media (max-width: 768px) {
+    .calendar-day {
+        min-height: 60px !important;
+        font-size: 0.9rem;
+    }
+    
+    .activity-item {
+        font-size: 0.7rem;
+        padding: 2px !important;
+    }
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row">
     <div class="col-12">
@@ -14,6 +82,18 @@
                 <p class="text-muted mb-0">Panel de seguimiento de actividades asignadas</p>
             </div>
             <div class="text-end">
+                <!-- Botones de vista -->
+                <div class="btn-group me-2" role="group" aria-label="Vista de actividades">
+                    <button type="button" class="btn btn-outline-primary active" id="listViewBtn">
+                        <i class="fas fa-list"></i> Lista
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="calendarViewBtn">
+                        <i class="fas fa-calendar"></i> Calendario
+                    </button>
+                </div>
+                <a href="{% url 'activity_create_standalone' %}" class="btn btn-success me-2">
+                    <i class="fas fa-plus"></i> Nueva Actividad
+                </a>
                 <span class="badge bg-info fs-6">CRM</span>
             </div>
         </div>
@@ -64,6 +144,48 @@
     </div>
 </div>
 
+<!-- Vista de Calendario (inicialmente oculta) -->
+<div id="calendarView" style="display: none;">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-calendar"></i> Calendario de Actividades
+                        </h5>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-light" id="prevMonth">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <button type="button" class="btn btn-light" id="currentMonth">
+                                <span id="monthYear"></span>
+                            </button>
+                            <button type="button" class="btn btn-light" id="nextMonth">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div id="calendar">
+                        <!-- Contenido del calendario se generará aquí -->
+                        <div class="p-4 text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Cargando calendario...</span>
+                            </div>
+                            <p class="mt-3 text-muted">Cargando calendario de actividades...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Vista de Lista (por defecto visible) -->
+<div id="listView">
+
 <div class="row">
     <!-- Actividades Vencidas -->
     {% if overdue_activities %}
@@ -85,7 +207,15 @@
                                     {{ activity.title }}
                                 </a>
                             </h6>
-                            <p class="text-muted mb-1 small">{{ activity.opportunity.name }}</p>
+                            <p class="text-muted mb-1 small">
+                                {% if activity.opportunity %}
+                                    <i class="fas fa-bullseye me-1"></i>{{ activity.opportunity.name }}
+                                {% elif activity.contact %}
+                                    <i class="fas fa-user-tie me-1"></i>{{ activity.contact.name }}
+                                {% else %}
+                                    <i class="fas fa-tasks me-1"></i><em>Actividad independiente</em>
+                                {% endif %}
+                            </p>
                             <div class="d-flex align-items-center">
                                 <span class="badge bg-{{ activity.get_priority_color }} me-2">{{ activity.get_priority_display }}</span>
                                 <span class="badge bg-outline-secondary me-2">{{ activity.get_activity_type_display }}</span>
@@ -106,10 +236,12 @@
                                 <li><a class="dropdown-item" href="{% url 'opportunity_activity_edit' activity.pk %}">
                                     <i class="fas fa-edit"></i> Editar
                                 </a></li>
+                                {% if activity.opportunity %}
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{% url 'opportunity_detail' activity.opportunity.pk %}">
                                     <i class="fas fa-bullseye"></i> Ver Oportunidad
                                 </a></li>
+                                {% endif %}
                             </ul>
                         </div>
                     </div>
@@ -140,7 +272,13 @@
                                         {{ activity.title }}
                                     </a>
                                 </h6>
-                                <p class="text-muted mb-1 small">{{ activity.opportunity.name }}</p>
+                                <p class="text-muted mb-1 small">
+                                    {% if activity.opportunity %}
+                                        {{ activity.opportunity.name }}
+                                    {% else %}
+                                        <em>Actividad independiente</em>
+                                    {% endif %}
+                                </p>
                                 <div class="d-flex align-items-center">
                                     <span class="badge bg-{{ activity.get_priority_color }} me-2">{{ activity.get_priority_display }}</span>
                                     <span class="badge bg-{{ activity.get_status_color }} me-2">{{ activity.get_status_display }}</span>
@@ -162,11 +300,15 @@
                                     <li><a class="dropdown-item" href="{% url 'opportunity_activity_edit' activity.pk %}">
                                         <i class="fas fa-edit"></i> Editar
                                     </a></li>
+                                    {% if activity.opportunity %}
                                     <li><hr class="dropdown-divider"></li>
                                     {% endif %}
+                                    {% endif %}
+                                    {% if activity.opportunity %}
                                     <li><a class="dropdown-item" href="{% url 'opportunity_detail' activity.opportunity.pk %}">
                                         <i class="fas fa-bullseye"></i> Ver Oportunidad
                                     </a></li>
+                                    {% endif %}
                                 </ul>
                             </div>
                         </div>
@@ -204,7 +346,13 @@
                                         {{ activity.title }}
                                     </a>
                                 </h6>
-                                <p class="text-muted mb-1 small">{{ activity.opportunity.name }}</p>
+                                <p class="text-muted mb-1 small">
+                                    {% if activity.opportunity %}
+                                        {{ activity.opportunity.name }}
+                                    {% else %}
+                                        <em>Actividad independiente</em>
+                                    {% endif %}
+                                </p>
                                 <div class="d-flex align-items-center">
                                     <span class="badge bg-{{ activity.get_priority_color }} me-2">{{ activity.get_priority_display }}</span>
                                     <span class="badge bg-outline-secondary me-2">{{ activity.get_activity_type_display }}</span>
@@ -230,10 +378,12 @@
                                     <li><a class="dropdown-item" href="{% url 'opportunity_activity_edit' activity.pk %}">
                                         <i class="fas fa-edit"></i> Editar
                                     </a></li>
+                                    {% if activity.opportunity %}
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item" href="{% url 'opportunity_detail' activity.opportunity.pk %}">
                                         <i class="fas fa-bullseye"></i> Ver Oportunidad
                                     </a></li>
+                                    {% endif %}
                                 </ul>
                             </div>
                         </div>
@@ -267,7 +417,13 @@
                                 {{ activity.title }}
                             </a>
                         </h6>
-                        <p class="text-muted mb-1 small">{{ activity.opportunity.name }}</p>
+                        <p class="text-muted mb-1 small">
+                            {% if activity.opportunity %}
+                                {{ activity.opportunity.name }}
+                            {% else %}
+                                <em>Actividad independiente</em>
+                            {% endif %}
+                        </p>
                         <small class="text-success">
                             <i class="fas fa-check"></i> 
                             {{ activity.completed_date|date:"d/m/Y H:i" }}
@@ -285,10 +441,431 @@
     </div>
 </div>
 
-<!-- Botón de acción flotante -->
-<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
-    <a href="{% url 'opportunity_list' %}" class="btn btn-primary btn-lg rounded-circle shadow">
-        <i class="fas fa-plus"></i>
-    </a>
-</div>
+</div> <!-- Fin de listView -->
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Iniciando calendario de actividades (versión simple)...');
+    
+    // Variables globales para el calendario
+    let currentDate = new Date();
+    let currentMonth = currentDate.getMonth();
+    let currentYear = currentDate.getFullYear();
+    
+    // Referencias a elementos
+    const listViewBtn = document.getElementById('listViewBtn');
+    const calendarViewBtn = document.getElementById('calendarViewBtn');
+    const listView = document.getElementById('listView');
+    const calendarView = document.getElementById('calendarView');
+    const prevMonthBtn = document.getElementById('prevMonth');
+    const nextMonthBtn = document.getElementById('nextMonth');
+    const monthYearSpan = document.getElementById('monthYear');
+    
+    // Función para alternar entre vistas
+    function toggleView(showCalendar) {
+        console.log('📱 Alternando vista:', showCalendar ? 'Calendario' : 'Lista');
+        
+        if (showCalendar) {
+            listView.style.display = 'none';
+            calendarView.style.display = 'block';
+            listViewBtn.classList.remove('active');
+            calendarViewBtn.classList.add('active');
+            
+            // Cargar calendario simple
+            loadSimpleCalendar();
+        } else {
+            listView.style.display = 'block';
+            calendarView.style.display = 'none';
+            listViewBtn.classList.add('active');
+            calendarViewBtn.classList.remove('active');
+        }
+    }
+    
+    // Event listeners para botones de vista
+    if (listViewBtn) {
+        listViewBtn.addEventListener('click', () => {
+            console.log('👆 Click en botón Lista');
+            toggleView(false);
+        });
+    }
+    
+    if (calendarViewBtn) {
+        calendarViewBtn.addEventListener('click', () => {
+            console.log('👆 Click en botón Calendario');
+            toggleView(true);
+        });
+    }
+    
+    // Event listeners para navegación de meses
+    if (prevMonthBtn) {
+        prevMonthBtn.addEventListener('click', () => {
+            console.log('⬅️ Navegando al mes anterior');
+            currentMonth--;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            loadSimpleCalendar();
+        });
+    }
+    
+    if (nextMonthBtn) {
+        nextMonthBtn.addEventListener('click', () => {
+            console.log('➡️ Navegando al mes siguiente');
+            currentMonth++;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            loadSimpleCalendar();
+        });
+    }
+    
+    // Función para cargar calendario simple
+    function loadSimpleCalendar() {
+        const calendarEl = document.getElementById('calendar');
+        
+        if (!calendarEl) {
+            console.error('❌ No se encontró el elemento #calendar');
+            return;
+        }
+        
+        console.log('📅 Cargando calendario simple...');
+        
+        // Actualizar el título del mes/año
+        if (monthYearSpan) {
+            monthYearSpan.textContent = `${getMonthName(currentMonth)} ${currentYear}`;
+        }
+        
+        // Cargar actividades desde la API
+        fetch('/api/activities/calendar/')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(activities => {
+                console.log('📋 Actividades recibidas:', activities.length);
+                renderSimpleCalendar(activities);
+            })
+            .catch(error => {
+                console.error('❌ Error al cargar actividades:', error);
+                renderErrorCalendar();
+            });
+    }
+    
+    // Función para renderizar calendario simple
+    function renderSimpleCalendar(activities) {
+        const calendarEl = document.getElementById('calendar');
+        const now = new Date();
+        
+        // Obtener primer y último día del mes actual (usando variables globales)
+        const firstDay = new Date(currentYear, currentMonth, 1);
+        const lastDay = new Date(currentYear, currentMonth + 1, 0);
+        const startDate = new Date(firstDay);
+        startDate.setDate(startDate.getDate() - firstDay.getDay()); // Ajustar al domingo
+        
+        // Crear HTML del calendario
+        let calendarHTML = `
+            <div class="simple-calendar p-3">
+                <div class="calendar-header text-center mb-3">
+                    <h4>${getMonthName(currentMonth)} ${currentYear}</h4>
+                </div>
+                <div class="calendar-grid">
+                    <div class="row">
+        `;
+        
+        // Días de la semana
+        const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+        dayNames.forEach(day => {
+            calendarHTML += `<div class="col text-center py-2 fw-bold bg-light">${day}</div>`;
+        });
+        calendarHTML += '</div>';
+        
+        // Generar semanas
+        let iteratorDate = new Date(startDate);
+        while (iteratorDate <= lastDay || iteratorDate.getDay() !== 0) {
+            calendarHTML += '<div class="row">';
+            
+            // Generar días de la semana
+            for (let i = 0; i < 7; i++) {
+                const isCurrentMonth = iteratorDate.getMonth() === currentMonth;
+                const isToday = iteratorDate.toDateString() === now.toDateString();
+                const dateStr = iteratorDate.toISOString().split('T')[0];
+                
+                // Encontrar actividades para este día
+                const dayActivities = activities.filter(activity => {
+                    const activityDate = new Date(activity.start).toDateString();
+                    return activityDate === iteratorDate.toDateString();
+                });
+                
+                let cellClass = 'col border calendar-day p-2';
+                if (!isCurrentMonth) cellClass += ' text-muted bg-light';
+                if (isToday) cellClass += ' bg-primary text-white';
+                
+                calendarHTML += `
+                    <div class="${cellClass}" data-date="${dateStr}" style="min-height: 80px; cursor: pointer;">
+                        <div class="fw-bold">${iteratorDate.getDate()}</div>
+                `;
+                
+                // Agregar actividades del día
+                dayActivities.forEach(activity => {
+                    const statusColors = {
+                        'pending': 'warning',
+                        'in_progress': 'info',
+                        'completed': 'success',
+                        'cancelled': 'secondary',
+                        'overdue': 'danger'
+                    };
+                    const color = statusColors[activity.extendedProps?.status] || 'secondary';
+                    
+                    calendarHTML += `
+                        <div class="activity-item bg-${color} text-white p-1 mb-1 rounded small" 
+                             onclick="viewActivity('${activity.url}')" 
+                             title="${activity.title}"
+                             data-activity-id="${activity.id}"
+                             data-activity-url="${activity.url}">
+                            ${activity.title.length > 15 ? activity.title.substring(0, 15) + '...' : activity.title}
+                        </div>
+                    `;
+                });
+                
+                calendarHTML += '</div>';
+                
+                iteratorDate.setDate(iteratorDate.getDate() + 1);
+            }
+            
+            calendarHTML += '</div>';
+            
+            if (iteratorDate > lastDay && iteratorDate.getDay() === 0) break;
+        }
+        
+        calendarHTML += `
+                </div>
+                <div class="text-center mt-3">
+                    <small class="text-muted">Haz clic en un día para crear una nueva actividad</small>
+                </div>
+            </div>
+        `;
+        
+        calendarEl.innerHTML = calendarHTML;
+        
+        // Agregar event listeners para los días
+        document.querySelectorAll('.calendar-day').forEach(day => {
+            day.addEventListener('click', function(e) {
+                // Si se hizo clic en una actividad, no crear nueva actividad
+                if (e.target.classList.contains('activity-item')) {
+                    e.stopPropagation();
+                    return;
+                }
+                
+                const date = this.dataset.date;
+                if (date) {
+                    const url = `{% url 'activity_create_standalone' %}?date=${date}`;
+                    window.location.href = url;
+                }
+            });
+        });
+        
+        // Event listener específico para actividades usando event delegation
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('activity-item')) {
+                e.stopPropagation();
+                const activityUrl = e.target.dataset.activityUrl;
+                const activityId = e.target.dataset.activityId;
+                
+                console.log('🎯 Click en actividad:', {
+                    id: activityId,
+                    url: activityUrl,
+                    element: e.target
+                });
+                
+                if (activityUrl && activityUrl !== 'undefined' && activityUrl !== 'null') {
+                    console.log('✅ Navegando a actividad:', activityUrl);
+                    window.location.href = activityUrl;
+                } else {
+                    console.error('❌ URL de actividad no válida:', activityUrl);
+                    // Fallback: construir URL manualmente
+                    if (activityId) {
+                        const fallbackUrl = `/crm/activities/${activityId}/`;
+                        console.log('🔄 Usando URL de fallback:', fallbackUrl);
+                        window.location.href = fallbackUrl;
+                    } else {
+                        alert('Error: No se pudo determinar la actividad seleccionada');
+                    }
+                }
+            }
+        });
+        
+        console.log('✅ Calendario simple renderizado exitosamente');
+    }
+    
+    // Función para mostrar error en el calendario
+    function renderErrorCalendar() {
+        const calendarEl = document.getElementById('calendar');
+        calendarEl.innerHTML = `
+            <div class="alert alert-warning text-center p-4">
+                <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+                <h5>Error al cargar el calendario</h5>
+                <p class="mb-2">No se pudieron cargar las actividades.</p>
+                <button class="btn btn-primary" onclick="location.reload()">
+                    <i class="fas fa-refresh"></i> Reintentar
+                </button>
+            </div>
+        `;
+    }
+    
+    // Función auxiliar para obtener nombre del mes
+    function getMonthName(monthIndex) {
+        const months = [
+            'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+        ];
+        return months[monthIndex];
+    }
+    
+    // Función global para ver actividad
+    window.viewActivity = function(url) {
+        console.log('🔗 viewActivity called with URL:', url);
+        
+        if (url && url !== 'undefined' && url !== 'null') {
+            console.log('✅ Navegando a:', url);
+            window.location.href = url;
+        } else {
+            console.error('❌ URL inválida para navegar:', url);
+            alert('Error: No se pudo determinar la URL de la actividad');
+        }
+    };
+    
+    // Inicializar el título del mes/año actual
+    if (monthYearSpan) {
+        monthYearSpan.textContent = `${getMonthName(currentMonth)} ${currentYear}`;
+    }
+});
+</script>
+<!-- Estilos personalizados para el calendario -->
+<style>
+/* Estilos básicos para eventos del calendario */
+.fc-event {
+    border-radius: 4px !important;
+    font-size: 0.85rem !important;
+    margin: 1px 0 !important;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.fc-event:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Colores por estado */
+.status-pending {
+    background-color: #ffc107 !important;
+    border-color: #ffc107 !important;
+    color: #000 !important;
+}
+
+.status-in_progress {
+    background-color: #17a2b8 !important;
+    border-color: #17a2b8 !important;
+    color: #fff !important;
+}
+
+.status-completed {
+    background-color: #28a745 !important;
+    border-color: #28a745 !important;
+    color: #fff !important;
+}
+
+.status-cancelled {
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
+    color: #fff !important;
+}
+
+.status-overdue {
+    background-color: #dc3545 !important;
+    border-color: #dc3545 !important;
+    color: #fff !important;
+}
+
+/* Prioridades */
+.priority-urgent {
+    font-weight: bold !important;
+    box-shadow: 0 0 0 2px #dc3545 !important;
+}
+
+.priority-high {
+    font-weight: bold !important;
+    box-shadow: 0 0 0 1px #fd7e14 !important;
+}
+
+/* Personalización del calendario */
+.fc-toolbar {
+    margin-bottom: 1rem !important;
+    padding: 0.5rem !important;
+}
+
+.fc-toolbar-title {
+    font-size: 1.25rem !important;
+    font-weight: 600 !important;
+}
+
+.fc-button-primary {
+    background-color: #007bff !important;
+    border-color: #007bff !important;
+}
+
+.fc-button-primary:hover {
+    background-color: #0056b3 !important;
+    border-color: #0056b3 !important;
+}
+
+.fc-day-today {
+    background-color: rgba(0, 123, 255, 0.1) !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .fc-toolbar {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+    }
+    
+    .fc-toolbar-chunk {
+        margin: 0.2em 0 !important;
+    }
+    
+    .fc-button {
+        font-size: 0.8rem !important;
+        padding: 0.25rem 0.5rem !important;
+    }
+    
+    .fc-toolbar-title {
+        font-size: 1rem !important;
+    }
+}
+
+/* Mejorar visibilidad del calendario */
+#calendar {
+    min-height: 500px;
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.fc-daygrid-event {
+    margin: 1px 2px !important;
+    border-radius: 4px !important;
+}
+
+.fc-event-title {
+    font-weight: 500 !important;
+}
+</style>
 {% endblock %}

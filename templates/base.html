@@ -1152,6 +1152,49 @@
                 {% endif %}
                 
                 <ul class="navbar-nav">
+                    <!-- Botón de Actividades Pendientes -->
+                    <li class="nav-item dropdown me-2">
+                        <a class="nav-link dropdown-toggle position-relative" href="#" id="navbarActivities" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-check2-square"></i>
+                            {% if crm_counters.pending_activities > 0 %}
+                                <span class="position-absolute bottom-0 end-0 translate-middle 
+                                    badge rounded-pill bg-danger" style="font-size: 0.7em;">
+                                    {{ crm_counters.pending_activities }}
+                                    <span class="visually-hidden">actividades pendientes</span>
+                                </span>
+                            {% endif %}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" style="min-width: 350px;" id="activitiesDropdown">
+                            <li>
+                                <h6 class="dropdown-header">
+                                    <i class="bi bi-list-task"></i> Mis Actividades Pendientes
+                                </h6>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li id="activitiesLoader" class="text-center p-3">
+                                <div class="spinner-border spinner-border-sm" role="status">
+                                    <span class="visually-hidden">Cargando...</span>
+                                </div>
+                            </li>
+                            <li id="activitiesContent" style="display: none;">
+                                <div id="activitiesList">
+                                    <!-- Las actividades se cargarán dinámicamente aquí -->
+                                </div>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-center" href="{% url 'my_activities_dashboard' %}">
+                                    <i class="bi bi-arrow-right"></i> Ver todas las actividades
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item text-center" href="{% url 'activity_create_standalone' %}">
+                                    <i class="bi bi-plus-circle"></i> Nueva actividad
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
                             <i class="bi bi-person-circle"></i> {{ user.username }}
@@ -5016,6 +5059,138 @@
         
         // Cargar conteo inicial
         setTimeout(loadOpenTicketsCount, 1000);
+        
+        // ===== SISTEMA DE ACTIVIDADES PENDIENTES =====
+        
+        // Función para cargar actividades pendientes
+        function loadPendingActivities() {
+            console.log('📋 Cargando actividades pendientes...');
+            
+            const loader = document.getElementById('activitiesLoader');
+            const content = document.getElementById('activitiesContent');
+            
+            if (loader) loader.style.display = 'block';
+            if (content) content.style.display = 'none';
+            
+            fetch('/api/user-activities/pending/', {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error en la respuesta del servidor');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('📋 Actividades recibidas:', data);
+                
+                if (loader) loader.style.display = 'none';
+                if (content) content.style.display = 'block';
+                
+                const activitiesContainer = document.getElementById('activitiesList');
+                if (!activitiesContainer) return;
+                
+                if (data.activities && data.activities.length > 0) {
+                    let activitiesHtml = '';
+                    
+                    data.activities.forEach(activity => {
+                        const priorityClass = getPriorityClass(activity.priority);
+                        const dueDateStr = activity.due_date_str || 'Sin fecha';
+                        
+                        // Mostrar información de oportunidad o contacto
+                        let relationInfo = '';
+                        if (activity.opportunity_name) {
+                            relationInfo = `<i class="fas fa-bullseye me-1"></i>${activity.opportunity_name}`;
+                        } else if (activity.contact_name) {
+                            relationInfo = `<i class="fas fa-user-tie me-1"></i>${activity.contact_name}`;
+                        } else {
+                            relationInfo = `<i class="fas fa-tasks me-1"></i>Actividad independiente`;
+                        }
+                        
+                        activitiesHtml += `
+                            <div class="dropdown-item-text p-3 border-bottom">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1 me-2">
+                                        <h6 class="mb-1 fw-bold text-dark">${activity.title}</h6>
+                                        <small class="text-muted d-block mb-1">
+                                            ${relationInfo}
+                                        </small>
+                                        <small class="text-muted d-block">
+                                            <i class="fas fa-clock me-1"></i>${dueDateStr}
+                                        </small>
+                                    </div>
+                                    <span class="badge ${priorityClass} ms-2">${activity.priority}</span>
+                                </div>
+                                <div class="mt-2">
+                                    <a href="${activity.edit_url}" class="btn btn-sm btn-outline-primary me-1">
+                                        <i class="fas fa-edit"></i> Editar
+                                    </a>
+                                    <a href="${activity.detail_url}" class="btn btn-sm btn-outline-info">
+                                        <i class="fas fa-eye"></i> Ver
+                                    </a>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    activitiesContainer.innerHTML = activitiesHtml;
+                } else {
+                    activitiesContainer.innerHTML = `
+                        <div class="dropdown-item-text text-center p-4">
+                            <i class="fas fa-tasks text-muted fa-3x mb-3"></i>
+                            <p class="mb-0 text-muted">No tienes actividades pendientes</p>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error al cargar actividades:', error);
+                
+                if (loader) loader.style.display = 'none';
+                if (content) content.style.display = 'block';
+                
+                const activitiesContainer = document.getElementById('activitiesList');
+                if (activitiesContainer) {
+                    activitiesContainer.innerHTML = `
+                        <div class="dropdown-item-text text-center p-4">
+                            <i class="fas fa-exclamation-triangle text-warning fa-2x mb-2"></i>
+                            <p class="mb-0 text-muted">Error al cargar actividades</p>
+                        </div>
+                    `;
+                }
+            });
+        }
+        
+        // Función auxiliar para obtener clase CSS de prioridad
+        function getPriorityClass(priority) {
+            switch(priority) {
+                case 'Crítica':
+                    return 'bg-danger';
+                case 'Alta':
+                    return 'bg-warning text-dark';
+                case 'Media':
+                    return 'bg-info';
+                case 'Baja':
+                    return 'bg-secondary';
+                default:
+                    return 'bg-secondary';
+            }
+        }
+        
+        // Cargar actividades cuando se abre el dropdown
+        document.addEventListener('DOMContentLoaded', function() {
+            const activitiesDropdown = document.getElementById('navbarActivities');
+            if (activitiesDropdown) {
+                activitiesDropdown.addEventListener('shown.bs.dropdown', function() {
+                    loadPendingActivities();
+                });
+            }
+        });
     </script>
     {% endif %}
 </body>

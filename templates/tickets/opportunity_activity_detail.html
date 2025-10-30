@@ -11,8 +11,11 @@
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="{% url 'crm_dashboard' %}">CRM</a></li>
-                        <li class="breadcrumb-item"><a href="{% url 'opportunity_list' %}">Oportunidades</a></li>
-                        <li class="breadcrumb-item"><a href="{% url 'opportunity_detail' activity.opportunity.pk %}">{{ activity.opportunity.name }}</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'my_activities_dashboard' %}">Actividades</a></li>
+                        {% if activity.opportunity %}
+                            <li class="breadcrumb-item"><a href="{% url 'opportunity_list' %}">Oportunidades</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'opportunity_detail' activity.opportunity.pk %}">{{ activity.opportunity.name }}</a></li>
+                        {% endif %}
                         <li class="breadcrumb-item active">{{ activity.title }}</li>
                     </ol>
                 </nav>
@@ -20,7 +23,13 @@
                     <i class="fas fa-tasks"></i> {{ activity.title }}
                 </h1>
                 <p class="text-muted mb-0">
-                    <i class="fas fa-building"></i> {{ activity.opportunity.company.name }} - {{ activity.opportunity.name }}
+                    {% if activity.opportunity %}
+                        <i class="fas fa-bullseye"></i> {{ activity.opportunity.company.name }} - {{ activity.opportunity.name }}
+                    {% elif activity.contact %}
+                        <i class="fas fa-user"></i> Contacto: {{ activity.contact.name }}
+                    {% else %}
+                        <i class="fas fa-tasks"></i> Actividad independiente
+                    {% endif %}
                 </p>
             </div>
             <div class="text-end">
@@ -149,9 +158,17 @@
                     </a>
                     {% endif %}
                     
+                    {% if activity.opportunity %}
                     <a href="{% url 'opportunity_detail' activity.opportunity.pk %}" class="btn btn-primary">
                         <i class="fas fa-bullseye"></i> Ver Oportunidad
                     </a>
+                    {% endif %}
+                    
+                    {% if activity.contact %}
+                    <a href="{% url 'contact_detail' activity.contact.pk %}" class="btn btn-info">
+                        <i class="fas fa-user"></i> Ver Contacto
+                    </a>
+                    {% endif %}
                     
                     <a href="{% url 'my_activities_dashboard' %}" class="btn btn-secondary">
                         <i class="fas fa-tasks"></i> Mis Actividades
@@ -168,6 +185,7 @@
     </div>
 
     <div class="col-lg-4">
+        {% if activity.opportunity %}
         <!-- Información de la Oportunidad -->
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-info text-white">
@@ -212,6 +230,56 @@
                 </div>
             </div>
         </div>
+        {% elif activity.contact %}
+        <!-- Información del Contacto -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-user"></i> Contacto Relacionado
+                </h6>
+            </div>
+            <div class="card-body">
+                <h6 class="text-primary">{{ activity.contact.name }}</h6>
+                {% if activity.contact.company %}
+                    <p class="text-muted mb-3">{{ activity.contact.company }}</p>
+                {% endif %}
+                
+                {% if activity.contact.email %}
+                <div class="mb-2">
+                    <small class="text-muted d-block">Email:</small>
+                    <a href="mailto:{{ activity.contact.email }}">{{ activity.contact.email }}</a>
+                </div>
+                {% endif %}
+
+                {% if activity.contact.phone %}
+                <div class="mb-2">
+                    <small class="text-muted d-block">Teléfono:</small>
+                    <a href="tel:{{ activity.contact.phone }}">{{ activity.contact.phone }}</a>
+                </div>
+                {% endif %}
+
+                <div class="mb-3">
+                    <small class="text-muted d-block">Estado:</small>
+                    <span class="badge bg-{{ activity.contact.get_status_color }}">
+                        {% if activity.contact.status == 'positive' %}😊{% endif %}
+                        {{ activity.contact.get_status_display }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <!-- Actividad Independiente -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-tasks"></i> Actividad Independiente
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Esta actividad no está asociada a ninguna oportunidad o contacto específico.</p>
+            </div>
+        </div>
+        {% endif %}
 
         <!-- Estadísticas -->
         <div class="card shadow-sm">

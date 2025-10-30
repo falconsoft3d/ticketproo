@@ -1,0 +1,312 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h3 mb-0 text-primary">
+                    <i class="fas fa-plus-circle"></i> {{ page_title }}
+                </h1>
+                <p class="text-muted mb-0">Crear nueva actividad de seguimiento para <strong>{{ contact.name }}</strong></p>
+            </div>
+            <div class="text-end">
+                <a href="{% url 'contact_detail' contact.pk %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver al Contacto
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Información del contacto -->
+<div class="row justify-content-center mb-4">
+    <div class="col-lg-8">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-user-tie"></i> Información del Contacto
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <strong>Nombre:</strong><br>
+                        {{ contact.name }}
+                    </div>
+                    {% if contact.email %}
+                    <div class="col-md-4">
+                        <strong>Email:</strong><br>
+                        <a href="mailto:{{ contact.email }}">{{ contact.email }}</a>
+                    </div>
+                    {% endif %}
+                    {% if contact.phone %}
+                    <div class="col-md-4">
+                        <strong>Teléfono:</strong><br>
+                        <a href="tel:{{ contact.phone }}">{{ contact.phone }}</a>
+                    </div>
+                    {% endif %}
+                </div>
+                {% if contact.company %}
+                <div class="row mt-2">
+                    <div class="col-md-6">
+                        <strong>Empresa:</strong><br>
+                        {{ contact.company }}
+                    </div>
+                    {% if contact.position %}
+                    <div class="col-md-6">
+                        <strong>Cargo:</strong><br>
+                        {{ contact.position }}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-tasks"></i> Información de la Actividad
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <!-- Oportunidad -->
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.opportunity.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-bullseye text-primary"></i> Oportunidad
+                                <span class="text-muted small">(opcional)</span>
+                            </label>
+                            {{ form.opportunity }}
+                            {% if form.opportunity.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.opportunity.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Selecciona la oportunidad relacionada (opcional).</div>
+                        </div>
+
+                        <!-- Contacto (pre-seleccionado y readonly) -->
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.contact.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-user-tie text-primary"></i> Contacto
+                                <span class="text-success small">(pre-seleccionado)</span>
+                            </label>
+                            {{ form.contact }}
+                            {% if form.contact.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.contact.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">El contacto está pre-seleccionado automáticamente.</div>
+                        </div>
+
+                        <!-- Título -->
+                        <div class="col-md-8 mb-3">
+                            <label for="{{ form.title.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-heading text-primary"></i> Título
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.title.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Tipo de Actividad -->
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.activity_type.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-tag text-primary"></i> Tipo
+                            </label>
+                            {{ form.activity_type }}
+                            {% if form.activity_type.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.activity_type.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Descripción -->
+                        <div class="col-12 mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-align-left text-primary"></i> Descripción
+                            </label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.description.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Fecha y Hora Programada -->
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.scheduled_date.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-calendar text-primary"></i> Fecha y Hora Programada
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.scheduled_date }}
+                            {% if form.scheduled_date.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.scheduled_date.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Prioridad -->
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.priority.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-exclamation-triangle text-primary"></i> Prioridad
+                            </label>
+                            {{ form.priority }}
+                            {% if form.priority.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.priority.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Asignado a -->
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.assigned_to.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-user text-primary"></i> Asignado a
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.assigned_to }}
+                            {% if form.assigned_to.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.assigned_to.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Duración -->
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.duration_minutes.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-clock text-primary"></i> Duración (minutos)
+                            </label>
+                            {{ form.duration_minutes }}
+                            {% if form.duration_minutes.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.duration_minutes.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Ubicación -->
+                        <div class="col-12 mb-3">
+                            <label for="{{ form.location.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-map-marker-alt text-primary"></i> Ubicación
+                            </label>
+                            {{ form.location }}
+                            {% if form.location.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.location.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Botones de acción -->
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'contact_detail' contact.pk %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save"></i> Crear Actividad para {{ contact.name }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Información adicional -->
+<div class="row justify-content-center mt-4">
+    <div class="col-lg-8">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle"></i> Información
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0 small">
+                    <li><strong>Contacto:</strong> La actividad se asociará automáticamente a {{ contact.name }}</li>
+                    <li><strong>Oportunidad:</strong> Opcionalmente puedes vincular esta actividad a una oportunidad específica</li>
+                    <li><strong>Fecha y Hora:</strong> Programa cuándo debe realizarse la actividad</li>
+                    <li><strong>Tipo:</strong> Define el tipo de actividad (llamada, reunión, correo, etc.)</li>
+                    <li><strong>Prioridad:</strong> Establece la importancia de la actividad</li>
+                    <li><strong>Asignación:</strong> Define quién será responsable de realizar la actividad</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Establecer fecha mínima como hoy
+    const dateInput = document.querySelector('input[type="datetime-local"]');
+    if (dateInput) {
+        const now = new Date();
+        const localISOTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        dateInput.min = localISOTime;
+    }
+    
+    // Manejar el campo de contacto pre-seleccionado
+    const contactSelect = document.getElementById('{{ form.contact.id_for_label }}');
+    if (contactSelect) {
+        // El contacto ya está pre-seleccionado y deshabilitado
+        // Crear un campo hidden para asegurar que se envíe el valor
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = 'contact';
+        hiddenInput.value = contactSelect.value;
+        contactSelect.parentNode.appendChild(hiddenInput);
+    }
+    
+    // Autocompletar título basado en tipo de actividad y nombre del contacto
+    const activityType = document.getElementById('{{ form.activity_type.id_for_label }}');
+    const titleInput = document.getElementById('{{ form.title.id_for_label }}');
+    const contactName = '{{ contact.name }}';
+    
+    if (activityType && titleInput) {
+        activityType.addEventListener('change', function() {
+            if (!titleInput.value) {
+                const suggestions = {
+                    'call': `Llamada de seguimiento a ${contactName}`,
+                    'meeting': `Reunión con ${contactName}`,
+                    'email': `Envío de información a ${contactName}`,
+                    'task': `Tarea de seguimiento para ${contactName}`,
+                    'demo': `Demostración de producto a ${contactName}`,
+                    'proposal': `Elaborar propuesta para ${contactName}`,
+                    'follow_up': `Seguimiento con ${contactName}`,
+                    'other': `Actividad adicional para ${contactName}`
+                };
+                
+                if (suggestions[this.value]) {
+                    titleInput.value = suggestions[this.value];
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

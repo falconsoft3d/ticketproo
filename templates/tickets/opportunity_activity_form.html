@@ -11,8 +11,12 @@
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="{% url 'crm_dashboard' %}">CRM</a></li>
-                        <li class="breadcrumb-item"><a href="{% url 'opportunity_list' %}">Oportunidades</a></li>
-                        <li class="breadcrumb-item"><a href="{% url 'opportunity_detail' opportunity.pk %}">{{ opportunity.name }}</a></li>
+                        {% if opportunity %}
+                            <li class="breadcrumb-item"><a href="{% url 'opportunity_list' %}">Oportunidades</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'opportunity_detail' opportunity.pk %}">{{ opportunity.name }}</a></li>
+                        {% else %}
+                            <li class="breadcrumb-item"><a href="{% url 'my_activities_dashboard' %}">Actividades</a></li>
+                        {% endif %}
                         <li class="breadcrumb-item active">{% if activity %}Editar Actividad{% else %}Nueva Actividad{% endif %}</li>
                     </ol>
                 </nav>
@@ -20,7 +24,15 @@
                     <i class="fas fa-tasks"></i> 
                     {% if activity %}Editar Actividad{% else %}Nueva Actividad{% endif %}
                 </h1>
-                <p class="text-muted mb-0">Oportunidad: {{ opportunity.name }}</p>
+                <p class="text-muted mb-0">
+                    {% if opportunity %}
+                        Oportunidad: {{ opportunity.name }}
+                    {% elif activity.contact %}
+                        Contacto: {{ activity.contact.name }}
+                    {% else %}
+                        Actividad independiente
+                    {% endif %}
+                </p>
             </div>
         </div>
     </div>
@@ -135,9 +147,19 @@
                     </div>
 
                     <div class="d-flex justify-content-between">
-                        <a href="{% url 'opportunity_detail' opportunity.pk %}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Volver
-                        </a>
+                        {% if opportunity %}
+                            <a href="{% url 'opportunity_detail' opportunity.pk %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Volver a Oportunidad
+                            </a>
+                        {% elif activity.contact %}
+                            <a href="{% url 'contact_detail' activity.contact.pk %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Volver a Contacto
+                            </a>
+                        {% else %}
+                            <a href="{% url 'my_activities_dashboard' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Volver a Actividades
+                            </a>
+                        {% endif %}
                         <div class="d-flex gap-2">
                             {% if activity %}
                                 <a href="{% url 'opportunity_activity_delete' activity.pk %}" 

@@ -13,7 +13,11 @@
                         <i class="bi bi-person-lines-fill text-primary"></i>
                         {{ contact.name }}
                         <span class="badge bg-{{ contact.get_status_color }} ms-2">
-                            <i class="{{ contact.get_status_icon }}"></i>
+                            {% if contact.status == 'positive' %}
+                                😊 <i class="{{ contact.get_status_icon }}"></i>
+                            {% else %}
+                                <i class="{{ contact.get_status_icon }}"></i>
+                            {% endif %}
                             {{ contact.get_status_display }}
                         </span>
                     </h2>
@@ -74,6 +78,11 @@
                             {% if contact.company %}
                             <h6><i class="bi bi-building"></i> Empresa</h6>
                             <p>{{ contact.company }}</p>
+                            {% endif %}
+                            
+                            {% if contact.country %}
+                            <h6><i class="bi bi-globe"></i> País</h6>
+                            <p>{{ contact.country }}</p>
                             {% endif %}
                             
                             <h6><i class="bi bi-flag"></i> Estado</h6>
@@ -332,28 +341,128 @@
 
         <!-- Información adicional -->
         <div class="col-md-4">
-            <!-- Fechas importantes -->
+            
+
+            <!-- Actividades del Contacto -->
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-calendar"></i> Fechas Importantes
+                        <i class="bi bi-list-task"></i> Actividades ({{ total_activities }})
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
-                        <h6>Fecha de Contacto</h6>
-                        <p class="text-muted">{{ contact.contact_date|date:"d/m/Y H:i" }}</p>
+                    <!-- Estadísticas de actividades -->
+                    <div class="row mb-3">
+                        <div class="col-4 text-center">
+                            <div class="bg-warning text-dark rounded p-2">
+                                <small class="d-block">Pendientes</small>
+                                <strong>{{ pending_activities }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-4 text-center">
+                            <div class="bg-success text-white rounded p-2">
+                                <small class="d-block">Completadas</small>
+                                <strong>{{ completed_activities }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-4 text-center">
+                            <div class="bg-info text-white rounded p-2">
+                                <small class="d-block">Total</small>
+                                <strong>{{ total_activities }}</strong>
+                            </div>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <h6>Creado</h6>
-                        <p class="text-muted">{{ contact.created_at|date:"d/m/Y H:i" }}</p>
+
+                    <!-- Botón para crear nueva actividad -->
+                    <div class="d-grid mb-3">
+                        <a href="{% url 'activity_create_from_contact' contact.pk %}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Nueva Actividad
+                        </a>
                     </div>
+
+                    <!-- Botones rápidos para actividades -->
                     <div class="mb-3">
-                        <h6>Última Actualización</h6>
-                        <p class="text-muted">{{ contact.updated_at|date:"d/m/Y H:i" }}</p>
+                        <h6 class="text-muted mb-2">
+                            <i class="bi bi-lightning"></i> Acciones Rápidas
+                        </h6>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <button type="button" class="btn btn-outline-success btn-sm w-100" 
+                                        onclick="crearActividadRapida('call', '{{ contact.pk }}')"
+                                        title="Programar llamada para dentro de 1 semana">
+                                    <i class="bi bi-telephone"></i>
+                                    <small class="d-block">Llamar en</small>
+                                    <small class="d-block">1 semana</small>
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button type="button" class="btn btn-outline-info btn-sm w-100" 
+                                        onclick="crearActividadRapida('meeting', '{{ contact.pk }}')"
+                                        title="Programar reunión para dentro de 1 semana">
+                                    <i class="bi bi-people"></i>
+                                    <small class="d-block">Reunirnos en</small>
+                                    <small class="d-block">1 semana</small>
+                                </button>
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- Lista de actividades recientes -->
+                    {% if activities %}
+                        <h6 class="text-muted mb-2">Actividades Recientes:</h6>
+                        <div class="list-group list-group-flush">
+                            {% for activity in activities|slice:":5" %}
+                            <div class="list-group-item px-0 py-2 border-bottom">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1 small">
+                                            <a href="{% url 'opportunity_activity_detail' activity.pk %}" class="text-decoration-none">
+                                                {{ activity.title|truncatechars:30 }}
+                                            </a>
+                                        </h6>
+                                        <small class="text-muted d-block">
+                                            <i class="bi bi-calendar"></i> {{ activity.scheduled_date|date:"d/m/Y H:i" }}
+                                        </small>
+                                        {% if activity.opportunity %}
+                                        <small class="text-muted d-block">
+                                            <i class="bi bi-bullseye"></i> {{ activity.opportunity.name|truncatechars:20 }}
+                                        </small>
+                                        {% endif %}
+                                    </div>
+                                    <span class="badge bg-{{ activity.get_priority_color }} ms-2 small">
+                                        {{ activity.get_priority_display }}
+                                    </span>
+                                </div>
+                                <div class="mt-1">
+                                    <span class="badge bg-{{ activity.get_status_color }} small me-1">
+                                        {{ activity.get_status_display }}
+                                    </span>
+                                    <span class="badge bg-secondary small">
+                                        {{ activity.get_activity_type_display }}
+                                    </span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        {% if total_activities > 5 %}
+                        <div class="text-center mt-2">
+                            <a href="{% url 'my_activities_dashboard' %}?contact={{ contact.pk }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-arrow-right"></i> Ver todas las actividades
+                            </a>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center text-muted py-3">
+                            <i class="bi bi-list-task" style="font-size: 2rem;"></i>
+                            <p class="mb-0 small">No hay actividades registradas</p>
+                            <small>Crea la primera actividad para este contacto</small>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
+
+            
 
             <!-- Acciones rápidas -->
             <div class="card">
@@ -369,6 +478,10 @@
                             <i class="bi bi-plus-circle"></i> Crear Oportunidad
                         </a>
                         {% endif %}
+                        
+                        <a href="{% url 'activity_create_from_contact' contact.pk %}" class="btn btn-primary">
+                            <i class="bi bi-list-task"></i> Nueva Actividad
+                        </a>
                         
                         {% if contact.email %}
                         <a href="mailto:{{ contact.email }}" class="btn btn-outline-primary">
@@ -396,7 +509,96 @@
                     </div>
                 </div>
             </div>
+
+
+            <!-- Fechas importantes -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-calendar"></i> Fechas Importantes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6>Fecha de Contacto</h6>
+                        <p class="text-muted">{{ contact.contact_date|date:"d/m/Y H:i" }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Creado</h6>
+                        <p class="text-muted">{{ contact.created_at|date:"d/m/Y H:i" }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Última Actualización</h6>
+                        <p class="text-muted">{{ contact.updated_at|date:"d/m/Y H:i" }}</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<script>
+function crearActividadRapida(tipo, contactId) {
+    console.log('🚀 Creando actividad rápida:', tipo, 'para contacto:', contactId);
+    
+    // Mostrar feedback visual inmediatamente
+    const button = event.target.closest('button');
+    const originalHTML = button.innerHTML;
+    
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Creando...';
+    
+    // Preparar datos para AJAX
+    const requestData = {
+        type: tipo
+    };
+    
+    // Token CSRF
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                     document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
+                     '{{ csrf_token }}';
+    
+    // Realizar petición AJAX
+    fetch(`{% url 'create_quick_activity' contact.pk %}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify(requestData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('✅ Actividad creada exitosamente:', data.activity_id);
+            
+            // Mostrar mensaje de éxito
+            button.innerHTML = '<i class="fas fa-check"></i> ¡Creada!';
+            button.classList.remove('btn-outline-primary', 'btn-outline-success');
+            button.classList.add('btn-success');
+            
+            // Opcional: Recargar la página después de un momento para mostrar la nueva actividad
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            console.error('❌ Error al crear actividad:', data.error);
+            alert('Error al crear la actividad: ' + data.error);
+            
+            // Restaurar botón
+            button.disabled = false;
+            button.innerHTML = originalHTML;
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error en la petición AJAX:', error);
+        alert('Error de conexión al crear la actividad');
+        
+        // Restaurar botón
+        button.disabled = false;
+        button.innerHTML = originalHTML;
+    });
+}
+</script>
 {% endblock %}

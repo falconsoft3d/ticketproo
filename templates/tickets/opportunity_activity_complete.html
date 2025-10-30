@@ -11,8 +11,12 @@
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="{% url 'crm_dashboard' %}">CRM</a></li>
-                        <li class="breadcrumb-item"><a href="{% url 'opportunity_list' %}">Oportunidades</a></li>
-                        <li class="breadcrumb-item"><a href="{% url 'opportunity_detail' activity.opportunity.pk %}">{{ activity.opportunity.name }}</a></li>
+                        {% if activity.opportunity %}
+                            <li class="breadcrumb-item"><a href="{% url 'opportunity_list' %}">Oportunidades</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'opportunity_detail' activity.opportunity.pk %}">{{ activity.opportunity.name }}</a></li>
+                        {% else %}
+                            <li class="breadcrumb-item"><a href="{% url 'my_activities_dashboard' %}">Actividades</a></li>
+                        {% endif %}
                         <li class="breadcrumb-item"><a href="{% url 'opportunity_activity_detail' activity.pk %}">{{ activity.title }}</a></li>
                         <li class="breadcrumb-item active">Completar</li>
                     </ol>
@@ -154,9 +158,19 @@
                 </div>
                 
                 <div class="mt-3">
-                    <a href="{% url 'opportunity_detail' activity.opportunity.pk %}" class="btn btn-outline-primary btn-sm w-100">
-                        <i class="fas fa-external-link-alt"></i> Ver Oportunidad
-                    </a>
+                    {% if activity.opportunity %}
+                        <a href="{% url 'opportunity_detail' activity.opportunity.pk %}" class="btn btn-outline-primary btn-sm w-100">
+                            <i class="fas fa-external-link-alt"></i> Ver Oportunidad
+                        </a>
+                    {% elif activity.contact %}
+                        <a href="{% url 'contact_detail' activity.contact.pk %}" class="btn btn-outline-info btn-sm w-100">
+                            <i class="fas fa-user"></i> Ver Contacto
+                        </a>
+                    {% else %}
+                        <a href="{% url 'my_activities_dashboard' %}" class="btn btn-outline-secondary btn-sm w-100">
+                            <i class="fas fa-tasks"></i> Ver Actividades
+                        </a>
+                    {% endif %}
                 </div>
             </div>
         </div>

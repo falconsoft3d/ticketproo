@@ -11,7 +11,7 @@ from django.db.models.functions import TruncHour, TruncDay, TruncMonth
 from django.http import HttpResponse, Http404, JsonResponse
 from django.utils import timezone
 from django.conf import settings
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_http_methods, require_POST
 from django.views.decorators.csrf import csrf_exempt
 from datetime import datetime, date, timedelta
 import os
@@ -7601,6 +7601,298 @@ def my_activities_dashboard(request):
     return render(request, 'tickets/my_activities_dashboard.html', context)
 
 
+@login_required
+def activity_create_standalone(request):
+    """Crear nueva actividad seleccionando la oportunidad"""
+    from .models import OpportunityActivity
+    from .forms import OpportunityActivityStandaloneForm
+    
+    if request.method == 'POST':
+        form = OpportunityActivityStandaloneForm(request.POST, current_user=request.user)
+        if form.is_valid():
+            activity = form.save(commit=False)
+            activity.created_by = request.user
+            activity.save()
+            
+            messages.success(request, f'Actividad "{activity.title}" creada exitosamente.')
+            return redirect('my_activities_dashboard')
+    else:
+        form = OpportunityActivityStandaloneForm(current_user=request.user)
+        
+        # Si se proporciona una fecha en los parámetros, establecerla como fecha programada
+        date_param = request.GET.get('date')
+        if date_param:
+            try:
+                from datetime import datetime
+                # Convertir fecha del calendario (YYYY-MM-DD) a datetime con hora por defecto
+                date_obj = datetime.strptime(date_param, '%Y-%m-%d')
+                # Establecer hora por defecto a las 9:00 AM
+                default_datetime = date_obj.replace(hour=9, minute=0)
+                form.fields['scheduled_date'].initial = default_datetime.strftime('%Y-%m-%dT%H:%M')
+            except ValueError:
+                pass  # Si la fecha no es válida, usar el valor por defecto
+    
+    context = {
+        'form': form,
+        'page_title': 'Nueva Actividad'
+    }
+    
+    return render(request, 'tickets/activity_standalone_form.html', context)
+
+
+@login_required
+def activity_create_from_contact(request, contact_id):
+    """Crear nueva actividad desde un contacto específico"""
+    from .models import OpportunityActivity, Contact
+    from .forms import OpportunityActivityStandaloneForm
+    
+    contact = get_object_or_404(Contact, pk=contact_id)
+    
+    if request.method == 'POST':
+        form = OpportunityActivityStandaloneForm(request.POST, current_user=request.user)
+        if form.is_valid():
+            activity = form.save(commit=False)
+            activity.created_by = request.user
+            activity.contact = contact  # Asociar automáticamente el contacto
+            activity.save()
+            
+            messages.success(request, f'Actividad "{activity.title}" creada exitosamente para {contact.name}.')
+            return redirect('contact_detail', pk=contact.pk)
+    else:
+        form = OpportunityActivityStandaloneForm(current_user=request.user)
+        # Pre-seleccionar el contacto y deshabilitar el campo
+        form.fields['contact'].initial = contact
+        form.fields['contact'].queryset = Contact.objects.filter(pk=contact.pk)
+        form.fields['contact'].widget.attrs['disabled'] = True
+    
+    context = {
+        'form': form,
+        'contact': contact,
+        'page_title': f'Nueva Actividad para {contact.name}'
+    }
+    
+    return render(request, 'tickets/activity_from_contact_form.html', context)
+
+
+@login_required
+def api_user_activities_pending(request):
+    """API para obtener actividades pendientes del usuario actual"""
+    from .models import OpportunityActivity
+    from django.http import JsonResponse
+    from django.utils import timezone
+    
+    # Obtener actividades pendientes del usuario
+    pending_activities = OpportunityActivity.objects.filter(
+        assigned_to=request.user,
+        status__in=['pending', 'in_progress']
+    ).order_by('scheduled_date')[:10]  # Limitamos a 10 para no sobrecargar
+    
+    # Convertir a formato JSON
+    activities_data = []
+    for activity in pending_activities:
+        is_overdue = activity.scheduled_date < timezone.now()
+        activities_data.append({
+            'id': activity.id,
+            'title': activity.title,
+            'opportunity_name': activity.opportunity.name if activity.opportunity else None,
+            'contact_name': activity.contact.name if activity.contact else None,
+            'scheduled_date': activity.scheduled_date.strftime('%d/%m/%Y %H:%M'),
+            'due_date_str': activity.scheduled_date.strftime('%d/%m/%Y %H:%M'),
+            'priority': activity.get_priority_display(),
+            'priority_color': activity.get_priority_color(),
+            'is_overdue': is_overdue,
+            'detail_url': f"/crm/activities/{activity.id}/",
+            'edit_url': f"/crm/activities/{activity.id}/edit/",
+        })
+    
+    return JsonResponse({
+        'activities': activities_data,
+        'total_pending': pending_activities.count()
+    })
+
+
+@login_required
+def api_activities_calendar(request):
+    """API para obtener actividades para el calendario"""
+    from .models import OpportunityActivity
+    from django.http import JsonResponse
+    from django.utils import timezone
+    from datetime import datetime, timedelta
+    
+    # Obtener parámetros de fecha (opcional)
+    start_param = request.GET.get('start')
+    end_param = request.GET.get('end')
+    
+    # Si no se proporcionan fechas, usar un rango de 3 meses
+    if not start_param or not end_param:
+        now = timezone.now()
+        start_date = now.replace(day=1) - timedelta(days=30)  # Mes anterior
+        end_date = start_date + timedelta(days=120)  # 4 meses
+    else:
+        try:
+            start_date = datetime.fromisoformat(start_param.replace('Z', '+00:00'))
+            end_date = datetime.fromisoformat(end_param.replace('Z', '+00:00'))
+        except ValueError:
+            start_date = timezone.now() - timedelta(days=30)
+            end_date = timezone.now() + timedelta(days=90)
+    
+    # Obtener actividades del usuario en el rango de fechas
+    activities = OpportunityActivity.objects.filter(
+        assigned_to=request.user,
+        scheduled_date__range=[start_date, end_date]
+    ).select_related('opportunity', 'contact').order_by('scheduled_date')
+    
+    # Convertir a formato FullCalendar
+    events = []
+    for activity in activities:
+        # Determinar color según estado y prioridad
+        color = '#6c757d'  # Default gris
+        if activity.status == 'pending':
+            color = '#ffc107'  # Amarillo
+        elif activity.status == 'in_progress':
+            color = '#17a2b8'  # Azul
+        elif activity.status == 'completed':
+            color = '#28a745'  # Verde
+        elif activity.status == 'cancelled':
+            color = '#6c757d'  # Gris
+        elif activity.status == 'overdue':
+            color = '#dc3545'  # Rojo
+            
+        # Ajustar color por prioridad
+        if activity.priority == 'urgent':
+            color = '#dc3545'  # Rojo urgente
+        elif activity.priority == 'high' and activity.status == 'pending':
+            color = '#fd7e14'  # Naranja para alta prioridad
+        
+        # Crear título descriptivo
+        title_parts = [activity.title]
+        if activity.contact:
+            title_parts.append(f"({activity.contact.name})")
+        elif activity.opportunity:
+            title_parts.append(f"({activity.opportunity.name})")
+            
+        event = {
+            'id': activity.id,
+            'title': ' '.join(title_parts),
+            'start': activity.scheduled_date.isoformat(),
+            'color': color,
+            'url': f"/crm/activities/{activity.id}/",
+            'extendedProps': {
+                'status': activity.status,
+                'priority': activity.priority,
+                'activity_type': activity.activity_type,
+                'contact_name': activity.contact.name if activity.contact else None,
+                'opportunity_name': activity.opportunity.name if activity.opportunity else None,
+                'description': activity.description,
+                'location': activity.location,
+                'duration_minutes': activity.duration_minutes,
+            }
+        }
+        
+        # Si tiene duración, establecer hora de fin
+        if activity.duration_minutes:
+            end_time = activity.scheduled_date + timedelta(minutes=activity.duration_minutes)
+            event['end'] = end_time.isoformat()
+        
+        events.append(event)
+    
+    return JsonResponse(events, safe=False)
+
+
+@login_required
+@require_POST
+def create_quick_activity(request, contact_id):
+    """Vista AJAX para crear actividades rápidas desde contactos"""
+    from .models import Contact, OpportunityActivity
+    from django.http import JsonResponse
+    from django.utils import timezone
+    from datetime import timedelta
+    import json
+    
+    try:
+        # Obtener el contacto
+        contact = Contact.objects.get(pk=contact_id, created_by=request.user)
+        
+        # Obtener datos del request
+        data = json.loads(request.body)
+        activity_type = data.get('type')
+        
+        if activity_type not in ['call', 'meeting']:
+            return JsonResponse({'success': False, 'error': 'Tipo de actividad inválido'})
+        
+        # Calcular fecha para 1 semana desde hoy
+        scheduled_date = timezone.now() + timedelta(days=7)
+        
+        # Ajustar hora según el tipo de actividad
+        if activity_type == 'call':
+            scheduled_date = scheduled_date.replace(hour=10, minute=0, second=0, microsecond=0)
+            title = f"Llamada de seguimiento - {contact.name}"
+            description = f"""Llamada de seguimiento programada automáticamente.
+
+Contacto: {contact.name}
+Empresa: {contact.company or 'No especificada'}
+Teléfono: {contact.phone or 'No especificado'}
+
+Objetivos:
+- Revisar estado del contacto
+- Evaluar necesidades actuales
+- Definir próximos pasos
+- Mantener relación comercial"""
+            duration_minutes = 30
+            priority = 'medium'
+            
+        else:  # meeting
+            scheduled_date = scheduled_date.replace(hour=14, minute=0, second=0, microsecond=0)
+            title = f"Reunión comercial - {contact.name}"
+            description = f"""Reunión comercial programada automáticamente.
+
+Contacto: {contact.name}
+Empresa: {contact.company or 'No especificada'}
+Email: {contact.email or 'No especificado'}
+
+Agenda:
+- Presentación de servicios/productos
+- Análisis de necesidades del cliente
+- Demostración si es necesario
+- Propuesta comercial
+- Definir siguientes pasos"""
+            duration_minutes = 60
+            priority = 'high'
+        
+        # Crear la actividad
+        activity = OpportunityActivity.objects.create(
+            title=title,
+            description=description,
+            activity_type=activity_type,
+            scheduled_date=scheduled_date,
+            priority=priority,
+            duration_minutes=duration_minutes,
+            status='pending',
+            contact=contact,
+            opportunity=None,  # No hay oportunidad asociada
+            assigned_to=request.user,
+            created_by=request.user
+        )
+        
+        # Formatear fecha para mostrar al usuario
+        fecha_formateada = scheduled_date.strftime("%d/%m/%Y a las %H:%M")
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Actividad creada exitosamente para el {fecha_formateada}',
+            'activity_id': activity.id,
+            'activity_url': f'/crm/activities/{activity.id}/',
+            'scheduled_date': fecha_formateada
+        })
+        
+    except Contact.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Contacto no encontrado'})
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Datos inválidos'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Error inesperado: {str(e)}'})
+
+
 # ============================
 # VISTAS DE REUNIONES
 # ============================
@@ -8677,6 +8969,15 @@ def contact_detail(request, pk):
     comments = contact.comments.all().order_by('created_at')
     attachments = contact.attachments.all().order_by('-uploaded_at')
     
+    # Obtener actividades relacionadas con este contacto
+    from .models import OpportunityActivity
+    activities = OpportunityActivity.objects.filter(contact=contact).order_by('-created_at')
+    
+    # Estadísticas de actividades
+    total_activities = activities.count()
+    pending_activities = activities.filter(status__in=['pending', 'in_progress']).count()
+    completed_activities = activities.filter(status='completed').count()
+    
     # Formularios para nuevos comentarios y adjuntos
     from .forms import ContactCommentForm, ContactAttachmentForm
     comment_form = ContactCommentForm(user=request.user, contact=contact)
@@ -8701,6 +9002,10 @@ def contact_detail(request, pk):
         'contact': contact,
         'comments': comments,
         'attachments': attachments,
+        'activities': activities,
+        'total_activities': total_activities,
+        'pending_activities': pending_activities,
+        'completed_activities': completed_activities,
         'comment_form': comment_form,
         'attachment_form': attachment_form,
         'page_title': f'Contacto: {contact.name}'

@@ -72,7 +72,7 @@ def crm_counters(request):
         return {}
     
     try:
-        from tickets.models import Contact, Company, Opportunity, Meeting, Quotation, QuotationTemplate
+        from tickets.models import Contact, Company, Opportunity, Meeting, Quotation, QuotationTemplate, OpportunityActivity
         
         # Contadores básicos
         contacts_count = Contact.objects.count()
@@ -96,6 +96,12 @@ def crm_counters(request):
         # Plantillas públicas activas
         templates_count = QuotationTemplate.objects.filter(is_active=True).count()
         
+        # Actividades pendientes del usuario
+        pending_activities_count = OpportunityActivity.objects.filter(
+            assigned_to=request.user,
+            status__in=['pending', 'in_progress']
+        ).count()
+        
         return {
             'crm_counters': {
                 'contacts': contacts_count,
@@ -104,6 +110,7 @@ def crm_counters(request):
                 'meetings': meetings_count,
                 'quotations': quotations_count,
                 'templates': templates_count,
+                'pending_activities': pending_activities_count,
             }
         }
     except Exception:

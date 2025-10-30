@@ -11,8 +11,12 @@
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="{% url 'crm_dashboard' %}">CRM</a></li>
-                        <li class="breadcrumb-item"><a href="{% url 'opportunity_list' %}">Oportunidades</a></li>
-                        <li class="breadcrumb-item"><a href="{% url 'opportunity_detail' activity.opportunity.pk %}">{{ activity.opportunity.name }}</a></li>
+                        {% if activity.opportunity %}
+                            <li class="breadcrumb-item"><a href="{% url 'opportunity_list' %}">Oportunidades</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'opportunity_detail' activity.opportunity.pk %}">{{ activity.opportunity.name }}</a></li>
+                        {% else %}
+                            <li class="breadcrumb-item"><a href="{% url 'my_activities_dashboard' %}">Actividades</a></li>
+                        {% endif %}
                         <li class="breadcrumb-item"><a href="{% url 'opportunity_activity_detail' activity.pk %}">{{ activity.title }}</a></li>
                         <li class="breadcrumb-item active">Eliminar</li>
                     </ol>

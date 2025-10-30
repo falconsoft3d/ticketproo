@@ -2968,6 +2968,128 @@ class OpportunityActivityForm(forms.ModelForm):
             agent_users = User.objects.filter(is_active=True).order_by('first_name', 'last_name')
         
         self.fields['assigned_to'].queryset = agent_users
+        
+        # Si hay un usuario actual, asignarlo por defecto
+        if current_user:
+            self.fields['assigned_to'].initial = current_user
+        
+        # Configurar fecha por defecto a la hora actual + 1 hora
+        if not self.instance.pk:
+            from django.utils import timezone
+            default_date = timezone.now() + timezone.timedelta(hours=1)
+            self.fields['scheduled_date'].initial = default_date.strftime('%Y-%m-%dT%H:%M')
+
+
+class OpportunityActivityStandaloneForm(forms.ModelForm):
+    """Formulario para crear actividades seleccionando la oportunidad"""
+    
+    opportunity = forms.ModelChoiceField(
+        queryset=None,
+        widget=forms.Select(attrs={
+            'class': 'form-control'
+        }),
+        label='Oportunidad',
+        help_text='Selecciona la oportunidad para esta actividad (opcional)',
+        required=False
+    )
+    
+    contact = forms.ModelChoiceField(
+        queryset=None,
+        widget=forms.Select(attrs={
+            'class': 'form-control'
+        }),
+        label='Contacto',
+        help_text='Selecciona el contacto relacionado con esta actividad (opcional)',
+        required=False
+    )
+    
+    class Meta:
+        model = OpportunityActivity
+        fields = [
+            'opportunity', 'contact', 'title', 'description', 'activity_type', 'priority', 
+            'scheduled_date', 'assigned_to', 'duration_minutes', 'location'
+        ]
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título de la actividad'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción detallada de la actividad'
+            }),
+            'activity_type': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'priority': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'scheduled_date': forms.DateTimeInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local'
+            }),
+            'assigned_to': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'duration_minutes': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Duración en minutos',
+                'min': '1'
+            }),
+            'location': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ubicación (opcional)'
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        current_user = kwargs.pop('current_user', None)
+        super().__init__(*args, **kwargs)
+        
+        # Filtrar oportunidades
+        from .models import Opportunity
+        from . import utils
+        from django.db import models
+        if current_user and utils.is_agent(current_user):
+            # Agentes pueden ver todas las oportunidades
+            self.fields['opportunity'].queryset = Opportunity.objects.all().order_by('-created_at')
+        elif current_user:
+            # Usuarios normales solo ven sus oportunidades
+            self.fields['opportunity'].queryset = Opportunity.objects.filter(
+                models.Q(created_by=current_user) | models.Q(assigned_to=current_user)
+            ).order_by('-created_at')
+        
+        # Filtrar contactos (todos los usuarios pueden ver todos los contactos)
+        self.fields['contact'].queryset = Contact.objects.all().order_by('name')
+        self.fields['contact'].empty_label = "Seleccionar contacto (opcional)"
+        
+        # Filtrar usuarios a solo agentes activos
+        if hasattr(User, 'groups'):
+            try:
+                agent_group = Group.objects.get(name='Agentes')
+                agent_users = User.objects.filter(
+                    groups=agent_group,
+                    is_active=True
+                ).order_by('first_name', 'last_name')
+            except Group.DoesNotExist:
+                agent_users = User.objects.filter(is_active=True).order_by('first_name', 'last_name')
+        else:
+            agent_users = User.objects.filter(is_active=True).order_by('first_name', 'last_name')
+        
+        self.fields['assigned_to'].queryset = agent_users
+        
+        # Si hay un usuario actual, asignarlo por defecto
+        if current_user:
+            self.fields['assigned_to'].initial = current_user
+        
+        # Configurar fecha por defecto a la hora actual + 1 hora
+        if not self.instance.pk:
+            from django.utils import timezone
+            default_date = timezone.now() + timezone.timedelta(hours=1)
+            self.fields['scheduled_date'].initial = default_date.strftime('%Y-%m-%dT%H:%M')
+        
+        self.fields['assigned_to'].queryset = agent_users
         self.fields['assigned_to'].empty_label = "Seleccionar agente"
         
         # Establecer valores por defecto al crear nueva actividad
@@ -3125,7 +3247,7 @@ class ContactForm(forms.ModelForm):
     class Meta:
         model = Contact
         fields = [
-            'name', 'email', 'phone', 'position', 'company', 'erp',
+            'name', 'email', 'phone', 'position', 'company', 'country', 'erp',
             'status', 'source', 'notes', 'contact_date',
             'contacted_by_phone', 'contacted_by_web', 
             'contact_tracking_notes', 'last_contact_date'
@@ -3150,6 +3272,10 @@ class ContactForm(forms.ModelForm):
             'company': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Nombre de la empresa'
+            }),
+            'country': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'España, México, Argentina, etc.'
             }),
             'erp': forms.TextInput(attrs={
                 'class': 'form-control',

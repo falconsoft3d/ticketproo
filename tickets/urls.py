@@ -313,6 +313,12 @@ urlpatterns = [
     path('contact-attachments/<int:pk>/delete/', views.contact_attachment_delete, name='contact_attachment_delete'),
     path('contact-attachments/<int:pk>/download/', views.contact_attachment_download, name='contact_attachment_download'),
     
+    # URL para crear actividad desde contacto
+    path('contacts/<int:contact_id>/create-activity/', views.activity_create_from_contact, name='activity_create_from_contact'),
+    
+    # URL para crear actividad rápida desde contacto (AJAX)
+    path('contacts/<int:contact_id>/quick-activity/', views.create_quick_activity, name='create_quick_activity'),
+    
     # ============= URLs CRM =============
     path('crm/', views.crm_dashboard, name='crm_dashboard'),
     path('crm/opportunities/', views.opportunity_list, name='opportunity_list'),
@@ -330,6 +336,13 @@ urlpatterns = [
     path('crm/activities/<int:pk>/complete/', views.opportunity_activity_complete, name='opportunity_activity_complete'),
     path('crm/activities/<int:pk>/delete/', views.opportunity_activity_delete, name='opportunity_activity_delete'),
     path('crm/my-activities/', views.my_activities_dashboard, name='my_activities_dashboard'),
+    path('crm/activities/create/', views.activity_create_standalone, name='activity_create_standalone'),
+    
+    # API para actividades pendientes
+    path('api/user-activities/pending/', views.api_user_activities_pending, name='api_user_activities_pending'),
+    
+    # API para calendario de actividades
+    path('api/activities/calendar/', views.api_activities_calendar, name='api_activities_calendar'),
     
     # URLs de gestión de estados CRM (solo para agentes)
     path('crm/status/', views.opportunity_status_list, name='opportunity_status_list'),

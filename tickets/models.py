@@ -3534,7 +3534,18 @@ class OpportunityActivity(models.Model):
         Opportunity,
         on_delete=models.CASCADE,
         related_name='activities',
-        verbose_name='Oportunidad'
+        verbose_name='Oportunidad',
+        null=True,
+        blank=True
+    )
+    contact = models.ForeignKey(
+        'Contact',
+        on_delete=models.CASCADE,
+        related_name='activities',
+        verbose_name='Contacto',
+        null=True,
+        blank=True,
+        help_text='Contacto relacionado con esta actividad'
     )
     title = models.CharField(
         max_length=200,
@@ -4158,6 +4169,13 @@ class Contact(models.Model):
         blank=True,
         null=True,
         verbose_name='Empresa'
+    )
+    country = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='País',
+        help_text='País del contacto'
     )
     erp = models.CharField(
         max_length=100,
