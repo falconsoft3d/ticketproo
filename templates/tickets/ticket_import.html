@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% load project_extras %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2>
+                        <i class="bi bi-file-earmark-excel text-success"></i>
+                        Importar Tickets desde Excel
+                    </h2>
+                    <p class="text-muted mb-0">Sube un archivo Excel para crear múltiples tickets automáticamente</p>
+                </div>
+                <div>
+                    <a href="{% url 'ticket_list' %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver a Tickets
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-xl-8 col-lg-10">
+            <!-- Instrucciones -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle"></i> Instrucciones
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-1-circle text-primary"></i> Formato del archivo Excel</h6>
+                            <p class="mb-3">Tu archivo Excel debe tener las siguientes columnas:</p>
+                            <ul class="list-unstyled">
+                                <li><i class="bi bi-check text-success"></i> <strong>Título</strong> - Título del ticket</li>
+                                <li><i class="bi bi-check text-success"></i> <strong>Descripción</strong> - Descripción detallada del ticket</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-2-circle text-primary"></i> Ejemplo de estructura</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Título</th>
+                                            <th>Descripción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Error en login</td>
+                                            <td>El sistema no permite hacer login con credenciales válidas</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Actualizar base de datos</td>
+                                            <td>Necesitamos actualizar la estructura de la base de datos</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-warning mt-3">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Importante:</strong> Todos los tickets se crearán con la empresa, categoría y prioridad que selecciones a continuación.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulario de importación -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-upload"></i> Subir archivo y configuración
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- Archivo Excel -->
+                        <div class="mb-4">
+                            <label for="{{ form.excel_file.id_for_label }}" class="form-label">
+                                <i class="bi bi-file-earmark-excel text-success"></i> {{ form.excel_file.label }}
+                            </label>
+                            {{ form.excel_file }}
+                            {% if form.excel_file.errors %}
+                                <div class="text-danger small mt-1">{{ form.excel_file.errors.0 }}</div>
+                            {% endif %}
+                            {% if form.excel_file.help_text %}
+                                <div class="form-text">{{ form.excel_file.help_text }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <!-- Empresa -->
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.company.id_for_label }}" class="form-label">
+                                    <i class="bi bi-building"></i> {{ form.company.label }}
+                                </label>
+                                {{ form.company }}
+                                {% if form.company.errors %}
+                                    <div class="text-danger small mt-1">{{ form.company.errors.0 }}</div>
+                                {% endif %}
+                                {% if form.company.help_text %}
+                                    <div class="form-text">{{ form.company.help_text }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Categoría -->
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.category.id_for_label }}" class="form-label">
+                                    <i class="bi bi-tag"></i> {{ form.category.label }}
+                                </label>
+                                {{ form.category }}
+                                {% if form.category.errors %}
+                                    <div class="text-danger small mt-1">{{ form.category.errors.0 }}</div>
+                                {% endif %}
+                                {% if form.category.help_text %}
+                                    <div class="form-text">{{ form.category.help_text }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Prioridad -->
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.priority.id_for_label }}" class="form-label">
+                                    <i class="bi bi-flag"></i> {{ form.priority.label }}
+                                </label>
+                                {{ form.priority }}
+                                {% if form.priority.errors %}
+                                    <div class="text-danger small mt-1">{{ form.priority.errors.0 }}</div>
+                                {% endif %}
+                                {% if form.priority.help_text %}
+                                    <div class="form-text">{{ form.priority.help_text }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'ticket_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-upload"></i> Importar Tickets
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Ejemplo descargable -->
+            <div class="card mt-4">
+                <div class="card-body text-center">
+                    <h6><i class="bi bi-download"></i> ¿Necesitas un ejemplo?</h6>
+                    <p class="text-muted">Descarga un archivo Excel de ejemplo con el formato correcto</p>
+                    <a href="{% url 'ticket_import_example' %}" class="btn btn-outline-primary">
+                        <i class="bi bi-download"></i> Descargar ejemplo
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card-header.bg-info {
+    background-color: #0dcaf0 !important;
+}
+</style>
+{% endblock %}

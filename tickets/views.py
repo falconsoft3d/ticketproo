@@ -799,6 +799,181 @@ def ticket_create_view(request):
     
     return render(request, 'tickets/ticket_create.html', context)
 
+
+@login_required
+def ticket_import_view(request):
+    """Vista para importar tickets desde Excel"""
+    from .forms import TicketImportForm
+    import pandas as pd
+    import io
+    
+    # Solo agentes pueden importar tickets
+    if not is_agent(request.user):
+        messages.error(request, 'No tienes permisos para importar tickets.')
+        return redirect('ticket_list')
+    
+    if request.method == 'POST':
+        form = TicketImportForm(request.POST, request.FILES)
+        if form.is_valid():
+            try:
+                excel_file = form.cleaned_data['excel_file']
+                company = form.cleaned_data['company']
+                category = form.cleaned_data['category']
+                priority = form.cleaned_data['priority']
+                
+                # Leer el archivo Excel
+                try:
+                    # Leer el archivo en memoria
+                    file_content = excel_file.read()
+                    df = pd.read_excel(io.BytesIO(file_content))
+                except Exception as e:
+                    messages.error(request, f'Error al leer el archivo Excel: {str(e)}')
+                    return render(request, 'tickets/ticket_import.html', {'form': form})
+                
+                # Validar que las columnas necesarias existen
+                required_columns = ['Título', 'Descripción']
+                missing_columns = [col for col in required_columns if col not in df.columns]
+                
+                if missing_columns:
+                    messages.error(request, f'Faltan las siguientes columnas en el Excel: {", ".join(missing_columns)}')
+                    return render(request, 'tickets/ticket_import.html', {'form': form})
+                
+                # Procesar cada fila y crear tickets
+                created_tickets = []
+                errors = []
+                
+                for index, row in df.iterrows():
+                    try:
+                        titulo = str(row['Título']).strip() if pd.notna(row['Título']) else ''
+                        descripcion = str(row['Descripción']).strip() if pd.notna(row['Descripción']) else ''
+                        
+                        # Validar que los campos no estén vacíos
+                        if not titulo:
+                            errors.append(f'Fila {index + 2}: El título está vacío')
+                            continue
+                        
+                        if not descripcion:
+                            errors.append(f'Fila {index + 2}: La descripción está vacía')
+                            continue
+                        
+                        # Crear el ticket
+                        ticket = Ticket.objects.create(
+                            title=titulo,
+                            description=descripcion,
+                            company=company,
+                            category=category,
+                            priority=priority,
+                            status='open',
+                            created_by=request.user,
+                            assigned_to=None  # Se puede asignar manualmente después
+                        )
+                        
+                        created_tickets.append(ticket)
+                        
+                    except Exception as e:
+                        errors.append(f'Fila {index + 2}: Error al crear ticket - {str(e)}')
+                
+                # Mostrar resultados
+                success_count = len(created_tickets)
+                error_count = len(errors)
+                
+                if success_count > 0:
+                    messages.success(request, f'Se importaron exitosamente {success_count} tickets.')
+                
+                if error_count > 0:
+                    error_message = f'Se encontraron {error_count} errores:\n' + '\n'.join(errors[:10])
+                    if error_count > 10:
+                        error_message += f'\n... y {error_count - 10} errores más.'
+                    messages.warning(request, error_message)
+                
+                # Redirigir a la lista de tickets si se creó al menos uno
+                if success_count > 0:
+                    return redirect('ticket_list')
+                    
+            except Exception as e:
+                messages.error(request, f'Error durante la importación: {str(e)}')
+    else:
+        form = TicketImportForm()
+    
+    context = {
+        'form': form,
+        'page_title': 'Importar Tickets desde Excel'
+    }
+    
+    return render(request, 'tickets/ticket_import.html', context)
+
+
+@login_required
+def ticket_import_example(request):
+    """Vista para descargar un archivo Excel de ejemplo para importar tickets"""
+    import pandas as pd
+    from django.http import HttpResponse
+    import io
+    
+    # Solo agentes pueden descargar el ejemplo
+    if not is_agent(request.user):
+        messages.error(request, 'No tienes permisos para acceder a esta función.')
+        return redirect('ticket_list')
+    
+    # Crear datos de ejemplo
+    ejemplo_data = {
+        'Título': [
+            'Error en el sistema de login',
+            'Actualizar base de datos',
+            'Problema con reportes',
+            'Configurar servidor de correo',
+            'Error 404 en página principal'
+        ],
+        'Descripción': [
+            'Los usuarios no pueden acceder al sistema con credenciales válidas',
+            'Necesitamos actualizar la estructura de la base de datos para soportar nuevas funcionalidades',
+            'Los reportes mensuales no se están generando correctamente',
+            'Configurar el servidor SMTP para el envío de notificaciones por email',
+            'La página principal muestra error 404 para algunos usuarios'
+        ]
+    }
+    
+    # Crear DataFrame
+    df = pd.DataFrame(ejemplo_data)
+    
+    # Crear archivo Excel en memoria
+    excel_buffer = io.BytesIO()
+    with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
+        df.to_excel(writer, sheet_name='Tickets', index=False)
+        
+        # Obtener el workbook y worksheet para formatear
+        workbook = writer.book
+        worksheet = writer.sheets['Tickets']
+        
+        # Formatear encabezados
+        header_format = workbook.add_format({
+            'bold': True,
+            'text_wrap': True,
+            'valign': 'top',
+            'fg_color': '#4472C4',
+            'font_color': 'white'
+        })
+        
+        # Aplicar formato a encabezados
+        for col_num, value in enumerate(df.columns.values):
+            worksheet.write(0, col_num, value, header_format)
+        
+        # Ajustar ancho de columnas
+        worksheet.set_column('A:A', 25)  # Título
+        worksheet.set_column('B:B', 60)  # Descripción
+    
+    excel_buffer.seek(0)
+    
+    # Crear respuesta HTTP
+    response = HttpResponse(
+        excel_buffer.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename="ejemplo_tickets.xlsx"'
+    
+    return response
+
+
 @login_required
 def ticket_detail_view(request, pk):
     """Vista para ver los detalles de un ticket"""

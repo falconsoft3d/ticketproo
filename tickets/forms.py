@@ -7579,3 +7579,67 @@ class ContactAttachmentForm(forms.ModelForm):
         if commit:
             instance.save()
         return instance
+
+
+class TicketImportForm(forms.Form):
+    """Formulario para importar tickets desde Excel"""
+    
+    excel_file = forms.FileField(
+        label='Archivo Excel',
+        help_text='Archivo Excel con columnas: Título, Descripción',
+        widget=forms.ClearableFileInput(attrs={
+            'class': 'form-control',
+            'accept': '.xlsx,.xls',
+            'required': True
+        })
+    )
+    
+    company = forms.ModelChoiceField(
+        queryset=Company.objects.filter(is_active=True),
+        label='Empresa',
+        help_text='Empresa a la que se asignarán todos los tickets',
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'required': True
+        }),
+        empty_label='Seleccione una empresa...'
+    )
+    
+    category = forms.ModelChoiceField(
+        queryset=Category.objects.filter(is_active=True),
+        label='Categoría',
+        help_text='Categoría que se asignará a todos los tickets',
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'required': True
+        }),
+        empty_label='Seleccione una categoría...'
+    )
+    
+    priority = forms.ChoiceField(
+        choices=[
+            ('low', 'Baja'),
+            ('normal', 'Normal'),
+            ('high', 'Alta'),
+            ('urgent', 'Urgente')
+        ],
+        initial='normal',
+        label='Prioridad',
+        help_text='Prioridad que se asignará a todos los tickets',
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        })
+    )
+
+    def clean_excel_file(self):
+        file = self.cleaned_data.get('excel_file')
+        if file:
+            # Validar extensión
+            if not file.name.lower().endswith(('.xlsx', '.xls')):
+                raise forms.ValidationError('Solo se permiten archivos Excel (.xlsx, .xls)')
+            
+            # Validar tamaño (max 5MB)
+            if file.size > 5 * 1024 * 1024:
+                raise forms.ValidationError('El archivo no puede ser mayor a 5 MB.')
+        
+        return file

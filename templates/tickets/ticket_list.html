@@ -99,6 +99,11 @@
         <button type="button" class="btn btn-danger" id="exportSelectedPDF" onclick="exportSelectedTicketsToPDF()" disabled title="Exportar tickets seleccionados a PDF">
             <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
         </button>
+        {% if is_agent %}
+        <a href="{% url 'ticket_import' %}" class="btn btn-success" title="Importar tickets desde Excel">
+            <i class="bi bi-file-earmark-excel"></i> Importar Excel
+        </a>
+        {% endif %}
         <a href="{% url 'ticket_create' %}" class="btn btn-primary">
             <i class="bi bi-plus"></i> Nuevo Ticket
         </a>
