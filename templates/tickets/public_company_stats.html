@@ -36,6 +36,37 @@
         .bg-gradient-secondary {
             background: linear-gradient(45deg, #6c757d, #545b62);
         }
+        
+        /* Estilos adicionales para la tabla */
+        .table tbody tr:hover {
+            background-color: rgba(0,123,255,0.05);
+        }
+        
+        /* Botón flotante para volver arriba */
+        .back-to-top {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            transition: all 0.3s;
+        }
+        
+        .back-to-top:hover {
+            background: #0056b3;
+            transform: scale(1.1);
+        }
+        
+        .back-to-top.show {
+            display: block;
+        }
     </style>
 </head>
 <body class="bg-light">
@@ -357,6 +388,262 @@
                 </div>
             </div>
             {% endif %}
+
+            <!-- Listado de TODOS los Tickets -->
+            <div class="row mt-5">
+                <div class="col-12">
+                    <h3 class="text-center mb-4">
+                        <i class="bi bi-list-ul text-primary"></i> Todos los Tickets
+                    </h3>
+                    
+                    <!-- Filtros -->
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-body">
+                            <form method="GET" class="row g-3 align-items-end">
+                                <div class="col-md-4">
+                                    <label for="status" class="form-label">
+                                        <i class="bi bi-funnel"></i> Filtrar por Estado
+                                    </label>
+                                    <select name="status" id="status" class="form-select" onchange="this.form.submit()">
+                                        {% for value, label in ticket_statuses %}
+                                        <option value="{{ value }}" {% if value == status_filter %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="priority" class="form-label">
+                                        <i class="bi bi-exclamation-triangle"></i> Filtrar por Prioridad
+                                    </label>
+                                    <select name="priority" id="priority" class="form-select" onchange="this.form.submit()">
+                                        {% for value, label in ticket_priorities %}
+                                        <option value="{{ value }}" {% if value == priority_filter %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="d-flex gap-2">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="bi bi-search"></i> Filtrar
+                                        </button>
+                                        <a href="?" class="btn btn-outline-secondary">
+                                            <i class="bi bi-arrow-clockwise"></i> Limpiar
+                                        </a>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    {% if all_tickets %}
+                    <div class="card border-0 shadow">
+                        <div class="card-header bg-primary text-white">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-ticket-perforated me-2"></i>
+                                    Lista Completa de Tickets
+                                    {% if status_filter != 'all' or priority_filter != 'all' %}
+                                        <small>(Filtrado)</small>
+                                    {% endif %}
+                                </h5>
+                                <div class="d-flex align-items-center gap-3">
+                                    {% if status_filter != 'all' or priority_filter != 'all' %}
+                                        <div class="d-flex gap-2">
+                                            {% if status_filter != 'all' %}
+                                                <span class="badge bg-light text-dark small">
+                                                    Estado: {{ status_filter|title }}
+                                                </span>
+                                            {% endif %}
+                                            {% if priority_filter != 'all' %}
+                                                <span class="badge bg-light text-dark small">
+                                                    Prioridad: {{ priority_filter|title }}
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                    <span class="badge bg-light text-dark">
+                                        Total: {{ all_tickets.paginator.count }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-3">Número</th>
+                                            <th>Título</th>
+                                            <th>Estado</th>
+                                            <th>Prioridad</th>
+                                            <th>Categoría</th>
+                                            <th>Creado por</th>
+                                            <th>Fecha Creación</th>
+                                            <th>Última Actualización</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for ticket in all_tickets %}
+                                        <tr>
+                                            <td class="ps-3">
+                                                <span class="badge bg-secondary">#{{ ticket.ticket_number }}</span>
+                                            </td>
+                                            <td>
+                                                <div class="fw-bold text-dark">{{ ticket.title }}</div>
+                                                {% if ticket.description %}
+                                                <small class="text-muted">
+                                                    {{ ticket.description|truncatechars:80 }}
+                                                </small>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if ticket.status == 'open' %}
+                                                    <span class="badge bg-success">
+                                                        <i class="bi bi-door-open"></i> Abierto
+                                                    </span>
+                                                {% elif ticket.status == 'in_progress' %}
+                                                    <span class="badge bg-warning text-dark">
+                                                        <i class="bi bi-clock-history"></i> En Progreso
+                                                    </span>
+                                                {% elif ticket.status == 'closed' %}
+                                                    <span class="badge bg-secondary">
+                                                        <i class="bi bi-check-circle"></i> Cerrado
+                                                    </span>
+                                                {% elif ticket.status == 'resolved' %}
+                                                    <span class="badge bg-info">
+                                                        <i class="bi bi-check-all"></i> Resuelto
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-light text-dark">
+                                                        {{ ticket.get_status_display }}
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if ticket.priority == 'high' %}
+                                                    <span class="badge bg-danger">
+                                                        <i class="bi bi-arrow-up"></i> Alta
+                                                    </span>
+                                                {% elif ticket.priority == 'medium' %}
+                                                    <span class="badge bg-warning text-dark">
+                                                        <i class="bi bi-dash"></i> Media
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-info">
+                                                        <i class="bi bi-arrow-down"></i> Baja
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if ticket.category %}
+                                                    <span class="badge" style="background-color: {{ ticket.category.color }};">
+                                                        {{ ticket.category.name }}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-muted">Sin categoría</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="me-2">
+                                                        <i class="bi bi-person-circle text-muted"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-bold small">
+                                                            {{ ticket.created_by.get_full_name|default:ticket.created_by.username }}
+                                                        </div>
+                                                        {% if ticket.created_by.email %}
+                                                        <small class="text-muted">{{ ticket.created_by.email|truncatechars:20 }}</small>
+                                                        {% endif %}
+                                                        {% if ticket.assigned_to and ticket.assigned_to != ticket.created_by %}
+                                                        <div class="mt-1">
+                                                            <small class="text-info">
+                                                                <i class="bi bi-arrow-right"></i> 
+                                                                Asignado: {{ ticket.assigned_to.get_full_name|default:ticket.assigned_to.username }}
+                                                            </small>
+                                                        </div>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="text-muted">
+                                                <div>{{ ticket.created_at|date:"d/m/Y" }}</div>
+                                                <small>{{ ticket.created_at|date:"H:i" }}</small>
+                                            </td>
+                                            <td class="text-muted">
+                                                <div>{{ ticket.updated_at|date:"d/m/Y" }}</div>
+                                                <small>{{ ticket.updated_at|date:"H:i" }}</small>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- Paginación -->
+                        {% if all_tickets.has_other_pages %}
+                        <div class="card-footer bg-light">
+                            <nav aria-label="Paginación de tickets">
+                                <ul class="pagination justify-content-center mb-0">
+                                    {% if all_tickets.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page=1{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}{% if priority_filter != 'all' %}&priority={{ priority_filter }}{% endif %}">
+                                                <i class="bi bi-chevron-double-left"></i> Primera
+                                            </a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ all_tickets.previous_page_number }}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}{% if priority_filter != 'all' %}&priority={{ priority_filter }}{% endif %}">
+                                                <i class="bi bi-chevron-left"></i> Anterior
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                    
+                                    <li class="page-item active">
+                                        <span class="page-link">
+                                            Página {{ all_tickets.number }} de {{ all_tickets.paginator.num_pages }}
+                                        </span>
+                                    </li>
+                                    
+                                    {% if all_tickets.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ all_tickets.next_page_number }}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}{% if priority_filter != 'all' %}&priority={{ priority_filter }}{% endif %}">
+                                                Siguiente <i class="bi bi-chevron-right"></i>
+                                            </a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ all_tickets.paginator.num_pages }}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}{% if priority_filter != 'all' %}&priority={{ priority_filter }}{% endif %}">
+                                                Última <i class="bi bi-chevron-double-right"></i>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                            
+                            <div class="text-center mt-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i>
+                                    Mostrando tickets {{ all_tickets.start_index }} - {{ all_tickets.end_index }} 
+                                    de {{ all_tickets.paginator.count }} total
+                                </small>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="card border-0 shadow">
+                        <div class="card-body text-center py-5">
+                            <i class="bi bi-inbox display-4 text-muted mb-3"></i>
+                            <h5 class="text-muted">No hay tickets</h5>
+                            <p class="text-muted mb-0">Esta empresa aún no tiene tickets registrados</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
 
         <!-- Footer -->
@@ -378,7 +665,53 @@
         </footer>
     </div>
 
+    <!-- Botón flotante para volver arriba -->
+    <button type="button" class="back-to-top" id="backToTop" title="Volver arriba">
+        <i class="bi bi-arrow-up"></i>
+    </button>
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Mostrar/ocultar botón de volver arriba
+        window.addEventListener('scroll', function() {
+            const backToTopButton = document.getElementById('backToTop');
+            if (window.pageYOffset > 300) {
+                backToTopButton.classList.add('show');
+            } else {
+                backToTopButton.classList.remove('show');
+            }
+        });
+
+        // Función para volver arriba
+        document.getElementById('backToTop').addEventListener('click', function() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+
+        // Efecto de loading para los filtros
+        document.querySelectorAll('select[onchange]').forEach(select => {
+            select.addEventListener('change', function() {
+                const form = this.closest('form');
+                const submitBtn = form.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Filtrando...';
+                    submitBtn.disabled = true;
+                }
+            });
+        });
+
+        // Función para añadir tooltips a los estados de tickets
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar tooltips de Bootstrap si existen
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
 </body>
 </html>

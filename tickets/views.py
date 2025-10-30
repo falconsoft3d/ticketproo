@@ -6828,10 +6828,53 @@ def public_company_stats(request, token):
     # Obtener tickets abiertos de la empresa (limitados a los primeros 10)
     open_tickets = company.tickets.filter(status='open').order_by('-created_at')[:10]
     
+    # Obtener todos los tickets de la empresa con filtros opcionales
+    from django.core.paginator import Paginator
+    all_tickets = company.tickets.all()
+    
+    # Aplicar filtros si se proporcionan
+    status_filter = request.GET.get('status')
+    priority_filter = request.GET.get('priority')
+    
+    if status_filter and status_filter != 'all':
+        all_tickets = all_tickets.filter(status=status_filter)
+    
+    if priority_filter and priority_filter != 'all':
+        all_tickets = all_tickets.filter(priority=priority_filter)
+    
+    all_tickets = all_tickets.order_by('-created_at')
+    
+    # Paginación para todos los tickets
+    tickets_per_page = 20
+    paginator = Paginator(all_tickets, tickets_per_page)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Estadísticas para los filtros
+    ticket_statuses = [
+        ('all', 'Todos'),
+        ('open', 'Abiertos'),
+        ('in_progress', 'En Progreso'),
+        ('closed', 'Cerrados'),
+        ('resolved', 'Resueltos'),
+    ]
+    
+    ticket_priorities = [
+        ('all', 'Todas'),
+        ('high', 'Alta'),
+        ('medium', 'Media'),
+        ('low', 'Baja'),
+    ]
+    
     context = {
         'company': company,
         'stats': stats,
         'open_tickets': open_tickets,
+        'all_tickets': page_obj,
+        'status_filter': status_filter or 'all',
+        'priority_filter': priority_filter or 'all',
+        'ticket_statuses': ticket_statuses,
+        'ticket_priorities': ticket_priorities,
         'page_title': f'Estadísticas - {company.name}'
     }
     

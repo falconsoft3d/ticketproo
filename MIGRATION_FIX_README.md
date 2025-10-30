@@ -18,21 +18,32 @@ La migración `0251_contact_comments_attachments` intenta crear tablas que ya fu
 
 ### 2. Para aplicar en servidor de producción:
 
-#### Opción A: Script automático (Recomendado)
+#### Paso 1: Diagnóstico (Obligatorio)
 ```bash
-# 1. Subir fix_migration_0251.py al servidor
-# 2. Ejecutar el script
-python fix_migration_0251.py
+# Ejecutar diagnóstico para entender el problema específico
+python diagnose_migration_0251.py
+```
 
-# 3. Aplicar migraciones pendientes
+#### Paso 2: Aplicar solución según diagnóstico
+
+##### Opción A: Script automático (Recomendado)
+```bash
+# Si el diagnóstico lo recomienda
+python fix_migration_0251.py
 python manage.py migrate
 ```
 
-#### Opción B: Manual
+##### Opción B: Script de emergencia
 ```bash
-# 1. Conectar a PostgreSQL y verificar tablas
-psql -d tu_base_de_datos
-\dt tickets_contact*
+# Solo si la Opción A no funciona
+python force_fix_migration_0251.py
+python manage.py migrate
+```
+
+##### Opción C: Manual (Última opción)
+```bash
+# 1. Verificar tablas en PostgreSQL
+psql -d tu_base_de_datos -c "\dt tickets_contact*"
 
 # 2. Si las tablas existen, marcar migración como aplicada
 python manage.py shell
@@ -44,6 +55,7 @@ from django.db import connection
 
 recorder = MigrationRecorder(connection)
 recorder.record_applied('tickets', '0251_contact_comments_attachments')
+exit()
 ```
 
 ```bash
@@ -51,18 +63,24 @@ recorder.record_applied('tickets', '0251_contact_comments_attachments')
 python manage.py migrate
 ```
 
-## 🔍 Verificación
+## � Archivos de Solución Incluidos
+
+1. **diagnose_migration_0251.py** - Script de diagnóstico completo
+2. **fix_migration_0251.py** - Script de corrección automático
+3. **force_fix_migration_0251.py** - Script de emergencia
+4. **MIGRATION_FIX_README.md** - Esta documentación
+
+## �🔍 Verificación
 
 ### Verificar estado de migraciones:
 ```bash
-python manage.py showmigrations tickets | tail -10
+python manage.py showmigrations tickets | grep -A 7 -B 3 "025"
 ```
 
 ### Resultado esperado:
 ```
 [X] 0249_contactcomment_contactattachment
 [X] 0250_auto_20251030_2004
-[X] 0251_contact_comments_attachments  # ← Marcada como aplicada
 [X] 0252_alter_contactattachment_file_and_more
 [X] 0253_auto_20251030_2028
 [X] 0254_opportunityactivity_contact
@@ -76,26 +94,56 @@ python manage.py showmigrations tickets | tail -10
 
 Debería mostrar:
 - `tickets_contact`
-- `tickets_contactattachment`
+- `tickets_contactattachment`  
 - `tickets_contactcomment`
+- `tickets_contactformsubmission`
+- `tickets_contactgenerator`
+- `tickets_contactoweb`
 
-## 📝 Notas Importantes
+## 📝 Proceso Recomendado
 
-1. **No eliminar datos**: Esta solución preserva todos los datos existentes
-2. **Seguridad**: Hacer backup de la base de datos antes de aplicar cambios
-3. **Verificación**: Las tablas ya existen desde la migración 0249
-4. **Dependencias**: Se corrigieron las dependencias para evitar futuros conflictos
+### En el servidor de producción:
+
+1. **Backup de seguridad**:
+   ```bash
+   pg_dump tu_base_de_datos > backup_antes_migracion.sql
+   ```
+
+2. **Diagnóstico**:
+   ```bash
+   python diagnose_migration_0251.py
+   ```
+
+3. **Aplicar solución** según la recomendación del diagnóstico
+
+4. **Verificar resultado**:
+   ```bash
+   python manage.py migrate
+   python manage.py showmigrations tickets | tail -10
+   ```
+
+5. **Probar funcionalidad** de contactos en la aplicación
 
 ## 🚨 Si el problema persiste
 
 1. Verificar que `python manage.py migrate` se ejecute sin errores
-2. Revisar logs del servidor para errores adicionales
+2. Revisar logs del servidor para errores adicionales  
 3. Verificar que todas las dependencias estén correctas
 4. Consultar el estado de la base de datos directamente
+5. Revisar la salida del script de diagnóstico
 
-## 📞 Contacto
+## 📞 Información de Debug
+
 Si necesitas ayuda adicional, proporciona:
-- Output completo del error
+- Output completo del script `diagnose_migration_0251.py`
+- Output completo del error original
 - Estado de migraciones: `python manage.py showmigrations tickets`
 - Versión de Django y PostgreSQL
 - Logs del servidor
+
+## 🎯 Notas Importantes
+
+- ✅ **Seguro**: No elimina datos existentes
+- ✅ **Probado**: Scripts validados en entorno de desarrollo
+- ✅ **Reversible**: Se puede deshacer si es necesario
+- ⚠️ **Importante**: Siempre hacer backup antes de cambios en producción
