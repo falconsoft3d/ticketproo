@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}{{ title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>
+                <i class="bi bi-clock-history text-primary"></i>
+                {{ title }}
+            </h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'scheduled_task_list' %}">Tareas Programadas</a></li>
+                    <li class="breadcrumb-item active">{{ title }}</li>
+                </ol>
+            </nav>
+        </div>
+        <a href="{% url 'scheduled_task_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-gear"></i> Configuración de la Tarea
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                {% bootstrap_field form.name %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {% bootstrap_field form.frequency %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {% bootstrap_field form.frequency_unit %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.is_active }}
+                                <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                    {{ form.is_active.label }}
+                                </label>
+                                <div class="form-text">{{ form.is_active.help_text }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.code.id_for_label }}" class="form-label">
+                                {{ form.code.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.code }}
+                            <div class="form-text">{{ form.code.help_text }}</div>
+                            {% if form.code.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.code.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle"></i> Guardar
+                            </button>
+                            <a href="{% url 'scheduled_task_list' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-info-circle"></i> Información
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <h6>Frecuencias de Ejemplo:</h6>
+                    <ul class="list-unstyled">
+                        <li><strong>5 minutos:</strong> Verificaciones rápidas</li>
+                        <li><strong>1 hora:</strong> Reportes periódicos</li>
+                        <li><strong>1 día:</strong> Procesos diarios</li>
+                        <li><strong>1 mes:</strong> Procesos mensuales</li>
+                    </ul>
+                    
+                    <hr>
+                    
+                    <h6>Variables Disponibles:</h6>
+                    <ul class="list-unstyled small">
+                        <li><code>timezone</code> - Manejo de fechas</li>
+                        <li><code>datetime</code> - Fechas y horas</li>
+                        <li><code>User</code> - Modelo de usuarios</li>
+                        <li><code>request</code> - Objeto request</li>
+                    </ul>
+                    
+                    <hr>
+                    
+                    <h6>Ejemplo de Código:</h6>
+                    <pre class="small"><code># Ejemplo básico
+print("Ejecutando tarea...")
+current_time = timezone.now()
+print(f"Hora: {current_time}")
+
+# Consulta a BD
+total_users = User.objects.count()
+print(f"Total usuarios: {total_users}")</code></pre>
+                </div>
+            </div>
+            
+            {% if task %}
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-clock"></i> Estado Actual
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p><strong>Estado:</strong> 
+                        {% if task.is_active %}
+                            <span class="badge bg-success">Activa</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Inactiva</span>
+                        {% endif %}
+                    </p>
+                    
+                    {% if task.last_execution %}
+                        <p><strong>Última ejecución:</strong><br>
+                            {{ task.last_execution|date:"d/m/Y H:i" }}
+                        </p>
+                    {% endif %}
+                    
+                    {% if task.is_active %}
+                        <p><strong>Próxima ejecución:</strong><br>
+                            {{ task.get_next_execution|date:"d/m/Y H:i" }}
+                        </p>
+                    {% endif %}
+                    
+                    <p><strong>Estadísticas:</strong></p>
+                    <ul class="list-unstyled">
+                        <li>✓ Exitosas: {{ task.success_count }}</li>
+                        <li>✗ Errores: {{ task.error_count }}</li>
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-completar frecuencias comunes
+    const frequencyInput = document.getElementById('{{ form.frequency.id_for_label }}');
+    const unitSelect = document.getElementById('{{ form.frequency_unit.id_for_label }}');
+    
+    // Sugerencias predefinidas
+    const suggestions = {
+        'minute': [1, 5, 10, 15, 30],
+        'hour': [1, 2, 6, 12, 24],
+        'day': [1, 7, 15, 30],
+        'month': [1, 3, 6, 12]
+    };
+    
+    unitSelect.addEventListener('change', function() {
+        const unit = this.value;
+        if (suggestions[unit] && !frequencyInput.value) {
+            frequencyInput.value = suggestions[unit][0];
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -16033,3 +16033,140 @@ class SupportMeetingPublicLink(models.Model):
         self.access_count += 1
         self.save(update_fields=['last_accessed', 'access_count'])
 
+
+class ScheduledTask(models.Model):
+    """Modelo para tareas programadas"""
+    
+    FREQUENCY_UNIT_CHOICES = [
+        ('minute', 'Minuto'),
+        ('hour', 'Hora'),  
+        ('day', 'Día'),
+        ('month', 'Mes'),
+    ]
+    
+    name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre de la Tarea'
+    )
+    frequency = models.PositiveIntegerField(
+        verbose_name='Frecuencia',
+        help_text='Cada cuántas unidades de tiempo se ejecuta'
+    )
+    frequency_unit = models.CharField(
+        max_length=10,
+        choices=FREQUENCY_UNIT_CHOICES,
+        default='hour',
+        verbose_name='Unidad de Frecuencia'
+    )
+    code = models.TextField(
+        verbose_name='Código a Ejecutar',
+        help_text='Código Python que se ejecutará en cada iteración'
+    )
+    is_active = models.BooleanField(
+        default=False,
+        verbose_name='Activo'
+    )
+    last_execution = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Última Ejecución'
+    )
+    last_result = models.TextField(
+        blank=True,
+        verbose_name='Último Resultado',
+        help_text='Resultado de la última ejecución'
+    )
+    success_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Ejecuciones Exitosas'
+    )
+    error_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Ejecuciones con Error'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de Creación'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='created_scheduled_tasks',
+        verbose_name='Creado por'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Tarea Programada'
+        verbose_name_plural = 'Tareas Programadas'
+    
+    def __str__(self):
+        return f"{self.name} (cada {self.frequency} {self.get_frequency_unit_display().lower()})"
+    
+    def get_next_execution(self):
+        """Calcula cuándo debe ejecutarse la próxima vez"""
+        if not self.last_execution:
+            return timezone.now()
+        
+        if self.frequency_unit == 'minute':
+            delta = timedelta(minutes=self.frequency)
+        elif self.frequency_unit == 'hour':
+            delta = timedelta(hours=self.frequency)
+        elif self.frequency_unit == 'day':
+            delta = timedelta(days=self.frequency)
+        elif self.frequency_unit == 'month':
+            delta = timedelta(days=self.frequency * 30)  # Aproximado
+        else:
+            delta = timedelta(hours=1)
+            
+        return self.last_execution + delta
+    
+    def should_execute(self):
+        """Verifica si la tarea debe ejecutarse"""
+        if not self.is_active:
+            return False
+        return timezone.now() >= self.get_next_execution()
+
+
+class ScheduledTaskExecution(models.Model):
+    """Historial de ejecuciones de tareas programadas"""
+    
+    STATUS_CHOICES = [
+        ('success', 'Exitosa'),
+        ('error', 'Error'),
+        ('timeout', 'Timeout'),
+    ]
+    
+    task = models.ForeignKey(
+        ScheduledTask,
+        on_delete=models.CASCADE,
+        related_name='executions',
+        verbose_name='Tarea'
+    )
+    executed_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Ejecutado en'
+    )
+    status = models.CharField(
+        max_length=10,
+        choices=STATUS_CHOICES,
+        verbose_name='Estado'
+    )
+    result = models.TextField(
+        blank=True,
+        verbose_name='Resultado'
+    )
+    execution_time = models.FloatField(
+        null=True,
+        blank=True,
+        verbose_name='Tiempo de Ejecución (segundos)'
+    )
+    
+    class Meta:
+        ordering = ['-executed_at']
+        verbose_name = 'Ejecución de Tarea'
+        verbose_name_plural = 'Ejecuciones de Tareas'
+    
+    def __str__(self):
+        return f"{self.task.name} - {self.executed_at.strftime('%d/%m/%Y %H:%M')} ({self.get_status_display()})"
+

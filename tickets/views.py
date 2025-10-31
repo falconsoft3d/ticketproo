@@ -54,7 +54,7 @@ from .models import (
     Recording, RecordingPlayback, MultipleDocumentation, MultipleDocumentationItem,
     TaskSchedule, ScheduleTask, ScheduleComment, SatisfactionSurvey, ClientProjectAccess, ClientTimeEntry, ShortUrl,
     ProductSet, ProductItem, Precotizador, PrecotizadorExample, PrecotizadorQuote, CrmQuestion,
-    SupportMeeting, SupportMeetingPoint,
+    SupportMeeting, SupportMeetingPoint, ScheduledTask, ScheduledTaskExecution,
     # ...existing code...
 )
 
@@ -157,7 +157,7 @@ from .forms import (
     AITutorForm, AITutorProgressReportForm, AITutorAttachmentForm, AITutorFilterForm,
     ExpenseReportForm, ExpenseItemForm, ExpenseCommentForm, ExpenseReportFilterForm,
     VideoMeetingForm, MeetingTranscriptionForm, MeetingFilterForm, QuoteGeneratorForm, AbsenceTypeForm,
-    CrmQuestionForm, PublicCrmQuestionForm
+    CrmQuestionForm, PublicCrmQuestionForm, ScheduledTaskForm
 )
 from .utils import is_agent, is_regular_user, is_teacher, can_manage_courses, get_user_role, assign_user_to_group
 
@@ -36642,3 +36642,193 @@ def public_crm_question_create(request, company_uuid):
     }
     
     return render(request, 'tickets/public_crm_question_form.html', context)
+
+
+# ================================
+# TAREAS PROGRAMADAS
+# ================================
+
+@login_required
+def scheduled_task_list(request):
+    """Lista de tareas programadas"""
+    tasks = ScheduledTask.objects.all()
+    
+    # Filtros
+    search = request.GET.get('search')
+    if search:
+        tasks = tasks.filter(
+            Q(name__icontains=search) |
+            Q(code__icontains=search)
+        )
+    
+    is_active = request.GET.get('is_active')
+    if is_active:
+        tasks = tasks.filter(is_active=is_active == 'true')
+    
+    # Paginación
+    paginator = Paginator(tasks, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'search': search,
+        'is_active': is_active,
+    }
+    
+    return render(request, 'tickets/scheduled_task_list.html', context)
+
+
+@login_required
+def scheduled_task_create(request):
+    """Crear nueva tarea programada"""
+    if request.method == 'POST':
+        form = ScheduledTaskForm(request.POST)
+        if form.is_valid():
+            task = form.save(commit=False)
+            task.created_by = request.user
+            task.save()
+            messages.success(request, 'Tarea programada creada exitosamente.')
+            return redirect('scheduled_task_list')
+    else:
+        form = ScheduledTaskForm()
+    
+    context = {
+        'form': form,
+        'title': 'Crear Tarea Programada',
+    }
+    
+    return render(request, 'tickets/scheduled_task_form.html', context)
+
+
+@login_required
+def scheduled_task_edit(request, pk):
+    """Editar tarea programada"""
+    task = get_object_or_404(ScheduledTask, pk=pk)
+    
+    if request.method == 'POST':
+        form = ScheduledTaskForm(request.POST, instance=task)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Tarea programada actualizada exitosamente.')
+            return redirect('scheduled_task_list')
+    else:
+        form = ScheduledTaskForm(instance=task)
+    
+    context = {
+        'form': form,
+        'task': task,
+        'title': 'Editar Tarea Programada',
+    }
+    
+    return render(request, 'tickets/scheduled_task_form.html', context)
+
+
+@login_required
+def scheduled_task_detail(request, pk):
+    """Detalle de tarea programada"""
+    task = get_object_or_404(ScheduledTask, pk=pk)
+    executions = task.executions.all()[:20]  # Últimas 20 ejecuciones
+    
+    context = {
+        'task': task,
+        'executions': executions,
+        'next_execution': task.get_next_execution() if task.is_active else None,
+    }
+    
+    return render(request, 'tickets/scheduled_task_detail.html', context)
+
+
+@login_required
+def scheduled_task_delete(request, pk):
+    """Eliminar tarea programada"""
+    task = get_object_or_404(ScheduledTask, pk=pk)
+    
+    if request.method == 'POST':
+        task_name = task.name
+        task.delete()
+        messages.success(request, f'Tarea programada "{task_name}" eliminada exitosamente.')
+        return redirect('scheduled_task_list')
+    
+    context = {
+        'task': task,
+    }
+    
+    return render(request, 'tickets/scheduled_task_delete.html', context)
+
+
+@login_required
+def scheduled_task_toggle_active(request, pk):
+    """Activar/Desactivar tarea programada"""
+    task = get_object_or_404(ScheduledTask, pk=pk)
+    task.is_active = not task.is_active
+    task.save()
+    
+    status = "activada" if task.is_active else "desactivada"
+    messages.success(request, f'Tarea "{task.name}" {status} exitosamente.')
+    
+    return redirect('scheduled_task_list')
+
+
+@login_required
+def scheduled_task_execute(request, pk):
+    """Ejecutar tarea programada manualmente"""
+    task = get_object_or_404(ScheduledTask, pk=pk)
+    
+    if request.method == 'POST':
+        try:
+            import time
+            start_time = time.time()
+            
+            # Ejecutar el código de la tarea
+            exec_globals = {
+                '__builtins__': __builtins__,
+                'timezone': timezone,
+                'datetime': datetime,
+                'User': User,
+                'request': request,
+            }
+            exec_locals = {}
+            
+            exec(task.code, exec_globals, exec_locals)
+            
+            execution_time = time.time() - start_time
+            result = "Ejecución manual exitosa"
+            
+            # Registrar la ejecución
+            execution = ScheduledTaskExecution.objects.create(
+                task=task,
+                status='success',
+                result=result,
+                execution_time=execution_time
+            )
+            
+            # Actualizar la tarea
+            task.last_execution = timezone.now()
+            task.last_result = result
+            task.success_count += 1
+            task.save()
+            
+            messages.success(request, f'Tarea ejecutada exitosamente en {execution_time:.2f} segundos.')
+            
+        except Exception as e:
+            execution_time = time.time() - start_time
+            error_message = str(e)
+            
+            # Registrar la ejecución con error
+            execution = ScheduledTaskExecution.objects.create(
+                task=task,
+                status='error',
+                result=error_message,
+                execution_time=execution_time
+            )
+            
+            # Actualizar la tarea
+            task.last_execution = timezone.now()
+            task.last_result = error_message
+            task.error_count += 1
+            task.save()
+            
+            messages.error(request, f'Error ejecutando la tarea: {error_message}')
+    
+    return redirect('scheduled_task_detail', pk=pk)

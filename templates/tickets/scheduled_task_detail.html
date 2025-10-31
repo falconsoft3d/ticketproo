@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+{% load project_extras %}
+
+{% block title %}{{ task.name }} - Tareas Programadas{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>
+                <i class="bi bi-clock-history text-primary"></i>
+                {{ task.name }}
+                {% if task.is_active %}
+                    <span class="badge bg-success ms-2">Activa</span>
+                {% else %}
+                    <span class="badge bg-secondary ms-2">Inactiva</span>
+                {% endif %}
+            </h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'scheduled_task_list' %}">Tareas Programadas</a></li>
+                    <li class="breadcrumb-item active">{{ task.name }}</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="btn-group" role="group">
+            <a href="{% url 'scheduled_task_edit' task.pk %}" class="btn btn-warning">
+                <i class="bi bi-pencil"></i> Editar
+            </a>
+            <a href="{% url 'scheduled_task_toggle_active' task.pk %}" 
+               class="btn btn-{% if task.is_active %}secondary{% else %}success{% endif %}">
+                <i class="bi bi-{% if task.is_active %}pause{% else %}play{% endif %}-fill"></i> 
+                {% if task.is_active %}Desactivar{% else %}Activar{% endif %}
+            </a>
+            <form method="post" action="{% url 'scheduled_task_execute' task.pk %}" 
+                  style="display: inline;" 
+                  onsubmit="return confirm('¿Ejecutar esta tarea manualmente?')">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-info">
+                    <i class="bi bi-play-circle"></i> Ejecutar
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información de la Tarea -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle"></i> Información de la Tarea
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Configuración</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Frecuencia:</strong> {{ task.frequency }} {{ task.get_frequency_unit_display|lower }}</li>
+                                <li><strong>Estado:</strong> 
+                                    {% if task.is_active %}
+                                        <span class="badge bg-success">Activa</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Inactiva</span>
+                                    {% endif %}
+                                </li>
+                                <li><strong>Creada por:</strong> {{ task.created_by.get_full_name|default:task.created_by.username }}</li>
+                                <li><strong>Fecha de creación:</strong> {{ task.created_at|date:"d/m/Y H:i" }}</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Ejecuciones</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Última ejecución:</strong> 
+                                    {% if task.last_execution %}
+                                        {{ task.last_execution|date:"d/m/Y H:i" }}
+                                    {% else %}
+                                        <span class="text-muted">Nunca</span>
+                                    {% endif %}
+                                </li>
+                                {% if next_execution %}
+                                    <li><strong>Próxima ejecución:</strong> {{ next_execution|date:"d/m/Y H:i" }}</li>
+                                {% endif %}
+                                <li><strong>Exitosas:</strong> <span class="badge bg-success">{{ task.success_count }}</span></li>
+                                <li><strong>Con errores:</strong> <span class="badge bg-danger">{{ task.error_count }}</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Código de la Tarea -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-code-slash"></i> Código de la Tarea
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <pre class="bg-light p-3 rounded"><code>{{ task.code }}</code></pre>
+                </div>
+            </div>
+
+            <!-- Último Resultado -->
+            {% if task.last_result %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-terminal"></i> Último Resultado
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <pre class="bg-light p-3 rounded"><code>{{ task.last_result }}</code></pre>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-md-4">
+            <!-- Acciones Rápidas -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-lightning"></i> Acciones Rápidas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'scheduled_task_edit' task.pk %}" class="btn btn-outline-warning btn-sm">
+                            <i class="bi bi-pencil"></i> Editar Tarea
+                        </a>
+                        <a href="{% url 'scheduled_task_toggle_active' task.pk %}" 
+                           class="btn btn-outline-{% if task.is_active %}secondary{% else %}success{% endif %} btn-sm">
+                            <i class="bi bi-{% if task.is_active %}pause{% else %}play{% endif %}-fill"></i> 
+                            {% if task.is_active %}Desactivar{% else %}Activar{% endif %}
+                        </a>
+                        <form method="post" action="{% url 'scheduled_task_execute' task.pk %}" 
+                              onsubmit="return confirm('¿Ejecutar esta tarea manualmente?')">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-info btn-sm w-100">
+                                <i class="bi bi-play-circle"></i> Ejecutar Ahora
+                            </button>
+                        </form>
+                        <hr>
+                        <a href="{% url 'scheduled_task_delete' task.pk %}" 
+                           class="btn btn-outline-danger btn-sm"
+                           onclick="return confirm('¿Estás seguro de eliminar esta tarea?')">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-graph-up"></i> Estadísticas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% with total_executions=task.success_count|add:task.error_count %}
+                        <div class="text-center mb-3">
+                            <h4 class="text-primary">{{ total_executions }}</h4>
+                            <small class="text-muted">Total de ejecuciones</small>
+                        </div>
+                        
+                        {% if total_executions > 0 %}
+                            {% widthratio task.success_count total_executions 100 as success_rate %}
+                                <div class="progress mb-2">
+                                    <div class="progress-bar bg-success" style="width: {{ success_rate }}%">
+                                        {{ success_rate }}% exitosas
+                                    </div>
+                                </div>
+                        {% endif %}
+                        
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="text-success">
+                                    <i class="bi bi-check-circle"></i><br>
+                                    <strong>{{ task.success_count }}</strong><br>
+                                    <small>Exitosas</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-danger">
+                                    <i class="bi bi-x-circle"></i><br>
+                                    <strong>{{ task.error_count }}</strong><br>
+                                    <small>Errores</small>
+                                </div>
+                            </div>
+                        </div>
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historial de Ejecuciones -->
+    {% if executions %}
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="bi bi-clock-history"></i> Historial de Ejecuciones (Últimas 20)
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Fecha y Hora</th>
+                            <th>Estado</th>
+                            <th>Tiempo</th>
+                            <th>Resultado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for execution in executions %}
+                        <tr>
+                            <td>{{ execution.executed_at|date:"d/m/Y H:i:s" }}</td>
+                            <td>
+                                {% if execution.status == 'success' %}
+                                    <span class="badge bg-success">Exitosa</span>
+                                {% elif execution.status == 'error' %}
+                                    <span class="badge bg-danger">Error</span>
+                                {% elif execution.status == 'timeout' %}
+                                    <span class="badge bg-warning">Timeout</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if execution.execution_time %}
+                                    {{ execution.execution_time|floatformat:2 }}s
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if execution.result %}
+                                    <code class="small">{{ execution.result|truncatechars:100 }}</code>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

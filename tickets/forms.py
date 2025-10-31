@@ -32,7 +32,7 @@ from .models import (
     EmployeeRequest, InternalAgreement, Asset, AssetHistory, 
     AITutor, AITutorProgressReport, AITutorAttachment, ExpenseReport, ExpenseItem, ExpenseComment,
     VideoMeeting, MeetingNote, QuoteGenerator, CountdownTimer, AbsenceType,
-    MonthlyCumplimiento, DailyCumplimiento, QRCode, CrmQuestion, SupportMeeting, SupportMeetingPoint
+    MonthlyCumplimiento, DailyCumplimiento, QRCode, CrmQuestion, SupportMeeting, SupportMeetingPoint, ScheduledTask
 )
 
 class CategoryForm(forms.ModelForm):
@@ -8091,3 +8091,77 @@ class SupportMeetingPointForm(forms.ModelForm):
         if len(description) < 10:
             raise forms.ValidationError('La descripción del punto debe tener al menos 10 caracteres.')
         return description
+
+
+class ScheduledTaskForm(forms.ModelForm):
+    """Formulario para tareas programadas"""
+    
+    class Meta:
+        model = ScheduledTask
+        fields = ['name', 'frequency', 'frequency_unit', 'code', 'is_active']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre descriptivo de la tarea'
+            }),
+            'frequency': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '1',
+                'placeholder': 'Ejemplo: 10'
+            }),
+            'frequency_unit': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'code': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 15,
+                'placeholder': '''# Ejemplo de código Python:
+print("Ejecutando tarea programada...")
+
+# Puedes usar cualquier código Python aquí
+# Variables disponibles: timezone, datetime, User, request
+# Ejemplo:
+current_time = timezone.now()
+print(f"Hora actual: {current_time}")
+
+# Ejemplo con base de datos:
+# users_count = User.objects.count()
+# print(f"Total usuarios: {users_count}")'''
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'name': 'Nombre de la Tarea',
+            'frequency': 'Frecuencia',
+            'frequency_unit': 'Unidad de Tiempo',
+            'code': 'Código Python a Ejecutar',
+            'is_active': 'Activar Tarea',
+        }
+        help_texts = {
+            'name': 'Nombre descriptivo para identificar la tarea',
+            'frequency': 'Número que indica cada cuántas unidades se ejecuta',
+            'frequency_unit': 'Unidad de tiempo (minutos, horas, días, meses)',
+            'code': 'Código Python que se ejecutará automáticamente',
+            'is_active': 'Marcar para activar la ejecución automática',
+        }
+    
+    def clean_frequency(self):
+        frequency = self.cleaned_data.get('frequency')
+        if frequency and frequency < 1:
+            raise forms.ValidationError('La frecuencia debe ser mayor a 0.')
+        return frequency
+    
+    def clean_code(self):
+        code = self.cleaned_data.get('code', '').strip()
+        if not code:
+            raise forms.ValidationError('El código no puede estar vacío.')
+        
+        # Validación básica de sintaxis Python
+        try:
+            compile(code, '<string>', 'exec')
+        except SyntaxError as e:
+            raise forms.ValidationError(f'Error de sintaxis en el código: {e}')
+        
+        return code

@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block title %}Eliminar Tarea Programada - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>
+                <i class="bi bi-trash text-danger"></i>
+                Eliminar Tarea Programada
+            </h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'scheduled_task_list' %}">Tareas Programadas</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'scheduled_task_detail' task.pk %}">{{ task.name }}</a></li>
+                    <li class="breadcrumb-item active">Eliminar</li>
+                </ol>
+            </nav>
+        </div>
+        <a href="{% url 'scheduled_task_detail' task.pk %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> ¿Confirmar Eliminación?
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>¡Atención!</strong> Esta acción no se puede deshacer.
+                    </div>
+                    
+                    <p>Estás a punto de eliminar la siguiente tarea programada:</p>
+                    
+                    <div class="card">
+                        <div class="card-body">
+                            <h6><strong>{{ task.name }}</strong></h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <ul class="list-unstyled">
+                                        <li><strong>Frecuencia:</strong> {{ task.frequency }} {{ task.get_frequency_unit_display|lower }}</li>
+                                        <li><strong>Estado:</strong> 
+                                            {% if task.is_active %}
+                                                <span class="badge bg-success">Activa</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Inactiva</span>
+                                            {% endif %}
+                                        </li>
+                                        <li><strong>Creada por:</strong> {{ task.created_by.get_full_name|default:task.created_by.username }}</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <ul class="list-unstyled">
+                                        <li><strong>Ejecuciones exitosas:</strong> {{ task.success_count }}</li>
+                                        <li><strong>Ejecuciones con error:</strong> {{ task.error_count }}</li>
+                                        <li><strong>Última ejecución:</strong> 
+                                            {% if task.last_execution %}
+                                                {{ task.last_execution|date:"d/m/Y H:i" }}
+                                            {% else %}
+                                                <span class="text-muted">Nunca</span>
+                                            {% endif %}
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <h6>Código:</h6>
+                            <pre class="bg-light p-2 rounded small"><code>{{ task.code|truncatechars:200 }}</code></pre>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Nota:</strong> También se eliminará todo el historial de ejecuciones asociado a esta tarea.
+                    </div>
+                    
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Sí, Eliminar Tarea
+                            </button>
+                            <a href="{% url 'scheduled_task_detail' task.pk %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

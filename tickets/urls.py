@@ -1211,6 +1211,15 @@ urlpatterns += [
     path('public/company/<uuid:company_uuid>/questions/', views.public_crm_questions, name='public_crm_questions'),
     path('public/company/<uuid:company_uuid>/questions/ask/', views.public_crm_question_create, name='public_crm_question_create'),
     
+    # URLs de Tareas Programadas
+    path('scheduled-tasks/', views.scheduled_task_list, name='scheduled_task_list'),
+    path('scheduled-tasks/create/', views.scheduled_task_create, name='scheduled_task_create'),
+    path('scheduled-tasks/<int:pk>/', views.scheduled_task_detail, name='scheduled_task_detail'),
+    path('scheduled-tasks/<int:pk>/edit/', views.scheduled_task_edit, name='scheduled_task_edit'),
+    path('scheduled-tasks/<int:pk>/delete/', views.scheduled_task_delete, name='scheduled_task_delete'),
+    path('scheduled-tasks/<int:pk>/toggle-active/', views.scheduled_task_toggle_active, name='scheduled_task_toggle_active'),
+    path('scheduled-tasks/<int:pk>/execute/', views.scheduled_task_execute, name='scheduled_task_execute'),
+    
     # URLs de API
     path('api/', include('tickets.api_urls')),
 ]

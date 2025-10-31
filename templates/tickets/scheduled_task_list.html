@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+{% load project_extras %}
+
+{% block title %}Tareas Programadas - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>
+                <i class="bi bi-clock-history text-primary"></i>
+                Tareas Programadas
+            </h2>
+            <p class="text-muted mb-0">Sistema de automatización de tareas</p>
+        </div>
+        <a href="{% url 'scheduled_task_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nueva Tarea
+        </a>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="search" class="form-label">Buscar</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           value="{{ search }}" placeholder="Nombre o código...">
+                </div>
+                <div class="col-md-3">
+                    <label for="is_active" class="form-label">Estado</label>
+                    <select class="form-select" id="is_active" name="is_active">
+                        <option value="">Todos</option>
+                        <option value="true" {% if is_active == 'true' %}selected{% endif %}>Activas</option>
+                        <option value="false" {% if is_active == 'false' %}selected{% endif %}>Inactivas</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <div class="d-flex gap-1 w-100">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="bi bi-search"></i> Buscar
+                        </button>
+                        <a href="{% url 'scheduled_task_list' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-arrow-clockwise"></i> Limpiar
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de tareas -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Tareas</h5>
+            <span class="badge bg-secondary">{{ page_obj.paginator.count }} total</span>
+        </div>
+        <div class="card-body">
+            {% if page_obj %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Tarea</th>
+                                <th>Frecuencia</th>
+                                <th>Estado</th>
+                                <th>Última Ejecución</th>
+                                <th>Próxima Ejecución</th>
+                                <th>Estadísticas</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in page_obj %}
+                            <tr>
+                                <td>
+                                    <div>
+                                        <strong>
+                                            <a href="{% url 'scheduled_task_detail' task.pk %}" 
+                                               class="text-decoration-none">
+                                                {{ task.name }}
+                                            </a>
+                                        </strong>
+                                        <br><small class="text-muted">
+                                            Creado por {{ task.created_by.get_full_name|default:task.created_by.username }}
+                                        </small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">
+                                        {{ task.frequency }} {{ task.get_frequency_unit_display|lower }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if task.is_active %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-play-fill"></i> Activa
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-pause-fill"></i> Inactiva
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if task.last_execution %}
+                                        <div>
+                                            <strong>{{ task.last_execution|date:"d/m/Y" }}</strong>
+                                            <br><small class="text-muted">{{ task.last_execution|time:"H:i" }}</small>
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">Nunca</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if task.is_active %}
+                                        {% with next_exec=task.get_next_execution %}
+                                            <div>
+                                                <strong>{{ next_exec|date:"d/m/Y" }}</strong>
+                                                <br><small class="text-muted">{{ next_exec|time:"H:i" }}</small>
+                                            </div>
+                                        {% endwith %}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        <span class="badge bg-success" title="Ejecuciones exitosas">
+                                            ✓ {{ task.success_count }}
+                                        </span>
+                                        <span class="badge bg-danger" title="Ejecuciones con error">
+                                            ✗ {{ task.error_count }}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'scheduled_task_detail' task.pk %}" 
+                                           class="btn btn-outline-primary btn-sm" title="Ver">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="{% url 'scheduled_task_edit' task.pk %}" 
+                                           class="btn btn-outline-warning btn-sm" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="{% url 'scheduled_task_toggle_active' task.pk %}" 
+                                           class="btn btn-outline-{% if task.is_active %}secondary{% else %}success{% endif %} btn-sm" 
+                                           title="{% if task.is_active %}Desactivar{% else %}Activar{% endif %}">
+                                            <i class="bi bi-{% if task.is_active %}pause{% else %}play{% endif %}-fill"></i>
+                                        </a>
+                                        <form method="post" action="{% url 'scheduled_task_execute' task.pk %}" 
+                                              style="display: inline;" 
+                                              onsubmit="return confirm('¿Ejecutar esta tarea manualmente?')">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-outline-info btn-sm" title="Ejecutar">
+                                                <i class="bi bi-play-circle"></i>
+                                            </button>
+                                        </form>
+                                        <a href="{% url 'scheduled_task_delete' task.pk %}" 
+                                           class="btn btn-outline-danger btn-sm" title="Eliminar">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginación -->
+                {% if page_obj.has_other_pages %}
+                <nav aria-label="Paginación de tareas">
+                    <ul class="pagination justify-content-center mt-4">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if is_active %}&is_active={{ is_active }}{% endif %}">Primera</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if is_active %}&is_active={{ is_active }}{% endif %}">Anterior</a>
+                            </li>
+                        {% endif %}
+                        
+                        <li class="page-item active">
+                            <span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                        </li>
+                        
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if is_active %}&is_active={{ is_active }}{% endif %}">Siguiente</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if is_active %}&is_active={{ is_active }}{% endif %}">Última</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-clock-history text-muted" style="font-size: 3rem;"></i>
+                    <h4 class="text-muted mt-3">No hay tareas programadas</h4>
+                    <p class="text-muted">Crea tu primera tarea programada para automatizar procesos.</p>
+                    <a href="{% url 'scheduled_task_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Crear Primera Tarea
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
