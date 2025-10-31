@@ -4030,6 +4030,10 @@ def company_detail_view(request, company_id):
     # Estadísticas de la empresa
     total_tickets = company.tickets.count()
     open_tickets = company.tickets.filter(status='open').count()
+    closed_tickets = company.tickets.filter(status='closed').count()
+    in_progress_tickets = company.tickets.filter(status='in_progress').count()
+    pending_tickets = company.tickets.filter(status='pending').count()
+    
     total_users = company.users.count()
     active_users = company.users.filter(user__is_active=True).count()
     
@@ -4055,6 +4059,9 @@ def company_detail_view(request, company_id):
         'company': company,
         'total_tickets': total_tickets,
         'open_tickets': open_tickets,
+        'closed_tickets': closed_tickets,
+        'in_progress_tickets': in_progress_tickets,
+        'pending_tickets': pending_tickets,
         'total_users': total_users,
         'active_users': active_users,
         'recent_tickets': recent_tickets,

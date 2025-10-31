@@ -3,6 +3,24 @@
 
 {% block title %}{{ page_title }} - TicketProo{% endblock %}
 
+{% block extra_css %}
+<style>
+.ticket-kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    border-color: #007bff !important;
+}
+
+.ticket-kpi-card:active {
+    transform: translateY(0);
+}
+
+.ticket-kpi-card {
+    border: 2px solid transparent !important;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
     <div class="row">
@@ -210,30 +228,70 @@
                         </div>
                         <div class="card-body">
                             <div class="row text-center">
-                                <div class="col-6 mb-3">
-                                    <div class="border rounded p-3">
-                                        <div class="fs-2 fw-bold text-primary">{{ total_tickets }}</div>
-                                        <div class="text-muted">Total de Tickets</div>
-                                    </div>
+                                <div class="col-6 col-md-3 mb-3">
+                                    <a href="{% url 'ticket_list' %}?company={{ company.id }}" 
+                                       class="text-decoration-none">
+                                        <div class="border rounded p-3 ticket-kpi-card" 
+                                             style="cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;">
+                                            <div class="fs-2 fw-bold text-primary">{{ total_tickets }}</div>
+                                            <div class="text-muted">Total de Tickets</div>
+                                        </div>
+                                    </a>
                                 </div>
-                                <div class="col-6 mb-3">
-                                    <div class="border rounded p-3">
-                                        <div class="fs-2 fw-bold text-warning">{{ open_tickets }}</div>
-                                        <div class="text-muted">Tickets Abiertos</div>
-                                    </div>
+                                <div class="col-6 col-md-3 mb-3">
+                                    <a href="{% url 'ticket_list' %}?company={{ company.id }}&status=open" 
+                                       class="text-decoration-none">
+                                        <div class="border rounded p-3 ticket-kpi-card" 
+                                             style="cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;">
+                                            <div class="fs-2 fw-bold text-warning">{{ open_tickets }}</div>
+                                            <div class="text-muted">Tickets Abiertos</div>
+                                        </div>
+                                    </a>
                                 </div>
-                                <div class="col-6">
+                                <div class="col-6 col-md-3 mb-3">
+                                    <a href="{% url 'ticket_list' %}?company={{ company.id }}&status=in_progress" 
+                                       class="text-decoration-none">
+                                        <div class="border rounded p-3 ticket-kpi-card" 
+                                             style="cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;">
+                                            <div class="fs-2 fw-bold text-info">{{ in_progress_tickets }}</div>
+                                            <div class="text-muted">En Progreso</div>
+                                        </div>
+                                    </a>
+                                </div>
+                                <div class="col-6 col-md-3 mb-3">
+                                    <a href="{% url 'ticket_list' %}?company={{ company.id }}&status=closed" 
+                                       class="text-decoration-none">
+                                        <div class="border rounded p-3 ticket-kpi-card" 
+                                             style="cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;">
+                                            <div class="fs-2 fw-bold text-success">{{ closed_tickets }}</div>
+                                            <div class="text-muted">Tickets Cerrados</div>
+                                        </div>
+                                    </a>
+                                </div>
+                                <div class="col-6 col-md-3">
                                     <div class="border rounded p-3">
                                         <div class="fs-2 fw-bold text-info">{{ total_users }}</div>
                                         <div class="text-muted">Total de Usuarios</div>
                                     </div>
                                 </div>
-                                <div class="col-6">
+                                <div class="col-6 col-md-3">
                                     <div class="border rounded p-3">
                                         <div class="fs-2 fw-bold text-success">{{ active_users }}</div>
                                         <div class="text-muted">Usuarios Activos</div>
                                     </div>
                                 </div>
+                                {% if pending_tickets > 0 %}
+                                <div class="col-6 col-md-3">
+                                    <a href="{% url 'ticket_list' %}?company={{ company.id }}&status=pending" 
+                                       class="text-decoration-none">
+                                        <div class="border rounded p-3 ticket-kpi-card" 
+                                             style="cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;">
+                                            <div class="fs-2 fw-bold text-secondary">{{ pending_tickets }}</div>
+                                            <div class="text-muted">Pendientes</div>
+                                        </div>
+                                    </a>
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
