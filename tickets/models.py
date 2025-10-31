@@ -1368,6 +1368,54 @@ class TimeEntry(models.Model):
         )
 
 
+class TimeEntryAuditLog(models.Model):
+    """Modelo para auditar cambios en registros de tiempo"""
+    
+    time_entry = models.ForeignKey(
+        TimeEntry,
+        on_delete=models.CASCADE,
+        related_name='audit_logs',
+        verbose_name='Registro de Tiempo'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Usuario que modificó'
+    )
+    timestamp = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha y hora de modificación'
+    )
+    field_name = models.CharField(
+        max_length=50,
+        verbose_name='Campo modificado'
+    )
+    old_value = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name='Valor anterior'
+    )
+    new_value = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name='Valor nuevo'
+    )
+    change_reason = models.CharField(
+        max_length=200,
+        null=True,
+        blank=True,
+        verbose_name='Razón del cambio'
+    )
+    
+    class Meta:
+        ordering = ['-timestamp']
+        verbose_name = 'Log de Auditoría de Tiempo'
+        verbose_name_plural = 'Logs de Auditoría de Tiempo'
+    
+    def __str__(self):
+        return f"{self.time_entry} - {self.field_name} - {self.timestamp.strftime('%d/%m/%Y %H:%M')}"
+
+
 class PublicTimeAccess(models.Model):
     """Modelo para gestionar acceso público al control de horario"""
     

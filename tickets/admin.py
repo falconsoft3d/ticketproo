@@ -4,7 +4,7 @@ from django.utils import timezone
 import os
 from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserNote, 
-    TimeEntry, PublicTimeAccess, Project, Company, SystemConfiguration, Document, UserProfile,
+    TimeEntry, TimeEntryAuditLog, PublicTimeAccess, Project, Company, SystemConfiguration, Document, UserProfile,
     WorkOrder, WorkOrderAttachment, Task, Opportunity, OpportunityStatus, 
     OpportunityNote, OpportunityStatusHistory, Concept, Exam, ExamQuestion, 
     ExamAttempt, ExamAnswer, ContactoWeb, Employee, JobApplicationToken,
@@ -371,6 +371,41 @@ class TimeEntryAdmin(admin.ModelAdmin):
         if obj is not None:
             return obj.can_edit(request.user)
         return super().has_change_permission(request, obj)
+
+
+@admin.register(TimeEntryAuditLog)
+class TimeEntryAuditLogAdmin(admin.ModelAdmin):
+    list_display = ('time_entry', 'user', 'timestamp', 'field_name', 'old_value', 'new_value', 'change_reason')
+    list_filter = ('timestamp', 'field_name', 'user')
+    search_fields = ('time_entry__user__username', 'user__username', 'field_name', 'change_reason')
+    readonly_fields = ('timestamp',)
+    ordering = ('-timestamp',)
+    date_hierarchy = 'timestamp'
+    
+    fieldsets = (
+        ('Información del Cambio', {
+            'fields': ('time_entry', 'user', 'timestamp', 'field_name')
+        }),
+        ('Valores', {
+            'fields': ('old_value', 'new_value', 'change_reason')
+        }),
+    )
+    
+    def get_queryset(self, request):
+        """Optimizar consultas con select_related"""
+        return super().get_queryset(request).select_related('time_entry', 'user', 'time_entry__user')
+    
+    def has_add_permission(self, request):
+        """No permitir agregar logs manualmente"""
+        return False
+    
+    def has_change_permission(self, request, obj=None):
+        """No permitir modificar logs de auditoría"""
+        return False
+    
+    def has_delete_permission(self, request, obj=None):
+        """Solo permitir eliminar a superusuarios"""
+        return request.user.is_superuser
     
     def has_view_permission(self, request, obj=None):
         if obj is not None:

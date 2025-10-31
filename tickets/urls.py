@@ -120,6 +120,7 @@ urlpatterns = [
     path('time-entries/export/excel/', views.time_entries_export_excel, name='time_entries_export_excel'),
     path('time-entries/<int:entry_id>/', views.time_entry_detail, name='time_entry_detail'),
     path('time-entries/<int:entry_id>/edit/', views.time_entry_edit, name='time_entry_edit'),
+    path('time-entries/<int:entry_id>/audit/', views.time_entry_audit_log, name='time_entry_audit_log'),
     
     # URLs públicas de control de horario (sin login)
     path('public-time/<str:token>/', views.public_time_clock, name='public_time_clock'),

@@ -6,7 +6,7 @@
 {% block content %}
 <div class="container">
     <div class="row justify-content-center">
-        <div class="col-md-8">
+        <div class="col-md-10">
             <div class="card">
                 <div class="card-header">
                     <h4 class="mb-0">
@@ -14,73 +14,37 @@
                     </h4>
                 </div>
                 <div class="card-body">
-                    <!-- Información del registro -->
-                    <div class="alert alert-light border">
-                        <div class="row">
-                            <div class="col-md-4">
-                                <strong>Fecha:</strong><br>
-                                {{ entry.fecha_entrada|date:"d/m/Y" }}
-                            </div>
-                            <div class="col-md-4">
-                                <strong>Entrada:</strong><br>
-                                {{ entry.fecha_entrada|date:"H:i" }}
-                            </div>
-                            <div class="col-md-4">
-                                <strong>Salida:</strong><br>
-                                {% if entry.fecha_salida %}
-                                    {{ entry.fecha_salida|date:"H:i" }}
-                                {% else %}
-                                    <span class="badge bg-success">Activo</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="row mt-2">
-                            <div class="col-md-6">
-                                <strong>Duración:</strong> {{ entry.duracion_formateada }}
-                            </div>
-                            <div class="col-md-6">
-                                <strong>Estado:</strong>
-                                {% if entry.fecha_salida %}
-                                    <span class="badge bg-secondary">Completado</span>
-                                {% else %}
-                                    <span class="badge bg-success">En Progreso</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="row mt-2">
-                            <div class="col-12">
-                                <strong>Trabajando en:</strong><br>
-                                <div class="d-flex flex-wrap gap-1 mt-1">
-                                    {% if entry.project %}
-                                        <span class="badge" style="background-color: {{ entry.project.color }}; color: white;">
-                                            <i class="bi bi-folder"></i> {{ entry.project.name }}
-                                        </span>
-                                    {% endif %}
-                                    {% if entry.ticket %}
-                                        <span class="badge bg-primary">
-                                            <i class="bi bi-ticket-perforated"></i> {{ entry.ticket.ticket_number }}
-                                        </span>
-                                    {% endif %}
-                                    {% if entry.work_order %}
-                                        <span class="badge bg-success">
-                                            <i class="bi bi-clipboard-check"></i> {{ entry.work_order.order_number }}
-                                        </span>
-                                    {% endif %}
-                                    {% if entry.task %}
-                                        <span class="badge bg-info">
-                                            <i class="bi bi-list-task"></i> {{ entry.task.title }}
-                                        </span>
-                                    {% endif %}
-                                    {% if not entry.project and not entry.ticket and not entry.work_order and not entry.task %}
-                                        <span class="text-muted">Sin asignación específica</span>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                     <form method="post">
                         {% csrf_token %}
+                        
+                        <!-- Campos de horario -->
+                        <div class="alert alert-warning">
+                            <h6><i class="bi bi-clock text-warning"></i> Horarios</h6>
+                            <p class="mb-2"><small>Puedes ajustar las horas de entrada y salida si es necesario.</small></p>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {% bootstrap_field form.fecha_entrada %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {% bootstrap_field form.fecha_salida %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                {% bootstrap_field form.change_reason %}
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <!-- Campos de asignación -->
+                        <div class="alert alert-info">
+                            <h6><i class="bi bi-briefcase text-info"></i> Asignación de Trabajo</h6>
+                            <p class="mb-0"><small>Asocia este registro con proyectos, tickets, órdenes de trabajo o tareas.</small></p>
+                        </div>
                         
                         <div class="row">
                             <div class="col-md-6 mb-3">
@@ -108,18 +72,162 @@
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-save"></i> Guardar Cambios
                             </button>
+                            <a href="{% url 'time_entry_audit_log' entry.id %}" class="btn btn-outline-info">
+                                <i class="bi bi-clock-history"></i> Ver Historial
+                            </a>
                             <a href="{% url 'time_entry_detail' entry.id %}" class="btn btn-outline-secondary">
                                 <i class="bi bi-times"></i> Cancelar
                             </a>
                         </div>
                     </form>
-                    
-                    <div class="alert alert-info mt-3">
-                        <small>
-                            <i class="bi bi-info-circle"></i>
-                            Puedes editar la información de asignación (proyecto, ticket, orden de trabajo, tarea) 
-                            y las notas del registro. Los horarios de entrada y salida no pueden modificarse por seguridad.
-                        </small>
+                </div>
+            </div>
+            
+            <!-- Historial de auditoría -->
+            {% if audit_logs %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-clock-history text-secondary"></i> Historial de Modificaciones
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Usuario</th>
+                                    <th>Campo</th>
+                                    <th>Valor Anterior</th>
+                                    <th>Valor Nuevo</th>
+                                    <th>Razón</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in audit_logs %}
+                                <tr>
+                                    <td>
+                                        <small>{{ log.timestamp|date:"d/m/Y H:i" }}</small>
+                                    </td>
+                                    <td>
+                                        <small>{{ log.user.get_full_name|default:log.user.username }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">
+                                            {% if log.field_name == 'fecha_entrada' %}
+                                                Entrada
+                                            {% elif log.field_name == 'fecha_salida' %}
+                                                Salida
+                                            {% else %}
+                                                {{ log.field_name }}
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {% if log.old_value %}
+                                                {{ log.old_value }}
+                                            {% else %}
+                                                <em>Vacío</em>
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <small class="text-success">
+                                            {% if log.new_value %}
+                                                {{ log.new_value }}
+                                            {% else %}
+                                                <em>Vacío</em>
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <small>
+                                            {% if log.change_reason %}
+                                                {{ log.change_reason }}
+                                            {% else %}
+                                                <em class="text-muted">Sin especificar</em>
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Información actual del registro -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle text-info"></i> Información Actual del Registro
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <strong>Fecha:</strong><br>
+                            {{ entry.fecha_entrada|date:"d/m/Y" }}
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Entrada:</strong><br>
+                            {{ entry.fecha_entrada|date:"H:i" }}
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Salida:</strong><br>
+                            {% if entry.fecha_salida %}
+                                {{ entry.fecha_salida|date:"H:i" }}
+                            {% else %}
+                                <span class="badge bg-success">Activo</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-6">
+                            <strong>Duración:</strong> {{ entry.duracion_formateada }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Estado:</strong>
+                            {% if entry.fecha_salida %}
+                                <span class="badge bg-secondary">Completado</span>
+                            {% else %}
+                                <span class="badge bg-success">En Progreso</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-12">
+                            <strong>Trabajando en:</strong><br>
+                            <div class="d-flex flex-wrap gap-1 mt-1">
+                                {% if entry.project %}
+                                    <span class="badge" style="background-color: {{ entry.project.color }}; color: white;">
+                                        <i class="bi bi-folder"></i> {{ entry.project.name }}
+                                    </span>
+                                {% endif %}
+                                {% if entry.ticket %}
+                                    <span class="badge bg-primary">
+                                        <i class="bi bi-ticket-perforated"></i> {{ entry.ticket.ticket_number }}
+                                    </span>
+                                {% endif %}
+                                {% if entry.work_order %}
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-clipboard-check"></i> {{ entry.work_order.order_number }}
+                                    </span>
+                                {% endif %}
+                                {% if entry.task %}
+                                    <span class="badge bg-info">
+                                        <i class="bi bi-list-task"></i> {{ entry.task.title }}
+                                    </span>
+                                {% endif %}
+                                {% if not entry.project and not entry.ticket and not entry.work_order and not entry.task %}
+                                    <span class="text-muted">Sin asignación específica</span>
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

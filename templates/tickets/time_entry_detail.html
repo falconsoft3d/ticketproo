@@ -11,7 +11,10 @@
                 <h2><i class="bi bi-clock text-primary"></i> {{ page_title }}</h2>
                 <div class="btn-group" role="group">
                     <a href="{% url 'time_entry_edit' entry.id %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-edit"></i> Editar Notas
+                        <i class="bi bi-edit"></i> Editar Registro
+                    </a>
+                    <a href="{% url 'time_entry_audit_log' entry.id %}" class="btn btn-outline-info">
+                        <i class="bi bi-clock-history"></i> Ver Historial
                     </a>
                     <a href="{% url 'time_entries_list' %}" class="btn btn-outline-primary">
                         <i class="bi bi-list"></i> Volver a Lista

@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="bi bi-clock-history text-info"></i> {{ page_title }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Información básica del registro -->
+                    <div class="alert alert-light border">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <strong>Usuario:</strong><br>
+                                {{ entry.user.get_full_name|default:entry.user.username }}
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Fecha:</strong><br>
+                                {{ entry.fecha_entrada|date:"d/m/Y" }}
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Entrada:</strong><br>
+                                {{ entry.fecha_entrada|date:"H:i" }}
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Salida:</strong><br>
+                                {% if entry.fecha_salida %}
+                                    {{ entry.fecha_salida|date:"H:i" }}
+                                {% else %}
+                                    <span class="badge bg-success">Activo</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-6">
+                                <strong>Duración:</strong> {{ entry.duracion_formateada }}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Estado:</strong>
+                                {% if entry.fecha_salida %}
+                                    <span class="badge bg-secondary">Completado</span>
+                                {% else %}
+                                    <span class="badge bg-success">En Progreso</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botones de acción -->
+                    <div class="mb-3">
+                        <a href="{% url 'time_entry_detail' entry.id %}" class="btn btn-outline-primary">
+                            <i class="bi bi-arrow-left"></i> Volver al Registro
+                        </a>
+                        <a href="{% url 'time_entry_edit' entry.id %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-edit"></i> Editar Registro
+                        </a>
+                    </div>
+
+                    <!-- Historial de auditoría -->
+                    {% if audit_logs %}
+                        <h5><i class="bi bi-list-ul"></i> Historial Completo de Modificaciones</h5>
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Fecha y Hora</th>
+                                        <th>Usuario</th>
+                                        <th>Campo Modificado</th>
+                                        <th>Valor Anterior</th>
+                                        <th>Valor Nuevo</th>
+                                        <th>Razón del Cambio</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for log in audit_logs %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex flex-column">
+                                                <strong>{{ log.timestamp|date:"d/m/Y" }}</strong>
+                                                <small class="text-muted">{{ log.timestamp|date:"H:i:s" }}</small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-person-circle me-2"></i>
+                                                <div>
+                                                    <strong>{{ log.user.get_full_name|default:log.user.username }}</strong>
+                                                    <br><small class="text-muted">@{{ log.user.username }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">
+                                                {% if log.field_name == 'fecha_entrada' %}
+                                                    <i class="bi bi-clock"></i> Hora de Entrada
+                                                {% elif log.field_name == 'fecha_salida' %}
+                                                    <i class="bi bi-clock-fill"></i> Hora de Salida
+                                                {% else %}
+                                                    <i class="bi bi-pencil"></i> {{ log.field_name|title }}
+                                                {% endif %}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if log.old_value %}
+                                                <div class="text-danger">
+                                                    <del>{{ log.old_value }}</del>
+                                                </div>
+                                            {% else %}
+                                                <em class="text-muted">Vacío</em>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if log.new_value %}
+                                                <div class="text-success">
+                                                    <strong>{{ log.new_value }}</strong>
+                                                </div>
+                                            {% else %}
+                                                <em class="text-muted">Vacío</em>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if log.change_reason %}
+                                                <div class="alert alert-light p-2 mb-0">
+                                                    <i class="bi bi-chat-square-text"></i>
+                                                    {{ log.change_reason }}
+                                                </div>
+                                            {% else %}
+                                                <em class="text-muted">Sin especificar</em>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>No hay cambios registrados</strong><br>
+                            Este registro no ha sido modificado desde su creación.
+                        </div>
+                    {% endif %}
+
+                    <!-- Información adicional -->
+                    <div class="mt-4">
+                        <h6>Información del Registro</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Creado:</strong> {{ entry.created_at|date:"d/m/Y H:i" }}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Última actualización:</strong> {{ entry.updated_at|date:"d/m/Y H:i" }}
+                            </div>
+                        </div>
+                        {% if entry.notas %}
+                        <div class="mt-2">
+                            <strong>Notas:</strong><br>
+                            <div class="border p-2 bg-light rounded">
+                                {{ entry.notas|linebreaks }}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

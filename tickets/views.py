@@ -3094,7 +3094,7 @@ def time_entry_detail(request, entry_id):
 @login_required
 @user_passes_test(is_agent, login_url='dashboard')
 def time_entry_edit(request, entry_id):
-    """Editar notas de un registro de horario"""
+    """Editar un registro de horario incluyendo entrada y salida"""
     
     entry = get_object_or_404(TimeEntry, id=entry_id)
     
@@ -3106,19 +3106,49 @@ def time_entry_edit(request, entry_id):
     if request.method == 'POST':
         form = TimeEntryEditForm(request.POST, instance=entry, user=request.user)
         if form.is_valid():
+            # Establecer el usuario para el log de auditoría
+            form._user = request.user
             form.save()
             messages.success(request, 'Registro actualizado exitosamente.')
             return redirect('time_entry_detail', entry_id=entry.id)
     else:
         form = TimeEntryEditForm(instance=entry, user=request.user)
     
+    # Obtener logs de auditoría para mostrar historial
+    audit_logs = entry.audit_logs.all()[:10]  # Últimos 10 cambios
+    
     context = {
         'form': form,
         'entry': entry,
+        'audit_logs': audit_logs,
         'page_title': f'Editar Registro del {entry.fecha_entrada.strftime("%d/%m/%Y")}'
     }
     
     return render(request, 'tickets/time_entry_edit.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='dashboard')
+def time_entry_audit_log(request, entry_id):
+    """Ver historial completo de auditoría de un registro de tiempo"""
+    
+    entry = get_object_or_404(TimeEntry, id=entry_id)
+    
+    # Verificar permisos
+    if not entry.can_view(request.user):
+        messages.error(request, 'No tienes permisos para ver este registro.')
+        return redirect('time_entries_list')
+    
+    # Obtener todos los logs de auditoría
+    audit_logs = entry.audit_logs.all()
+    
+    context = {
+        'entry': entry,
+        'audit_logs': audit_logs,
+        'page_title': f'Historial de Cambios - Registro del {entry.fecha_entrada.strftime("%d/%m/%Y")}'
+    }
+    
+    return render(request, 'tickets/time_entry_audit_log.html', context)
 
 
 @login_required

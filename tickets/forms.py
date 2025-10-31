@@ -2,7 +2,24 @@ from django import forms
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
 from django.db import models
+from django.utils import timezone
 import os
+
+
+class DateTimeLocalWidget(forms.DateTimeInput):
+    """Widget personalizado para datetime-local que maneja correctamente el formato"""
+    input_type = 'datetime-local'
+    
+    def __init__(self, attrs=None, format=None):
+        super().__init__(attrs, format='%Y-%m-%dT%H:%M')
+    
+    def format_value(self, value):
+        if value:
+            # Asegurar formato ISO para input type="datetime-local"
+            if hasattr(value, 'strftime'):
+                return value.strftime('%Y-%m-%dT%H:%M')
+            return value
+        return ''
 
 
 class DateInput(forms.DateInput):
@@ -1255,9 +1272,39 @@ class TimeEntryEndForm(forms.Form):
 class TimeEntryEditForm(forms.ModelForm):
     """Formulario para editar registros de horario"""
     
+    fecha_entrada = forms.DateTimeField(
+        widget=DateTimeLocalWidget(
+            attrs={
+                'class': 'form-control',
+            }
+        ),
+        label='Fecha y hora de entrada'
+    )
+    
+    fecha_salida = forms.DateTimeField(
+        required=False,
+        widget=DateTimeLocalWidget(
+            attrs={
+                'class': 'form-control',
+            }
+        ),
+        label='Fecha y hora de salida'
+    )
+    
+    change_reason = forms.CharField(
+        required=False,
+        max_length=200,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Razón del cambio (opcional)'
+        }),
+        label='Razón del cambio',
+        help_text='Opcional: Explica por qué modificas los horarios'
+    )
+    
     class Meta:
         model = TimeEntry
-        fields = ['project', 'ticket', 'work_order', 'task', 'notas']
+        fields = ['fecha_entrada', 'fecha_salida', 'project', 'ticket', 'work_order', 'task', 'notas']
         widgets = {
             'project': forms.Select(attrs={
                 'class': 'form-select',
@@ -1290,6 +1337,8 @@ class TimeEntryEditForm(forms.ModelForm):
             'work_order': 'Orden de trabajo en la que se trabajó',
             'task': 'Tarea en la que se trabajó',
             'notas': 'Describe las actividades realizadas, observaciones o comentarios relevantes',
+            'fecha_entrada': 'Ajusta la fecha y hora de entrada si es necesario',
+            'fecha_salida': 'Ajusta la fecha y hora de salida si es necesario',
         }
     
     def __init__(self, *args, **kwargs):
@@ -1328,13 +1377,31 @@ class TimeEntryEditForm(forms.ModelForm):
             self.fields[field].required = False
             self.fields[field].empty_label = f"Seleccionar {self.fields[field].label.lower()} (opcional)"
     
-    def clean_notas(self):
-        notas = self.cleaned_data.get('notas')
-        if notas:
-            notas = notas.strip()
-            if len(notas) > 500:
-                raise forms.ValidationError('Las notas no pueden exceder 500 caracteres.')
-        return notas
+    def clean_fecha_entrada(self):
+        fecha_entrada = self.cleaned_data.get('fecha_entrada')
+        if not fecha_entrada:
+            raise forms.ValidationError('La fecha de entrada es requerida.')
+        
+        # No puede ser en el futuro
+        if fecha_entrada > timezone.now():
+            raise forms.ValidationError('La fecha de entrada no puede ser en el futuro.')
+        
+        return fecha_entrada
+    
+    def clean_fecha_salida(self):
+        fecha_salida = self.cleaned_data.get('fecha_salida')
+        fecha_entrada = self.cleaned_data.get('fecha_entrada')
+        
+        if fecha_salida:
+            # No puede ser en el futuro
+            if fecha_salida > timezone.now():
+                raise forms.ValidationError('La fecha de salida no puede ser en el futuro.')
+            
+            # No puede ser antes que la entrada
+            if fecha_entrada and fecha_salida < fecha_entrada:
+                raise forms.ValidationError('La fecha de salida no puede ser anterior a la fecha de entrada.')
+        
+        return fecha_salida
     
     def clean_notas(self):
         notas = self.cleaned_data.get('notas')
@@ -1343,6 +1410,50 @@ class TimeEntryEditForm(forms.ModelForm):
             if len(notas) > 500:
                 raise forms.ValidationError('Las notas no pueden exceder 500 caracteres.')
         return notas
+    
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        
+        # Guardar información de auditoría si hay cambios en fecha_entrada o fecha_salida
+        if self.instance.pk:  # Solo si es una edición
+            original = TimeEntry.objects.get(pk=self.instance.pk)
+            changes = []
+            
+            if original.fecha_entrada != instance.fecha_entrada:
+                changes.append({
+                    'field': 'fecha_entrada',
+                    'old_value': original.fecha_entrada.strftime('%Y-%m-%d %H:%M:%S'),
+                    'new_value': instance.fecha_entrada.strftime('%Y-%m-%d %H:%M:%S')
+                })
+            
+            if original.fecha_salida != instance.fecha_salida:
+                old_value = original.fecha_salida.strftime('%Y-%m-%d %H:%M:%S') if original.fecha_salida else None
+                new_value = instance.fecha_salida.strftime('%Y-%m-%d %H:%M:%S') if instance.fecha_salida else None
+                changes.append({
+                    'field': 'fecha_salida',
+                    'old_value': old_value,
+                    'new_value': new_value
+                })
+            
+            if commit:
+                instance.save()
+                
+                # Crear logs de auditoría para los cambios
+                change_reason = self.cleaned_data.get('change_reason', '')
+                for change in changes:
+                    from .models import TimeEntryAuditLog
+                    TimeEntryAuditLog.objects.create(
+                        time_entry=instance,
+                        user=getattr(self, '_user', None),  # Se establecerá en la vista
+                        field_name=change['field'],
+                        old_value=change['old_value'],
+                        new_value=change['new_value'],
+                        change_reason=change_reason
+                    )
+        elif commit:
+            instance.save()
+        
+        return instance
 
 
 class PublicTimeAccessForm(forms.ModelForm):
