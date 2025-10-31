@@ -72,7 +72,7 @@ def crm_counters(request):
         return {}
     
     try:
-        from tickets.models import Contact, Company, Opportunity, Meeting, Quotation, QuotationTemplate, OpportunityActivity
+        from tickets.models import Contact, Company, Opportunity, Meeting, Quotation, QuotationTemplate, OpportunityActivity, CrmQuestion
         
         # Contadores básicos
         contacts_count = Contact.objects.count()
@@ -87,6 +87,9 @@ def crm_counters(request):
         from django.utils import timezone
         today = timezone.now().date()
         meetings_count = Meeting.objects.filter(date__gte=today).count()
+        
+        # Preguntas pendientes de respuesta
+        questions_count = CrmQuestion.objects.filter(answer__isnull=True).count()
         
         # Cotizaciones activas (draft, sent, approved)
         quotations_count = Quotation.objects.filter(
@@ -108,6 +111,7 @@ def crm_counters(request):
                 'companies': companies_count,
                 'opportunities': opportunities_count,
                 'meetings': meetings_count,
+                'questions': questions_count,
                 'quotations': quotations_count,
                 'templates': templates_count,
                 'pending_activities': pending_activities_count,

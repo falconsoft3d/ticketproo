@@ -1,0 +1,257 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if question %}Editar Pregunta #{{ question.sequence }}{% else %}Nueva Pregunta CRM{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-question-circle me-2"></i>
+                            {% if question %}
+                                Editar Pregunta #{{ question.sequence }}
+                            {% else %}
+                                Nueva Pregunta
+                            {% endif %}
+                        </h5>
+                        <a href="{% url 'crm_questions_list' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Volver
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-12 col-md-6 mb-3">
+                                <label for="{{ form.company.id_for_label }}" class="form-label">
+                                    Empresa <span class="text-danger">*</span>
+                                </label>
+                                {{ form.company }}
+                                {% if form.company.help_text %}
+                                    <small class="text-muted d-block mt-1">
+                                        <i class="fas fa-info-circle me-1"></i>{{ form.company.help_text }}
+                                    </small>
+                                {% endif %}
+                                {% if form.company.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {{ form.company.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            {% if question %}
+                            <div class="col-12 col-md-6 mb-3">
+                                <label class="form-label">Secuencia</label>
+                                <input type="text" class="form-control" value="#{{ question.sequence }}" readonly>
+                                <small class="text-muted">Asignada automáticamente</small>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12 col-md-6 mb-3">
+                                <label for="{{ form.person_name.id_for_label }}" class="form-label">
+                                    Nombre de la Persona <span class="text-danger">*</span>
+                                </label>
+                                {{ form.person_name }}
+                                {% if form.person_name.help_text %}
+                                    <small class="text-muted d-block mt-1">
+                                        <i class="fas fa-info-circle me-1"></i>{{ form.person_name.help_text }}
+                                    </small>
+                                {% endif %}
+                                {% if form.person_name.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {{ form.person_name.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-12 col-md-6 mb-3">
+                                <label for="{{ form.person_email.id_for_label }}" class="form-label">
+                                    Email de la Persona <span class="text-danger">*</span>
+                                </label>
+                                {{ form.person_email }}
+                                {% if form.person_email.help_text %}
+                                    <small class="text-muted d-block mt-1">
+                                        <i class="fas fa-info-circle me-1"></i>{{ form.person_email.help_text }}
+                                    </small>
+                                {% endif %}
+                                {% if form.person_email.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {{ form.person_email.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.question.id_for_label }}" class="form-label">
+                                Pregunta <span class="text-danger">*</span>
+                            </label>
+                            {{ form.question }}
+                            {% if form.question.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.question.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.answer.id_for_label }}" class="form-label">
+                                Respuesta
+                            </label>
+                            {{ form.answer }}
+                            {% if form.answer.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.answer.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <small class="text-muted">
+                                Dejar vacío si la pregunta no ha sido respondida aún
+                            </small>
+                        </div>
+
+                        {% if question and question.is_answered %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Estado:</strong> Pregunta respondida
+                            {% if question.answered_by %}
+                                por {{ question.answered_by.get_full_name|default:question.answered_by.username }}
+                                el {{ question.answered_at|date:"d/m/Y H:i" }}
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'crm_questions_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>
+                                {% if question %}Actualizar{% else %}Crear{% endif %} Pregunta
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-resize textareas
+    const textareas = document.querySelectorAll('textarea');
+    textareas.forEach(function(textarea) {
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
+        // Trigger initial resize
+        textarea.dispatchEvent(new Event('input'));
+    });
+    
+    // Monitorear cambios en el campo respuesta para mostrar estado
+    const answerField = document.querySelector('#id_answer');
+    if (!answerField) return;
+    
+    // Crear el contenedor de alertas de estado
+    const statusContainer = document.createElement('div');
+    statusContainer.id = 'status-alerts';
+    answerField.parentNode.appendChild(statusContainer);
+    
+    // Estado inicial
+    const initialValue = answerField.value.trim();
+    const wasAnswered = {% if question.is_answered %}true{% else %}false{% endif %};
+    
+    function createAlert(type, icon, message) {
+        return `
+            <div class="alert alert-${type} mt-2 fade show" role="alert">
+                <i class="${icon} me-2"></i>
+                <strong>Estado:</strong> ${message}
+            </div>
+        `;
+    }
+    
+    function updateStatusAlert() {
+        const currentValue = answerField.value.trim();
+        const hasValidAnswer = currentValue.length > 0;
+        
+        let alertHtml = '';
+        
+        if (hasValidAnswer && (!wasAnswered || currentValue !== initialValue)) {
+            // Hay respuesta válida y es nueva o modificada
+            alertHtml = createAlert(
+                'success', 
+                'fas fa-check-circle', 
+                'Esta pregunta se marcará como <strong>RESPONDIDA</strong> al guardar.'
+            );
+        } else if (!hasValidAnswer && wasAnswered) {
+            // Se borró la respuesta de una pregunta que estaba respondida
+            alertHtml = createAlert(
+                'warning', 
+                'fas fa-exclamation-triangle', 
+                'Al borrar la respuesta, la pregunta volverá a estado <strong>PENDIENTE</strong>.'
+            );
+        } else if (hasValidAnswer && wasAnswered && currentValue === initialValue) {
+            // La respuesta no ha cambiado
+            alertHtml = createAlert(
+                'info', 
+                'fas fa-info-circle', 
+                'Esta pregunta está <strong>RESPONDIDA</strong>.'
+            );
+        } else if (!hasValidAnswer && !wasAnswered) {
+            // No hay respuesta y no estaba respondida (estado normal para nueva pregunta)
+            alertHtml = createAlert(
+                'secondary', 
+                'fas fa-clock', 
+                'Esta pregunta estará en estado <strong>PENDIENTE</strong> hasta que se agregue una respuesta.'
+            );
+        }
+        
+        statusContainer.innerHTML = alertHtml;
+    }
+    
+    // Event listeners
+    answerField.addEventListener('input', updateStatusAlert);
+    answerField.addEventListener('blur', updateStatusAlert);
+    answerField.addEventListener('paste', function() {
+        setTimeout(updateStatusAlert, 100); // Delay para que se procese el paste
+    });
+    
+    // Verificar estado inicial
+    updateStatusAlert();
+    
+    // Animación de entrada para las alertas
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList') {
+                mutation.addedNodes.forEach(function(node) {
+                    if (node.nodeType === 1 && node.classList.contains('alert')) {
+                        node.style.opacity = '0';
+                        node.style.transform = 'translateY(-10px)';
+                        setTimeout(function() {
+                            node.style.transition = 'all 0.3s ease';
+                            node.style.opacity = '1';
+                            node.style.transform = 'translateY(0)';
+                        }, 10);
+                    }
+                });
+            }
+        });
+    });
+    
+    observer.observe(statusContainer, { childList: true });
+});
+</script>
+{% endblock %}

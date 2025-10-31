@@ -87,7 +87,9 @@
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle {% if 'employee_request' in request.resolver_match.url_name or 'ai_manager' in request.resolver_match.url_name or 'employee_dashboard' in request.resolver_match.url_name or 'internal_agreement' in request.resolver_match.url_name or 'training_plan' in request.resolver_match.url_name or 'my_training_progress' in request.resolver_match.url_name or 'ai_recommendation' in request.resolver_match.url_name or 'employee_absence' in request.resolver_match.url_name or 'absence_type' in request.resolver_match.url_name or 'company_protocol' in request.resolver_match.url_name or 'ai_tutor' in request.resolver_match.url_name or 'video_meeting' in request.resolver_match.url_name or 'expense_report' in request.resolver_match.url_name %}active{% endif %}" 
                            href="#" id="navbarDropdownEmployee" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-person-badge"></i> CRM
+                            <i class="bi bi-person-add"></i>
+
+                            </i> CRM
                         </a>
                         <ul class="dropdown-menu">
                             
@@ -137,6 +139,16 @@
                                     <i class="bi bi-calendar-event"></i> Reuniones
                                     {% if crm_counters.meetings > 0 %}
                                         <span class="badge bg-secondary ms-2">{{ crm_counters.meetings }}</span>
+                                    {% endif %}
+                                </a>
+                            </li>
+                            
+                            <li>
+                                <a class="dropdown-item {% if 'support_meeting' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'support_meeting_list' %}">
+                                    <i class="bi bi-headset"></i> Reuniones Soporte
+                                    {% if crm_counters.support_meetings > 0 %}
+                                        <span class="badge bg-secondary ms-2">{{ crm_counters.support_meetings }}</span>
                                     {% endif %}
                                 </a>
                             </li>
@@ -309,7 +321,7 @@
                     <!-- Menú de Capacitación -->
                     {% if user.is_authenticated %}
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if 'course' in request.resolver_match.url_name or 'exam' in request.resolver_match.url_name %}active{% endif %}" 
+                        <a class="nav-link dropdown-toggle {% if 'course' in request.resolver_match.url_name or 'exam' in request.resolver_match.url_name or 'crm_question' in request.resolver_match.url_name %}active{% endif %}" 
                            href="#" id="navbarDropdownTraining" role="button" data-bs-toggle="dropdown">
                             <i class="bi bi-book"></i> CAP
                         </a>
@@ -324,6 +336,15 @@
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'exam_list' %}active{% endif %}" 
                                    href="{% url 'exam_list' %}">
                                     <i class="bi bi-question-circle"></i> Exámenes
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'crm_question' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'crm_questions_list' %}">
+                                    <i class="bi bi-chat-square-text"></i> Preguntas
+                                    {% if crm_counters.questions > 0 %}
+                                        <span class="badge bg-secondary ms-2">{{ crm_counters.questions }}</span>
+                                    {% endif %}
                                 </a>
                             </li>
                             <li>
@@ -1203,13 +1224,16 @@
                             <li><a class="dropdown-item" href="{% url 'user_profile' %}">
                                 <i class="bi bi-person-gear"></i> Mi Perfil
                             </a></li>
+
+                            <li><hr class="dropdown-divider"></li>    
+
                             <li><a class="dropdown-item" href="{% url 'my_notes' %}">
                                 <i class="bi bi-journal-text"></i> Mis Notas
                             </a></li>
                             
                             <!-- Menú de Juegos (Para todos los usuarios autenticados) -->
                             <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">🎮 Juegos</li>
+                            
                             <li><a class="dropdown-item {% if 'tetris' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'tetris' %}">
                                 <i class="bi bi-grid-3x3-gap"></i> Tetris
@@ -1941,6 +1965,9 @@
     </footer>
 
     {% bootstrap_javascript %}
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     
     <!-- Scripts principales del sistema -->
     <script>

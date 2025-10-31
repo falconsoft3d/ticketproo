@@ -240,6 +240,106 @@
                 </div>
             </div>
 
+            <!-- URLs Públicas para Clientes -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow-sm border-success">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-globe me-2"></i>
+                                URLs Públicas para Clientes - Sistema CRM
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>¡Comparte estas URLs con tus clientes!</strong> 
+                                Podrán hacer preguntas y ver todas las respuestas sin necesidad de registrarse.
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-lg-6 mb-3">
+                                    <div class="border rounded p-3 bg-light">
+                                        <h6 class="fw-bold text-success mb-2">
+                                            <i class="bi bi-question-circle me-1"></i>
+                                            Ver Preguntas y Respuestas
+                                        </h6>
+                                        <p class="text-muted small mb-2">
+                                            Los clientes pueden ver todas las preguntas y respuestas públicas
+                                        </p>
+                                        <div class="input-group">
+                                            <input type="text" 
+                                                   class="form-control" 
+                                                   value="{{ public_crm_questions_url }}" 
+                                                   id="crmQuestionsUrl" 
+                                                   readonly>
+                                            <button class="btn btn-outline-success" 
+                                                    type="button" 
+                                                    onclick="copyToClipboard('crmQuestionsUrl')"
+                                                    title="Copiar URL">
+                                                <i class="bi bi-clipboard"></i>
+                                            </button>
+                                            <a href="{{ public_crm_questions_url }}" 
+                                               target="_blank" 
+                                               class="btn btn-success"
+                                               title="Abrir en nueva pestaña">
+                                                <i class="bi bi-box-arrow-up-right"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-lg-6 mb-3">
+                                    <div class="border rounded p-3 bg-light">
+                                        <h6 class="fw-bold text-primary mb-2">
+                                            <i class="bi bi-plus-circle me-1"></i>
+                                            Enviar Nueva Pregunta
+                                        </h6>
+                                        <p class="text-muted small mb-2">
+                                            Los clientes pueden enviar nuevas preguntas directamente
+                                        </p>
+                                        <div class="input-group">
+                                            <input type="text" 
+                                                   class="form-control" 
+                                                   value="{{ public_crm_ask_url }}" 
+                                                   id="crmAskUrl" 
+                                                   readonly>
+                                            <button class="btn btn-outline-primary" 
+                                                    type="button" 
+                                                    onclick="copyToClipboard('crmAskUrl')"
+                                                    title="Copiar URL">
+                                                <i class="bi bi-clipboard"></i>
+                                            </button>
+                                            <a href="{{ public_crm_ask_url }}" 
+                                               target="_blank" 
+                                               class="btn btn-primary"
+                                               title="Abrir en nueva pestaña">
+                                                <i class="bi bi-box-arrow-up-right"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <h6 class="fw-bold mb-2">
+                                        <i class="bi bi-lightbulb me-1"></i>
+                                        ¿Cómo usar estas URLs?
+                                    </h6>
+                                    <ul class="small text-muted mb-0">
+                                        <li><strong>Comparte en tu sitio web:</strong> Agrégalas como enlaces en tu página de soporte.</li>
+                                        <li><strong>Envía por email:</strong> Incluye estos enlaces en tus comunicaciones con clientes.</li>
+                                        <li><strong>Redes sociales:</strong> Publica estos enlaces para que tus seguidores puedan hacer preguntas.</li>
+                                        <li><strong>QR Code:</strong> Genera códigos QR de estas URLs para materiales impresos.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Usuarios de la empresa -->
             {% if company_users %}
             <div class="card shadow-sm mb-4">
@@ -571,6 +671,49 @@ function toggleEditObjectives() {
         viewDiv.style.display = 'none';
         editDiv.style.display = 'block';
         buttonText.textContent = 'Cancelar';
+    }
+}
+
+// Función para copiar URLs al portapapeles
+function copyToClipboard(inputId) {
+    const input = document.getElementById(inputId);
+    if (input) {
+        input.select();
+        input.setSelectionRange(0, 99999); // Para móviles
+        
+        try {
+            document.execCommand('copy');
+            
+            // Mostrar notificación de éxito
+            const button = input.nextElementSibling;
+            const originalHtml = button.innerHTML;
+            button.innerHTML = '<i class="bi bi-check"></i>';
+            button.classList.add('btn-success');
+            button.classList.remove('btn-outline-success', 'btn-outline-primary');
+            
+            setTimeout(() => {
+                button.innerHTML = originalHtml;
+                button.classList.remove('btn-success');
+                if (inputId === 'crmQuestionsUrl') {
+                    button.classList.add('btn-outline-success');
+                } else {
+                    button.classList.add('btn-outline-primary');
+                }
+            }, 2000);
+            
+            // Mostrar notificación toast si existe
+            if (typeof showToast === 'function') {
+                showToast('URL copiada al portapapeles', 'success');
+            }
+        } catch (err) {
+            console.error('Error al copiar al portapapeles:', err);
+            // Fallback: mostrar alerta
+            alert('URL copiada: ' + input.value);
+        }
+        
+        // Deseleccionar el texto
+        input.setSelectionRange(0, 0);
+        input.blur();
     }
 }
 

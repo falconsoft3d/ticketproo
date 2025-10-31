@@ -1,0 +1,301 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Preguntas{% endblock %}
+
+{% block extra_css %}
+<style>
+    .question-preview {
+        line-height: 1.4;
+    }
+    .person-info {
+        line-height: 1.3;
+    }
+    .table th {
+        font-weight: 600;
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
+    }
+    .table-success {
+        --bs-table-accent-bg: rgba(25, 135, 84, 0.1);
+    }
+    .table-warning {
+        --bs-table-accent-bg: rgba(255, 193, 7, 0.1);
+    }
+    .btn-group-sm .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    .badge {
+        font-size: 0.75em;
+    }
+    .card {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        border: 1px solid rgba(0, 0, 0, 0.125);
+    }
+    @media (max-width: 768px) {
+        .table-responsive {
+            font-size: 0.875rem;
+        }
+        .btn-group-sm .btn {
+            padding: 0.125rem 0.25rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-question-circle me-2"></i>
+                    Preguntas
+                </h1>
+                <a href="{% url 'crm_question_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>
+                    Nueva Pregunta
+                </a>
+            </div>
+
+            <!-- Filtros -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get" class="row g-3 align-items-end">
+                        <div class="col-md-3">
+                            <label for="{{ filter_form.company.id_for_label }}" class="form-label">Empresa</label>
+                            {{ filter_form.company }}
+                        </div>
+                        <div class="col-md-3">
+                            <label for="{{ filter_form.status.id_for_label }}" class="form-label">Estado</label>
+                            {{ filter_form.status }}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ filter_form.search.id_for_label }}" class="form-label">Búsqueda</label>
+                            {{ filter_form.search }}
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search me-2"></i>
+                                Filtrar
+                            </button>
+                        </div>
+                        {% if request.GET %}
+                        <div class="col-md-12 mt-2">
+                            <a href="{% url 'crm_questions_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>
+                                Limpiar filtros
+                            </a>
+                        </div>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+
+            <!-- Estadísticas -->
+            {% if total_all_questions > 0 %}
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card border-primary">
+                        <div class="card-body text-center">
+                            <i class="fas fa-question-circle fa-2x text-primary mb-2"></i>
+                            <h5 class="text-primary">
+                                {{ total_questions }}
+                                {% if has_filters and total_questions != total_all_questions %}
+                                <small class="text-muted">/ {{ total_all_questions }}</small>
+                                {% endif %}
+                            </h5>
+                            <p class="card-text">Total Preguntas{% if has_filters %} (Filtradas){% endif %}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-success">
+                        <div class="card-body text-center">
+                            <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                            <h5 class="text-success">
+                                {{ answered_questions }}
+                                {% if has_filters and answered_questions != answered_all_questions %}
+                                <small class="text-muted">/ {{ answered_all_questions }}</small>
+                                {% endif %}
+                            </h5>
+                            <p class="card-text">Respondidas</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-warning">
+                        <div class="card-body text-center">
+                            <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+                            <h5 class="text-warning">
+                                {{ pending_questions }}
+                                {% if has_filters and pending_questions != pending_all_questions %}
+                                <small class="text-muted">/ {{ pending_all_questions }}</small>
+                                {% endif %}
+                            </h5>
+                            <p class="card-text">Pendientes</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% if has_filters %}
+            <div class="alert alert-info mb-4">
+                <i class="fas fa-info-circle me-2"></i>
+                Mostrando resultados filtrados. Los números pequeños representan totales sin filtros.
+            </div>
+            {% endif %}
+            {% endif %}
+
+            <!-- Tabla de Preguntas -->
+            <div class="card">
+                <div class="card-body">
+                    {% if questions %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="8%">#</th>
+                                    <th width="15%">Empresa</th>
+                                    <th width="25%">Pregunta</th>
+                                    <th width="15%">Persona</th>
+                                    <th width="10%">Estado</th>
+                                    <th width="12%">Fecha</th>
+                                    <th width="15%">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for question in questions %}
+                                <tr class="">
+                                    <td>
+                                        <strong>#{{ question.sequence }}</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ question.company.name }}</span>
+                                        <br><small class="badge {{ question.get_origin_badge_class }} mt-1">
+                                            <i class="{{ question.get_origin_icon }} me-1"></i>
+                                            {% if question.is_public_question %}Pública{% else %}Interna{% endif %}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <div class="question-preview">
+                                            <p class="mb-1">{{ question.question|truncatechars:60 }}</p>
+                                            {% if question.answer %}
+                                            <small class="text-muted">
+                                                <i class="fas fa-reply me-1"></i>
+                                                {{ question.answer|truncatechars:50 }}
+                                            </small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="person-info">
+                                            <div><i class="fas fa-user me-1"></i>{{ question.person_name }}</div>
+                                            <small class="text-muted">
+                                                <i class="fas fa-envelope me-1"></i>{{ question.person_email|truncatechars:20 }}
+                                            </small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if question.is_answered %}
+                                            <span class="badge {{ question.get_status_badge_class }}">
+                                                <i class="{{ question.get_status_icon }} me-1"></i>Respondida
+                                            </span>
+                                            {% if question.answered_by %}
+                                            <small class="d-block text-muted mt-1">
+                                                Por: {{ question.answered_by.get_full_name|default:question.answered_by.username }}
+                                            </small>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="badge {{ question.get_status_badge_class }}">
+                                                <i class="{{ question.get_status_icon }} me-1"></i>Pendiente
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small>
+                                            <div>{{ question.created_at|date:"d/m/Y" }}</div>
+                                            <div class="text-muted">{{ question.created_at|date:"H:i" }}</div>
+                                            {% if question.answered_at %}
+                                            <div class="text-success mt-1">
+                                                <i class="fas fa-reply me-1"></i>{{ question.answered_at|date:"d/m/Y H:i" }}
+                                            </div>
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'crm_question_detail' question.pk %}" 
+                                               class="btn btn-outline-primary"
+                                               title="Ver detalle">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'crm_question_edit' question.pk %}" 
+                                               class="btn btn-outline-secondary"
+                                               title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'crm_question_delete' question.pk %}" 
+                                               class="btn btn-outline-danger"
+                                               title="Eliminar">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-question-circle fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No hay preguntas disponibles</h5>
+                        <p class="text-muted mb-4">No se encontraron preguntas con los criterios seleccionados.</p>
+                        <a href="{% url 'crm_question_create' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>
+                            Crear primera pregunta
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Paginación -->
+            {% if is_paginated %}
+            <nav aria-label="Navegación de páginas">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">
+                                <i class="fas fa-chevron-left"></i> Anterior
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">
+                                Siguiente <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

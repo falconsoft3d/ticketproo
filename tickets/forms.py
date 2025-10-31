@@ -32,7 +32,7 @@ from .models import (
     EmployeeRequest, InternalAgreement, Asset, AssetHistory, 
     AITutor, AITutorProgressReport, AITutorAttachment, ExpenseReport, ExpenseItem, ExpenseComment,
     VideoMeeting, MeetingNote, QuoteGenerator, CountdownTimer, AbsenceType,
-    MonthlyCumplimiento, DailyCumplimiento, QRCode
+    MonthlyCumplimiento, DailyCumplimiento, QRCode, CrmQuestion, SupportMeeting, SupportMeetingPoint
 )
 
 class CategoryForm(forms.ModelForm):
@@ -7769,3 +7769,325 @@ class TicketImportForm(forms.Form):
                 raise forms.ValidationError('El archivo no puede ser mayor a 5 MB.')
         
         return file
+
+
+class CrmQuestionForm(forms.ModelForm):
+    """Formulario para crear y editar preguntas del CRM"""
+    
+    class Meta:
+        model = CrmQuestion
+        fields = [
+            'company', 'question', 'person_name', 'person_email', 
+            'answer'
+        ]
+        widgets = {
+            'company': forms.Select(attrs={
+                'class': 'form-select',
+                'required': True
+            }),
+            'question': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Escribe la pregunta aquí...',
+                'required': True
+            }),
+            'person_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre completo de quien pregunta',
+                'required': True
+            }),
+            'person_email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'correo@ejemplo.com',
+                'required': True
+            }),
+            'answer': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Escribe la respuesta aquí...',
+                'id': 'id_answer'
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        # Guardar el usuario para usarlo en la validación
+        self._user = user
+        
+        # Configurar campos según el rol del usuario
+        if user:
+            from .utils import is_agent
+            if is_agent(user):
+                # Los agentes pueden ver todas las empresas
+                self.fields['company'].queryset = Company.objects.filter(is_active=True)
+            else:
+                # Los usuarios normales solo ven su empresa
+                try:
+                    user_company = user.profile.company
+                except:
+                    user_company = None
+                    
+                if user_company:
+                    # Establecer la empresa del usuario por defecto
+                    self.fields['company'].queryset = Company.objects.filter(id=user_company.id)
+                    self.fields['company'].initial = user_company
+                    # Hacer que solo aparezca una opción y sea readonly
+                    self.fields['company'].widget.attrs.update({
+                        'readonly': True,
+                        'style': 'background-color: #f8f9fa; cursor: not-allowed;',
+                        'onclick': 'return false;',
+                        'onkeydown': 'return false;'
+                    })
+                    # Marcar que es un campo controlado para usuarios no agentes
+                    self.fields['company'].help_text = 'Empresa asignada automáticamente'
+                else:
+                    self.fields['company'].queryset = Company.objects.none()
+                
+                # Establecer nombre y correo del usuario por defecto para no agentes
+                if not self.instance.pk:  # Solo para nuevos registros
+                    # Configurar nombre del usuario
+                    user_full_name = user.get_full_name() or user.username
+                    self.fields['person_name'].initial = user_full_name
+                    self.fields['person_name'].widget.attrs.update({
+                        'placeholder': f'Propuesto: {user_full_name}'
+                    })
+                    
+                    # Configurar email del usuario
+                    if user.email:
+                        self.fields['person_email'].initial = user.email
+                        self.fields['person_email'].widget.attrs.update({
+                            'placeholder': f'Propuesto: {user.email}'
+                        })
+        
+        # Configurar campos opcionales para respuesta
+        if 'answer' in self.fields:
+            self.fields['answer'].required = False
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        # La validación de answered_by se maneja automáticamente en la vista
+        return cleaned_data
+    
+    def clean_company(self):
+        """Validar que usuarios no agentes no cambien la empresa"""
+        company = self.cleaned_data.get('company')
+        
+        # Si hay un usuario asociado al formulario, validar permisos
+        if hasattr(self, '_user'):
+            from .utils import is_agent
+            user = self._user
+            
+            if not is_agent(user):
+                # Para usuarios no agentes, forzar su empresa
+                try:
+                    user_company = user.profile.company
+                    if user_company:
+                        # Siempre retornar la empresa del usuario, sin importar lo que venga en el POST
+                        return user_company
+                    else:
+                        raise forms.ValidationError("No tienes una empresa asignada.")
+                except:
+                    raise forms.ValidationError("No tienes una empresa asignada.")
+        
+        return company
+        
+        return company
+
+
+class CrmQuestionFilterForm(forms.Form):
+    """Formulario para filtrar preguntas del CRM"""
+    
+    STATUS_CHOICES = [
+        ('', 'Todos los estados'),
+        ('answered', 'Respondidas'),
+        ('pending', 'Pendientes'),
+    ]
+    
+    company = forms.ModelChoiceField(
+        queryset=Company.objects.filter(is_active=True),
+        required=False,
+        empty_label="Todas las empresas",
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    status = forms.ChoiceField(
+        choices=STATUS_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    search = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Buscar en preguntas, respuestas o nombres...'
+        })
+    )
+    
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        # Filtrar empresas según el rol del usuario
+        if user:
+            from .utils import is_agent
+            if is_agent(user):
+                # Los agentes pueden ver todas las empresas
+                self.fields['company'].queryset = Company.objects.filter(is_active=True)
+            else:
+                # Los usuarios normales solo ven su empresa
+                try:
+                    user_company = user.profile.company
+                except:
+                    user_company = None
+                    
+                if user_company:
+                    self.fields['company'].queryset = Company.objects.filter(id=user_company.id)
+                else:
+                    self.fields['company'].queryset = Company.objects.none()
+
+
+class PublicCrmQuestionForm(forms.ModelForm):
+    """Formulario público para que los clientes envíen preguntas"""
+    
+    class Meta:
+        model = CrmQuestion
+        fields = ['person_name', 'person_email', 'question']
+        widgets = {
+            'person_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Tu nombre completo',
+                'required': True
+            }),
+            'person_email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'tu.email@ejemplo.com',
+                'required': True
+            }),
+            'question': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': 'Escribe tu pregunta aquí...',
+                'rows': 5,
+                'required': True
+            }),
+        }
+        labels = {
+            'person_name': 'Tu Nombre',
+            'person_email': 'Tu Email',
+            'question': 'Tu Pregunta',
+        }
+        help_texts = {
+            'person_name': 'Ingresa tu nombre completo',
+            'person_email': 'Ingresa tu email para recibir notificaciones',
+            'question': 'Describe tu pregunta de manera clara y detallada',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        self.company = kwargs.pop('company', None)
+        super().__init__(*args, **kwargs)
+        
+        # Configurar campos obligatorios
+        for field_name in ['person_name', 'person_email', 'question']:
+            self.fields[field_name].required = True
+    
+    def clean_person_email(self):
+        """Validar el formato del email"""
+        email = self.cleaned_data.get('person_email')
+        if email:
+            # Validación básica adicional si es necesario
+            if '@' not in email or '.' not in email.split('@')[-1]:
+                raise forms.ValidationError('Ingresa un email válido.')
+        return email
+    
+    def clean_question(self):
+        """Validar que la pregunta tenga contenido suficiente"""
+        question = self.cleaned_data.get('question', '').strip()
+        if len(question) < 10:
+            raise forms.ValidationError('La pregunta debe tener al menos 10 caracteres.')
+        return question
+
+
+class SupportMeetingForm(forms.ModelForm):
+    """Formulario para crear y editar reuniones de soporte"""
+    
+    class Meta:
+        model = SupportMeeting
+        fields = ['company', 'date', 'description']
+        widgets = {
+            'company': forms.Select(attrs={
+                'class': 'form-control',
+                'required': True
+            }),
+            'date': DateInput(attrs={
+                'class': 'form-control',
+                'required': True
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': 'Descripción de la reunión...',
+                'rows': 5,
+                'required': True
+            }),
+        }
+        labels = {
+            'company': 'Empresa',
+            'date': 'Fecha',
+            'description': 'Descripción',
+        }
+        help_texts = {
+            'company': 'Selecciona la empresa para la cual es la reunión',
+            'date': 'Fecha en que se realizó la reunión',
+            'description': 'Descripción de la reunión',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Configurar campos obligatorios
+        self.fields['company'].required = True
+        self.fields['date'].required = True
+        self.fields['description'].required = True
+        
+        # Ordenar empresas por nombre
+        self.fields['company'].queryset = Company.objects.filter(is_active=True).order_by('name')
+    
+    def clean_description(self):
+        """Validar que la descripción tenga contenido suficiente"""
+        description = self.cleaned_data.get('description', '').strip()
+        if len(description) < 10:
+            raise forms.ValidationError('La descripción debe tener al menos 10 caracteres.')
+        return description
+
+
+class SupportMeetingPointForm(forms.ModelForm):
+    """Formulario para agregar puntos a las reuniones de soporte"""
+    
+    class Meta:
+        model = SupportMeetingPoint
+        fields = ['description', 'is_selected']
+        widgets = {
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': 'Describe el punto tratado en la reunión...',
+                'rows': 3,
+                'required': True
+            }),
+            'is_selected': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'description': 'Descripción del punto',
+            'is_selected': 'Seleccionar para crear como ticket',
+        }
+        help_texts = {
+            'description': 'Describe detalladamente el punto tratado',
+            'is_selected': 'Marca esta casilla si quieres que este punto se convierta en ticket',
+        }
+    
+    def clean_description(self):
+        """Validar que la descripción tenga contenido suficiente"""
+        description = self.cleaned_data.get('description', '').strip()
+        if len(description) < 10:
+            raise forms.ValidationError('La descripción del punto debe tener al menos 10 caracteres.')
+        return description

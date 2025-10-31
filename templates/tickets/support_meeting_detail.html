@@ -1,0 +1,584 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .meeting-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 0.375rem 0.375rem 0 0;
+    }
+    .stats-card {
+        border: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .point-card {
+        border-left: 4px solid #007bff;
+        transition: all 0.2s;
+    }
+    .point-card.selected {
+        border-left-color: #28a745;
+        background-color: #f8fff9;
+    }
+    .point-card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .sequence-badge {
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    .point-checkbox {
+        transform: scale(1.3);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="card mb-4">
+        <div class="card-header meeting-header">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h3 class="mb-0">
+                        <i class="fas fa-handshake me-2"></i>
+                        Reunión #{{ meeting.sequence }}
+                    </h3>
+                    <p class="mb-0 opacity-75">
+                        <i class="fas fa-building me-1" style="color: {{ meeting.company.color }}"></i>
+                        {{ meeting.company.name }}
+                    </p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <span class="badge bg-light text-dark sequence-badge">#{{ meeting.sequence }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <h5 class="text-muted">Descripción de la reunión:</h5>
+                    <p class="lead">{{ meeting.description|linebreaks }}</p>
+                    
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <small class="text-muted">Fecha de reunión:</small><br>
+                            <strong>{{ meeting.date|date:"d/m/Y" }}</strong>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted">Creado por:</small><br>
+                            <strong>{{ meeting.created_by.get_full_name|default:meeting.created_by.username }}</strong>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <!-- Estadísticas -->
+                    <div class="row">
+                        <div class="col-6 mb-2">
+                            <div class="card stats-card text-center">
+                                <div class="card-body py-2">
+                                    <h4 class="mb-0 text-primary" id="total-points">{{ stats.total_points }}</h4>
+                                    <small class="text-muted">Puntos Total</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-2">
+                            <div class="card stats-card text-center">
+                                <div class="card-body py-2">
+                                    <h4 class="mb-0 text-success" id="selected-points">{{ stats.selected_points }}</h4>
+                                    <small class="text-muted">Seleccionados</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Acciones -->
+                    <div class="btn-group w-100 mb-2" role="group">
+                        <a href="{% url 'support_meeting_edit' meeting.pk %}" class="btn btn-outline-primary">
+                            <i class="fas fa-edit"></i> Editar
+                        </a>
+                        <a href="{% url 'support_meeting_delete' meeting.pk %}" class="btn btn-outline-danger">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </a>
+                    </div>
+                    
+                    <!-- Botón de crear tickets - se muestra/oculta dinámicamente -->
+                    <div id="create-tickets-container" {% if stats.selected_points > 0 %}style="display: block;"{% else %}style="display: none;"{% endif %}>
+                        <a href="{% url 'support_meeting_create_tickets' meeting.pk %}" class="btn btn-success w-100" id="create-tickets-btn">
+                            <i class="fas fa-ticket-alt"></i> Crear <span id="tickets-count">{{ stats.selected_points }}</span> Tickets
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Lista de puntos -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list-ul me-2"></i>
+                        Puntos de la Reunión
+                    </h5>
+                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#addPointForm">
+                        <i class="fas fa-plus"></i> Agregar Punto
+                    </button>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Formulario para agregar punto -->
+                    <div class="collapse" id="addPointForm">
+                        <div class="card border-primary mb-3">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0">Nuevo Punto</h6>
+                            </div>
+                            <div class="card-body">
+                                <form method="post" id="add-point-form">
+                                    {% csrf_token %}
+                                    <div class="mb-3">
+                                        <label for="{{ point_form.description.id_for_label }}" class="form-label">
+                                            {{ point_form.description.label }}
+                                        </label>
+                                        {{ point_form.description }}
+                                        <div id="point-error" class="text-danger mt-2" style="display: none;"></div>
+                                        {% if point_form.description.help_text %}
+                                            <div class="form-text">{{ point_form.description.help_text }}</div>
+                                        {% endif %}
+                                        {% if point_form.description.errors %}
+                                            <div class="text-danger">
+                                                {% for error in point_form.description.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="form-check mb-3">
+                                        {{ point_form.is_selected }}
+                                        <label class="form-check-label" for="{{ point_form.is_selected.id_for_label }}">
+                                            {{ point_form.is_selected.label }}
+                                        </label>
+                                        {% if point_form.is_selected.help_text %}
+                                            <div class="form-text">{{ point_form.is_selected.help_text }}</div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-end">
+                                        <button type="button" class="btn btn-outline-secondary me-2" data-bs-toggle="collapse" data-bs-target="#addPointForm">
+                                            Cancelar
+                                        </button>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-plus"></i> Agregar Punto
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Lista de puntos existentes -->
+                    {% for point in points %}
+                        <div class="card point-card mb-3 {% if point.is_selected %}selected{% endif %}">
+                            <div class="card-body">
+                                <div class="row align-items-start">
+                                    <div class="col-md-1 text-center">
+                                        <input type="checkbox" class="form-check-input point-checkbox" 
+                                               {% if point.is_selected %}checked{% endif %}
+                                               data-point-id="{{ point.id }}">
+                                    </div>
+                                    <div class="col-md-10">
+                                        <p class="mb-2">{{ point.description|linebreaks }}</p>
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock"></i> {{ point.created_at|date:"d/m/Y H:i" }}
+                                        </small>
+                                    </div>
+                                    <div class="col-md-1 text-end">
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary" type="button" 
+                                                    data-bs-toggle="dropdown">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li>
+                                                    <a class="dropdown-item" href="#" onclick="editPoint({{ point.id }})">
+                                                        <i class="fas fa-edit"></i> Editar
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item text-danger" href="#" onclick="deletePoint({{ point.id }})">
+                                                        <i class="fas fa-trash"></i> Eliminar
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-list-ul fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No hay puntos registrados</h5>
+                            <p class="text-muted">Comienza agregando los puntos que se trataron en la reunión.</p>
+                            <button class="btn btn-primary" data-bs-toggle="collapse" data-bs-target="#addPointForm">
+                                <i class="fas fa-plus"></i> Agregar Primer Punto
+                            </button>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Panel lateral -->
+        <div class="col-lg-4">
+            <!-- Información de la empresa -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-building"></i> Información de la Empresa
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <h5 style="color: {{ meeting.company.color }}">{{ meeting.company.name }}</h5>
+                    {% if meeting.company.description %}
+                        <p class="text-muted small">{{ meeting.company.description }}</p>
+                    {% endif %}
+                    
+                    <div class="mb-2">
+                        {% if meeting.company.email %}
+                            <small class="text-muted">
+                                <i class="fas fa-envelope"></i> {{ meeting.company.email }}
+                            </small><br>
+                        {% endif %}
+                        {% if meeting.company.phone %}
+                            <small class="text-muted">
+                                <i class="fas fa-phone"></i> {{ meeting.company.phone }}
+                            </small><br>
+                        {% endif %}
+                        {% if meeting.company.website %}
+                            <small class="text-muted">
+                                <i class="fas fa-globe"></i> 
+                                <a href="{{ meeting.company.website }}" target="_blank">{{ meeting.company.website }}</a>
+                            </small>
+                        {% endif %}
+                    </div>
+                    
+                    <a href="{% url 'company_detail' meeting.company.id %}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-eye"></i> Ver Empresa
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Acciones rápidas -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-bolt"></i> Acciones Rápidas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary" onclick="selectAllPoints()">
+                            <i class="fas fa-check-double"></i> Seleccionar Todos
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="deselectAllPoints()">
+                            <i class="fas fa-times"></i> Deseleccionar Todos
+                        </button>
+                        <div id="quick-create-tickets" {% if stats.selected_points > 0 %}style="display: block;"{% else %}style="display: none;"{% endif %}>
+                            <a href="{% url 'support_meeting_create_tickets' meeting.pk %}" class="btn btn-success" id="quick-tickets-btn">
+                                <i class="fas fa-ticket-alt"></i> Crear Tickets (<span id="quick-tickets-count">{{ stats.selected_points }}</span>)
+                            </a>
+                        </div>
+                        <hr>
+                        <button class="btn btn-outline-info" onclick="generatePublicLink()">
+                            <i class="fas fa-share-alt"></i> Compartir con Cliente
+                        </button>
+                        {% if meeting.public_link.is_active %}
+                        <button class="btn btn-outline-warning" onclick="disablePublicLink()">
+                            <i class="fas fa-eye-slash"></i> Deshabilitar Enlace
+                        </button>
+                        {% endif %}
+                        <hr>
+                        <a href="{% url 'support_meeting_list' %}" class="btn btn-outline-dark">
+                            <i class="fas fa-arrow-left"></i> Volver a Lista
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Configurar CSRF token
+    $.ajaxSetup({
+        beforeSend: function(xhr, settings) {
+            if (!(/^http:.*/.test(settings.url) || /^https:.*/.test(settings.url))) {
+                xhr.setRequestHeader("X-CSRFToken", $('[name=csrfmiddlewaretoken]').val());
+            }
+        }
+    });
+    
+    // Mostrar/ocultar botón de crear tickets al cargar
+    updateCreateTicketsButton();
+    
+    // Manejar cambios en checkboxes de puntos
+    $('.point-checkbox').change(function() {
+        const pointId = $(this).data('point-id');
+        const isSelected = $(this).is(':checked');
+        const card = $(this).closest('.point-card');
+        
+        // Actualizar visualmente
+        if (isSelected) {
+            card.addClass('selected');
+        } else {
+            card.removeClass('selected');
+        }
+        
+        // Enviar al servidor
+        $.post('{% url "support_meeting_detail" meeting.pk %}', {
+            'action': 'toggle_point',
+            'point_id': pointId,
+            'is_selected': isSelected
+        }, function(response) {
+            if (response.success) {
+                // Actualizar contadores
+                $('#selected-points').text(response.selected_count);
+                $('#tickets-count').text(response.selected_count);
+                $('#quick-tickets-count').text(response.selected_count);
+                
+                // Mostrar/ocultar botón de crear tickets
+                updateCreateTicketsButton();
+                
+                if (typeof toastr !== 'undefined') {
+                    toastr.success('Punto actualizado');
+                }
+            } else {
+                // Revertir checkbox en caso de error
+                $(this).prop('checked', !isSelected);
+                if (isSelected) {
+                    card.removeClass('selected');
+                } else {
+                    card.addClass('selected');
+                }
+                
+                if (typeof toastr !== 'undefined') {
+                    toastr.error(response.error || 'Error al actualizar el punto');
+                }
+            }
+        }.bind(this)).fail(function() {
+            // Revertir checkbox en caso de error de conexión
+            $(this).prop('checked', !isSelected);
+            if (isSelected) {
+                card.removeClass('selected');
+            } else {
+                card.addClass('selected');
+            }
+            
+            if (typeof toastr !== 'undefined') {
+                toastr.error('Error de conexión');
+            }
+        }.bind(this));
+    });
+
+    // Validación cliente para el formulario de agregar punto
+    $('#add-point-form').on('submit', function(e){
+        const textarea = $(this).find('textarea[name="description"]');
+        if (!textarea.length) {
+            return true;
+        }
+        const val = textarea.val().trim();
+        if (val.length < 10) {
+            e.preventDefault();
+            $('#point-error').html('<strong>Describe detalladamente el punto tratado</strong><br>La descripción del punto debe tener al menos 10 caracteres.').show();
+            textarea.focus();
+            return false;
+        }
+        $('#point-error').hide();
+        return true;
+    });
+
+    // Ocultar mensaje de error al escribir y alcanzar 10 caracteres
+    $('#add-point-form').on('input', 'textarea[name="description"]', function(){
+        if ($(this).val().trim().length >= 10) {
+            $('#point-error').hide();
+        }
+    });
+});
+
+function updateCreateTicketsButton() {
+    const selectedCount = parseInt($('#selected-points').text());
+    
+    if (selectedCount > 0) {
+        $('#create-tickets-container').show();
+        $('#quick-create-tickets').show();
+        $('#tickets-count').text(selectedCount);
+        $('#quick-tickets-count').text(selectedCount);
+    } else {
+        $('#create-tickets-container').hide();
+        $('#quick-create-tickets').hide();
+    }
+}
+
+function selectAllPoints() {
+    $('.point-checkbox').prop('checked', true).trigger('change');
+}
+
+function deselectAllPoints() {
+    $('.point-checkbox').prop('checked', false).trigger('change');
+}
+
+function editPoint(pointId) {
+    // Implementar edición de punto
+    if (typeof toastr !== 'undefined') {
+        toastr.info('Función de edición en desarrollo');
+    }
+}
+
+function deletePoint(pointId) {
+    if (confirm('¿Estás seguro de que quieres eliminar este punto?')) {
+        // Implementar eliminación de punto
+        if (typeof toastr !== 'undefined') {
+            toastr.info('Función de eliminación en desarrollo');
+        }
+    }
+}
+
+function generatePublicLink() {
+    $.post('{% url "support_meeting_generate_link" meeting.pk %}', {
+        'show_company_meetings': true,
+        'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+    }, function(response) {
+        if (response.success) {
+            // Mostrar modal con el enlace generado
+            showPublicLinkModal(response.public_url);
+            
+            if (typeof toastr !== 'undefined') {
+                toastr.success('Enlace público generado exitosamente');
+            }
+            
+            // Recargar página para mostrar botón de deshabilitar
+            setTimeout(function() {
+                location.reload();
+            }, 2000);
+        } else {
+            if (typeof toastr !== 'undefined') {
+                toastr.error(response.error || 'Error al generar enlace público');
+            }
+        }
+    }).fail(function() {
+        if (typeof toastr !== 'undefined') {
+            toastr.error('Error de conexión al generar enlace');
+        }
+    });
+}
+
+function disablePublicLink() {
+    if (confirm('¿Deshabilitar el enlace público?\n\nEsto impedirá que el cliente pueda acceder a la reunión a través del enlace.')) {
+        $.post('{% url "support_meeting_disable_link" meeting.pk %}', {
+            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+        }, function(response) {
+            if (response.success) {
+                if (typeof toastr !== 'undefined') {
+                    toastr.success('Enlace público deshabilitado');
+                }
+                
+                // Recargar página para ocultar botón de deshabilitar
+                setTimeout(function() {
+                    location.reload();
+                }, 1000);
+            } else {
+                if (typeof toastr !== 'undefined') {
+                    toastr.error(response.error || 'Error al deshabilitar enlace');
+                }
+            }
+        }).fail(function() {
+            if (typeof toastr !== 'undefined') {
+                toastr.error('Error de conexión');
+            }
+        });
+    }
+}
+
+function showPublicLinkModal(publicUrl) {
+    const modalHtml = `
+        <div class="modal fade" id="publicLinkModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="fas fa-share-alt me-2"></i>Enlace Público Generado
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p><strong>¡Enlace público creado exitosamente!</strong></p>
+                        <p>Comparte este enlace con tu cliente para que pueda ver la reunión:</p>
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" id="publicUrlInput" value="${publicUrl}" readonly>
+                            <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard()">
+                                <i class="fas fa-copy"></i> Copiar
+                            </button>
+                        </div>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>El cliente podrá:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>Ver los detalles de la reunión</li>
+                                <li>Ver todos los puntos tratados</li>
+                                <li>Ver otras reuniones de la empresa (si está habilitado)</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="button" class="btn btn-primary" onclick="copyToClipboard()">
+                            <i class="fas fa-copy me-1"></i>Copiar Enlace
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remover modal anterior si existe
+    $('#publicLinkModal').remove();
+    
+    // Agregar modal al body
+    $('body').append(modalHtml);
+    
+    // Mostrar modal
+    $('#publicLinkModal').modal('show');
+}
+
+function copyToClipboard() {
+    const input = document.getElementById('publicUrlInput');
+    input.select();
+    input.setSelectionRange(0, 99999); // Para móviles
+    
+    try {
+        document.execCommand('copy');
+        if (typeof toastr !== 'undefined') {
+            toastr.success('Enlace copiado al portapapeles');
+        } else {
+            alert('Enlace copiado al portapapeles');
+        }
+    } catch (err) {
+        if (typeof toastr !== 'undefined') {
+            toastr.error('Error al copiar enlace');
+        } else {
+            alert('Error al copiar enlace');
+        }
+    }
+}
+</script>
+{% endblock %}

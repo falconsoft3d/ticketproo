@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .create-tickets-card {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: none;
+        border-top: 4px solid #28a745;
+    }
+    .point-preview {
+        background-color: #f8f9fa;
+        border-radius: 0.375rem;
+        border-left: 4px solid #28a745;
+        transition: all 0.2s;
+    }
+    .point-preview:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .meeting-info {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 0.375rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-7">
+            <div class="card create-tickets-card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-ticket-alt me-2"></i>
+                        {{ page_title }}
+                    </h4>
+                </div>
+                
+                <div class="card-body p-4">
+                    <!-- Información de la reunión -->
+                    <div class="meeting-info p-3 mb-4">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h5 class="mb-1">
+                                    <i class="fas fa-handshake me-2"></i>
+                                    Reunión #{{ meeting.sequence }}
+                                </h5>
+                                <p class="mb-0 opacity-75">
+                                    <i class="fas fa-building me-1"></i>
+                                    {{ meeting.company.name }} | {{ meeting.date|date:"d/m/Y" }}
+                                </p>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <h3 class="mb-0">{{ selected_points.count }}</h3>
+                                <small>Puntos Seleccionados</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if selected_points %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>¿Qué sucederá?</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>Se crearán {{ selected_points.count }} tickets nuevos</li>
+                                <li>Cada ticket tendrá la descripción del punto correspondiente</li>
+                                <li>Todos los tickets serán asignados a la empresa <strong>{{ meeting.company.name }}</strong></li>
+                                <li>Los tickets tendrán prioridad <strong>Media</strong> y estado <strong>Abierto</strong></li>
+                                <li>Los puntos seleccionados serán marcados como procesados</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Vista previa de los puntos -->
+                        <h5 class="mb-3">
+                            <i class="fas fa-eye me-2"></i>
+                            Vista previa de tickets a crear:
+                        </h5>
+                        
+                        <div class="row">
+                            {% for point in selected_points %}
+                                <div class="col-12 mb-3">
+                                    <div class="point-preview p-3">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h6 class="text-success mb-0">
+                                                <i class="fas fa-ticket-alt me-1"></i>
+                                                Ticket #{{ forloop.counter }} - Punto de reunión #{{ meeting.sequence }}
+                                            </h6>
+                                            <small class="text-muted">
+                                                <i class="fas fa-clock"></i> {{ point.created_at|date:"d/m/Y H:i" }}
+                                            </small>
+                                        </div>
+                                        
+                                        <div class="mb-2">
+                                            <strong>Descripción:</strong>
+                                        </div>
+                                        <p class="mb-2">{{ point.description|linebreaks }}</p>
+                                        
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <small class="text-muted">Empresa:</small><br>
+                                                <strong style="color: {{ meeting.company.color }}">{{ meeting.company.name }}</strong>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <small class="text-muted">Prioridad:</small><br>
+                                                <span class="badge bg-warning">Media</span>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <small class="text-muted">Estado:</small><br>
+                                                <span class="badge bg-primary">Abierto</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Confirmación -->
+                        <div class="alert alert-warning mt-4">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Confirmación requerida:</strong>
+                            Una vez creados los tickets, los puntos seleccionados se marcarán como procesados y ya no estarán disponibles para crear tickets nuevamente.
+                        </div>
+                        
+                        <!-- Botones de acción -->
+                        <div class="d-flex justify-content-between pt-3">
+                            <a href="{% url 'support_meeting_detail' meeting.pk %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Cancelar
+                            </a>
+                            
+                            <form method="post" style="display: inline;" onsubmit="return confirmCreate()">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="fas fa-ticket-alt me-2"></i>
+                                    Crear {{ selected_points.count }} Tickets
+                                </button>
+                            </form>
+                        </div>
+                        
+                    {% else %}
+                        <!-- No hay puntos seleccionados -->
+                        <div class="text-center py-5">
+                            <i class="fas fa-exclamation-circle fa-4x text-warning mb-3"></i>
+                            <h4 class="text-warning">No hay puntos seleccionados</h4>
+                            <p class="text-muted">
+                                Para crear tickets, primero debes seleccionar los puntos de la reunión que quieres convertir en tickets.
+                            </p>
+                            <a href="{% url 'support_meeting_detail' meeting.pk %}" class="btn btn-primary">
+                                <i class="fas fa-arrow-left me-2"></i>Volver y Seleccionar Puntos
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="card-footer bg-light">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <small class="text-muted">Reunión:</small><br>
+                            <strong>#{{ meeting.sequence }}</strong>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted">Empresa:</small><br>
+                            <strong>{{ meeting.company.name }}</strong>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted">Puntos totales:</small><br>
+                            <strong>{{ meeting.points_count }}</strong>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted">A procesar:</small><br>
+                            <strong class="text-success">{{ selected_points.count }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmCreate() {
+    const count = {{ selected_points.count }};
+    return confirm(`¿Estás seguro de que quieres crear ${count} tickets desde los puntos seleccionados?\n\nEsta acción marcará los puntos como procesados.`);
+}
+
+// Animación de entrada
+$(document).ready(function() {
+    $('.create-tickets-card').hide().fadeIn(300);
+    
+    // Animar puntos con delay
+    $('.point-preview').each(function(index) {
+        $(this).hide().delay(index * 100).fadeIn(200);
+    });
+});
+</script>
+{% endblock %}

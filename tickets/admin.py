@@ -4483,3 +4483,110 @@ class ContactAttachmentAdmin(admin.ModelAdmin):
     def file_size_display(self, obj):
         return obj.get_file_size_display()
     file_size_display.short_description = 'Tamaño'
+
+
+# ============= ADMIN PARA REUNIONES DE SOPORTE =============
+
+from .models import SupportMeeting, SupportMeetingPoint, SupportMeetingPublicLink
+
+class SupportMeetingPointInline(admin.TabularInline):
+    model = SupportMeetingPoint
+    extra = 0
+    readonly_fields = ('created_at',)
+    fields = ('description', 'is_selected', 'created_at')
+
+
+@admin.register(SupportMeeting)
+class SupportMeetingAdmin(admin.ModelAdmin):
+    list_display = ('sequence_display', 'company', 'date', 'points_summary', 'created_by', 'created_at')
+    list_filter = ('date', 'company', 'created_by', 'created_at')
+    search_fields = ('company__name', 'description', 'sequence')
+    date_hierarchy = 'date'
+    ordering = ('-created_at',)
+    inlines = [SupportMeetingPointInline]
+    
+    fieldsets = (
+        ('Información Principal', {
+            'fields': ('company', 'sequence', 'date', 'description')
+        }),
+        ('Metadatos', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    readonly_fields = ('sequence', 'created_at', 'updated_at')
+    
+    def sequence_display(self, obj):
+        return f"#{obj.sequence}"
+    sequence_display.short_description = 'Secuencia'
+    
+    def points_summary(self, obj):
+        total = obj.points_count
+        selected = obj.selected_points_count
+        return format_html(
+            '<span class="badge badge-info">{} total</span> '
+            '<span class="badge badge-success">{} seleccionados</span>',
+            total, selected
+        )
+    points_summary.short_description = 'Puntos'
+    
+    def save_model(self, request, obj, form, change):
+        if not change:  # Si es un objeto nuevo
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(SupportMeetingPoint)
+class SupportMeetingPointAdmin(admin.ModelAdmin):
+    list_display = ('meeting_info', 'description_preview', 'is_selected', 'created_at')
+    list_filter = ('is_selected', 'created_at', 'meeting__company')
+    search_fields = ('meeting__company__name', 'description', 'meeting__sequence')
+    ordering = ('-created_at',)
+    
+    def meeting_info(self, obj):
+        return f"#{obj.meeting.sequence} - {obj.meeting.company.name}"
+    meeting_info.short_description = 'Reunión'
+    
+    def description_preview(self, obj):
+        return obj.description[:80] + '...' if len(obj.description) > 80 else obj.description
+    description_preview.short_description = 'Descripción'
+
+
+@admin.register(SupportMeetingPublicLink)
+class SupportMeetingPublicLinkAdmin(admin.ModelAdmin):
+    list_display = ('meeting_info', 'token_preview', 'is_active', 'access_count', 'last_accessed', 'created_at')
+    list_filter = ('is_active', 'show_company_meetings', 'created_at', 'meeting__company')
+    search_fields = ('meeting__company__name', 'meeting__sequence', 'token')
+    readonly_fields = ('token', 'access_count', 'last_accessed', 'created_at')
+    ordering = ('-created_at',)
+    
+    fieldsets = (
+        ('Información del Enlace', {
+            'fields': ('meeting', 'token', 'is_active')
+        }),
+        ('Configuración', {
+            'fields': ('show_company_meetings',)
+        }),
+        ('Estadísticas', {
+            'fields': ('access_count', 'last_accessed', 'created_at'),
+            'classes': ('collapse',)
+        }),
+        ('Auditoría', {
+            'fields': ('created_by',),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def meeting_info(self, obj):
+        return f"#{obj.meeting.sequence} - {obj.meeting.company.name}"
+    meeting_info.short_description = 'Reunión'
+    
+    def token_preview(self, obj):
+        return f"{obj.token[:8]}...{obj.token[-8:]}" if len(obj.token) > 16 else obj.token
+    token_preview.short_description = 'Token'
+    
+    def save_model(self, request, obj, form, change):
+        if not change:  # Si es una creación nueva
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)

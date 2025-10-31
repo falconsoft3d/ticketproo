@@ -93,6 +93,15 @@ class Company(models.Model):
         verbose_name='Token público',
         help_text='Token único para acceso público a estadísticas'
     )
+    uuid = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        unique=True,
+        null=True,
+        blank=True,
+        verbose_name='UUID público',
+        help_text='Identificador único para URLs públicas'
+    )
     business_objectives = models.TextField(
         blank=True,
         verbose_name='Objetivos Empresariales',
@@ -15688,4 +15697,339 @@ class QuotationTemplateRequest(models.Model):
             self.processed_by = processed_by_user
             self.save()
             raise e
+
+
+class CrmQuestion(models.Model):
+    """Modelo para gestionar preguntas del CRM"""
+    
+    sequence = models.PositiveIntegerField(
+        verbose_name='Secuencia',
+        help_text='Número de secuencia de la pregunta'
+    )
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.CASCADE,
+        related_name='crm_questions',
+        verbose_name='Empresa',
+        help_text='Empresa asociada a la pregunta'
+    )
+    question = models.TextField(
+        verbose_name='Pregunta',
+        help_text='Contenido de la pregunta'
+    )
+    answer = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Respuesta',
+        help_text='Respuesta a la pregunta'
+    )
+    person_name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre de la persona',
+        help_text='Nombre completo de quien hace la pregunta'
+    )
+    person_email = models.EmailField(
+        verbose_name='Email de la persona',
+        help_text='Correo electrónico de quien hace la pregunta'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='crm_questions_created',
+        verbose_name='Creado por',
+        help_text='Usuario que creó la pregunta (NULL para preguntas públicas)'
+    )
+    answered_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='crm_questions_answered',
+        verbose_name='Respondido por'
+    )
+    answered_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de respuesta'
+    )
+    
+    class Meta:
+        ordering = ['sequence', '-created_at']
+        verbose_name = 'Pregunta CRM'
+        verbose_name_plural = 'Preguntas CRM'
+        unique_together = [['company', 'sequence']]
+    
+    def __str__(self):
+        return f"#{self.sequence} - {self.person_name} ({self.company.name})"
+    
+    def save(self, *args, **kwargs):
+        # Auto-asignar secuencia si no está definida
+        if not self.sequence:
+            last_question = CrmQuestion.objects.filter(company=self.company).order_by('-sequence').first()
+            self.sequence = (last_question.sequence + 1) if last_question else 1
+        
+        # Manejar el estado de la respuesta automáticamente
+        if self.answer and self.answer.strip():
+            # Si hay respuesta y no estaba respondida antes
+            if not self.answered_at:
+                self.answered_at = timezone.now()
+            # Si no hay usuario que respondió asignado, mantener el que ya estaba
+            # (esto se manejará en las vistas para asignar el usuario correcto)
+        else:
+            # Si se borra la respuesta, limpiar campos relacionados
+            self.answered_at = None
+            self.answered_by = None
+        
+        super().save(*args, **kwargs)
+    
+    @property
+    def is_answered(self):
+        """Retorna True si la pregunta ya fue respondida"""
+        return bool(self.answer and self.answer.strip())
+    
+    @property
+    def is_public_question(self):
+        """Retorna True si es una pregunta pública (sin usuario creador)"""
+        return self.created_by is None
+    
+    def get_creator_display(self):
+        """Retorna información sobre quién creó la pregunta"""
+        if self.is_public_question:
+            return "Pregunta Pública"
+        else:
+            if self.created_by:
+                return self.created_by.get_full_name() or self.created_by.username
+            return "Usuario no disponible"
+    
+    def get_origin_badge_class(self):
+        """Retorna la clase CSS para el badge de origen"""
+        return "bg-success" if self.is_public_question else "bg-primary"
+    
+    def get_origin_icon(self):
+        """Retorna el icono para el origen de la pregunta"""
+        return "fas fa-globe" if self.is_public_question else "fas fa-user-tie"
+    
+    def get_answered_by_display(self):
+        """Retorna información sobre quién respondió la pregunta"""
+        if not self.answered_by:
+            return "Usuario no disponible"
+        return self.answered_by.get_full_name() or self.answered_by.username
+    
+    def mark_as_answered(self, user, answer_text):
+        """Marca la pregunta como respondida con el texto y usuario especificado"""
+        self.answer = answer_text
+        self.answered_by = user
+        self.answered_at = timezone.now()
+        self.save()
+    
+    def mark_as_pending(self):
+        """Marca la pregunta como pendiente (sin respuesta)"""
+        self.answer = None
+        self.answered_by = None
+        self.answered_at = None
+        self.save()
+    
+    def get_status_badge_class(self):
+        """Retorna la clase CSS para el badge de estado"""
+        return "bg-success" if self.is_answered else "bg-warning"
+    
+    def get_status_icon(self):
+        """Retorna el icono FontAwesome para el estado"""
+        return "fas fa-check" if self.is_answered else "fas fa-clock"
+    
+    @property
+    def status_display(self):
+        """Retorna el estado de la pregunta para mostrar"""
+        return "Respondida" if self.is_answered else "Pendiente"
+    
+    @property
+    def status_color(self):
+        """Retorna el color del estado para la UI"""
+        return "success" if self.is_answered else "warning"
+
+
+class SupportMeeting(models.Model):
+    """Modelo para gestionar reuniones de soporte"""
+    
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        verbose_name='Empresa',
+        help_text='Empresa para la cual se realiza la reunión'
+    )
+    sequence = models.PositiveIntegerField(
+        verbose_name='Secuencia',
+        help_text='Número secuencial de la reunión'
+    )
+    date = models.DateField(
+        default=timezone.now,
+        verbose_name='Fecha',
+        help_text='Fecha de la reunión'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Creado por',
+        help_text='Usuario que creó la reunión'
+    )
+    description = models.TextField(
+        verbose_name='Descripción',
+        help_text='Descripción de lo que se vio en la reunión'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        ordering = ['company', '-sequence']
+        verbose_name = 'Reunión de Soporte'
+        verbose_name_plural = 'Reuniones de Soporte'
+        unique_together = [['company', 'sequence']]
+    
+    def __str__(self):
+        return f"#{self.sequence} - {self.company.name} ({self.date})"
+    
+    def save(self, *args, **kwargs):
+        # Auto-asignar secuencia si no está definida
+        if not self.sequence:
+            last_meeting = SupportMeeting.objects.filter(company=self.company).order_by('-sequence').first()
+            self.sequence = (last_meeting.sequence + 1) if last_meeting else 1
+        
+        super().save(*args, **kwargs)
+    
+    @property
+    def points_count(self):
+        """Retorna el número total de puntos de la reunión"""
+        return self.support_meeting_points.count()
+    
+    @property
+    def selected_points_count(self):
+        """Retorna el número de puntos seleccionados"""
+        return self.support_meeting_points.filter(is_selected=True).count()
+
+
+class SupportMeetingPoint(models.Model):
+    """Modelo para los puntos de las reuniones de soporte"""
+    
+    meeting = models.ForeignKey(
+        SupportMeeting,
+        on_delete=models.CASCADE,
+        related_name='support_meeting_points',
+        verbose_name='Reunión'
+    )
+    description = models.TextField(
+        verbose_name='Descripción del punto',
+        help_text='Descripción detallada del punto'
+    )
+    is_selected = models.BooleanField(
+        default=False,
+        verbose_name='Seleccionado',
+        help_text='Marcar para crear como ticket'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    
+    class Meta:
+        ordering = ['created_at']
+        verbose_name = 'Punto de Reunión'
+        verbose_name_plural = 'Puntos de Reunión'
+    
+    def __str__(self):
+        return f"{self.meeting} - {self.description[:50]}..."
+
+
+class SupportMeetingPublicLink(models.Model):
+    """Modelo para enlaces públicos de reuniones de soporte"""
+    
+    meeting = models.OneToOneField(
+        SupportMeeting,
+        on_delete=models.CASCADE,
+        related_name='public_link',
+        verbose_name='Reunión'
+    )
+    token = models.CharField(
+        max_length=64,
+        unique=True,
+        verbose_name='Token de acceso'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo'
+    )
+    show_company_meetings = models.BooleanField(
+        default=True,
+        verbose_name='Mostrar otras reuniones de la empresa',
+        help_text='Si está marcado, se mostrarán todas las reuniones públicas de la empresa'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Creado por'
+    )
+    last_accessed = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Último acceso'
+    )
+    access_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Número de accesos'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Enlace Público de Reunión'
+        verbose_name_plural = 'Enlaces Públicos de Reuniones'
+    
+    def __str__(self):
+        return f"Enlace público - {self.meeting}"
+    
+    def save(self, *args, **kwargs):
+        if not self.token:
+            import secrets
+            self.token = secrets.token_urlsafe(32)
+        super().save(*args, **kwargs)
+    
+    def get_public_url(self, request=None):
+        """Obtener URL pública completa"""
+        from django.urls import reverse
+        from django.conf import settings
+        
+        if request:
+            # Si tenemos request, usar el host actual
+            base_url = f"{request.scheme}://{request.get_host()}"
+        else:
+            # Fallback para cuando no hay request
+            base_url = getattr(settings, 'BASE_URL', 'http://127.0.0.1:8000')
+        
+        path = reverse('support_meeting_public', kwargs={'token': self.token})
+        return f"{base_url}{path}"
+    
+    def register_access(self):
+        """Registrar un acceso al enlace"""
+        from django.utils import timezone
+        self.last_accessed = timezone.now()
+        self.access_count += 1
+        self.save(update_fields=['last_accessed', 'access_count'])
 

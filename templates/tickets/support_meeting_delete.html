@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .delete-card {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: none;
+        border-top: 4px solid #dc3545;
+    }
+    .meeting-info {
+        background-color: #f8f9fa;
+        border-radius: 0.375rem;
+        border-left: 4px solid #007bff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-xl-5">
+            <div class="card delete-card">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        {{ page_title }}
+                    </h4>
+                </div>
+                
+                <div class="card-body p-4">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>¡Atención!</strong> Esta acción no se puede deshacer.
+                    </div>
+                    
+                    <p class="lead">¿Estás seguro de que quieres eliminar esta reunión de soporte?</p>
+                    
+                    <!-- Información de la reunión -->
+                    <div class="meeting-info p-3 mb-4">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-muted mb-1">Reunión:</h6>
+                                <strong>#{{ meeting.sequence }}</strong>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-muted mb-1">Empresa:</h6>
+                                <strong style="color: {{ meeting.company.color }}">{{ meeting.company.name }}</strong>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-muted mb-1">Fecha de reunión:</h6>
+                                <strong>{{ meeting.date|date:"d/m/Y" }}</strong>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-muted mb-1">Creado por:</h6>
+                                <strong>{{ meeting.created_by.get_full_name|default:meeting.created_by.username }}</strong>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                <h6 class="text-muted mb-1">Descripción:</h6>
+                                <p class="mb-0">{{ meeting.description|truncatewords:20 }}</p>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <h5 class="mb-0 text-primary">{{ meeting.points_count }}</h5>
+                                <small class="text-muted">Puntos Total</small>
+                            </div>
+                            <div class="col-4">
+                                <h5 class="mb-0 text-success">{{ meeting.selected_points_count }}</h5>
+                                <small class="text-muted">Seleccionados</small>
+                            </div>
+                            <div class="col-4">
+                                <h5 class="mb-0 text-info">{{ meeting.points_count|add:"-"|add:meeting.selected_points_count }}</h5>
+                                <small class="text-muted">No Seleccionados</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Información sobre consecuencias -->
+                    <div class="alert alert-danger">
+                        <h6><i class="fas fa-info-circle me-2"></i>Lo que se eliminará:</h6>
+                        <ul class="mb-0">
+                            <li>La reunión de soporte #{{ meeting.sequence }}</li>
+                            {% if meeting.points_count > 0 %}
+                                <li>Todos los {{ meeting.points_count }} puntos asociados</li>
+                            {% endif %}
+                            <li>Todo el historial relacionado</li>
+                        </ul>
+                    </div>
+                    
+                    {% if meeting.selected_points_count > 0 %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Nota importante:</strong> 
+                            Tienes {{ meeting.selected_points_count }} punto(s) seleccionado(s) que podrían convertirse en tickets. 
+                            Considera crear los tickets antes de eliminar la reunión.
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Botones de acción -->
+                    <div class="d-flex justify-content-between pt-3">
+                        <a href="{% url 'support_meeting_detail' meeting.pk %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Cancelar
+                        </a>
+                        
+                        <div>
+                            {% if meeting.selected_points_count > 0 %}
+                                <a href="{% url 'support_meeting_create_tickets' meeting.pk %}" class="btn btn-warning me-2">
+                                    <i class="fas fa-ticket-alt me-2"></i>Crear Tickets Primero
+                                </a>
+                            {% endif %}
+                            
+                            <form method="post" style="display: inline;" onsubmit="return confirmDelete()">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-trash-alt me-2"></i>Eliminar Reunión
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-footer bg-light">
+                    <small class="text-muted">
+                        <i class="fas fa-clock me-1"></i>
+                        Reunión creada el {{ meeting.created_at|date:"d/m/Y \a \l\a\s H:i" }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmDelete() {
+    return confirm('¿Estás completamente seguro de que quieres eliminar esta reunión de soporte?\n\nEsta acción NO se puede deshacer.');
+}
+
+// Agregar clase de animación al cargar
+$(document).ready(function() {
+    $('.delete-card').hide().fadeIn(300);
+});
+</script>
+{% endblock %}

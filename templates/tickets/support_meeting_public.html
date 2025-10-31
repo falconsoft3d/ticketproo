@@ -1,0 +1,516 @@
+{% extends "public_base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .point-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid #dee2e6;
+    }
+    
+    .point-card.completed {
+        border-left-color: #28a745;
+        background-color: #f8fff9;
+    }
+    
+    .point-card.pending {
+        border-left-color: #ffc107;
+        background-color: #fffef8;
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+    }
+    
+    .kpi-card {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+        border: none;
+        transition: transform 0.3s ease;
+    }
+    
+    .kpi-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .kpi-icon {
+        font-size: 2rem;
+        opacity: 0.8;
+    }
+    
+    .kpi-value {
+        font-size: 1.8rem;
+        font-weight: bold;
+    }
+    
+    .kpi-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    
+    .progress-circle {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,0.2);
+        border: 3px solid rgba(255,255,255,0.3);
+    }
+    
+    .company-header {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+        padding: 2rem 0;
+    }
+    
+    .meeting-badge {
+        background-color: rgba(255,255,255,0.2);
+        border: 1px solid rgba(255,255,255,0.3);
+    }
+    
+    .other-meetings-card {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+    }
+    
+    .meeting-link {
+        color: #495057;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+    
+    .meeting-link:hover {
+        color: #007bff;
+        text-decoration: none;
+        transform: translateX(5px);
+    }
+    
+    .point-status-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header de la empresa -->
+<div class="company-header">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <div class="text-center">
+                    <h1 class="display-6 mb-2">
+                        <i class="fas fa-building me-3"></i>{{ company.name }}
+                    </h1>
+                    <p class="lead mb-0">Portal de Reuniones de Soporte</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mt-4">
+    <div class="row">
+        <!-- Información principal de la reunión -->
+        <div class="col-lg-8">
+            <!-- Detalles de la reunión -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fas fa-calendar-alt me-2"></i>
+                            Reunión #{{ meeting.sequence }}
+                        </h4>
+                        <span class="badge meeting-badge">
+                            {{ meeting.date|date:"d/m/Y" }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-building text-primary me-2"></i>Empresa:</h6>
+                            <p class="mb-2">{{ meeting.company.name }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-calendar text-primary me-2"></i>Fecha:</h6>
+                            <p class="mb-2">{{ meeting.date|date:"d \d\e F \d\e Y" }}</p>
+                        </div>
+                    </div>
+                    
+                    {% if meeting.description %}
+                    <div class="mb-3">
+                        <h6><i class="fas fa-file-text text-primary me-2"></i>Descripción:</h6>
+                        <div class="bg-light p-3 rounded">
+                            {{ meeting.description|linebreaks }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Estadísticas -->
+            
+            
+            <!-- Lista de puntos -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list-ul me-2"></i>
+                        Puntos Tratados en la Reunión
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for point in points %}
+                        <div class="point-card card mb-3 {% if point.is_selected %}completed{% else %}pending{% endif %}">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <p class="mb-2">{{ point.description|linebreaks }}</p>
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock me-1"></i>
+                                            {{ point.created_at|date:"d/m/Y H:i" }}
+                                        </small>
+                                    </div>
+                                    <div class="ms-3">
+                                        {% if point.is_selected %}
+                                            <span class="badge bg-success point-status-badge">
+                                                <i class="fas fa-check me-1"></i>Procesado
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-warning point-status-badge">
+                                                <i class="fas fa-clock me-1"></i>Pendiente
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-list-ul fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No hay puntos registrados</h5>
+                            <p class="text-muted">Los puntos de la reunión aparecerán aquí cuando sean agregados.</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+
+<div class="card stats-card mb-4">
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <div class="d-flex flex-column">
+                                <span class="h2 mb-0">{{ stats.total_points }}</span>
+                                <small>Total de Puntos</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex flex-column">
+                                <span class="h2 mb-0">{{ stats.selected_points }}</span>
+                                <small>Puntos Procesados</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex flex-column">
+                                <span class="h2 mb-0">{{ stats.completed_points }}</span>
+                                <small>Puntos Pendientes</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- KPIs Empresariales -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line me-2"></i>
+                        Indicadores de Tu Empresa
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <!-- Reuniones de Soporte -->
+                        <div class="col-md-6 col-lg-3">
+                            <div class="kpi-card card h-100">
+                                <div class="card-body text-center">
+                                    <div class="kpi-icon mb-2">
+                                        <i class="fas fa-handshake"></i>
+                                    </div>
+                                    <div class="kpi-value">{{ company_kpis.support_meetings.total }}</div>
+                                    <div class="kpi-label">Reuniones de Soporte</div>
+                                    {% if company_kpis.support_meetings.recent > 0 %}
+                                        <small class="d-block mt-1">
+                                            <i class="fas fa-calendar-alt me-1"></i>
+                                            {{ company_kpis.support_meetings.recent }} en 6 meses
+                                        </small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Tickets -->
+                        <div class="col-md-6 col-lg-3">
+                            <div class="kpi-card card h-100">
+                                <div class="card-body text-center">
+                                    <div class="kpi-icon mb-2">
+                                        <i class="fas fa-ticket-alt"></i>
+                                    </div>
+                                    <div class="kpi-value">{{ company_kpis.tickets.total }}</div>
+                                    <div class="kpi-label">Tickets Totales</div>
+                                    {% if company_kpis.tickets.resolution_rate > 0 %}
+                                        <small class="d-block mt-1">
+                                            <i class="fas fa-check-circle me-1"></i>
+                                            {{ company_kpis.tickets.resolution_rate }}% resueltos
+                                        </small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Proyectos -->
+                        <div class="col-md-6 col-lg-3">
+                            <div class="kpi-card card h-100">
+                                <div class="card-body text-center">
+                                    <div class="kpi-icon mb-2">
+                                        <i class="fas fa-project-diagram"></i>
+                                    </div>
+                                    <div class="kpi-value">{{ company_kpis.projects.total }}</div>
+                                    <div class="kpi-label">Proyectos</div>
+                                    {% if company_kpis.projects.active > 0 %}
+                                        <small class="d-block mt-1">
+                                            <i class="fas fa-play-circle me-1"></i>
+                                            {{ company_kpis.projects.active }} activos
+                                        </small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Actividad -->
+                        <div class="col-md-6 col-lg-3">
+                            <div class="kpi-card card h-100">
+                                <div class="card-body text-center">
+                                    <div class="progress-circle mx-auto mb-2">
+                                        <span class="fw-bold">{{ company_kpis.engagement.activity_score }}%</span>
+                                    </div>
+                                    <div class="kpi-label">Nivel de Actividad</div>
+                                    {% if company_kpis.engagement.meetings_frequency > 0 %}
+                                        <small class="d-block mt-1">
+                                            <i class="fas fa-calendar-week me-1"></i>
+                                            {{ company_kpis.engagement.meetings_frequency }} reuniones/mes
+                                        </small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Resumen adicional -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="alert alert-light">
+                                <div class="row text-center">
+                                    <div class="col-md-3">
+                                        <i class="fas fa-tasks text-primary fa-2x mb-2"></i>
+                                        <h6>{{ company_kpis.workorders.total }}</h6>
+                                        <small class="text-muted">Órdenes de Trabajo</small>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <i class="fas fa-clock text-warning fa-2x mb-2"></i>
+                                        <h6>{{ company_kpis.tickets.recent }}</h6>
+                                        <small class="text-muted">Tickets Recientes</small>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <i class="fas fa-check-double text-success fa-2x mb-2"></i>
+                                        <h6>{{ company_kpis.tickets.resolved }}</h6>
+                                        <small class="text-muted">Tickets Resueltos</small>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <i class="fas fa-trending-up text-info fa-2x mb-2"></i>
+                                        <h6>{{ company_kpis.workorders.recent }}</h6>
+                                        <small class="text-muted">Trabajos Recientes</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        
+        <!-- Panel lateral -->
+        <div class="col-lg-4">
+            <!-- Información del enlace -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Información de Acceso
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="small text-muted">
+                        <p><strong>Accesos:</strong> {{ public_link.access_count }}</p>
+                        {% if public_link.last_accessed %}
+                            <p><strong>Último acceso:</strong><br>{{ public_link.last_accessed|date:"d/m/Y H:i" }}</p>
+                        {% endif %}
+                        <p><strong>Enlace creado:</strong><br>{{ public_link.created_at|date:"d/m/Y H:i" }}</p>
+                    </div>
+                    <hr>
+                    <div class="alert alert-info mb-0">
+                        <small>
+                            <i class="fas fa-shield-alt me-1"></i>
+                            Esta es una vista pública de la reunión. 
+                            Los puntos marcados como "Procesados" han sido convertidos en tickets internos.
+                        </small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Resumen de Colaboración -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-handshake me-2"></i>Nuestra Colaboración
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center g-2">
+                        <div class="col-6">
+                            <div class="bg-light rounded p-2">
+                                <h6 class="text-primary mb-1">{{ company_kpis.support_meetings.total }}</h6>
+                                <small>Reuniones</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="bg-light rounded p-2">
+                                <h6 class="text-success mb-1">{{ company_kpis.tickets.resolved }}</h6>
+                                <small>Resueltos</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="bg-light rounded p-2">
+                                <h6 class="text-info mb-1">{{ company_kpis.projects.total }}</h6>
+                                <small>Proyectos</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="bg-light rounded p-2">
+                                <h6 class="text-warning mb-1">{{ company_kpis.engagement.activity_score }}%</h6>
+                                <small>Actividad</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if company_kpis.tickets.resolution_rate > 80 %}
+                        <div class="alert alert-success mt-3 mb-0">
+                            <small>
+                                <i class="fas fa-star me-1"></i>
+                                <strong>¡Excelente!</strong> Mantenemos una alta tasa de resolución.
+                            </small>
+                        </div>
+                    {% elif company_kpis.engagement.meetings_frequency > 2 %}
+                        <div class="alert alert-info mt-3 mb-0">
+                            <small>
+                                <i class="fas fa-calendar-check me-1"></i>
+                                <strong>Activa colaboración:</strong> Reuniones regulares para tu éxito.
+                            </small>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-primary mt-3 mb-0">
+                            <small>
+                                <i class="fas fa-rocket me-1"></i>
+                                <strong>Trabajando juntos</strong> para alcanzar tus objetivos.
+                            </small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Otras reuniones -->
+            <div class="card other-meetings-card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-history me-2"></i>Otras Reuniones
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if other_meetings %}
+                        {% for other_meeting in other_meetings %}
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="me-3">
+                                    <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" 
+                                         style="width: 40px; height: 40px;">
+                                        <span class="text-white small fw-bold">#{{ other_meeting.sequence }}</span>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <a href="{% url 'support_meeting_public' other_meeting.public_link.token %}" 
+                                       class="meeting-link">
+                                        <h6 class="mb-1">Reunión #{{ other_meeting.sequence }}</h6>
+                                        <small class="text-muted">
+                                            {{ other_meeting.date|date:"d/m/Y" }} • 
+                                            {{ other_meeting.points_count }} puntos
+                                        </small>
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-calendar-times fa-2x text-muted mb-2"></i>
+                            <p class="mb-0 text-muted small">
+                                {% if total_company_meetings > 0 %}
+                                    <strong>{{ total_company_meetings }}</strong> reunión{{ total_company_meetings|pluralize:"es" }} adicional{{ total_company_meetings|pluralize:"es" }} disponible{{ total_company_meetings|pluralize:"s" }}, 
+                                    pero sin enlace público activo.
+                                {% else %}
+                                    No hay otras reuniones disponibles para mostrar.
+                                {% endif %}
+                            </p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Footer -->
+<footer class="bg-light mt-5 py-4">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center">
+                <small class="text-muted">
+                    <i class="fas fa-calendar-alt me-1"></i>
+                    Sistema de Reuniones de Soporte • 
+                    Generado el {{ public_link.created_at|date:"d/m/Y" }}
+                </small>
+            </div>
+        </div>
+    </div>
+</footer>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Actualizar el título de la página
+    document.title = 'Reunión #{{ meeting.sequence }} - {{ company.name }}';
+    
+    // Animaciones suaves al cargar
+    $(document).ready(function() {
+        $('.point-card').each(function(index) {
+            $(this).delay(index * 100).animate({
+                opacity: 1
+            }, 500);
+        });
+    });
+</script>
+{% endblock %}

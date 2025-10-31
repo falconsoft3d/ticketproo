@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+    }
+    .meeting-card {
+        border-left: 4px solid #007bff;
+        transition: transform 0.2s;
+    }
+    .meeting-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .sequence-badge {
+        font-size: 1.2rem;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-handshake text-primary"></i>
+                        {{ page_title }}
+                    </h1>
+                    <p class="text-muted mb-0">Gestión de reuniones de soporte técnico</p>
+                </div>
+                <a href="{% url 'support_meeting_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nueva Reunión
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="card-body text-center">
+                    <h3 class="mb-1">{{ stats.total }}</h3>
+                    <p class="mb-0">Total Reuniones</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="card-body text-center">
+                    <h3 class="mb-1">{{ stats.this_month }}</h3>
+                    <p class="mb-0">Este Mes</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="card-body text-center">
+                    <h3 class="mb-1">{{ stats.companies_count }}</h3>
+                    <p class="mb-0">Empresas Atendidas</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+                <div class="card stats-card">
+                <div class="card-body text-center">
+                    <h3 class="mb-1">
+                        {% if stats.total > 0 %}
+                            {% widthratio stats.this_month stats.total 100 %}%
+                        {% else %}
+                            0%
+                        {% endif %}
+                    </h3>
+                    <p class="mb-0">Crecimiento Mensual</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="search" class="form-label">Buscar</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           value="{{ search_query }}" placeholder="Buscar por empresa, descripción o secuencia...">
+                </div>
+                <div class="col-md-4">
+                    <label for="company" class="form-label">Empresa</label>
+                    <select class="form-control" id="company" name="company">
+                        <option value="">Todas las empresas</option>
+                        {% for company in companies %}
+                            <option value="{{ company.id }}" {% if current_company == company.id|stringformat:"s" %}selected{% endif %}>
+                                {{ company.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-search"></i> Filtrar
+                    </button>
+                    <a href="{% url 'support_meeting_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i> Limpiar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de reuniones -->
+    <div class="row">
+        {% for meeting in meetings %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card meeting-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <span class="badge bg-primary sequence-badge">#{{ meeting.sequence }}</span>
+                            <small class="text-muted">{{ meeting.date|date:"d/m/Y" }}</small>
+                        </div>
+                        
+                        <h5 class="card-title">
+                            <i class="fas fa-building" style="color: {{ meeting.company.color }}"></i>
+                            {{ meeting.company.name }}
+                        </h5>
+                        
+                        <p class="card-text text-truncate">
+                            {{ meeting.description|truncatewords:15 }}
+                        </p>
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <small class="text-muted">
+                                <i class="fas fa-user"></i> {{ meeting.created_by.get_full_name|default:meeting.created_by.username }}
+                            </small>
+                            <small class="text-muted">
+                                <i class="fas fa-calendar"></i> {{ meeting.created_at|date:"d/m/Y" }}
+                            </small>
+                        </div>
+                        
+                        <div class="row text-center mb-3">
+                            <div class="col-6">
+                                <div class="badge bg-info">
+                                    {{ meeting.points_count }} puntos
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="badge bg-success">
+                                    {{ meeting.selected_points_count }} seleccionados
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer bg-transparent">
+                        <div class="btn-group w-100" role="group">
+                            <a href="{% url 'support_meeting_detail' meeting.pk %}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-eye"></i> Ver
+                            </a>
+                            <a href="{% url 'support_meeting_edit' meeting.pk %}" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-edit"></i> Editar
+                            </a>
+                            <a href="{% url 'support_meeting_delete' meeting.pk %}" class="btn btn-outline-danger btn-sm">
+                                <i class="fas fa-trash"></i> Eliminar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-handshake fa-4x text-muted mb-3"></i>
+                        <h4 class="text-muted">No hay reuniones de soporte</h4>
+                        <p class="text-muted">Comienza creando tu primera reunión de soporte.</p>
+                        <a href="{% url 'support_meeting_create' %}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Crear Primera Reunión
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Paginación -->
+    {% if meetings.has_other_pages %}
+        <div class="row mt-4">
+            <div class="col-12">
+                <nav aria-label="Paginación de reuniones">
+                    <ul class="pagination justify-content-center">
+                        {% if meetings.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if current_company %}&company={{ current_company }}{% endif %}">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ meetings.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_company %}&company={{ current_company }}{% endif %}">
+                                    <i class="fas fa-angle-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        <li class="page-item active">
+                            <span class="page-link">
+                                Página {{ meetings.number }} de {{ meetings.paginator.num_pages }}
+                            </span>
+                        </li>
+                        
+                        {% if meetings.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ meetings.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_company %}&company={{ current_company }}{% endif %}">
+                                    <i class="fas fa-angle-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ meetings.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_company %}&company={{ current_company }}{% endif %}">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Auto-submit del formulario de filtros después de cambios
+    $('#company').change(function() {
+        $(this).closest('form').submit();
+    });
+    
+    // Búsqueda en tiempo real con delay
+    let searchTimeout;
+    $('#search').on('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            $(this).closest('form').submit();
+        }, 500);
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,226 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Pregunta #{{ question.sequence }} - {{ question.company.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .status-badge {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        border-radius: 0.5rem;
+    }
+    .status-pendiente {
+        background-color: #fef3c7;
+        color: #92400e;
+    }
+    .status-respondida {
+        background-color: #d1fae5;
+        color: #065f46;
+    }
+    .info-card {
+        border-left: 4px solid #3b82f6;
+    }
+    .answer-card {
+        border-left: 4px solid #10b981;
+        background-color: #f0fdf4;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="fas fa-question-circle me-2"></i>
+                        Pregunta #{{ question.sequence }}
+                    </h1>
+                    <p class="text-muted mb-0">{{ question.company.name }}</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'crm_question_edit' question.pk %}" class="btn btn-outline-primary">
+                        <i class="fas fa-edit me-2"></i>
+                        Editar
+                    </a>
+                    <a href="{% url 'crm_questions_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        Volver
+                    </a>
+                </div>
+            </div>
+
+            <!-- Estado -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h6 class="mb-1">Estado de la Pregunta</h6>
+                            {% if question.is_answered %}
+                                <span class="status-badge status-respondida">
+                                    <i class="fas fa-check me-1"></i>
+                                    Respondida
+                                </span>
+                            {% else %}
+                                <span class="status-badge status-pendiente">
+                                    <i class="fas fa-clock me-1"></i>
+                                    Pendiente
+                                </span>
+                            {% endif %}
+                        </div>
+                        <div class="text-end">
+                            <small class="text-muted d-block">Creada el</small>
+                            <strong>{{ question.created_at|date:"d/m/Y H:i" }}</strong>
+                        </div>
+                    </div>
+                    
+                    <!-- Información de origen -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <small class="text-muted d-block">Origen:</small>
+                            <span class="badge {{ question.get_origin_badge_class }}">
+                                <i class="{{ question.get_origin_icon }} me-1"></i>
+                                {{ question.get_creator_display }}
+                            </span>
+                        </div>
+                        {% if question.is_answered %}
+                        <div class="col-md-6">
+                            <small class="text-muted d-block">Respondida por:</small>
+                            <strong>{{ question.get_answered_by_display }}</strong>
+                            <small class="text-muted d-block">{{ question.answered_at|date:"d/m/Y H:i" }}</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información del Contacto -->
+            <div class="card info-card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-user me-2"></i>
+                        Información del Contacto
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Nombre:</strong><br>
+                            {{ question.person_name }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Email:</strong><br>
+                            <a href="mailto:{{ question.person_email }}" class="text-decoration-none">
+                                {{ question.person_email }}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pregunta -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-question me-2"></i>
+                        Pregunta
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ question.question|linebreaks }}</p>
+                </div>
+            </div>
+
+            <!-- Respuesta -->
+            {% if question.answer %}
+            <div class="card answer-card mb-4">
+                <div class="card-header bg-transparent">
+                    <h6 class="mb-0">
+                        <i class="fas fa-reply me-2"></i>
+                        Respuesta
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-3">{{ question.answer|linebreaks }}</p>
+                    {% if question.answered_by %}
+                    <div class="border-top pt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-user me-1"></i>
+                            Respondida por <strong>{{ question.get_answered_by_display }}</strong>
+                            el {{ question.answered_at|date:"d/m/Y H:i" }}
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="card mb-4">
+                <div class="card-body text-center py-4">
+                    <i class="fas fa-clock fa-2x text-muted mb-3"></i>
+                    <h6 class="text-muted mb-2">Pregunta Pendiente de Respuesta</h6>
+                    <p class="text-muted mb-3">Esta pregunta aún no ha sido respondida.</p>
+                    <a href="{% url 'crm_question_edit' question.pk %}" class="btn btn-primary">
+                        <i class="fas fa-reply me-2"></i>
+                        Responder Pregunta
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Información Adicional -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Información Adicional
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-sm">
+                        <div class="col-md-6 mb-2">
+                            <strong>Registrada por:</strong><br>
+                            {% if question.created_by %}
+                                {{ question.created_by.get_full_name|default:question.created_by.username }}
+                            {% else %}
+                                <span class="text-muted">Pregunta Pública</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <strong>Fecha de registro:</strong><br>
+                            {{ question.created_at|date:"d/m/Y H:i" }}
+                        </div>
+                        {% if question.updated_at %}
+                        <div class="col-md-6 mb-2">
+                            <strong>Última actualización:</strong><br>
+                            {{ question.updated_at|date:"d/m/Y H:i" }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="d-flex justify-content-between mt-4 mb-4">
+                <a href="{% url 'crm_questions_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    Volver a la Lista
+                </a>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'crm_question_edit' question.pk %}" class="btn btn-primary">
+                        <i class="fas fa-edit me-2"></i>
+                        Editar
+                    </a>
+                    <a href="{% url 'crm_question_delete' question.pk %}" class="btn btn-outline-danger">
+                        <i class="fas fa-trash me-2"></i>
+                        Eliminar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

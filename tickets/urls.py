@@ -350,6 +350,13 @@ urlpatterns = [
     path('crm/status/<int:pk>/edit/', views.opportunity_status_edit, name='opportunity_status_edit'),
     path('crm/status/<int:pk>/delete/', views.opportunity_status_delete, name='opportunity_status_delete'),
     
+    # URLs de Preguntas CRM
+    path('crm/questions/', views.crm_questions_list, name='crm_questions_list'),
+    path('crm/questions/create/', views.crm_question_create, name='crm_question_create'),
+    path('crm/questions/<int:pk>/', views.crm_question_detail, name='crm_question_detail'),
+    path('crm/questions/<int:pk>/edit/', views.crm_question_edit, name='crm_question_edit'),
+    path('crm/questions/<int:pk>/delete/', views.crm_question_delete, name='crm_question_delete'),
+    
     # URLs de Reuniones
     path('meetings/', views.meeting_list_view, name='meeting_list'),
     path('meetings/create/', views.meeting_create_view, name='meeting_create'),
@@ -360,6 +367,19 @@ urlpatterns = [
     path('meetings/<int:pk>/pdf/', views.meeting_pdf_download_view, name='meeting_pdf_download'),
     path('meetings/<int:pk>/questions/', views.meeting_questions_view, name='meeting_questions'),
     path('meetings/<int:pk>/attendees/', views.meeting_attendees_view, name='meeting_attendees'),
+    
+    # URLs de Reuniones Soporte
+    path('support-meetings/', views.support_meeting_list, name='support_meeting_list'),
+    path('support-meetings/create/', views.support_meeting_create, name='support_meeting_create'),
+    path('support-meetings/<int:pk>/', views.support_meeting_detail, name='support_meeting_detail'),
+    path('support-meetings/<int:pk>/edit/', views.support_meeting_edit, name='support_meeting_edit'),
+    path('support-meetings/<int:pk>/delete/', views.support_meeting_delete, name='support_meeting_delete'),
+    path('support-meetings/<int:pk>/create-tickets/', views.support_meeting_create_tickets, name='support_meeting_create_tickets'),
+    path('support-meetings/<int:pk>/generate-link/', views.support_meeting_generate_public_link, name='support_meeting_generate_link'),
+    path('support-meetings/<int:pk>/disable-link/', views.support_meeting_disable_public_link, name='support_meeting_disable_link'),
+    
+    # URLs públicas de reuniones de soporte (sin autenticación)
+    path('support/meeting/<str:token>/', views.support_meeting_public, name='support_meeting_public'),
     
     # URLs públicas de reuniones (sin autenticación)
     path('meetings/public/<str:token>/', views.meeting_public_view, name='meeting_public'),
@@ -1186,6 +1206,10 @@ urlpatterns += [
     path('database/restore/', views.database_restore, name='database_restore'),
     path('database/backup/download/<str:filename>/', views.download_backup, name='download_backup'),
     path('database/backup/delete/<str:filename>/', views.delete_backup, name='delete_backup'),
+    
+    # URLs Públicas de CRM Questions (sin autenticación)
+    path('public/company/<uuid:company_uuid>/questions/', views.public_crm_questions, name='public_crm_questions'),
+    path('public/company/<uuid:company_uuid>/questions/ask/', views.public_crm_question_create, name='public_crm_question_create'),
     
     # URLs de API
     path('api/', include('tickets.api_urls')),

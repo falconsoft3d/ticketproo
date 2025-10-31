@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Eliminar Pregunta #{{ question.sequence }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-6">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Confirmar Eliminación
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-warning me-2"></i>
+                        <strong>¡Atención!</strong> Esta acción no se puede deshacer.
+                    </div>
+
+                    <p class="mb-4">
+                        ¿Estás seguro de que deseas eliminar la siguiente pregunta?
+                    </p>
+
+                    <!-- Información de la pregunta -->
+                    <div class="card bg-light mb-4">
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-sm-3">
+                                    <strong>Pregunta:</strong>
+                                </div>
+                                <div class="col-sm-9">
+                                    #{{ question.sequence }}
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-3">
+                                    <strong>Empresa:</strong>
+                                </div>
+                                <div class="col-sm-9">
+                                    {{ question.company.name }}
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-3">
+                                    <strong>Persona:</strong>
+                                </div>
+                                <div class="col-sm-9">
+                                    {{ question.person_name }} ({{ question.person_email }})
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-3">
+                                    <strong>Pregunta:</strong>
+                                </div>
+                                <div class="col-sm-9">
+                                    {{ question.question|truncatechars:100 }}
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-3">
+                                    <strong>Estado:</strong>
+                                </div>
+                                <div class="col-sm-9">
+                                    <span class="badge bg-{% if question.is_answered %}success{% else %}warning{% endif %}">
+                                        {{ question.get_status_display }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-3">
+                                    <strong>Creada:</strong>
+                                </div>
+                                <div class="col-sm-9">
+                                    {{ question.created_at|date:"d/m/Y H:i" }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'crm_question_detail' question.pk %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash me-2"></i>
+                                Sí, Eliminar Pregunta
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Enlaces adicionales -->
+            <div class="text-center mt-3">
+                <a href="{% url 'crm_questions_list' %}" class="text-muted text-decoration-none">
+                    <i class="fas fa-arrow-left me-1"></i>
+                    Volver a la lista de preguntas
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

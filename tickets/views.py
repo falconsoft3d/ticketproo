@@ -53,7 +53,8 @@ from .models import (
     LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry, SharedFile, SharedFileDownload,
     Recording, RecordingPlayback, MultipleDocumentation, MultipleDocumentationItem,
     TaskSchedule, ScheduleTask, ScheduleComment, SatisfactionSurvey, ClientProjectAccess, ClientTimeEntry, ShortUrl,
-    ProductSet, ProductItem, Precotizador, PrecotizadorExample, PrecotizadorQuote,
+    ProductSet, ProductItem, Precotizador, PrecotizadorExample, PrecotizadorQuote, CrmQuestion,
+    SupportMeeting, SupportMeetingPoint,
     # ...existing code...
 )
 
@@ -155,7 +156,8 @@ from .forms import (
     FormQuestionOptionForm, PublicFormResponseForm, AssetForm, AssetAssignForm, AssetFilterForm,
     AITutorForm, AITutorProgressReportForm, AITutorAttachmentForm, AITutorFilterForm,
     ExpenseReportForm, ExpenseItemForm, ExpenseCommentForm, ExpenseReportFilterForm,
-    VideoMeetingForm, MeetingTranscriptionForm, MeetingFilterForm, QuoteGeneratorForm, AbsenceTypeForm
+    VideoMeetingForm, MeetingTranscriptionForm, MeetingFilterForm, QuoteGeneratorForm, AbsenceTypeForm,
+    CrmQuestionForm, PublicCrmQuestionForm
 )
 from .utils import is_agent, is_regular_user, is_teacher, can_manage_courses, get_user_role, assign_user_to_group
 
@@ -4039,6 +4041,15 @@ def company_detail_view(request, company_id):
     # Usuarios de la empresa
     company_users = company.users.select_related('user').order_by('user__first_name', 'user__username')
     
+    # URLs públicas de CRM
+    from django.urls import reverse
+    public_crm_questions_url = request.build_absolute_uri(
+        reverse('public_crm_questions', kwargs={'company_uuid': company.uuid})
+    )
+    public_crm_ask_url = request.build_absolute_uri(
+        reverse('public_crm_question_create', kwargs={'company_uuid': company.uuid})
+    )
+    
     context = {
         'page_title': f'Empresa: {company.name}',
         'company': company,
@@ -4049,6 +4060,8 @@ def company_detail_view(request, company_id):
         'recent_tickets': recent_tickets,
         'company_users': company_users,
         'is_agent': is_agent(request.user),
+        'public_crm_questions_url': public_crm_questions_url,
+        'public_crm_ask_url': public_crm_ask_url,
     }
     
     return render(request, 'tickets/company_detail.html', context)
@@ -8360,6 +8373,446 @@ def meeting_answer_question_view(request, pk, question_id):
             })
     
     return JsonResponse({'success': False, 'error': 'Método no permitido.'})
+
+
+# ============================
+# VISTAS DE REUNIONES SOPORTE
+# ============================
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def support_meeting_list(request):
+    """Vista para listar reuniones de soporte"""
+    from .models import SupportMeeting
+    
+    meetings = SupportMeeting.objects.all()
+    
+    # Filtros
+    company_id = request.GET.get('company')
+    if company_id:
+        meetings = meetings.filter(company_id=company_id)
+    
+    search = request.GET.get('search')
+    if search:
+        meetings = meetings.filter(
+            models.Q(company__name__icontains=search) | 
+            models.Q(description__icontains=search) |
+            models.Q(sequence__icontains=search)
+        )
+    
+    meetings = meetings.order_by('-created_at')
+    
+    # Paginación
+    paginator = Paginator(meetings, 20)
+    page_number = request.GET.get('page')
+    meetings = paginator.get_page(page_number)
+    
+    # Estadísticas
+    stats = {
+        'total': SupportMeeting.objects.count(),
+        'this_month': SupportMeeting.objects.filter(created_at__month=timezone.now().month).count(),
+        'companies_count': SupportMeeting.objects.values('company').distinct().count(),
+    }
+    
+    # Lista de empresas para el filtro
+    from .models import Company
+    companies = Company.objects.filter(is_active=True).order_by('name')
+    
+    context = {
+        'page_title': 'Reuniones de Soporte',
+        'meetings': meetings,
+        'stats': stats,
+        'companies': companies,
+        'current_company': company_id,
+        'search_query': search,
+    }
+    return render(request, 'tickets/support_meeting_list.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def support_meeting_create(request):
+    """Vista para crear reuniones de soporte"""
+    from .forms import SupportMeetingForm
+    
+    if request.method == 'POST':
+        form = SupportMeetingForm(request.POST)
+        if form.is_valid():
+            meeting = form.save(commit=False)
+            meeting.created_by = request.user
+            meeting.save()
+            messages.success(request, f'Reunión de soporte #{meeting.sequence} creada exitosamente.')
+            return redirect('support_meeting_detail', pk=meeting.pk)
+    else:
+        form = SupportMeetingForm()
+    
+    context = {
+        'page_title': 'Nueva Reunión de Soporte',
+        'form': form,
+    }
+    return render(request, 'tickets/support_meeting_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def support_meeting_detail(request, pk):
+    """Vista detallada de una reunión de soporte"""
+    from .models import SupportMeeting, SupportMeetingPoint
+    from .forms import SupportMeetingPointForm
+    
+    meeting = get_object_or_404(SupportMeeting, pk=pk)
+    points = meeting.support_meeting_points.all().order_by('created_at')
+    
+    # Manejar AJAX para toggle de puntos
+    if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        action = request.POST.get('action')
+        if action == 'toggle_point':
+            point_id = request.POST.get('point_id')
+            is_selected = request.POST.get('is_selected') == 'true'
+            
+            try:
+                point = SupportMeetingPoint.objects.get(id=point_id, meeting=meeting)
+                point.is_selected = is_selected
+                point.save()
+                
+                # Obtener conteos actualizados
+                selected_count = meeting.support_meeting_points.filter(is_selected=True).count()
+                
+                return JsonResponse({
+                    'success': True,
+                    'selected_count': selected_count,
+                    'message': 'Punto actualizado exitosamente.'
+                })
+            except SupportMeetingPoint.DoesNotExist:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Punto no encontrado.'
+                })
+        
+        return JsonResponse({'success': False, 'error': 'Acción no válida.'})
+    
+    # Manejar formulario de puntos (POST normal)
+    if request.method == 'POST':
+        point_form = SupportMeetingPointForm(request.POST)
+        if point_form.is_valid():
+            point = point_form.save(commit=False)
+            point.meeting = meeting
+            point.save()
+            messages.success(request, 'Punto agregado exitosamente.')
+            return redirect('support_meeting_detail', pk=meeting.pk)
+    else:
+        point_form = SupportMeetingPointForm()
+    
+    # Estadísticas
+    stats = {
+        'total_points': points.count(),
+        'selected_points': points.filter(is_selected=True).count(),
+        'unselected_points': points.filter(is_selected=False).count(),
+    }
+    
+    context = {
+        'page_title': f'Reunión #{meeting.sequence} - {meeting.company.name}',
+        'meeting': meeting,
+        'points': points,
+        'point_form': point_form,
+        'stats': stats,
+    }
+    return render(request, 'tickets/support_meeting_detail.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def support_meeting_edit(request, pk):
+    """Vista para editar reuniones de soporte"""
+    from .forms import SupportMeetingForm
+    from .models import SupportMeeting
+    
+    meeting = get_object_or_404(SupportMeeting, pk=pk)
+    
+    if request.method == 'POST':
+        form = SupportMeetingForm(request.POST, instance=meeting)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Reunión #{meeting.sequence} actualizada exitosamente.')
+            return redirect('support_meeting_detail', pk=meeting.pk)
+    else:
+        form = SupportMeetingForm(instance=meeting)
+    
+    context = {
+        'page_title': f'Editar Reunión #{meeting.sequence}',
+        'form': form,
+        'meeting': meeting,
+    }
+    return render(request, 'tickets/support_meeting_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def support_meeting_delete(request, pk):
+    """Vista para eliminar reuniones de soporte"""
+    from .models import SupportMeeting
+    
+    meeting = get_object_or_404(SupportMeeting, pk=pk)
+    
+    if request.method == 'POST':
+        meeting_info = f"#{meeting.sequence} - {meeting.company.name}"
+        meeting.delete()
+        messages.success(request, f'Reunión {meeting_info} eliminada exitosamente.')
+        return redirect('support_meeting_list')
+    
+    context = {
+        'page_title': f'Eliminar Reunión #{meeting.sequence}',
+        'meeting': meeting,
+    }
+    return render(request, 'tickets/support_meeting_delete.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def support_meeting_create_tickets(request, pk):
+    """Vista para crear tickets masivamente desde puntos seleccionados"""
+    from .models import SupportMeeting, Ticket
+    
+    meeting = get_object_or_404(SupportMeeting, pk=pk)
+    
+    if request.method == 'POST':
+        selected_points = meeting.support_meeting_points.filter(is_selected=True)
+        
+        if not selected_points.exists():
+            messages.warning(request, 'No hay puntos seleccionados para crear tickets.')
+            return redirect('support_meeting_detail', pk=meeting.pk)
+        
+        tickets_created = 0
+        for point in selected_points:
+            # Crear ticket desde el punto
+            ticket = Ticket.objects.create(
+                title=f"Punto de reunión #{meeting.sequence}",
+                description=point.description,
+                company=meeting.company,
+                created_by=request.user,
+                priority='medium',
+                status='open'
+            )
+            
+            # Marcar punto como procesado (desseleccionar)
+            point.is_selected = False
+            point.save()
+            
+            tickets_created += 1
+        
+        messages.success(request, f'{tickets_created} tickets creados exitosamente desde los puntos seleccionados.')
+        return redirect('support_meeting_detail', pk=meeting.pk)
+    
+    # Obtener puntos seleccionados para confirmación
+    selected_points = meeting.support_meeting_points.filter(is_selected=True)
+    
+    context = {
+        'page_title': f'Crear Tickets - Reunión #{meeting.sequence}',
+        'meeting': meeting,
+        'selected_points': selected_points,
+    }
+    return render(request, 'tickets/support_meeting_create_tickets.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def support_meeting_generate_public_link(request, pk):
+    """Generar enlace público para una reunión de soporte"""
+    from .models import SupportMeeting, SupportMeetingPublicLink
+    from django.http import JsonResponse
+    
+    meeting = get_object_or_404(SupportMeeting, pk=pk)
+    
+    if request.method == 'POST':
+        # Verificar si ya existe un enlace
+        public_link, created = SupportMeetingPublicLink.objects.get_or_create(
+            meeting=meeting,
+            defaults={
+                'created_by': request.user,
+                'show_company_meetings': request.POST.get('show_company_meetings', 'true') == 'true'
+            }
+        )
+        
+        if not created:
+            # Si ya existe, actualizar configuración
+            public_link.show_company_meetings = request.POST.get('show_company_meetings', 'true') == 'true'
+            public_link.is_active = True
+            public_link.save()
+        
+        # Obtener URL completa
+        public_url = public_link.get_public_url(request)
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'public_url': public_url,
+                'token': public_link.token,
+                'message': 'Enlace público generado exitosamente'
+            })
+        
+        messages.success(request, f'Enlace público generado: {public_url}')
+        return redirect('support_meeting_detail', pk=meeting.pk)
+    
+    context = {
+        'page_title': f'Generar Enlace Público - Reunión #{meeting.sequence}',
+        'meeting': meeting,
+    }
+    return render(request, 'tickets/support_meeting_generate_link.html', context)
+
+
+def support_meeting_public(request, token):
+    """Vista pública de reunión de soporte (sin autenticación)"""
+    from .models import SupportMeetingPublicLink, SupportMeeting
+    from django.utils import timezone
+    
+    # Buscar enlace público activo
+    public_link = get_object_or_404(
+        SupportMeetingPublicLink,
+        token=token,
+        is_active=True
+    )
+    
+    # Registrar acceso
+    public_link.register_access()
+    
+    meeting = public_link.meeting
+    points = meeting.support_meeting_points.all().order_by('created_at')
+    
+    # Obtener otras reuniones de la empresa si está configurado
+    other_meetings = []
+    total_company_meetings = 0
+    
+    if public_link.show_company_meetings:
+        # Contar todas las reuniones de la empresa
+        total_company_meetings = SupportMeeting.objects.filter(
+            company=meeting.company
+        ).exclude(pk=meeting.pk).count()
+        
+        # Buscar reuniones de la misma empresa que tengan enlaces públicos activos
+        other_meetings = list(SupportMeeting.objects.filter(
+            company=meeting.company,
+            public_link__is_active=True
+        ).exclude(pk=meeting.pk).select_related('public_link').order_by('-date')[:10])
+    
+    # Estadísticas de la reunión actual
+    stats = {
+        'total_points': points.count(),
+        'selected_points': points.filter(is_selected=True).count(),
+        'completed_points': points.filter(is_selected=False).count(),
+    }
+    
+    # KPIs empresariales para el cliente
+    from django.utils import timezone
+    from datetime import timedelta
+    from django.db.models import Count, Avg
+    
+    # Período de análisis (últimos 6 meses)
+    six_months_ago = timezone.now() - timedelta(days=180)
+    
+    company_kpis = {}
+    
+    # 1. Estadísticas de reuniones de soporte
+    total_support_meetings = SupportMeeting.objects.filter(company=meeting.company).count()
+    recent_meetings = SupportMeeting.objects.filter(
+        company=meeting.company,
+        created_at__gte=six_months_ago
+    ).count()
+    
+    # 2. Estadísticas de tickets
+    total_tickets = meeting.company.ticket_set.count() if hasattr(meeting.company, 'ticket_set') else 0
+    recent_tickets = meeting.company.ticket_set.filter(
+        created_at__gte=six_months_ago
+    ).count() if hasattr(meeting.company, 'ticket_set') else 0
+    
+    resolved_tickets = meeting.company.ticket_set.filter(
+        status='closed',
+        created_at__gte=six_months_ago
+    ).count() if hasattr(meeting.company, 'ticket_set') else 0
+    
+    # 3. Estadísticas de proyectos
+    total_projects = meeting.company.project_set.count() if hasattr(meeting.company, 'project_set') else 0
+    active_projects = meeting.company.project_set.filter(
+        created_at__gte=six_months_ago
+    ).count() if hasattr(meeting.company, 'project_set') else 0
+    
+    # 4. Estadísticas de órdenes de trabajo
+    total_workorders = meeting.company.workorder_set.count() if hasattr(meeting.company, 'workorder_set') else 0
+    recent_workorders = meeting.company.workorder_set.filter(
+        created_at__gte=six_months_ago
+    ).count() if hasattr(meeting.company, 'workorder_set') else 0
+    
+    # Calcular KPIs
+    company_kpis = {
+        'support_meetings': {
+            'total': total_support_meetings,
+            'recent': recent_meetings,
+            'growth': recent_meetings,
+        },
+        'tickets': {
+            'total': total_tickets,
+            'recent': recent_tickets,
+            'resolved': resolved_tickets,
+            'resolution_rate': round((resolved_tickets / recent_tickets * 100) if recent_tickets > 0 else 0, 1),
+        },
+        'projects': {
+            'total': total_projects,
+            'active': active_projects,
+        },
+        'workorders': {
+            'total': total_workorders,
+            'recent': recent_workorders,
+        },
+        'engagement': {
+            'meetings_frequency': round(recent_meetings / 6, 1) if recent_meetings > 0 else 0,  # promedio mensual
+            'activity_score': min(100, round((recent_tickets + recent_meetings + recent_workorders) / 3, 0)),
+        }
+    }
+    
+    context = {
+        'page_title': f'Reunión #{meeting.sequence} - {meeting.company.name}',
+        'meeting': meeting,
+        'points': points,
+        'stats': stats,
+        'company_kpis': company_kpis,
+        'other_meetings': other_meetings,
+        'total_company_meetings': total_company_meetings,
+        'public_link': public_link,
+        'company': meeting.company,
+    }
+    return render(request, 'tickets/support_meeting_public.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def support_meeting_disable_public_link(request, pk):
+    """Deshabilitar enlace público de una reunión"""
+    from .models import SupportMeeting, SupportMeetingPublicLink
+    from django.http import JsonResponse
+    
+    meeting = get_object_or_404(SupportMeeting, pk=pk)
+    
+    try:
+        public_link = meeting.public_link
+        public_link.is_active = False
+        public_link.save()
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': 'Enlace público deshabilitado exitosamente'
+            })
+        
+        messages.success(request, 'Enlace público deshabilitado exitosamente.')
+    except SupportMeetingPublicLink.DoesNotExist:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'error': 'No existe enlace público para esta reunión'
+            })
+        
+        messages.error(request, 'No existe enlace público para esta reunión.')
+    
+    return redirect('support_meeting_detail', pk=meeting.pk)
 
 
 # ========================
@@ -35836,3 +36289,320 @@ def quotation_template_requests_view(request):
     }
     
     return render(request, 'tickets/quotation_template_requests.html', context)
+
+
+# ============= VISTAS CRM PREGUNTAS =============
+
+def can_access_crm_question(user, question=None):
+    """
+    Verifica si un usuario puede acceder a las preguntas CRM o a una pregunta específica
+    - Agentes: pueden acceder a todas las preguntas
+    - Usuarios normales: solo pueden acceder a preguntas de su empresa
+    """
+    if not user.is_authenticated:
+        return False
+    
+    # Los agentes pueden ver todas las preguntas
+    if is_agent(user):
+        return True
+    
+    # Para usuarios normales, verificar empresa a través del profile
+    try:
+        user_company = user.profile.company
+    except:
+        user_company = None
+    
+    if not user_company:
+        return False
+    
+    # Si se especifica una pregunta, verificar que pertenezca a la empresa del usuario
+    if question:
+        return question.company == user_company
+    
+    # Si no se especifica pregunta, el usuario puede acceder al sistema pero con filtros
+    return True
+
+@login_required
+def crm_questions_list(request):
+    """Vista para listar preguntas del CRM"""
+    from .forms import CrmQuestionFilterForm
+    from django.db.models import Q
+    
+    # Verificar permisos de acceso
+    if not can_access_crm_question(request.user):
+        raise Http404("No tienes permisos para acceder a esta sección")
+    
+    # Filtros
+    filter_form = CrmQuestionFilterForm(request.GET, user=request.user)
+    questions = CrmQuestion.objects.all()
+    
+    # Aplicar filtros de visibilidad según el rol del usuario
+    if is_agent(request.user):
+        # Los agentes ven todas las preguntas
+        pass  # No se aplica ningún filtro
+    else:
+        # Los usuarios normales solo ven preguntas de su empresa
+        try:
+            user_company = request.user.profile.company
+        except:
+            user_company = None
+            
+        if user_company:
+            questions = questions.filter(company=user_company)
+        else:
+            # Si no tiene empresa asociada, no ve ninguna pregunta
+            questions = questions.none()
+    
+    # Variables para estadísticas antes de filtros
+    base_questions = questions
+    
+    if filter_form.is_valid():
+        # Filtro por empresa
+        if filter_form.cleaned_data.get('company'):
+            questions = questions.filter(company=filter_form.cleaned_data['company'])
+        
+        # Filtro por estado
+        status = filter_form.cleaned_data.get('status')
+        if status == 'answered':
+            questions = questions.filter(answer__isnull=False).exclude(answer='')
+        elif status == 'pending':
+            questions = questions.filter(Q(answer__isnull=True) | Q(answer=''))
+        
+        # Búsqueda de texto
+        search = filter_form.cleaned_data.get('search')
+        if search:
+            questions = questions.filter(
+                Q(question__icontains=search) |
+                Q(answer__icontains=search) |
+                Q(person_name__icontains=search) |
+                Q(person_email__icontains=search)
+            )
+    
+    questions = questions.order_by('-created_at')
+    
+    # Paginación
+    from django.core.paginator import Paginator
+    paginator = Paginator(questions, 20)  # Aumenté a 20 para la tabla
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Estadísticas basadas en filtros aplicados
+    total_questions = questions.count()
+    answered_questions = questions.filter(answer__isnull=False).exclude(answer='').count()
+    pending_questions = total_questions - answered_questions
+    
+    # Estadísticas generales (sin filtros)
+    total_all_questions = base_questions.count()
+    answered_all_questions = base_questions.filter(answer__isnull=False).exclude(answer='').count()
+    pending_all_questions = total_all_questions - answered_all_questions
+    
+    context = {
+        'page_title': 'Preguntas CRM',
+        'questions': page_obj,
+        'filter_form': filter_form,
+        'total_questions': total_questions,
+        'answered_questions': answered_questions,
+        'pending_questions': pending_questions,
+        'total_all_questions': total_all_questions,
+        'answered_all_questions': answered_all_questions,
+        'pending_all_questions': pending_all_questions,
+        'is_paginated': page_obj.has_other_pages(),
+        'page_obj': page_obj,
+        'has_filters': bool(request.GET.get('company') or request.GET.get('status') or request.GET.get('search')),
+    }
+    
+    return render(request, 'tickets/crm_questions_list.html', context)
+
+
+@login_required
+def crm_question_create(request):
+    """Vista para crear una nueva pregunta CRM"""
+    from .forms import CrmQuestionForm
+    
+    # Verificar permisos de acceso
+    if not can_access_crm_question(request.user):
+        raise Http404("No tienes permisos para acceder a esta sección")
+    
+    if request.method == 'POST':
+        form = CrmQuestionForm(request.POST, user=request.user)
+        if form.is_valid():
+            question = form.save(commit=False)
+            question.created_by = request.user
+            
+            # Verificar si se creó con respuesta
+            has_valid_answer = question.answer and question.answer.strip()
+            
+            if has_valid_answer:
+                question.answered_by = request.user
+                question.answered_at = timezone.now()
+            
+            question.save()
+            
+            # Mensaje según el estado inicial
+            if has_valid_answer:
+                messages.success(request, f'Pregunta #{question.sequence} creada y respondida exitosamente.')
+            else:
+                messages.success(request, f'Pregunta #{question.sequence} creada exitosamente (pendiente de respuesta).')
+            
+            return redirect('crm_questions_list')
+    else:
+        form = CrmQuestionForm(user=request.user)
+    
+    context = {
+        'page_title': 'Nueva Pregunta',
+        'form': form,
+        'action': 'create'
+    }
+    
+    return render(request, 'tickets/crm_question_form.html', context)
+
+
+@login_required
+def crm_question_detail(request, pk):
+    """Vista para ver el detalle de una pregunta CRM"""
+    question = get_object_or_404(CrmQuestion, pk=pk)
+    
+    # Verificar permisos
+    if not can_access_crm_question(request.user, question):
+        raise Http404("Pregunta no encontrada")
+    
+    context = {
+        'page_title': f'Pregunta #{question.sequence}',
+        'question': question,
+    }
+    
+    return render(request, 'tickets/crm_question_detail.html', context)
+
+
+@login_required
+def crm_question_edit(request, pk):
+    """Vista para editar una pregunta CRM"""
+    from .forms import CrmQuestionForm
+    
+    question = get_object_or_404(CrmQuestion, pk=pk)
+    
+    # Verificar permisos
+    if not can_access_crm_question(request.user, question):
+        raise Http404("Pregunta no encontrada")
+    
+    if request.method == 'POST':
+        form = CrmQuestionForm(request.POST, instance=question, user=request.user)
+        if form.is_valid():
+            # Obtener el estado anterior para comparar
+            was_answered_before = question.is_answered
+            old_answer = question.answer
+            
+            question = form.save(commit=False)
+            
+            # Verificar si hay respuesta válida
+            has_valid_answer = question.answer and question.answer.strip()
+            
+            if has_valid_answer:
+                # Si no había respuesta antes o se cambió
+                if not was_answered_before or (old_answer and old_answer.strip() != question.answer.strip()):
+                    question.answered_by = request.user
+                    question.answered_at = timezone.now()
+            else:
+                # No hay respuesta válida, marcar como pendiente
+                question.answered_by = None
+                question.answered_at = None
+            
+            question.save()
+            
+            # Mensaje según la acción realizada
+            if has_valid_answer:
+                if not was_answered_before:
+                    messages.success(request, f'Pregunta #{question.sequence} respondida exitosamente.')
+                else:
+                    messages.success(request, f'Respuesta de la pregunta #{question.sequence} actualizada exitosamente.')
+            else:
+                if was_answered_before:
+                    messages.warning(request, f'Pregunta #{question.sequence} marcada como pendiente (respuesta eliminada).')
+                else:
+                    messages.success(request, f'Pregunta #{question.sequence} actualizada exitosamente.')
+            
+            return redirect('crm_questions_list')
+    else:
+        form = CrmQuestionForm(instance=question, user=request.user)
+    
+    context = {
+        'page_title': f'Editar Pregunta #{question.sequence}',
+        'form': form,
+        'question': question,
+        'action': 'edit'
+    }
+    
+    return render(request, 'tickets/crm_question_form.html', context)
+
+
+@login_required
+def crm_question_delete(request, pk):
+    """Vista para eliminar una pregunta CRM"""
+    question = get_object_or_404(CrmQuestion, pk=pk)
+    
+    # Verificar permisos
+    if not can_access_crm_question(request.user, question):
+        raise Http404("Pregunta no encontrada")
+    
+    if request.method == 'POST':
+        question_number = question.sequence
+        question.delete()
+        messages.success(request, f'Pregunta #{question_number} eliminada exitosamente.')
+        return redirect('crm_questions_list')
+    
+    context = {
+        'page_title': f'Eliminar Pregunta #{question.sequence}',
+        'question': question,
+    }
+    
+    return render(request, 'tickets/crm_question_delete.html', context)
+
+
+# =============================================================================
+# VISTAS PÚBLICAS PARA CLIENTES
+# =============================================================================
+
+def public_crm_questions(request, company_uuid):
+    """Vista pública para que los clientes vean las preguntas de su empresa"""
+    company = get_object_or_404(Company, uuid=company_uuid, is_active=True)
+    
+    # Obtener todas las preguntas de la empresa
+    questions = CrmQuestion.objects.filter(company=company).order_by('-created_at')
+    
+    context = {
+        'page_title': f'Preguntas y Respuestas - {company.name}',
+        'company': company,
+        'questions': questions,
+    }
+    
+    return render(request, 'tickets/public_crm_questions.html', context)
+
+
+def public_crm_question_create(request, company_uuid):
+    """Vista pública para que los clientes envíen preguntas"""
+    company = get_object_or_404(Company, uuid=company_uuid, is_active=True)
+    
+    if request.method == 'POST':
+        form = PublicCrmQuestionForm(request.POST, company=company)
+        if form.is_valid():
+            question = form.save(commit=False)
+            question.company = company
+            question.save()
+            
+            messages.success(
+                request, 
+                f'¡Tu pregunta ha sido enviada exitosamente! '
+                f'Se te asignó el número #{question.sequence}. '
+                f'Podrás ver la respuesta en esta misma página cuando esté disponible.'
+            )
+            return redirect('public_crm_questions', company_uuid=company_uuid)
+    else:
+        form = PublicCrmQuestionForm(company=company)
+    
+    context = {
+        'page_title': f'Enviar Pregunta - {company.name}',
+        'company': company,
+        'form': form,
+    }
+    
+    return render(request, 'tickets/public_crm_question_form.html', context)
