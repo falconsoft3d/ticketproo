@@ -29,11 +29,20 @@
         background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
         color: white;
         border: none;
-        transition: transform 0.3s ease;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        cursor: pointer;
+        text-decoration: none;
     }
     
     .kpi-card:hover {
         transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+    
+    .kpi-card:focus,
+    .kpi-card:active {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.3);
     }
     
     .kpi-icon {
@@ -239,7 +248,7 @@
                     <div class="row g-3">
                         <!-- Reuniones de Soporte -->
                         <div class="col-md-6 col-lg-3">
-                            <div class="kpi-card card h-100">
+                            <div class="kpi-card card h-100" style="cursor: pointer;" onclick="showKPIDetails('meetings', {{ company_kpis.support_meetings.total }}, {{ company_kpis.support_meetings.recent }})">
                                 <div class="card-body text-center">
                                     <div class="kpi-icon mb-2">
                                         <i class="fas fa-handshake"></i>
@@ -258,7 +267,7 @@
                         
                         <!-- Tickets -->
                         <div class="col-md-6 col-lg-3">
-                            <div class="kpi-card card h-100">
+                            <div class="kpi-card card h-100" style="cursor: pointer;" onclick="showKPIDetails('tickets', {{ company_kpis.tickets.total }}, {{ company_kpis.tickets.resolved }}, {{ company_kpis.tickets.resolution_rate }})">
                                 <div class="card-body text-center">
                                     <div class="kpi-icon mb-2">
                                         <i class="fas fa-ticket-alt"></i>
@@ -277,7 +286,7 @@
                         
                         <!-- Proyectos -->
                         <div class="col-md-6 col-lg-3">
-                            <div class="kpi-card card h-100">
+                            <div class="kpi-card card h-100" style="cursor: pointer;" onclick="showKPIDetails('projects', {{ company_kpis.projects.total }}, {{ company_kpis.projects.active }})">
                                 <div class="card-body text-center">
                                     <div class="kpi-icon mb-2">
                                         <i class="fas fa-project-diagram"></i>
@@ -296,7 +305,7 @@
                         
                         <!-- Actividad -->
                         <div class="col-md-6 col-lg-3">
-                            <div class="kpi-card card h-100">
+                            <div class="kpi-card card h-100" style="cursor: pointer;" onclick="showKPIDetails('activity', {{ company_kpis.engagement.activity_score }}, {{ company_kpis.engagement.meetings_frequency }})">
                                 <div class="card-body text-center">
                                     <div class="progress-circle mx-auto mb-2">
                                         <span class="fw-bold">{{ company_kpis.engagement.activity_score }}%</span>
@@ -500,9 +509,225 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- Modal para detalles de KPIs -->
+<div class="modal fade" id="kpiDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="kpiModalTitle">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Detalles del Indicador
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="kpiDetailsContent">
+                    <!-- El contenido se carga dinámicamente aquí -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     // Actualizar el título de la página
     document.title = 'Reunión #{{ meeting.sequence }} - {{ company.name }}';
+    
+    // Función para mostrar detalles de los KPIs
+    function showKPIDetails(type, ...values) {
+        let title = '';
+        let content = '';
+        
+        switch(type) {
+            case 'meetings':
+                title = 'Reuniones de Soporte';
+                content = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-handshake fa-3x text-primary mb-3"></i>
+                                    <h3 class="text-primary">${values[0]}</h3>
+                                    <p class="mb-0">Total de Reuniones</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-calendar-alt fa-3x text-success mb-3"></i>
+                                    <h3 class="text-success">${values[1]}</h3>
+                                    <p class="mb-0">Reuniones Recientes (6 meses)</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <h6><i class="fas fa-info-circle me-2"></i>Información sobre las Reuniones</h6>
+                        <p class="text-muted">
+                            Las reuniones de soporte son sesiones dedicadas donde trabajamos juntos para resolver 
+                            tus consultas, revisar el progreso de tus proyectos y planificar mejoras en los servicios.
+                        </p>
+                        <div class="alert alert-info">
+                            <i class="fas fa-lightbulb me-2"></i>
+                            <strong>¿Sabías qué?</strong> Cada reunión de soporte incluye un seguimiento detallado 
+                            de los puntos tratados y las acciones a realizar.
+                        </div>
+                    </div>
+                `;
+                break;
+                
+            case 'tickets':
+                title = 'Gestión de Tickets';
+                content = `
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-ticket-alt fa-3x text-primary mb-3"></i>
+                                    <h3 class="text-primary">${values[0]}</h3>
+                                    <p class="mb-0">Total de Tickets</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                                    <h3 class="text-success">${values[1]}</h3>
+                                    <p class="mb-0">Tickets Resueltos</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-percentage fa-3x text-warning mb-3"></i>
+                                    <h3 class="text-warning">${values[2]}%</h3>
+                                    <p class="mb-0">Tasa de Resolución</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <h6><i class="fas fa-info-circle me-2"></i>Sistema de Tickets</h6>
+                        <p class="text-muted">
+                            Nuestro sistema de tickets permite un seguimiento eficiente de todas tus solicitudes, 
+                            desde el reporte inicial hasta la resolución completa.
+                        </p>
+                        <div class="progress mb-3">
+                            <div class="progress-bar bg-success" style="width: ${values[2]}%">
+                                ${values[2]}% Tasa de Resolución
+                            </div>
+                        </div>
+                        <div class="alert alert-success">
+                            <i class="fas fa-trophy me-2"></i>
+                            <strong>Excelente gestión:</strong> Mantenemos una alta tasa de resolución 
+                            para asegurar tu satisfacción.
+                        </div>
+                    </div>
+                `;
+                break;
+                
+            case 'projects':
+                title = 'Proyectos en Desarrollo';
+                content = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-project-diagram fa-3x text-primary mb-3"></i>
+                                    <h3 class="text-primary">${values[0]}</h3>
+                                    <p class="mb-0">Total de Proyectos</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-play-circle fa-3x text-success mb-3"></i>
+                                    <h3 class="text-success">${values[1]}</h3>
+                                    <p class="mb-0">Proyectos Activos</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <h6><i class="fas fa-info-circle me-2"></i>Desarrollo de Proyectos</h6>
+                        <p class="text-muted">
+                            Trabajamos en proyectos personalizados que se adaptan a tus necesidades específicas, 
+                            con seguimiento continuo y entregas incrementales.
+                        </p>
+                        <div class="alert alert-info">
+                            <i class="fas fa-cogs me-2"></i>
+                            <strong>Metodología ágil:</strong> Utilizamos metodologías modernas para 
+                            asegurar entregas de calidad en tiempo y forma.
+                        </div>
+                    </div>
+                `;
+                break;
+                
+            case 'activity':
+                title = 'Nivel de Actividad';
+                content = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <div class="progress-circle mx-auto mb-3" style="width: 80px; height: 80px; font-size: 1.2rem;">
+                                        <span class="fw-bold">${values[0]}%</span>
+                                    </div>
+                                    <p class="mb-0">Puntuación de Actividad</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-calendar-week fa-3x text-info mb-3"></i>
+                                    <h3 class="text-info">${values[1]}</h3>
+                                    <p class="mb-0">Reuniones por Mes</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <h6><i class="fas fa-info-circle me-2"></i>Nivel de Colaboración</h6>
+                        <p class="text-muted">
+                            Este indicador refleja la frecuencia e intensidad de nuestra colaboración, 
+                            basado en reuniones, comunicaciones y actividades del proyecto.
+                        </p>
+                        <div class="progress mb-3">
+                            <div class="progress-bar bg-gradient" style="width: ${values[0]}%; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);">
+                                ${values[0]}% Actividad
+                            </div>
+                        </div>
+                        ${values[0] > 80 ? 
+                            '<div class="alert alert-success"><i class="fas fa-star me-2"></i><strong>¡Excelente!</strong> Mantenemos una colaboración muy activa contigo.</div>' :
+                            values[0] > 60 ?
+                            '<div class="alert alert-info"><i class="fas fa-thumbs-up me-2"></i><strong>Buena colaboración:</strong> Trabajamos de manera regular en tus proyectos.</div>' :
+                            '<div class="alert alert-warning"><i class="fas fa-calendar-plus me-2"></i><strong>Oportunidad:</strong> Podemos incrementar la frecuencia de nuestras colaboraciones.</div>'
+                        }
+                    </div>
+                `;
+                break;
+        }
+        
+        // Actualizar el modal
+        document.getElementById('kpiModalTitle').innerHTML = `<i class="fas fa-chart-line me-2"></i>${title}`;
+        document.getElementById('kpiDetailsContent').innerHTML = content;
+        
+        // Mostrar el modal
+        const modal = new bootstrap.Modal(document.getElementById('kpiDetailsModal'));
+        modal.show();
+    }
     
     // Animaciones suaves al cargar
     $(document).ready(function() {
@@ -510,6 +735,12 @@
             $(this).delay(index * 100).animate({
                 opacity: 1
             }, 500);
+        });
+        
+        // Prevenir cualquier enlace predeterminado en las KPI cards
+        $('.kpi-card').click(function(e) {
+            e.preventDefault();
+            e.stopPropagation();
         });
     });
 </script>

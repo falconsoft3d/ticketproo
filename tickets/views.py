@@ -5,7 +5,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User, Group
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Q, Sum, F, Count
+from django.db.models import Q, Sum, F, Count, Exists, Min
 from django.db import models
 from django.db.models.functions import TruncHour, TruncDay, TruncMonth
 from django.http import HttpResponse, Http404, JsonResponse
@@ -45,7 +45,7 @@ from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
     UserNote, TimeEntry, PublicTimeAccess, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
     DailyTaskSession, DailyTaskItem, ChatRoom, ChatMessage, ContactFormSubmission,
-    Opportunity, OpportunityStatus, OpportunityNote, OpportunityStatusHistory,
+    Opportunity, OpportunityStatus, OpportunityNote, OpportunityStatusHistory, OpportunityActivity,
     Meeting, MeetingAttendee, MeetingQuestion, Contact,
     BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, Concept,
     Exam, ExamQuestion, ExamAttempt, ExamAnswer, ContactoWeb, PublicDocumentUpload,
@@ -9377,7 +9377,21 @@ def mark_class_as_viewed(request, course_id, class_id):
 @login_required
 def contact_list(request):
     """Lista de contactos con filtros"""
-    contacts = Contact.objects.all()
+    from django.db.models import Count, Exists, OuterRef, Min
+    from django.utils import timezone
+    
+    # Subconsulta para verificar si tiene actividades
+    has_activities = OpportunityActivity.objects.filter(contact=OuterRef('pk'))
+    
+    # Obtener la fecha de la próxima actividad (futuras o pendientes)
+    now = timezone.now()
+    
+    contacts = Contact.objects.annotate(
+        activity_count=Count('activities'),
+        has_activities=Exists(has_activities),
+        next_activity_date=Min('activities__scheduled_date', 
+                              filter=Q(activities__scheduled_date__gte=now))
+    )
     
     # Filtros
     status = request.GET.get('status')
@@ -9397,6 +9411,13 @@ def contact_list(request):
             Q(phone__icontains=search) |
             Q(erp__icontains=search)
         )
+    
+    # Filtro por actividades
+    has_activity = request.GET.get('has_activity')
+    if has_activity == 'yes':
+        contacts = contacts.filter(activities_count__gt=0)
+    elif has_activity == 'no':
+        contacts = contacts.filter(activities_count=0)
     
     date_from = request.GET.get('date_from')
     if date_from:
@@ -9418,6 +9439,18 @@ def contact_list(request):
     negative_contacts = Contact.objects.filter(status='negative').count()
     today_contacts = Contact.objects.filter(contact_date__date=timezone.now().date()).count()
     
+    # Estadísticas de actividades
+    contacts_with_activities = Contact.objects.annotate(
+        activities_count=Count('activities')
+    ).filter(activities_count__gt=0).count()
+    
+    contacts_without_activities = Contact.objects.annotate(
+        activities_count=Count('activities')
+    ).filter(activities_count=0).count()
+    
+    # Fecha de hoy para comparaciones en template
+    today_date = timezone.now().date().strftime('%Y-%m-%d')
+    
     context = {
         'page_obj': page_obj,
         'contacts': page_obj.object_list,
@@ -9425,6 +9458,9 @@ def contact_list(request):
         'positive_contacts': positive_contacts,
         'negative_contacts': negative_contacts,
         'today_contacts': today_contacts,
+        'contacts_with_activities': contacts_with_activities,
+        'contacts_without_activities': contacts_without_activities,
+        'today_date': today_date,
         'page_title': 'Contactos'
     }
     

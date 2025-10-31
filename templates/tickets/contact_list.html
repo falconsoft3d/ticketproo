@@ -1,7 +1,66 @@
 {% extends 'base.html' %}
+
+{% block extra_css %}
+<style>
+.contact-kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+.filter-active {
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25);
+    border-color: #0d6efd !important;
+}
+.activity-date {
+    font-size: 0.75rem;
+    line-height: 1.2;
+}
+.activity-info {
+    min-width: 80px;
+}
+</style>
+{% endblock %}
 {% load project_extras %}
 
 {% block title %}Contactos - TicketProo{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Animación suave para las KPI cards
+        $('.contact-kpi-card').hover(
+            function() {
+                $(this).find('.card').addClass('shadow-lg');
+            },
+            function() {
+                $(this).find('.card').removeClass('shadow-lg');
+            }
+        );
+        
+        // Efecto click en KPI cards
+        $('.contact-kpi-card').click(function() {
+            // Agregar efecto visual temporal
+            $(this).find('.card').addClass('border-2');
+            
+            // Mostrar indicador de carga
+            const originalContent = $(this).find('small').html();
+            $(this).find('small').html('<i class="bi bi-arrow-clockwise"></i> Filtrando...');
+            
+            // Restaurar después de un momento (el navegador manejará la navegación)
+            setTimeout(() => {
+                $(this).find('small').html(originalContent);
+            }, 1000);
+        });
+        
+        // Resaltar filtros activos
+        $('.filter-active').addClass('shadow');
+        
+        // Auto-focus en el campo de búsqueda si no hay filtros activos
+        {% if not request.GET.status and not request.GET.date_from and not request.GET.search %}
+        $('#search').focus();
+        {% endif %}
+    });
+</script>
+{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -11,8 +70,33 @@
             <h2>
                 <i class="bi bi-person-lines-fill text-primary"></i>
                 Contactos
+                {% if request.GET.status or request.GET.search or request.GET.date_from or request.GET.date_to %}
+                    <span class="badge bg-warning text-dark ms-2">Filtros activos</span>
+                {% endif %}
             </h2>
-            <p class="text-muted mb-0">Gestión de contactos de ventas</p>
+            <p class="text-muted mb-0">
+                Gestión de contactos de ventas
+                {% if request.GET.status or request.GET.search or request.GET.date_from or request.GET.date_to %}
+                    <br><small class="text-primary">
+                        <i class="bi bi-funnel-fill"></i>
+                        {% if request.GET.status %}
+                            Estado: {{ request.GET.status|title }}
+                        {% endif %}
+                        {% if request.GET.search %}
+                            • Búsqueda: "{{ request.GET.search }}"
+                        {% endif %}
+                        {% if request.GET.date_from %}
+                            • Desde: {{ request.GET.date_from }}
+                        {% endif %}
+                        {% if request.GET.date_to %}
+                            • Hasta: {{ request.GET.date_to }}
+                        {% endif %}
+                        <a href="{% url 'contact_list' %}" class="text-decoration-none ms-2">
+                            <small>(Limpiar filtros)</small>
+                        </a>
+                    </small>
+                {% endif %}
+            </p>
         </div>
         <div class="d-flex gap-2">
             <a href="{% url 'contact_chart' %}" class="btn btn-outline-info">
@@ -26,37 +110,89 @@
 
     <!-- Estadísticas -->
     <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card text-center border-primary">
-                <div class="card-body">
-                    <h3 class="text-primary">{{ total_contacts }}</h3>
-                    <p class="text-muted mb-0">Total Contactos</p>
+        <div class="col-md-2">
+            <a href="{% url 'contact_list' %}" class="text-decoration-none">
+                <div class="card text-center border-primary h-100 contact-kpi-card {% if not request.GET.status and not request.GET.date_from and not request.GET.has_activity %}filter-active{% endif %}" style="cursor: pointer; transition: transform 0.2s;">
+                    <div class="card-body p-2">
+                        <i class="bi bi-people-fill text-primary mb-1" style="font-size: 1.5rem;"></i>
+                        <h4 class="text-primary mb-0">{{ total_contacts }}</h4>
+                        <p class="text-muted mb-0 small">Total</p>
+                        {% if not request.GET.status and not request.GET.date_from and not request.GET.has_activity %}
+                            <small class="text-primary fw-bold">✓ Activo</small>
+                        {% endif %}
+                    </div>
                 </div>
-            </div>
+            </a>
         </div>
-        <div class="col-md-3">
-            <div class="card text-center border-success">
-                <div class="card-body">
-                    <h3 class="text-success">{{ positive_contacts }}</h3>
-                    <p class="text-muted mb-0">😊 Positivos</p>
+        <div class="col-md-2">
+            <a href="{% url 'contact_list' %}?status=positive" class="text-decoration-none">
+                <div class="card text-center border-success h-100 contact-kpi-card {% if request.GET.status == 'positive' %}filter-active{% endif %}" style="cursor: pointer; transition: transform 0.2s;">
+                    <div class="card-body p-2">
+                        <i class="bi bi-emoji-smile-fill text-success mb-1" style="font-size: 1.5rem;"></i>
+                        <h4 class="text-success mb-0">{{ positive_contacts }}</h4>
+                        <p class="text-muted mb-0 small">😊 Positivos</p>
+                        {% if request.GET.status == 'positive' %}
+                            <small class="text-success fw-bold">✓ Activo</small>
+                        {% endif %}
+                    </div>
                 </div>
-            </div>
+            </a>
         </div>
-        <div class="col-md-3">
-            <div class="card text-center border-danger">
-                <div class="card-body">
-                    <h3 class="text-danger">{{ negative_contacts }}</h3>
-                    <p class="text-muted mb-0">Negativos</p>
+        <div class="col-md-2">
+            <a href="{% url 'contact_list' %}?status=negative" class="text-decoration-none">
+                <div class="card text-center border-danger h-100 contact-kpi-card {% if request.GET.status == 'negative' %}filter-active{% endif %}" style="cursor: pointer; transition: transform 0.2s;">
+                    <div class="card-body p-2">
+                        <i class="bi bi-emoji-frown-fill text-danger mb-1" style="font-size: 1.5rem;"></i>
+                        <h4 class="text-danger mb-0">{{ negative_contacts }}</h4>
+                        <p class="text-muted mb-0 small">😞 Negativos</p>
+                        {% if request.GET.status == 'negative' %}
+                            <small class="text-danger fw-bold">✓ Activo</small>
+                        {% endif %}
+                    </div>
                 </div>
-            </div>
+            </a>
         </div>
-        <div class="col-md-3">
-            <div class="card text-center border-info">
-                <div class="card-body">
-                    <h3 class="text-info">{{ today_contacts }}</h3>
-                    <p class="text-muted mb-0">Hoy</p>
+        <div class="col-md-2">
+            <a href="{% url 'contact_list' %}?has_activity=yes" class="text-decoration-none">
+                <div class="card text-center border-warning h-100 contact-kpi-card {% if request.GET.has_activity == 'yes' %}filter-active{% endif %}" style="cursor: pointer; transition: transform 0.2s;">
+                    <div class="card-body p-2">
+                        <i class="bi bi-telephone-fill text-warning mb-1" style="font-size: 1.5rem;"></i>
+                        <h4 class="text-warning mb-0">{{ contacts_with_activities }}</h4>
+                        <p class="text-muted mb-0 small">� Con Actividad</p>
+                        {% if request.GET.has_activity == 'yes' %}
+                            <small class="text-warning fw-bold">✓ Activo</small>
+                        {% endif %}
+                    </div>
                 </div>
-            </div>
+            </a>
+        </div>
+        <div class="col-md-2">
+            <a href="{% url 'contact_list' %}?has_activity=no" class="text-decoration-none">
+                <div class="card text-center border-secondary h-100 contact-kpi-card {% if request.GET.has_activity == 'no' %}filter-active{% endif %}" style="cursor: pointer; transition: transform 0.2s;">
+                    <div class="card-body p-2">
+                        <i class="bi bi-telephone-x-fill text-secondary mb-1" style="font-size: 1.5rem;"></i>
+                        <h4 class="text-secondary mb-0">{{ contacts_without_activities }}</h4>
+                        <p class="text-muted mb-0 small">📵 Sin Actividad</p>
+                        {% if request.GET.has_activity == 'no' %}
+                            <small class="text-secondary fw-bold">✓ Activo</small>
+                        {% endif %}
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-2">
+            <a href="{% url 'contact_list' %}?date_from={% now 'Y-m-d' %}&date_to={% now 'Y-m-d' %}" class="text-decoration-none">
+                <div class="card text-center border-info h-100 contact-kpi-card {% if request.GET.date_from == today_date and request.GET.date_to == today_date %}filter-active{% endif %}" style="cursor: pointer; transition: transform 0.2s;">
+                    <div class="card-body p-2">
+                        <i class="bi bi-calendar-day-fill text-info mb-1" style="font-size: 1.5rem;"></i>
+                        <h4 class="text-info mb-0">{{ today_contacts }}</h4>
+                        <p class="text-muted mb-0 small">Hoy</p>
+                        {% if request.GET.date_from == today_date and request.GET.date_to == today_date %}
+                            <small class="text-info fw-bold">✓ Activo</small>
+                        {% endif %}
+                    </div>
+                </div>
+            </a>
         </div>
     </div>
 
@@ -69,11 +205,11 @@
         </div>
         <div class="card-body">
             <form method="GET" class="row">
-                <div class="col-md-3 mb-3">
+                <div class="col-md-2 mb-3">
                     <label for="search" class="form-label">Buscar</label>
                     <input type="text" class="form-control" id="search" name="search" 
                            value="{{ request.GET.search }}" 
-                           placeholder="Nombre, email, empresa, teléfono, ERP...">
+                           placeholder="Nombre, email, empresa...">
                 </div>
                 <div class="col-md-2 mb-3">
                     <label for="status" class="form-label">Estado</label>
@@ -81,6 +217,14 @@
                         <option value="">Todos</option>
                         <option value="positive" {% if request.GET.status == 'positive' %}selected{% endif %}>Positivo</option>
                         <option value="negative" {% if request.GET.status == 'negative' %}selected{% endif %}>Negativo</option>
+                    </select>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label for="has_activity" class="form-label">Actividades</label>
+                    <select class="form-select" id="has_activity" name="has_activity">
+                        <option value="">Todos</option>
+                        <option value="yes" {% if request.GET.has_activity == 'yes' %}selected{% endif %}>Con actividades</option>
+                        <option value="no" {% if request.GET.has_activity == 'no' %}selected{% endif %}>Sin actividades</option>
                     </select>
                 </div>
                 <div class="col-md-2 mb-3">
@@ -93,12 +237,12 @@
                     <input type="date" class="form-control" id="date_to" name="date_to" 
                            value="{{ request.GET.date_to }}">
                 </div>
-                <div class="col-md-3 mb-3 d-flex align-items-end">
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary">
+                <div class="col-md-2 mb-3 d-flex align-items-end">
+                    <div class="d-flex gap-1 w-100">
+                        <button type="submit" class="btn btn-primary btn-sm">
                             <i class="bi bi-search"></i> Buscar
                         </button>
-                        <a href="{% url 'contact_list' %}" class="btn btn-outline-secondary">
+                        <a href="{% url 'contact_list' %}" class="btn btn-outline-secondary btn-sm">
                             <i class="bi bi-arrow-clockwise"></i> Limpiar
                         </a>
                     </div>
@@ -124,7 +268,8 @@
                                 <th>Empresa</th>
                                 <th>País</th>
                                 <th>ERP</th>
-                                <th>Fecha Contacto</th>
+                                <th>Actividades</th>
+                                <th>Fecha</th>
                                 <th>Fuente</th>
                                 <th>Creado por</th>
                                 <th>Acciones</th>
@@ -171,6 +316,40 @@
                                         <span class="badge bg-info">{{ contact.erp }}</span>
                                     {% else %}
                                         <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if contact.has_activities %}
+                                        <div class="activity-info">
+                                            <div class="d-flex align-items-center justify-content-center mb-1">
+                                                <span class="badge bg-success me-1">{{ contact.activity_count }}</span>
+                                                <i class="bi bi-telephone-fill text-success" title="Tiene actividades programadas"></i>
+                                            </div>
+                                            {% if contact.next_activity_date %}
+                                                <small class="activity-date text-muted">
+                                                    <i class="bi bi-calendar-event"></i>
+                                                    {{ contact.next_activity_date|date:"d/m/Y" }}
+                                                    <br>
+                                                    <i class="bi bi-clock"></i>
+                                                    {{ contact.next_activity_date|time:"H:i" }}
+                                                </small>
+                                            {% else %}
+                                                <small class="activity-date text-warning">
+                                                    <i class="bi bi-exclamation-circle"></i>
+                                                    Sin fecha futura
+                                                </small>
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        <div class="activity-info">
+                                            <div class="d-flex align-items-center justify-content-center">
+                                                <span class="badge bg-light text-muted me-1">0</span>
+                                                <i class="bi bi-telephone-x text-muted" title="Sin actividades"></i>
+                                            </div>
+                                            <small class="activity-date text-muted">
+                                                Sin actividades
+                                            </small>
+                                        </div>
                                     {% endif %}
                                 </td>
                                 <td>
