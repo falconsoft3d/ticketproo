@@ -15974,6 +15974,13 @@ class SupportMeeting(models.Model):
 class SupportMeetingPoint(models.Model):
     """Modelo para los puntos de las reuniones de soporte"""
     
+    STATUS_CHOICES = [
+        ('pending', 'Pendiente'),
+        ('in_progress', 'En Progreso'),
+        ('completed', 'Completado'),
+        ('cancelled', 'Cancelado'),
+    ]
+    
     meeting = models.ForeignKey(
         SupportMeeting,
         on_delete=models.CASCADE,
@@ -15983,6 +15990,13 @@ class SupportMeetingPoint(models.Model):
     description = models.TextField(
         verbose_name='Descripción del punto',
         help_text='Descripción detallada del punto'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        verbose_name='Estado',
+        help_text='Estado actual del punto'
     )
     is_selected = models.BooleanField(
         default=False,
@@ -16001,6 +16015,16 @@ class SupportMeetingPoint(models.Model):
     
     def __str__(self):
         return f"{self.meeting} - {self.description[:50]}..."
+    
+    def get_status_badge_class(self):
+        """Retorna la clase CSS para el badge del estado"""
+        status_classes = {
+            'pending': 'bg-secondary',
+            'in_progress': 'bg-warning',
+            'completed': 'bg-success',
+            'cancelled': 'bg-danger',
+        }
+        return status_classes.get(self.status, 'bg-secondary')
 
 
 class SupportMeetingPublicLink(models.Model):

@@ -14,19 +14,29 @@
         background-color: #f8fff9;
     }
     
-    .point-card.pending {
+    .point-card.in-progress {
         border-left-color: #ffc107;
         background-color: #fffef8;
     }
     
+    .point-card.pending {
+        border-left-color: #6c757d;
+        background-color: #f8f9fa;
+    }
+    
+    .point-card.cancelled {
+        border-left-color: #dc3545;
+        background-color: #fff5f5;
+    }
+    
     .stats-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: #0d6efd;
         color: white;
         border: none;
     }
     
     .kpi-card {
-        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        background: #0d6efd;
         color: white;
         border: none;
         transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -72,7 +82,7 @@
     }
     
     .company-header {
-        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        background: #0d6efd;
         color: white;
         padding: 2rem 0;
     }
@@ -176,7 +186,11 @@
                 </div>
                 <div class="card-body">
                     {% for point in points %}
-                        <div class="point-card card mb-3 {% if point.is_selected %}completed{% else %}pending{% endif %}">
+                        <div class="point-card card mb-3 
+                            {% if point.status == 'completed' %}completed
+                            {% elif point.status == 'in_progress' %}in-progress
+                            {% elif point.status == 'cancelled' %}cancelled
+                            {% else %}pending{% endif %}">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div class="flex-grow-1">
@@ -187,13 +201,27 @@
                                         </small>
                                     </div>
                                     <div class="ms-3">
-                                        {% if point.is_selected %}
+                                        {% if point.status == 'completed' %}
                                             <span class="badge bg-success point-status-badge">
-                                                <i class="fas fa-check me-1"></i>Procesado
+                                                <i class="fas fa-check me-1"></i>Completado
+                                            </span>
+                                        {% elif point.status == 'in_progress' %}
+                                            <span class="badge bg-warning point-status-badge">
+                                                <i class="fas fa-spinner me-1"></i>En Progreso
+                                            </span>
+                                        {% elif point.status == 'cancelled' %}
+                                            <span class="badge bg-danger point-status-badge">
+                                                <i class="fas fa-times me-1"></i>Cancelado
                                             </span>
                                         {% else %}
-                                            <span class="badge bg-warning point-status-badge">
+                                            <span class="badge bg-secondary point-status-badge">
                                                 <i class="fas fa-clock me-1"></i>Pendiente
+                                            </span>
+                                        {% endif %}
+                                        
+                                        {% if point.is_selected %}
+                                            <span class="badge bg-primary point-status-badge mt-1 d-block">
+                                                <i class="fas fa-ticket-alt me-1"></i>Ticket Creado
                                             </span>
                                         {% endif %}
                                     </div>
@@ -211,34 +239,50 @@
             </div>
 
 
-<div class="card stats-card mb-4">
+            <div class="card stats-card mb-4 mt-2">
                 <div class="card-body">
                     <div class="row text-center">
-                        <div class="col-md-4">
+                        <div class="col-md-2">
                             <div class="d-flex flex-column">
                                 <span class="h2 mb-0">{{ stats.total_points }}</span>
                                 <small>Total de Puntos</small>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="d-flex flex-column">
-                                <span class="h2 mb-0">{{ stats.selected_points }}</span>
-                                <small>Puntos Procesados</small>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
+                        <div class="col-md-2">
                             <div class="d-flex flex-column">
                                 <span class="h2 mb-0">{{ stats.completed_points }}</span>
-                                <small>Puntos Pendientes</small>
+                                <small>Completados</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="d-flex flex-column">
+                                <span class="h2 mb-0">{{ stats.in_progress_points }}</span>
+                                <small>En Progreso</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="d-flex flex-column">
+                                <span class="h2 mb-0">{{ stats.pending_points }}</span>
+                                <small>Pendientes</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="d-flex flex-column">
+                                <span class="h2 mb-0">{{ stats.cancelled_points }}</span>
+                                <small>Cancelados</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="d-flex flex-column">
+                                <span class="h2 mb-0">{{ stats.selected_points }}</span>
+                                <small>Con Tickets</small>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            
-            <!-- KPIs Empresariales -->
+            </div>            <!-- KPIs Empresariales -->
             <div class="card mb-4">
-                <div class="card-header bg-info text-white">
+                <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
                         <i class="fas fa-chart-line me-2"></i>
                         Indicadores de Tu Empresa

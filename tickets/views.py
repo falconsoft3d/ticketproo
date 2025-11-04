@@ -8735,7 +8735,10 @@ def support_meeting_public(request, token):
     stats = {
         'total_points': points.count(),
         'selected_points': points.filter(is_selected=True).count(),
-        'completed_points': points.filter(is_selected=False).count(),
+        'pending_points': points.filter(status='pending').count(),
+        'in_progress_points': points.filter(status='in_progress').count(),
+        'completed_points': points.filter(status='completed').count(),
+        'cancelled_points': points.filter(status='cancelled').count(),
     }
     
     # KPIs empresariales para el cliente
@@ -8850,6 +8853,94 @@ def support_meeting_disable_public_link(request, pk):
         messages.error(request, 'No existe enlace público para esta reunión.')
     
     return redirect('support_meeting_detail', pk=meeting.pk)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def support_meeting_point_edit(request, meeting_pk, point_pk):
+    """Vista para editar un punto de reunión de soporte"""
+    from .models import SupportMeeting, SupportMeetingPoint
+    from .forms import SupportMeetingPointForm
+    from django.http import JsonResponse
+    
+    meeting = get_object_or_404(SupportMeeting, pk=meeting_pk)
+    point = get_object_or_404(SupportMeetingPoint, pk=point_pk, meeting=meeting)
+    
+    if request.method == 'POST':
+        # Si es una petición AJAX
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            form = SupportMeetingPointForm(request.POST, instance=point)
+            if form.is_valid():
+                form.save()
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Punto actualizado exitosamente.',
+                    'description': point.description,
+                    'is_selected': point.is_selected
+                })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'errors': form.errors
+                })
+        else:
+            # POST normal
+            form = SupportMeetingPointForm(request.POST, instance=point)
+            if form.is_valid():
+                form.save()
+                messages.success(request, 'Punto actualizado exitosamente.')
+                return redirect('support_meeting_detail', pk=meeting.pk)
+    else:
+        form = SupportMeetingPointForm(instance=point)
+    
+    context = {
+        'page_title': f'Editar Punto - Reunión #{meeting.sequence}',
+        'meeting': meeting,
+        'point': point,
+        'form': form,
+    }
+    return render(request, 'tickets/support_meeting_point_edit.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def support_meeting_point_delete(request, meeting_pk, point_pk):
+    """Vista para eliminar un punto de reunión de soporte"""
+    from .models import SupportMeeting, SupportMeetingPoint
+    from django.http import JsonResponse
+    
+    meeting = get_object_or_404(SupportMeeting, pk=meeting_pk)
+    point = get_object_or_404(SupportMeetingPoint, pk=point_pk, meeting=meeting)
+    
+    if request.method == 'POST':
+        # Si es una petición AJAX
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            point_description = point.description[:50] + "..." if len(point.description) > 50 else point.description
+            point.delete()
+            
+            # Obtener conteos actualizados
+            selected_count = meeting.support_meeting_points.filter(is_selected=True).count()
+            total_count = meeting.support_meeting_points.count()
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Punto "{point_description}" eliminado exitosamente.',
+                'selected_count': selected_count,
+                'total_count': total_count
+            })
+        else:
+            # POST normal
+            point_info = point.description[:100] + "..." if len(point.description) > 100 else point.description
+            point.delete()
+            messages.success(request, f'Punto "{point_info}" eliminado exitosamente.')
+            return redirect('support_meeting_detail', pk=meeting.pk)
+    
+    context = {
+        'page_title': f'Eliminar Punto - Reunión #{meeting.sequence}',
+        'meeting': meeting,
+        'point': point,
+    }
+    return render(request, 'tickets/support_meeting_point_delete.html', context)
 
 
 # ========================
@@ -9452,9 +9543,9 @@ def contact_list(request):
     # Filtro por actividades
     has_activity = request.GET.get('has_activity')
     if has_activity == 'yes':
-        contacts = contacts.filter(activities_count__gt=0)
+        contacts = contacts.filter(activity_count__gt=0)
     elif has_activity == 'no':
-        contacts = contacts.filter(activities_count=0)
+        contacts = contacts.filter(activity_count=0)
     
     date_from = request.GET.get('date_from')
     if date_from:
@@ -9478,12 +9569,12 @@ def contact_list(request):
     
     # Estadísticas de actividades
     contacts_with_activities = Contact.objects.annotate(
-        activities_count=Count('activities')
-    ).filter(activities_count__gt=0).count()
+        activity_count=Count('activities')
+    ).filter(activity_count__gt=0).count()
     
     contacts_without_activities = Contact.objects.annotate(
-        activities_count=Count('activities')
-    ).filter(activities_count=0).count()
+        activity_count=Count('activities')
+    ).filter(activity_count=0).count()
     
     # Fecha de hoy para comparaciones en template
     today_date = timezone.now().date().strftime('%Y-%m-%d')

@@ -378,6 +378,8 @@ urlpatterns = [
     path('support-meetings/<int:pk>/create-tickets/', views.support_meeting_create_tickets, name='support_meeting_create_tickets'),
     path('support-meetings/<int:pk>/generate-link/', views.support_meeting_generate_public_link, name='support_meeting_generate_link'),
     path('support-meetings/<int:pk>/disable-link/', views.support_meeting_disable_public_link, name='support_meeting_disable_link'),
+    path('support-meetings/<int:meeting_pk>/points/<int:point_pk>/edit/', views.support_meeting_point_edit, name='support_meeting_point_edit'),
+    path('support-meetings/<int:meeting_pk>/points/<int:point_pk>/delete/', views.support_meeting_point_delete, name='support_meeting_point_delete'),
     
     # URLs públicas de reuniones de soporte (sin autenticación)
     path('support/meeting/<str:token>/', views.support_meeting_public, name='support_meeting_public'),

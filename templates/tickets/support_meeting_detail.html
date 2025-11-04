@@ -159,6 +159,23 @@
                                         {% endif %}
                                     </div>
                                     
+                                    <div class="mb-3">
+                                        <label for="{{ point_form.status.id_for_label }}" class="form-label">
+                                            {{ point_form.status.label }}
+                                        </label>
+                                        {{ point_form.status }}
+                                        {% if point_form.status.help_text %}
+                                            <div class="form-text">{{ point_form.status.help_text }}</div>
+                                        {% endif %}
+                                        {% if point_form.status.errors %}
+                                            <div class="text-danger">
+                                                {% for error in point_form.status.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    
                                     <div class="form-check mb-3">
                                         {{ point_form.is_selected }}
                                         <label class="form-check-label" for="{{ point_form.is_selected.id_for_label }}">
@@ -194,6 +211,24 @@
                                     </div>
                                     <div class="col-md-10">
                                         <p class="mb-2">{{ point.description|linebreaks }}</p>
+                                        <div class="d-flex align-items-center gap-2 mb-2">
+                                            <span class="badge {{ point.get_status_badge_class }}">
+                                                {% if point.status == 'pending' %}
+                                                    <i class="fas fa-clock"></i> Pendiente
+                                                {% elif point.status == 'in_progress' %}
+                                                    <i class="fas fa-spinner"></i> En Progreso
+                                                {% elif point.status == 'completed' %}
+                                                    <i class="fas fa-check"></i> Completado
+                                                {% elif point.status == 'cancelled' %}
+                                                    <i class="fas fa-times"></i> Cancelado
+                                                {% endif %}
+                                            </span>
+                                            {% if point.is_selected %}
+                                                <span class="badge bg-primary">
+                                                    <i class="fas fa-ticket-alt"></i> Para Ticket
+                                                </span>
+                                            {% endif %}
+                                        </div>
                                         <small class="text-muted">
                                             <i class="fas fa-clock"></i> {{ point.created_at|date:"d/m/Y H:i" }}
                                         </small>
@@ -206,12 +241,12 @@
                                             </button>
                                             <ul class="dropdown-menu">
                                                 <li>
-                                                    <a class="dropdown-item" href="#" onclick="editPoint({{ point.id }})">
+                                                    <a class="dropdown-item" href="{% url 'support_meeting_point_edit' meeting.pk point.id %}">
                                                         <i class="fas fa-edit"></i> Editar
                                                     </a>
                                                 </li>
                                                 <li>
-                                                    <a class="dropdown-item text-danger" href="#" onclick="deletePoint({{ point.id }})">
+                                                    <a class="dropdown-item text-danger" href="#" onclick="deletePoint({{ point.id }}); return false;">
                                                         <i class="fas fa-trash"></i> Eliminar
                                                     </a>
                                                 </li>
@@ -438,18 +473,78 @@ function deselectAllPoints() {
 }
 
 function editPoint(pointId) {
-    // Implementar edición de punto
-    if (typeof toastr !== 'undefined') {
-        toastr.info('Función de edición en desarrollo');
-    }
+    // Esta función ya no es necesaria ya que usamos enlaces directos
+    // Pero la mantenemos para compatibilidad
+    window.location.href = `{% url 'support_meeting_point_edit' meeting.pk 0 %}`.replace('0', pointId);
 }
 
 function deletePoint(pointId) {
-    if (confirm('¿Estás seguro de que quieres eliminar este punto?')) {
-        // Implementar eliminación de punto
-        if (typeof toastr !== 'undefined') {
-            toastr.info('Función de eliminación en desarrollo');
-        }
+    if (confirm('¿Estás seguro de que quieres eliminar este punto?\n\nEsta acción no se puede deshacer.')) {
+        // Método 1: Eliminación vía AJAX
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!(/^http:.*/.test(settings.url) || /^https:.*/.test(settings.url))) {
+                    xhr.setRequestHeader("X-CSRFToken", $('[name=csrfmiddlewaretoken]').val());
+                }
+            }
+        });
+        
+        $.post(`{% url 'support_meeting_point_delete' meeting.pk 0 %}`.replace('0', pointId), {
+            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+        }, function(response) {
+            if (response.success) {
+                // Remover el punto del DOM
+                $(`.point-card`).filter(function() {
+                    return $(this).find('.point-checkbox').data('point-id') == pointId;
+                }).fadeOut(300, function() {
+                    $(this).remove();
+                    
+                    // Actualizar contadores
+                    $('#selected-points').text(response.selected_count);
+                    $('#total-points').text(response.total_count);
+                    $('#tickets-count').text(response.selected_count);
+                    $('#quick-tickets-count').text(response.selected_count);
+                    
+                    // Actualizar botón de crear tickets
+                    updateCreateTicketsButton();
+                    
+                    // Mostrar mensaje si no hay puntos
+                    if (response.total_count === 0) {
+                        $('.card-body').html(`
+                            <div class="text-center py-5">
+                                <i class="fas fa-list-ul fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">No hay puntos registrados</h5>
+                                <p class="text-muted">Comienza agregando los puntos que se trataron en la reunión.</p>
+                                <button class="btn btn-primary" data-bs-toggle="collapse" data-bs-target="#addPointForm">
+                                    <i class="fas fa-plus"></i> Agregar Primer Punto
+                                </button>
+                            </div>
+                        `);
+                    }
+                });
+                
+                if (typeof toastr !== 'undefined') {
+                    toastr.success(response.message);
+                } else {
+                    alert(response.message);
+                }
+            } else {
+                if (typeof toastr !== 'undefined') {
+                    toastr.error(response.error || 'Error al eliminar el punto');
+                } else {
+                    alert('Error al eliminar el punto');
+                }
+            }
+        }).fail(function() {
+            if (typeof toastr !== 'undefined') {
+                toastr.error('Error de conexión al eliminar el punto');
+            } else {
+                alert('Error de conexión al eliminar el punto');
+            }
+        });
+        
+        // Método 2: Redirigir a página de confirmación (comentado)
+        // window.location.href = `{% url 'support_meeting_detail' meeting.pk %}`.replace('{{ meeting.pk }}', '{{ meeting.pk }}') + `../points/${pointId}/delete/`;
     }
 }
 

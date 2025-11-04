@@ -8175,7 +8175,7 @@ class SupportMeetingPointForm(forms.ModelForm):
     
     class Meta:
         model = SupportMeetingPoint
-        fields = ['description', 'is_selected']
+        fields = ['description', 'status', 'is_selected']
         widgets = {
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
@@ -8183,16 +8183,21 @@ class SupportMeetingPointForm(forms.ModelForm):
                 'rows': 3,
                 'required': True
             }),
+            'status': forms.Select(attrs={
+                'class': 'form-select'
+            }),
             'is_selected': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
         }
         labels = {
             'description': 'Descripción del punto',
+            'status': 'Estado del punto',
             'is_selected': 'Seleccionar para crear como ticket',
         }
         help_texts = {
             'description': 'Describe detalladamente el punto tratado',
+            'status': 'Estado actual del punto en la reunión',
             'is_selected': 'Marca esta casilla si quieres que este punto se convierta en ticket',
         }
     

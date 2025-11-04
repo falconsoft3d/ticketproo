@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-trash"></i> {{ page_title }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Información de la reunión -->
+                    <div class="alert alert-light border">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <strong>Reunión:</strong> #{{ meeting.sequence }} - {{ meeting.company.name }}<br>
+                                <small class="text-muted">{{ meeting.date|date:"d/m/Y" }}</small>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <a href="{% url 'support_meeting_detail' meeting.pk %}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-arrow-left"></i> Volver a Reunión
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Confirmación de eliminación -->
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>¿Estás seguro de que quieres eliminar este punto?</strong>
+                    </div>
+                    
+                    <!-- Información del punto a eliminar -->
+                    <div class="card border-left-primary">
+                        <div class="card-body">
+                            <h6 class="text-muted">Punto a eliminar:</h6>
+                            <p class="lead">{{ point.description|linebreaks }}</p>
+                            <small class="text-muted">
+                                <i class="fas fa-clock"></i> Creado el {{ point.created_at|date:"d/m/Y H:i" }}
+                            </small>
+                            {% if point.is_selected %}
+                                <br><span class="badge bg-success mt-1">Seleccionado para tickets</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if point.is_selected %}
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Nota:</strong> Este punto está seleccionado para generar tickets. Al eliminarlo, no se incluirá en la creación de tickets.
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Formulario de confirmación -->
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'support_meeting_detail' meeting.pk %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Sí, Eliminar Punto
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
