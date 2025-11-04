@@ -9519,7 +9519,7 @@ def contact_list(request):
         has_activities=Exists(has_activities),
         next_activity_date=Min('activities__scheduled_date', 
                               filter=Q(activities__scheduled_date__gte=now))
-    )
+    ).order_by('-created_at')
     
     # Filtros
     status = request.GET.get('status')
