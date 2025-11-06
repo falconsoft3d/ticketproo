@@ -741,6 +741,25 @@
             overflow: visible;
         }
         
+        /* Estilos para formulario deshabilitado */
+        .form-disabled {
+            opacity: 0.6;
+            pointer-events: none;
+            position: relative;
+        }
+        
+        .form-disabled::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.7);
+            z-index: 10;
+            cursor: not-allowed;
+        }
+        
         /* Estilos para los contadores de botones */
         .badge {
             font-size: 0.75rem;
@@ -824,9 +843,26 @@
                                             </p>
                                         </div>
 
+                                        {% if messages %}
+                                            {% for message in messages %}
+                                                <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                                    {{ message }}
+                                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                                </div>
+                                            {% endfor %}
+                                        {% endif %}
+
+                                        {% if already_submitted_today %}
+                                            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                                                <i class="fas fa-clock me-2"></i>
+                                                <strong>Formulario ya enviado hoy</strong><br>
+                                                Ya has enviado el formulario hoy desde esta ubicación. Para enviar una nueva solicitud, espera hasta mañana o contáctanos directamente.
+                                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                            </div>
+                                        {% endif %}
                                         
-                                        
-                                        <form method="post" id="landingForm" novalidate>
+                                        <form method="post" id="landingForm" novalidate {% if already_submitted_today %}class="form-disabled"{% endif %}>
                                             {% csrf_token %}
                                             
                                             <div class="row">
@@ -1007,8 +1043,25 @@
             const form = document.getElementById('landingForm');
             let isSubmitting = false;
             
+            // Verificar si el formulario está deshabilitado
+            const isFormDisabled = form.classList.contains('form-disabled');
+            
+            // Desactivar campos si el formulario está deshabilitado
+            if (isFormDisabled) {
+                const formInputs = form.querySelectorAll('input, textarea, select, button');
+                formInputs.forEach(input => {
+                    input.disabled = true;
+                });
+            }
+            
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
+                
+                // Prevenir envío si el formulario está deshabilitado
+                if (isFormDisabled) {
+                    alert('Ya has enviado el formulario hoy. Por favor, espera hasta mañana para enviar una nueva solicitud.');
+                    return;
+                }
                 
                 if (isSubmitting) return;
                 
@@ -1035,21 +1088,34 @@
                         'X-Requested-With': 'XMLHttpRequest',
                     }
                 })
-                .then(response => {
-                    if (response.ok) {
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success === false) {
+                        // Error del servidor (como formulario ya enviado)
+                        hideLoadingOverlay();
+                        showSpecificErrorMessage(data.error);
+                        
+                        if (data.already_submitted_today) {
+                            // Desactivar el formulario permanentemente
+                            form.classList.add('form-disabled');
+                            const formInputs = form.querySelectorAll('input, textarea, select, button');
+                            formInputs.forEach(input => {
+                                input.disabled = true;
+                            });
+                        }
+                        isSubmitting = false;
+                    } else {
                         // Envío exitoso
                         showSuccessMessage();
                         setTimeout(() => {
                             window.location.reload();
                         }, 2000);
-                    } else {
-                        throw new Error('Error en el envío');
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
                     hideLoadingOverlay();
-                    showErrorMessage();
+                    showErrorMessage('Error de conexión. Por favor, inténtalo de nuevo.');
                     isSubmitting = false;
                 });
             });
@@ -1089,12 +1155,25 @@
                 form.parentElement.appendChild(overlay);
             }
             
-            function showErrorMessage() {
+            function showErrorMessage(message = 'Hubo un error al enviar el formulario. Por favor, inténtalo de nuevo.') {
                 const alertDiv = document.createElement('div');
                 alertDiv.className = 'alert alert-danger alert-dismissible fade show mt-3';
                 alertDiv.innerHTML = `
                     <i class="fas fa-exclamation-triangle me-2"></i>
-                    Hubo un error al enviar el formulario. Por favor, inténtalo de nuevo.
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                form.appendChild(alertDiv);
+            }
+            
+            function showSpecificErrorMessage(message) {
+                hideLoadingOverlay();
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-warning alert-dismissible fade show mt-3';
+                alertDiv.innerHTML = `
+                    <i class="fas fa-clock me-2"></i>
+                    <strong>Formulario ya enviado</strong><br>
+                    ${message}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 `;
                 form.appendChild(alertDiv);

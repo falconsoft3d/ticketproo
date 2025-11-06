@@ -14156,18 +14156,51 @@ def landing_page_public(request, slug):
     landing_page.increment_views()
     
     if request.method == 'POST':
+        # Obtener la IP del usuario
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            user_ip = x_forwarded_for.split(',')[0]
+        else:
+            user_ip = request.META.get('REMOTE_ADDR')
+        
+        # Verificar si ya hay un envío de esta IP hoy
+        today = date.today()
+        existing_submission = LandingPageSubmission.objects.filter(
+            landing_page=landing_page,
+            ip_address=user_ip,
+            created_at__date=today
+        ).exists()
+        
+        if existing_submission:
+            # Si ya existe un envío, mostrar mensaje de error
+            form = LandingPageSubmissionForm(request.POST)
+            
+            # Si es una petición AJAX, devolver JSON
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Ya has enviado el formulario hoy. Por favor, espera hasta mañana para enviar una nueva solicitud o contáctanos directamente.',
+                    'already_submitted_today': True
+                })
+            
+            messages.error(
+                request, 
+                'Ya has enviado el formulario hoy. Por favor, espera hasta mañana para enviar una nueva solicitud o contáctanos directamente.'
+            )
+            context = {
+                'landing_page': landing_page,
+                'form': form,
+                'already_submitted_today': True,
+            }
+            return render(request, 'tickets/landing_page_public.html', context)
+        
         form = LandingPageSubmissionForm(request.POST)
         if form.is_valid():
             submission = form.save(commit=False)
             submission.landing_page = landing_page
             
             # Capturar información adicional
-            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-            if x_forwarded_for:
-                submission.ip_address = x_forwarded_for.split(',')[0]
-            else:
-                submission.ip_address = request.META.get('REMOTE_ADDR')
-            
+            submission.ip_address = user_ip
             submission.user_agent = request.META.get('HTTP_USER_AGENT', '')
             submission.utm_source = request.GET.get('utm_source', '')
             submission.utm_medium = request.GET.get('utm_medium', '')
@@ -14215,11 +14248,31 @@ def landing_page_public(request, slug):
                 logger = logging.getLogger(__name__)
                 logger.error(f"Error enviando notificación de Telegram: {str(e)}")
             
+            # Si es una petición AJAX, devolver JSON de éxito
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'message': '¡Formulario enviado con éxito! Nos pondremos en contacto contigo pronto.'
+                })
+            
             # Redirigir a página de gracias
             return render(request, 'tickets/landing_page_thanks.html', {
                 'landing_page': landing_page,
                 'submission': submission,
             })
+        else:
+            # El formulario no es válido
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                # Recopilar errores del formulario
+                errors = {}
+                for field, error_list in form.errors.items():
+                    errors[field] = list(error_list)
+                
+                return JsonResponse({
+                    'success': False,
+                    'errors': errors,
+                    'message': 'Por favor, corrige los errores en el formulario.'
+                })
     else:
         form = LandingPageSubmissionForm()
     
