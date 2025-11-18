@@ -237,3 +237,6 @@ DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
 # Para desarrollo local, usar backend de consola si no hay configuración de email
 if DEBUG and not EMAIL_HOST_USER:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# Configuración del dominio del sitio para URLs absolutas
+SITE_DOMAIN = os.environ.get('SITE_DOMAIN', 'ticketproo.com')

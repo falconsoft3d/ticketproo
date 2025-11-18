@@ -20031,7 +20031,7 @@ def short_url_create(request):
             ).first()
             
             if existing:
-                messages.info(request, f'Ya existe una URL corta para esta dirección: {existing.get_short_url()}')
+                messages.info(request, f'Ya existe una URL corta para esta dirección: {existing.get_short_url(request)}')
                 return redirect('short_url_list')
             
             # Crear nueva URL corta
@@ -20053,7 +20053,7 @@ def short_url_create(request):
             
             short_url.save()
             
-            messages.success(request, f'URL corta creada exitosamente: {short_url.get_short_url()}')
+            messages.success(request, f'URL corta creada exitosamente: {short_url.get_short_url(request)}')
             return redirect('short_url_list')
         else:
             messages.error(request, 'La URL es requerida.')
@@ -20072,15 +20072,26 @@ def short_url_edit(request, pk):
     short_url = get_object_or_404(ShortUrl, pk=pk, created_by=request.user)
     
     if request.method == 'POST':
-        short_url.title = request.POST.get('title', '')
-        short_url.description = request.POST.get('description', '')
-        short_url.is_active = request.POST.get('is_active') == 'on'
+        # Actualizar URL original
+        original_url = request.POST.get('original_url', '').strip()
+        if original_url:
+            short_url.original_url = original_url
         
-        expires_days = request.POST.get('expires_days')
-        if expires_days:
+        # Actualizar código corto si se proporciona uno diferente
+        new_short_code = request.POST.get('short_code', '').strip()
+        if new_short_code and new_short_code != short_url.short_code:
+            # Verificar que el nuevo código no esté en uso
+            if ShortUrl.objects.filter(short_code=new_short_code).exclude(pk=pk).exists():
+                messages.error(request, f'El código "{new_short_code}" ya está en uso.')
+                return redirect('short_url_edit', pk=pk)
+            short_url.short_code = new_short_code
+        
+        # Actualizar fecha de expiración
+        expires_at = request.POST.get('expires_at', '').strip()
+        if expires_at:
             try:
-                days = int(expires_days)
-                short_url.expires_at = timezone.now() + timezone.timedelta(days=days)
+                from datetime import datetime
+                short_url.expires_at = timezone.make_aware(datetime.fromisoformat(expires_at))
             except (ValueError, TypeError):
                 short_url.expires_at = None
         else:
@@ -20090,9 +20101,18 @@ def short_url_edit(request, pk):
         messages.success(request, 'URL corta actualizada exitosamente.')
         return redirect('short_url_list')
     
+    # Preparar datos para el formulario
+    form_data = {
+        'original_url': {'value': short_url.original_url},
+        'short_code': {'value': short_url.short_code},
+        'expires_at': {'value': short_url.expires_at},
+    }
+    
     context = {
         'page_title': 'Editar URL Corta',
         'short_url': short_url,
+        'object': short_url,  # Para compatibilidad con el template
+        'form': form_data,
     }
     
     return render(request, 'tickets/short_url_edit.html', context)
@@ -20119,6 +20139,11 @@ def short_url_delete(request, pk):
 
 def short_url_redirect(request, short_code):
     """Vista para redireccionar desde URL corta a URL original"""
+    from .models import ShortUrlClick
+    import geoip2.database
+    import os
+    from django.conf import settings
+    
     short_url = get_object_or_404(ShortUrl, short_code=short_code, is_active=True)
     
     # Verificar si ha expirado
@@ -20129,6 +20154,35 @@ def short_url_redirect(request, short_code):
     # Incrementar contador de clics
     short_url.increment_clicks()
     
+    # Registrar el clic con detalles
+    ip_address = request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0].strip() or \
+                 request.META.get('REMOTE_ADDR', '')
+    
+    country = ''
+    city = ''
+    
+    # Intentar obtener geolocalización si está disponible
+    try:
+        geoip_path = getattr(settings, 'GEOIP_PATH', None)
+        if geoip_path and os.path.exists(os.path.join(geoip_path, 'GeoLite2-City.mmdb')):
+            reader = geoip2.database.Reader(os.path.join(geoip_path, 'GeoLite2-City.mmdb'))
+            response = reader.city(ip_address)
+            country = response.country.name or ''
+            city = response.city.name or ''
+            reader.close()
+    except:
+        pass
+    
+    # Crear registro del clic
+    ShortUrlClick.objects.create(
+        short_url=short_url,
+        ip_address=ip_address,
+        country=country,
+        city=city,
+        user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
+        referer=request.META.get('HTTP_REFERER', '')[:500]
+    )
+    
     # Redireccionar a la URL original
     return redirect(short_url.original_url)
 
@@ -20136,12 +20190,115 @@ def short_url_redirect(request, short_code):
 @login_required
 @user_passes_test(is_agent_or_superuser, login_url='/')
 def short_url_stats(request, pk):
-    """Vista para ver estadísticas de una URL corta"""
+    """Vista para ver estadísticas detalladas de una URL corta"""
+    from django.db.models import Count
+    from django.db.models.functions import TruncDate, TruncMonth
+    from datetime import timedelta
+    import json
+    
     short_url = get_object_or_404(ShortUrl, pk=pk, created_by=request.user)
     
+    # Obtener clicks con detalles
+    clicks = short_url.click_records.all()
+    
+    # Usar el contador del modelo como total (incluye clicks históricos)
+    total_clicks = short_url.clicks
+    
+    # IPs y países únicos (de los registros detallados disponibles)
+    unique_ips = clicks.values('ip_address').distinct().count()
+    unique_countries = clicks.exclude(country='').values('country').distinct().count()
+    
+    # Estadísticas por día (últimos 30 días)
+    thirty_days_ago = timezone.now() - timedelta(days=30)
+    clicks_by_day_data = clicks.filter(clicked_at__gte=thirty_days_ago).annotate(
+        date=TruncDate('clicked_at')
+    ).values('date').annotate(
+        count=Count('id')
+    ).order_by('date')
+    
+    # Crear todas las fechas de los últimos 30 días
+    clicks_by_day_dict = {item['date'].strftime('%d/%m'): item['count'] for item in clicks_by_day_data}
+    
+    # Calcular clicks históricos (sin registro detallado)
+    clicks_detallados = clicks.count()
+    clicks_historicos = total_clicks - clicks_detallados
+    
+    # Generar etiquetas para los últimos 30 días
+    clicks_by_day_labels = []
+    clicks_by_day_values = []
+    for i in range(30):
+        day = timezone.now().date() - timedelta(days=29-i)
+        label = day.strftime('%d/%m')
+        clicks_by_day_labels.append(label)
+        clicks_by_day_values.append(clicks_by_day_dict.get(label, 0))
+    
+    # Si hay clicks históricos, agregarlos en el primer día del rango
+    if clicks_historicos > 0:
+        # Agregar los clicks históricos al primer día del rango visible
+        clicks_by_day_values[0] += clicks_historicos
+    
+    # Estadísticas por mes (últimos 12 meses)
+    twelve_months_ago = timezone.now() - timedelta(days=365)
+    clicks_by_month_data = clicks.filter(clicked_at__gte=twelve_months_ago).annotate(
+        month=TruncMonth('clicked_at')
+    ).values('month').annotate(
+        count=Count('id')
+    ).order_by('month')
+    
+    # Crear todos los meses de los últimos 12 meses
+    clicks_by_month_dict = {item['month'].strftime('%m/%Y'): item['count'] for item in clicks_by_month_data}
+    
+    # Generar etiquetas para los últimos 12 meses
+    clicks_by_month_labels = []
+    clicks_by_month_values = []
+    for i in range(12):
+        month = timezone.now().date() - timedelta(days=30*(11-i))
+        label = month.strftime('%m/%Y')
+        if label not in clicks_by_month_labels:  # Evitar duplicados
+            clicks_by_month_labels.append(label)
+            clicks_by_month_values.append(clicks_by_month_dict.get(label, 0))
+    
+    # Si hay clicks históricos, agregarlos en el primer mes del rango
+    if clicks_historicos > 0:
+        # Agregar los clicks históricos al primer mes del rango visible
+        clicks_by_month_values[0] += clicks_historicos
+    
+    # Estadísticas por país
+    clicks_by_country_data = clicks.exclude(country='').values('country').annotate(
+        count=Count('id')
+    ).order_by('-count')[:10]
+    
+    clicks_by_country_labels = [item['country'] for item in clicks_by_country_data]
+    clicks_by_country_values = [item['count'] for item in clicks_by_country_data]
+    
+    # Top 10 ciudades
+    top_cities = clicks.exclude(city='').values('city', 'country').annotate(
+        count=Count('id')
+    ).order_by('-count')[:10]
+    
+    # Últimos 20 clicks
+    last_clicks = clicks.order_by('-clicked_at')[:20]
+    
     context = {
-        'page_title': f'Estadísticas - {short_url.short_code}',
+        'page_title': f'Estadísticas - {short_url.title or short_url.short_code}',
         'short_url': short_url,
+        'total_clicks': total_clicks,
+        'unique_ips': unique_ips,
+        'unique_countries': unique_countries,
+        
+        # Datos para gráficos (en formato JSON)
+        'clicks_by_day_labels': json.dumps(clicks_by_day_labels),
+        'clicks_by_day_values': json.dumps(clicks_by_day_values),
+        
+        'clicks_by_month_labels': json.dumps(clicks_by_month_labels),
+        'clicks_by_month_values': json.dumps(clicks_by_month_values),
+        
+        'clicks_by_country_labels': json.dumps(clicks_by_country_labels),
+        'clicks_by_country_values': json.dumps(clicks_by_country_values),
+        
+        # Datos para tablas
+        'top_cities': top_cities,
+        'last_clicks': last_clicks,
     }
     
     return render(request, 'tickets/short_url_stats.html', context)

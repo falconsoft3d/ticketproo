@@ -794,3 +794,38 @@ def system_info_api(request):
             'status': 'error',
             'error': f'Error al obtener información del sistema: {str(e)}'
         }, status=500)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def short_url_stats_api(request):
+    """
+    API endpoint para obtener estadísticas de URLs cortas del usuario actual
+    """
+    from .models import ShortUrl
+    from django.db.models import Sum
+    
+    try:
+        # Obtener todas las URLs del usuario
+        user_short_urls = ShortUrl.objects.filter(created_by=request.user, is_active=True)
+        
+        # Calcular estadísticas
+        total_urls = user_short_urls.count()
+        total_clicks = user_short_urls.aggregate(total=Sum('clicks'))['total'] or 0
+        
+        # Obtener las 5 URLs más populares
+        top_urls = user_short_urls.order_by('-clicks')[:5].values(
+            'id', 'short_code', 'title', 'clicks', 'original_url'
+        )
+        
+        return JsonResponse({
+            'status': 'success',
+            'total_urls': total_urls,
+            'total_clicks': total_clicks,
+            'top_urls': list(top_urls)
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'error': str(e)
+        }, status=500)

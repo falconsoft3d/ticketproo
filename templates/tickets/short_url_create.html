@@ -89,7 +89,7 @@
                             <h6><i class="fas fa-info-circle"></i> Vista Previa</h6>
                             <p class="mb-0">
                                 Tu URL corta se verá como: 
-                                <code>http://localhost:8000/s/XXXXXX</code>
+                                <code>{{ request.scheme }}://{{ request.get_host }}/s/XXXXXX</code>
                             </p>
                             <small class="text-muted">
                                 Se generará automáticamente un código único de 6 caracteres.

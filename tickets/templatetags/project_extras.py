@@ -106,3 +106,9 @@ def pluralize_es(value, singular_plural=''):
             return singular_plural if count != 1 else ''
     except (ValueError, TypeError):
         return ''
+
+@register.simple_tag(takes_context=True)
+def short_url(context, short_url_obj):
+    """Genera la URL corta completa usando el request del contexto"""
+    request = context.get('request')
+    return short_url_obj.get_short_url(request)

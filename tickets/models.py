@@ -8356,11 +8356,20 @@ class ShortUrl(models.Model):
     def __str__(self):
         return f"{self.short_code} → {self.original_url[:50]}..."
     
-    def get_short_url(self):
+    def get_short_url(self, request=None):
         """Retorna la URL corta completa"""
         from django.conf import settings
-        domain = getattr(settings, 'SITE_DOMAIN', 'localhost:8000')
-        return f"http://{domain}/s/{self.short_code}"
+        
+        # Si se proporciona request, usar su dominio
+        if request:
+            domain = request.get_host()
+            protocol = 'https' if request.is_secure() else 'http'
+        else:
+            # Usar configuración del settings
+            domain = getattr(settings, 'SITE_DOMAIN', 'ticketproo.com')
+            protocol = 'https' if not settings.DEBUG else 'http'
+        
+        return f"{protocol}://{domain}/s/{self.short_code}"
     
     def is_expired(self):
         """Verifica si la URL ha expirado"""
@@ -8384,6 +8393,59 @@ class ShortUrl(models.Model):
             code = ''.join(random.choice(chars) for _ in range(6))
             if not ShortUrl.objects.filter(short_code=code).exists():
                 return code
+
+
+class ShortUrlClick(models.Model):
+    """Modelo para rastrear cada clic en una URL corta"""
+    
+    short_url = models.ForeignKey(
+        ShortUrl,
+        on_delete=models.CASCADE,
+        related_name='click_records',
+        verbose_name='URL Corta'
+    )
+    clicked_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha del clic',
+        db_index=True
+    )
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name='Dirección IP'
+    )
+    country = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='País',
+        db_index=True
+    )
+    city = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Ciudad'
+    )
+    user_agent = models.TextField(
+        blank=True,
+        verbose_name='User Agent'
+    )
+    referer = models.URLField(
+        max_length=500,
+        blank=True,
+        verbose_name='Referer'
+    )
+    
+    class Meta:
+        verbose_name = 'Clic de URL Corta'
+        verbose_name_plural = 'Clics de URLs Cortas'
+        ordering = ['-clicked_at']
+        indexes = [
+            models.Index(fields=['short_url', '-clicked_at']),
+            models.Index(fields=['country', '-clicked_at']),
+        ]
+    
+    def __str__(self):
+        return f"Clic en {self.short_url.short_code} - {self.clicked_at}"
 
 
 class ProductSet(models.Model):

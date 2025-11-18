@@ -1,261 +1,255 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% load static %}
 
-{% block title %}Estadísticas - {{ short_url.short_code }}{% endblock %}
+{% block extra_css %}
+<style>
+    .stats-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin: 20px 0;
+    }
+    
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #4a5568;
+    }
+    
+    .stat-label {
+        font-size: 0.875rem;
+        color: #718096;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .table-responsive {
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .section-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: #2d3748;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                        <i class="bi bi-graph-up"></i> Estadísticas - {{ short_url.short_code }}
-                    </h5>
-                    <div>
-                        <a href="{% url 'short_url_edit' short_url.pk %}" class="btn btn-outline-primary btn-sm me-2">
-                            <i class="bi bi-pencil"></i> Editar
-                        </a>
-                        <a href="{% url 'short_url_list' %}" class="btn btn-outline-secondary btn-sm">
-                            <i class="bi bi-arrow-left"></i> Volver
-                        </a>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <!-- Información principal -->
-                    <div class="row mb-4">
-                        <div class="col-md-8">
-                            <div class="card bg-light">
-                                <div class="card-body">
-                                    <h6 class="card-title">Información de la URL</h6>
-                                    <table class="table table-sm table-borderless mb-0">
-                                        <tr>
-                                            <td style="width: 150px;"><strong>URL Original:</strong></td>
-                                            <td>
-                                                <a href="{{ short_url.original_url }}" target="_blank" class="text-break">
-                                                    {{ short_url.original_url }}
-                                                    <i class="bi bi-box-arrow-up-right ms-1"></i>
-                                                </a>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>URL Corta:</strong></td>
-                                            <td>
-                                                <div class="input-group">
-                                                    <input type="text" 
-                                                           class="form-control form-control-sm" 
-                                                           value="{{ request.build_absolute_uri|slice:':-1' }}{% url 'short_url_redirect' short_url.short_code %}" 
-                                                           readonly 
-                                                           id="shortUrl">
-                                                    <button class="btn btn-outline-secondary btn-sm" 
-                                                            type="button" 
-                                                            onclick="copyToClipboard('shortUrl')"
-                                                            title="Copiar URL">
-                                                        <i class="bi bi-clipboard"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Código:</strong></td>
-                                            <td><code>{{ short_url.short_code }}</code></td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Creada:</strong></td>
-                                            <td>{{ short_url.created_at|date:"d/m/Y H:i" }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Creada por:</strong></td>
-                                            <td>{{ short_url.created_by.get_full_name|default:short_url.created_by.username }}</td>
-                                        </tr>
-                                        {% if short_url.expires_at %}
-                                        <tr>
-                                            <td><strong>Expira:</strong></td>
-                                            <td>
-                                                {% if short_url.is_expired %}
-                                                    <span class="badge bg-danger">Expirada - {{ short_url.expires_at|date:"d/m/Y H:i" }}</span>
-                                                {% else %}
-                                                    <span class="badge bg-warning">{{ short_url.expires_at|date:"d/m/Y H:i" }}</span>
-                                                {% endif %}
-                                            </td>
-                                        </tr>
-                                        {% endif %}
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-4">
-                            <!-- Métricas principales -->
-                            <div class="row g-3">
-                                <div class="col-6">
-                                    <div class="card text-center bg-primary text-white">
-                                        <div class="card-body">
-                                            <h3 class="card-title mb-0">{{ short_url.clicks }}</h3>
-                                            <small>Total de Clics</small>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="card text-center bg-info text-white">
-                                        <div class="card-body">
-                                            <h3 class="card-title mb-0">
-                                                {% if short_url.created_at %}
-                                                    {{ days_active }}
-                                                {% else %}
-                                                    0
-                                                {% endif %}
-                                            </h3>
-                                            <small>Días Activa</small>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="card text-center bg-success text-white">
-                                        <div class="card-body">
-                                            <h3 class="card-title mb-0">
-                                                {% if short_url.clicks and days_active %}
-                                                    {{ clicks_per_day|floatformat:1 }}
-                                                {% else %}
-                                                    0
-                                                {% endif %}
-                                            </h3>
-                                            <small>Clics/Día</small>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="card text-center {% if short_url.is_expired %}bg-danger{% else %}bg-warning{% endif %} text-white">
-                                        <div class="card-body">
-                                            <h5 class="card-title mb-0">
-                                                {% if short_url.is_expired %}
-                                                    <i class="bi bi-x-circle"></i>
-                                                {% else %}
-                                                    <i class="bi bi-check-circle"></i>
-                                                {% endif %}
-                                            </h5>
-                                            <small>
-                                                {% if short_url.is_expired %}
-                                                    Expirada
-                                                {% else %}
-                                                    Activa
-                                                {% endif %}
-                                            </small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Estadísticas de {{ short_url.title|default:short_url.short_code }}
+                </h2>
+                <a href="{% url 'short_url_list' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver
+                </a>
+            </div>
+        </div>
+    </div>
 
-                    <!-- Información adicional -->
+    <!-- Tarjetas de resumen -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card stats-card bg-primary text-white">
+                <div class="card-body text-center">
+                    <div class="stat-number">{{ total_clicks }}</div>
+                    <div class="stat-label text-white">Total de Clicks</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card stats-card bg-success text-white">
+                <div class="card-body text-center">
+                    <div class="stat-number">{{ unique_ips }}</div>
+                    <div class="stat-label text-white">IPs Únicas (Tracking Detallado)</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card stats-card bg-info text-white">
+                <div class="card-body text-center">
+                    <div class="stat-number">{{ unique_countries }}</div>
+                    <div class="stat-label text-white">Países (Tracking Detallado)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if unique_ips == 0 %}
+    <!-- Mensaje informativo cuando no hay datos detallados -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Nota:</strong> Los gráficos y estadísticas detalladas solo muestran clicks con tracking detallado. 
+                Los clicks anteriores están contabilizados en el total pero no tienen información geográfica detallada.
+            </div>
+        </div>
+    </div>
+    {% elif unique_ips > 0 and unique_ips < total_clicks %}
+    <!-- Mensaje informativo cuando hay pocos datos -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Tracking detallado activo:</strong> Se están registrando clicks con información geográfica. 
+                Total de clicks con datos detallados: <strong>{{ unique_ips }}</strong> de {{ total_clicks }}.
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Información de la URL -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <h5 class="section-title">Información de la URL</h5>
                     <div class="row">
                         <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h6 class="mb-0"><i class="bi bi-clock-history"></i> Actividad Reciente</h6>
-                                </div>
-                                <div class="card-body">
-                                    {% if short_url.clicks > 0 %}
-                                        <p class="mb-2">
-                                            <strong>Última actualización:</strong><br>
-                                            {{ short_url.updated_at|date:"d/m/Y H:i:s" }}
-                                        </p>
-                                        <p class="mb-0">
-                                            <strong>Hace:</strong>
-                                            {{ short_url.updated_at|timesince }}
-                                        </p>
-                                    {% else %}
-                                        <p class="text-muted mb-0">
-                                            <i class="bi bi-info-circle"></i> Esta URL nunca ha sido accedida.
-                                        </p>
-                                    {% endif %}
-                                </div>
-                            </div>
+                            <p><strong>URL Corta:</strong> <code>{{ short_url.get_short_url }}</code></p>
+                            <p><strong>URL Destino:</strong> <a href="{{ short_url.original_url }}" target="_blank">{{ short_url.original_url }}</a></p>
                         </div>
-                        
                         <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h6 class="mb-0"><i class="bi bi-gear"></i> Acciones</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="d-grid gap-2">
-                                        <a href="{% url 'short_url_redirect' short_url.short_code %}" 
-                                           target="_blank" 
-                                           class="btn btn-outline-primary btn-sm">
-                                            <i class="bi bi-box-arrow-up-right"></i> Probar URL
-                                        </a>
-                                        <a href="{% url 'short_url_edit' short_url.pk %}" 
-                                           class="btn btn-outline-secondary btn-sm">
-                                            <i class="bi bi-pencil"></i> Editar URL
-                                        </a>
-                                        <a href="{% url 'short_url_delete' short_url.pk %}" 
-                                           class="btn btn-outline-danger btn-sm">
-                                            <i class="bi bi-trash"></i> Eliminar URL
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
+                            <p><strong>Creada:</strong> {{ short_url.created_at|date:"d/m/Y H:i" }}</p>
+                            <p><strong>Estado:</strong> 
+                                {% if short_url.is_active %}
+                                    <span class="badge bg-success">Activa</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inactiva</span>
+                                {% endif %}
+                            </p>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                    <!-- Gráfico simple de actividad (placeholder) -->
-                    {% if short_url.clicks > 0 %}
-                    <div class="row mt-4">
-                        <div class="col-12">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h6 class="mb-0"><i class="bi bi-bar-chart"></i> Resumen de Rendimiento</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="row text-center">
-                                        <div class="col-md-3">
-                                            <div class="border rounded p-3">
-                                                <h4 class="text-primary">{{ short_url.clicks }}</h4>
-                                                <small class="text-muted">Clics Totales</small>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <div class="border rounded p-3">
-                                                <h4 class="text-info">{{ days_active }}</h4>
-                                                <small class="text-muted">Días Activos</small>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <div class="border rounded p-3">
-                                                <h4 class="text-success">{{ clicks_per_day|floatformat:1 }}</h4>
-                                                <small class="text-muted">Promedio Diario</small>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <div class="border rounded p-3">
-                                                <h4 class="{% if short_url.is_expired %}text-danger{% else %}text-warning{% endif %}">
-                                                    {% if short_url.expires_at %}
-                                                        {% if short_url.is_expired %}
-                                                            Expirada
-                                                        {% else %}
-                                                            {{ short_url.expires_at|timeuntil }}
-                                                        {% endif %}
-                                                    {% else %}
-                                                        ∞
-                                                    {% endif %}
-                                                </h4>
-                                                <small class="text-muted">
-                                                    {% if short_url.expires_at %}
-                                                        {% if short_url.is_expired %}Estado{% else %}Tiempo Restante{% endif %}
-                                                    {% else %}
-                                                        Sin Expiración
-                                                    {% endif %}
-                                                </small>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+    <!-- Gráficos -->
+    <div class="row mb-4">
+        <!-- Clicks por día -->
+        <div class="col-lg-6 mb-3">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <h5 class="section-title">Clicks por Día (Últimos 30 días)</h5>
+                    <div class="chart-container">
+                        <canvas id="dailyClicksChart"></canvas>
                     </div>
-                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Clicks por mes -->
+        <div class="col-lg-6 mb-3">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <h5 class="section-title">Clicks por Mes (Últimos 12 meses)</h5>
+                    <div class="chart-container">
+                        <canvas id="monthlyClicksChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <!-- Clicks por país -->
+        <div class="col-lg-6 mb-3">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <h5 class="section-title">Clicks por País</h5>
+                    <div class="chart-container">
+                        <canvas id="countryClicksChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top 10 ciudades -->
+        <div class="col-lg-6 mb-3">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <h5 class="section-title">Top 10 Ciudades</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Ciudad</th>
+                                    <th>Clicks</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for city in top_cities %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ city.city|default:"Desconocida" }}</td>
+                                    <td><span class="badge bg-primary">{{ city.count }}</span></td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted">No hay datos disponibles</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de últimos clicks -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <h5 class="section-title">Últimos 20 Clicks</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Fecha y Hora</th>
+                                    <th>País</th>
+                                    <th>Ciudad</th>
+                                    <th>IP</th>
+                                    <th>Navegador</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for click in last_clicks %}
+                                <tr>
+                                    <td>{{ click.clicked_at|date:"d/m/Y H:i:s" }}</td>
+                                    <td>{{ click.country|default:"Desconocido" }}</td>
+                                    <td>{{ click.city|default:"Desconocida" }}</td>
+                                    <td><code>{{ click.ip_address }}</code></td>
+                                    <td>{{ click.user_agent|truncatewords:5 }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">No hay clicks registrados</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -264,43 +258,165 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-function copyToClipboard(elementId) {
-    const element = document.getElementById(elementId);
-    element.select();
-    element.setSelectionRange(0, 99999);
-    navigator.clipboard.writeText(element.value).then(function() {
-        // Cambiar temporalmente el ícono
-        const button = element.nextElementSibling;
-        const icon = button.querySelector('i');
-        const originalClass = icon.className;
-        icon.className = 'bi bi-check';
-        
-        // Mostrar tooltip de confirmación
-        const tooltip = new bootstrap.Tooltip(button, {
-            title: '¡Copiado!',
-            trigger: 'manual'
-        });
-        tooltip.show();
-        
-        setTimeout(() => {
-            icon.className = originalClass;
-            tooltip.hide();
-        }, 2000);
-    }).catch(function(err) {
-        console.error('Error al copiar: ', err);
-    });
-}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
-// Auto-refrescar cada 30 segundos si hay actividad
-{% if short_url.clicks > 0 %}
-setInterval(function() {
-    // Solo refrescar si la página está visible
-    if (!document.hidden) {
-        // Recargar estadísticas cada 30 segundos
-        location.reload();
-    }
-}, 30000);
-{% endif %}
+<script>
+    // Configuración común de los gráficos
+    Chart.defaults.font.family = "'Segoe UI', 'Roboto', sans-serif";
+    Chart.defaults.color = '#4a5568';
+
+    // Gráfico de clicks por día
+    const dailyCtx = document.getElementById('dailyClicksChart').getContext('2d');
+    const dailyClicksChart = new Chart(dailyCtx, {
+        type: 'line',
+        data: {
+            labels: {{ clicks_by_day_labels|safe }},
+            datasets: [{
+                label: 'Clicks',
+                data: {{ clicks_by_day_values|safe }},
+                borderColor: 'rgb(59, 130, 246)',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    borderColor: 'rgba(59, 130, 246, 0.5)',
+                    borderWidth: 1
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+
+    // Gráfico de clicks por mes
+    const monthlyCtx = document.getElementById('monthlyClicksChart').getContext('2d');
+    const monthlyClicksChart = new Chart(monthlyCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ clicks_by_month_labels|safe }},
+            datasets: [{
+                label: 'Clicks',
+                data: {{ clicks_by_month_values|safe }},
+                backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                borderColor: 'rgb(16, 185, 129)',
+                borderWidth: 1,
+                borderRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    borderColor: 'rgba(16, 185, 129, 0.5)',
+                    borderWidth: 1
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+
+    // Gráfico de clicks por país
+    const countryCtx = document.getElementById('countryClicksChart').getContext('2d');
+    const countryClicksChart = new Chart(countryCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ clicks_by_country_labels|safe }},
+            datasets: [{
+                data: {{ clicks_by_country_values|safe }},
+                backgroundColor: [
+                    'rgba(59, 130, 246, 0.8)',
+                    'rgba(16, 185, 129, 0.8)',
+                    'rgba(249, 115, 22, 0.8)',
+                    'rgba(139, 92, 246, 0.8)',
+                    'rgba(236, 72, 153, 0.8)',
+                    'rgba(245, 158, 11, 0.8)',
+                    'rgba(20, 184, 166, 0.8)',
+                    'rgba(239, 68, 68, 0.8)',
+                    'rgba(99, 102, 241, 0.8)',
+                    'rgba(34, 197, 94, 0.8)'
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        padding: 15,
+                        usePointStyle: true,
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    borderColor: 'rgba(255, 255, 255, 0.3)',
+                    borderWidth: 1
+                }
+            }
+        }
+    });
 </script>
 {% endblock %}

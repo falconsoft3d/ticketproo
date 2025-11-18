@@ -5,7 +5,7 @@ from .api_views import (
     api_status, generate_api_token, toggle_api_access, whatsapp_receive_message,
     landing_page_meeting_click, landing_page_contact_click,
     active_users_count, active_users_list, open_tickets_count, direct_ai_chat,
-    system_info_api
+    system_info_api, short_url_stats_api
 )
 
 # Router para los ViewSets
@@ -43,6 +43,9 @@ api_urlpatterns = [
     
     # URL para información del sistema
     path('system-info/', system_info_api, name='api-system-info'),
+    
+    # URL para estadísticas de URLs cortas
+    path('short-urls/stats/', short_url_stats_api, name='api-short-url-stats'),
 ]
 
 # Django espera que la variable se llame urlpatterns

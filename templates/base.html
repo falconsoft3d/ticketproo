@@ -1323,6 +1323,63 @@
 
     <!-- Barra lateral de usuarios activos (disponible en todo el dashboard) -->
     {% if user.is_authenticated %}
+    <!-- Botón flotante para estadísticas de URLs Cortas -->
+    <div id="shortUrlStatsToggle" class="dropdown" style="position: fixed; right: 0; top: calc(50% - 320px); transform: translateY(-50%); z-index: 1050; transition: all 0.3s ease;">
+        <button class="btn btn-info shadow-lg dropdown-toggle" 
+                data-bs-toggle="dropdown" 
+                aria-expanded="false"
+                style="border-radius: 8px 0 0 8px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
+                       border-right: none; transition: all 0.3s ease; position: relative;" 
+                title="Estadísticas de URLs Cortas"
+                onmouseover="this.style.transform = 'scale(1.1)'"
+                onmouseout="this.style.transform = 'scale(1)'">
+            <i class="bi bi-link-45deg" style="color: white; font-size: 1.2em;"></i>
+            <span id="totalClicksBadge" class="position-absolute top-0 start-0 translate-middle badge rounded-pill bg-danger" style="font-size: 0.7em;">
+                0
+            </span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow" style="min-width: 300px; max-height: 400px; overflow-y: auto;">
+            <li>
+                <h6 class="dropdown-header">
+                    <i class="bi bi-graph-up"></i> Estadísticas de URLs Cortas
+                </h6>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li class="px-3 py-2">
+                <div class="d-flex justify-content-between mb-2">
+                    <small class="text-muted">Total URLs:</small>
+                    <strong id="totalUrls">0</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <small class="text-muted">Total Clics:</small>
+                    <strong id="totalClicks" class="text-success">0</strong>
+                </div>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+                <h6 class="dropdown-header">Top 5 URLs</h6>
+            </li>
+            <li>
+                <div id="topUrlsList" class="px-3" style="max-height: 200px; overflow-y: auto;">
+                    <div class="text-center text-muted py-3">
+                        <i class="bi bi-hourglass-split"></i> Cargando...
+                    </div>
+                </div>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+                <a class="dropdown-item" href="{% url 'short_url_list' %}">
+                    <i class="bi bi-list-ul"></i> Ver todas las URLs
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item" href="{% url 'short_url_create' %}">
+                    <i class="bi bi-plus-circle"></i> Crear nueva URL
+                </a>
+            </li>
+        </ul>
+    </div>
+
     <!-- Botón flotante para Chat IA -->
     <button id="aiChatToggle" class="btn btn-gradient shadow-lg" onclick="window.toggleAIChat()"
             style="position: fixed; right: 0; top: calc(50% - 240px); transform: translateY(-50%); z-index: 1050; 
@@ -1994,6 +2051,7 @@
         // Funciones auxiliares para manejar visibilidad de botones flotantes
         function hideOtherFloatingButtons(except = []) {
             const floatingButtons = [
+                'shortUrlStatsToggle',
                 'aiChatToggle',
                 'createTicketToggle', 
                 'quickNoteToggle',
@@ -2009,7 +2067,12 @@
                     if (button) {
                         button.style.opacity = '0.3';
                         button.style.pointerEvents = 'none';
-                        button.style.transform = 'translateY(-50%) translateX(100px) scale(0.8)'; // Mover hacia la derecha
+                        // Para el dropdown de shortUrlStatsToggle mantener translateY
+                        if (buttonId === 'shortUrlStatsToggle') {
+                            button.style.transform = 'translateY(-50%) translateX(100px) scale(0.8)';
+                        } else {
+                            button.style.transform = 'translateY(-50%) translateX(100px) scale(0.8)';
+                        }
                     }
                 }
             });
@@ -2017,6 +2080,7 @@
         
         function showAllFloatingButtons() {
             const floatingButtons = [
+                'shortUrlStatsToggle',
                 'aiChatToggle',
                 'createTicketToggle', 
                 'quickNoteToggle',
@@ -2031,8 +2095,12 @@
                 if (button) {
                     button.style.opacity = '1';
                     button.style.pointerEvents = 'auto';
-                    // Mantener el transform base y permitir que el hover funcione
-                    button.style.transform = 'translateY(-50%) translateX(0) scale(1)';
+                    // Para el dropdown de shortUrlStatsToggle mantener translateY
+                    if (buttonId === 'shortUrlStatsToggle') {
+                        button.style.transform = 'translateY(-50%)';
+                    } else {
+                        button.style.transform = 'translateY(-50%) translateX(0) scale(1)';
+                    }
                 }
             });
         }
@@ -5106,6 +5174,126 @@
         
         // Cargar conteo inicial
         setTimeout(loadOpenTicketsCount, 1000);
+        
+        // ===== SISTEMA DE ESTADÍSTICAS DE URLs CORTAS =====
+        
+        // Función para cargar estadísticas de URLs cortas
+        function loadShortUrlStats() {
+            console.log('🔗 Cargando estadísticas de URLs cortas...');
+            
+            fetch('/api/short-urls/stats/', {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error en la respuesta del servidor');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('📊 Estadísticas de URLs recibidas:', data);
+                
+                // Actualizar contador de clics totales en el badge
+                const clicksBadge = document.getElementById('totalClicksBadge');
+                if (clicksBadge) {
+                    clicksBadge.textContent = data.total_clicks || 0;
+                }
+                
+                // Actualizar estadísticas en el dropdown
+                const totalUrlsEl = document.getElementById('totalUrls');
+                if (totalUrlsEl) {
+                    totalUrlsEl.textContent = data.total_urls || 0;
+                }
+                
+                const totalClicksEl = document.getElementById('totalClicks');
+                if (totalClicksEl) {
+                    totalClicksEl.textContent = data.total_clicks || 0;
+                }
+                
+                // Actualizar lista de top URLs
+                const topUrlsList = document.getElementById('topUrlsList');
+                if (topUrlsList && data.top_urls && data.top_urls.length > 0) {
+                    topUrlsList.innerHTML = data.top_urls.map(url => `
+                        <div class="mb-2 pb-2 border-bottom">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div style="flex: 1; min-width: 0;">
+                                    <a href="/short-urls/${url.id}/stats/" 
+                                       class="text-decoration-none text-truncate d-block" 
+                                       style="font-size: 0.9em;"
+                                       title="${url.title || url.short_code}">
+                                        <i class="bi bi-link-45deg"></i> 
+                                        ${url.title || url.short_code}
+                                    </a>
+                                    <small class="text-muted d-block text-truncate" 
+                                           title="${url.original_url}"
+                                           style="font-size: 0.75em;">
+                                        ${url.original_url.substring(0, 40)}${url.original_url.length > 40 ? '...' : ''}
+                                    </small>
+                                </div>
+                                <span class="badge bg-primary ms-2" style="font-size: 0.75em;">
+                                    ${url.clicks} <i class="bi bi-cursor-fill"></i>
+                                </span>
+                            </div>
+                        </div>
+                    `).join('');
+                } else if (topUrlsList) {
+                    topUrlsList.innerHTML = `
+                        <div class="text-center text-muted py-3">
+                            <i class="bi bi-inbox"></i> 
+                            <p class="mb-0">No hay URLs creadas aún</p>
+                        </div>
+                    `;
+                }
+                
+                console.log(`✅ Estadísticas actualizadas: ${data.total_urls} URLs, ${data.total_clicks} clics totales`);
+            })
+            .catch(error => {
+                console.error('❌ Error al cargar estadísticas de URLs:', error);
+                
+                const clicksBadge = document.getElementById('totalClicksBadge');
+                if (clicksBadge) {
+                    clicksBadge.textContent = '?';
+                }
+                
+                const topUrlsList = document.getElementById('topUrlsList');
+                if (topUrlsList) {
+                    topUrlsList.innerHTML = `
+                        <div class="text-center text-danger py-3">
+                            <i class="bi bi-exclamation-triangle"></i> 
+                            <p class="mb-0">Error al cargar estadísticas</p>
+                        </div>
+                    `;
+                }
+            });
+        }
+        
+        // Auto-actualizar estadísticas cada 60 segundos
+        setInterval(loadShortUrlStats, 60000);
+        
+        // Cargar estadísticas inicial
+        setTimeout(loadShortUrlStats, 1500);
+        
+        // Recargar estadísticas cuando se abre el dropdown
+        const shortUrlStatsDropdown = document.getElementById('shortUrlStatsToggle');
+        if (shortUrlStatsDropdown) {
+            // Cuando se muestra el dropdown, ocultar otros botones y cargar estadísticas
+            shortUrlStatsDropdown.addEventListener('show.bs.dropdown', function() {
+                console.log('📊 Abriendo estadísticas de URLs - ocultando otros botones');
+                hideOtherFloatingButtons(['shortUrlStatsToggle']);
+                loadShortUrlStats();
+            });
+            
+            // Cuando se oculta el dropdown, mostrar todos los botones
+            shortUrlStatsDropdown.addEventListener('hide.bs.dropdown', function() {
+                console.log('📊 Cerrando estadísticas de URLs - mostrando todos los botones');
+                showAllFloatingButtons();
+            });
+        }
         
         // ===== SISTEMA DE ACTIVIDADES PENDIENTES =====
         

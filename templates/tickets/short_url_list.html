@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load project_extras %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
@@ -85,8 +86,8 @@
                                         <tr class="{% if not short_url.is_active %}table-secondary{% elif short_url.is_expired %}table-warning{% endif %}">
                                             <td>
                                                 <div class="d-flex align-items-center">
-                                                    <code class="me-2">{{ short_url.get_short_url }}</code>
-                                                    <button class="btn btn-sm btn-outline-secondary" onclick="copyToClipboard('{{ short_url.get_short_url }}')" title="Copiar URL">
+                                                    <code class="me-2">{% short_url short_url %}</code>
+                                                    <button class="btn btn-sm btn-outline-secondary" onclick="copyToClipboard('{% short_url short_url %}')" title="Copiar URL">
                                                         <i class="fas fa-copy"></i>
                                                     </button>
                                                 </div>
@@ -124,7 +125,7 @@
                                             </td>
                                             <td>
                                                 <div class="btn-group btn-group-sm" role="group">
-                                                    <a href="{{ short_url.get_short_url }}" class="btn btn-outline-success" target="_blank" title="Probar URL">
+                                                    <a href="{% short_url short_url %}" class="btn btn-outline-success" target="_blank" title="Probar URL">
                                                         <i class="fas fa-external-link-alt"></i>
                                                     </a>
                                                     <a href="{% url 'short_url_stats' short_url.pk %}" class="btn btn-outline-info" title="Estadísticas">
