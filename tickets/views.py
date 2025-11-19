@@ -13,6 +13,7 @@ from django.utils import timezone
 from django.conf import settings
 from django.views.decorators.http import require_http_methods, require_POST
 from django.views.decorators.csrf import csrf_exempt
+from django.urls import reverse
 from datetime import datetime, date, timedelta
 import os
 import json
@@ -37453,3 +37454,715 @@ def scheduled_task_execute(request, pk):
             messages.error(request, f'Error ejecutando la tarea: {error_message}')
     
     return redirect('scheduled_task_detail', pk=pk)
+
+
+# ==================== GAME COUNTER VIEWS ====================
+
+@login_required
+def game_counter_list(request):
+    """Lista de contadores de juegos"""
+    from .models import GameCounter
+    
+    games = GameCounter.objects.all()
+    
+    # Filtros
+    status_filter = request.GET.get('status', '')
+    if status_filter:
+        games = games.filter(status=status_filter)
+    
+    # Paginación
+    paginator = Paginator(games, 20)
+    page = request.GET.get('page', 1)
+    games_page = paginator.get_page(page)
+    
+    context = {
+        'games': games_page,
+        'page_title': 'Contadores de Juegos',
+        'status_filter': status_filter,
+    }
+    
+    return render(request, 'tickets/game_counter_list.html', context)
+
+
+@login_required
+def game_counter_create(request):
+    """Crear un nuevo contador de juego"""
+    from .models import GameCounter, Company
+    
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        player1_name = request.POST.get('player1_name')
+        player2_name = request.POST.get('player2_name')
+        max_points = request.POST.get('max_points', 0)
+        notes = request.POST.get('notes', '')
+        company_id = request.POST.get('company')
+        
+        # Validaciones
+        if not name or not player1_name or not player2_name:
+            messages.error(request, 'Debes completar todos los campos obligatorios.')
+            return redirect('game_counter_create')
+        
+        # Crear el juego
+        game = GameCounter.objects.create(
+            name=name,
+            player1_name=player1_name,
+            player2_name=player2_name,
+            max_points=int(max_points) if max_points else 0,
+            notes=notes,
+            created_by=request.user,
+        )
+        
+        # Asignar empresa si existe
+        if company_id:
+            try:
+                game.company = Company.objects.get(pk=company_id)
+                game.save()
+            except Company.DoesNotExist:
+                pass
+        
+        messages.success(request, f'Juego "{name}" creado exitosamente.')
+        return redirect('game_counter_detail', pk=game.pk)
+    
+    # GET request
+    companies = Company.objects.filter(is_active=True).order_by('name')
+    
+    context = {
+        'companies': companies,
+        'page_title': 'Nuevo Contador de Juego',
+    }
+    
+    return render(request, 'tickets/game_counter_create.html', context)
+
+
+@login_required
+def game_counter_detail(request, pk):
+    """Detalle de un contador de juego"""
+    from .models import GameCounter
+    
+    game = get_object_or_404(GameCounter, pk=pk)
+    
+    context = {
+        'game': game,
+        'page_title': f'Juego: {game.name}',
+    }
+    
+    return render(request, 'tickets/game_counter_detail.html', context)
+
+
+@login_required
+def game_counter_delete(request, pk):
+    """Eliminar un contador de juego"""
+    from .models import GameCounter
+    
+    game = get_object_or_404(GameCounter, pk=pk)
+    
+    if request.method == 'POST':
+        game_name = game.name
+        game.delete()
+        messages.success(request, f'Juego "{game_name}" eliminado exitosamente.')
+        return redirect('game_counter_list')
+    
+    context = {
+        'game': game,
+        'page_title': f'Eliminar: {game.name}',
+    }
+    
+    return render(request, 'tickets/game_counter_delete.html', context)
+
+
+def game_counter_public(request, uuid):
+    """Vista pública del contador de juego - sin login requerido"""
+    from .models import GameCounter
+    
+    game = get_object_or_404(GameCounter, public_uuid=uuid)
+    
+    context = {
+        'game': game,
+        'page_title': f'{game.player1_name} vs {game.player2_name}',
+    }
+    
+    return render(request, 'tickets/game_counter_public.html', context)
+
+
+@require_POST
+def game_counter_start(request, uuid):
+    """Iniciar el juego - AJAX"""
+    from .models import GameCounter
+    
+    game = get_object_or_404(GameCounter, public_uuid=uuid)
+    game.start_game()
+    
+    return JsonResponse({
+        'status': 'success',
+        'game_status': game.status,
+        'started_at': game.started_at.isoformat() if game.started_at else None
+    })
+
+
+@require_POST
+def game_counter_finish(request, uuid):
+    """Finalizar el juego - AJAX"""
+    from .models import GameCounter
+    
+    game = get_object_or_404(GameCounter, public_uuid=uuid)
+    game.finish_game()
+    
+    return JsonResponse({
+        'status': 'success',
+        'game_status': game.status,
+        'finished_at': game.finished_at.isoformat() if game.finished_at else None,
+        'winner': game.get_winner(),
+        'duration': game.get_duration()
+    })
+
+
+@require_POST
+def game_counter_add_point(request, uuid, player):
+    """Añadir punto a un jugador - AJAX"""
+    from .models import GameCounter
+    
+    game = get_object_or_404(GameCounter, public_uuid=uuid)
+    
+    if player == '1':
+        game.add_point_player1()
+    elif player == '2':
+        game.add_point_player2()
+    else:
+        return JsonResponse({'status': 'error', 'message': 'Jugador inválido'}, status=400)
+    
+    return JsonResponse({
+        'status': 'success',
+        'player1_score': game.player1_score,
+        'player2_score': game.player2_score,
+        'game_status': game.status,
+        'winner': game.get_winner() if game.status == 'finished' else None
+    })
+
+
+@csrf_exempt
+@require_POST
+def game_counter_clone(request, uuid):
+    """Clonar un juego existente con los mismos jugadores"""
+    from .models import GameCounter
+    import re
+    
+    try:
+        original_game = get_object_or_404(GameCounter, public_uuid=uuid)
+        
+        # Encontrar el nombre base (sin número de copia)
+        base_name = re.sub(r'\s*\(\d+\)\s*$', '', original_game.name)
+        
+        # Buscar todas las copias existentes con el mismo nombre base
+        existing_copies = GameCounter.objects.filter(
+            name__regex=r'^' + re.escape(base_name) + r'(\s*\(\d+\))?$'
+        ).count()
+        
+        # El nuevo número será el total de copias + 1
+        new_number = existing_copies + 1
+        
+        # Crear nuevo juego con los mismos datos (sin required fields que puedan ser null)
+        new_game = GameCounter(
+            name=f"{base_name} ({new_number})",
+            player1_name=original_game.player1_name,
+            player2_name=original_game.player2_name,
+            max_points=original_game.max_points,
+            company=original_game.company,
+            notes=original_game.notes if original_game.notes else ""
+        )
+        
+        # Solo asignar created_by si existe
+        if original_game.created_by:
+            new_game.created_by = original_game.created_by
+        elif request.user.is_authenticated:
+            new_game.created_by = request.user
+        
+        new_game.save()
+        
+        # Generar URL pública del nuevo juego
+        new_game_url = request.build_absolute_uri(
+            reverse('game_counter_public', kwargs={'uuid': new_game.public_uuid})
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'new_game_url': new_game_url,
+            'new_game_uuid': str(new_game.public_uuid)
+        })
+    except Exception as e:
+        import traceback
+        return JsonResponse({
+            'success': False,
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }, status=400)
+
+
+# ==================== EXERCISE COUNTER VIEWS ====================
+
+@login_required
+def exercise_counter_list(request):
+    """Lista de contadores de ejercicios"""
+    from .models import ExerciseCounter
+    
+    exercises = ExerciseCounter.objects.all()
+    
+    # Filtro por estado
+    status_filter = request.GET.get('status')
+    if status_filter:
+        exercises = exercises.filter(status=status_filter)
+    
+    # Paginación
+    paginator = Paginator(exercises, 20)
+    page = request.GET.get('page')
+    exercises = paginator.get_page(page)
+    
+    context = {
+        'exercises': exercises,
+        'status_filter': status_filter,
+        'page_title': 'Contador de Ejercicios',
+    }
+    
+    return render(request, 'tickets/exercise_counter_list.html', context)
+
+
+@login_required
+def exercise_counter_create(request):
+    """Crear un nuevo contador de ejercicio"""
+    from .models import ExerciseCounter, Company
+    
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        sets_target = request.POST.get('sets_target')
+        reps_target = request.POST.get('reps_target')
+        notes = request.POST.get('notes', '')
+        company_id = request.POST.get('company')
+        
+        # Validaciones
+        if not title or not sets_target or not reps_target:
+            messages.error(request, 'Debes completar todos los campos obligatorios.')
+            return redirect('exercise_counter_create')
+        
+        # Crear el ejercicio
+        exercise = ExerciseCounter.objects.create(
+            title=title,
+            sets_target=int(sets_target),
+            reps_target=int(reps_target),
+            notes=notes,
+            created_by=request.user,
+        )
+        
+        # Asignar empresa si existe
+        if company_id:
+            try:
+                exercise.company = Company.objects.get(pk=company_id)
+                exercise.save()
+            except Company.DoesNotExist:
+                pass
+        
+        messages.success(request, f'Ejercicio "{title}" creado exitosamente.')
+        return redirect('exercise_counter_detail', pk=exercise.pk)
+    
+    # GET request
+    companies = Company.objects.filter(is_active=True).order_by('name')
+    
+    context = {
+        'companies': companies,
+        'page_title': 'Nuevo Contador de Ejercicio',
+    }
+    
+    return render(request, 'tickets/exercise_counter_create.html', context)
+
+
+@login_required
+def exercise_counter_detail(request, pk):
+    """Detalle de un contador de ejercicio"""
+    from .models import ExerciseCounter
+    
+    exercise = get_object_or_404(ExerciseCounter, pk=pk)
+    
+    # Generar URL pública completa
+    public_url = request.build_absolute_uri(exercise.get_public_url())
+    
+    context = {
+        'exercise': exercise,
+        'public_url': public_url,
+        'page_title': f'Ejercicio: {exercise.title}',
+    }
+    
+    return render(request, 'tickets/exercise_counter_detail.html', context)
+
+
+@login_required
+def exercise_counter_delete(request, pk):
+    """Eliminar un contador de ejercicio"""
+    from .models import ExerciseCounter
+    
+    exercise = get_object_or_404(ExerciseCounter, pk=pk)
+    
+    if request.method == 'POST':
+        exercise.delete()
+        messages.success(request, 'Ejercicio eliminado exitosamente.')
+        return redirect('exercise_counter_list')
+    
+    context = {
+        'exercise': exercise,
+        'page_title': f'Eliminar: {exercise.title}',
+    }
+    
+    return render(request, 'tickets/exercise_counter_delete.html', context)
+
+
+def exercise_counter_public(request, uuid):
+    """Vista pública del contador de ejercicio (sin login)"""
+    from .models import ExerciseCounter
+    
+    exercise = get_object_or_404(ExerciseCounter, public_uuid=uuid)
+    
+    context = {
+        'exercise': exercise,
+    }
+    
+    return render(request, 'tickets/exercise_counter_public.html', context)
+
+
+@csrf_exempt
+@require_POST
+def exercise_counter_start(request, uuid):
+    """Iniciar ejercicio - AJAX"""
+    from .models import ExerciseCounter
+    
+    exercise = get_object_or_404(ExerciseCounter, public_uuid=uuid)
+    exercise.start_exercise()
+    
+    return JsonResponse({
+        'status': 'success',
+        'exercise_status': exercise.status,
+        'started_at': exercise.started_at.isoformat() if exercise.started_at else None
+    })
+
+
+@csrf_exempt
+@require_POST
+def exercise_counter_pause(request, uuid):
+    """Pausar ejercicio - AJAX"""
+    from .models import ExerciseCounter
+    
+    exercise = get_object_or_404(ExerciseCounter, public_uuid=uuid)
+    
+    if exercise.status == 'in_progress':
+        exercise.pause_exercise()
+        action = 'paused'
+    elif exercise.status == 'paused':
+        exercise.resume_exercise()
+        action = 'resumed'
+    else:
+        return JsonResponse({'status': 'error', 'message': 'Estado inválido'}, status=400)
+    
+    return JsonResponse({
+        'status': 'success',
+        'exercise_status': exercise.status,
+        'action': action
+    })
+
+
+@csrf_exempt
+@require_POST
+def exercise_counter_finish(request, uuid):
+    """Finalizar ejercicio - AJAX"""
+    from .models import ExerciseCounter
+    
+    exercise = get_object_or_404(ExerciseCounter, public_uuid=uuid)
+    exercise.finish_exercise()
+    
+    return JsonResponse({
+        'status': 'success',
+        'exercise_status': exercise.status,
+        'duration': exercise.get_duration()
+    })
+
+
+@csrf_exempt
+@require_POST
+def exercise_counter_add_set(request, uuid):
+    """Añadir tanda - AJAX"""
+    from .models import ExerciseCounter
+    
+    exercise = get_object_or_404(ExerciseCounter, public_uuid=uuid)
+    
+    if exercise.status not in ['in_progress', 'paused']:
+        return JsonResponse({'status': 'error', 'message': 'El ejercicio debe estar en progreso'}, status=400)
+    
+    exercise.add_set()
+    
+    return JsonResponse({
+        'status': 'success',
+        'current_sets': exercise.current_sets,
+        'current_reps': exercise.current_reps,
+        'exercise_status': exercise.status,
+        'progress': exercise.get_progress()
+    })
+
+
+@csrf_exempt
+@require_POST
+def exercise_counter_add_rep(request, uuid):
+    """Añadir repetición - AJAX"""
+    from .models import ExerciseCounter
+    
+    exercise = get_object_or_404(ExerciseCounter, public_uuid=uuid)
+    
+    if exercise.status not in ['in_progress', 'paused']:
+        return JsonResponse({'status': 'error', 'message': 'El ejercicio debe estar en progreso'}, status=400)
+    
+    exercise.add_rep()
+    
+    return JsonResponse({
+        'status': 'success',
+        'current_sets': exercise.current_sets,
+        'current_reps': exercise.current_reps,
+        'exercise_status': exercise.status,
+        'progress': exercise.get_progress()
+    })
+
+
+@csrf_exempt
+@require_POST
+def exercise_counter_clone(request, uuid):
+    """Clonar un ejercicio existente"""
+    from .models import ExerciseCounter
+    import re
+    
+    try:
+        original_exercise = get_object_or_404(ExerciseCounter, public_uuid=uuid)
+        
+        # Encontrar el título base (sin número de copia)
+        base_title = re.sub(r'\s*\(\d+\)\s*$', '', original_exercise.title)
+        
+        # Buscar todas las copias existentes con el mismo título base
+        existing_copies = ExerciseCounter.objects.filter(
+            title__regex=r'^' + re.escape(base_title) + r'(\s*\(\d+\))?$'
+        ).count()
+        
+        # El nuevo número será el total de copias + 1
+        new_number = existing_copies + 1
+        
+        # Crear nuevo ejercicio con los mismos datos
+        new_exercise = ExerciseCounter(
+            title=f"{base_title} ({new_number})",
+            sets_target=original_exercise.sets_target,
+            reps_target=original_exercise.reps_target,
+            company=original_exercise.company,
+            notes=original_exercise.notes if original_exercise.notes else ""
+        )
+        
+        # Solo asignar created_by si existe
+        if original_exercise.created_by:
+            new_exercise.created_by = original_exercise.created_by
+        elif request.user.is_authenticated:
+            new_exercise.created_by = request.user
+        
+        new_exercise.save()
+        
+        # Generar URL pública del nuevo ejercicio
+        new_exercise_url = request.build_absolute_uri(
+            reverse('exercise_counter_public', kwargs={'uuid': new_exercise.public_uuid})
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'new_exercise_url': new_exercise_url,
+            'new_exercise_uuid': str(new_exercise.public_uuid)
+        })
+    except Exception as e:
+        import traceback
+        return JsonResponse({
+            'success': False,
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }, status=400)
+
+
+# ==================== Sport Goal Views ====================
+
+@login_required
+def sport_goal_list(request):
+    """Lista de objetivos deportivos"""
+    from .models import SportGoal
+    
+    sport_goals = SportGoal.objects.all()
+    
+    # Filtros
+    if hasattr(request.user, 'company') and request.user.company:
+        sport_goals = sport_goals.filter(company=request.user.company)
+    
+    # Filtro por jugador
+    player_filter = request.GET.get('player', '')
+    if player_filter:
+        sport_goals = sport_goals.filter(player_name__icontains=player_filter)
+    
+    # Paginación
+    paginator = Paginator(sport_goals, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'player_filter': player_filter,
+    }
+    
+    return render(request, 'tickets/sport_goal_list.html', context)
+
+
+@login_required
+def sport_goal_create(request):
+    """Crear nuevo objetivo deportivo"""
+    from .models import SportGoal
+    
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        player_name = request.POST.get('player_name')
+        target_time = request.POST.get('target_time')  # en segundos
+        target_distance = request.POST.get('target_distance')
+        notes = request.POST.get('notes', '')
+        
+        # Validación
+        if not title or not player_name:
+            messages.error(request, 'El título y el nombre del jugador son obligatorios.')
+            return render(request, 'tickets/sport_goal_create.html')
+        
+        # Crear objetivo
+        sport_goal = SportGoal(
+            title=title,
+            player_name=player_name,
+            target_time=int(target_time) if target_time else None,
+            target_distance=target_distance if target_distance else None,
+            notes=notes,
+            created_by=request.user
+        )
+        
+        if hasattr(request.user, 'company') and request.user.company:
+            sport_goal.company = request.user.company
+        
+        sport_goal.save()
+        
+        messages.success(request, f'Objetivo "{title}" creado exitosamente.')
+        return redirect('sport_goal_detail', pk=sport_goal.pk)
+    
+    return render(request, 'tickets/sport_goal_create.html')
+
+
+@login_required
+def sport_goal_detail(request, pk):
+    """Detalle de objetivo deportivo con gráfico de progreso"""
+    from .models import SportGoal
+    import json
+    
+    sport_goal = get_object_or_404(SportGoal, pk=pk)
+    
+    # Verificar permisos
+    if hasattr(request.user, 'company') and request.user.company and sport_goal.company != request.user.company:
+        messages.error(request, 'No tienes permiso para ver este objetivo.')
+        return redirect('sport_goal_list')
+    
+    # Obtener todos los registros
+    records = sport_goal.get_records()
+    
+    # Preparar datos para el gráfico
+    chart_data = {
+        'labels': [record.recorded_at.strftime('%d/%m/%Y %H:%M') for record in records],
+        'times': [record.actual_time if record.actual_time else 0 for record in records],
+        'distances': [float(record.actual_distance) if record.actual_distance else 0 for record in records],
+        'target_time': sport_goal.target_time if sport_goal.target_time else 0,
+        'target_distance': float(sport_goal.target_distance) if sport_goal.target_distance else 0,
+    }
+    
+    # Convertir a JSON para el template
+    chart_data_json = json.dumps(chart_data)
+    
+    context = {
+        'sport_goal': sport_goal,
+        'records': records,
+        'chart_data_json': chart_data_json,
+        'progress_percentage': sport_goal.get_progress_percentage(),
+        'best_time': sport_goal.get_best_time(),
+        'best_distance': sport_goal.get_best_distance(),
+    }
+    
+    return render(request, 'tickets/sport_goal_detail.html', context)
+
+
+@login_required
+def sport_goal_delete(request, pk):
+    """Eliminar objetivo deportivo"""
+    from .models import SportGoal
+    
+    sport_goal = get_object_or_404(SportGoal, pk=pk)
+    
+    # Verificar permisos
+    if hasattr(request.user, 'company') and request.user.company and sport_goal.company != request.user.company:
+        messages.error(request, 'No tienes permiso para eliminar este objetivo.')
+        return redirect('sport_goal_list')
+    
+    if request.method == 'POST':
+        sport_goal.delete()
+        messages.success(request, f'Objetivo "{sport_goal.title}" eliminado exitosamente.')
+        return redirect('sport_goal_list')
+    
+    context = {'sport_goal': sport_goal}
+    return render(request, 'tickets/sport_goal_delete.html', context)
+
+
+def sport_goal_public(request, uuid):
+    """Interfaz pública para registrar intento de objetivo"""
+    from .models import SportGoal
+    
+    sport_goal = get_object_or_404(SportGoal, public_uuid=uuid)
+    
+    context = {
+        'sport_goal': sport_goal,
+    }
+    
+    return render(request, 'tickets/sport_goal_public.html', context)
+
+
+@csrf_exempt
+@require_POST
+def sport_goal_record(request, uuid):
+    """Registrar un intento de objetivo - AJAX"""
+    from .models import SportGoal, SportGoalRecord
+    import json
+    
+    try:
+        data = json.loads(request.body)
+        sport_goal = get_object_or_404(SportGoal, public_uuid=uuid)
+        
+        actual_time = data.get('actual_time')  # en segundos
+        actual_distance = data.get('actual_distance')  # en km
+        notes = data.get('notes', '')
+        
+        # Crear registro
+        record = SportGoalRecord(
+            sport_goal=sport_goal,
+            actual_time=int(actual_time) if actual_time else None,
+            actual_distance=actual_distance if actual_distance else None,
+            notes=notes
+        )
+        record.save()
+        
+        # Verificar si se alcanzó el objetivo
+        goal_achieved = record.is_goal_achieved()
+        
+        return JsonResponse({
+            'status': 'success',
+            'record_id': record.id,
+            'goal_achieved': goal_achieved,
+            'formatted_time': record.format_actual_time(),
+            'best_time': sport_goal.get_best_time(),
+            'best_distance': float(sport_goal.get_best_distance()) if sport_goal.get_best_distance() else None,
+            'progress_percentage': sport_goal.get_progress_percentage()
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=400)

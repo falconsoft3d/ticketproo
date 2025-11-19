@@ -682,6 +682,26 @@
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Contadores</li>
+                            <li>
+                                <a class="dropdown-item {% if 'game_counter' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'game_counter_list' %}">
+                                    <i class="bi bi-joystick"></i> Contador de Juegos
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'exercise_counter' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'exercise_counter_list' %}">
+                                    <i class="bi bi-heart-pulse"></i> Contador de Deporte
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'sport_goal' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'sport_goal_list' %}">
+                                    <i class="bi bi-trophy"></i> Objetivos de Deporte
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
                             <li class="dropdown-header">Generadores</li>
                             <!-- Aquí se pueden agregar futuros generadores de código -->
                         </ul>
@@ -5472,8 +5492,8 @@
         }
 
         .rating-float-btn {
-            width: 60px;
-            height: 60px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             background: white;
             display: flex;
@@ -5484,7 +5504,7 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             transition: all 0.3s ease;
             cursor: pointer;
-            border: 3px solid transparent;
+            border: 2px solid transparent;
             position: relative;
         }
 
@@ -5494,7 +5514,7 @@
         }
 
         .rating-float-btn .rating-emoji {
-            font-size: 26px;
+            font-size: 22px;
             line-height: 1;
             filter: grayscale(0.3);
             transition: filter 0.3s ease;
@@ -5587,12 +5607,12 @@
             }
             
             .rating-float-btn {
-                width: 52px;
-                height: 52px;
+                width: 45px;
+                height: 45px;
             }
             
             .rating-float-btn .rating-emoji {
-                font-size: 22px;
+                font-size: 20px;
             }
 
             .rating-float-btn .rating-count {

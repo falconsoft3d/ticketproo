@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-joystick"></i> Contadores de Juegos</h2>
+        <a href="{% url 'game_counter_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nuevo Juego
+        </a>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Estado</label>
+                    <select name="status" class="form-select" onchange="this.form.submit()">
+                        <option value="">Todos los estados</option>
+                        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pendiente</option>
+                        <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>En Progreso</option>
+                        <option value="finished" {% if status_filter == 'finished' %}selected{% endif %}>Finalizado</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <a href="{% url 'game_counter_list' %}" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Limpiar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Estadísticas rápidas -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h3>{{ games.paginator.count }}</h3>
+                    <p class="mb-0">Total de Juegos</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de juegos -->
+    <div class="card">
+        <div class="card-body">
+            {% if games %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Jugadores</th>
+                            <th>Puntuación</th>
+                            <th>Estado</th>
+                            <th>Creado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for game in games %}
+                        <tr>
+                            <td>
+                                <strong>{{ game.name }}</strong>
+                            </td>
+                            <td>
+                                <i class="bi bi-person-fill text-primary"></i> {{ game.player1_name }}<br>
+                                <i class="bi bi-person-fill text-danger"></i> {{ game.player2_name }}
+                            </td>
+                            <td>
+                                <span class="badge bg-primary">{{ game.player1_score }}</span>
+                                <span class="text-muted">vs</span>
+                                <span class="badge bg-danger">{{ game.player2_score }}</span>
+                            </td>
+                            <td>
+                                {% if game.status == 'pending' %}
+                                    <span class="badge bg-secondary">Pendiente</span>
+                                {% elif game.status == 'in_progress' %}
+                                    <span class="badge bg-success">En Progreso</span>
+                                {% else %}
+                                    <span class="badge bg-dark">Finalizado</span>
+                                    {% if game.get_winner %}
+                                        <br><small class="text-success">Ganador: {{ game.get_winner }}</small>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small>{{ game.created_at|date:"d/m/Y H:i" }}</small>
+                            </td>
+                            <td>
+                                <a href="{% url 'game_counter_detail' game.pk %}" class="btn btn-sm btn-info" title="Ver detalle">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'game_counter_delete' game.pk %}" class="btn btn-sm btn-danger" title="Eliminar">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            {% if games.has_other_pages %}
+            <nav aria-label="Navegación de página">
+                <ul class="pagination justify-content-center">
+                    {% if games.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ games.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">Anterior</a>
+                    </li>
+                    {% endif %}
+                    
+                    <li class="page-item active">
+                        <span class="page-link">Página {{ games.number }} de {{ games.paginator.num_pages }}</span>
+                    </li>
+                    
+                    {% if games.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ games.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">Siguiente</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-joystick" style="font-size: 4rem; color: #ccc;"></i>
+                <p class="text-muted mt-3">No hay juegos registrados</p>
+                <a href="{% url 'game_counter_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Crear Primer Juego
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

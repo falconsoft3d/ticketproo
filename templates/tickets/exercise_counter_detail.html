@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ exercise.title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="bi bi-heart-pulse"></i> Información del Ejercicio</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-bordered">
+                        <tr>
+                            <th>Título:</th>
+                            <td><strong>{{ exercise.title }}</strong></td>
+                        </tr>
+                        <tr>
+                            <th>Tandas Objetivo:</th>
+                            <td><span class="badge bg-primary">{{ exercise.sets_target }}</span></td>
+                        </tr>
+                        <tr>
+                            <th>Repeticiones Objetivo:</th>
+                            <td><span class="badge bg-info">{{ exercise.reps_target }}</span></td>
+                        </tr>
+                        <tr>
+                            <th>Estado:</th>
+                            <td>
+                                {% if exercise.status == 'pending' %}
+                                    <span class="badge bg-secondary">⏸️ Pendiente</span>
+                                {% elif exercise.status == 'in_progress' %}
+                                    <span class="badge bg-success">▶️ En Progreso</span>
+                                {% elif exercise.status == 'paused' %}
+                                    <span class="badge bg-warning">⏸️ Pausado</span>
+                                {% else %}
+                                    <span class="badge bg-dark">⏹️ Finalizado</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Progreso:</th>
+                            <td>
+                                <div class="progress" style="height: 25px;">
+                                    <div class="progress-bar bg-success" 
+                                         role="progressbar" 
+                                         style="width: {{ exercise.get_progress }}%"
+                                         aria-valuenow="{{ exercise.get_progress }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                        {{ exercise.get_progress }}%
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% if exercise.get_duration %}
+                        <tr>
+                            <th>Duración:</th>
+                            <td>{{ exercise.get_duration }}</td>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <th>Creado:</th>
+                            <td>{{ exercise.created_at|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                        {% if exercise.notes %}
+                        <tr>
+                            <th>Notas:</th>
+                            <td>{{ exercise.notes }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+
+                    <div class="alert alert-info">
+                        <strong><i class="bi bi-share"></i> URL Pública:</strong>
+                        <div class="input-group mt-2">
+                            <input type="text" class="form-control" id="publicUrl" 
+                                   value="{{ public_url }}" readonly>
+                            <button class="btn btn-outline-secondary" type="button" 
+                                    onclick="copyUrl()">
+                                <i class="bi bi-clipboard"></i> Copiar
+                            </button>
+                        </div>
+                        <small class="text-muted">Comparte esta URL para acceder al contador sin login</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i class="bi bi-layers"></i> Tandas Actuales</h6>
+                </div>
+                <div class="card-body text-center">
+                    <h1 class="display-1 text-primary">{{ exercise.current_sets }}</h1>
+                    <p class="text-muted">de {{ exercise.sets_target }} tandas</p>
+                </div>
+            </div>
+
+            <div class="card border-info mt-3">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="bi bi-arrow-repeat"></i> Repeticiones Actuales</h6>
+                </div>
+                <div class="card-body text-center">
+                    <h1 class="display-1 text-info">{{ exercise.current_reps }}</h1>
+                    <p class="text-muted">de {{ exercise.reps_target }} repeticiones</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col-12">
+            <a href="{% url 'exercise_counter_list' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+            <a href="{{ exercise.get_public_url }}" class="btn btn-primary" target="_blank">
+                <i class="bi bi-play-circle"></i> Abrir Contador
+            </a>
+            <a href="{% url 'exercise_counter_delete' exercise.pk %}" class="btn btn-danger">
+                <i class="bi bi-trash"></i> Eliminar
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyUrl() {
+    const input = document.getElementById('publicUrl');
+    input.select();
+    input.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(input.value);
+    alert('URL copiada al portapapeles');
+}
+</script>
+{% endblock %}

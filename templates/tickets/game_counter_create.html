@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-plus-circle"></i> Nuevo Contador de Juego
+                    </h4>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="name" class="form-label fw-bold">Nombre del Juego *</label>
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                id="name" 
+                                name="name" 
+                                required
+                                placeholder="Ej: Final Torneo 2025"
+                            >
+                            <small class="form-text text-muted">Nombre descriptivo para identificar el juego</small>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="player1_name" class="form-label fw-bold">
+                                    <i class="bi bi-person-fill text-primary"></i> Jugador 1 *
+                                </label>
+                                <input 
+                                    type="text" 
+                                    class="form-control" 
+                                    id="player1_name" 
+                                    name="player1_name" 
+                                    required
+                                    placeholder="Nombre del jugador 1"
+                                >
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="player2_name" class="form-label fw-bold">
+                                    <i class="bi bi-person-fill text-danger"></i> Jugador 2 *
+                                </label>
+                                <input 
+                                    type="text" 
+                                    class="form-control" 
+                                    id="player2_name" 
+                                    name="player2_name" 
+                                    required
+                                    placeholder="Nombre del jugador 2"
+                                >
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="max_points" class="form-label fw-bold">Puntos Máximos</label>
+                                <input 
+                                    type="number" 
+                                    class="form-control" 
+                                    id="max_points" 
+                                    name="max_points" 
+                                    value="0"
+                                    min="0"
+                                    placeholder="0 = sin límite"
+                                >
+                                <small class="form-text text-muted">0 para juego sin límite de puntos</small>
+                            </div>
+                            {% if companies %}
+                            <div class="col-md-6 mb-3">
+                                <label for="company" class="form-label fw-bold">Empresa</label>
+                                <select class="form-select" id="company" name="company">
+                                    <option value="">Ninguna</option>
+                                    {% for company in companies %}
+                                    <option value="{{ company.pk }}">{{ company.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label fw-bold">Notas</label>
+                            <textarea 
+                                class="form-control" 
+                                id="notes" 
+                                name="notes" 
+                                rows="3"
+                                placeholder="Notas adicionales sobre el juego (opcional)"
+                            ></textarea>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'game_counter_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Crear Juego
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información -->
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-info-circle"></i> ¿Cómo funciona?
+                    </h6>
+                    <ol class="mb-0">
+                        <li>Crea un juego con los nombres de los jugadores</li>
+                        <li>Una vez creado, obtendrás una URL pública</li>
+                        <li>Abre la URL desde tu celular para iniciar el contador</li>
+                        <li>Toca el botón superior para sumar puntos al Jugador 1</li>
+                        <li>Toca el botón inferior para sumar puntos al Jugador 2</li>
+                        <li>Finaliza el juego cuando terminen de jugar</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

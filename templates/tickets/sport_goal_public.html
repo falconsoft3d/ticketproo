@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{{ sport_goal.title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .container-fluid {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            color: white;
+        }
+
+        .header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .timer-display {
+            font-size: 4rem;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            color: #000;
+            text-shadow: 0 0 20px rgba(101, 103, 101, 0.5);
+            margin: 20px 0;
+        }
+
+        .distance-input-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn-control {
+            font-size: 1.2rem;
+            padding: 15px 30px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .btn-stop {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #6c757d, #5a6268);
+            color: white;
+        }
+
+        .btn-record {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+        }
+
+        .btn-control:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .goals-display {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .goal-card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 20px;
+            min-width: 200px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .goal-card h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 1rem;
+        }
+
+        .goal-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .distance-input-group {
+            max-width: 400px;
+            margin: 20px auto;
+        }
+
+        .distance-input-group input {
+            font-size: 1.5rem;
+            text-align: center;
+            padding: 15px;
+        }
+
+        .success-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            flex-direction: column;
+            color: white;
+        }
+
+        .success-overlay.show {
+            display: flex;
+        }
+
+        .trophy-animation {
+            font-size: 8rem;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @media (max-width: 768px) {
+            .timer-display {
+                font-size: 3rem;
+            }
+            
+            .btn-control {
+                font-size: 1rem;
+                padding: 12px 20px;
+            }
+            
+            .goal-value {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="header">
+            <h2><i class="bi bi-trophy"></i> {{ sport_goal.title }}</h2>
+            <div class="player-info">
+                <span><i class="bi bi-person"></i> {{ sport_goal.player_name }}</span>
+            </div>
+        </div>
+
+        <div class="distance-input-container text-center">
+            <!-- Objetivos -->
+            <div class="goals-display">
+                {% if sport_goal.target_time %}
+                <div class="goal-card">
+                    <h4><i class="bi bi-clock text-warning"></i> Tiempo Objetivo</h4>
+                    <div class="goal-value">{{ sport_goal.format_target_time }}</div>
+                </div>
+                {% endif %}
+
+                {% if sport_goal.target_distance %}
+                <div class="goal-card">
+                    <h4><i class="bi bi-signpost text-success"></i> Distancia Objetivo</h4>
+                    <div class="goal-value">{{ sport_goal.target_distance }} km</div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Cronómetro -->
+            <div class="timer-display" id="timerDisplay">00:00:00</div>
+
+            <!-- Controles -->
+            <div class="control-buttons mb-4">
+                <button class="btn-control btn-start" id="btnStart">
+                    <i class="bi bi-play-fill"></i> Iniciar
+                </button>
+                <button class="btn-control btn-stop" id="btnStop" disabled>
+                    <i class="bi bi-stop-fill"></i> Detener
+                </button>
+                <button class="btn-control btn-reset" id="btnReset">
+                    <i class="bi bi-arrow-counterclockwise"></i> Reiniciar
+                </button>
+            </div>
+
+            <!-- Input de distancia -->
+            {% if sport_goal.target_distance %}
+            <div class="distance-input-group">
+                <label class="form-label"><strong>Distancia Recorrida (km)</strong></label>
+                <div class="input-group input-group-lg">
+                    <span class="input-group-text"><i class="bi bi-signpost"></i></span>
+                    <input type="number" class="form-control" id="distanceInput" 
+                           placeholder="0.00" step="0.01" min="0">
+                    <span class="input-group-text">km</span>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Botón de registrar -->
+            <button class="btn-control btn-record w-100 mt-3" id="btnRecord">
+                <i class="bi bi-save"></i> Registrar Intento
+            </button>
+        </div>
+    </div>
+
+    <!-- Overlay de éxito -->
+    <div class="success-overlay" id="successOverlay">
+        <div class="trophy-animation">🏆</div>
+        <h1 id="successMessage">¡Intento Registrado!</h1>
+        <p id="successDetails" style="font-size: 1.5rem; margin-top: 20px;"></p>
+        <button class="btn-control btn-start mt-4" id="btnContinue">
+            <i class="bi bi-check-circle"></i> Continuar
+        </button>
+    </div>
+
+    <script>
+        // Variables globales
+        const sportGoalUuid = '{{ sport_goal.public_uuid }}';
+        const targetTime = {% if sport_goal.target_time %}{{ sport_goal.target_time }}{% else %}0{% endif %};
+        const targetDistance = {% if sport_goal.target_distance %}parseFloat('{{ sport_goal.target_distance }}'.replace(',', '.')){% else %}0{% endif %};
+
+        let startTime = null;
+        let elapsedTime = 0;
+        let timerInterval = null;
+        let isRunning = false;
+
+        console.log('Sport Goal UUID:', sportGoalUuid);
+        console.log('Target Time:', targetTime);
+        console.log('Target Distance:', targetDistance);
+
+        // Funciones
+        function startTimer() {
+            console.log('startTimer called, isRunning:', isRunning);
+            if (!isRunning) {
+                startTime = Date.now() - elapsedTime;
+                timerInterval = setInterval(updateTimer, 10);
+                isRunning = true;
+                
+                document.getElementById('btnStart').disabled = true;
+                document.getElementById('btnStop').disabled = false;
+                console.log('Timer started');
+            }
+        }
+
+        function stopTimer() {
+            if (isRunning) {
+                clearInterval(timerInterval);
+                isRunning = false;
+                
+                document.getElementById('btnStart').disabled = false;
+                document.getElementById('btnStop').disabled = true;
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            elapsedTime = 0;
+            isRunning = false;
+            
+            document.getElementById('timerDisplay').textContent = '00:00:00';
+            document.getElementById('btnStart').disabled = false;
+            document.getElementById('btnStop').disabled = true;
+        }
+
+        function updateTimer() {
+            elapsedTime = Date.now() - startTime;
+            
+            const totalSeconds = Math.floor(elapsedTime / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            
+            document.getElementById('timerDisplay').textContent = 
+                `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        async function recordAttempt() {
+            // Detener el cronómetro si está corriendo
+            if (isRunning) {
+                stopTimer();
+            }
+
+            const actualTime = Math.floor(elapsedTime / 1000); // Tiempo en segundos
+            const distanceInput = document.getElementById('distanceInput');
+            const actualDistance = distanceInput ? parseFloat(distanceInput.value) || null : null;
+
+            // Validación
+            if (actualTime === 0) {
+                alert('Debes iniciar el cronómetro antes de registrar');
+                return;
+            }
+
+            if (targetDistance && !actualDistance) {
+                alert('Debes ingresar la distancia recorrida');
+                return;
+            }
+
+            // Enviar registro
+            try {
+                const response = await fetch(`/objetivo/${sportGoalUuid}/record/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        actual_time: actualTime,
+                        actual_distance: actualDistance,
+                        notes: ''
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    showSuccess(data);
+                    
+                    // Reiniciar después de 3 segundos
+                    setTimeout(() => {
+                        resetTimer();
+                        if (distanceInput) {
+                            distanceInput.value = '';
+                        }
+                    }, 3000);
+                } else {
+                    alert('Error al registrar: ' + data.message);
+                }
+            } catch (error) {
+                alert('Error de conexión: ' + error.message);
+            }
+        }
+
+        function showSuccess(data) {
+            const overlay = document.getElementById('successOverlay');
+            const message = document.getElementById('successMessage');
+            const details = document.getElementById('successDetails');
+
+            if (data.goal_achieved) {
+                message.textContent = '🎉 ¡Objetivo Alcanzado! 🎉';
+            } else {
+                message.textContent = '✅ Intento Registrado';
+            }
+
+            let detailsText = '';
+            if (data.formatted_time) {
+                detailsText += `Tiempo: ${data.formatted_time}`;
+            }
+            if (data.best_distance) {
+                detailsText += ` | Distancia: ${data.best_distance} km`;
+            }
+            detailsText += `<br>Progreso: ${data.progress_percentage.toFixed(0)}%`;
+
+            details.innerHTML = detailsText;
+            overlay.classList.add('show');
+        }
+
+        function closeSuccessOverlay() {
+            document.getElementById('successOverlay').classList.remove('show');
+        }
+
+        // Vibración al registrar (si está disponible)
+        function vibrate() {
+            if ('vibrate' in navigator) {
+                navigator.vibrate(200);
+            }
+        }
+
+        // Attach event listeners after DOM loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, attaching event listeners');
+            
+            const btnStart = document.getElementById('btnStart');
+            const btnStop = document.getElementById('btnStop');
+            const btnReset = document.getElementById('btnReset');
+            const btnRecord = document.getElementById('btnRecord');
+            const btnContinue = document.getElementById('btnContinue');
+            
+            if (btnStart) {
+                btnStart.addEventListener('click', startTimer);
+                console.log('btnStart listener attached');
+            }
+            if (btnStop) {
+                btnStop.addEventListener('click', stopTimer);
+                console.log('btnStop listener attached');
+            }
+            if (btnReset) {
+                btnReset.addEventListener('click', resetTimer);
+                console.log('btnReset listener attached');
+            }
+            if (btnRecord) {
+                btnRecord.addEventListener('click', recordAttempt);
+                console.log('btnRecord listener attached');
+            }
+            if (btnContinue) {
+                btnContinue.addEventListener('click', closeSuccessOverlay);
+                console.log('btnContinue listener attached');
+            }
+            
+            console.log('Event listeners attached successfully');
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

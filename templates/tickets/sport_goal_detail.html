@@ -1,0 +1,357 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ sport_goal.title }}{% endblock %}
+
+{% block extra_head %}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="bi bi-trophy"></i> {{ sport_goal.title }}</h2>
+            <p class="text-muted">
+                <i class="bi bi-person"></i> {{ sport_goal.player_name }} | 
+                <i class="bi bi-calendar"></i> Creado: {{ sport_goal.created_at|date:"d/m/Y H:i" }}
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'sport_goal_list' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+            <a href="{% url 'sport_goal_public' sport_goal.public_uuid %}" class="btn btn-primary" target="_blank">
+                <i class="bi bi-play-circle"></i> Abrir Cronómetro
+            </a>
+            <a href="{% url 'sport_goal_delete' sport_goal.pk %}" class="btn btn-danger">
+                <i class="bi bi-trash"></i> Eliminar
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información del objetivo -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5><i class="bi bi-info-circle"></i> Información del Objetivo</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <th width="40%">Título:</th>
+                            <td>{{ sport_goal.title }}</td>
+                        </tr>
+                        <tr>
+                            <th>Jugador:</th>
+                            <td>
+                                <span class="badge bg-info">
+                                    <i class="bi bi-person"></i> {{ sport_goal.player_name }}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Tiempo Objetivo:</th>
+                            <td>
+                                {% if sport_goal.target_time %}
+                                    <span class="badge bg-warning">
+                                        <i class="bi bi-clock"></i> {{ sport_goal.format_target_time }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">No especificado</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Distancia Objetivo:</th>
+                            <td>
+                                {% if sport_goal.target_distance %}
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-signpost"></i> {{ sport_goal.target_distance }} km
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">No especificado</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Progreso:</th>
+                            <td>
+                                <div class="progress" style="height: 25px;">
+                                    <div class="progress-bar bg-success" role="progressbar" 
+                                         style="width: {{ progress_percentage }}%;" 
+                                         aria-valuenow="{{ progress_percentage }}" aria-valuemin="0" aria-valuemax="100">
+                                        {{ progress_percentage|floatformat:0 }}%
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Total Intentos:</th>
+                            <td>
+                                <span class="badge bg-secondary">{{ records.count }}</span>
+                            </td>
+                        </tr>
+                        {% if sport_goal.notes %}
+                        <tr>
+                            <th>Notas:</th>
+                            <td>{{ sport_goal.notes }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+
+            <!-- Mejores marcas -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5><i class="bi bi-star"></i> Mejores Marcas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h6>Mejor Tiempo</h6>
+                            {% if best_time %}
+                                <h3 class="text-primary">
+                                    {% with hours=best_time|divisibleby:3600 minutes=best_time|divisibleby:60 %}
+                                        {% if best_time >= 3600 %}
+                                            {{ best_time|floatformat:0|slice:":2" }}:{{ best_time|add:"-3600"|floatformat:0|slice:":2" }}:{{ best_time|add:"-60"|floatformat:0 }}
+                                        {% else %}
+                                            {{ best_time|floatformat:0|slice:":2" }}:{{ best_time|add:"-60"|floatformat:0 }}
+                                        {% endif %}
+                                    {% endwith %}
+                                </h3>
+                            {% else %}
+                                <h3 class="text-muted">--:--</h3>
+                            {% endif %}
+                        </div>
+                        <div class="col-6">
+                            <h6>Mejor Distancia</h6>
+                            {% if best_distance %}
+                                <h3 class="text-success">{{ best_distance }} km</h3>
+                            {% else %}
+                                <h3 class="text-muted">-- km</h3>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- URL Pública -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5><i class="bi bi-link-45deg"></i> URL Pública del Cronómetro</h5>
+                </div>
+                <div class="card-body">
+                    <p>Comparte esta URL para registrar intentos:</p>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" 
+                               value="{{ request.scheme }}://{{ request.get_host }}{% url 'sport_goal_public' sport_goal.public_uuid %}" 
+                               id="publicUrl" readonly>
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyUrl()">
+                            <i class="bi bi-clipboard"></i> Copiar
+                        </button>
+                    </div>
+                    <a href="{% url 'sport_goal_public' sport_goal.public_uuid %}" 
+                       class="btn btn-primary w-100" target="_blank">
+                        <i class="bi bi-play-circle"></i> Abrir Cronómetro Público
+                    </a>
+                </div>
+            </div>
+
+            <!-- Gráfico de progreso -->
+            {% if records %}
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5><i class="bi bi-graph-up"></i> Gráfico de Progreso</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="progressChart" style="max-height: 300px;"></canvas>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Historial de registros -->
+    {% if records %}
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h5><i class="bi bi-clock-history"></i> Historial de Intentos</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Fecha y Hora</th>
+                            <th>Tiempo Real</th>
+                            <th>Distancia Real</th>
+                            <th>Objetivo Alcanzado</th>
+                            <th>Notas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in records %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ record.recorded_at|date:"d/m/Y H:i:s" }}</td>
+                                <td>
+                                    {% if record.actual_time %}
+                                        <span class="badge bg-primary">
+                                            {{ record.format_actual_time }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if record.actual_distance %}
+                                        <span class="badge bg-success">
+                                            {{ record.actual_distance }} km
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if record.is_goal_achieved %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle"></i> Sí
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-danger">
+                                            <i class="bi bi-x-circle"></i> No
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ record.notes|default:"-" }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function copyUrl() {
+    const urlInput = document.getElementById('publicUrl');
+    urlInput.select();
+    urlInput.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(urlInput.value);
+    alert('URL copiada al portapapeles');
+}
+
+// Esperar a que se cargue la página y Chart.js
+document.addEventListener('DOMContentLoaded', function() {
+    // Verificar si Chart está disponible
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js no se ha cargado correctamente');
+        return;
+    }
+
+    // Datos del gráfico
+    const chartData = {{ chart_data_json|safe }};
+
+    console.log('Chart Data:', chartData);
+
+    // Configurar gráfico
+    const ctx = document.getElementById('progressChart').getContext('2d');
+    const progressChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: chartData.labels,
+        datasets: []
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        },
+        plugins: {
+            legend: {
+                display: true,
+                position: 'top'
+            },
+            title: {
+                display: true,
+                text: 'Evolución del Rendimiento'
+            }
+        }
+    }
+});
+
+// Agregar dataset de tiempo si existe
+if (chartData.target_time > 0) {
+    progressChart.data.datasets.push({
+        label: 'Tiempo Real (segundos)',
+        data: chartData.times,
+        borderColor: 'rgb(54, 162, 235)',
+        backgroundColor: 'rgba(54, 162, 235, 0.1)',
+        tension: 0.1
+    });
+    
+    // Línea de objetivo de tiempo
+    progressChart.data.datasets.push({
+        label: 'Objetivo Tiempo',
+        data: new Array(chartData.labels.length).fill(chartData.target_time),
+        borderColor: 'rgb(255, 99, 132)',
+        borderDash: [5, 5],
+        backgroundColor: 'transparent',
+        pointRadius: 0
+    });
+}
+
+// Agregar dataset de distancia si existe
+if (chartData.target_distance > 0) {
+    progressChart.data.datasets.push({
+        label: 'Distancia Real (km)',
+        data: chartData.distances,
+        borderColor: 'rgb(75, 192, 192)',
+        backgroundColor: 'rgba(75, 192, 192, 0.1)',
+        tension: 0.1,
+        yAxisID: 'y1'
+    });
+    
+    // Línea de objetivo de distancia
+    progressChart.data.datasets.push({
+        label: 'Objetivo Distancia',
+        data: new Array(chartData.labels.length).fill(chartData.target_distance),
+        borderColor: 'rgb(153, 102, 255)',
+        borderDash: [5, 5],
+        backgroundColor: 'transparent',
+        pointRadius: 0,
+        yAxisID: 'y1'
+    });
+    
+    // Agregar segundo eje Y para distancia
+    progressChart.options.scales.y1 = {
+        type: 'linear',
+        display: true,
+        position: 'right',
+        grid: {
+            drawOnChartArea: false
+        }
+    };
+}
+
+    progressChart.update();
+
+    console.log('Chart initialized successfully');
+});
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}

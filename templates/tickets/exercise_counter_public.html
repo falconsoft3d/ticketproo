@@ -1,0 +1,651 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{{ exercise.title }}</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #1a1a2e;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .exercise-header {
+            background: #16213e;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        .exercise-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .exercise-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .exercise-controls button {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-start {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-pause {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .btn-finish {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-clone {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-start:hover {
+            background: #218838;
+        }
+
+        .btn-pause:hover {
+            background: #e0a800;
+        }
+
+        .btn-finish:hover {
+            background: #c82333;
+        }
+
+        .btn-clone:hover {
+            background: #0056b3;
+        }
+
+        .exercise-status {
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .status-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .status-pending {
+            background: #6c757d;
+        }
+
+        .status-in_progress {
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+
+        .status-paused {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .status-finished {
+            background: #dc3545;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .exercise-timer {
+            font-family: 'Courier New', monospace;
+            font-size: 1.5rem;
+            color: #00ff00;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            margin-top: 5px;
+        }
+
+        .counter-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .counter-zone {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            padding: 20px;
+        }
+
+        .counter-zone.disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .counter-zone:not(.disabled):active {
+            transform: scale(0.98);
+        }
+
+        .sets-zone {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .sets-zone:not(.disabled):hover {
+            background: linear-gradient(135deg, #5568d3 0%, #653a91 100%);
+        }
+
+        .reps-zone {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .reps-zone:not(.disabled):hover {
+            background: linear-gradient(135deg, #df82ea 0%, #e4465b 100%);
+        }
+
+        .counter-content {
+            text-align: center;
+            width: 100%;
+        }
+
+        .counter-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .counter-display {
+            font-size: 8rem;
+            font-weight: bold;
+            text-shadow: 4px 4px 8px rgba(0,0,0,0.5);
+            line-height: 1;
+            margin-bottom: 10px;
+        }
+
+        .counter-target {
+            font-size: 1.2rem;
+            opacity: 0.8;
+        }
+
+        .tap-hint {
+            font-size: 0.9rem;
+            opacity: 0.7;
+            margin-top: 10px;
+        }
+
+        .progress-overlay {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .finished-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .finished-overlay.show {
+            display: flex;
+        }
+
+        .finished-content {
+            text-align: center;
+            padding: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            max-width: 90%;
+        }
+
+        .trophy-icon {
+            font-size: 5rem;
+            margin-bottom: 20px;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @media (max-width: 768px) {
+            .exercise-title {
+                font-size: 1rem;
+            }
+
+            .counter-display {
+                font-size: 6rem;
+            }
+
+            .counter-name {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="exercise-header">
+        <div class="exercise-title">
+            <i class="bi bi-heart-pulse"></i> {{ exercise.title }}
+        </div>
+        
+        <div class="exercise-controls">
+            {% if exercise.status == 'pending' %}
+                <button class="btn-start" onclick="startExercise()">
+                    <i class="bi bi-play-circle"></i> Iniciar
+                </button>
+            {% elif exercise.status == 'in_progress' %}
+                <button class="btn-pause" onclick="pauseExercise()">
+                    <i class="bi bi-pause-circle"></i> Pausar
+                </button>
+                <button class="btn-finish" onclick="finishExercise()">
+                    <i class="bi bi-stop-circle"></i> Finalizar
+                </button>
+            {% elif exercise.status == 'paused' %}
+                <button class="btn-start" onclick="pauseExercise()">
+                    <i class="bi bi-play-circle"></i> Reanudar
+                </button>
+                <button class="btn-finish" onclick="finishExercise()">
+                    <i class="bi bi-stop-circle"></i> Finalizar
+                </button>
+            {% elif exercise.status == 'finished' %}
+                <button class="btn-clone" onclick="cloneExercise()">
+                    <i class="bi bi-files"></i> Clonar
+                </button>
+            {% endif %}
+        </div>
+
+        <div class="exercise-status">
+            <span class="status-badge status-{{ exercise.status }}" id="statusBadge">
+                {% if exercise.status == 'pending' %}
+                    ⏸️ Pendiente
+                {% elif exercise.status == 'in_progress' %}
+                    ▶️ En Progreso
+                {% elif exercise.status == 'paused' %}
+                    ⏸️ Pausado
+                {% else %}
+                    ⏹️ Finalizado
+                {% endif %}
+            </span>
+        </div>
+
+        {% if exercise.status == 'in_progress' or exercise.status == 'paused' or exercise.status == 'finished' %}
+        <div class="exercise-timer" id="exerciseTimer">00:00:00</div>
+        {% endif %}
+    </div>
+
+    <!-- Zonas de conteo -->
+    <div class="counter-container">
+        <!-- Zona de Tandas (Superior) -->
+        <div class="counter-zone sets-zone {% if exercise.status not in 'in_progress,paused' %}disabled{% endif %}" 
+             onclick="addSet()" id="setsZone">
+            <div class="counter-content">
+                <div class="counter-name">
+                    <i class="bi bi-layers"></i> TANDAS
+                </div>
+                <div class="counter-display" id="setsDisplay">{{ exercise.current_sets }}</div>
+                <div class="counter-target">de {{ exercise.sets_target }}</div>
+                {% if exercise.status in 'in_progress,paused' %}
+                <div class="tap-hint">
+                    <i class="bi bi-hand-index"></i> Toca para completar tanda
+                </div>
+                {% endif %}
+            </div>
+            <div class="progress-overlay" id="progressDisplay">
+                {{ exercise.get_progress }}%
+            </div>
+        </div>
+
+        <!-- Zona de Repeticiones (Inferior) -->
+        <div class="counter-zone reps-zone {% if exercise.status not in 'in_progress,paused' %}disabled{% endif %}" 
+             onclick="addRep()" id="repsZone">
+            <div class="counter-content">
+                <div class="counter-name">
+                    <i class="bi bi-arrow-repeat"></i> REPETICIONES
+                </div>
+                <div class="counter-display" id="repsDisplay">{{ exercise.current_reps }}</div>
+                <div class="counter-target">de {{ exercise.reps_target }}</div>
+                {% if exercise.status in 'in_progress,paused' %}
+                <div class="tap-hint">
+                    <i class="bi bi-hand-index"></i> Toca para añadir repetición
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay de finalización -->
+    <div class="finished-overlay" id="finishedOverlay">
+        <div class="finished-content">
+            <div class="trophy-icon">🏆</div>
+            <h1>¡Ejercicio Completado!</h1>
+            <h3 id="finishedStats"></h3>
+            <button class="btn btn-light mt-4" onclick="location.reload()">
+                <i class="bi bi-arrow-clockwise"></i> Recargar
+            </button>
+        </div>
+    </div>
+
+    <script>
+    const exerciseUuid = '{{ exercise.public_uuid }}';
+    let exerciseStatus = '{{ exercise.status }}';
+    let currentSets = {{ exercise.current_sets }};
+    let currentReps = {{ exercise.current_reps }};
+    let targetSets = {{ exercise.sets_target }};
+    let targetReps = {{ exercise.reps_target }};
+    let startTime = {% if exercise.started_at %}'{{ exercise.started_at.isoformat }}'{% else %}null{% endif %};
+    let timerInterval = null;
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function updateUI() {
+        // Actualizar displays
+        document.getElementById('setsDisplay').textContent = currentSets;
+        document.getElementById('repsDisplay').textContent = currentReps;
+        
+        // Calcular progreso
+        const totalRepsTarget = targetSets * targetReps;
+        const totalRepsCurrent = (currentSets * targetReps) + currentReps;
+        const progress = Math.floor((totalRepsCurrent / totalRepsTarget) * 100);
+        document.getElementById('progressDisplay').textContent = progress + '%';
+        
+        // Actualizar zonas
+        const setsZone = document.getElementById('setsZone');
+        const repsZone = document.getElementById('repsZone');
+        
+        if (exerciseStatus === 'in_progress' || exerciseStatus === 'paused') {
+            setsZone.classList.remove('disabled');
+            repsZone.classList.remove('disabled');
+        } else {
+            setsZone.classList.add('disabled');
+            repsZone.classList.add('disabled');
+        }
+    }
+
+    function startExercise() {
+        fetch(`/ejercicio/${exerciseUuid}/start/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                exerciseStatus = data.exercise_status;
+                startTime = data.started_at;
+                startTimer();
+                updateUI();
+                location.reload();
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function pauseExercise() {
+        fetch(`/ejercicio/${exerciseUuid}/pause/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                exerciseStatus = data.exercise_status;
+                if (data.action === 'paused') {
+                    stopTimer();
+                } else if (data.action === 'resumed') {
+                    startTimer();
+                }
+                location.reload();
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function finishExercise() {
+        if (!confirm('¿Finalizar el ejercicio?')) return;
+
+        fetch(`/ejercicio/${exerciseUuid}/finish/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                exerciseStatus = data.exercise_status;
+                stopTimer();
+                showFinished(data.duration);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function addSet() {
+        if (exerciseStatus !== 'in_progress' && exerciseStatus !== 'paused') return;
+
+        // Vibración
+        if (navigator.vibrate) {
+            navigator.vibrate(100);
+        }
+
+        fetch(`/ejercicio/${exerciseUuid}/add-set/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                currentSets = data.current_sets;
+                currentReps = data.current_reps;
+                exerciseStatus = data.exercise_status;
+                updateUI();
+                
+                if (exerciseStatus === 'finished') {
+                    showFinished();
+                }
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function addRep() {
+        if (exerciseStatus !== 'in_progress' && exerciseStatus !== 'paused') return;
+
+        // Vibración
+        if (navigator.vibrate) {
+            navigator.vibrate(50);
+        }
+
+        fetch(`/ejercicio/${exerciseUuid}/add-rep/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                currentSets = data.current_sets;
+                currentReps = data.current_reps;
+                exerciseStatus = data.exercise_status;
+                updateUI();
+                
+                if (exerciseStatus === 'finished') {
+                    showFinished();
+                }
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function cloneExercise() {
+        if (!confirm('¿Crear un nuevo ejercicio con las mismas configuraciones?')) return;
+
+        fetch(`/ejercicio/${exerciseUuid}/clone/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.new_exercise_url) {
+                alert('¡Ejercicio clonado! Redirigiendo...');
+                window.location.href = data.new_exercise_url;
+            } else {
+                console.error('Error completo:', data);
+                alert('Error al clonar: ' + (data.error || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al clonar el ejercicio');
+        });
+    }
+
+    function showFinished(duration) {
+        const overlay = document.getElementById('finishedOverlay');
+        const stats = document.getElementById('finishedStats');
+        stats.textContent = duration ? `Duración: ${duration}` : `${currentSets} tandas completadas`;
+        overlay.classList.add('show');
+    }
+
+    // ==================== TIMER FUNCTIONS ====================
+    
+    function startTimer() {
+        if (!startTime || (exerciseStatus !== 'in_progress' && exerciseStatus !== 'paused')) return;
+        
+        updateTimer();
+        if (exerciseStatus === 'in_progress') {
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+    }
+
+    function stopTimer() {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+    }
+
+    function updateTimer() {
+        if (!startTime) return;
+
+        const start = new Date(startTime);
+        const now = new Date();
+        const elapsed = Math.floor((now - start) / 1000);
+
+        const hours = Math.floor(elapsed / 3600);
+        const minutes = Math.floor((elapsed % 3600) / 60);
+        const seconds = elapsed % 60;
+
+        const timerDisplay = document.getElementById('exerciseTimer');
+        if (timerDisplay) {
+            timerDisplay.textContent = 
+                String(hours).padStart(2, '0') + ':' +
+                String(minutes).padStart(2, '0') + ':' +
+                String(seconds).padStart(2, '0');
+        }
+    }
+
+    // Iniciar timer si el ejercicio está en progreso
+    if ((exerciseStatus === 'in_progress' || exerciseStatus === 'paused' || exerciseStatus === 'finished') && startTime) {
+        startTimer();
+    }
+
+    // Prevenir zoom en doble tap
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function (event) {
+        const now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 300) {
+            event.preventDefault();
+        }
+        lastTouchEnd = now;
+    }, false);
+    </script>
+</body>
+</html>

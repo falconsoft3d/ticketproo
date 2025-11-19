@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Objetivos Deportivos{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2><i class="bi bi-trophy"></i> Objetivos Deportivos</h2>
+        </div>
+        <div class="col-md-6 text-end">
+            <a href="{% url 'sport_goal_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Crear Objetivo
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Filtrar por jugador</label>
+                    <input type="text" class="form-control" name="player" value="{{ player_filter }}" 
+                           placeholder="Nombre del jugador">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-secondary w-100">
+                        <i class="bi bi-filter"></i> Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabla de objetivos -->
+    <div class="card">
+        <div class="card-body">
+            {% if page_obj %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Título</th>
+                                <th>Jugador</th>
+                                <th>Objetivo Tiempo</th>
+                                <th>Objetivo Distancia</th>
+                                <th>Mejor Tiempo</th>
+                                <th>Mejor Distancia</th>
+                                <th>Progreso</th>
+                                <th>Registros</th>
+                                <th>Creado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for goal in page_obj %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ goal.title }}</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">
+                                            <i class="bi bi-person"></i> {{ goal.player_name }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if goal.target_time %}
+                                            <span class="badge bg-primary">
+                                                <i class="bi bi-clock"></i> {{ goal.format_target_time }}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if goal.target_distance %}
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-signpost"></i> {{ goal.target_distance }} km
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if goal.get_best_time %}
+                                            <span class="badge bg-dark">
+                                                {{ goal.get_best_time|date:"i:s" }}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">Sin datos</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if goal.get_best_distance %}
+                                            <span class="badge bg-dark">
+                                                {{ goal.get_best_distance }} km
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">Sin datos</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% with progress=goal.get_progress_percentage %}
+                                            <div class="progress" style="height: 25px;">
+                                                <div class="progress-bar bg-success" role="progressbar" 
+                                                     style="width: {{ progress }}%;" 
+                                                     aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100">
+                                                    {{ progress|floatformat:0 }}%
+                                                </div>
+                                            </div>
+                                        {% endwith %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">
+                                            {{ goal.records.count }}
+                                        </span>
+                                    </td>
+                                    <td>{{ goal.created_at|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <a href="{% url 'sport_goal_detail' goal.pk %}" 
+                                           class="btn btn-sm btn-outline-primary" title="Ver detalle">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="{% url 'sport_goal_delete' goal.pk %}" 
+                                           class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginación -->
+                {% if page_obj.has_other_pages %}
+                    <nav>
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1{% if player_filter %}&player={{ player_filter }}{% endif %}">Primera</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if player_filter %}&player={{ player_filter }}{% endif %}">Anterior</a>
+                                </li>
+                            {% endif %}
+
+                            <li class="page-item active">
+                                <span class="page-link">
+                                    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                </span>
+                            </li>
+
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if player_filter %}&player={{ player_filter }}{% endif %}">Siguiente</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if player_filter %}&player={{ player_filter }}{% endif %}">Última</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No hay objetivos deportivos creados.
+                    <a href="{% url 'sport_goal_create' %}" class="alert-link">Crear el primero</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

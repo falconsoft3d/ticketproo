@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Crear Objetivo Deportivo{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4><i class="bi bi-trophy"></i> Crear Nuevo Objetivo Deportivo</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> <strong>¿Cómo funciona?</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Define un objetivo deportivo con tiempo y/o distancia meta</li>
+                            <li>Obtén una URL pública para registrar intentos</li>
+                            <li>Visualiza tu progreso con gráficos en tiempo real</li>
+                            <li>Compara tus mejores marcas con el objetivo</li>
+                        </ul>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="title" class="form-label">
+                                <i class="bi bi-card-text text-primary"></i> Título del Objetivo *
+                            </label>
+                            <input type="text" class="form-control" id="title" name="title" required
+                                   placeholder="Ej: Correr 5K en menos de 30 minutos">
+                            <small class="form-text text-muted">
+                                Describe tu objetivo deportivo de forma clara
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="player_name" class="form-label">
+                                <i class="bi bi-person text-info"></i> Nombre del Jugador *
+                            </label>
+                            <input type="text" class="form-control" id="player_name" name="player_name" required
+                                   placeholder="Ej: Juan Pérez">
+                            <small class="form-text text-muted">
+                                Nombre de la persona que realizará el objetivo
+                            </small>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="target_time" class="form-label">
+                                        <i class="bi bi-clock text-warning"></i> Tiempo Objetivo (segundos)
+                                    </label>
+                                    <input type="number" class="form-control" id="target_time" name="target_time" 
+                                           min="1" placeholder="Ej: 1800 (30 minutos)">
+                                    <small class="form-text text-muted">
+                                        Tiempo meta en segundos. Ejemplo: 1800 = 30 minutos
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="target_distance" class="form-label">
+                                        <i class="bi bi-signpost text-success"></i> Distancia Objetivo (km)
+                                    </label>
+                                    <input type="number" class="form-control" id="target_distance" name="target_distance" 
+                                           step="0.01" min="0.01" placeholder="Ej: 5.0">
+                                    <small class="form-text text-muted">
+                                        Distancia meta en kilómetros. Ejemplo: 5.0 km
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> 
+                            Debes especificar al menos un objetivo (tiempo o distancia)
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">
+                                <i class="bi bi-journal-text"></i> Notas
+                            </label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3"
+                                      placeholder="Notas adicionales sobre el objetivo..."></textarea>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'sport_goal_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Crear Objetivo
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

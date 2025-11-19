@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="bi bi-joystick"></i> {{ game.name }}
+                    </h4>
+                    <span class="badge {% if game.status == 'pending' %}bg-secondary{% elif game.status == 'in_progress' %}bg-success{% else %}bg-dark{% endif %}">
+                        {{ game.get_status_display }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <!-- URL Pública -->
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">
+                            <i class="bi bi-link-45deg"></i> URL Pública
+                        </h6>
+                        <div class="input-group">
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                value="{{ request.scheme }}://{{ request.get_host }}{% url 'game_counter_public' game.public_uuid %}" 
+                                id="publicUrl"
+                                readonly
+                            >
+                            <button class="btn btn-outline-primary" type="button" onclick="copyUrl()">
+                                <i class="bi bi-clipboard"></i> Copiar
+                            </button>
+                            <a href="{% url 'game_counter_public' game.public_uuid %}" class="btn btn-outline-success" target="_blank">
+                                <i class="bi bi-box-arrow-up-right"></i> Abrir
+                            </a>
+                        </div>
+                        <small class="text-muted">Comparte esta URL para acceder al contador desde cualquier dispositivo</small>
+                    </div>
+
+                    <!-- Información del juego -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5><i class="bi bi-info-circle"></i> Información</h5>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>Creado por:</th>
+                                    <td>{{ game.created_by.get_full_name|default:game.created_by.username }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Fecha creación:</th>
+                                    <td>{{ game.created_at|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                                {% if game.started_at %}
+                                <tr>
+                                    <th>Iniciado:</th>
+                                    <td>{{ game.started_at|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if game.finished_at %}
+                                <tr>
+                                    <th>Finalizado:</th>
+                                    <td>{{ game.finished_at|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Duración:</th>
+                                    <td>{{ game.get_duration }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if game.max_points > 0 %}
+                                <tr>
+                                    <th>Puntos máximos:</th>
+                                    <td>{{ game.max_points }}</td>
+                                </tr>
+                                {% endif %}
+                            </table>
+                        </div>
+
+                        <div class="col-md-6">
+                            <h5><i class="bi bi-trophy"></i> Puntuación</h5>
+                            <div class="card mb-2 border-primary">
+                                <div class="card-body text-center">
+                                    <h6><i class="bi bi-person-fill text-primary"></i> {{ game.player1_name }}</h6>
+                                    <h1 class="display-3 mb-0 text-primary">{{ game.player1_score }}</h1>
+                                </div>
+                            </div>
+                            <div class="card border-danger">
+                                <div class="card-body text-center">
+                                    <h6><i class="bi bi-person-fill text-danger"></i> {{ game.player2_name }}</h6>
+                                    <h1 class="display-3 mb-0 text-danger">{{ game.player2_score }}</h1>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if game.status == 'finished' and game.get_winner %}
+                    <div class="alert alert-success text-center">
+                        <h4>
+                            <i class="bi bi-trophy-fill"></i> Ganador: <strong>{{ game.get_winner }}</strong>
+                        </h4>
+                    </div>
+                    {% endif %}
+
+                    {% if game.notes %}
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6><i class="bi bi-sticky"></i> Notas</h6>
+                            <p class="mb-0">{{ game.notes }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Botones de acción -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <a href="{% url 'game_counter_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver al Listado
+                        </a>
+                        <a href="{% url 'game_counter_delete' game.pk %}" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Eliminar Juego
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyUrl() {
+    const urlInput = document.getElementById('publicUrl');
+    urlInput.select();
+    urlInput.setSelectionRange(0, 99999); // Para móviles
+    
+    navigator.clipboard.writeText(urlInput.value).then(function() {
+        alert('URL copiada al portapapeles');
+    }, function(err) {
+        console.error('Error al copiar:', err);
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Nuevo Ejercicio{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="bi bi-heart-pulse"></i> Nuevo Contador de Ejercicio</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Título del Ejercicio *</label>
+                            <input type="text" class="form-control" id="title" name="title" required
+                                   placeholder="Ej: Rutina de Flexiones">
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="sets_target" class="form-label">
+                                    <i class="bi bi-layers text-primary"></i> Tandas Objetivo *
+                                </label>
+                                <input type="number" class="form-control" id="sets_target" 
+                                       name="sets_target" required min="1" value="3">
+                                <small class="text-muted">Número de tandas a completar</small>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="reps_target" class="form-label">
+                                    <i class="bi bi-arrow-repeat text-info"></i> Repeticiones Objetivo *
+                                </label>
+                                <input type="number" class="form-control" id="reps_target" 
+                                       name="reps_target" required min="1" value="10">
+                                <small class="text-muted">Repeticiones por tanda</small>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="company" class="form-label">Empresa (Opcional)</label>
+                            <select class="form-select" id="company" name="company">
+                                <option value="">Sin empresa</option>
+                                {% for company in companies %}
+                                    <option value="{{ company.id }}">{{ company.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notas (Opcional)</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3"
+                                      placeholder="Notas adicionales sobre el ejercicio..."></textarea>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>¿Cómo funciona?</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>Se creará un ejercicio con los objetivos establecidos</li>
+                                <li>Podrás compartir una URL pública para hacer seguimiento</li>
+                                <li>La parte superior contará las tandas completadas</li>
+                                <li>La parte inferior contará las repeticiones de la tanda actual</li>
+                            </ul>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'exercise_counter_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-check-circle"></i> Crear Ejercicio
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

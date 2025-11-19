@@ -1,0 +1,579 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{{ game.player1_name }} vs {{ game.player2_name }}</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #1a1a2e;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .game-header {
+            background: #16213e;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        .game-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .game-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .game-controls button {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-start {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-finish {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-clone {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-start:hover {
+            background: #218838;
+        }
+
+        .btn-finish:hover {
+            background: #c82333;
+        }
+
+        .btn-clone:hover {
+            background: #0056b3;
+        }
+
+        .game-status {
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .game-timer {
+            margin-top: 10px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            color: #00ff00;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+
+        .elapsed-time {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 5px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .status-pending {
+            background: #6c757d;
+        }
+
+        .status-in-progress {
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+
+        .status-finished {
+            background: #dc3545;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .score-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .player-zone {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .player-zone:active {
+            transform: scale(0.98);
+        }
+
+        .player-zone.disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .player1-zone {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-bottom: 3px solid rgba(255,255,255,0.2);
+        }
+
+        .player2-zone {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-top: 3px solid rgba(255,255,255,0.2);
+        }
+
+        .player-content {
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .player-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .player-score {
+            font-size: 8rem;
+            font-weight: 900;
+            line-height: 1;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .tap-hint {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .winner-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .winner-content {
+            text-align: center;
+            animation: bounceIn 0.6s;
+        }
+
+        .winner-content h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+
+        .winner-content .trophy {
+            font-size: 5rem;
+            animation: rotate 2s infinite;
+        }
+
+        @keyframes bounceIn {
+            0% {
+                transform: scale(0.3);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(-10deg); }
+            75% { transform: rotate(10deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 576px) {
+            .player-name {
+                font-size: 1.2rem;
+            }
+            
+            .player-score {
+                font-size: 6rem;
+            }
+
+            .game-title {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="game-header">
+        <div class="game-title">
+            <i class="bi bi-trophy"></i> {{ game.name }}
+        </div>
+        
+        <div class="game-controls">
+            {% if game.status == 'pending' %}
+                <button class="btn-start" onclick="startGame()">
+                    <i class="bi bi-play-circle"></i> Iniciar Juego
+                </button>
+            {% elif game.status == 'in_progress' %}
+                <button class="btn-finish" onclick="finishGame()">
+                    <i class="bi bi-stop-circle"></i> Finalizar Juego
+                </button>
+            {% elif game.status == 'finished' %}
+                <button class="btn-clone" onclick="cloneGame()">
+                    <i class="bi bi-files"></i> Clonar Juego
+                </button>
+            {% endif %}
+        </div>
+
+        <div class="game-status">
+            <span class="status-badge status-{{ game.status }}" id="statusBadge">
+                {% if game.status == 'pending' %}
+                    ⏸️ Pendiente
+                {% elif game.status == 'in_progress' %}
+                    ▶️ En Progreso
+                {% else %}
+                    ⏹️ Finalizado
+                {% endif %}
+            </span>
+        </div>
+
+        {% if game.status == 'in_progress' or game.status == 'finished' %}
+        <div class="game-timer" id="gameTimer">00:00:00</div>
+        <div class="elapsed-time" id="elapsedTime"></div>
+        {% endif %}
+    </div>
+
+    <!-- Zona de puntuación -->
+    <div class="score-container">
+        <!-- Jugador 1 (Superior) -->
+        <div class="player-zone player1-zone {% if game.status != 'in_progress' %}disabled{% endif %}" 
+             onclick="addPoint(1)" id="player1Zone">
+            <div class="player-content">
+                <div class="player-name">{{ game.player1_name }}</div>
+                <div class="player-score" id="player1Score">{{ game.player1_score }}</div>
+                {% if game.status == 'in_progress' %}
+                <div class="tap-hint">
+                    <i class="bi bi-hand-index-thumb"></i> Toca para sumar punto
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Jugador 2 (Inferior) -->
+        <div class="player-zone player2-zone {% if game.status != 'in_progress' %}disabled{% endif %}" 
+             onclick="addPoint(2)" id="player2Zone">
+            <div class="player-content">
+                {% if game.status == 'in_progress' %}
+                <div class="tap-hint">
+                    <i class="bi bi-hand-index-thumb"></i> Toca para sumar punto
+                </div>
+                {% endif %}
+                <div class="player-score" id="player2Score">{{ game.player2_score }}</div>
+                <div class="player-name">{{ game.player2_name }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay de ganador -->
+    <div class="winner-overlay" id="winnerOverlay">
+        <div class="winner-content">
+            <div class="trophy">🏆</div>
+            <h1>¡Ganador!</h1>
+            <h2 id="winnerName"></h2>
+            <p id="finalScore"></p>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+    const gameUuid = '{{ game.public_uuid }}';
+    let gameStatus = '{{ game.status }}';
+    let startTime = {% if game.started_at %}'{{ game.started_at.isoformat }}'{% else %}null{% endif %};
+    let timerInterval = null;
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function startGame() {
+        fetch(`/juego/${gameUuid}/start/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                gameStatus = data.game_status;
+                startTime = data.started_at;
+                updateUI();
+                startTimer();
+                location.reload();
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function finishGame() {
+        if (!confirm('¿Estás seguro de finalizar el juego?')) {
+            return;
+        }
+
+        fetch(`/juego/${gameUuid}/finish/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                gameStatus = data.game_status;
+                stopTimer();
+                showWinner(data.winner);
+                updateUI();
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function cloneGame() {
+        if (!confirm('¿Crear un nuevo juego con los mismos jugadores?')) {
+            return;
+        }
+
+        fetch(`/juego/${gameUuid}/clone/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.new_game_url) {
+                alert('¡Juego clonado exitosamente! Redirigiendo...');
+                window.location.href = data.new_game_url;
+            } else {
+                console.error('Error completo:', data);
+                alert('Error al clonar: ' + (data.error || 'Error desconocido'));
+                if (data.traceback) {
+                    console.error('Traceback:', data.traceback);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al clonar el juego');
+        });
+    }
+
+    function addPoint(player) {
+        if (gameStatus !== 'in_progress') {
+            return;
+        }
+
+        // Vibración en móviles
+        if (navigator.vibrate) {
+            navigator.vibrate(50);
+        }
+
+        fetch(`/juego/${gameUuid}/point/${player}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                document.getElementById('player1Score').textContent = data.player1_score;
+                document.getElementById('player2Score').textContent = data.player2_score;
+                
+                // Animación de score
+                const scoreElement = player === 1 ? 'player1Score' : 'player2Score';
+                const element = document.getElementById(scoreElement);
+                element.style.transform = 'scale(1.2)';
+                setTimeout(() => {
+                    element.style.transform = 'scale(1)';
+                }, 200);
+
+                // Si el juego terminó
+                if (data.game_status === 'finished') {
+                    gameStatus = 'finished';
+                    showWinner(data.winner);
+                }
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function showWinner(winner) {
+        const overlay = document.getElementById('winnerOverlay');
+        const winnerName = document.getElementById('winnerName');
+        const finalScore = document.getElementById('finalScore');
+        
+        const player1Score = document.getElementById('player1Score').textContent;
+        const player2Score = document.getElementById('player2Score').textContent;
+        
+        winnerName.textContent = winner;
+        finalScore.textContent = `${player1Score} - ${player2Score}`;
+        
+        overlay.style.display = 'flex';
+    }
+
+    function updateUI() {
+        const player1Zone = document.getElementById('player1Zone');
+        const player2Zone = document.getElementById('player2Zone');
+        
+        if (gameStatus !== 'in_progress') {
+            player1Zone.classList.add('disabled');
+            player2Zone.classList.add('disabled');
+        } else {
+            player1Zone.classList.remove('disabled');
+            player2Zone.classList.remove('disabled');
+        }
+    }
+
+    // ==================== TIMER FUNCTIONS ====================
+    
+    function startTimer() {
+        if (!startTime || gameStatus !== 'in_progress') return;
+        
+        updateTimer();
+        timerInterval = setInterval(updateTimer, 1000);
+    }
+
+    function stopTimer() {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+    }
+
+    function updateTimer() {
+        if (!startTime) return;
+
+        const start = new Date(startTime);
+        const now = new Date();
+        const elapsed = Math.floor((now - start) / 1000); // segundos totales
+
+        const hours = Math.floor(elapsed / 3600);
+        const minutes = Math.floor((elapsed % 3600) / 60);
+        const seconds = elapsed % 60;
+
+        // Formato digital: HH:MM:SS
+        const timerDisplay = document.getElementById('gameTimer');
+        if (timerDisplay) {
+            timerDisplay.textContent = 
+                String(hours).padStart(2, '0') + ':' +
+                String(minutes).padStart(2, '0') + ':' +
+                String(seconds).padStart(2, '0');
+        }
+
+        // Mostrar minutos transcurridos
+        const elapsedDisplay = document.getElementById('elapsedTime');
+        if (elapsedDisplay) {
+            const totalMinutes = Math.floor(elapsed / 60);
+            if (totalMinutes === 0) {
+                elapsedDisplay.textContent = `${seconds} segundos`;
+            } else if (totalMinutes === 1) {
+                elapsedDisplay.textContent = `1 minuto`;
+            } else {
+                elapsedDisplay.textContent = `${totalMinutes} minutos jugando`;
+            }
+        }
+    }
+
+    // Iniciar timer si el juego está en progreso
+    if (gameStatus === 'in_progress' && startTime) {
+        startTimer();
+    }
+
+    // Prevenir zoom en doble tap
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function (event) {
+        const now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 300) {
+            event.preventDefault();
+        }
+        lastTouchEnd = now;
+    }, false);
+    </script>
+</body>
+</html>

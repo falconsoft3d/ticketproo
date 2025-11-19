@@ -16413,3 +16413,538 @@ class QARating(models.Model):
         }
         return colors.get(self.rating, '#6c757d')
 
+
+class GameCounter(models.Model):
+    """Modelo para contador de juegos de pádel"""
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pendiente'),
+        ('in_progress', 'En Progreso'),
+        ('finished', 'Finalizado'),
+    ]
+    
+    # Información del juego
+    name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre del Juego',
+        help_text='Nombre descriptivo del juego (ej: Final Torneo 2025)'
+    )
+    player1_name = models.CharField(
+        max_length=100,
+        verbose_name='Jugador 1',
+        help_text='Nombre del primer jugador'
+    )
+    player2_name = models.CharField(
+        max_length=100,
+        verbose_name='Jugador 2',
+        help_text='Nombre del segundo jugador'
+    )
+    
+    # Puntuación
+    player1_score = models.IntegerField(
+        default=0,
+        verbose_name='Puntos Jugador 1'
+    )
+    player2_score = models.IntegerField(
+        default=0,
+        verbose_name='Puntos Jugador 2'
+    )
+    
+    # Estado
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        verbose_name='Estado del Juego'
+    )
+    
+    # URL pública
+    public_uuid = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        unique=True,
+        verbose_name='UUID Público',
+        help_text='Identificador único para acceso público'
+    )
+    
+    # Metadatos
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_games',
+        verbose_name='Creado por'
+    )
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='games',
+        verbose_name='Empresa'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    started_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de inicio'
+    )
+    finished_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de finalización'
+    )
+    
+    # Configuración opcional
+    max_points = models.IntegerField(
+        default=0,
+        verbose_name='Puntos máximos',
+        help_text='0 = sin límite'
+    )
+    notes = models.TextField(
+        blank=True,
+        verbose_name='Notas',
+        help_text='Notas adicionales sobre el juego'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Contador de Juego'
+        verbose_name_plural = 'Contadores de Juegos'
+    
+    def __str__(self):
+        return f"{self.name} - {self.player1_name} vs {self.player2_name}"
+    
+    def get_public_url(self):
+        """Devuelve la URL pública del juego"""
+        from django.urls import reverse
+        return reverse('game_counter_public', kwargs={'uuid': self.public_uuid})
+    
+    def start_game(self):
+        """Inicia el juego"""
+        if self.status == 'pending':
+            self.status = 'in_progress'
+            self.started_at = timezone.now()
+            self.save()
+    
+    def finish_game(self):
+        """Finaliza el juego"""
+        if self.status == 'in_progress':
+            self.status = 'finished'
+            self.finished_at = timezone.now()
+            self.save()
+    
+    def add_point_player1(self):
+        """Añade un punto al jugador 1"""
+        self.player1_score += 1
+        self.save()
+        
+        # Auto-finalizar si alcanza max_points
+        if self.max_points > 0 and self.player1_score >= self.max_points:
+            self.finish_game()
+    
+    def add_point_player2(self):
+        """Añade un punto al jugador 2"""
+        self.player2_score += 1
+        self.save()
+        
+        # Auto-finalizar si alcanza max_points
+        if self.max_points > 0 and self.player2_score >= self.max_points:
+            self.finish_game()
+    
+    def get_winner(self):
+        """Devuelve el nombre del ganador si el juego ha terminado"""
+        if self.status == 'finished':
+            if self.player1_score > self.player2_score:
+                return self.player1_name
+            elif self.player2_score > self.player1_score:
+                return self.player2_name
+            else:
+                return 'Empate'
+        return None
+    
+    def get_duration(self):
+        """Devuelve la duración del juego si ha terminado"""
+        if self.started_at and self.finished_at:
+            duration = self.finished_at - self.started_at
+            hours = duration.seconds // 3600
+            minutes = (duration.seconds % 3600) // 60
+            if hours > 0:
+                return f"{hours}h {minutes}m"
+            return f"{minutes}m"
+        return None
+
+
+class ExerciseCounter(models.Model):
+    """Modelo para contador de ejercicios deportivos"""
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pendiente'),
+        ('in_progress', 'En Progreso'),
+        ('paused', 'Pausado'),
+        ('finished', 'Finalizado'),
+    ]
+    
+    # Información del ejercicio
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título',
+        help_text='Nombre del ejercicio (ej: Rutina de Flexiones)'
+    )
+    
+    # Contadores
+    sets_target = models.IntegerField(
+        verbose_name='Tandas Objetivo',
+        help_text='Número de tandas objetivo'
+    )
+    reps_target = models.IntegerField(
+        verbose_name='Repeticiones Objetivo',
+        help_text='Número de repeticiones objetivo por tanda'
+    )
+    
+    current_sets = models.IntegerField(
+        default=0,
+        verbose_name='Tandas Actuales'
+    )
+    current_reps = models.IntegerField(
+        default=0,
+        verbose_name='Repeticiones Actuales'
+    )
+    
+    # Estado
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        verbose_name='Estado'
+    )
+    
+    # URL pública
+    public_uuid = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        unique=True,
+        verbose_name='UUID Público',
+        help_text='Identificador único para acceso público'
+    )
+    
+    # Metadatos
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_exercises',
+        verbose_name='Creado por'
+    )
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='exercises',
+        verbose_name='Empresa'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    started_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de inicio'
+    )
+    finished_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de finalización'
+    )
+    
+    notes = models.TextField(
+        blank=True,
+        verbose_name='Notas',
+        help_text='Notas adicionales sobre el ejercicio'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Contador de Ejercicio'
+        verbose_name_plural = 'Contadores de Ejercicios'
+    
+    def __str__(self):
+        return f"{self.title} - {self.current_sets}/{self.sets_target} tandas"
+    
+    def get_public_url(self):
+        """Devuelve la URL pública del ejercicio"""
+        from django.urls import reverse
+        return reverse('exercise_counter_public', kwargs={'uuid': self.public_uuid})
+    
+    def start_exercise(self):
+        """Inicia el ejercicio"""
+        if self.status == 'pending':
+            self.status = 'in_progress'
+            self.started_at = timezone.now()
+            self.save()
+    
+    def pause_exercise(self):
+        """Pausa el ejercicio"""
+        if self.status == 'in_progress':
+            self.status = 'paused'
+            self.save()
+    
+    def resume_exercise(self):
+        """Reanuda el ejercicio"""
+        if self.status == 'paused':
+            self.status = 'in_progress'
+            self.save()
+    
+    def finish_exercise(self):
+        """Finaliza el ejercicio"""
+        if self.status in ['in_progress', 'paused']:
+            self.status = 'finished'
+            self.finished_at = timezone.now()
+            self.save()
+    
+    def add_set(self):
+        """Añade una tanda"""
+        self.current_sets += 1
+        self.current_reps = 0  # Resetear repeticiones al completar una tanda
+        self.save()
+        
+        # Auto-finalizar si alcanza las tandas objetivo
+        if self.current_sets >= self.sets_target:
+            self.finish_exercise()
+    
+    def add_rep(self):
+        """Añade una repetición"""
+        self.current_reps += 1
+        self.save()
+        
+        # Auto-pasar a siguiente tanda si alcanza repeticiones objetivo
+        if self.current_reps >= self.reps_target:
+            self.add_set()
+    
+    def get_progress(self):
+        """Devuelve el progreso en porcentaje"""
+        total_reps_target = self.sets_target * self.reps_target
+        total_reps_current = (self.current_sets * self.reps_target) + self.current_reps
+        if total_reps_target > 0:
+            return int((total_reps_current / total_reps_target) * 100)
+        return 0
+    
+    def get_duration(self):
+        """Devuelve la duración del ejercicio si ha terminado"""
+        if self.started_at and self.finished_at:
+            duration = self.finished_at - self.started_at
+            hours = duration.seconds // 3600
+            minutes = (duration.seconds % 3600) // 60
+            seconds = duration.seconds % 60
+            if hours > 0:
+                return f"{hours}h {minutes}m {seconds}s"
+            elif minutes > 0:
+                return f"{minutes}m {seconds}s"
+            return f"{seconds}s"
+        return None
+
+
+class SportGoal(models.Model):
+    """Modelo para objetivos deportivos con seguimiento de tiempo y distancia"""
+    
+    # Información del objetivo
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título del Objetivo',
+        help_text='Nombre del objetivo deportivo (ej: Correr 5K en menos de 30 minutos)'
+    )
+    
+    player_name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre del Jugador',
+        help_text='Nombre de la persona que realizará el objetivo'
+    )
+    
+    # Objetivos
+    target_time = models.IntegerField(
+        verbose_name='Tiempo Objetivo (segundos)',
+        help_text='Tiempo objetivo en segundos para completar el objetivo',
+        null=True,
+        blank=True
+    )
+    
+    target_distance = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name='Distancia Objetivo (km)',
+        help_text='Distancia objetivo en kilómetros',
+        null=True,
+        blank=True
+    )
+    
+    # URL pública
+    public_uuid = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        unique=True,
+        verbose_name='UUID Público',
+        help_text='Identificador único para acceso público'
+    )
+    
+    # Metadatos
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_sport_goals',
+        verbose_name='Creado por'
+    )
+    
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='sport_goals',
+        verbose_name='Empresa'
+    )
+    
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    
+    notes = models.TextField(
+        blank=True,
+        verbose_name='Notas',
+        help_text='Notas adicionales sobre el objetivo'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Objetivo Deportivo'
+        verbose_name_plural = 'Objetivos Deportivos'
+    
+    def __str__(self):
+        return f"{self.title} - {self.player_name}"
+    
+    def get_records(self):
+        """Retorna todos los registros del objetivo"""
+        return self.records.all().order_by('recorded_at')
+    
+    def get_best_time(self):
+        """Retorna el mejor tiempo registrado"""
+        best = self.records.filter(actual_time__isnull=False).order_by('actual_time').first()
+        return best.actual_time if best else None
+    
+    def get_best_distance(self):
+        """Retorna la mejor distancia registrada"""
+        best = self.records.filter(actual_distance__isnull=False).order_by('-actual_distance').first()
+        return best.actual_distance if best else None
+    
+    def get_progress_percentage(self):
+        """Calcula el porcentaje de progreso basado en el mejor registro"""
+        if self.target_time and self.get_best_time():
+            # Para tiempo: menor es mejor, entonces invertimos el cálculo
+            if self.get_best_time() <= self.target_time:
+                return 100
+            else:
+                return min(100, (self.target_time / self.get_best_time()) * 100)
+        
+        if self.target_distance and self.get_best_distance():
+            # Para distancia: mayor es mejor
+            return min(100, (float(self.get_best_distance()) / float(self.target_distance)) * 100)
+        
+        return 0
+    
+    def format_target_time(self):
+        """Formatea el tiempo objetivo"""
+        if not self.target_time:
+            return "N/A"
+        hours = self.target_time // 3600
+        minutes = (self.target_time % 3600) // 60
+        seconds = self.target_time % 60
+        if hours > 0:
+            return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+        return f"{minutes:02d}:{seconds:02d}"
+
+
+class SportGoalRecord(models.Model):
+    """Modelo para registros de intentos de objetivos deportivos"""
+    
+    sport_goal = models.ForeignKey(
+        SportGoal,
+        on_delete=models.CASCADE,
+        related_name='records',
+        verbose_name='Objetivo Deportivo'
+    )
+    
+    # Registros reales
+    actual_time = models.IntegerField(
+        verbose_name='Tiempo Real (segundos)',
+        help_text='Tiempo real en segundos que tomó completar',
+        null=True,
+        blank=True
+    )
+    
+    actual_distance = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name='Distancia Real (km)',
+        help_text='Distancia real recorrida en kilómetros',
+        null=True,
+        blank=True
+    )
+    
+    # Metadatos
+    recorded_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de registro'
+    )
+    
+    notes = models.TextField(
+        blank=True,
+        verbose_name='Notas',
+        help_text='Notas sobre este intento específico'
+    )
+    
+    class Meta:
+        ordering = ['-recorded_at']
+        verbose_name = 'Registro de Objetivo'
+        verbose_name_plural = 'Registros de Objetivos'
+    
+    def __str__(self):
+        return f"{self.sport_goal.title} - {self.recorded_at.strftime('%Y-%m-%d %H:%M')}"
+    
+    def format_actual_time(self):
+        """Formatea el tiempo real"""
+        if not self.actual_time:
+            return "N/A"
+        hours = self.actual_time // 3600
+        minutes = (self.actual_time % 3600) // 60
+        seconds = self.actual_time % 60
+        if hours > 0:
+            return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+        return f"{minutes:02d}:{seconds:02d}"
+    
+    def is_goal_achieved(self):
+        """Verifica si se alcanzó el objetivo en este registro"""
+        goal = self.sport_goal
+        
+        # Verificar tiempo
+        if goal.target_time and self.actual_time:
+            if self.actual_time > goal.target_time:
+                return False
+        
+        # Verificar distancia
+        if goal.target_distance and self.actual_distance:
+            if self.actual_distance < goal.target_distance:
+                return False
+        
+        return True
+
+
+

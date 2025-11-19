@@ -21,7 +21,7 @@ from .models import (
     WebsiteTracker, LegalContract, SupplierContractReview, PayPalPaymentLink, PayPalOrder, TodoItem,
     AIBook, AIBookChapter, EmployeeRequest, InternalAgreement, Asset, AssetHistory, UrlManager,
     ExpenseReport, ExpenseItem, ExpenseComment, MonthlyCumplimiento, DailyCumplimiento, QRCode, Quotation, QuotationLine,
-    Contact, ContactComment, ContactAttachment, QARating
+    Contact, ContactComment, ContactAttachment, QARating, GameCounter, ExerciseCounter, SportGoal, SportGoalRecord
 )
 
 # Configuración del sitio de administración
@@ -4675,3 +4675,216 @@ class QARatingAdmin(admin.ModelAdmin):
     def opinion_preview(self, obj):
         return obj.opinion[:50] + '...' if len(obj.opinion) > 50 else obj.opinion
     opinion_preview.short_description = 'Opinión'
+
+
+@admin.register(GameCounter)
+class GameCounterAdmin(admin.ModelAdmin):
+    list_display = ('name', 'players_display', 'score_display', 'status_badge', 'created_by', 'created_at')
+    list_filter = ('status', 'created_at', 'company')
+    search_fields = ('name', 'player1_name', 'player2_name', 'created_by__username')
+    readonly_fields = ('public_uuid', 'created_at', 'started_at', 'finished_at')
+    ordering = ('-created_at',)
+    
+    fieldsets = (
+        ('Información del Juego', {
+            'fields': ('name', 'player1_name', 'player2_name')
+        }),
+        ('Puntuación', {
+            'fields': ('player1_score', 'player2_score', 'max_points')
+        }),
+        ('Estado', {
+            'fields': ('status',)
+        }),
+        ('URL Pública', {
+            'fields': ('public_uuid',)
+        }),
+        ('Configuración', {
+            'fields': ('company', 'created_by', 'notes')
+        }),
+        ('Fechas', {
+            'fields': ('created_at', 'started_at', 'finished_at'),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def players_display(self, obj):
+        return format_html(
+            '<i class="bi bi-person-fill text-primary"></i> {} <br> <i class="bi bi-person-fill text-danger"></i> {}',
+            obj.player1_name, obj.player2_name
+        )
+    players_display.short_description = 'Jugadores'
+    
+    def score_display(self, obj):
+        return format_html(
+            '<span class="badge bg-primary">{}</span> - <span class="badge bg-danger">{}</span>',
+            obj.player1_score, obj.player2_score
+        )
+    score_display.short_description = 'Puntuación'
+    
+    def status_badge(self, obj):
+        colors = {
+            'pending': '#6c757d',
+            'in_progress': '#28a745',
+            'finished': '#dc3545'
+        }
+        return format_html(
+            '<span class="badge" style="background-color: {};">{}</span>',
+            colors.get(obj.status, '#6c757d'), obj.get_status_display()
+        )
+    status_badge.short_description = 'Estado'
+
+
+@admin.register(ExerciseCounter)
+class ExerciseCounterAdmin(admin.ModelAdmin):
+    list_display = ('title', 'counters_display', 'progress_bar', 'status_badge', 'created_by', 'created_at')
+    list_filter = ('status', 'created_at', 'company')
+    search_fields = ('title', 'created_by__username')
+    readonly_fields = ('public_uuid', 'created_at', 'started_at', 'finished_at')
+    ordering = ('-created_at',)
+    
+    fieldsets = (
+        ('Información del Ejercicio', {
+            'fields': ('title', 'sets_target', 'reps_target')
+        }),
+        ('Contadores Actuales', {
+            'fields': ('current_sets', 'current_reps')
+        }),
+        ('Estado', {
+            'fields': ('status',)
+        }),
+        ('URL Pública', {
+            'fields': ('public_uuid',)
+        }),
+        ('Configuración', {
+            'fields': ('company', 'created_by', 'notes')
+        }),
+        ('Fechas', {
+            'fields': ('created_at', 'started_at', 'finished_at'),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def counters_display(self, obj):
+        return format_html(
+            '<i class="bi bi-layers text-primary"></i> {} / {} <br> <i class="bi bi-arrow-repeat text-info"></i> {} / {}',
+            obj.current_sets, obj.sets_target, obj.current_reps, obj.reps_target
+        )
+    counters_display.short_description = 'Progreso'
+    
+    def progress_bar(self, obj):
+        progress = obj.get_progress()
+        return format_html(
+            '<div style="width:100px;"><div class="progress"><div class="progress-bar bg-success" style="width:{}%">{:.0f}%</div></div></div>',
+            progress, progress
+        )
+    progress_bar.short_description = 'Completado'
+    
+    def status_badge(self, obj):
+        colors = {
+            'pending': '#6c757d',
+            'in_progress': '#28a745',
+            'paused': '#ffc107',
+            'finished': '#dc3545'
+        }
+        return format_html(
+            '<span class="badge" style="background-color: {};">{}</span>',
+            colors.get(obj.status, '#6c757d'), obj.get_status_display()
+        )
+    status_badge.short_description = 'Estado'
+
+
+@admin.register(SportGoal)
+class SportGoalAdmin(admin.ModelAdmin):
+    list_display = ('title', 'player_name', 'targets_display', 'progress_bar', 'records_count', 'created_by', 'created_at')
+    list_filter = ('created_at', 'company')
+    search_fields = ('title', 'player_name', 'created_by__username')
+    readonly_fields = ('public_uuid', 'created_at')
+    ordering = ('-created_at',)
+    
+    fieldsets = (
+        ('Información del Objetivo', {
+            'fields': ('title', 'player_name')
+        }),
+        ('Objetivos', {
+            'fields': ('target_time', 'target_distance')
+        }),
+        ('URL Pública', {
+            'fields': ('public_uuid',)
+        }),
+        ('Configuración', {
+            'fields': ('company', 'created_by', 'notes')
+        }),
+        ('Fechas', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def targets_display(self, obj):
+        time_html = ''
+        distance_html = ''
+        
+        if obj.target_time:
+            time_html = f'<span class="badge" style="background-color: #ffc107;"><i class="bi bi-clock"></i> {obj.format_target_time()}</span>'
+        
+        if obj.target_distance:
+            distance_html = f'<span class="badge" style="background-color: #28a745;"><i class="bi bi-signpost"></i> {obj.target_distance} km</span>'
+        
+        return format_html('{} {}', time_html, distance_html)
+    targets_display.short_description = 'Objetivos'
+    
+    def progress_bar(self, obj):
+        progress = obj.get_progress_percentage()
+        return format_html(
+            '<div style="width:100px;"><div class="progress"><div class="progress-bar bg-success" style="width:{}%">{:.0f}%</div></div></div>',
+            progress, progress
+        )
+    progress_bar.short_description = 'Progreso'
+    
+    def records_count(self, obj):
+        count = obj.records.count()
+        return format_html(
+            '<span class="badge" style="background-color: #6c757d;">{}</span>',
+            count
+        )
+    records_count.short_description = 'Registros'
+
+
+@admin.register(SportGoalRecord)
+class SportGoalRecordAdmin(admin.ModelAdmin):
+    list_display = ('sport_goal', 'actual_time_display', 'actual_distance', 'goal_achieved_badge', 'recorded_at')
+    list_filter = ('recorded_at', 'sport_goal')
+    search_fields = ('sport_goal__title', 'sport_goal__player_name')
+    readonly_fields = ('recorded_at',)
+    ordering = ('-recorded_at',)
+    
+    fieldsets = (
+        ('Objetivo', {
+            'fields': ('sport_goal',)
+        }),
+        ('Registros', {
+            'fields': ('actual_time', 'actual_distance')
+        }),
+        ('Información', {
+            'fields': ('recorded_at', 'notes')
+        })
+    )
+    
+    def actual_time_display(self, obj):
+        if obj.actual_time:
+            return format_html(
+                '<span class="badge" style="background-color: #007bff;">{}</span>',
+                obj.format_actual_time()
+            )
+        return '-'
+    actual_time_display.short_description = 'Tiempo Real'
+    
+    def goal_achieved_badge(self, obj):
+        if obj.is_goal_achieved():
+            return format_html(
+                '<span class="badge" style="background-color: #28a745;"><i class="bi bi-check-circle"></i> Sí</span>'
+            )
+        return format_html(
+            '<span class="badge" style="background-color: #dc3545;"><i class="bi bi-x-circle"></i> No</span>'
+        )
+    goal_achieved_badge.short_description = 'Objetivo Alcanzado'

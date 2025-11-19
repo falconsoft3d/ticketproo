@@ -1236,6 +1236,42 @@ urlpatterns += [
     path('scheduled-tasks/<int:pk>/toggle-active/', views.scheduled_task_toggle_active, name='scheduled_task_toggle_active'),
     path('scheduled-tasks/<int:pk>/execute/', views.scheduled_task_execute, name='scheduled_task_execute'),
     
+    # URLs de Contador de Juegos
+    path('game-counter/', views.game_counter_list, name='game_counter_list'),
+    path('game-counter/create/', views.game_counter_create, name='game_counter_create'),
+    path('game-counter/<int:pk>/', views.game_counter_detail, name='game_counter_detail'),
+    path('game-counter/<int:pk>/delete/', views.game_counter_delete, name='game_counter_delete'),
+    
+    # URLs públicas para contador de juegos
+    path('juego/<uuid:uuid>/', views.game_counter_public, name='game_counter_public'),
+    path('juego/<uuid:uuid>/start/', views.game_counter_start, name='game_counter_start'),
+    path('juego/<uuid:uuid>/finish/', views.game_counter_finish, name='game_counter_finish'),
+    path('juego/<uuid:uuid>/point/<str:player>/', views.game_counter_add_point, name='game_counter_add_point'),
+    path('juego/<uuid:uuid>/clone/', views.game_counter_clone, name='game_counter_clone'),
+    
+    # URLs de Contador de Ejercicios
+    path('exercise-counter/', views.exercise_counter_list, name='exercise_counter_list'),
+    path('exercise-counter/create/', views.exercise_counter_create, name='exercise_counter_create'),
+    path('exercise-counter/<int:pk>/', views.exercise_counter_detail, name='exercise_counter_detail'),
+    path('exercise-counter/<int:pk>/delete/', views.exercise_counter_delete, name='exercise_counter_delete'),
+    
+    # URLs públicas para contador de ejercicios
+    path('ejercicio/<uuid:uuid>/', views.exercise_counter_public, name='exercise_counter_public'),
+    path('ejercicio/<uuid:uuid>/start/', views.exercise_counter_start, name='exercise_counter_start'),
+    path('ejercicio/<uuid:uuid>/pause/', views.exercise_counter_pause, name='exercise_counter_pause'),
+    path('ejercicio/<uuid:uuid>/finish/', views.exercise_counter_finish, name='exercise_counter_finish'),
+    path('ejercicio/<uuid:uuid>/add-set/', views.exercise_counter_add_set, name='exercise_counter_add_set'),
+    path('ejercicio/<uuid:uuid>/add-rep/', views.exercise_counter_add_rep, name='exercise_counter_add_rep'),
+    path('ejercicio/<uuid:uuid>/clone/', views.exercise_counter_clone, name='exercise_counter_clone'),
+    
+    # Sport Goal URLs
+    path('sport-goal/', views.sport_goal_list, name='sport_goal_list'),
+    path('sport-goal/create/', views.sport_goal_create, name='sport_goal_create'),
+    path('sport-goal/<int:pk>/', views.sport_goal_detail, name='sport_goal_detail'),
+    path('sport-goal/<int:pk>/delete/', views.sport_goal_delete, name='sport_goal_delete'),
+    path('objetivo/<uuid:uuid>/', views.sport_goal_public, name='sport_goal_public'),
+    path('objetivo/<uuid:uuid>/record/', views.sport_goal_record, name='sport_goal_record'),
+    
     # URLs de API
     path('api/', include('tickets.api_urls')),
 ]

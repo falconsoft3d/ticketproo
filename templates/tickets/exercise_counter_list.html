@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Contador de Ejercicios{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-heart-pulse text-danger"></i> Contador de Ejercicios</h2>
+                <a href="{% url 'exercise_counter_create' %}" class="btn btn-danger">
+                    <i class="bi bi-plus-circle"></i> Nuevo Ejercicio
+                </a>
+            </div>
+
+            <!-- Filtros -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Estado</label>
+                            <select name="status" class="form-select" onchange="this.form.submit()">
+                                <option value="">Todos</option>
+                                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pendiente</option>
+                                <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>En Progreso</option>
+                                <option value="paused" {% if status_filter == 'paused' %}selected{% endif %}>Pausado</option>
+                                <option value="finished" {% if status_filter == 'finished' %}selected{% endif %}>Finalizado</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <a href="{% url 'exercise_counter_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Limpiar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Lista de ejercicios -->
+            {% if exercises %}
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Título</th>
+                                        <th>Tandas</th>
+                                        <th>Repeticiones</th>
+                                        <th>Progreso</th>
+                                        <th>Estado</th>
+                                        <th>Creado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for exercise in exercises %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ exercise.title }}</strong>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">
+                                                {{ exercise.current_sets }}/{{ exercise.sets_target }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">
+                                                {{ exercise.current_reps }}/{{ exercise.reps_target }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="progress" style="width: 100px; height: 20px;">
+                                                <div class="progress-bar bg-success" 
+                                                     role="progressbar" 
+                                                     style="width: {{ exercise.get_progress }}%"
+                                                     aria-valuenow="{{ exercise.get_progress }}" 
+                                                     aria-valuemin="0" 
+                                                     aria-valuemax="100">
+                                                    {{ exercise.get_progress }}%
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if exercise.status == 'pending' %}
+                                                <span class="badge bg-secondary">⏸️ Pendiente</span>
+                                            {% elif exercise.status == 'in_progress' %}
+                                                <span class="badge bg-success">▶️ En Progreso</span>
+                                            {% elif exercise.status == 'paused' %}
+                                                <span class="badge bg-warning">⏸️ Pausado</span>
+                                            {% else %}
+                                                <span class="badge bg-dark">⏹️ Finalizado</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ exercise.created_at|date:"d/m/Y H:i" }}</td>
+                                        <td>
+                                            <a href="{% url 'exercise_counter_detail' exercise.pk %}" 
+                                               class="btn btn-sm btn-outline-primary" 
+                                               title="Ver Detalle">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{% url 'exercise_counter_delete' exercise.pk %}" 
+                                               class="btn btn-sm btn-outline-danger" 
+                                               title="Eliminar">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Paginación -->
+                        {% if exercises.has_other_pages %}
+                        <nav aria-label="Paginación">
+                            <ul class="pagination justify-content-center">
+                                {% if exercises.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1{% if status_filter %}&status={{ status_filter }}{% endif %}">Primera</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ exercises.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">Anterior</a>
+                                    </li>
+                                {% endif %}
+
+                                <li class="page-item active">
+                                    <span class="page-link">
+                                        Página {{ exercises.number }} de {{ exercises.paginator.num_pages }}
+                                    </span>
+                                </li>
+
+                                {% if exercises.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ exercises.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">Siguiente</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ exercises.paginator.num_pages }}{% if status_filter %}&status={{ status_filter }}{% endif %}">Última</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    No hay ejercicios creados todavía.
+                    <a href="{% url 'exercise_counter_create' %}" class="alert-link">Crear Primer Ejercicio</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

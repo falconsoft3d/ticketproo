@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Eliminar Objetivo{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4><i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-circle"></i>
+                        ¿Estás seguro de que deseas eliminar este objetivo deportivo?
+                        <strong>Esta acción no se puede deshacer y eliminará todos los registros asociados.</strong>
+                    </div>
+
+                    <table class="table table-sm">
+                        <tr>
+                            <th width="40%">Título:</th>
+                            <td>{{ sport_goal.title }}</td>
+                        </tr>
+                        <tr>
+                            <th>Jugador:</th>
+                            <td>{{ sport_goal.player_name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Total Registros:</th>
+                            <td>
+                                <span class="badge bg-danger">{{ sport_goal.records.count }}</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Creado:</th>
+                            <td>{{ sport_goal.created_at|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                    </table>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'sport_goal_detail' sport_goal.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Eliminar Objetivo
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
