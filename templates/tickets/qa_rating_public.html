@@ -333,7 +333,7 @@
                         </h6>
                         
                         <div class="row">
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-6 mb-3 mb-md-0">
                                 <label for="name" class="form-label">Tu nombre</label>
                                 <input 
                                     type="text" 
@@ -343,7 +343,7 @@
                                     placeholder="Ej: Juan Pérez"
                                 >
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-6">
                                 <label for="email" class="form-label">Correo electrónico</label>
                                 <input 
                                     type="email" 
@@ -354,18 +354,6 @@
                                 >
                             </div>
                         </div>
-                        
-                        {% if companies %}
-                        <div class="mb-0">
-                            <label for="company" class="form-label">Empresa</label>
-                            <select class="form-select" id="company" name="company">
-                                <option value="">Selecciona una empresa (opcional)</option>
-                                {% for company in companies %}
-                                <option value="{{ company.pk }}">{{ company.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        {% endif %}
                     </div>
                 </div>
 

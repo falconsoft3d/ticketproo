@@ -5442,5 +5442,111 @@
         });
     </script>
     {% endif %}
+
+    <!-- Botones flotantes de calificación rápida (izquierda) -->
+    <div class="rating-float-buttons">
+        <a href="{% url 'qa_rating_public' %}?rating=happy" class="rating-float-btn rating-happy" title="Servicio excelente 😊" data-rating="happy">
+            <span class="rating-emoji">😊</span>
+        </a>
+        <a href="{% url 'qa_rating_public' %}?rating=neutral" class="rating-float-btn rating-neutral" title="Servicio aceptable 😐" data-rating="neutral">
+            <span class="rating-emoji">😐</span>
+        </a>
+        <a href="{% url 'qa_rating_public' %}?rating=sad" class="rating-float-btn rating-sad" title="Servicio deficiente 😞" data-rating="sad">
+            <span class="rating-emoji">😞</span>
+        </a>
+    </div>
+
+    <style>
+        .rating-float-buttons {
+            position: fixed;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1040;
+        }
+
+        .rating-float-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 3px solid transparent;
+        }
+
+        .rating-float-btn:hover {
+            transform: scale(1.15);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+        }
+
+        .rating-float-btn .rating-emoji {
+            font-size: 28px;
+            line-height: 1;
+            filter: grayscale(0.3);
+            transition: filter 0.3s ease;
+        }
+
+        .rating-float-btn:hover .rating-emoji {
+            filter: grayscale(0);
+        }
+
+        .rating-float-btn.rating-happy {
+            border-color: #28a745;
+        }
+
+        .rating-float-btn.rating-happy:hover {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+
+        .rating-float-btn.rating-neutral {
+            border-color: #ffc107;
+        }
+
+        .rating-float-btn.rating-neutral:hover {
+            background: #fff3cd;
+            border-color: #ffc107;
+        }
+
+        .rating-float-btn.rating-sad {
+            border-color: #dc3545;
+        }
+
+        .rating-float-btn.rating-sad:hover {
+            background: #f8d7da;
+            border-color: #dc3545;
+        }
+
+        /* Responsive: ocultar en pantallas pequeñas */
+        @media (max-width: 768px) {
+            .rating-float-buttons {
+                left: 10px;
+            }
+            
+            .rating-float-btn {
+                width: 45px;
+                height: 45px;
+            }
+            
+            .rating-float-btn .rating-emoji {
+                font-size: 24px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .rating-float-buttons {
+                display: none;
+            }
+        }
+    </style>
 </body>
 </html>
