@@ -21,7 +21,7 @@ from .models import (
     WebsiteTracker, LegalContract, SupplierContractReview, PayPalPaymentLink, PayPalOrder, TodoItem,
     AIBook, AIBookChapter, EmployeeRequest, InternalAgreement, Asset, AssetHistory, UrlManager,
     ExpenseReport, ExpenseItem, ExpenseComment, MonthlyCumplimiento, DailyCumplimiento, QRCode, Quotation, QuotationLine,
-    Contact, ContactComment, ContactAttachment
+    Contact, ContactComment, ContactAttachment, QARating
 )
 
 # Configuración del sitio de administración
@@ -4625,3 +4625,53 @@ class SupportMeetingPublicLinkAdmin(admin.ModelAdmin):
         if not change:  # Si es una creación nueva
             obj.created_by = request.user
         super().save_model(request, obj, form, change)
+
+
+@admin.register(QARating)
+class QARatingAdmin(admin.ModelAdmin):
+    list_display = ('rating_emoji', 'rating_badge', 'user_info', 'opinion_preview', 'company', 'is_public', 'created_at')
+    list_filter = ('rating', 'is_public', 'created_at', 'company')
+    search_fields = ('name', 'email', 'opinion', 'user__username', 'user__email')
+    readonly_fields = ('ip_address', 'user_agent', 'created_at')
+    ordering = ('-created_at',)
+    list_editable = ('is_public',)
+    
+    fieldsets = (
+        ('Calificación', {
+            'fields': ('rating', 'opinion')
+        }),
+        ('Información del Usuario', {
+            'fields': ('user', 'name', 'email', 'company')
+        }),
+        ('Configuración', {
+            'fields': ('is_public',)
+        }),
+        ('Metadatos', {
+            'fields': ('ip_address', 'user_agent', 'created_at'),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def rating_emoji(self, obj):
+        return format_html('<span style="font-size: 2rem;">{}</span>', obj.get_rating_emoji())
+    rating_emoji.short_description = 'Emoji'
+    
+    def rating_badge(self, obj):
+        return format_html(
+            '<span class="badge" style="background-color: {}; color: white;">{}</span>',
+            obj.get_rating_color(), obj.get_rating_display()
+        )
+    rating_badge.short_description = 'Calificación'
+    
+    def user_info(self, obj):
+        if obj.user:
+            return format_html('<i class="bi bi-person-badge"></i> {}', obj.user.get_full_name() or obj.user.username)
+        elif obj.name:
+            return obj.name
+        else:
+            return format_html('<span style="color: #999;">Anónimo</span>')
+    user_info.short_description = 'Usuario'
+    
+    def opinion_preview(self, obj):
+        return obj.opinion[:50] + '...' if len(obj.opinion) > 50 else obj.opinion
+    opinion_preview.short_description = 'Opinión'

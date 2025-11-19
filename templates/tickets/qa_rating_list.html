@@ -1,0 +1,316 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="bi bi-star-fill"></i> Calificaciones QA
+                    </h4>
+                    <div>
+                        <button class="btn btn-light btn-sm me-2" onclick="copyPublicUrl(event)" title="Copiar URL pública">
+                            <i class="bi bi-link-45deg"></i> URL Pública
+                        </button>
+                        <a href="{% url 'qa_rating_create' %}" class="btn btn-light btn-sm">
+                            <i class="bi bi-plus-circle"></i> Nueva Calificación
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- URL Pública para compartir -->
+                    <div class="alert alert-info alert-dismissible fade show" role="alert">
+                        <h6 class="alert-heading mb-2">
+                            <i class="bi bi-share"></i> URL Pública para Evaluaciones
+                        </h6>
+                        <p class="mb-2">Comparte esta URL con tus clientes para que puedan evaluar el servicio sin necesidad de registrarse:</p>
+                        <div class="input-group">
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                id="publicUrl" 
+                                value="{{ request.scheme }}://{{ request.get_host }}{% url 'qa_rating_public' %}" 
+                                readonly
+                            >
+                            <button class="btn btn-primary" type="button" onclick="copyPublicUrl(event)">
+                                <i class="bi bi-clipboard"></i> Copiar
+                            </button>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    
+                    <!-- Estadísticas -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body">
+                                    <h3 class="mb-0">{{ total_ratings }}</h3>
+                                    <small>Total Calificaciones</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body">
+                                    <h3 class="mb-0">😊 {{ happy_count }}</h3>
+                                    <small>Felices</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-dark">
+                                <div class="card-body">
+                                    <h3 class="mb-0">😐 {{ neutral_count }}</h3>
+                                    <small>Neutrales</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-danger text-white">
+                                <div class="card-body">
+                                    <h3 class="mb-0">😞 {{ sad_count }}</h3>
+                                    <small>Tristes</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filtros -->
+                    <form method="get" class="mb-4">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <select name="rating" class="form-select" onchange="this.form.submit()">
+                                    <option value="">Todas las calificaciones</option>
+                                    {% for value, label in rating_choices %}
+                                    <option value="{{ value }}" {% if rating_filter == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select name="company" class="form-select" onchange="this.form.submit()">
+                                    <option value="">Todas las empresas</option>
+                                    {% for company in companies %}
+                                    <option value="{{ company.pk }}" {% if company_filter == company.pk|stringformat:"s" %}selected{% endif %}>
+                                        {{ company.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <input 
+                                    type="text" 
+                                    name="search" 
+                                    class="form-control" 
+                                    placeholder="Buscar por nombre, email u opinión..."
+                                    value="{{ search }}"
+                                >
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="bi bi-search"></i> Buscar
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Lista de Calificaciones -->
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Calificación</th>
+                                    <th>Nombre/Email</th>
+                                    <th>Opinión</th>
+                                    <th>Empresa</th>
+                                    <th>Fecha</th>
+                                    <th>Público</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for rating in ratings %}
+                                <tr>
+                                    <td>
+                                        <span style="font-size: 2rem;">{{ rating.get_rating_emoji }}</span>
+                                        <br>
+                                        <span class="badge" style="background-color: {{ rating.get_rating_color }};">
+                                            {{ rating.get_rating_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if rating.user %}
+                                            <i class="bi bi-person-badge"></i> {{ rating.user.get_full_name|default:rating.user.username }}
+                                        {% elif rating.name %}
+                                            {{ rating.name }}
+                                        {% else %}
+                                            <span class="text-muted">Anónimo</span>
+                                        {% endif %}
+                                        <br>
+                                        {% if rating.email %}
+                                            <small class="text-muted">
+                                                <i class="bi bi-envelope"></i> {{ rating.email }}
+                                            </small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div style="max-width: 300px;">
+                                            {{ rating.opinion|truncatewords:20 }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if rating.company %}
+                                            <span class="badge" style="background-color: {{ rating.company.color }};">
+                                                {{ rating.company.name }}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small>{{ rating.created_at|date:"d/m/Y H:i" }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="form-check form-switch">
+                                            <input 
+                                                class="form-check-input toggle-public" 
+                                                type="checkbox" 
+                                                {% if rating.is_public %}checked{% endif %}
+                                                data-rating-id="{{ rating.pk }}"
+                                            >
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'qa_rating_detail' rating.pk %}" 
+                                               class="btn btn-info" 
+                                               title="Ver detalle">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{% url 'qa_rating_delete' rating.pk %}" 
+                                               class="btn btn-danger" 
+                                               title="Eliminar">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted">
+                                        <i class="bi bi-inbox"></i> No hay calificaciones registradas
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Paginación -->
+                    {% if ratings.has_other_pages %}
+                    <nav>
+                        <ul class="pagination justify-content-center">
+                            {% if ratings.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ ratings.previous_page_number }}{% if rating_filter %}&rating={{ rating_filter }}{% endif %}{% if company_filter %}&company={{ company_filter }}{% endif %}{% if search %}&search={{ search }}{% endif %}">
+                                    Anterior
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            <li class="page-item active">
+                                <span class="page-link">
+                                    Página {{ ratings.number }} de {{ ratings.paginator.num_pages }}
+                                </span>
+                            </li>
+                            
+                            {% if ratings.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ ratings.next_page_number }}{% if rating_filter %}&rating={{ rating_filter }}{% endif %}{% if company_filter %}&company={{ company_filter }}{% endif %}{% if search %}&search={{ search }}{% endif %}">
+                                    Siguiente
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Función para copiar URL pública
+function copyPublicUrl(evt) {
+    const urlInput = document.getElementById('publicUrl');
+    urlInput.select();
+    urlInput.setSelectionRange(0, 99999); // Para móviles
+    
+    navigator.clipboard.writeText(urlInput.value).then(function() {
+        // Mostrar confirmación
+        const btn = evt ? evt.target.closest('button') : null;
+        if (btn) {
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check2"></i> ¡Copiado!';
+            btn.classList.add('btn-success');
+            btn.classList.remove('btn-primary', 'btn-light');
+            
+            setTimeout(function() {
+                btn.innerHTML = originalHtml;
+                btn.classList.remove('btn-success');
+                if (btn.classList.contains('btn-sm')) {
+                    btn.classList.add('btn-light');
+                } else {
+                    btn.classList.add('btn-primary');
+                }
+            }, 2000);
+        } else {
+            alert('¡URL copiada al portapapeles!');
+        }
+    }).catch(function(err) {
+        alert('Error al copiar: ' + err);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle público/privado
+    const toggleSwitches = document.querySelectorAll('.toggle-public');
+    
+    toggleSwitches.forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            const ratingId = this.dataset.ratingId;
+            const isPublic = this.checked;
+            
+            fetch(`/qa/ratings/${ratingId}/toggle-public/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ is_public: isPublic })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Visibilidad actualizada');
+                } else {
+                    alert('Error al actualizar visibilidad');
+                    this.checked = !isPublic;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al actualizar visibilidad');
+                this.checked = !isPublic;
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

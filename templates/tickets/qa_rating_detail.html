@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="bi bi-star-fill"></i> Detalle de Calificación #{{ rating.pk }}
+                    </h4>
+                    <a href="{% url 'qa_rating_list' %}" class="btn btn-light btn-sm">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
+                </div>
+                <div class="card-body">
+                    <!-- Calificación -->
+                    <div class="text-center mb-4 p-4" style="background-color: {{ rating.get_rating_color }}20; border-radius: 10px;">
+                        <span style="font-size: 5rem;">{{ rating.get_rating_emoji }}</span>
+                        <h3 class="mt-2" style="color: {{ rating.get_rating_color }};">
+                            {{ rating.get_rating_display }}
+                        </h3>
+                    </div>
+
+                    <!-- Opinión -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="bi bi-chat-quote"></i> Opinión</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-0" style="white-space: pre-wrap;">{{ rating.opinion }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Información del Usuario -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="bi bi-person"></i> Información del Usuario</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-2">
+                                    <strong>Nombre:</strong>
+                                    {% if rating.user %}
+                                        <i class="bi bi-person-badge text-primary"></i> 
+                                        {{ rating.user.get_full_name|default:rating.user.username }}
+                                        <span class="badge bg-primary">Usuario registrado</span>
+                                    {% elif rating.name %}
+                                        {{ rating.name }}
+                                    {% else %}
+                                        <span class="text-muted">No proporcionado</span>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <strong>Email:</strong>
+                                    {% if rating.email %}
+                                        <a href="mailto:{{ rating.email }}">{{ rating.email }}</a>
+                                    {% else %}
+                                        <span class="text-muted">No proporcionado</span>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <strong>Empresa:</strong>
+                                    {% if rating.company %}
+                                        <span class="badge" style="background-color: {{ rating.company.color }};">
+                                            {{ rating.company.name }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">No especificada</span>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <strong>Fecha:</strong>
+                                    {{ rating.created_at|date:"d/m/Y H:i" }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Metadatos -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="bi bi-info-circle"></i> Metadatos</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-2">
+                                    <strong>Visibilidad:</strong>
+                                    {% if rating.is_public %}
+                                        <span class="badge bg-success">Pública</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Privada</span>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <strong>IP:</strong>
+                                    {% if rating.ip_address %}
+                                        <code>{{ rating.ip_address }}</code>
+                                    {% else %}
+                                        <span class="text-muted">No registrada</span>
+                                    {% endif %}
+                                </div>
+                                {% if rating.user_agent %}
+                                <div class="col-12 mb-2">
+                                    <strong>User Agent:</strong>
+                                    <br>
+                                    <small class="text-muted">{{ rating.user_agent|truncatewords:20 }}</small>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Acciones -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'qa_rating_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver a la lista
+                        </a>
+                        <div>
+                            <button class="btn btn-warning" onclick="togglePublic()">
+                                <i class="bi bi-eye{% if not rating.is_public %}-slash{% endif %}"></i>
+                                {% if rating.is_public %}Hacer Privada{% else %}Hacer Pública{% endif %}
+                            </button>
+                            <a href="{% url 'qa_rating_delete' rating.pk %}" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Eliminar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function togglePublic() {
+    if (!confirm('¿Cambiar la visibilidad de esta calificación?')) {
+        return;
+    }
+    
+    fetch('{% url "qa_rating_toggle_public" rating.pk %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al actualizar visibilidad');
+    });
+}
+</script>
+{% endblock %}

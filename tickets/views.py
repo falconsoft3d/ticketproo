@@ -31986,7 +31986,7 @@ def qa_dashboard(request):
     """Dashboard de QA con estadísticas y métricas"""
     from django.db.models import Count, Q, Avg
     from datetime import timedelta
-    from .models import QAComplaint
+    from .models import QAComplaint, QARating
     
     # Estadísticas generales
     total_complaints = QAComplaint.objects.count()
@@ -31996,6 +31996,12 @@ def qa_dashboard(request):
         status__in=['open', 'in_progress'],
         created_at__lt=timezone.now() - timedelta(days=7)
     ).count()
+    
+    # Estadísticas de calificaciones
+    total_ratings = QARating.objects.count()
+    happy_ratings = QARating.objects.filter(rating='happy').count()
+    neutral_ratings = QARating.objects.filter(rating='neutral').count()
+    sad_ratings = QARating.objects.filter(rating='sad').count()
     
     # Estadísticas por tipo
     type_stats = QAComplaint.objects.values('type').annotate(
@@ -32024,20 +32030,277 @@ def qa_dashboard(request):
         assigned_to=request.user
     ).exclude(status__in=['resolved', 'closed']).order_by('-priority', '-created_at')
     
+    # Calificaciones recientes
+    recent_ratings = QARating.objects.all().order_by('-created_at')[:5]
+    
     context = {
         'total_complaints': total_complaints,
         'open_complaints': open_complaints,
         'resolved_complaints': resolved_complaints,
         'overdue_complaints': overdue_complaints,
+        'total_ratings': total_ratings,
+        'happy_ratings': happy_ratings,
+        'neutral_ratings': neutral_ratings,
+        'sad_ratings': sad_ratings,
         'type_stats': type_stats,
         'company_stats': company_stats,
         'priority_stats': priority_stats,
         'recent_complaints': recent_complaints,
         'my_assignments': my_assignments,
+        'recent_ratings': recent_ratings,
         'page_title': 'Dashboard QA',
     }
     
     return render(request, 'tickets/qa_dashboard.html', context)
+
+
+# ==================== VISTAS DE CALIFICACIONES QA ====================
+
+@login_required
+def qa_rating_list(request):
+    """Lista de calificaciones QA"""
+    from .models import QARating
+    from django.db.models import Q
+    
+    ratings_list = QARating.objects.all()
+    
+    # Filtros
+    rating_filter = request.GET.get('rating')
+    company_filter = request.GET.get('company')
+    search = request.GET.get('search')
+    
+    if rating_filter:
+        ratings_list = ratings_list.filter(rating=rating_filter)
+    
+    if company_filter:
+        ratings_list = ratings_list.filter(company_id=company_filter)
+    
+    if search:
+        ratings_list = ratings_list.filter(
+            Q(name__icontains=search) |
+            Q(email__icontains=search) |
+            Q(opinion__icontains=search)
+        )
+    
+    # Paginación
+    paginator = Paginator(ratings_list, 20)
+    page_number = request.GET.get('page')
+    ratings = paginator.get_page(page_number)
+    
+    # Estadísticas
+    total_ratings = QARating.objects.count()
+    happy_count = QARating.objects.filter(rating='happy').count()
+    neutral_count = QARating.objects.filter(rating='neutral').count()
+    sad_count = QARating.objects.filter(rating='sad').count()
+    
+    # Empresas para el filtro
+    from .models import Company
+    companies = Company.objects.filter(is_active=True).order_by('name')
+    
+    context = {
+        'ratings': ratings,
+        'rating_choices': QARating.RATING_CHOICES,
+        'rating_filter': rating_filter,
+        'company_filter': company_filter,
+        'search': search,
+        'total_ratings': total_ratings,
+        'happy_count': happy_count,
+        'neutral_count': neutral_count,
+        'sad_count': sad_count,
+        'companies': companies,
+        'page_title': 'Calificaciones QA',
+    }
+    
+    return render(request, 'tickets/qa_rating_list.html', context)
+
+
+def qa_rating_create(request):
+    """Crear nueva calificación (puede ser pública o de usuario autenticado)"""
+    from .models import QARating, Company
+    
+    if request.method == 'POST':
+        rating = request.POST.get('rating')
+        opinion = request.POST.get('opinion')
+        name = request.POST.get('name', '').strip()
+        email = request.POST.get('email', '').strip()
+        company_id = request.POST.get('company')
+        
+        # Validaciones
+        if not rating or rating not in ['sad', 'neutral', 'happy']:
+            messages.error(request, 'Debes seleccionar una calificación válida.')
+            return redirect('qa_rating_create')
+        
+        if not opinion or len(opinion.strip()) < 10:
+            messages.error(request, 'La opinión debe tener al menos 10 caracteres.')
+            return redirect('qa_rating_create')
+        
+        # Crear la calificación
+        qa_rating = QARating(
+            rating=rating,
+            opinion=opinion.strip(),
+            name=name,
+            email=email,
+        )
+        
+        # Si hay usuario autenticado
+        if request.user.is_authenticated:
+            qa_rating.user = request.user
+        
+        # Si hay empresa seleccionada
+        if company_id:
+            try:
+                qa_rating.company = Company.objects.get(pk=company_id)
+            except Company.DoesNotExist:
+                pass
+        
+        # Guardar IP y User Agent
+        qa_rating.ip_address = request.META.get('REMOTE_ADDR')
+        qa_rating.user_agent = request.META.get('HTTP_USER_AGENT', '')[:500]
+        
+        qa_rating.save()
+        
+        messages.success(request, '¡Gracias por tu calificación! Tu opinión es muy importante para nosotros.')
+        
+        if request.user.is_authenticated:
+            return redirect('qa_rating_list')
+        else:
+            return redirect('qa_rating_create')
+    
+    # GET request
+    from .models import Company
+    companies = Company.objects.filter(is_active=True).order_by('name')
+    
+    context = {
+        'companies': companies,
+        'page_title': 'Nueva Calificación QA',
+    }
+    
+    return render(request, 'tickets/qa_rating_create.html', context)
+
+
+def qa_rating_public(request):
+    """Vista pública para calificaciones - sin login requerido"""
+    from .models import QARating, Company
+    
+    if request.method == 'POST':
+        rating = request.POST.get('rating')
+        opinion = request.POST.get('opinion')
+        name = request.POST.get('name', '').strip()
+        email = request.POST.get('email', '').strip()
+        company_id = request.POST.get('company')
+        
+        # Validaciones
+        if not rating or rating not in ['sad', 'neutral', 'happy']:
+            messages.error(request, 'Debes seleccionar una calificación válida.')
+            return redirect('qa_rating_public')
+        
+        if not opinion or len(opinion.strip()) < 10:
+            messages.error(request, 'La opinión debe tener al menos 10 caracteres.')
+            return redirect('qa_rating_public')
+        
+        # Crear la calificación
+        qa_rating = QARating(
+            rating=rating,
+            opinion=opinion.strip(),
+            name=name,
+            email=email,
+        )
+        
+        # Si hay usuario autenticado (opcional)
+        if request.user.is_authenticated:
+            qa_rating.user = request.user
+        
+        # Si hay empresa seleccionada
+        if company_id:
+            try:
+                qa_rating.company = Company.objects.get(pk=company_id)
+            except Company.DoesNotExist:
+                pass
+        
+        # Guardar IP y User Agent
+        qa_rating.ip_address = request.META.get('REMOTE_ADDR')
+        qa_rating.user_agent = request.META.get('HTTP_USER_AGENT', '')[:500]
+        
+        qa_rating.save()
+        
+        messages.success(request, '¡Gracias por tu calificación! Tu opinión es muy importante para nosotros.')
+        return redirect('qa_rating_public')
+    
+    # GET request
+    from .models import Company
+    companies = Company.objects.filter(is_active=True).order_by('name')
+    
+    # Estadísticas para mostrar
+    total_ratings = QARating.objects.count()
+    happy_count = QARating.objects.filter(rating='happy').count()
+    
+    context = {
+        'companies': companies,
+        'page_title': 'Evalúa nuestro servicio',
+        'is_public_page': True,
+        'total_ratings': total_ratings,
+        'happy_count': happy_count,
+    }
+    
+    return render(request, 'tickets/qa_rating_public.html', context)
+
+
+@login_required
+def qa_rating_detail(request, pk):
+    """Detalle de una calificación"""
+    from .models import QARating
+    
+    rating = get_object_or_404(QARating, pk=pk)
+    
+    context = {
+        'rating': rating,
+        'page_title': f'Calificación #{rating.pk}',
+    }
+    
+    return render(request, 'tickets/qa_rating_detail.html', context)
+
+
+@login_required
+def qa_rating_delete(request, pk):
+    """Eliminar una calificación"""
+    from .models import QARating
+    
+    rating = get_object_or_404(QARating, pk=pk)
+    
+    if request.method == 'POST':
+        rating.delete()
+        messages.success(request, 'Calificación eliminada correctamente.')
+        return redirect('qa_rating_list')
+    
+    context = {
+        'rating': rating,
+        'page_title': 'Eliminar Calificación',
+    }
+    
+    return render(request, 'tickets/qa_rating_delete.html', context)
+
+
+@login_required
+def qa_rating_toggle_public(request, pk):
+    """Alternar visibilidad pública de una calificación"""
+    from django.http import JsonResponse
+    from .models import QARating
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'})
+    
+    try:
+        rating = QARating.objects.get(pk=pk)
+        rating.is_public = not rating.is_public
+        rating.save()
+        
+        return JsonResponse({
+            'success': True,
+            'is_public': rating.is_public,
+            'message': 'Visibilidad actualizada'
+        })
+    except QARating.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Calificación no encontrada'})
 
 
 # ==================== VISTAS DE CONTROL DE ACTIVOS ====================

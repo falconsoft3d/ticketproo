@@ -1,0 +1,445 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title|default:"Evalúa nuestro servicio" }}</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .main-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+        
+        .rating-container {
+            background: white;
+            border-radius: 25px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 700px;
+            width: 100%;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        .rating-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            padding: 3rem 2rem;
+            text-align: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .rating-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            animation: float 20s infinite linear;
+        }
+        
+        @keyframes float {
+            0% { transform: translateX(0) translateY(0); }
+            100% { transform: translateX(-20px) translateY(-20px); }
+        }
+        
+        .rating-header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .rating-header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+            position: relative;
+            z-index: 1;
+            margin-bottom: 0;
+        }
+        
+        .rating-stats {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            margin-top: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .rating-body {
+            padding: 2.5rem;
+        }
+        
+        .rating-option {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+            border-radius: 20px;
+            padding: 2rem 1rem;
+            text-align: center;
+            background: #f8f9fa;
+            height: 100%;
+        }
+        
+        .rating-option:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        
+        .rating-option input[type="radio"] {
+            display: none;
+        }
+        
+        .rating-option.selected {
+            border-color: currentColor;
+            background: rgba(0, 0, 0, 0.03);
+        }
+        
+        .rating-emoji {
+            font-size: 4rem;
+            display: block;
+            margin-bottom: 1rem;
+            filter: grayscale(0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .rating-option:hover .rating-emoji,
+        .rating-option.selected .rating-emoji {
+            filter: grayscale(0);
+            transform: scale(1.1);
+        }
+        
+        .rating-label {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .rating-sad { color: var(--danger-color); }
+        .rating-neutral { color: var(--warning-color); }
+        .rating-happy { color: var(--success-color); }
+        
+        .form-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-control, .form-select {
+            border-radius: 12px;
+            border: 2px solid #e0e0e0;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .btn-submit {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            border: none;
+            color: white;
+            padding: 1rem 3rem;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+        
+        .optional-badge {
+            display: inline-block;
+            background: #e0e0e0;
+            color: #666;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+        }
+        
+        .info-card {
+            background: #f8f9fa;
+            border-left: 4px solid var(--primary-color);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-top: 2rem;
+        }
+        
+        .alert {
+            border-radius: 12px;
+            border: none;
+        }
+        
+        .powered-by {
+            text-align: center;
+            padding: 1rem;
+            color: white;
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-wrapper">
+        <div class="rating-container">
+        <!-- Header -->
+        <div class="rating-header">
+            <h1><i class="bi bi-star-fill"></i> Evalúa nuestro servicio</h1>
+            <p>Tu opinión nos ayuda a mejorar cada día</p>
+            
+            {% if total_ratings > 0 %}
+            <div class="rating-stats">
+                <div class="stat-item">
+                    <div class="stat-number">{{ total_ratings }}</div>
+                    <div class="stat-label">Evaluaciones</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">{{ happy_count }}</div>
+                    <div class="stat-label">Clientes felices</div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Body -->
+        <div class="rating-body">
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" id="ratingForm">
+                {% csrf_token %}
+                
+                <!-- Selección de Calificación -->
+                <div class="mb-4">
+                    <label class="form-label">¿Cómo calificarías nuestro servicio? <span class="text-danger">*</span></label>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="rating-option rating-sad" data-rating="sad">
+                                <input type="radio" name="rating" value="sad" required>
+                                <div class="rating-content">
+                                    <span class="rating-emoji">😞</span>
+                                    <div class="rating-label">Triste</div>
+                                    <small class="text-muted">Necesitamos mejorar</small>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="rating-option rating-neutral" data-rating="neutral">
+                                <input type="radio" name="rating" value="neutral" required>
+                                <div class="rating-content">
+                                    <span class="rating-emoji">😐</span>
+                                    <div class="rating-label">Neutro</div>
+                                    <small class="text-muted">Aceptable</small>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="rating-option rating-happy" data-rating="happy">
+                                <input type="radio" name="rating" value="happy" required>
+                                <div class="rating-content">
+                                    <span class="rating-emoji">😊</span>
+                                    <div class="rating-label">Feliz</div>
+                                    <small class="text-muted">Excelente servicio</small>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Opinión -->
+                <div class="mb-4">
+                    <label for="opinion" class="form-label">
+                        Tu opinión <span class="text-danger">*</span>
+                    </label>
+                    <textarea 
+                        class="form-control" 
+                        id="opinion" 
+                        name="opinion" 
+                        rows="4" 
+                        required
+                        placeholder="Cuéntanos tu experiencia... (mínimo 10 caracteres)"
+                        minlength="10"
+                    ></textarea>
+                </div>
+
+                <!-- Información Opcional -->
+                <div class="card mb-4" style="border: 2px solid #e0e0e0; border-radius: 15px;">
+                    <div class="card-body">
+                        <h6 class="mb-3">
+                            <i class="bi bi-person-circle"></i> Información de contacto 
+                            <span class="optional-badge">Opcional</span>
+                        </h6>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label">Tu nombre</label>
+                                <input 
+                                    type="text" 
+                                    class="form-control" 
+                                    id="name" 
+                                    name="name"
+                                    placeholder="Ej: Juan Pérez"
+                                >
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">Correo electrónico</label>
+                                <input 
+                                    type="email" 
+                                    class="form-control" 
+                                    id="email" 
+                                    name="email"
+                                    placeholder="tu@email.com"
+                                >
+                            </div>
+                        </div>
+                        
+                        {% if companies %}
+                        <div class="mb-0">
+                            <label for="company" class="form-label">Empresa</label>
+                            <select class="form-select" id="company" name="company">
+                                <option value="">Selecciona una empresa (opcional)</option>
+                                {% for company in companies %}
+                                <option value="{{ company.pk }}">{{ company.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Botón de envío -->
+                <button type="submit" class="btn btn-submit">
+                    <i class="bi bi-send-fill"></i> Enviar Evaluación
+                </button>
+            </form>
+
+            <!-- Información adicional -->
+            <div class="info-card">
+                <h6 class="mb-2"><i class="bi bi-shield-check"></i> Tu privacidad es importante</h6>
+                <ul class="mb-0 small">
+                    <li>Tu evaluación es anónima si no proporcionas tus datos</li>
+                    <li>Solo los campos con * son obligatorios</li>
+                    <li>Tu opinión nos ayuda a mejorar nuestros servicios</li>
+                    <li>Agradecemos tu tiempo y honestidad</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+        
+        <!-- Powered by -->
+        <div class="powered-by">
+            <i class="bi bi-heart-fill"></i> Gracias por ayudarnos a mejorar
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Manejar selección visual de calificación
+        const ratingOptions = document.querySelectorAll('.rating-option');
+        
+        ratingOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                // Remover clase selected de todas las opciones
+                ratingOptions.forEach(opt => opt.classList.remove('selected'));
+                
+                // Agregar clase selected a la opción clickeada
+                this.classList.add('selected');
+                
+                // Marcar el radio button
+                const radio = this.querySelector('input[type="radio"]');
+                radio.checked = true;
+            });
+        });
+        
+        // Animación al enviar
+        const form = document.getElementById('ratingForm');
+        form.addEventListener('submit', function(e) {
+            const rating = document.querySelector('input[name="rating"]:checked');
+            const opinion = document.getElementById('opinion').value.trim();
+            
+            if (!rating) {
+                e.preventDefault();
+                alert('Por favor selecciona una calificación');
+                return false;
+            }
+            
+            if (opinion.length < 10) {
+                e.preventDefault();
+                alert('La opinión debe tener al menos 10 caracteres');
+                return false;
+            }
+            
+            // Deshabilitar botón para evitar múltiples envíos
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Enviando...';
+        });
+    });
+    </script>
+</body>
+</html>

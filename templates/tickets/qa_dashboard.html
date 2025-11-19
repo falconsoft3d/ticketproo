@@ -405,6 +405,9 @@
                 </div>
                 <div class="col-md-4">
                     <div class="header-actions text-end">
+                        <a href="{% url 'qa_rating_public' %}" class="action-btn" target="_blank">
+                            <i class="fas fa-star me-2"></i>URL Pública Evaluación
+                        </a>
                         <a href="{% url 'qa_complaint_create' %}" class="action-btn">
                             <i class="fas fa-plus me-2"></i>Nuevo Reporte
                         </a>
@@ -471,6 +474,118 @@
                 <div class="metric-percentage">Más de 7 días sin resolver</div>
             </div>
         </div>
+
+        <!-- Métricas de Calificaciones -->
+        <div class="metrics-grid mt-4">
+            <div class="metric-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="metric-header">
+                    <div class="metric-icon">
+                        <i class="fas fa-star"></i>
+                    </div>
+                </div>
+                <div class="metric-number">{{ total_ratings|default:0 }}</div>
+                <div class="metric-label">Total Calificaciones</div>
+                <a href="{% url 'qa_rating_list' %}" class="btn btn-light btn-sm mt-2">
+                    Ver todas <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            
+            <div class="metric-card" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                <div class="metric-header">
+                    <div class="metric-icon">
+                        <span style="font-size: 2rem;">😊</span>
+                    </div>
+                </div>
+                <div class="metric-number">{{ happy_ratings|default:0 }}</div>
+                <div class="metric-label">Clientes Felices</div>
+                {% if total_ratings > 0 %}
+                    <div class="metric-progress">
+                        <div class="metric-progress-bar" style="width: {% widthratio happy_ratings total_ratings 100 %}%; background: rgba(255,255,255,0.5);"></div>
+                    </div>
+                    <div class="metric-percentage">{% widthratio happy_ratings total_ratings 100 %}% del total</div>
+                {% endif %}
+            </div>
+            
+            <div class="metric-card" style="background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);">
+                <div class="metric-header">
+                    <div class="metric-icon">
+                        <span style="font-size: 2rem;">😐</span>
+                    </div>
+                </div>
+                <div class="metric-number">{{ neutral_ratings|default:0 }}</div>
+                <div class="metric-label">Clientes Neutrales</div>
+                {% if total_ratings > 0 %}
+                    <div class="metric-progress">
+                        <div class="metric-progress-bar" style="width: {% widthratio neutral_ratings total_ratings 100 %}%; background: rgba(255,255,255,0.5);"></div>
+                    </div>
+                    <div class="metric-percentage">{% widthratio neutral_ratings total_ratings 100 %}% del total</div>
+                {% endif %}
+            </div>
+            
+            <div class="metric-card" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);">
+                <div class="metric-header">
+                    <div class="metric-icon">
+                        <span style="font-size: 2rem;">😞</span>
+                    </div>
+                </div>
+                <div class="metric-number">{{ sad_ratings|default:0 }}</div>
+                <div class="metric-label">Clientes Tristes</div>
+                {% if total_ratings > 0 %}
+                    <div class="metric-progress">
+                        <div class="metric-progress-bar" style="width: {% widthratio sad_ratings total_ratings 100 %}%; background: rgba(255,255,255,0.5);"></div>
+                    </div>
+                    <div class="metric-percentage">{% widthratio sad_ratings total_ratings 100 %}% del total</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Calificaciones Recientes -->
+        {% if recent_ratings %}
+        <div class="chart-card mt-4">
+            <div class="chart-header">
+                <h3 class="chart-title">
+                    <i class="fas fa-star me-2"></i>Calificaciones Recientes
+                </h3>
+                <a href="{% url 'qa_rating_list' %}" class="btn btn-primary btn-sm">
+                    Ver todas
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Calificación</th>
+                            <th>Usuario</th>
+                            <th>Opinión</th>
+                            <th>Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rating in recent_ratings %}
+                        <tr>
+                            <td>
+                                <span style="font-size: 1.5rem;">{{ rating.get_rating_emoji }}</span>
+                            </td>
+                            <td>
+                                {% if rating.user %}
+                                    {{ rating.user.get_full_name|default:rating.user.username }}
+                                {% elif rating.name %}
+                                    {{ rating.name }}
+                                {% else %}
+                                    <span class="text-muted">Anónimo</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ rating.opinion|truncatewords:15 }}</td>
+                            <td>
+                                <small>{{ rating.created_at|date:"d/m/Y H:i" }}</small>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
 
         <!-- Contenido Principal -->
         <div class="content-grid">

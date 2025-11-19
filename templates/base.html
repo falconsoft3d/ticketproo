@@ -709,6 +709,20 @@
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Calificaciones</li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'qa_rating_list' %}active{% endif %}" 
+                                   href="{% url 'qa_rating_list' %}">
+                                    <i class="fas fa-star"></i> Ver Calificaciones
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'qa_rating_create' %}active{% endif %}" 
+                                   href="{% url 'qa_rating_create' %}">
+                                    <i class="fas fa-plus-circle"></i> Nueva Calificación
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
                             <li class="dropdown-header">Cumplimiento</li>
                             <li>
                                 <a class="dropdown-item {% if 'monthly_cumplimiento' in request.resolver_match.url_name %}active{% endif %}" 

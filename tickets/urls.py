@@ -1105,6 +1105,16 @@ urlpatterns += [
     path('qa/complaints/<int:pk>/assign/', views.qa_complaint_assign, name='qa_complaint_assign'),
     path('qa/complaints/<int:pk>/resolve/', views.qa_complaint_resolve, name='qa_complaint_resolve'),
     
+    # URLs de Calificaciones QA
+    path('qa/ratings/', views.qa_rating_list, name='qa_rating_list'),
+    path('qa/ratings/create/', views.qa_rating_create, name='qa_rating_create'),
+    path('qa/ratings/<int:pk>/', views.qa_rating_detail, name='qa_rating_detail'),
+    path('qa/ratings/<int:pk>/delete/', views.qa_rating_delete, name='qa_rating_delete'),
+    path('qa/ratings/<int:pk>/toggle-public/', views.qa_rating_toggle_public, name='qa_rating_toggle_public'),
+    
+    # URL pública para calificaciones (sin login)
+    path('evaluar/', views.qa_rating_public, name='qa_rating_public'),
+    
     # URLs de Cumplimiento Mensual
     path('qa/cumplimiento/', views.monthly_cumplimiento_list, name='monthly_cumplimiento_list'),
     path('qa/cumplimiento/create/', views.monthly_cumplimiento_create, name='monthly_cumplimiento_create'),

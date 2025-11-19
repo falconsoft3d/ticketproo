@@ -16304,3 +16304,112 @@ class ScheduledTaskExecution(models.Model):
     def __str__(self):
         return f"{self.task.name} - {self.executed_at.strftime('%d/%m/%Y %H:%M')} ({self.get_status_display()})"
 
+
+class QARating(models.Model):
+    """Modelo para calificaciones de QA con caras (triste, neutro, feliz)"""
+    
+    RATING_CHOICES = [
+        ('sad', '😞 Triste'),
+        ('neutral', '😐 Neutro'),
+        ('happy', '😊 Feliz'),
+    ]
+    
+    # Calificación principal
+    rating = models.CharField(
+        max_length=10,
+        choices=RATING_CHOICES,
+        verbose_name='Calificación',
+        help_text='Calificación: triste, neutro o feliz'
+    )
+    
+    # Opinión
+    opinion = models.TextField(
+        verbose_name='Opinión',
+        help_text='Tu opinión sobre el servicio de QA'
+    )
+    
+    # Información opcional del usuario
+    name = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Nombre',
+        help_text='Tu nombre (opcional)'
+    )
+    email = models.EmailField(
+        blank=True,
+        verbose_name='Correo electrónico',
+        help_text='Tu correo electrónico (opcional)'
+    )
+    
+    # Relación opcional con empresa
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='qa_ratings',
+        verbose_name='Empresa',
+        help_text='Empresa asociada a esta calificación (opcional)'
+    )
+    
+    # Usuario registrado (si aplica)
+    user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='qa_ratings',
+        verbose_name='Usuario',
+        help_text='Usuario registrado que dejó la calificación'
+    )
+    
+    # Metadatos
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name='Dirección IP',
+        help_text='IP desde donde se realizó la calificación'
+    )
+    user_agent = models.CharField(
+        max_length=500,
+        blank=True,
+        verbose_name='User Agent',
+        help_text='Información del navegador'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    is_public = models.BooleanField(
+        default=True,
+        verbose_name='Visible públicamente',
+        help_text='Si la calificación puede mostrarse públicamente'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Calificación QA'
+        verbose_name_plural = 'Calificaciones QA'
+    
+    def __str__(self):
+        name_display = self.name or self.email or 'Anónimo'
+        return f"{name_display} - {self.get_rating_display()} - {self.created_at.strftime('%d/%m/%Y')}"
+    
+    def get_rating_emoji(self):
+        """Devuelve el emoji correspondiente a la calificación"""
+        emojis = {
+            'sad': '😞',
+            'neutral': '😐',
+            'happy': '😊',
+        }
+        return emojis.get(self.rating, '😐')
+    
+    def get_rating_color(self):
+        """Devuelve el color correspondiente a la calificación"""
+        colors = {
+            'sad': '#dc3545',      # Rojo
+            'neutral': '#ffc107',  # Amarillo
+            'happy': '#28a745',    # Verde
+        }
+        return colors.get(self.rating, '#6c757d')
+

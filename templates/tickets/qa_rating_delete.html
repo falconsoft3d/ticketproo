@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-exclamation-triangle-fill"></i> Eliminar Calificación
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>¡Atención!</strong> Esta acción no se puede deshacer.
+                    </div>
+
+                    <!-- Información de la calificación -->
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="text-center mb-3">
+                                <span style="font-size: 3rem;">{{ rating.get_rating_emoji }}</span>
+                                <h5 style="color: {{ rating.get_rating_color }};">
+                                    {{ rating.get_rating_display }}
+                                </h5>
+                            </div>
+                            
+                            <p><strong>De:</strong> 
+                                {% if rating.user %}
+                                    {{ rating.user.get_full_name|default:rating.user.username }}
+                                {% elif rating.name %}
+                                    {{ rating.name }}
+                                {% else %}
+                                    Anónimo
+                                {% endif %}
+                            </p>
+                            
+                            {% if rating.email %}
+                            <p><strong>Email:</strong> {{ rating.email }}</p>
+                            {% endif %}
+                            
+                            <p><strong>Fecha:</strong> {{ rating.created_at|date:"d/m/Y H:i" }}</p>
+                            
+                            <div class="border-top pt-2 mt-2">
+                                <strong>Opinión:</strong>
+                                <p class="mb-0">{{ rating.opinion|truncatewords:30 }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="text-center mb-4">
+                        ¿Estás seguro de que deseas eliminar esta calificación?
+                    </p>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                            <a href="{% url 'qa_rating_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash-fill"></i> Sí, eliminar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
