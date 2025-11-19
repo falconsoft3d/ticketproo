@@ -1115,6 +1115,9 @@ urlpatterns += [
     # URL pública para calificaciones (sin login)
     path('evaluar/', views.qa_rating_public, name='qa_rating_public'),
     
+    # API para contadores de calificaciones
+    path('api/qa/rating-counts/', views.qa_rating_counts, name='qa_rating_counts'),
+    
     # URLs de Cumplimiento Mensual
     path('qa/cumplimiento/', views.monthly_cumplimiento_list, name='monthly_cumplimiento_list'),
     path('qa/cumplimiento/create/', views.monthly_cumplimiento_create, name='monthly_cumplimiento_create'),

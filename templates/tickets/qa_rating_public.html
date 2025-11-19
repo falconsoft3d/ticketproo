@@ -276,8 +276,8 @@
                     <label class="form-label">¿Cómo calificarías nuestro servicio? <span class="text-danger">*</span></label>
                     <div class="row g-3">
                         <div class="col-md-4">
-                            <label class="rating-option rating-sad" data-rating="sad">
-                                <input type="radio" name="rating" value="sad" required>
+                            <label class="rating-option rating-sad{% if selected_rating == 'sad' %} selected{% endif %}" data-rating="sad">
+                                <input type="radio" name="rating" value="sad" required{% if selected_rating == 'sad' %} checked{% endif %}>
                                 <div class="rating-content">
                                     <span class="rating-emoji">😞</span>
                                     <div class="rating-label">Triste</div>
@@ -286,8 +286,8 @@
                             </label>
                         </div>
                         <div class="col-md-4">
-                            <label class="rating-option rating-neutral" data-rating="neutral">
-                                <input type="radio" name="rating" value="neutral" required>
+                            <label class="rating-option rating-neutral{% if selected_rating == 'neutral' %} selected{% endif %}" data-rating="neutral">
+                                <input type="radio" name="rating" value="neutral" required{% if selected_rating == 'neutral' %} checked{% endif %}>
                                 <div class="rating-content">
                                     <span class="rating-emoji">😐</span>
                                     <div class="rating-label">Neutro</div>
@@ -296,8 +296,8 @@
                             </label>
                         </div>
                         <div class="col-md-4">
-                            <label class="rating-option rating-happy" data-rating="happy">
-                                <input type="radio" name="rating" value="happy" required>
+                            <label class="rating-option rating-happy{% if selected_rating == 'happy' %} selected{% endif %}" data-rating="happy">
+                                <input type="radio" name="rating" value="happy" required{% if selected_rating == 'happy' %} checked{% endif %}>
                                 <div class="rating-content">
                                     <span class="rating-emoji">😊</span>
                                     <div class="rating-label">Feliz</div>

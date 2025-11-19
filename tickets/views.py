@@ -32234,15 +32234,35 @@ def qa_rating_public(request):
     total_ratings = QARating.objects.count()
     happy_count = QARating.objects.filter(rating='happy').count()
     
+    # Obtener rating pre-seleccionado desde parámetro GET
+    selected_rating = request.GET.get('rating', '')
+    if selected_rating not in ['sad', 'neutral', 'happy']:
+        selected_rating = ''
+    
     context = {
         'companies': companies,
         'page_title': 'Evalúa nuestro servicio',
         'is_public_page': True,
         'total_ratings': total_ratings,
         'happy_count': happy_count,
+        'selected_rating': selected_rating,
     }
     
     return render(request, 'tickets/qa_rating_public.html', context)
+
+
+def qa_rating_counts(request):
+    """API endpoint para obtener contadores de calificaciones"""
+    from .models import QARating
+    
+    counts = {
+        'happy': QARating.objects.filter(rating='happy').count(),
+        'neutral': QARating.objects.filter(rating='neutral').count(),
+        'sad': QARating.objects.filter(rating='sad').count(),
+        'total': QARating.objects.count(),
+    }
+    
+    return JsonResponse(counts)
 
 
 @login_required
