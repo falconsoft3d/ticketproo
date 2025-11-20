@@ -5879,6 +5879,15 @@ class LandingPage(models.Model):
         help_text='URL única para acceder a la landing page (ej: mi-producto)'
     )
     
+    # Token de API para seguridad
+    api_token = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        unique=True,
+        verbose_name='Token de API',
+        help_text='Token único para autenticar llamadas a la API de esta landing page'
+    )
+    
     # Estado
     is_active = models.BooleanField(
         default=True,

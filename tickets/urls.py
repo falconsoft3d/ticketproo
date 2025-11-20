@@ -630,6 +630,9 @@ urlpatterns = [
     path('ajax/landing-pages/submissions/<int:submission_id>/details/', views.ajax_submission_details, name='ajax_submission_details'),
     path('ajax/landing-pages/submissions/<int:submission_id>/delete/', views.ajax_landing_submission_delete, name='ajax_landing_submission_delete'),
     
+    # API pública para enviar datos a una landing page (JSON)
+    path('api/landing-pages/<int:pk>/submit/', views.landing_page_api_submit, name='landing_page_api_submit'),
+    
     # URLs para evaluación IA de landing pages
     path('ai/landing-submissions/', views.landing_submissions_list_view, name='landing_submissions_list'),
     path('ai/landing-submissions/<int:submission_id>/', views.landing_submission_detail_view, name='landing_submission_detail'),

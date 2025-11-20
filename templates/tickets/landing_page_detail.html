@@ -271,6 +271,110 @@
                                 <code>{{ landing_page.slug }}</code>
                             </div>
                             
+                            <!-- Documentación de API para integraciones -->
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <h6 class="mb-0"><i class="fas fa-code"></i> API: Envío via JSON</h6>
+                                </div>
+                                <div class="card-body small">
+                                    <p class="mb-2">Puedes enviar envíos (submissions) a esta landing mediante una petición <strong>POST</strong> en JSON.</p>
+                                    <p class="mb-1"><strong>Endpoint:</strong></p>
+                                    <pre class="p-2 bg-light rounded">{{ request.scheme }}://{{ request.get_host }}{% url 'landing_page_api_submit' landing_page.pk %}</pre>
+
+                                    <div class="alert alert-warning py-2 px-3 mb-2">
+                                        <strong><i class="fas fa-key"></i> Token de API:</strong>
+                                        <code class="text-dark">{{ landing_page.api_token }}</code>
+                                        <button class="btn btn-sm btn-outline-secondary ms-2" onclick="copyToClipboard('{{ landing_page.api_token }}')">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+
+                                    <p class="mb-1"><strong>Headers:</strong></p>
+                                    <ul>
+                                        <li><code>Content-Type: application/json</code></li>
+                                        <li><code>Authorization: Bearer {{ landing_page.api_token }}</code></li>
+                                    </ul>
+
+                                    <p class="mb-1"><strong>Ejemplo (curl):</strong></p>
+                                    <pre class="p-2 bg-dark text-white rounded">curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {{ landing_page.api_token }}" \
+  -d '{"nombre":"Juan","apellido":"Pérez","email":"juan@example.com","telefono":"+34123456789","empresa":"Mi Empresa","mensaje":"Interesado"}' \
+  {{ request.scheme }}://{{ request.get_host }}{% url 'landing_page_api_submit' landing_page.pk %}</pre>
+
+                                                <p class="mb-1"><strong>Ejemplo (Python - httpx):</strong></p>
+                                    <pre class="p-2 bg-dark text-white rounded"># Requiere instalar: pip install httpx
+import httpx
+
+url = "{{ request.scheme }}://{{ request.get_host }}{% url 'landing_page_api_submit' landing_page.pk %}"
+api_token = "{{ landing_page.api_token }}"
+
+payload = {
+    "nombre": "Juan",
+    "apellido": "Pérez",
+    "email": "juan@example.com",
+    "telefono": "+34123456789",
+    "empresa": "Mi Empresa",
+    "cargo": "CTO",
+    "mensaje": "Interesado",
+    "utm_source": "newsletter",
+    "utm_medium": "email",
+    "utm_campaign": "campania_noviembre"
+}
+
+headers = {
+    "Content-Type": "application/json",
+    "Authorization": f"Bearer {api_token}"
+}
+
+with httpx.Client() as client:
+    resp = client.post(url, json=payload, headers=headers)
+    print(resp.status_code)
+    print(resp.json())</pre>                                                                        <p class="mb-1"><strong>Ejemplo (Next.js - cliente):</strong></p>
+                                    <pre class="p-2 bg-dark text-white rounded">// Ejemplo de componente React en Next.js (client-side)
+import { useState } from 'react'
+
+export default function SubmitExample() {
+  const [result, setResult] = useState(null)
+  const API_TOKEN = '{{ landing_page.api_token }}'
+
+  async function handleSubmit() {
+    const url = "{{ request.scheme }}://{{ request.get_host }}{% url 'landing_page_api_submit' landing_page.pk %}"
+    const payload = {
+      nombre: 'Juan',
+      apellido: 'Pérez',
+      email: 'juan@example.com',
+      telefono: '+34123456789',
+      empresa: 'Mi Empresa',
+      cargo: 'CTO',
+      mensaje: 'Interesado'
+    }
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_TOKEN}`
+      },
+      body: JSON.stringify(payload)
+    })
+
+    const data = await res.json()
+    setResult(data)
+    console.log(data)
+  }
+
+  return (
+    <div>
+      <button onClick={handleSubmit} className="btn btn-primary btn-sm">Enviar Ejemplo</button>
+      {result && <pre className="mt-2">{JSON.stringify(result, null, 2)}</pre>}
+    </div>
+  )
+}
+</pre>                                                                        <p class="mb-0 text-muted"><i class="fas fa-shield-alt text-warning me-1"></i> <strong>Seguridad:</strong> El endpoint requiere el token de API para autenticar las peticiones. Guarda el token de forma segura y nunca lo expongas en el código del cliente (frontend público). Úsalo solo en llamadas server-side o servicios backend seguros.</p>
+                                            </div>
+                                        </div>
+
                             {% if landing_page.total_views > 0 %}
                                 <div class="mb-3">
                                     <strong>Mejor día:</strong><br>

@@ -14285,6 +14285,104 @@ def landing_page_public(request, slug):
     return render(request, 'tickets/landing_page_public.html', context)
 
 
+@csrf_exempt
+@require_POST
+def landing_page_api_submit(request, pk):
+    """Endpoint API público que acepta JSON POST para crear un LandingPageSubmission.
+    Ruta: /api/landing-pages/<pk>/submit/
+    Requiere header: Authorization: Bearer <api_token>
+    """
+    import json
+    from .models import LandingPage, LandingPageSubmission
+
+    landing_page = get_object_or_404(LandingPage, pk=pk, is_active=True)
+
+    # Validar token de API
+    auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+    if not auth_header.startswith('Bearer '):
+        return JsonResponse({'success': False, 'error': 'Missing or invalid Authorization header. Use: Authorization: Bearer <api_token>'}, status=401)
+    
+    token = auth_header.replace('Bearer ', '').strip()
+    if str(landing_page.api_token) != token:
+        return JsonResponse({'success': False, 'error': 'Invalid API token'}, status=403)
+
+    # Obtener body JSON
+    try:
+        payload = json.loads(request.body.decode('utf-8')) if request.body else {}
+    except Exception:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON body'}, status=400)
+
+    # Campos esperados
+    nombre = payload.get('nombre') or payload.get('first_name')
+    apellido = payload.get('apellido') or payload.get('last_name')
+    email = payload.get('email')
+    telefono = payload.get('telefono') or payload.get('phone')
+    empresa = payload.get('empresa') or payload.get('company')
+    cargo = payload.get('cargo') or payload.get('position')
+    mensaje = payload.get('mensaje') or payload.get('message')
+    preferred_contact_time = payload.get('preferred_contact_time')
+
+    # Validación básica
+    if not nombre or not apellido or not email:
+        return JsonResponse({'success': False, 'error': 'Missing required fields: nombre, apellido, email'}, status=400)
+
+    # Obtener IP y user agent
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        user_ip = x_forwarded_for.split(',')[0]
+    else:
+        user_ip = request.META.get('REMOTE_ADDR')
+
+    user_agent = request.META.get('HTTP_USER_AGENT', '')
+
+    # Crear el envío
+    submission = LandingPageSubmission(
+        landing_page=landing_page,
+        nombre=nombre,
+        apellido=apellido,
+        email=email,
+        telefono=telefono or '',
+        empresa=empresa or '',
+        cargo=cargo or '',
+        mensaje=mensaje or '',
+        preferred_contact_time=preferred_contact_time or 'asap',
+        ip_address=user_ip,
+        user_agent=user_agent,
+        utm_source=payload.get('utm_source', ''),
+        utm_medium=payload.get('utm_medium', ''),
+        utm_campaign=payload.get('utm_campaign', ''),
+    )
+    submission.save()
+
+    # Crear contacto y notificaciones (intentar, registrar errores internamente)
+    try:
+        create_contact_from_submission(submission, landing_page, created_by=None)
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Error creando contacto desde API: {e}")
+
+    # Incrementar contador de envíos
+    try:
+        landing_page.increment_submissions()
+    except Exception:
+        pass
+
+    # Enviar notificaciones
+    try:
+        from .utils import send_landing_page_notification
+        send_landing_page_notification(submission)
+    except Exception:
+        pass
+
+    try:
+        from .utils import send_telegram_notification
+        send_telegram_notification(landing_page, submission)
+    except Exception:
+        pass
+
+    return JsonResponse({'success': True, 'message': 'Submission created', 'submission_id': submission.pk})
+
+
 def create_contact_from_submission(submission, landing_page, created_by=None):
     """Crear un contacto desde un envío de landing page"""
     from .models import Contact
@@ -20173,6 +20271,19 @@ def short_url_redirect(request, short_code):
             reader.close()
     except:
         pass
+    
+    # Si no se pudo obtener geolocalización con GeoIP2, usar API gratuita
+    if not country and ip_address and not ip_address.startswith(('127.', '192.168.', '10.', '172.')):
+        try:
+            import requests
+            response = requests.get(f'http://ip-api.com/json/{ip_address}', timeout=2)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('status') == 'success':
+                    country = data.get('country', '')
+                    city = data.get('city', '')
+        except:
+            pass
     
     # Crear registro del clic
     ShortUrlClick.objects.create(
