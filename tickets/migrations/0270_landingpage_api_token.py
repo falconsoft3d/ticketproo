@@ -4,6 +4,14 @@ from django.db import migrations, models
 import uuid
 
 
+def generate_unique_tokens(apps, schema_editor):
+    """Generar tokens únicos para todas las landing pages"""
+    LandingPage = apps.get_model('tickets', 'LandingPage')
+    for landing_page in LandingPage.objects.all():
+        landing_page.api_token = uuid.uuid4()
+        landing_page.save()
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -11,9 +19,31 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        # Agregar campo sin unique primero, permitiendo null
         migrations.AddField(
             model_name='landingpage',
             name='api_token',
-            field=models.UUIDField(default=uuid.uuid4, editable=False, help_text='Token único para autenticar llamadas a la API de esta landing page', unique=True, verbose_name='Token de API'),
+            field=models.UUIDField(
+                default=uuid.uuid4, 
+                editable=False, 
+                help_text='Token único para autenticar llamadas a la API de esta landing page', 
+                verbose_name='Token de API',
+                null=True,
+                blank=True
+            ),
+        ),
+        # Generar tokens únicos para cada registro
+        migrations.RunPython(generate_unique_tokens, reverse_code=migrations.RunPython.noop),
+        # Ahora hacer el campo unique y no nullable
+        migrations.AlterField(
+            model_name='landingpage',
+            name='api_token',
+            field=models.UUIDField(
+                default=uuid.uuid4, 
+                editable=False, 
+                help_text='Token único para autenticar llamadas a la API de esta landing page', 
+                unique=True, 
+                verbose_name='Token de API'
+            ),
         ),
     ]
