@@ -7075,6 +7075,19 @@ class MultipleDocumentationItem(models.Model):
         help_text='Descripción del archivo'
     )
     
+    download_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Contador de Descargas',
+        help_text='Número de veces que se ha descargado este archivo'
+    )
+    
+    expiration_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Vencimiento',
+        help_text='Fecha de vencimiento del documento (opcional)'
+    )
+    
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name='Fecha de Creación'
@@ -7105,6 +7118,21 @@ class MultipleDocumentationItem(models.Model):
         """Obtiene la extensión del archivo"""
         import os
         return os.path.splitext(self.file.name)[1].lower() if self.file else ""
+    
+    def is_expired(self):
+        """Verifica si el documento está vencido"""
+        if not self.expiration_date:
+            return False
+        from django.utils import timezone
+        return timezone.now().date() > self.expiration_date
+    
+    def days_until_expiration(self):
+        """Calcula los días hasta el vencimiento"""
+        if not self.expiration_date:
+            return None
+        from django.utils import timezone
+        delta = self.expiration_date - timezone.now().date()
+        return delta.days
 
 
 class MultipleDocumentationStats(models.Model):
@@ -8530,6 +8558,13 @@ class ClientRequest(models.Model):
         auto_now=True,
         verbose_name='Fecha de actualización'
     )
+    attachment = models.FileField(
+        upload_to='client_request_attachments/',
+        null=True,
+        blank=True,
+        verbose_name='Archivo adjunto',
+        help_text='Documento o archivo de referencia para el cliente'
+    )
     
     class Meta:
         verbose_name = 'Solicitud al Cliente'
@@ -8602,6 +8637,91 @@ class ClientRequestResponse(models.Model):
     
     def __str__(self):
         return f"Respuesta a {self.request.sequence}"
+
+
+class ClientRequestTemplate(models.Model):
+    """Modelo para plantillas de solicitudes al cliente"""
+    
+    name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre de la Plantilla',
+        help_text='Nombre descriptivo para identificar este conjunto de solicitudes'
+    )
+    description = models.TextField(
+        verbose_name='Descripción',
+        blank=True,
+        help_text='Descripción de para qué sirve esta plantilla'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='client_request_templates',
+        verbose_name='Creado por'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Fecha de actualización'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activa',
+        help_text='Si está activa, se puede usar para crear solicitudes'
+    )
+    
+    class Meta:
+        verbose_name = 'Plantilla de Solicitud'
+        verbose_name_plural = 'Plantillas de Solicitudes'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return self.name
+
+
+class ClientRequestTemplateItem(models.Model):
+    """Modelo para ítems individuales dentro de una plantilla"""
+    
+    template = models.ForeignKey(
+        ClientRequestTemplate,
+        on_delete=models.CASCADE,
+        related_name='items',
+        verbose_name='Plantilla'
+    )
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título'
+    )
+    description = models.TextField(
+        verbose_name='Descripción'
+    )
+    requested_to = models.CharField(
+        max_length=200,
+        verbose_name='Solicitado a',
+        help_text='Nombre de la persona a quien se solicita'
+    )
+    order = models.IntegerField(
+        default=0,
+        verbose_name='Orden',
+        help_text='Orden de aparición en la lista'
+    )
+    attachment = models.FileField(
+        upload_to='client_request_template_attachments/',
+        null=True,
+        blank=True,
+        verbose_name='Archivo adjunto',
+        help_text='Documento de referencia para esta solicitud'
+    )
+    
+    class Meta:
+        verbose_name = 'Item de Plantilla'
+        verbose_name_plural = 'Items de Plantilla'
+        ordering = ['order', 'id']
+    
+    def __str__(self):
+        return f"{self.template.name} - {self.title}"
 
 
 class ProductSet(models.Model):

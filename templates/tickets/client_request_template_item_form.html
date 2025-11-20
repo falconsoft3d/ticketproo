@@ -7,14 +7,10 @@
         <div class="col-md-12">
             <div class="d-flex justify-content-between align-items-center">
                 <h2>
-                    <i class="bi bi-file-text me-2"></i>
-                    {% if client_request %}
-                        Editar Solicitud
-                    {% else %}
-                        Nueva Solicitud al Cliente
-                    {% endif %}
+                    <i class="bi bi-{% if item %}pencil{% else %}plus-circle{% endif %} me-2"></i>
+                    {% if item %}Editar Item{% else %}Agregar Item{% endif %}
                 </h2>
-                <a href="{% url 'client_request_list' %}" class="btn btn-outline-secondary">
+                <a href="{% url 'client_request_template_detail' template.pk %}" class="btn btn-outline-secondary">
                     <i class="bi bi-arrow-left me-2"></i>
                     Volver
                 </a>
@@ -25,6 +21,9 @@
     <div class="row">
         <div class="col-md-8">
             <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Plantilla: {{ template.name }}</h5>
+                </div>
                 <div class="card-body">
                     <form method="post" enctype="multipart/form-data" novalidate>
                         {% csrf_token %}
@@ -37,7 +36,6 @@
                             {% if form.title.errors %}
                                 <div class="text-danger small mt-1">{{ form.title.errors.0 }}</div>
                             {% endif %}
-                            <div class="form-text">Título descriptivo de la solicitud</div>
                         </div>
 
                         <div class="mb-3">
@@ -48,7 +46,6 @@
                             {% if form.description.errors %}
                                 <div class="text-danger small mt-1">{{ form.description.errors.0 }}</div>
                             {% endif %}
-                            <div class="form-text">Describe detalladamente lo que necesitas del cliente</div>
                         </div>
 
                         <div class="mb-3">
@@ -59,18 +56,17 @@
                             {% if form.requested_to.errors %}
                                 <div class="text-danger small mt-1">{{ form.requested_to.errors.0 }}</div>
                             {% endif %}
-                            <div class="form-text">Nombre de la persona a quien se solicita</div>
                         </div>
 
                         <div class="mb-3">
-                            <label for="{{ form.company.id_for_label }}" class="form-label">
-                                {{ form.company.label }} <span class="text-danger">*</span>
+                            <label for="{{ form.order.id_for_label }}" class="form-label">
+                                {{ form.order.label }} <span class="text-danger">*</span>
                             </label>
-                            {{ form.company }}
-                            {% if form.company.errors %}
-                                <div class="text-danger small mt-1">{{ form.company.errors.0 }}</div>
+                            {{ form.order }}
+                            {% if form.order.errors %}
+                                <div class="text-danger small mt-1">{{ form.order.errors.0 }}</div>
                             {% endif %}
-                            <div class="form-text">Empresa del cliente</div>
+                            <div class="form-text">Orden en que aparecerá este item</div>
                         </div>
 
                         <div class="mb-3">
@@ -82,19 +78,24 @@
                             {% if form.attachment.errors %}
                                 <div class="text-danger small mt-1">{{ form.attachment.errors.0 }}</div>
                             {% endif %}
-                            <div class="form-text">
-                                <i class="bi bi-info-circle me-1"></i>
-                                Puedes adjuntar documentos de referencia para el cliente (PDF, Word, Excel, imágenes, etc.)
+                            {% if item and item.attachment %}
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-file-earmark me-1"></i>
+                                    Archivo actual: {{ item.attachment.name|truncatechars:50 }}
+                                </small>
                             </div>
+                            {% endif %}
+                            <div class="form-text">Este archivo se copiará a cada solicitud creada</div>
                         </div>
 
                         <div class="d-flex justify-content-between">
-                            <a href="{% url 'client_request_list' %}" class="btn btn-secondary">
+                            <a href="{% url 'client_request_template_detail' template.pk %}" class="btn btn-secondary">
                                 Cancelar
                             </a>
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-save me-2"></i>
-                                {% if client_request %}Actualizar{% else %}Crear{% endif %} Solicitud
+                                {% if item %}Actualizar{% else %}Agregar{% endif %} Item
                             </button>
                         </div>
                     </form>
@@ -105,18 +106,18 @@
         <div class="col-md-4">
             <div class="card shadow-sm bg-light">
                 <div class="card-body">
-                    <h5 class="card-title">
+                    <h6 class="card-title">
                         <i class="bi bi-info-circle me-2"></i>
                         Información
-                    </h5>
-                    <p class="card-text">
-                        Las solicitudes al cliente permiten solicitar información o documentos específicos.
+                    </h6>
+                    <p class="card-text small">
+                        Cada item representa una solicitud individual que se creará cuando ejecutes la plantilla.
                     </p>
-                    <ul class="small">
-                        <li>La secuencia se genera automáticamente</li>
-                        <li>El cliente podrá responder con texto y adjuntos</li>
-                        <li>Los agentes ven todas las solicitudes</li>
-                        <li>Los clientes solo ven las de su empresa</li>
+                    <ul class="small mb-0">
+                        <li>Define el título y descripción claros</li>
+                        <li>Indica a quién se solicita</li>
+                        <li>El orden determina la secuencia</li>
+                        <li>El archivo adjunto es opcional</li>
                     </ul>
                 </div>
             </div>

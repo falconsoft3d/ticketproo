@@ -50,7 +50,7 @@ from .models import (
     AITutor, AITutorProgressReport, AITutorAttachment, ExpenseReport, ExpenseItem, ExpenseComment,
     VideoMeeting, MeetingNote, QuoteGenerator, CountdownTimer, AbsenceType,
     MonthlyCumplimiento, DailyCumplimiento, QRCode, CrmQuestion, SupportMeeting, SupportMeetingPoint, ScheduledTask,
-    ClientRequest, ClientRequestResponse
+    ClientRequest, ClientRequestResponse, ClientRequestTemplate, ClientRequestTemplateItem
 )
 
 class CategoryForm(forms.ModelForm):
@@ -3265,7 +3265,7 @@ class ClientRequestForm(forms.ModelForm):
     
     class Meta:
         model = ClientRequest
-        fields = ['title', 'description', 'requested_to', 'company']
+        fields = ['title', 'description', 'requested_to', 'company', 'attachment']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -3284,12 +3284,16 @@ class ClientRequestForm(forms.ModelForm):
             'company': forms.Select(attrs={
                 'class': 'form-control'
             }),
+            'attachment': forms.FileInput(attrs={
+                'class': 'form-control'
+            }),
         }
         labels = {
             'title': 'Título',
             'description': 'Descripción',
             'requested_to': 'Solicitado a',
             'company': 'Empresa',
+            'attachment': 'Archivo adjunto (opcional)',
         }
 
 
@@ -3313,6 +3317,83 @@ class ClientRequestResponseForm(forms.ModelForm):
             'response_text': 'Respuesta',
             'attachment': 'Adjunto (Opcional)',
         }
+
+
+class ClientRequestTemplateForm(forms.ModelForm):
+    """Formulario para crear plantillas de solicitudes"""
+    
+    class Meta:
+        model = ClientRequestTemplate
+        fields = ['name', 'description', 'is_active']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Onboarding de Cliente, Cierre de Mes, etc.'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Describe para qué sirve esta plantilla...'
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'name': 'Nombre de la Plantilla',
+            'description': 'Descripción',
+            'is_active': 'Activa',
+        }
+
+
+class ClientRequestTemplateItemForm(forms.ModelForm):
+    """Formulario para items de plantilla"""
+    
+    class Meta:
+        model = ClientRequestTemplateItem
+        fields = ['title', 'description', 'requested_to', 'order', 'attachment']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título de la solicitud'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción de lo que se solicita...'
+            }),
+            'requested_to': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre de la persona'
+            }),
+            'order': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 0
+            }),
+            'attachment': forms.FileInput(attrs={
+                'class': 'form-control'
+            }),
+        }
+        labels = {
+            'title': 'Título',
+            'description': 'Descripción',
+            'requested_to': 'Solicitado a',
+            'order': 'Orden',
+            'attachment': 'Archivo adjunto (opcional)',
+        }
+
+
+class ExecuteTemplateForm(forms.Form):
+    """Formulario para ejecutar una plantilla y crear solicitudes"""
+    
+    company = forms.ModelChoiceField(
+        queryset=Company.objects.all(),
+        widget=forms.Select(attrs={
+            'class': 'form-control'
+        }),
+        label='Empresa',
+        help_text='Selecciona la empresa para la cual crear las solicitudes'
+    )
 
 
 class CourseForm(forms.ModelForm):

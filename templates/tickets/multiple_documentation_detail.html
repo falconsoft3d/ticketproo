@@ -140,6 +140,27 @@
                                                         • {{ item.get_file_extension|upper }}
                                                         {% endif %}
                                                     </div>
+                                                    <div class="mt-2">
+                                                        <span class="badge bg-success">
+                                                            <i class="bi bi-download"></i> {{ item.download_count }} descarga{{ item.download_count|pluralize }}
+                                                        </span>
+                                                        {% if item.expiration_date %}
+                                                        <span class="badge {% if item.is_expired %}bg-danger{% elif item.days_until_expiration <= 7 %}bg-warning text-dark{% else %}bg-info{% endif %} ms-1">
+                                                            <i class="fas fa-calendar-times"></i>
+                                                            {% if item.is_expired %}
+                                                                Vencido el {{ item.expiration_date|date:"d/m/Y" }}
+                                                            {% elif item.days_until_expiration == 0 %}
+                                                                Vence hoy
+                                                            {% elif item.days_until_expiration == 1 %}
+                                                                Vence mañana
+                                                            {% elif item.days_until_expiration <= 7 %}
+                                                                Vence en {{ item.days_until_expiration }} días
+                                                            {% else %}
+                                                                Vence: {{ item.expiration_date|date:"d/m/Y" }}
+                                                            {% endif %}
+                                                        </span>
+                                                        {% endif %}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>

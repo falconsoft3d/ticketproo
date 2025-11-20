@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>
+                    <i class="bi bi-files me-2"></i>
+                    Plantillas de Solicitudes
+                </h2>
+                <a href="{% url 'client_request_template_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    Nueva Plantilla
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {% if templates %}
+    <div class="row">
+        {% for template in templates %}
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card shadow-sm h-100 {% if not template.is_active %}bg-light{% endif %}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h5 class="card-title mb-0">
+                            {{ template.name }}
+                            {% if not template.is_active %}
+                                <span class="badge bg-secondary ms-2">Inactiva</span>
+                            {% endif %}
+                        </h5>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-three-dots-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'client_request_template_detail' template.pk %}">
+                                        <i class="bi bi-eye me-2"></i>Ver Detalle
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'client_request_template_edit' template.pk %}">
+                                        <i class="bi bi-pencil me-2"></i>Editar
+                                    </a>
+                                </li>
+                                {% if template.is_active and template.items.count > 0 %}
+                                <li>
+                                    <a class="dropdown-item text-success" href="{% url 'client_request_template_execute' template.pk %}">
+                                        <i class="bi bi-play-circle me-2"></i>Ejecutar
+                                    </a>
+                                </li>
+                                {% endif %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item text-danger" href="{% url 'client_request_template_delete' template.pk %}">
+                                        <i class="bi bi-trash me-2"></i>Eliminar
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    {% if template.description %}
+                    <p class="card-text text-muted small">{{ template.description|truncatewords:20 }}</p>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <span class="badge bg-info">
+                            <i class="bi bi-list-ul me-1"></i>
+                            {{ template.items.count }} item{{ template.items.count|pluralize }}
+                        </span>
+                        <small class="text-muted">
+                            <i class="bi bi-calendar me-1"></i>
+                            {{ template.created_at|date:"d/m/Y" }}
+                        </small>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{% url 'client_request_template_detail' template.pk %}" class="btn btn-sm btn-outline-primary w-100">
+                        <i class="bi bi-arrow-right-circle me-2"></i>
+                        Ver Plantilla
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="row">
+        <div class="col-md-12">
+            <div class="alert alert-info">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-info-circle fs-3 me-3"></i>
+                    <div>
+                        <h5 class="alert-heading mb-1">No hay plantillas creadas</h5>
+                        <p class="mb-2">Las plantillas te permiten crear múltiples solicitudes al cliente de forma rápida.</p>
+                        <a href="{% url 'client_request_template_create' %}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-plus-circle me-2"></i>
+                            Crear Primera Plantilla
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

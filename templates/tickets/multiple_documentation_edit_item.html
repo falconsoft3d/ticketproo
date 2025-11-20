@@ -79,6 +79,20 @@
                                     </div>
                                 </div>
                                 
+                                <div class="mb-3">
+                                    <label for="expiration_date" class="form-label">
+                                        <i class="fas fa-calendar-times"></i> Fecha de Vencimiento
+                                    </label>
+                                    <input type="date" 
+                                           class="form-control" 
+                                           id="expiration_date" 
+                                           name="expiration_date" 
+                                           value="{% if item.expiration_date %}{{ item.expiration_date|date:'Y-m-d' }}{% endif %}">
+                                    <div class="form-text">
+                                        Fecha opcional en la que este documento vencerá
+                                    </div>
+                                </div>
+                                
                                 <div class="mb-4">
                                     <label for="file" class="form-label">
                                         <i class="fas fa-file"></i> Archivo

@@ -7,6 +7,8 @@
     
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
@@ -161,10 +163,33 @@
                                     • {{ item.get_file_extension|upper|slice:"1:" }}
                                     {% endif %}
                                 </small>
-                                <span class="download-count">
-                                    <i class="fas fa-download"></i> Descargar
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-download"></i> {{ item.download_count }}
+                                    </span>
+                                    <span class="download-count">
+                                        <i class="fas fa-download"></i> Descargar
+                                    </span>
+                                </div>
+                            </div>
+                            {% if item.expiration_date %}
+                            <div class="mt-2">
+                                <span class="badge {% if item.is_expired %}bg-danger{% elif item.days_until_expiration <= 7 %}bg-warning text-dark{% else %}bg-info{% endif %}">
+                                    <i class="fas fa-calendar-times"></i>
+                                    {% if item.is_expired %}
+                                        Vencido el {{ item.expiration_date|date:"d/m/Y" }}
+                                    {% elif item.days_until_expiration == 0 %}
+                                        Vence hoy
+                                    {% elif item.days_until_expiration == 1 %}
+                                        Vence mañana
+                                    {% elif item.days_until_expiration <= 7 %}
+                                        Vence en {{ item.days_until_expiration }} días
+                                    {% else %}
+                                        Vence: {{ item.expiration_date|date:"d/m/Y" }}
+                                    {% endif %}
                                 </span>
                             </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

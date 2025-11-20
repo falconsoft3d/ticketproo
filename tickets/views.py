@@ -9310,7 +9310,7 @@ def client_request_create(request):
     from . import utils
     
     if request.method == 'POST':
-        form = ClientRequestForm(request.POST)
+        form = ClientRequestForm(request.POST, request.FILES)
         if form.is_valid():
             client_request = form.save(commit=False)
             client_request.created_by = request.user
@@ -9719,6 +9719,254 @@ def public_client_request_detail(request, token, pk):
     }
     
     return render(request, 'tickets/public_client_request_detail.html', context)
+
+
+# ==================== VISTAS DE PLANTILLAS DE SOLICITUDES ====================
+
+@login_required
+def client_request_template_list(request):
+    """Lista de plantillas de solicitudes"""
+    from .models import ClientRequestTemplate
+    
+    templates = ClientRequestTemplate.objects.filter(
+        created_by=request.user
+    ).order_by('-created_at')
+    
+    context = {
+        'templates': templates,
+        'page_title': 'Plantillas de Solicitudes'
+    }
+    
+    return render(request, 'tickets/client_request_template_list.html', context)
+
+
+@login_required
+def client_request_template_create(request):
+    """Crear nueva plantilla"""
+    from .models import ClientRequestTemplate
+    from .forms import ClientRequestTemplateForm
+    
+    if request.method == 'POST':
+        form = ClientRequestTemplateForm(request.POST)
+        if form.is_valid():
+            template = form.save(commit=False)
+            template.created_by = request.user
+            template.save()
+            messages.success(request, f'Plantilla "{template.name}" creada exitosamente.')
+            return redirect('client_request_template_detail', pk=template.pk)
+    else:
+        form = ClientRequestTemplateForm()
+    
+    context = {
+        'form': form,
+        'page_title': 'Nueva Plantilla de Solicitudes'
+    }
+    
+    return render(request, 'tickets/client_request_template_form.html', context)
+
+
+@login_required
+def client_request_template_detail(request, pk):
+    """Detalle de una plantilla con sus items"""
+    from .models import ClientRequestTemplate
+    
+    template = get_object_or_404(ClientRequestTemplate, pk=pk, created_by=request.user)
+    items = template.items.all().order_by('order', 'id')
+    
+    context = {
+        'template': template,
+        'items': items,
+        'page_title': template.name
+    }
+    
+    return render(request, 'tickets/client_request_template_detail.html', context)
+
+
+@login_required
+def client_request_template_edit(request, pk):
+    """Editar plantilla"""
+    from .models import ClientRequestTemplate
+    from .forms import ClientRequestTemplateForm
+    
+    template = get_object_or_404(ClientRequestTemplate, pk=pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        form = ClientRequestTemplateForm(request.POST, instance=template)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Plantilla actualizada exitosamente.')
+            return redirect('client_request_template_detail', pk=template.pk)
+    else:
+        form = ClientRequestTemplateForm(instance=template)
+    
+    context = {
+        'form': form,
+        'template': template,
+        'page_title': f'Editar {template.name}'
+    }
+    
+    return render(request, 'tickets/client_request_template_form.html', context)
+
+
+@login_required
+def client_request_template_delete(request, pk):
+    """Eliminar plantilla"""
+    from .models import ClientRequestTemplate
+    
+    template = get_object_or_404(ClientRequestTemplate, pk=pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        name = template.name
+        template.delete()
+        messages.success(request, f'Plantilla "{name}" eliminada exitosamente.')
+        return redirect('client_request_template_list')
+    
+    context = {
+        'template': template,
+        'page_title': f'Eliminar {template.name}'
+    }
+    
+    return render(request, 'tickets/client_request_template_delete.html', context)
+
+
+@login_required
+def client_request_template_item_create(request, template_pk):
+    """Agregar item a una plantilla"""
+    from .models import ClientRequestTemplate, ClientRequestTemplateItem
+    from .forms import ClientRequestTemplateItemForm
+    
+    template = get_object_or_404(ClientRequestTemplate, pk=template_pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        form = ClientRequestTemplateItemForm(request.POST, request.FILES)
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.template = template
+            item.save()
+            messages.success(request, 'Item agregado exitosamente.')
+            return redirect('client_request_template_detail', pk=template.pk)
+    else:
+        # Sugerir el siguiente orden
+        last_item = template.items.order_by('-order').first()
+        initial_order = (last_item.order + 1) if last_item else 1
+        form = ClientRequestTemplateItemForm(initial={'order': initial_order})
+    
+    context = {
+        'form': form,
+        'template': template,
+        'page_title': f'Agregar Item a {template.name}'
+    }
+    
+    return render(request, 'tickets/client_request_template_item_form.html', context)
+
+
+@login_required
+def client_request_template_item_edit(request, pk):
+    """Editar item de plantilla"""
+    from .models import ClientRequestTemplateItem
+    from .forms import ClientRequestTemplateItemForm
+    
+    item = get_object_or_404(ClientRequestTemplateItem, pk=pk)
+    template = item.template
+    
+    # Verificar que el usuario sea el creador de la plantilla
+    if template.created_by != request.user:
+        messages.error(request, 'No tienes permisos para editar este item.')
+        return redirect('client_request_template_detail', pk=template.pk)
+    
+    if request.method == 'POST':
+        form = ClientRequestTemplateItemForm(request.POST, request.FILES, instance=item)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Item actualizado exitosamente.')
+            return redirect('client_request_template_detail', pk=template.pk)
+    else:
+        form = ClientRequestTemplateItemForm(instance=item)
+    
+    context = {
+        'form': form,
+        'item': item,
+        'template': template,
+        'page_title': f'Editar Item'
+    }
+    
+    return render(request, 'tickets/client_request_template_item_form.html', context)
+
+
+@login_required
+def client_request_template_item_delete(request, pk):
+    """Eliminar item de plantilla"""
+    from .models import ClientRequestTemplateItem
+    
+    item = get_object_or_404(ClientRequestTemplateItem, pk=pk)
+    template = item.template
+    
+    # Verificar que el usuario sea el creador de la plantilla
+    if template.created_by != request.user:
+        messages.error(request, 'No tienes permisos para eliminar este item.')
+        return redirect('client_request_template_detail', pk=template.pk)
+    
+    if request.method == 'POST':
+        item.delete()
+        messages.success(request, 'Item eliminado exitosamente.')
+        return redirect('client_request_template_detail', pk=template.pk)
+    
+    context = {
+        'item': item,
+        'template': template,
+        'page_title': 'Eliminar Item'
+    }
+    
+    return render(request, 'tickets/client_request_template_item_delete.html', context)
+
+
+@login_required
+def client_request_template_execute(request, pk):
+    """Ejecutar plantilla: crear solicitudes para una empresa"""
+    from .models import ClientRequestTemplate, ClientRequest, Company
+    from .forms import ExecuteTemplateForm
+    
+    template = get_object_or_404(ClientRequestTemplate, pk=pk, created_by=request.user)
+    
+    if not template.is_active:
+        messages.error(request, 'Esta plantilla está inactiva.')
+        return redirect('client_request_template_detail', pk=template.pk)
+    
+    if template.items.count() == 0:
+        messages.error(request, 'Esta plantilla no tiene items para crear.')
+        return redirect('client_request_template_detail', pk=template.pk)
+    
+    if request.method == 'POST':
+        form = ExecuteTemplateForm(request.POST)
+        if form.is_valid():
+            company = form.cleaned_data['company']
+            
+            # Crear todas las solicitudes
+            created_count = 0
+            for item in template.items.all().order_by('order', 'id'):
+                client_request = ClientRequest.objects.create(
+                    title=item.title,
+                    description=item.description,
+                    requested_to=item.requested_to,
+                    company=company,
+                    created_by=request.user,
+                    attachment=item.attachment
+                )
+                created_count += 1
+            
+            messages.success(request, f'Se crearon {created_count} solicitudes para {company.name}.')
+            return redirect('client_request_list')
+    else:
+        form = ExecuteTemplateForm()
+    
+    context = {
+        'form': form,
+        'template': template,
+        'items': template.items.all().order_by('order', 'id'),
+        'page_title': f'Ejecutar Plantilla: {template.name}'
+    }
+    
+    return render(request, 'tickets/client_request_template_execute.html', context)
 
 
 # ==================== VISTAS DE CURSOS ====================
@@ -17813,12 +18061,20 @@ def multiple_documentation_add_item_view(request, pk):
             # Permitir que el usuario especifique el número
             number = int(request.POST.get('number', next_number))
             
+            # Manejar fecha de vencimiento
+            expiration_date = request.POST.get('expiration_date', '').strip()
+            exp_date = None
+            if expiration_date:
+                from datetime import datetime
+                exp_date = datetime.strptime(expiration_date, '%Y-%m-%d').date()
+            
             item = MultipleDocumentationItem.objects.create(
                 documentation=documentation,
                 number=number,
                 name=request.POST['name'],
                 description=request.POST.get('description', ''),
-                file=request.FILES['file']
+                file=request.FILES['file'],
+                expiration_date=exp_date
             )
             
             messages.success(request, f'Documento "{item.name}" agregado correctamente.')
@@ -17854,6 +18110,14 @@ def multiple_documentation_edit_item_view(request, pk, item_id):
             item.number = int(request.POST['number'])
             item.name = request.POST['name']
             item.description = request.POST.get('description', '')
+            
+            # Manejar fecha de vencimiento
+            expiration_date = request.POST.get('expiration_date', '').strip()
+            if expiration_date:
+                from datetime import datetime
+                item.expiration_date = datetime.strptime(expiration_date, '%Y-%m-%d').date()
+            else:
+                item.expiration_date = None
             
             # Solo actualizar el archivo si se proporciona uno nuevo
             if 'file' in request.FILES:
@@ -18048,6 +18312,12 @@ def multiple_documentation_download_item_view(request, token, item_id):
             user_agent=request.META.get('HTTP_USER_AGENT', ''),
             referer=request.META.get('HTTP_REFERER')
         )
+        
+        # Incrementar contador del item
+        from django.db.models import F
+        item.download_count = F('download_count') + 1
+        item.save(update_fields=['download_count'])
+        item.refresh_from_db()
         
         # Actualizar estadísticas del archivo
         item_stats, created = MultipleDocumentationItemStats.objects.get_or_create(
@@ -20838,35 +21108,50 @@ def short_url_redirect(request, short_code):
     
     # Registrar el clic con detalles
     ip_address = request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0].strip() or \
+                 request.META.get('HTTP_X_REAL_IP', '').strip() or \
                  request.META.get('REMOTE_ADDR', '')
     
     country = ''
     city = ''
     
+    # Verificar que la IP no sea privada
+    is_public_ip = ip_address and not ip_address.startswith(('127.', '192.168.', '10.', '172.16.', '172.17.', '172.18.', '172.19.', '172.20.', '172.21.', '172.22.', '172.23.', '172.24.', '172.25.', '172.26.', '172.27.', '172.28.', '172.29.', '172.30.', '172.31.', 'localhost', '::1'))
+    
     # Intentar obtener geolocalización si está disponible
-    try:
-        geoip_path = getattr(settings, 'GEOIP_PATH', None)
-        if geoip_path and os.path.exists(os.path.join(geoip_path, 'GeoLite2-City.mmdb')):
-            reader = geoip2.database.Reader(os.path.join(geoip_path, 'GeoLite2-City.mmdb'))
-            response = reader.city(ip_address)
-            country = response.country.name or ''
-            city = response.city.name or ''
-            reader.close()
-    except:
-        pass
+    if is_public_ip:
+        try:
+            geoip_path = getattr(settings, 'GEOIP_PATH', None)
+            if geoip_path and os.path.exists(os.path.join(geoip_path, 'GeoLite2-City.mmdb')):
+                reader = geoip2.database.Reader(os.path.join(geoip_path, 'GeoLite2-City.mmdb'))
+                response = reader.city(ip_address)
+                country = response.country.name or ''
+                city = response.city.name or ''
+                reader.close()
+        except Exception as e:
+            # Log el error para debug
+            print(f"GeoIP2 error: {e}")
     
     # Si no se pudo obtener geolocalización con GeoIP2, usar API gratuita
-    if not country and ip_address and not ip_address.startswith(('127.', '192.168.', '10.', '172.')):
+    if not country and is_public_ip:
         try:
             import requests
-            response = requests.get(f'http://ip-api.com/json/{ip_address}', timeout=2)
+            response = requests.get(
+                f'http://ip-api.com/json/{ip_address}',
+                timeout=5,
+                headers={'User-Agent': 'Mozilla/5.0'}
+            )
             if response.status_code == 200:
                 data = response.json()
                 if data.get('status') == 'success':
                     country = data.get('country', '')
                     city = data.get('city', '')
-        except:
-            pass
+                    print(f"IP-API success: {ip_address} -> {country}, {city}")
+                else:
+                    print(f"IP-API failed: {data.get('message', 'Unknown error')}")
+            else:
+                print(f"IP-API HTTP error: {response.status_code}")
+        except Exception as e:
+            print(f"IP-API exception: {e}")
     
     # Crear registro del clic
     ShortUrlClick.objects.create(

@@ -167,7 +167,7 @@ class PageVisitTrackingMiddleware(MiddlewareMixin):
         if x_forwarded_for:
             ip = x_forwarded_for.split(',')[0].strip()
         else:
-            ip = request.META.get('REMOTE_ADDR')
+            ip = request.META.get('HTTP_X_REAL_IP') or request.META.get('REMOTE_ADDR')
         return ip
     
     def _is_bot(self, user_agent):
@@ -212,12 +212,21 @@ class PageVisitTrackingMiddleware(MiddlewareMixin):
         """
         Obtiene información de geolocalización desde la IP
         """
+        # Verificar que la IP sea pública
+        if not ip_address or ip_address.startswith(('127.', '192.168.', '10.', '172.16.', '172.17.', '172.18.', '172.19.', '172.20.', '172.21.', '172.22.', '172.23.', '172.24.', '172.25.', '172.26.', '172.27.', '172.28.', '172.29.', '172.30.', '172.31.', 'localhost', '::1')):
+            return {
+                'country': '',
+                'country_code': '',
+                'region': '',
+                'city': '',
+            }
+        
         try:
             # Usar un servicio gratuito de geolocalización
-            # Nota: En producción considerar usar un servicio más robusto
             response = requests.get(
                 f"http://ip-api.com/json/{ip_address}",
-                timeout=2
+                timeout=5,
+                headers={'User-Agent': 'Mozilla/5.0'}
             )
             
             if response.status_code == 200:
@@ -229,6 +238,8 @@ class PageVisitTrackingMiddleware(MiddlewareMixin):
                         'region': data.get('regionName', ''),
                         'city': data.get('city', ''),
                     }
+                else:
+                    logger.warning(f"IP-API returned error for {ip_address}: {data.get('message', 'Unknown')}")
         except Exception as e:
             logger.error(f"Error obteniendo geolocalización para IP {ip_address}: {e}")
         

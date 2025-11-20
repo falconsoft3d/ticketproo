@@ -122,6 +122,19 @@
                     </p>
                 </div>
             </div>
+
+            {% if client_request.attachment %}
+            <hr>
+            <div class="mb-2">
+                <strong><i class="bi bi-paperclip me-1"></i> Documento adjunto:</strong><br>
+                <a href="{{ client_request.attachment.url }}" 
+                   class="btn btn-sm btn-info mt-2" 
+                   target="_blank">
+                    <i class="bi bi-download me-1"></i>
+                    Descargar Documento de Referencia
+                </a>
+            </div>
+            {% endif %}
         </div>
 
         <!-- Respuesta (si existe) -->

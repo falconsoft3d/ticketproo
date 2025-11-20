@@ -327,12 +327,6 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li>
-                                <a class="dropdown-item {% if 'client_request' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'client_request_list' %}">
-                                    <i class="bi bi-file-text"></i> Solicitudes al Cliente
-                                </a>
-                            </li>
-                            <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'course_list' %}active{% endif %}" 
                                    href="{% url 'course_list' %}">
                                     <i class="bi bi-collection"></i> Cursos
@@ -710,6 +704,20 @@
                             <li><hr class="dropdown-divider"></li>
                             <li class="dropdown-header">Generadores</li>
                             <!-- Aquí se pueden agregar futuros generadores de código -->
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Solicitudes</li>
+                            <li>
+                                <a class="dropdown-item {% if 'client_request' in request.resolver_match.url_name and 'template' not in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'client_request_list' %}">
+                                    <i class="bi bi-file-text"></i> Solicitudes al Cliente
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'client_request_template' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'client_request_template_list' %}">
+                                    <i class="bi bi-files"></i> Plantillas de Solicitudes
+                                </a>
+                            </li>
                         </ul>
                     </li>
                     

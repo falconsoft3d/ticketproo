@@ -439,6 +439,17 @@ urlpatterns = [
     path('public/requests/<uuid:token>/', views.public_client_requests, name='public_client_requests'),
     path('public/requests/<uuid:token>/<int:pk>/', views.public_client_request_detail, name='public_client_request_detail'),
     
+    # URLs de Plantillas de Solicitudes
+    path('client-request-templates/', views.client_request_template_list, name='client_request_template_list'),
+    path('client-request-templates/create/', views.client_request_template_create, name='client_request_template_create'),
+    path('client-request-templates/<int:pk>/', views.client_request_template_detail, name='client_request_template_detail'),
+    path('client-request-templates/<int:pk>/edit/', views.client_request_template_edit, name='client_request_template_edit'),
+    path('client-request-templates/<int:pk>/delete/', views.client_request_template_delete, name='client_request_template_delete'),
+    path('client-request-templates/<int:pk>/execute/', views.client_request_template_execute, name='client_request_template_execute'),
+    path('client-request-templates/<int:template_pk>/items/create/', views.client_request_template_item_create, name='client_request_template_item_create'),
+    path('client-request-template-items/<int:pk>/edit/', views.client_request_template_item_edit, name='client_request_template_item_edit'),
+    path('client-request-template-items/<int:pk>/delete/', views.client_request_template_item_delete, name='client_request_template_item_delete'),
+    
     # URLs de Capacitación (Cursos y Clases)
     path('courses/', views.course_list, name='course_list'),
     path('courses/create/', views.course_create, name='course_create'),
