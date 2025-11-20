@@ -9141,6 +9141,589 @@ def course_class_public(request, token, class_id):
     return render(request, 'tickets/course_class_public.html', context)
 
 @login_required
+# ==================== VISTAS DE SOLICITUDES AL CLIENTE ====================
+
+@login_required
+def client_request_list(request):
+    """Lista todas las solicitudes al cliente con filtros y estadísticas"""
+    from .models import ClientRequest, Company
+    from . import utils
+    from django.db.models import Count, Q
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+    from django.http import HttpResponse
+    from datetime import datetime
+    
+    # Si es agente o superusuario, ve todas las solicitudes
+    is_agent = request.user.is_superuser or utils.is_agent(request.user)
+    
+    if is_agent:
+        requests = ClientRequest.objects.all().select_related('created_by', 'company')
+    else:
+        # Si no es agente, solo ve las de su empresa
+        try:
+            user_profile = request.user.userprofile
+            if user_profile.company:
+                requests = ClientRequest.objects.filter(company=user_profile.company).select_related('created_by', 'company')
+            else:
+                requests = ClientRequest.objects.none()
+        except:
+            requests = ClientRequest.objects.none()
+    
+    # Aplicar filtros
+    status_filter = request.GET.get('status', '')
+    company_filter = request.GET.get('company', '')
+    search = request.GET.get('search', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    
+    if status_filter:
+        requests = requests.filter(status=status_filter)
+    
+    if company_filter:
+        requests = requests.filter(company_id=company_filter)
+    
+    if search:
+        requests = requests.filter(
+            Q(sequence__icontains=search) |
+            Q(title__icontains=search) |
+            Q(requested_to__icontains=search) |
+            Q(description__icontains=search)
+        )
+    
+    if date_from:
+        requests = requests.filter(created_at__gte=date_from)
+    
+    if date_to:
+        requests = requests.filter(created_at__lte=date_to + ' 23:59:59')
+    
+    # Ordenar
+    requests = requests.order_by('-created_at')
+    
+    # Calcular estadísticas
+    total_requests = requests.count()
+    pending_requests = requests.filter(status='pending').count()
+    in_progress_requests = requests.filter(status='in_progress').count()
+    completed_requests = requests.filter(status='completed').count()
+    cancelled_requests = requests.filter(status='cancelled').count()
+    
+    # Solicitudes con respuesta
+    requests_with_response = sum(1 for r in requests if hasattr(r, 'response'))
+    requests_without_response = total_requests - requests_with_response
+    
+    # Exportar a Excel
+    if request.GET.get('export') == 'excel':
+        workbook = openpyxl.Workbook()
+        sheet = workbook.active
+        sheet.title = 'Solicitudes'
+        
+        # Estilos
+        header_fill = PatternFill(start_color='4472C4', end_color='4472C4', fill_type='solid')
+        header_font = Font(bold=True, color='FFFFFF')
+        
+        # Encabezados
+        headers = ['Secuencia', 'Título', 'Solicitado a', 'Empresa', 'Estado', 'Respondida', 'Creado por', 'Fecha']
+        for col_num, header in enumerate(headers, 1):
+            cell = sheet.cell(row=1, column=col_num)
+            cell.value = header
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal='center', vertical='center')
+        
+        # Datos
+        for row_num, req in enumerate(requests, 2):
+            sheet.cell(row=row_num, column=1).value = req.sequence
+            sheet.cell(row=row_num, column=2).value = req.title
+            sheet.cell(row=row_num, column=3).value = req.requested_to
+            sheet.cell(row=row_num, column=4).value = req.company.name if req.company else '-'
+            sheet.cell(row=row_num, column=5).value = req.get_status_display()
+            sheet.cell(row=row_num, column=6).value = 'Sí' if hasattr(req, 'response') else 'No'
+            sheet.cell(row=row_num, column=7).value = req.created_by.get_full_name() or req.created_by.username
+            sheet.cell(row=row_num, column=8).value = req.created_at.strftime('%d/%m/%Y %H:%M')
+        
+        # Ajustar ancho de columnas
+        for col in sheet.columns:
+            max_length = 0
+            column = col[0].column_letter
+            for cell in col:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(cell.value)
+                except:
+                    pass
+            adjusted_width = (max_length + 2)
+            sheet.column_dimensions[column].width = adjusted_width
+        
+        # Crear respuesta HTTP
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename=solicitudes_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+        workbook.save(response)
+        return response
+    
+    # Obtener empresas para el filtro
+    if is_agent:
+        companies = Company.objects.filter(clientrequest__isnull=False).distinct().order_by('name')
+    else:
+        try:
+            user_profile = request.user.userprofile
+            companies = Company.objects.filter(id=user_profile.company_id) if user_profile.company else Company.objects.none()
+        except:
+            companies = Company.objects.none()
+    
+    context = {
+        'requests': requests,
+        'page_title': 'Solicitudes al Cliente',
+        'is_agent': is_agent,
+        # Estadísticas
+        'total_requests': total_requests,
+        'pending_requests': pending_requests,
+        'in_progress_requests': in_progress_requests,
+        'completed_requests': completed_requests,
+        'cancelled_requests': cancelled_requests,
+        'requests_with_response': requests_with_response,
+        'requests_without_response': requests_without_response,
+        # Filtros
+        'status_filter': status_filter,
+        'company_filter': company_filter,
+        'search': search,
+        'date_from': date_from,
+        'date_to': date_to,
+        'companies': companies,
+        'status_choices': [
+            ('pending', 'Pendiente'),
+            ('in_progress', 'En Progreso'),
+            ('completed', 'Completada'),
+            ('cancelled', 'Cancelada')
+        ]
+    }
+    
+    return render(request, 'tickets/client_request_list.html', context)
+
+
+@login_required
+def client_request_create(request):
+    """Crear nueva solicitud al cliente"""
+    from .models import ClientRequest
+    from .forms import ClientRequestForm
+    from . import utils
+    
+    if request.method == 'POST':
+        form = ClientRequestForm(request.POST)
+        if form.is_valid():
+            client_request = form.save(commit=False)
+            client_request.created_by = request.user
+            
+            # Si no es agente y no tiene empresa asignada, asignar la del usuario
+            if not client_request.company and not (request.user.is_superuser or utils.is_agent(request.user)):
+                try:
+                    user_profile = request.user.userprofile
+                    if user_profile.company:
+                        client_request.company = user_profile.company
+                except:
+                    pass
+            
+            client_request.save()
+            messages.success(request, f'Solicitud "{client_request.sequence}" creada exitosamente.')
+            return redirect('client_request_detail', pk=client_request.pk)
+    else:
+        form = ClientRequestForm()
+        
+        # Si no es agente, prellenar con su empresa
+        if not (request.user.is_superuser or utils.is_agent(request.user)):
+            try:
+                user_profile = request.user.userprofile
+                if user_profile.company:
+                    form.initial['company'] = user_profile.company
+            except:
+                pass
+    
+    context = {
+        'form': form,
+        'page_title': 'Nueva Solicitud al Cliente'
+    }
+    
+    return render(request, 'tickets/client_request_form.html', context)
+
+
+@login_required
+def client_request_detail(request, pk):
+    """Detalle de una solicitud al cliente"""
+    from .models import ClientRequest, ClientRequestResponse
+    from .forms import ClientRequestResponseForm
+    from . import utils
+    
+    client_request = get_object_or_404(ClientRequest, pk=pk)
+    
+    # Verificar permisos
+    is_agent = request.user.is_superuser or utils.is_agent(request.user)
+    
+    if not is_agent:
+        # Si no es agente, verificar que sea de su empresa
+        try:
+            user_profile = request.user.userprofile
+            if not user_profile.company or client_request.company != user_profile.company:
+                messages.error(request, 'No tienes permisos para ver esta solicitud.')
+                return redirect('client_request_list')
+        except:
+            messages.error(request, 'No tienes permisos para ver esta solicitud.')
+            return redirect('client_request_list')
+    
+    # Verificar si ya hay respuesta
+    has_response = hasattr(client_request, 'response')
+    
+    # Formulario para responder (solo si no hay respuesta)
+    response_form = None
+    if not has_response and request.method == 'POST':
+        response_form = ClientRequestResponseForm(request.POST, request.FILES)
+        if response_form.is_valid():
+            response = response_form.save(commit=False)
+            response.request = client_request
+            response.responded_by = request.user
+            response.save()
+            
+            # Actualizar estado de la solicitud
+            client_request.status = 'completed'
+            client_request.save()
+            
+            messages.success(request, 'Respuesta enviada exitosamente.')
+            return redirect('client_request_detail', pk=client_request.pk)
+    elif not has_response:
+        response_form = ClientRequestResponseForm()
+    
+    context = {
+        'client_request': client_request,
+        'has_response': has_response,
+        'response_form': response_form,
+        'is_agent': is_agent,
+        'page_title': f'Solicitud {client_request.sequence}'
+    }
+    
+    return render(request, 'tickets/client_request_detail.html', context)
+
+
+@login_required
+def client_request_edit(request, pk):
+    """Editar solicitud al cliente"""
+    from .models import ClientRequest
+    from .forms import ClientRequestForm
+    
+    client_request = get_object_or_404(ClientRequest, pk=pk)
+    
+    # Solo el creador puede editar
+    if client_request.created_by != request.user:
+        messages.error(request, 'No tienes permisos para editar esta solicitud.')
+        return redirect('client_request_detail', pk=client_request.pk)
+    
+    # No se puede editar si ya tiene respuesta
+    if hasattr(client_request, 'response'):
+        messages.error(request, 'No puedes editar una solicitud que ya tiene respuesta.')
+        return redirect('client_request_detail', pk=client_request.pk)
+    
+    if request.method == 'POST':
+        form = ClientRequestForm(request.POST, instance=client_request)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Solicitud actualizada exitosamente.')
+            return redirect('client_request_detail', pk=client_request.pk)
+    else:
+        form = ClientRequestForm(instance=client_request)
+    
+    context = {
+        'form': form,
+        'client_request': client_request,
+        'page_title': f'Editar {client_request.sequence}'
+    }
+    
+    return render(request, 'tickets/client_request_form.html', context)
+
+
+@login_required
+def client_request_delete(request, pk):
+    """Eliminar solicitud al cliente"""
+    from .models import ClientRequest
+    
+    client_request = get_object_or_404(ClientRequest, pk=pk)
+    
+    # Solo el creador puede eliminar
+    if client_request.created_by != request.user:
+        messages.error(request, 'No tienes permisos para eliminar esta solicitud.')
+        return redirect('client_request_detail', pk=client_request.pk)
+    
+    # No se puede eliminar si ya tiene respuesta
+    if hasattr(client_request, 'response'):
+        messages.error(request, 'No puedes eliminar una solicitud que ya tiene respuesta.')
+        return redirect('client_request_detail', pk=client_request.pk)
+    
+    if request.method == 'POST':
+        sequence = client_request.sequence
+        client_request.delete()
+        messages.success(request, f'Solicitud {sequence} eliminada exitosamente.')
+        return redirect('client_request_list')
+    
+    context = {
+        'client_request': client_request,
+        'page_title': f'Eliminar {client_request.sequence}'
+    }
+    
+    return render(request, 'tickets/client_request_delete.html', context)
+
+
+@login_required
+def client_request_pdf(request, pk):
+    """Genera un PDF con el detalle de la solicitud"""
+    from .models import ClientRequest
+    from django.http import HttpResponse
+    from reportlab.lib.pagesizes import letter, A4
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+    from io import BytesIO
+    from . import utils
+    
+    client_request = get_object_or_404(ClientRequest, pk=pk)
+    
+    # Verificar permisos
+    is_agent = request.user.is_superuser or utils.is_agent(request.user)
+    
+    if not is_agent:
+        # Si no es agente, verificar que sea de su empresa
+        try:
+            user_profile = request.user.userprofile
+            if not user_profile.company or client_request.company != user_profile.company:
+                messages.error(request, 'No tienes permisos para ver esta solicitud.')
+                return redirect('client_request_list')
+        except:
+            messages.error(request, 'No tienes permisos para ver esta solicitud.')
+            return redirect('client_request_list')
+    
+    # Crear el PDF
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=0.5*inch, bottomMargin=0.5*inch)
+    
+    # Estilos
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=24,
+        textColor=colors.HexColor('#2c3e50'),
+        spaceAfter=30,
+        alignment=TA_CENTER
+    )
+    
+    heading_style = ParagraphStyle(
+        'CustomHeading',
+        parent=styles['Heading2'],
+        fontSize=14,
+        textColor=colors.HexColor('#34495e'),
+        spaceAfter=12,
+        spaceBefore=12
+    )
+    
+    normal_style = ParagraphStyle(
+        'CustomNormal',
+        parent=styles['Normal'],
+        fontSize=10,
+        spaceAfter=6
+    )
+    
+    label_style = ParagraphStyle(
+        'Label',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=colors.HexColor('#7f8c8d'),
+        spaceAfter=3
+    )
+    
+    # Construir el contenido
+    story = []
+    
+    # Título
+    story.append(Paragraph(f"Solicitud al Cliente", title_style))
+    story.append(Paragraph(f"{client_request.sequence}", heading_style))
+    story.append(Spacer(1, 0.3*inch))
+    
+    # Información básica en tabla
+    status_map = {
+        'pending': 'Pendiente',
+        'in_progress': 'En Progreso',
+        'completed': 'Completada',
+        'cancelled': 'Cancelada'
+    }
+    
+    info_data = [
+        ['Secuencia:', client_request.sequence],
+        ['Estado:', status_map.get(client_request.status, client_request.status)],
+        ['Empresa:', client_request.company.name if client_request.company else '-'],
+        ['Solicitado a:', client_request.requested_to],
+        ['Creado por:', client_request.created_by.get_full_name() or client_request.created_by.username],
+        ['Fecha de creación:', client_request.created_at.strftime('%d/%m/%Y %H:%M')],
+    ]
+    
+    if client_request.updated_at != client_request.created_at:
+        info_data.append(['Última actualización:', client_request.updated_at.strftime('%d/%m/%Y %H:%M')])
+    
+    info_table = Table(info_data, colWidths=[2*inch, 4*inch])
+    info_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#ecf0f1')),
+        ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#2c3e50')),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#bdc3c7')),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 10),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+    ]))
+    
+    story.append(info_table)
+    story.append(Spacer(1, 0.3*inch))
+    
+    # Título de la solicitud
+    story.append(Paragraph("Título", heading_style))
+    story.append(Paragraph(client_request.title, normal_style))
+    story.append(Spacer(1, 0.2*inch))
+    
+    # Descripción
+    story.append(Paragraph("Descripción", heading_style))
+    description_text = client_request.description.replace('\n', '<br/>')
+    story.append(Paragraph(description_text, normal_style))
+    story.append(Spacer(1, 0.3*inch))
+    
+    # Respuesta si existe
+    if hasattr(client_request, 'response'):
+        story.append(Paragraph("Respuesta del Cliente", heading_style))
+        
+        response_text = client_request.response.response_text.replace('\n', '<br/>')
+        story.append(Paragraph(response_text, normal_style))
+        story.append(Spacer(1, 0.2*inch))
+        
+        if client_request.response.attachment:
+            story.append(Paragraph(f"<b>Archivo adjunto:</b> {client_request.response.attachment.name}", normal_style))
+            story.append(Spacer(1, 0.1*inch))
+        
+        responded_by = 'Cliente' if not client_request.response.responded_by else (
+            client_request.response.responded_by.get_full_name() or 
+            client_request.response.responded_by.username
+        )
+        
+        story.append(Paragraph(
+            f"<i>Respondido por {responded_by} el {client_request.response.responded_at.strftime('%d/%m/%Y %H:%M')}</i>",
+            label_style
+        ))
+    else:
+        story.append(Paragraph("Respuesta del Cliente", heading_style))
+        story.append(Paragraph("<i>Pendiente de respuesta</i>", label_style))
+    
+    # Construir PDF
+    doc.build(story)
+    
+    # Preparar respuesta
+    buffer.seek(0)
+    response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="Solicitud_{client_request.sequence}.pdf"'
+    
+    return response
+
+
+# ==================== VISTAS PÚBLICAS DE SOLICITUDES AL CLIENTE ====================
+
+def public_client_requests(request, token):
+    """Vista pública para que los clientes vean y respondan sus solicitudes"""
+    from .models import Company, ClientRequest, ClientRequestResponse
+    from .forms import ClientRequestResponseForm
+    
+    # Buscar la empresa por token
+    company = get_object_or_404(Company, client_requests_token=token)
+    
+    # Obtener todas las solicitudes de esta empresa
+    all_requests = ClientRequest.objects.filter(company=company).order_by('-created_at')
+    
+    # Verificar si se debe mostrar todas o solo pendientes
+    show_all = request.GET.get('show_all', 'false') == 'true'
+    
+    if show_all:
+        requests = all_requests
+    else:
+        # Mostrar solo pendientes y en progreso por defecto
+        requests = all_requests.filter(status__in=['pending', 'in_progress'])
+    
+    # Calcular estadísticas (siempre sobre todas las solicitudes)
+    total_requests = all_requests.count()
+    pending_requests = all_requests.filter(status='pending').count()
+    completed_requests = all_requests.filter(status='completed').count()
+    in_progress_requests = all_requests.filter(status='in_progress').count()
+    
+    context = {
+        'company': company,
+        'requests': requests,
+        'total_requests': total_requests,
+        'pending_requests': pending_requests,
+        'completed_requests': completed_requests,
+        'in_progress_requests': in_progress_requests,
+        'token': token,
+        'show_all': show_all,
+        'page_title': f'Solicitudes - {company.name}'
+    }
+    
+    return render(request, 'tickets/public_client_requests.html', context)
+
+
+def public_client_request_detail(request, token, pk):
+    """Vista pública para ver detalle y responder una solicitud"""
+    from .models import Company, ClientRequest, ClientRequestResponse
+    from .forms import ClientRequestResponseForm
+    
+    # Buscar la empresa por token
+    company = get_object_or_404(Company, client_requests_token=token)
+    
+    # Buscar la solicitud y verificar que pertenece a la empresa
+    client_request = get_object_or_404(ClientRequest, pk=pk, company=company)
+    
+    # Verificar si ya hay respuesta
+    has_response = hasattr(client_request, 'response')
+    
+    # Formulario para responder (solo si no hay respuesta)
+    response_form = None
+    if not has_response and request.method == 'POST':
+        response_form = ClientRequestResponseForm(request.POST, request.FILES)
+        if response_form.is_valid():
+            response = response_form.save(commit=False)
+            response.request = client_request
+            response.responded_by = None  # Respuesta anónima desde vista pública
+            response.save()
+            
+            # Actualizar estado de la solicitud
+            client_request.status = 'completed'
+            client_request.save()
+            
+            messages.success(request, 'Respuesta enviada exitosamente.')
+            return redirect('public_client_request_detail', token=token, pk=client_request.pk)
+    elif not has_response:
+        response_form = ClientRequestResponseForm()
+    
+    context = {
+        'company': company,
+        'client_request': client_request,
+        'has_response': has_response,
+        'response_form': response_form,
+        'token': token,
+        'page_title': f'{client_request.sequence} - {company.name}'
+    }
+    
+    return render(request, 'tickets/public_client_request_detail.html', context)
+
+
+# ==================== VISTAS DE CURSOS ====================
+
+@login_required
 def course_list(request):
     """Lista todos los cursos disponibles"""
     from .models import Course

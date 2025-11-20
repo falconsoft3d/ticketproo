@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .stats-card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            margin-bottom: 20px;
+        }
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+        .company-header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .company-logo {
+            max-height: 80px;
+            margin-bottom: 15px;
+        }
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+        .request-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        .request-card:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            transform: translateX(5px);
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Header de la Empresa -->
+        <div class="company-header text-center">
+            {% if company.logo %}
+                <img src="{{ company.logo.url }}" alt="{{ company.name }}" class="company-logo">
+            {% endif %}
+            <h1 class="mb-2">{{ company.name }}</h1>
+            <p class="text-muted mb-0">Portal de Solicitudes</p>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="row mb-4">
+            <div class="col-md-3 col-sm-6">
+                <div class="card stats-card text-grayscale bg-light">
+                    <div class="card-body text-center">
+                        <i class="bi bi-file-text fs-1 mb-2"></i>
+                        <div class="stat-number">{{ total_requests }}</div>
+                        <div>Total</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="card stats-card text-grayscale bg-light">
+                    <div class="card-body text-center">
+                        <i class="bi bi-clock fs-1 mb-2"></i>
+                        <div class="stat-number">{{ pending_requests }}</div>
+                        <div>Pendientes</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="card stats-card text-grayscale bg-light">
+                    <div class="card-body text-center">
+                        <i class="bi bi-arrow-repeat fs-1 mb-2"></i>
+                        <div class="stat-number">{{ in_progress_requests }}</div>
+                        <div>En Progreso</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="card stats-card text-grayscale bg-light">
+                    <div class="card-body text-center">
+                        <i class="bi bi-check-circle fs-1 mb-2"></i>
+                        <div class="stat-number">{{ completed_requests }}</div>
+                        <div>Completadas</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de Solicitudes -->
+        <div class="card shadow-sm" style="border-radius: 15px;">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center" style="border-radius: 15px 15px 0 0;">
+                <h4 class="mb-0">
+                    <i class="bi bi-list-ul me-2"></i>
+                    {% if show_all %}Todas las Solicitudes{% else %}Solicitudes Pendientes{% endif %}
+                </h4>
+                <div>
+                    {% if show_all %}
+                        <a href="?" class="btn btn-warning btn-sm">
+                            <i class="bi bi-clock me-1"></i>
+                            Ver Pendientes
+                        </a>
+                    {% else %}
+                        <a href="?show_all=true" class="btn btn-info btn-sm">
+                            <i class="bi bi-list-check me-1"></i>
+                            Ver Todas
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                {% if requests %}
+                    {% for request in requests %}
+                    <div class="request-card">
+                        <div class="row align-items-center">
+                            <div class="col-md-7">
+                                <h5 class="mb-2">
+                                    <span class="badge bg-secondary me-2">{{ request.sequence }}</span>
+                                    {{ request.title }}
+                                </h5>
+                                <p class="text-muted mb-2">
+                                    <i class="bi bi-person me-1"></i>
+                                    Solicitado a: <strong>{{ request.requested_to }}</strong>
+                                </p>
+                                <p class="text-muted mb-0">
+                                    <i class="bi bi-calendar me-1"></i>
+                                    {{ request.created_at|date:"d/m/Y H:i" }}
+                                </p>
+                            </div>
+                            <div class="col-md-2 text-center">
+                                <div class="mb-1">
+                                    <small class="text-muted">Antigüedad</small>
+                                </div>
+                                <div class="fs-5 fw-bold text-primary">
+                                    {{ request.created_at|timesince }}
+                                </div>
+                            </div>
+                            <div class="col-md-3 text-end">
+                                <div class="mb-2">
+                                    {% if request.status == 'pending' %}
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="bi bi-clock me-1"></i>Pendiente
+                                        </span>
+                                    {% elif request.status == 'in_progress' %}
+                                        <span class="badge bg-info">
+                                            <i class="bi bi-arrow-repeat me-1"></i>En Progreso
+                                        </span>
+                                    {% elif request.status == 'completed' %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle me-1"></i>Completada
+                                        </span>
+                                    {% elif request.status == 'cancelled' %}
+                                        <span class="badge bg-danger">
+                                            <i class="bi bi-x-circle me-1"></i>Cancelada
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                <div class="mb-2">
+                                    {% if request.response %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle-fill me-1"></i>Respondida
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-clock me-1"></i>Sin responder
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                <a href="{% url 'public_client_request_detail' token request.pk %}" 
+                                   class="btn btn-primary btn-sm">
+                                    <i class="bi bi-eye me-1"></i>
+                                    Ver Detalle
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        {% if show_all %}
+                            No hay solicitudes registradas para tu empresa.
+                        {% else %}
+                            No hay solicitudes pendientes. <a href="?show_all=true" class="alert-link">Ver todas las solicitudes</a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-4">
+            <p class="text-white">
+                <i class="bi bi-shield-check me-1"></i>
+                Portal seguro para gestión de solicitudes
+            </p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -49,7 +49,8 @@ from .models import (
     EmployeeRequest, InternalAgreement, Asset, AssetHistory, 
     AITutor, AITutorProgressReport, AITutorAttachment, ExpenseReport, ExpenseItem, ExpenseComment,
     VideoMeeting, MeetingNote, QuoteGenerator, CountdownTimer, AbsenceType,
-    MonthlyCumplimiento, DailyCumplimiento, QRCode, CrmQuestion, SupportMeeting, SupportMeetingPoint, ScheduledTask
+    MonthlyCumplimiento, DailyCumplimiento, QRCode, CrmQuestion, SupportMeeting, SupportMeetingPoint, ScheduledTask,
+    ClientRequest, ClientRequestResponse
 )
 
 class CategoryForm(forms.ModelForm):
@@ -3257,6 +3258,61 @@ class OpportunityActivityCompleteForm(forms.ModelForm):
         
         self.fields['result'].label = 'Resultado de la Actividad'
         self.fields['status'].label = 'Estado Final'
+
+
+class ClientRequestForm(forms.ModelForm):
+    """Formulario para crear solicitudes al cliente"""
+    
+    class Meta:
+        model = ClientRequest
+        fields = ['title', 'description', 'requested_to', 'company']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título de la solicitud',
+                'maxlength': 200
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Describe lo que necesitas del cliente...'
+            }),
+            'requested_to': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre de la persona'
+            }),
+            'company': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+        }
+        labels = {
+            'title': 'Título',
+            'description': 'Descripción',
+            'requested_to': 'Solicitado a',
+            'company': 'Empresa',
+        }
+
+
+class ClientRequestResponseForm(forms.ModelForm):
+    """Formulario para que el cliente responda una solicitud"""
+    
+    class Meta:
+        model = ClientRequestResponse
+        fields = ['response_text', 'attachment']
+        widgets = {
+            'response_text': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 5,
+                'placeholder': 'Escribe tu respuesta aquí...'
+            }),
+            'attachment': forms.FileInput(attrs={
+                'class': 'form-control'
+            }),
+        }
+        labels = {
+            'response_text': 'Respuesta',
+            'attachment': 'Adjunto (Opcional)',
+        }
 
 
 class CourseForm(forms.ModelForm):

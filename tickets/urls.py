@@ -427,6 +427,18 @@ urlpatterns = [
     # AJAX para reuniones
     path('meetings/<int:pk>/questions/<int:question_id>/answer/', views.meeting_answer_question_view, name='meeting_answer_question'),
     
+    # URLs de Solicitudes al Cliente
+    path('client-requests/', views.client_request_list, name='client_request_list'),
+    path('client-requests/create/', views.client_request_create, name='client_request_create'),
+    path('client-requests/<int:pk>/', views.client_request_detail, name='client_request_detail'),
+    path('client-requests/<int:pk>/edit/', views.client_request_edit, name='client_request_edit'),
+    path('client-requests/<int:pk>/delete/', views.client_request_delete, name='client_request_delete'),
+    path('client-requests/<int:pk>/pdf/', views.client_request_pdf, name='client_request_pdf'),
+    
+    # URLs Públicas de Solicitudes al Cliente
+    path('public/requests/<uuid:token>/', views.public_client_requests, name='public_client_requests'),
+    path('public/requests/<uuid:token>/<int:pk>/', views.public_client_request_detail, name='public_client_request_detail'),
+    
     # URLs de Capacitación (Cursos y Clases)
     path('courses/', views.course_list, name='course_list'),
     path('courses/create/', views.course_create, name='course_create'),

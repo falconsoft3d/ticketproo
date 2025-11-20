@@ -21,7 +21,8 @@ from .models import (
     WebsiteTracker, LegalContract, SupplierContractReview, PayPalPaymentLink, PayPalOrder, TodoItem,
     AIBook, AIBookChapter, EmployeeRequest, InternalAgreement, Asset, AssetHistory, UrlManager,
     ExpenseReport, ExpenseItem, ExpenseComment, MonthlyCumplimiento, DailyCumplimiento, QRCode, Quotation, QuotationLine,
-    Contact, ContactComment, ContactAttachment, QARating, GameCounter, ExerciseCounter, SportGoal, SportGoalRecord
+    Contact, ContactComment, ContactAttachment, QARating, GameCounter, ExerciseCounter, SportGoal, SportGoalRecord,
+    ClientRequest, ClientRequestResponse
 )
 
 # Configuración del sitio de administración
@@ -4888,3 +4889,79 @@ class SportGoalRecordAdmin(admin.ModelAdmin):
             '<span class="badge" style="background-color: #dc3545;"><i class="bi bi-x-circle"></i> No</span>'
         )
     goal_achieved_badge.short_description = 'Objetivo Alcanzado'
+
+
+@admin.register(ClientRequest)
+class ClientRequestAdmin(admin.ModelAdmin):
+    list_display = ('sequence', 'title', 'requested_to', 'company', 'status_badge', 'has_response', 'created_by', 'created_at')
+    list_filter = ('status', 'created_at', 'company')
+    search_fields = ('sequence', 'title', 'requested_to', 'description')
+    readonly_fields = ('sequence', 'created_at', 'updated_at')
+    ordering = ('-created_at',)
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('sequence', 'title', 'description', 'requested_to')
+        }),
+        ('Empresa y Estado', {
+            'fields': ('company', 'status', 'created_by')
+        }),
+        ('Fechas', {
+            'fields': ('created_at', 'updated_at')
+        })
+    )
+    
+    def status_badge(self, obj):
+        colors = {
+            'pending': '#ffc107',
+            'in_progress': '#17a2b8',
+            'completed': '#28a745',
+            'cancelled': '#dc3545'
+        }
+        return format_html(
+            '<span class="badge" style="background-color: {};">{}</span>',
+            colors.get(obj.status, '#6c757d'),
+            obj.get_status_display()
+        )
+    status_badge.short_description = 'Estado'
+    
+    def has_response(self, obj):
+        if hasattr(obj, 'response'):
+            return format_html(
+                '<span class="badge" style="background-color: #28a745;"><i class="bi bi-check-circle"></i> Sí</span>'
+            )
+        return format_html(
+            '<span class="badge" style="background-color: #6c757d;"><i class="bi bi-clock"></i> No</span>'
+        )
+    has_response.short_description = 'Respondida'
+
+
+@admin.register(ClientRequestResponse)
+class ClientRequestResponseAdmin(admin.ModelAdmin):
+    list_display = ('request', 'responded_by', 'has_attachment', 'responded_at')
+    list_filter = ('responded_at',)
+    search_fields = ('request__sequence', 'request__title', 'response_text')
+    readonly_fields = ('responded_at',)
+    ordering = ('-responded_at',)
+    
+    fieldsets = (
+        ('Solicitud', {
+            'fields': ('request',)
+        }),
+        ('Respuesta', {
+            'fields': ('response_text', 'attachment')
+        }),
+        ('Información', {
+            'fields': ('responded_by', 'responded_at')
+        })
+    )
+    
+    def has_attachment(self, obj):
+        if obj.attachment:
+            return format_html(
+                '<span class="badge" style="background-color: #007bff;"><i class="bi bi-paperclip"></i> Sí</span>'
+            )
+        return format_html(
+            '<span class="badge" style="background-color: #6c757d;">No</span>'
+        )
+    has_attachment.short_description = 'Adjunto'

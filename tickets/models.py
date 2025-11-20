@@ -93,6 +93,13 @@ class Company(models.Model):
         verbose_name='Token público',
         help_text='Token único para acceso público a estadísticas'
     )
+    client_requests_token = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        unique=True,
+        verbose_name='Token de Solicitudes',
+        help_text='Token único para que los clientes accedan a sus solicitudes'
+    )
     uuid = models.UUIDField(
         default=uuid.uuid4,
         editable=False,
@@ -151,6 +158,17 @@ class Company(models.Model):
         self.public_token = uuid.uuid4()
         self.save()
         return self.public_token
+    
+    def get_client_requests_url(self):
+        """Obtiene la URL pública para que el cliente vea sus solicitudes"""
+        from django.urls import reverse
+        return reverse('public_client_requests', kwargs={'token': self.client_requests_token})
+    
+    def regenerate_client_requests_token(self):
+        """Regenera el token para solicitudes de cliente"""
+        self.client_requests_token = uuid.uuid4()
+        self.save()
+        return self.client_requests_token
 
 
 class Project(models.Model):
@@ -8455,6 +8473,135 @@ class ShortUrlClick(models.Model):
     
     def __str__(self):
         return f"Clic en {self.short_url.short_code} - {self.clicked_at}"
+
+
+class ClientRequest(models.Model):
+    """Modelo para solicitudes al cliente"""
+    
+    sequence = models.CharField(
+        max_length=50,
+        unique=True,
+        verbose_name='Secuencia',
+        help_text='Número de secuencia único de la solicitud'
+    )
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título'
+    )
+    description = models.TextField(
+        verbose_name='Descripción',
+        help_text='Descripción de lo que se solicita'
+    )
+    requested_to = models.CharField(
+        max_length=200,
+        verbose_name='Solicitado a',
+        help_text='Nombre de la persona a quien se solicita'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='client_requests_created',
+        verbose_name='Creado por'
+    )
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name='Empresa',
+        help_text='Empresa asociada a la solicitud'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ('pending', 'Pendiente'),
+            ('in_progress', 'En Progreso'),
+            ('completed', 'Completada'),
+            ('cancelled', 'Cancelada')
+        ],
+        default='pending',
+        verbose_name='Estado'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Fecha de actualización'
+    )
+    
+    class Meta:
+        verbose_name = 'Solicitud al Cliente'
+        verbose_name_plural = 'Solicitudes a Clientes'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['sequence']),
+            models.Index(fields=['status', '-created_at']),
+            models.Index(fields=['company', '-created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.sequence} - {self.title}"
+    
+    def save(self, *args, **kwargs):
+        if not self.sequence and self.company:
+            # Generar secuencia automática por empresa: REQ-{company_id}-{número}
+            last_request = ClientRequest.objects.filter(company=self.company).order_by('-id').first()
+            if last_request and last_request.sequence:
+                try:
+                    # Extraer el último número de la secuencia REQ-XX-YYYY
+                    parts = last_request.sequence.split('-')
+                    last_num = int(parts[-1])
+                    self.sequence = f"REQ-{self.company.id:02d}-{last_num + 1:04d}"
+                except:
+                    self.sequence = f"REQ-{self.company.id:02d}-0001"
+            else:
+                self.sequence = f"REQ-{self.company.id:02d}-0001"
+        elif not self.sequence:
+            # Fallback si no hay empresa
+            self.sequence = f"REQ-00-0001"
+        super().save(*args, **kwargs)
+
+
+class ClientRequestResponse(models.Model):
+    """Modelo para respuestas del cliente a las solicitudes"""
+    
+    request = models.OneToOneField(
+        ClientRequest,
+        on_delete=models.CASCADE,
+        related_name='response',
+        verbose_name='Solicitud'
+    )
+    response_text = models.TextField(
+        verbose_name='Respuesta',
+        help_text='Texto de la respuesta del cliente'
+    )
+    attachment = models.FileField(
+        upload_to='client_request_attachments/%Y/%m/',
+        null=True,
+        blank=True,
+        verbose_name='Adjunto'
+    )
+    responded_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Respondido por'
+    )
+    responded_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de respuesta'
+    )
+    
+    class Meta:
+        verbose_name = 'Respuesta de Solicitud'
+        verbose_name_plural = 'Respuestas de Solicitudes'
+        ordering = ['-responded_at']
+    
+    def __str__(self):
+        return f"Respuesta a {self.request.sequence}"
 
 
 class ProductSet(models.Model):

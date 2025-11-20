@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>
+                    <i class="bi bi-file-text me-2"></i>
+                    Solicitud {{ client_request.sequence }}
+                </h2>
+                <div>
+                    <a href="{% url 'client_request_pdf' client_request.pk %}" class="btn btn-success me-2" target="_blank">
+                        <i class="bi bi-file-pdf me-2"></i>
+                        Descargar PDF
+                    </a>
+                    {% if client_request.created_by == user and not has_response %}
+                    <a href="{% url 'client_request_edit' client_request.pk %}" class="btn btn-outline-primary me-2">
+                        <i class="bi bi-pencil me-2"></i>
+                        Editar
+                    </a>
+                    <a href="{% url 'client_request_delete' client_request.pk %}" class="btn btn-outline-danger me-2">
+                        <i class="bi bi-trash me-2"></i>
+                        Eliminar
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'client_request_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>
+                        Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Información de la solicitud -->
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Información de la Solicitud
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Secuencia:</strong>
+                            <p>{{ client_request.sequence }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Estado:</strong>
+                            <p>
+                                {% if client_request.status == 'pending' %}
+                                    <span class="badge bg-warning text-dark">Pendiente</span>
+                                {% elif client_request.status == 'in_progress' %}
+                                    <span class="badge bg-info">En Progreso</span>
+                                {% elif client_request.status == 'completed' %}
+                                    <span class="badge bg-success">Completada</span>
+                                {% elif client_request.status == 'cancelled' %}
+                                    <span class="badge bg-danger">Cancelada</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <strong>Título:</strong>
+                        <p>{{ client_request.title }}</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <strong>Descripción:</strong>
+                        <p class="text-muted">{{ client_request.description|linebreaks }}</p>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <strong>Solicitado a:</strong>
+                            <p>{{ client_request.requested_to }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <strong>Empresa:</strong>
+                            <p>
+                                {% if client_request.company %}
+                                    <span class="badge bg-secondary">{{ client_request.company.name }}</span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Creado por:</strong>
+                            <p>{{ client_request.created_by.get_full_name|default:client_request.created_by.username }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Fecha:</strong>
+                            <p>{{ client_request.created_at|date:"d/m/Y H:i" }}</p>
+                        </div>
+                    </div>
+
+                    {% if client_request.company and is_agent %}
+                    <hr>
+                    <div class="alert alert-info">
+                        <h6 class="mb-2">
+                            <i class="bi bi-link-45deg me-2"></i>
+                            URL Pública del Cliente
+                        </h6>
+                        <p class="mb-2">Comparte esta URL con el cliente para que vea todas sus solicitudes:</p>
+                        <div class="input-group">
+                            <input type="text" 
+                                   class="form-control" 
+                                   value="{{ request.scheme }}://{{ request.get_host }}{% url 'public_client_requests' client_request.company.client_requests_token %}" 
+                                   id="publicUrl" 
+                                   readonly>
+                            <button class="btn btn-outline-secondary" 
+                                    type="button" 
+                                    onclick="copyToClipboard('publicUrl')">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Respuesta del cliente -->
+            {% if has_response %}
+            <div class="card shadow-sm mb-3 border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-check-circle me-2"></i>
+                        Respuesta del Cliente
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Respuesta:</strong>
+                        <p class="text-muted">{{ client_request.response.response_text|linebreaks }}</p>
+                    </div>
+
+                    {% if client_request.response.attachment %}
+                    <div class="mb-3">
+                        <strong>Adjunto:</strong>
+                        <p>
+                            <a href="{{ client_request.response.attachment.url }}" 
+                               class="btn btn-sm btn-outline-primary" 
+                               target="_blank">
+                                <i class="bi bi-download me-2"></i>
+                                Descargar Archivo
+                            </a>
+                        </p>
+                    </div>
+                    {% endif %}
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Respondido por:</strong>
+                            <p>
+                                {% if client_request.response.responded_by %}
+                                    {{ client_request.response.responded_by.get_full_name|default:client_request.response.responded_by.username }}
+                                {% else %}
+                                    <span class="text-muted">Anónimo</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Fecha de respuesta:</strong>
+                            <p>{{ client_request.response.responded_at|date:"d/m/Y H:i" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <!-- Formulario para responder -->
+            <div class="card shadow-sm mb-3 border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="bi bi-pencil me-2"></i>
+                        Responder Solicitud
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ response_form.response_text.id_for_label }}" class="form-label">
+                                {{ response_form.response_text.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ response_form.response_text }}
+                            {% if response_form.response_text.errors %}
+                                <div class="text-danger small mt-1">{{ response_form.response_text.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ response_form.attachment.id_for_label }}" class="form-label">
+                                {{ response_form.attachment.label }}
+                            </label>
+                            {{ response_form.attachment }}
+                            {% if response_form.attachment.errors %}
+                                <div class="text-danger small mt-1">{{ response_form.attachment.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-text">Puedes adjuntar un archivo si es necesario</div>
+                        </div>
+
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-send me-2"></i>
+                            Enviar Respuesta
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="bi bi-clock-history me-2"></i>
+                        Historial
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <small class="text-muted">
+                                <i class="bi bi-plus-circle me-1"></i>
+                                Creada: {{ client_request.created_at|date:"d/m/Y H:i" }}
+                            </small>
+                        </li>
+                        {% if client_request.updated_at != client_request.created_at %}
+                        <li class="mb-2">
+                            <small class="text-muted">
+                                <i class="bi bi-pencil me-1"></i>
+                                Actualizada: {{ client_request.updated_at|date:"d/m/Y H:i" }}
+                            </small>
+                        </li>
+                        {% endif %}
+                        {% if has_response %}
+                        <li class="mb-2">
+                            <small class="text-success">
+                                <i class="bi bi-check-circle me-1"></i>
+                                Respondida: {{ client_request.response.responded_at|date:"d/m/Y H:i" }}
+                            </small>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyToClipboard(elementId) {
+    const input = document.getElementById(elementId);
+    input.select();
+    input.setSelectionRange(0, 99999);
+    document.execCommand('copy');
+    
+    // Mostrar feedback
+    const button = event.currentTarget;
+    const originalHTML = button.innerHTML;
+    button.innerHTML = '<i class="bi bi-check"></i>';
+    button.classList.remove('btn-outline-secondary');
+    button.classList.add('btn-success');
+    
+    setTimeout(() => {
+        button.innerHTML = originalHTML;
+        button.classList.remove('btn-success');
+        button.classList.add('btn-outline-secondary');
+    }, 2000);
+}
+</script>
+{% endblock %}
