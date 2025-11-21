@@ -83,12 +83,49 @@ def contact_chart(request):
     labels = [item['grp'].strftime(label_fmt) for item in data if item['grp']]
     counts = [item['count'] for item in data]
     
+    # Generar datos para el gráfico de actividad de contactos (estilo GitHub)
+    from django.db.models.functions import TruncDate
+    
+    # Calcular fecha de inicio (365 días atrás)
+    end_date = timezone.now().date()
+    start_date = end_date - timedelta(days=364)  # 365 días incluyendo hoy
+    
+    # Obtener conteo de contactos por día
+    contacts_by_date = Contact.objects.filter(
+        contact_date__date__gte=start_date,
+        contact_date__date__lte=end_date
+    ).annotate(
+        date=TruncDate('contact_date')
+    ).values('date').annotate(
+        count=Count('id')
+    ).order_by('date')
+    
+    # Crear diccionario con todos los días del año (inicializados en 0)
+    activity_data = {}
+    current_date = start_date
+    while current_date <= end_date:
+        activity_data[current_date.isoformat()] = 0
+        current_date += timedelta(days=1)
+    
+    # Llenar con datos reales
+    for item in contacts_by_date:
+        activity_data[item['date'].isoformat()] = item['count']
+    
+    # Calcular estadísticas
+    total_contributions = sum(activity_data.values())
+    max_contributions = max(activity_data.values()) if activity_data.values() else 0
+    
     import json
     context = {
         'labels': json.dumps(labels),
         'counts': json.dumps(counts),
         'group_by': group_by,
-        'page_title': 'Gráfico de Creación de Contactos'
+        'page_title': 'Gráfico de Creación de Contactos',
+        'activity_data': json.dumps(activity_data),
+        'activity_total': total_contributions,
+        'activity_max': max_contributions,
+        'activity_start_date': start_date,
+        'activity_end_date': end_date,
     }
     return render(request, 'tickets/contact_chart.html', context)
 from django.shortcuts import render, redirect, get_object_or_404
@@ -586,11 +623,50 @@ def ticket_chart(request):
     counts = [item['count'] for item in data]
     
     import json
+    
+    # Generar datos para el gráfico de actividad de tickets (estilo GitHub)
+    from django.db.models.functions import TruncDate
+    
+    # Calcular fecha de inicio (365 días atrás)
+    end_date = timezone.now().date()
+    start_date = end_date - timedelta(days=364)  # 365 días incluyendo hoy
+    
+    # Usar los mismos tickets filtrados
+    # Obtener conteo de tickets por día
+    tickets_by_date = tickets.filter(
+        created_at__date__gte=start_date,
+        created_at__date__lte=end_date
+    ).annotate(
+        date=TruncDate('created_at')
+    ).values('date').annotate(
+        count=Count('id')
+    ).order_by('date')
+    
+    # Crear diccionario con todos los días del año (inicializados en 0)
+    activity_data = {}
+    current_date = start_date
+    while current_date <= end_date:
+        activity_data[current_date.isoformat()] = 0
+        current_date += timedelta(days=1)
+    
+    # Llenar con datos reales
+    for item in tickets_by_date:
+        activity_data[item['date'].isoformat()] = item['count']
+    
+    # Calcular estadísticas
+    total_contributions = sum(activity_data.values())
+    max_contributions = max(activity_data.values()) if activity_data.values() else 0
+    
     context = {
         'labels': json.dumps(labels),
         'counts': json.dumps(counts),
         'group_by': group_by,
-        'page_title': 'Gráfico de Creación de Tickets'
+        'page_title': 'Gráfico de Creación de Tickets',
+        'activity_data': json.dumps(activity_data),
+        'activity_total': total_contributions,
+        'activity_max': max_contributions,
+        'activity_start_date': start_date,
+        'activity_end_date': end_date,
     }
     return render(request, 'tickets/ticket_chart.html', context)
 
@@ -21173,7 +21249,7 @@ def short_url_stats(request, pk):
     """Vista para ver estadísticas detalladas de una URL corta"""
     from django.db.models import Count
     from django.db.models.functions import TruncDate, TruncMonth
-    from datetime import timedelta
+    from datetime import timedelta, date
     import json
     
     short_url = get_object_or_404(ShortUrl, pk=pk, created_by=request.user)
@@ -21187,6 +21263,40 @@ def short_url_stats(request, pk):
     # IPs y países únicos (de los registros detallados disponibles)
     unique_ips = clicks.values('ip_address').distinct().count()
     unique_countries = clicks.exclude(country='').values('country').distinct().count()
+    
+    # ==================== DATOS PARA GRÁFICO DE ACTIVIDAD ESTILO GITHUB ====================
+    # Calcular últimos 365 días para el gráfico de contribuciones
+    end_date = timezone.now().date()
+    start_date = end_date - timedelta(days=364)
+    
+    # Obtener clicks por día en los últimos 365 días
+    clicks_by_day_contribution = clicks.filter(
+        clicked_at__date__gte=start_date,
+        clicked_at__date__lte=end_date
+    ).annotate(
+        date=TruncDate('clicked_at')
+    ).values('date').annotate(
+        count=Count('id')
+    ).order_by('date')
+    
+    # Crear diccionario con todos los días inicializados en 0
+    activity_data = {}
+    current_date = start_date
+    while current_date <= end_date:
+        activity_data[current_date.isoformat()] = 0
+        current_date += timedelta(days=1)
+    
+    # Llenar con los datos reales
+    for item in clicks_by_day_contribution:
+        activity_data[item['date'].isoformat()] = item['count']
+    
+    # Calcular total y máximo para el gráfico
+    activity_total = sum(activity_data.values())
+    activity_max = max(activity_data.values()) if activity_data.values() else 0
+    
+    # Serializar datos para JavaScript
+    activity_data_json = json.dumps(activity_data)
+    # ==================== FIN DATOS GRÁFICO DE ACTIVIDAD ====================
     
     # Estadísticas por día (últimos 30 días)
     thirty_days_ago = timezone.now() - timedelta(days=30)
@@ -21275,6 +21385,13 @@ def short_url_stats(request, pk):
         
         'clicks_by_country_labels': json.dumps(clicks_by_country_labels),
         'clicks_by_country_values': json.dumps(clicks_by_country_values),
+        
+        # Datos para gráfico de actividad estilo GitHub
+        'activity_data': activity_data_json,
+        'activity_total': activity_total,
+        'activity_max': activity_max,
+        'activity_start_date': start_date.isoformat(),
+        'activity_end_date': end_date.isoformat(),
         
         # Datos para tablas
         'top_cities': top_cities,
