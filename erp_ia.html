@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Tipo ERP</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            /* Colores base inspirados en la imagen */
+            --bg-gradient-start: #f3f4f6; 
+            --bg-gradient-end: #e0e7ff; /* Tono lila suave */
+            --text-color: #374151;
+            --icon-bg: #ffffff;
+            --hover-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: var(--text-color);
+        }
+
+        /* --- Barra de Navegación Superior --- */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 1.5rem;
+            background-color: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(10px); /* Efecto vidrio */
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .nav-left i {
+            font-size: 1.2rem;
+            color: #4b5563;
+            cursor: pointer;
+            margin-right: 15px;
+        }
+
+        .nav-right {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .nav-item {
+            position: relative;
+            cursor: pointer;
+            color: #4b5563;
+            font-size: 1.1rem;
+            transition: color 0.2s;
+        }
+
+        .nav-item:hover {
+            color: #111827;
+        }
+
+        /* Badge de notificaciones */
+        .badge {
+            position: absolute;
+            top: -5px;
+            right: -8px;
+            background-color: #ef4444;
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 5px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background-color: #4f46e5;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        /* --- Contenedor Principal (Grid) --- */
+        .dashboard-container {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            display: flex;
+            align-items: center; /* Centrar verticalmente si hay pocos iconos */
+            justify-content: center;
+        }
+
+        .app-grid {
+            display: grid;
+            /* Grid responsivo: crea columnas automáticas de mínimo 100px */
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); 
+            gap: 2rem;
+            width: 100%;
+        }
+
+        /* --- Tarjetas de Aplicación --- */
+        .app-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: var(--text-color);
+            transition: transform 0.2s ease;
+            cursor: pointer;
+        }
+
+        .app-card:hover {
+            transform: translateY(-5px); /* Efecto de elevación */
+        }
+
+        .icon-box {
+            width: 75px;
+            height: 75px;
+            background-color: var(--icon-bg);
+            border-radius: 12px; /* Bordes redondeados estilo Odoo */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 10px;
+            transition: box-shadow 0.2s ease;
+        }
+
+        .app-card:hover .icon-box {
+            box-shadow: var(--hover-shadow);
+        }
+
+        .icon-box i {
+            font-size: 2rem;
+        }
+
+        .app-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-align: center;
+            color: #1f2937;
+        }
+
+        /* --- Colores Específicos para Iconos --- */
+        /* Usamos clases auxiliares para dar color a cada icono como en la imagen */
+        .text-purple { color: #7c3aed; }
+        .text-blue { color: #2563eb; }
+        .text-green { color: #059669; }
+        .text-orange { color: #ea580c; }
+        .text-red { color: #dc2626; }
+        .text-teal { color: #0d9488; }
+        .text-yellow { color: #ca8a04; }
+        .text-pink { color: #db2777; }
+
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-left">
+            <i class="fa-solid fa-grip-vertical"></i>
+            <span style="font-weight: 600; color: #374151;">Home</span>
+        </div>
+        <div class="nav-right">
+            <div class="nav-item" title="Conversaciones">
+                <i class="fa-regular fa-comments"></i>
+                <span class="badge">3</span>
+            </div>
+            <div class="nav-item" title="Actividad">
+                <i class="fa-regular fa-clock"></i>
+            </div>
+            <div class="user-avatar">DB</div>
+        </div>
+    </nav>
+
+    <main class="dashboard-container">
+        <div class="app-grid">
+            
+            <a href="#" class="app-card">
+                <div class="icon-box">
+                    <i class="fa-solid fa-chart-line text-purple"></i>
+                </div>
+                <span class="app-name">Tableros</span>
+            </a>
+
+            <a href="#" class="app-card">
+                <div class="icon-box">
+                    <i class="fa-solid fa-chart-column text-blue"></i>
+                </div>
+                <span class="app-name">Ventas</span>
+            </a>
+
+            <a href="#" class="app-card">
+                <div class="icon-box">
+                    <i class="fa-solid fa-globe text-teal"></i>
+                </div>
+                <span class="app-name">Sitio Web</span>
+            </a>
+
+            <a href="#" class="app-card">
+                <div class="icon-box">
+                    <i class="fa-solid fa-calculator text-orange"></i>
+                </div>
+                <span class="app-name">Contabilidad</span>
+            </a>
+
+            <a href="#" class="app-card">
+                <div class="icon-box">
+                    <i class="fa-solid fa-handshake text-green"></i>
+                </div>
+                <span class="app-name">CRM</span>
+            </a>
+
+            <a href="#" class="app-card">
+                <div class="icon-box">
+                    <i class="fa-solid fa-boxes-stacked text-yellow"></i>
+                </div>
+                <span class="app-name">Inventario</span>
+            </a>
+
+            <a href="#" class="app-card">
+                <div class="icon-box">
+                    <i class="fa-solid fa-list-check text-pink"></i>
+                </div>
+                <span class="app-name">Proyectos</span>
+            </a>
+
+            <a href="#" class="app-card">
+                <div class="icon-box">
+                    <i class="fa-solid fa-file-invoice-dollar text-blue"></i>
+                </div>
+                <span class="app-name">Facturación</span>
+            </a>
+
+            <a href="#" class="app-card">
+                <div class="icon-box">
+                    <i class="fa-solid fa-users text-purple"></i>
+                </div>
+                <span class="app-name">Empleados</span>
+            </a>
+
+            <a href="#" class="app-card">
+                <div class="icon-box">
+                    <i class="fa-solid fa-cash-register text-green"></i>
+                </div>
+                <span class="app-name">PdV</span>
+            </a>
+
+            <a href="#" class="app-card">
+                <div class="icon-box">
+                    <i class="fa-solid fa-bullhorn text-red"></i>
+                </div>
+                <span class="app-name">Marketing</span>
+            </a>
+
+            <a href="#" class="app-card">
+                <div class="icon-box">
+                    <i class="fa-solid fa-gear text-gray"></i>
+                </div>
+                <span class="app-name">Ajustes</span>
+            </a>
+
+        </div>
+    </main>
+
+</body>
+</html>
