@@ -59,15 +59,24 @@
     </button>
 
     <div class="quotation-container">
-        <!-- Header -->
-        <div class="header-section-1 m-4 rounded">
+        <!-- Header con información de la empresa -->
+        <div class="bg-light border-bottom py-4">
             <div class="container">
-                <div class="text-center">
-                    <h1 class="display-6 mb-2">
-                        <i class="bi bi-file-earmark-text"></i>
-                        {{ quotation.sequence }}
-                    </h1>
-                    <p class="lead mb-0">Cotización para {{ quotation.company.name }}</p>
+                <div class="row align-items-center">
+                    <div class="col-md-4 text-center">
+                        {% if seller_company and seller_company.logo %}
+                            <img src="{{ seller_company.logo.url }}" alt="{{ seller_company.name }}" class="img-fluid" style="max-height: 80px;">
+                        {% else %}
+                            <h4 class="mb-0">{{ seller_company.name|default:"Empresa" }}</h4>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-8 text-center">
+                        <h1 class="display-6 mb-2">
+                            <i class="bi bi-file-earmark-text"></i>
+                            {{ quotation.sequence }}
+                        </h1>
+                        <p class="lead mb-0">Cotización para {{ quotation.company.name }}</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -108,12 +117,39 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <p><strong>Empresa:</strong> {{ quotation.company.name }}</p>
-                            <p><strong>Vendedor:</strong> {{ quotation.salesperson.get_full_name|default:quotation.salesperson.username }}</p>
+                            <h6 class="text-primary mb-3"><i class="bi bi-building"></i> Empresa</h6>
+                            {% if seller_company %}
+                                <p class="mb-1"><strong>{{ seller_company.name }}</strong></p>
+                                {% if seller_company.tax_id %}
+                                    <p class="mb-1"><small class="text-muted">NIF/CIF: {{ seller_company.tax_id }}</small></p>
+                                {% endif %}
+                                {% if seller_company.address %}
+                                    <p class="mb-1"><small>{{ seller_company.address }}</small></p>
+                                {% endif %}
+                                <p class="mb-1">
+                                    {% if seller_company.city %}{{ seller_company.city }}{% endif %}
+                                    {% if seller_company.postal_code %}, {{ seller_company.postal_code }}{% endif %}
+                                </p>
+                                {% if seller_company.state %}
+                                    <p class="mb-1"><small>{{ seller_company.state }}{% if seller_company.country %}, {{ seller_company.country }}{% endif %}</small></p>
+                                {% endif %}
+                            {% else %}
+                                <p class="mb-1"><strong>Vendedor:</strong> {{ quotation.salesperson.get_full_name|default:quotation.salesperson.username }}</p>
+                            {% endif %}
                         </div>
                         <div class="col-md-6">
-                            <p><strong>Fecha:</strong> {{ quotation.date|date:"d/m/Y" }}</p>
-                            <p><strong>Secuencia:</strong> {{ quotation.sequence }}</p>
+                            <h6 class="text-primary mb-3"><i class="bi bi-person"></i> Cliente</h6>
+                            <p class="mb-1"><strong>{{ quotation.company.name }}</strong></p>
+                            {% if quotation.company.address %}
+                                <p class="mb-1"><small>{{ quotation.company.address }}</small></p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <p class="mb-1"><strong>Fecha:</strong> {{ quotation.date|date:"d/m/Y" }}</p>
+                            <p class="mb-1"><strong>Secuencia:</strong> {{ quotation.sequence }}</p>
                         </div>
                     </div>
                     
@@ -124,7 +160,19 @@
                                 <i class="bi bi-hourglass-split"></i>
                                 <strong>Fecha de Vencimiento:</strong> {{ quotation.expiry_date|date:"d/m/Y" }}
                                 <br>
-                                <small>{{ quotation.get_expiry_status_display }}</small>
+                                {% if not quotation.is_expired %}
+                                <div class="mt-2">
+                                    <strong>Tiempo restante:</strong>
+                                    <div id="countdown" class="fs-5 mt-2" style="font-family: 'Courier New', monospace;">
+                                        <span id="days">0</span> días
+                                        <span id="hours">00</span> horas
+                                        <span id="minutes">00</span> minutos
+                                        <span id="seconds">00</span> segundos
+                                    </div>
+                                </div>
+                                {% else %}
+                                <small class="text-danger">{{ quotation.get_expiry_status_display }}</small>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -413,6 +461,34 @@
         
         pendingAction = null;
     });
+
+    // Contador regresivo
+    {% if quotation.expiry_date and not quotation.is_expired %}
+    function updateCountdown() {
+        const expiryDate = new Date("{{ quotation.expiry_date|date:'Y-m-d' }}T23:59:59").getTime();
+        const now = new Date().getTime();
+        const distance = expiryDate - now;
+
+        if (distance < 0) {
+            document.getElementById('countdown').innerHTML = '<span class="text-danger">¡Cotización vencida!</span>';
+            return;
+        }
+
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        document.getElementById('days').textContent = days;
+        document.getElementById('hours').textContent = hours.toString().padStart(2, '0');
+        document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
+        document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
+    }
+
+    // Actualizar cada segundo
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+    {% endif %}
     </script>
 </body>
 </html>

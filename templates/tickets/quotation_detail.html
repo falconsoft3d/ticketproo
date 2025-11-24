@@ -368,6 +368,73 @@
                     </div>
                     {% endif %}
 
+                    <!-- Estadísticas de Visitas -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0">
+                                <i class="bi bi-eye"></i>
+                                Estadísticas de Visitas
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-12 text-center">
+                                    <h3 class="fw-bold text-info mb-0">{{ total_views }}</h3>
+                                    <small class="text-muted">Visitas Totales</small>
+                                </div>
+                            </div>
+                            
+                            {% if views_by_country %}
+                            <hr>
+                            <h6 class="mb-3">Visitas por País:</h6>
+                            <div class="list-group list-group-flush">
+                                {% for view in views_by_country %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                    <span>
+                                        {% if view.country_code and view.country_code != 'XX' %}
+                                            <img src="https://flagcdn.com/16x12/{{ view.country_code|lower }}.png" 
+                                                 alt="{{ view.country }}" 
+                                                 class="me-2"
+                                                 onerror="this.style.display='none'">
+                                        {% endif %}
+                                        {{ view.country }}
+                                    </span>
+                                    <span class="badge bg-info rounded-pill">{{ view.count }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <p class="text-muted text-center mb-0">
+                                <i class="bi bi-info-circle"></i>
+                                Sin visitas aún
+                            </p>
+                            {% endif %}
+                            
+                            {% if recent_views %}
+                            <hr>
+                            <h6 class="mb-2">Últimas Visitas:</h6>
+                            <div class="small">
+                                {% for view in recent_views|slice:":5" %}
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <div>
+                                            {% if view.country_code and view.country_code != 'XX' %}
+                                                <img src="https://flagcdn.com/16x12/{{ view.country_code|lower }}.png" 
+                                                     alt="{{ view.country }}" 
+                                                     class="me-1"
+                                                     onerror="this.style.display='none'">
+                                            {% endif %}
+                                            {{ view.country }}
+                                        </div>
+                                        <small class="text-muted">{{ view.viewed_at|date:"d/m/Y H:i" }}</small>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
                     <!-- Información de la empresa -->
                     <div class="card">
                         <div class="card-header">

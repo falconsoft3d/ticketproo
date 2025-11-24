@@ -115,6 +115,86 @@ class Company(models.Model):
         help_text='Objetivos, metas y KPIs estratégicos de la empresa. Estos serán considerados en los resúmenes ejecutivos generados por IA.'
     )
     
+    # Información fiscal y de ubicación
+    tax_id = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name='NIF/CIF/Tax ID',
+        help_text='Número de identificación fiscal'
+    )
+    city = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Ciudad',
+        help_text='Ciudad de la empresa'
+    )
+    state = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Estado/Provincia',
+        help_text='Estado o provincia de la empresa'
+    )
+    postal_code = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name='Código Postal',
+        help_text='Código postal'
+    )
+    country = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='País',
+        help_text='País de la empresa'
+    )
+    
+    # Información bancaria
+    bank_name = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Nombre del Banco',
+        help_text='Nombre del banco'
+    )
+    bank_url = models.URLField(
+        blank=True,
+        verbose_name='URL del Banco',
+        help_text='Sitio web del banco'
+    )
+    bank_account_holder = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Titular de la Cuenta',
+        help_text='Nombre del titular de la cuenta bancaria'
+    )
+    bank_account = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Número de Cuenta',
+        help_text='IBAN o número de cuenta bancaria'
+    )
+    bank_swift = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name='SWIFT/BIC',
+        help_text='Código SWIFT o BIC del banco'
+    )
+    
+    # Condiciones de pago
+    payment_terms = models.TextField(
+        blank=True,
+        verbose_name='Condiciones de Pago',
+        help_text='Términos y condiciones de pago (se mostrarán en las cotizaciones)'
+    )
+    payment_terms_description = models.TextField(
+        blank=True,
+        verbose_name='Descripción de Condiciones de Pago',
+        help_text='Descripción detallada de las condiciones de pago para las cotizaciones'
+    )
+    quotation_general_description = models.TextField(
+        blank=True,
+        verbose_name='Descripción General de Cotizaciones',
+        help_text='Descripción general que aparecerá en todas las cotizaciones de esta empresa'
+    )
+    
     class Meta:
         ordering = ['name']
         verbose_name = 'Empresa'
@@ -266,7 +346,7 @@ class Project(models.Model):
         return is_agent(user) or user == self.created_by
     
     def generate_public_share_token(self):
-        """Genera un token único para compartir el proyecto públicamente"""
+        """Genera un token unico para compartir el proyecto publicamente"""
         if not self.public_share_token:
             import secrets
             self.public_share_token = secrets.token_urlsafe(32)
@@ -274,10 +354,9 @@ class Project(models.Model):
         return self.public_share_token
     
     def get_public_share_url(self):
-        """Obtiene la URL pública para compartir el proyecto"""
         if not self.public_share_token:
             self.generate_public_share_token()
-        return f"/public/project/{self.public_share_token}/"
+        return "/public/project/" + str(self.public_share_token) + "/"
     
     def get_tickets_count(self):
         """Obtiene el total de tickets relacionados con este proyecto"""
@@ -533,17 +612,17 @@ class Ticket(models.Model):
         verbose_name_plural = 'Tickets'
     
     def generate_ticket_number(self):
-        """Genera un número de ticket único con formato XX-XXX"""
+        """Genera un numero de ticket unico con formato XX-XXX"""
         if self.ticket_number:
             return self.ticket_number
             
-        # Formatear ID del usuario con ceros a la izquierda (2 dígitos)
-        user_id_formatted = f"{self.created_by.id:02d}"
+        # Formatear ID del usuario con ceros a la izquierda (2 digitos)
+        user_id_formatted = "{:02d}".format(self.created_by.id)
         
-        # Buscar el último ticket creado por este usuario
+        # Buscar el ultimo ticket creado por este usuario
         last_ticket = Ticket.objects.filter(
             created_by=self.created_by,
-            ticket_number__startswith=f"{user_id_formatted}-"
+            ticket_number__startswith=user_id_formatted + "-"
         ).exclude(id=self.id).order_by('-ticket_number').first()
         
         if last_ticket and last_ticket.ticket_number:
@@ -15727,6 +15806,60 @@ class Quotation(models.Model):
         }
         color = badge_colors.get(self.client_status, 'secondary')
         return f'<span class="badge bg-{color}">{self.get_client_status_display()}</span>'
+
+
+class QuotationView(models.Model):
+    """Modelo para registrar las visitas a las cotizaciones publicas"""
+    
+    quotation = models.ForeignKey(
+        'Quotation',
+        on_delete=models.CASCADE,
+        verbose_name='Cotizacion',
+        related_name='views'
+    )
+    
+    viewed_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de Visita'
+    )
+    
+    ip_address = models.GenericIPAddressField(
+        verbose_name='Direccion IP',
+        null=True,
+        blank=True
+    )
+    
+    country = models.CharField(
+        max_length=100,
+        verbose_name='Pais',
+        blank=True,
+        help_text='Pais desde donde se accedio'
+    )
+    
+    country_code = models.CharField(
+        max_length=2,
+        verbose_name='Codigo de Pais',
+        blank=True,
+        help_text='Codigo ISO del pais (ej: US, MX, ES)'
+    )
+    
+    user_agent = models.TextField(
+        verbose_name='Navegador/Dispositivo',
+        blank=True
+    )
+    
+    class Meta:
+        ordering = ['-viewed_at']
+        verbose_name = 'Visita a Cotizacion'
+        verbose_name_plural = 'Visitas a Cotizaciones'
+        indexes = [
+            models.Index(fields=['quotation']),
+            models.Index(fields=['viewed_at']),
+            models.Index(fields=['country']),
+        ]
+    
+    def __str__(self):
+        return f"{self.quotation.sequence} - {self.viewed_at.strftime('%Y-%m-%d %H:%M')} - {self.country or 'Desconocido'}"
 
 
 class QuotationLine(models.Model):

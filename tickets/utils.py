@@ -402,3 +402,76 @@ def get_weather_info(city='Valencia', country_code='ES'):
             'success': False,
             'error': str(e)
         }
+
+
+def get_country_from_ip(ip_address):
+    """
+    Obtiene el país desde una dirección IP usando la API gratuita de ip-api.com
+    Retorna un diccionario con country, country_code, city, etc.
+    """
+    import requests
+    
+    if not ip_address or ip_address in ['127.0.0.1', 'localhost', '::1']:
+        return {
+            'country': 'Local',
+            'country_code': 'LO',
+            'city': 'Local',
+            'success': False
+        }
+    
+    try:
+        # API gratuita sin necesidad de API key
+        # Límite: 45 peticiones por minuto
+        url = f"http://ip-api.com/json/{ip_address}?fields=status,country,countryCode,city,lat,lon,timezone"
+        response = requests.get(url, timeout=3)
+        
+        if response.status_code != 200:
+            return {
+                'country': 'Desconocido',
+                'country_code': 'XX',
+                'city': '',
+                'success': False
+            }
+        
+        data = response.json()
+        
+        if data.get('status') == 'success':
+            return {
+                'country': data.get('country', 'Desconocido'),
+                'country_code': data.get('countryCode', 'XX'),
+                'city': data.get('city', ''),
+                'latitude': data.get('lat', 0),
+                'longitude': data.get('lon', 0),
+                'timezone': data.get('timezone', ''),
+                'success': True
+            }
+        else:
+            return {
+                'country': 'Desconocido',
+                'country_code': 'XX',
+                'city': '',
+                'success': False
+            }
+    
+    except Exception as e:
+        logger.error(f"Error obteniendo país desde IP {ip_address}: {str(e)}")
+        return {
+            'country': 'Error',
+            'country_code': 'XX',
+            'city': '',
+            'success': False,
+            'error': str(e)
+        }
+
+
+def get_client_ip(request):
+    """
+    Obtiene la dirección IP real del cliente considerando proxies y load balancers
+    """
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        # La primera IP es la del cliente original
+        ip = x_forwarded_for.split(',')[0].strip()
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip

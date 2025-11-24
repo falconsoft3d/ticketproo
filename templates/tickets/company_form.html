@@ -137,6 +137,189 @@
                             {% endif %}
                         </div>
 
+                        <div class="mb-3">
+                            <label for="{{ form.business_objectives.id_for_label }}" class="form-label fw-bold">
+                                <i class="bi bi-bullseye me-1"></i>
+                                {{ form.business_objectives.label }}
+                            </label>
+                            {{ form.business_objectives }}
+                            {% if form.business_objectives.errors %}
+                                {% for error in form.business_objectives.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                            <small class="text-muted">Objetivos, metas y KPIs estratégicos de la empresa</small>
+                        </div>
+
+                        <!-- Sección de Información Fiscal -->
+                        <hr class="my-4">
+                        <h5 class="mb-3"><i class="bi bi-card-list me-2"></i>Información Fiscal</h5>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.tax_id.id_for_label }}" class="form-label fw-bold">
+                                        {{ form.tax_id.label }}
+                                    </label>
+                                    {{ form.tax_id }}
+                                    {% if form.tax_id.errors %}
+                                        {% for error in form.tax_id.errors %}
+                                            <div class="text-danger small mt-1">{{ error }}</div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.city.id_for_label }}" class="form-label fw-bold">
+                                        {{ form.city.label }}
+                                    </label>
+                                    {{ form.city }}
+                                    {% if form.city.errors %}
+                                        {% for error in form.city.errors %}
+                                            <div class="text-danger small mt-1">{{ error }}</div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.postal_code.id_for_label }}" class="form-label fw-bold">
+                                        {{ form.postal_code.label }}
+                                    </label>
+                                    {{ form.postal_code }}
+                                    {% if form.postal_code.errors %}
+                                        {% for error in form.postal_code.errors %}
+                                            <div class="text-danger small mt-1">{{ error }}</div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.state.id_for_label }}" class="form-label fw-bold">
+                                        {{ form.state.label }}
+                                    </label>
+                                    {{ form.state }}
+                                    {% if form.state.errors %}
+                                        {% for error in form.state.errors %}
+                                            <div class="text-danger small mt-1">{{ error }}</div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.country.id_for_label }}" class="form-label fw-bold">
+                                        {{ form.country.label }}
+                                    </label>
+                                    {{ form.country }}
+                                    {% if form.country.errors %}
+                                        {% for error in form.country.errors %}
+                                            <div class="text-danger small mt-1">{{ error }}</div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sección de Información Bancaria -->
+                        <hr class="my-4">
+                        <h5 class="mb-3"><i class="bi bi-bank me-2"></i>Información Bancaria</h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.bank_name.id_for_label }}" class="form-label fw-bold">
+                                        {{ form.bank_name.label }}
+                                    </label>
+                                    {{ form.bank_name }}
+                                    {% if form.bank_name.errors %}
+                                        {% for error in form.bank_name.errors %}
+                                            <div class="text-danger small mt-1">{{ error }}</div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.bank_url.id_for_label }}" class="form-label fw-bold">
+                                        {{ form.bank_url.label }}
+                                    </label>
+                                    {{ form.bank_url }}
+                                    {% if form.bank_url.errors %}
+                                        {% for error in form.bank_url.errors %}
+                                            <div class="text-danger small mt-1">{{ error }}</div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.bank_account_holder.id_for_label }}" class="form-label fw-bold">
+                                        {{ form.bank_account_holder.label }}
+                                    </label>
+                                    {{ form.bank_account_holder }}
+                                    {% if form.bank_account_holder.errors %}
+                                        {% for error in form.bank_account_holder.errors %}
+                                            <div class="text-danger small mt-1">{{ error }}</div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.bank_account.id_for_label }}" class="form-label fw-bold">
+                                        {{ form.bank_account.label }}
+                                    </label>
+                                    {{ form.bank_account }}
+                                    {% if form.bank_account.errors %}
+                                        {% for error in form.bank_account.errors %}
+                                            <div class="text-danger small mt-1">{{ error }}</div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.bank_swift.id_for_label }}" class="form-label fw-bold">
+                                {{ form.bank_swift.label }}
+                            </label>
+                            {{ form.bank_swift }}
+                            {% if form.bank_swift.errors %}
+                                {% for error in form.bank_swift.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <!-- Sección de Condiciones de Pago y Cotizaciones -->
+                        <hr class="my-4">
+                        <h5 class="mb-3"><i class="bi bi-file-text me-2"></i>Condiciones de Pago y Cotizaciones</h5>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.payment_terms.id_for_label }}" class="form-label fw-bold">
+                                {{ form.payment_terms.label }}
+                            </label>
+                            {{ form.payment_terms }}
+                            {% if form.payment_terms.errors %}
+                                {% for error in form.payment_terms.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                            <small class="text-muted">Términos y condiciones de pago que se mostrarán en las cotizaciones (se mostrará en el PDF)</small>
+                        </div>
+
+                        <hr class="my-4">
+                        <h5 class="mb-3"><i class="bi bi-palette me-2"></i>Personalización</h5>
+
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">

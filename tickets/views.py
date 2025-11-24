@@ -29,6 +29,7 @@ import json
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
 from reportlab.lib import colors
+import qrcode
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
@@ -36912,6 +36913,11 @@ def quotation_list_view(request):
     total_amount = sum(quotation.get_total_amount() for quotation in quotations)
     stats['total_amount'] = total_amount
     
+    # Calcular total de visitas públicas
+    from .models import QuotationView
+    total_views = QuotationView.objects.filter(quotation__in=quotations).count()
+    stats['total_views'] = total_views
+    
     # Para los filtros
     from .models import Company
     from django.contrib.auth.models import User
@@ -37018,6 +37024,7 @@ def quotation_create_view(request):
 def quotation_detail_view(request, quotation_id):
     """Vista para ver detalles de una cotización"""
     from .models import Quotation, SystemConfiguration
+    from django.db.models import Count
     
     # Obtener configuración del sistema para la moneda
     config = SystemConfiguration.get_config()
@@ -37025,10 +37032,22 @@ def quotation_detail_view(request, quotation_id):
     
     quotation = get_object_or_404(Quotation, id=quotation_id)
     
+    # Obtener estadísticas de visitas
+    total_views = quotation.views.count()
+    views_by_country = quotation.views.values('country', 'country_code').annotate(
+        count=Count('id')
+    ).order_by('-count')
+    
+    # Obtener las últimas 10 visitas
+    recent_views = quotation.views.all()[:10]
+    
     context = {
         'page_title': f'Cotización {quotation.sequence}',
         'quotation': quotation,
         'currency_symbol': currency_symbol,
+        'total_views': total_views,
+        'views_by_country': views_by_country,
+        'recent_views': recent_views,
     }
     
     return render(request, 'tickets/quotation_detail.html', context)
@@ -37278,7 +37297,7 @@ def quotation_pdf_view(request, quotation_id):
     # Crear el documento PDF
     doc = SimpleDocTemplate(buffer, pagesize=A4,
                            rightMargin=72, leftMargin=72,
-                           topMargin=72, bottomMargin=18)
+                           topMargin=36, bottomMargin=18)
     
     # Crear lista de elementos para el PDF
     elements = []
@@ -37305,25 +37324,89 @@ def quotation_pdf_view(request, quotation_id):
     )
     
     # Información de la empresa emisora (parte superior derecha)
-    company_info = """
-    <b>Manufactura y Servicios TACA</b><br/>
-    CALLE 2DA TRANS LOCAL 22 ZONA<br/>
-    INDUSTRIAL 2<br/>
-    ACARIGUA PORTUGUESA ZONA POSTAL<br/>
-    3301<br/><br/>
-    Venezuela<br/>
-    NIF: V-14.677.128
-    """
-    elements.append(Paragraph(company_info, company_style))
-    elements.append(Spacer(1, 20))
+    # Obtener la empresa del usuario que creó la cotización
+    user_company = None
+    if hasattr(quotation.salesperson, 'profile') and quotation.salesperson.profile.company:
+        user_company = quotation.salesperson.profile.company
     
-    # Información del cliente (parte inferior izquierda) 
-    client_info = f"""
-    <b>{quotation.company.name}</b><br/>
-    {quotation.company.address or ''}<br/>
-    {quotation.company.phone or ''}<br/>
-    {quotation.company.email or ''}
-    """
+    if user_company:
+        # Construir líneas solo si hay datos
+        company_lines = []
+        if user_company.name:
+            company_lines.append(user_company.name)
+        if user_company.address:
+            company_lines.append(user_company.address)
+        
+        # Ciudad y código postal en la misma línea
+        city_line = []
+        if user_company.city:
+            city_line.append(user_company.city)
+        if user_company.postal_code:
+            city_line.append(user_company.postal_code)
+        if city_line:
+            company_lines.append(' '.join(city_line))
+        
+        if user_company.state:
+            company_lines.append(user_company.state)
+        if user_company.country:
+            company_lines.append(user_company.country)
+        if user_company.tax_id:
+            company_lines.append(f"NIF: {user_company.tax_id}")
+        
+        # Agregar información de contacto
+        if user_company.phone:
+            company_lines.append(user_company.phone)
+        if user_company.email:
+            company_lines.append(user_company.email)
+        if user_company.website:
+            company_lines.append(user_company.website)
+        
+        # Unir todas las líneas
+        company_info = '<br/>'.join(company_lines)
+    else:
+        # Fallback a datos por defecto si no hay empresa asociada
+        company_info = """Manufactura y Servicios TACA<br/>
+CALLE 2DA TRANS LOCAL 22 ZONA<br/>
+INDUSTRIAL 2<br/>
+ACARIGUA PORTUGUESA ZONA POSTAL<br/>
+3301<br/>
+Venezuela<br/>
+NIF: V-14.677.128"""
+    
+    # Información del cliente (parte izquierda)
+    client_lines = []
+    # Agregar etiqueta "Contacto"
+    client_lines.append("Contacto")
+    if quotation.company.name:
+        client_lines.append(quotation.company.name)
+    if quotation.company.address:
+        client_lines.append(quotation.company.address)
+    
+    # Ciudad y código postal del cliente
+    client_city_line = []
+    if quotation.company.city:
+        client_city_line.append(quotation.company.city)
+    if quotation.company.postal_code:
+        client_city_line.append(quotation.company.postal_code)
+    if client_city_line:
+        client_lines.append(' '.join(client_city_line))
+    
+    if quotation.company.state:
+        client_lines.append(quotation.company.state)
+    if quotation.company.country:
+        client_lines.append(quotation.company.country)
+    if quotation.company.tax_id:
+        client_lines.append(f"NIF: {quotation.company.tax_id}")
+    
+    # Información de contacto del cliente
+    if quotation.company.phone:
+        client_lines.append(quotation.company.phone)
+    if quotation.company.email:
+        client_lines.append(quotation.company.email)
+    if quotation.company.website:
+        client_lines.append(quotation.company.website)
+    
+    client_info = '<br/>'.join(client_lines) if client_lines else quotation.company.name
     
     client_style = ParagraphStyle(
         'Client',
@@ -37331,32 +37414,93 @@ def quotation_pdf_view(request, quotation_id):
         fontSize=10,
         alignment=0,  # Left
     )
-    elements.append(Paragraph(client_info, client_style))
-    elements.append(Spacer(1, 30))
+    
+    # Crear tabla con empresa y cliente lado a lado
+    header_data = [[Paragraph(client_info, client_style), Paragraph(company_info, company_style)]]
+    header_table = Table(header_data, colWidths=[3.7*inch, 3.7*inch])
+    header_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+        ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+    ]))
+    elements.append(header_table)
+    elements.append(Spacer(1, 20))
     
     # Título del documento
-    elements.append(Paragraph(f'Pedido # {quotation.sequence}', title_style))
+    elements.append(Paragraph(f'Cotización # {quotation.sequence}', title_style))
     
-    # Información del pedido
-    order_data = [
-        ['Fecha orden:', quotation.date.strftime('%d/%m/%Y %H:%M:%S')],
-        ['Comercial:', quotation.salesperson.get_full_name() or quotation.salesperson.username],
+    # Información de la cotización - izquierda y derecha
+    left_data = [
+        ['Fecha de cotización:', quotation.date.strftime('%d/%m/%Y')],
+        ['Fecha de vencimiento:', quotation.expiry_date.strftime('%d/%m/%Y') if quotation.expiry_date else 'No especificada'],
     ]
     
-    order_table = Table(order_data, colWidths=[2*inch, 3*inch])
-    order_table.setStyle(TableStyle([
+    # Información del comercial - derecha
+    commercial_lines = []
+    commercial_name = quotation.salesperson.get_full_name() or quotation.salesperson.username
+    commercial_lines.append(f"<b>Comercial:</b> {commercial_name}")
+    
+    # Email del usuario
+    if quotation.salesperson.email:
+        commercial_lines.append(quotation.salesperson.email)
+    
+    # Teléfono del perfil del usuario
+    try:
+        profile = quotation.salesperson.profile
+        if profile and profile.phone:
+            commercial_lines.append(profile.phone)
+    except Exception:
+        # Si no hay perfil, intentar obtener el teléfono de la empresa del vendedor
+        try:
+            if user_company and user_company.phone:
+                commercial_lines.append(user_company.phone)
+        except Exception:
+            pass
+    
+    commercial_info = '<br/>'.join(commercial_lines)
+    
+    commercial_style = ParagraphStyle(
+        'Commercial',
+        parent=styles['Normal'],
+        fontSize=10,
+        alignment=2,  # Right
+    )
+    
+    # Crear tabla izquierda con fechas
+    left_table = Table(left_data, colWidths=[2*inch, 1.7*inch])
+    left_table.setStyle(TableStyle([
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
         ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
         ('FONTSIZE', (0, 0), (-1, -1), 10),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
     ]))
-    elements.append(order_table)
+    
+    # Combinar fechas e información comercial lado a lado
+    info_data = [[left_table, Paragraph(commercial_info, commercial_style)]]
+    info_table = Table(info_data, colWidths=[3.7*inch, 3.7*inch])
+    info_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+        ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+    ]))
+    elements.append(info_table)
     elements.append(Spacer(1, 20))
     
     # Tabla de productos
     lines = quotation.lines.all()
-    table_data = [['Descripción', 'Cantidad', 'Precio unitario', 'Impuestos', 'Importe']]
+    table_data = [['Descripción', 'Cantidad', 'Precio unitario', 'Importe']]
     
     # Obtener configuración del sistema para la moneda
     config = SystemConfiguration.get_config()
@@ -37367,29 +37511,29 @@ def quotation_pdf_view(request, quotation_id):
             line.description or line.product.name,
             f'{line.quantity:,.0f}',
             f'{line.unit_price:,.2f}',
-            '',  # Impuestos vacío por ahora
             f'{line.get_total():,.2f} {currency_symbol}'
         ])
     
     # Crear la tabla
-    product_table = Table(table_data, colWidths=[3*inch, 1*inch, 1.2*inch, 1*inch, 1.2*inch])
+    product_table = Table(table_data, colWidths=[3.7*inch, 1.2*inch, 1.3*inch, 1.2*inch])
     product_table.setStyle(TableStyle([
-        # Encabezado
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        # Bordes
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        
+        # Fuentes
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, 0), 10),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        
-        # Contenido
         ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
         ('FONTSIZE', (0, 1), (-1, -1), 9),
-        ('ALIGN', (0, 1), (0, -1), 'LEFT'),  # Descripción alineada a la izquierda
-        ('ALIGN', (1, 1), (-1, -1), 'RIGHT'), # Números alineados a la derecha
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.beige, colors.white]),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        
+        # Alineación vertical
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        
+        # Alineación horizontal - primero todo centrado
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        # Luego sobrescribimos la primera columna (Descripción) a la izquierda
+        ('ALIGN', (0, 0), (0, -1), 'LEFT'),
     ]))
     elements.append(product_table)
     elements.append(Spacer(1, 20))
@@ -37411,37 +37555,136 @@ def quotation_pdf_view(request, quotation_id):
         ('LINEBELOW', (3, -1), (4, -1), 2, colors.black),
     ]))
     elements.append(totals_table)
-    elements.append(Spacer(1, 40))
+    elements.append(Spacer(1, 20))
+    
+    # Descripción de la cotización (si existe)
+    if quotation.description:
+        description_cotizacion_style = ParagraphStyle(
+            'DescriptionCotizacion',
+            parent=styles['Normal'],
+            fontSize=10,
+            alignment=0,  # Left
+            leading=14,
+        )
+        description_table = Table([[Paragraph(quotation.description, description_cotizacion_style)]], colWidths=[7.4*inch])
+        description_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+            ('LEFTPADDING', (0, 0), (0, 0), 0),
+            ('RIGHTPADDING', (0, 0), (0, 0), 0),
+            ('TOPPADDING', (0, 0), (0, 0), 0),
+            ('BOTTOMPADDING', (0, 0), (0, 0), 0),
+        ]))
+        elements.append(description_table)
+        elements.append(Spacer(1, 20))
     
     # Información de pago y QR code
-    payment_info = """
-    <b>Forma Trabajo</b><br/><br/>
+    # Construir información de pago basada en los datos de la empresa
+    payment_lines = []
     
-    <b>Datos Pago</b><br/>
-    Banco: CAJAMAR ( https://www.cajamar.es )<br/>
-    Nombre del Beneficiario: Marlon Falcon Hernandez<br/>
-    Dirección Beneficiario: Valencia, España<br/>
-    Numero de Cuenta Bancaria: ES84 3058 2214 0427 2001 3741<br/>
-    BIC ( SWIFT ): CCRIES2AXXX<br/><br/>
-    • mfalconsoft@gmail.com<br/>
-    • www.marlonfalcon.com<br/><br/>
-    - Cubre cualquier error del sistema.<br/>
-    - El valor es por mes.<br/>
-    - Se paga trimestral o semestral.<br/>
-    - Incluye 1 horas de desarrollo al mes que se puede hacer en reunión.
-    """
+    if user_company:
+        # Solo agregar secciones si hay datos
+        has_bank_data = user_company.bank_name or user_company.bank_account or user_company.bank_swift
+        has_contact_data = user_company.email or user_company.website
+        
+        if has_bank_data:
+            payment_lines.append("Datos Pago")
+            payment_lines.append("")  # Línea en blanco
+            
+            # Banco
+            if user_company.bank_name:
+                bank_line = f"Banco: {user_company.bank_name}"
+                if user_company.bank_url:
+                    bank_line += f" ( {user_company.bank_url} )"
+                payment_lines.append(bank_line)
+            
+            # Beneficiario
+            if user_company.bank_account_holder:
+                payment_lines.append(f"Nombre del Beneficiario: {user_company.bank_account_holder}")
+            elif user_company.name:
+                payment_lines.append(f"Nombre del Beneficiario: {user_company.name}")
+            
+            # Dirección
+            address_parts = []
+            if user_company.city:
+                address_parts.append(user_company.city)
+            if user_company.country:
+                address_parts.append(user_company.country)
+            if address_parts:
+                payment_lines.append(f"Dirección Beneficiario: {', '.join(address_parts)}")
+            
+            # Cuenta bancaria
+            if user_company.bank_account:
+                payment_lines.append(f"Numero de Cuenta Bancaria: {user_company.bank_account}")
+            
+            # SWIFT
+            if user_company.bank_swift:
+                payment_lines.append(f"BIC ( SWIFT ): {user_company.bank_swift}")
+            
+            payment_lines.append("")  # Línea en blanco
+        
+        # Condiciones de pago
+        if user_company.payment_terms:
+            # Las condiciones pueden tener múltiples líneas
+            payment_lines.extend(user_company.payment_terms.split('\n'))
+        
+        payment_info = '<br/>'.join(payment_lines) if payment_lines else "Información de pago no disponible"
+    else:
+        # Fallback a datos por defecto
+        payment_info = """"""
     
-    # Crear una tabla con dos columnas: una para el QR (vacío por ahora) y otra para la información de pago
+    # Generar QR code con la URL pública de la cotización
+    from io import BytesIO as QRBuffer
+    
+    # Obtener la URL pública de la cotización
+    public_url = request.build_absolute_uri(
+        reverse('quotation_public_view', kwargs={'token': quotation.public_token or quotation.generate_public_token()})
+    )
+    
+    # Generar QR code
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(public_url)
+    qr.make(fit=True)
+    
+    # Crear imagen del QR
+    qr_img = qr.make_image(fill_color="black", back_color="white")
+    
+    # Guardar imagen QR en buffer
+    qr_buffer = QRBuffer()
+    qr_img.save(qr_buffer, format='PNG')
+    qr_buffer.seek(0)
+    
+    # Crear objeto Image de ReportLab desde el buffer
+    qr_image = Image(qr_buffer, width=1.5*inch, height=1.5*inch)
+    
+    # Crear estilo para información de pago
+    payment_style = ParagraphStyle(
+        'PaymentInfo',
+        parent=styles['Normal'],
+        fontSize=9,
+        alignment=0,  # Left
+        leading=12,  # Espaciado entre líneas
+    )
+    
+    # Envolver payment_info en un Paragraph para que procese el HTML correctamente
+    payment_paragraph = Paragraph(payment_info, payment_style)
+    
+    # Crear una tabla con dos columnas: una para el QR y otra para la información de pago
     payment_table_data = [
-        ['[QR CODE PLACEHOLDER]', payment_info]
+        [qr_image, payment_paragraph]
     ]
     
-    payment_table = Table(payment_table_data, colWidths=[2*inch, 4*inch])
+    payment_table = Table(payment_table_data, colWidths=[2*inch, 5.4*inch])
     payment_table.setStyle(TableStyle([
-        ('ALIGN', (0, 0), (0, 0), 'CENTER'),
+        ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+        ('ALIGN', (1, 0), (1, 0), 'LEFT'),
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('FONTNAME', (1, 0), (1, 0), 'Helvetica'),
-        ('FONTSIZE', (1, 0), (1, 0), 9),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
     ]))
     elements.append(payment_table)
     
@@ -37480,19 +37723,42 @@ def quotation_share_view(request, quotation_id):
 
 def quotation_public_view(request, token):
     """Vista pública para mostrar cotización sin autenticación"""
-    from .models import Quotation, SystemConfiguration
+    from .models import Quotation, SystemConfiguration, QuotationView
+    from .utils import get_client_ip, get_country_from_ip
     
     try:
         quotation = get_object_or_404(Quotation, public_token=token)
+        
+        # Registrar la visita
+        ip_address = get_client_ip(request)
+        user_agent = request.META.get('HTTP_USER_AGENT', '')
+        
+        # Obtener información del país desde la IP
+        location_data = get_country_from_ip(ip_address)
+        
+        # Crear registro de visita
+        QuotationView.objects.create(
+            quotation=quotation,
+            ip_address=ip_address,
+            country=location_data.get('country', 'Desconocido'),
+            country_code=location_data.get('country_code', 'XX'),
+            user_agent=user_agent
+        )
         
         # Obtener configuración del sistema para la moneda
         config = SystemConfiguration.get_config()
         currency_symbol = config.get_currency_symbol()
         
+        # Obtener la empresa del vendedor (compañía que cotiza)
+        seller_company = None
+        if hasattr(quotation.salesperson, 'profile') and quotation.salesperson.profile.company:
+            seller_company = quotation.salesperson.profile.company
+        
         context = {
             'quotation': quotation,
             'currency_symbol': currency_symbol,
             'can_respond': quotation.can_be_responded(),
+            'seller_company': seller_company,
         }
         
         return render(request, 'tickets/quotation_public_view.html', context)

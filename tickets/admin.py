@@ -20,7 +20,7 @@ from .models import (
     AIManager, AIManagerMeeting, AIManagerMeetingAttachment, AIManagerSummary, CompanyAISummary, UserAIPerformanceEvaluation,
     WebsiteTracker, LegalContract, SupplierContractReview, PayPalPaymentLink, PayPalOrder, TodoItem,
     AIBook, AIBookChapter, EmployeeRequest, InternalAgreement, Asset, AssetHistory, UrlManager,
-    ExpenseReport, ExpenseItem, ExpenseComment, MonthlyCumplimiento, DailyCumplimiento, QRCode, Quotation, QuotationLine,
+    ExpenseReport, ExpenseItem, ExpenseComment, MonthlyCumplimiento, DailyCumplimiento, QRCode, Quotation, QuotationLine, QuotationView,
     Contact, ContactComment, ContactAttachment, QARating, GameCounter, ExerciseCounter, SportGoal, SportGoalRecord,
     ClientRequest, ClientRequestResponse
 )
@@ -4399,6 +4399,36 @@ class QuotationAdmin(admin.ModelAdmin):
         total = obj.get_total_amount()
         return f"${total:,.2f}"
     total_amount.short_description = 'Total'
+
+
+@admin.register(QuotationView)
+class QuotationViewAdmin(admin.ModelAdmin):
+    list_display = ('quotation', 'country', 'country_code', 'ip_address', 'viewed_at')
+    list_filter = ('country', 'viewed_at')
+    search_fields = ('quotation__sequence', 'country', 'ip_address')
+    ordering = ('-viewed_at',)
+    readonly_fields = ('quotation', 'viewed_at', 'ip_address', 'country', 'country_code', 'user_agent')
+    
+    fieldsets = (
+        ('Información de la Visita', {
+            'fields': ('quotation', 'viewed_at', 'ip_address')
+        }),
+        ('Ubicación', {
+            'fields': ('country', 'country_code')
+        }),
+        ('Detalles Técnicos', {
+            'fields': ('user_agent',),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def has_add_permission(self, request):
+        # No permitir agregar manualmente, solo se crean automáticamente
+        return False
+    
+    def has_change_permission(self, request, obj=None):
+        # No permitir editar
+        return False
 
 
 @admin.register(QuotationLine)

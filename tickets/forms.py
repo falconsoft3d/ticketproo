@@ -1548,7 +1548,10 @@ class CompanyForm(forms.ModelForm):
     
     class Meta:
         model = Company
-        fields = ['name', 'description', 'business_objectives', 'address', 'phone', 'email', 'website', 'color', 'logo', 'public_token', 'is_active']
+        fields = ['name', 'description', 'business_objectives', 'address', 'phone', 'email', 'website', 'color', 'logo', 'public_token', 'is_active', 
+                  'tax_id', 'city', 'state', 'postal_code', 'country',
+                  'bank_name', 'bank_url', 'bank_account_holder', 'bank_account', 'bank_swift',
+                  'payment_terms']
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -1596,6 +1599,51 @@ class CompanyForm(forms.ModelForm):
             'is_active': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
+            'tax_id': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'NIF/CIF'
+            }),
+            'city': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ciudad'
+            }),
+            'state': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Estado/Provincia'
+            }),
+            'postal_code': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Código Postal'
+            }),
+            'country': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'País'
+            }),
+            'bank_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre del banco'
+            }),
+            'bank_url': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://www.banco.com'
+            }),
+            'bank_account_holder': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Titular de la cuenta'
+            }),
+            'bank_account': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'IBAN o número de cuenta'
+            }),
+            'bank_swift': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'SWIFT/BIC'
+            }),
+            'payment_terms': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Condiciones de pago generales...'
+            }),
         }
         labels = {
             'name': 'Nombre de la Empresa',
@@ -1608,6 +1656,17 @@ class CompanyForm(forms.ModelForm):
             'color': 'Color Identificativo',
             'public_token': 'Token Público',
             'is_active': 'Empresa Activa',
+            'tax_id': 'NIF/CIF/Tax ID',
+            'city': 'Ciudad',
+            'state': 'Estado/Provincia',
+            'postal_code': 'Código Postal',
+            'country': 'País',
+            'bank_name': 'Nombre del Banco',
+            'bank_url': 'URL del Banco',
+            'bank_account_holder': 'Titular de la Cuenta',
+            'bank_account': 'Número de Cuenta',
+            'bank_swift': 'SWIFT/BIC',
+            'payment_terms': 'Condiciones de Pago',
         }
         help_texts = {
             'business_objectives': 'Define los objetivos, metas y KPIs estratégicos. Estos serán considerados por los gerentes IA al generar resúmenes ejecutivos.',

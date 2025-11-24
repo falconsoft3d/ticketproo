@@ -174,6 +174,7 @@
                                         <th>Vencimiento</th>
                                         <th>Estado</th>
                                         <th>Cliente</th>
+                                        <th>Visitas</th>
                                         <th>Importe</th>
                                         <th width="150">Acciones</th>
                                     </tr>
@@ -236,6 +237,17 @@
                                                 <br><small class="text-muted">{{ quotation.client_response_name }}</small>
                                             {% endif %}
                                         </td>
+                                        <td class="text-center">
+                                            {% with view_count=quotation.views.count %}
+                                                {% if view_count > 0 %}
+                                                    <span class="badge bg-info" title="Visitas públicas">
+                                                        <i class="bi bi-eye"></i> {{ view_count }}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-muted">0</span>
+                                                {% endif %}
+                                            {% endwith %}
+                                        </td>
                                         <td>
                                             <strong>
                                                 
@@ -259,14 +271,19 @@
                                 </tbody>
                                 <tfoot class="table-light">
                                     <tr>
-                                        <td colspan="6" class="text-end"><strong>Total:</strong></td>
+                                        <td colspan="7" class="text-end"><strong>Total:</strong></td>
+                                        <td class="text-center">
+                                            <strong class="text-info">
+                                                <i class="bi bi-eye"></i> {{ stats.total_views }}
+                                            </strong>
+                                        </td>
                                         <td>
                                             <strong class="fs-5">
                                                 
                                                 {{ currency_symbol }}{{ stats.total_amount|floatformat:2 }}
                                             </strong>
                                         </td>
-                                        <td colspan="2"></td>
+                                        <td></td>
                                     </tr>
                                 </tfoot>
                             </table>
