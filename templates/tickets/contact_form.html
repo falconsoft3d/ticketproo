@@ -177,6 +177,29 @@
 
                                 <div class="row mb-3">
                                     <div class="col-md-6">
+                                        <div class="form-check">
+                                            {{ form.had_meeting }}
+                                            <label class="form-check-label" for="{{ form.had_meeting.id_for_label }}">
+                                                <i class="bi bi-calendar-check text-purple"></i> {{ form.had_meeting.label }}
+                                            </label>
+                                        </div>
+                                        {% if form.had_meeting.errors %}
+                                            <div class="text-danger small">{{ form.had_meeting.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ form.meeting_date.id_for_label }}" class="form-label">
+                                            <i class="bi bi-calendar-event"></i> {{ form.meeting_date.label }}
+                                        </label>
+                                        {{ form.meeting_date }}
+                                        {% if form.meeting_date.errors %}
+                                            <div class="text-danger small">{{ form.meeting_date.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
                                         <label for="{{ form.last_contact_date.id_for_label }}" class="form-label">
                                             <i class="bi bi-calendar-check"></i> {{ form.last_contact_date.label }}
                                         </label>

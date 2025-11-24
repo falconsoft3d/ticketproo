@@ -4361,13 +4361,24 @@ class Contact(models.Model):
     # Seguimiento de contacto
     contacted_by_phone = models.BooleanField(
         default=False,
-        verbose_name='Contactado por teléfono',
-        help_text='Marcar si se contactó al cliente por teléfono'
+        verbose_name='Contactado por telefono',
+        help_text='Marcar si se contacto al cliente por telefono'
     )
     contacted_by_web = models.BooleanField(
         default=False,
         verbose_name='Contactado por web/email',
-        help_text='Marcar si se contactó al cliente por web o email'
+        help_text='Marcar si se contacto al cliente por web o email'
+    )
+    had_meeting = models.BooleanField(
+        default=False,
+        verbose_name='Reunion realizada',
+        help_text='Marcar si se tuvo una reunion con este contacto'
+    )
+    meeting_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name='Fecha de reunion',
+        help_text='Fecha en la que se realizo la reunion'
     )
     contact_tracking_notes = models.TextField(
         blank=True,
@@ -4377,8 +4388,8 @@ class Contact(models.Model):
     last_contact_date = models.DateTimeField(
         blank=True,
         null=True,
-        verbose_name='Fecha del último contacto',
-        help_text='Fecha del último contacto realizado'
+        verbose_name='Fecha del ultimo contacto',
+        help_text='Fecha del ultimo contacto realizado'
     )
     
     contact_date = models.DateTimeField(

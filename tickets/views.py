@@ -10485,6 +10485,16 @@ def contact_list(request):
         activity_count=Count('activities')
     ).filter(activity_count=0).count()
     
+    # Estadísticas de reuniones
+    current_date = timezone.now()
+    monthly_meetings = Contact.objects.filter(
+        had_meeting=True,
+        meeting_date__year=current_date.year,
+        meeting_date__month=current_date.month
+    ).count()
+    
+    total_meetings = Contact.objects.filter(had_meeting=True).count()
+    
     # Fecha de hoy para comparaciones en template
     today_date = timezone.now().date().strftime('%Y-%m-%d')
     
@@ -10497,6 +10507,8 @@ def contact_list(request):
         'today_contacts': today_contacts,
         'contacts_with_activities': contacts_with_activities,
         'contacts_without_activities': contacts_without_activities,
+        'monthly_meetings': monthly_meetings,
+        'total_meetings': total_meetings,
         'today_date': today_date,
         'page_title': 'Contactos'
     }

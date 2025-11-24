@@ -196,6 +196,28 @@
         </div>
     </div>
 
+    <!-- Estadísticas de Reuniones -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center h-100" style="border: 2px solid #6f42c1;">
+                <div class="card-body p-2">
+                    <i class="bi bi-calendar-check-fill mb-1" style="font-size: 1.5rem; color: #6f42c1;"></i>
+                    <h4 class="mb-0" style="color: #6f42c1;">{{ monthly_meetings }}</h4>
+                    <p class="text-muted mb-0 small">📊 Reuniones este mes</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-dark h-100">
+                <div class="card-body p-2">
+                    <i class="bi bi-calendar2-event-fill text-dark mb-1" style="font-size: 1.5rem;"></i>
+                    <h4 class="text-dark mb-0">{{ total_meetings }}</h4>
+                    <p class="text-muted mb-0 small">🗓️ Total reuniones</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Filtros -->
     <div class="card mb-4">
         <div class="card-header">
@@ -269,6 +291,7 @@
                                 <th>País</th>
                                 <th>ERP</th>
                                 <th>Actividades</th>
+                                <th>Reunión</th>
                                 <th>Fecha</th>
                                 <th>Fuente</th>
                                 <th>Creado por</th>
@@ -350,6 +373,18 @@
                                                 Sin actividades
                                             </small>
                                         </div>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if contact.had_meeting %}
+                                        <div>
+                                            <i class="bi bi-calendar-check-fill text-success" style="font-size: 1.2rem;" title="Reunión realizada"></i>
+                                            {% if contact.meeting_date %}
+                                                <br><small class="text-muted">{{ contact.meeting_date|date:"d/m/Y" }}</small>
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
                                     {% endif %}
                                 </td>
                                 <td>

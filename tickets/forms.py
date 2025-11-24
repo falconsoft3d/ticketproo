@@ -3556,7 +3556,7 @@ class ContactForm(forms.ModelForm):
         fields = [
             'name', 'email', 'phone', 'position', 'company', 'country', 'erp',
             'status', 'source', 'notes', 'contact_date',
-            'contacted_by_phone', 'contacted_by_web', 
+            'contacted_by_phone', 'contacted_by_web', 'had_meeting', 'meeting_date',
             'contact_tracking_notes', 'last_contact_date'
         ]
         widgets = {
@@ -3610,6 +3610,13 @@ class ContactForm(forms.ModelForm):
             'contacted_by_web': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
+            'had_meeting': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'meeting_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
             'contact_tracking_notes': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
@@ -3657,6 +3664,8 @@ class ContactForm(forms.ModelForm):
         self.fields['contact_date'].label = 'Fecha y Hora de Contacto'
         self.fields['contacted_by_phone'].label = 'Contactado por teléfono'
         self.fields['contacted_by_web'].label = 'Contactado por web/email'
+        self.fields['had_meeting'].label = 'Reunión realizada'
+        self.fields['meeting_date'].label = 'Fecha de reunión'
         self.fields['contact_tracking_notes'].label = 'Notas de seguimiento'
         self.fields['last_contact_date'].label = 'Fecha del último contacto'
 
