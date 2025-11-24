@@ -10456,6 +10456,19 @@ def contact_list(request):
     elif has_activity == 'no':
         contacts = contacts.filter(activity_count=0)
     
+    # Filtro por reuniones
+    has_meeting = request.GET.get('has_meeting')
+    if has_meeting == 'monthly':
+        # Reuniones del mes actual
+        contacts = contacts.filter(
+            had_meeting=True,
+            meeting_date__year=now.year,
+            meeting_date__month=now.month
+        )
+    elif has_meeting == 'all':
+        # Todas las reuniones
+        contacts = contacts.filter(had_meeting=True)
+    
     date_from = request.GET.get('date_from')
     if date_from:
         contacts = contacts.filter(contact_date__date__gte=date_from)
