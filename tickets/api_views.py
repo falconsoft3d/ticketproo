@@ -484,6 +484,8 @@ def upcoming_events_list(request):
         traceback.print_exc()
         return JsonResponse({'count': 0, 'events': [], 'error': str(e)})
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def active_users_list(request):
     """
     Devuelve la lista de usuarios activos en oficina con detalles

@@ -26,9 +26,10 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-&d)wf7xgiy_qchk2@%bti
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
+DEBUG = True
 
 # ALLOWED_HOSTS configuration
-ALLOWED_HOSTS_STR = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0,37.27.255.163')
+ALLOWED_HOSTS_STR = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0,37.27.255.163,ticketproo.com,www.ticketproo.com')
 ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_STR.split(',') if host.strip()]
 
 
