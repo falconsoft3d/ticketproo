@@ -5,7 +5,8 @@ from .api_views import (
     api_status, generate_api_token, toggle_api_access, whatsapp_receive_message,
     landing_page_meeting_click, landing_page_contact_click,
     active_users_count, active_users_list, open_tickets_count, direct_ai_chat,
-    system_info_api, short_url_stats_api, upcoming_events_list
+    system_info_api, short_url_stats_api, upcoming_events_list, web_counter_track,
+    web_counter_stats
 )
 
 # Router para los ViewSets
@@ -49,6 +50,10 @@ api_urlpatterns = [
     
     # URL para estadísticas de URLs cortas
     path('short-urls/stats/', short_url_stats_api, name='api-short-url-stats'),
+    
+    # URL para tracking de contadores web (sin autenticación)
+    path('web-counter/track/', web_counter_track, name='api-web-counter-track'),
+    path('web-counter/stats/<str:token>/', web_counter_stats, name='api-web-counter-stats'),
 ]
 
 # Django espera que la variable se llame urlpatterns

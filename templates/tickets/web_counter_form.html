@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-globe"></i> 
+                        {% if counter %}Editar Contador Web{% else %}Crear Contador Web{% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Título del Contador *</label>
+                            <input type="text" class="form-control" id="title" name="title" 
+                                   value="{{ counter.title|default:'' }}" required 
+                                   placeholder="Ej: Mi Blog Personal">
+                            <div class="form-text">
+                                Nombre descriptivo para identificar este contador
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="domain" class="form-label">Dominio (Opcional)</label>
+                            <input type="text" class="form-control" id="domain" name="domain" 
+                                   value="{{ counter.domain|default:'' }}" 
+                                   placeholder="Ej: www.miblog.com">
+                            <div class="form-text">
+                                Dominio donde se instalará el contador (solo informativo)
+                            </div>
+                        </div>
+
+                        {% if counter %}
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                                           {% if counter.is_active %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_active">
+                                        Contador Activo
+                                    </label>
+                                </div>
+                                <div class="form-text">
+                                    Si está desactivado, no se registrarán nuevas visitas
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-lg"></i> 
+                                {% if counter %}Actualizar{% else %}Crear{% endif %} Contador
+                            </button>
+                            <a href="{% url 'web_counter_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-lg"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {% if not counter %}
+                <div class="card mt-4 border-info">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="bi bi-info-circle"></i> ¿Cómo funciona?</h5>
+                    </div>
+                    <div class="card-body">
+                        <ol>
+                            <li class="mb-2">Crea un contador con un título descriptivo</li>
+                            <li class="mb-2">Obtén el código script generado automáticamente</li>
+                            <li class="mb-2">Inserta el script en tu sitio web (HTML o Next.js)</li>
+                            <li class="mb-2">¡Listo! Comienza a rastrear visitas automáticamente</li>
+                        </ol>
+                        <p class="mb-0 text-muted">
+                            El contador registra: páginas visitadas, país de origen, navegador, 
+                            dispositivo y más.
+                        </p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

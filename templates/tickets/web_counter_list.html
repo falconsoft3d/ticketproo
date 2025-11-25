@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-globe"></i> Contadores Web</h2>
+        <a href="{% url 'web_counter_create' %}" class="btn btn-success">
+            <i class="bi bi-plus-lg"></i> Crear Contador
+        </a>
+    </div>
+
+    {% if counters %}
+        <div class="row">
+            {% for counter in counters %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-globe"></i> {{ counter.title }}
+                            </h5>
+                            <span class="badge {% if counter.is_active %}bg-success{% else %}bg-secondary{% endif %}">
+                                {% if counter.is_active %}Activo{% else %}Inactivo{% endif %}
+                            </span>
+                        </div>
+                        <div class="card-body">
+                            {% if counter.domain %}
+                                <p class="text-muted mb-3">
+                                    <i class="bi bi-link-45deg"></i> {{ counter.domain }}
+                                </p>
+                            {% endif %}
+
+                            <div class="row text-center mb-3">
+                                <div class="col-4">
+                                    <div class="border rounded p-2">
+                                        <h4 class="mb-0 text-primary">{{ counter.visits_count }}</h4>
+                                        <small class="text-muted">Total Visitas</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="border rounded p-2">
+                                        <h4 class="mb-0 text-success">{{ counter.visits_today }}</h4>
+                                        <small class="text-muted">Hoy</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="border rounded p-2">
+                                        <h4 class="mb-0 text-info">{{ counter.visits_week }}</h4>
+                                        <small class="text-muted">Semana</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar"></i> Creado: {{ counter.created_at|date:"d/m/Y H:i" }}
+                                </small>
+                            </div>
+                            <div class="mb-3">
+                                <small class="text-muted">
+                                    <i class="bi bi-key"></i> Token: <code>{{ counter.token|slice:":8" }}...</code>
+                                </small>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'web_counter_detail' counter.pk %}" class="btn btn-primary">
+                                    <i class="bi bi-bar-chart"></i> Ver Estadísticas
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> No tienes contadores web creados.
+            <a href="{% url 'web_counter_create' %}" class="alert-link">Crear el primero</a>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.card:hover {
+    transform: translateY(-5px);
+    transition: all 0.3s ease;
+}
+</style>
+{% endblock %}

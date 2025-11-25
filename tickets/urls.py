@@ -1328,6 +1328,14 @@ urlpatterns += [
     path('trips/<int:pk>/stop/<int:stop_id>/regenerate/', views.trip_stop_regenerate, name='trip_stop_regenerate'),
     path('trips/public/<uuid:token>/', views.trip_public, name='trip_public'),
     
+    # URLs de Contadores Web
+    path('web-counters/', views.web_counter_list, name='web_counter_list'),
+    path('web-counters/create/', views.web_counter_create, name='web_counter_create'),
+    path('web-counters/<int:pk>/', views.web_counter_detail, name='web_counter_detail'),
+    path('web-counters/<int:pk>/edit/', views.web_counter_edit, name='web_counter_edit'),
+    path('web-counters/<int:pk>/delete/', views.web_counter_delete, name='web_counter_delete'),
+    path('web-counters/test/<str:token>/', views.web_counter_test_page, name='web_counter_test_page'),
+    
     # URLs de API
     path('api/', include('tickets.api_urls')),
 ]

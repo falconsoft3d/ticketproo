@@ -17702,4 +17702,181 @@ class TripStop(models.Model):
         return None
 
 
+class WebCounter(models.Model):
+    """Contador web para rastrear visitas en sitios externos"""
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Usuario',
+        related_name='web_counters'
+    )
+    
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título del Contador'
+    )
+    
+    token = models.CharField(
+        max_length=64,
+        unique=True,
+        verbose_name='Token',
+        help_text='Token único para identificar este contador'
+    )
+    
+    domain = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name='Dominio',
+        help_text='Dominio donde se instalará el contador (opcional)'
+    )
+    
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo'
+    )
+    
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    
+    total_visits = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Total de Visitas'
+    )
+    
+    total_page_views = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Total de Páginas Vistas'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Contador Web'
+        verbose_name_plural = 'Contadores Web'
+    
+    def __str__(self):
+        return f"{self.title} ({self.token})"
+    
+    def save(self, *args, **kwargs):
+        if not self.token:
+            import secrets
+            self.token = secrets.token_urlsafe(32)
+        super().save(*args, **kwargs)
+    
+    def get_script_html(self, request=None):
+        """Generar el script HTML para insertar en sitios web"""
+        from django.conf import settings
+        
+        # Usar configuración del settings o detectar automáticamente
+        if request:
+            base_url = request.build_absolute_uri('/').rstrip('/')
+        else:
+            # En producción usar el dominio configurado en settings
+            base_url = getattr(settings, 'WEB_COUNTER_BASE_URL', 'https://ticketproo.com')
+        
+        script = f'''<!-- TicketProo Counter -->
+<script type="text/javascript">
+!function(){{var t="{self.token}",e="{base_url}/api/web-counter/track/";function n(){{fetch(e,{{method:"POST",headers:{{"Content-Type":"application/json"}},body:JSON.stringify({{token:t,url:window.location.href,referrer:document.referrer,user_agent:navigator.userAgent,screen_resolution:window.screen.width+"x"+window.screen.height,language:navigator.language}})}}).catch(function(){{}});}}"loading"===document.readyState?document.addEventListener("DOMContentLoaded",n):n();}}();
+</script>'''
+        return script
+
+
+class WebCounterVisit(models.Model):
+    """Registro de visitas del contador web"""
+    counter = models.ForeignKey(
+        WebCounter,
+        on_delete=models.CASCADE,
+        related_name='visits',
+        verbose_name='Contador'
+    )
+    
+    url = models.CharField(
+        max_length=2048,
+        verbose_name='URL Visitada'
+    )
+    
+    referrer = models.CharField(
+        max_length=2048,
+        blank=True,
+        verbose_name='Referrer'
+    )
+    
+    ip_address = models.GenericIPAddressField(
+        verbose_name='IP'
+    )
+    
+    country = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='País'
+    )
+    
+    city = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Ciudad'
+    )
+    
+    user_agent = models.TextField(
+        blank=True,
+        verbose_name='User Agent'
+    )
+    
+    browser = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Navegador'
+    )
+    
+    os = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Sistema Operativo'
+    )
+    
+    device_type = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name='Tipo de Dispositivo',
+        help_text='mobile, tablet, desktop'
+    )
+    
+    screen_resolution = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name='Resolución de Pantalla'
+    )
+    
+    language = models.CharField(
+        max_length=10,
+        blank=True,
+        verbose_name='Idioma'
+    )
+    
+    session_id = models.CharField(
+        max_length=64,
+        blank=True,
+        verbose_name='ID de Sesión'
+    )
+    
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de Visita',
+        db_index=True
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Visita de Contador Web'
+        verbose_name_plural = 'Visitas de Contadores Web'
+        indexes = [
+            models.Index(fields=['-created_at', 'counter']),
+            models.Index(fields=['counter', 'session_id']),
+        ]
+    
+    def __str__(self):
+        return f"{self.counter.title} - {self.url} ({self.created_at})"
+
+
 

@@ -22,7 +22,7 @@ from .models import (
     AIBook, AIBookChapter, EmployeeRequest, InternalAgreement, Asset, AssetHistory, UrlManager,
     ExpenseReport, ExpenseItem, ExpenseComment, MonthlyCumplimiento, DailyCumplimiento, QRCode, Quotation, QuotationLine, QuotationView,
     Contact, ContactComment, ContactAttachment, QARating, GameCounter, ExerciseCounter, SportGoal, SportGoalRecord,
-    ClientRequest, ClientRequestResponse, Event, Trip, TripStop
+    ClientRequest, ClientRequestResponse, Event, Trip, TripStop, WebCounter, WebCounterVisit
 )
 
 # Configuración del sitio de administración
@@ -5120,3 +5120,52 @@ class TripStopAdmin(admin.ModelAdmin):
             'fields': ('visit_date', 'visit_time', 'duration_minutes', 'notes')
         })
     )
+
+
+@admin.register(WebCounter)
+class WebCounterAdmin(admin.ModelAdmin):
+    """Administración de Contadores Web"""
+    list_display = ('title', 'domain', 'user', 'total_visits', 'total_page_views', 'is_active', 'created_at')
+    list_filter = ('is_active', 'created_at', 'user')
+    search_fields = ('title', 'domain', 'token')
+    readonly_fields = ('token', 'total_visits', 'total_page_views', 'created_at')
+    ordering = ('-created_at',)
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('user', 'title', 'domain')
+        }),
+        ('Configuración', {
+            'fields': ('is_active', 'token')
+        }),
+        ('Estadísticas', {
+            'fields': ('total_visits', 'total_page_views', 'created_at')
+        })
+    )
+
+
+@admin.register(WebCounterVisit)
+class WebCounterVisitAdmin(admin.ModelAdmin):
+    """Administración de Visitas de Contadores Web"""
+    list_display = ('counter', 'url_short', 'country', 'device_type', 'browser_short', 'created_at')
+    list_filter = ('counter', 'country', 'device_type', 'created_at')
+    search_fields = ('url', 'ip_address', 'country', 'browser')
+    readonly_fields = ('counter', 'url', 'referrer', 'ip_address', 'country', 'city', 
+                      'user_agent', 'browser', 'os', 'device_type', 'screen_resolution', 
+                      'language', 'session_id', 'created_at')
+    ordering = ('-created_at',)
+    date_hierarchy = 'created_at'
+    
+    def url_short(self, obj):
+        """URL truncada"""
+        return obj.url[:50] + '...' if len(obj.url) > 50 else obj.url
+    url_short.short_description = 'URL'
+    
+    def browser_short(self, obj):
+        """Navegador truncado"""
+        return obj.browser[:30] if obj.browser else '-'
+    browser_short.short_description = 'Navegador'
+    
+    def has_add_permission(self, request):
+        """No permitir agregar visitas manualmente"""
+        return False

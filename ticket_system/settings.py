@@ -241,3 +241,6 @@ if DEBUG and not EMAIL_HOST_USER:
 
 # Configuración del dominio del sitio para URLs absolutas
 SITE_DOMAIN = os.environ.get('SITE_DOMAIN', 'ticketproo.com')
+
+# URL base para el script del contador web
+WEB_COUNTER_BASE_URL = os.environ.get('WEB_COUNTER_BASE_URL', f'https://{SITE_DOMAIN}')

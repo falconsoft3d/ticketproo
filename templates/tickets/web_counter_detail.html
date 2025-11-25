@@ -1,0 +1,338 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="bi bi-globe"></i> {{ counter.title }}
+            <span class="badge {% if counter.is_active %}bg-success{% else %}bg-secondary{% endif %} ms-2">
+                {% if counter.is_active %}Activo{% else %}Inactivo{% endif %}
+            </span>
+        </h2>
+        <div>
+            <a href="{% url 'web_counter_test_page' counter.token %}" class="btn btn-primary" target="_blank">
+                <i class="bi bi-eye"></i> Ver Página de Prueba
+            </a>
+            <a href="{% url 'web_counter_edit' counter.pk %}" class="btn btn-warning">
+                <i class="bi bi-pencil"></i> Editar
+            </a>
+            <a href="{% url 'web_counter_delete' counter.pk %}" class="btn btn-danger">
+                <i class="bi bi-trash"></i> Eliminar
+            </a>
+            <a href="{% url 'web_counter_list' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    {% if counter.domain %}
+        <p class="text-muted mb-3">
+            <i class="bi bi-link-45deg"></i> Dominio: <strong>{{ counter.domain }}</strong>
+        </p>
+    {% endif %}
+
+    <!-- Estadísticas principales -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-primary">
+                <div class="card-body text-center">
+                    <h2 class="text-primary mb-0">{{ total_visits }}</h2>
+                    <p class="text-muted mb-0">Total Visitas</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <h2 class="text-success mb-0">{{ visits_today }}</h2>
+                    <p class="text-muted mb-0">Visitas Hoy</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <h2 class="text-info mb-0">{{ visits_week }}</h2>
+                    <p class="text-muted mb-0">Última Semana</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <h2 class="text-warning mb-0">{{ visits_month }}</h2>
+                    <p class="text-muted mb-0">Último Mes</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Code -->
+    <div class="card mb-4 border-success">
+        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-code-slash"></i> Código de Instalación</h5>
+            <button class="btn btn-sm btn-light" onclick="copyScript()">
+                <i class="bi bi-clipboard"></i> Copiar
+            </button>
+        </div>
+        <div class="card-body">
+            <p class="mb-2">Copia e inserta este código en tu sitio web, justo antes del cierre de <code>&lt;/body&gt;</code>:</p>
+            
+            <!-- HTML -->
+            <div class="mb-3">
+                <label class="form-label fw-bold">Para HTML:</label>
+                <pre id="scriptCode" style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; overflow-x: auto;"><code>{{ script_code|escape }}</code></pre>
+            </div>
+
+            <!-- Next.js -->
+            <div class="mb-3">
+                <label class="form-label fw-bold">Para Next.js (en _app.js o layout.js):</label>
+                <pre style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; overflow-x: auto;"><code>import { useEffect } from 'react';
+
+export default function App({ Component, pageProps }) {
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.innerHTML = `{{ script_code|escapejs }}`;
+    document.body.appendChild(script);
+  }, []);
+
+  return &lt;Component {...pageProps} /&gt;;
+}</code></pre>
+            </div>
+
+            <div class="alert alert-info mb-0">
+                <i class="bi bi-info-circle"></i> <strong>Nota:</strong> El script es ligero y no afecta el rendimiento de tu sitio.
+                Solo envía datos anónimos de visitas cuando la página carga.
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico de visitas -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="bi bi-graph-up"></i> Visitas de los Últimos 30 Días</h5>
+        </div>
+        <div class="card-body">
+            <canvas id="visitsChart" height="80"></canvas>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Páginas más visitadas -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="bi bi-file-text"></i> Páginas Más Visitadas</h5>
+                </div>
+                <div class="card-body">
+                    {% if top_pages %}
+                        <div class="list-group">
+                            {% for page in top_pages %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        <i class="bi bi-link-45deg"></i> {{ page.url|truncatechars:50 }}
+                                    </div>
+                                    <span class="badge bg-primary rounded-pill">{{ page.count }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No hay datos disponibles</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Países -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="bi bi-globe-americas"></i> Países</h5>
+                </div>
+                <div class="card-body">
+                    {% if top_countries %}
+                        <div class="list-group">
+                            {% for country in top_countries %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span><i class="bi bi-geo-alt"></i> {{ country.country|default:"Desconocido" }}</span>
+                                    <span class="badge bg-info rounded-pill">{{ country.count }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No hay datos de geolocalización</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Navegadores -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="bi bi-browser-chrome"></i> Navegadores</h5>
+                </div>
+                <div class="card-body">
+                    {% if top_browsers %}
+                        <div class="list-group">
+                            {% for browser in top_browsers %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>{{ browser.browser }}</span>
+                                    <span class="badge bg-primary rounded-pill">{{ browser.count }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No hay datos</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sistemas Operativos -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="bi bi-pc-display"></i> Sistemas Operativos</h5>
+                </div>
+                <div class="card-body">
+                    {% if top_os %}
+                        <div class="list-group">
+                            {% for os in top_os %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>{{ os.os }}</span>
+                                    <span class="badge bg-success rounded-pill">{{ os.count }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No hay datos</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Dispositivos -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="bi bi-phone"></i> Dispositivos</h5>
+                </div>
+                <div class="card-body">
+                    {% if device_stats %}
+                        <div class="list-group">
+                            {% for device in device_stats %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>
+                                        {% if device.device_type == 'mobile' %}
+                                            <i class="bi bi-phone"></i> Móvil
+                                        {% elif device.device_type == 'tablet' %}
+                                            <i class="bi bi-tablet"></i> Tablet
+                                        {% else %}
+                                            <i class="bi bi-laptop"></i> Escritorio
+                                        {% endif %}
+                                    </span>
+                                    <span class="badge bg-warning rounded-pill">{{ device.count }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No hay datos</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Visitas recientes -->
+    <div class="card">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0"><i class="bi bi-clock-history"></i> Visitas Recientes</h5>
+        </div>
+        <div class="card-body">
+            {% if recent_visits %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>URL</th>
+                                <th>País</th>
+                                <th>Navegador</th>
+                                <th>Dispositivo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for visit in recent_visits %}
+                                <tr>
+                                    <td>{{ visit.created_at|date:"d/m/Y H:i" }}</td>
+                                    <td>{{ visit.url|truncatechars:50 }}</td>
+                                    <td>{{ visit.country|default:"-" }}</td>
+                                    <td>{{ visit.browser|truncatechars:20 }}</td>
+                                    <td>
+                                        {% if visit.device_type == 'mobile' %}
+                                            <i class="bi bi-phone"></i>
+                                        {% elif visit.device_type == 'tablet' %}
+                                            <i class="bi bi-tablet"></i>
+                                        {% else %}
+                                            <i class="bi bi-laptop"></i>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted mb-0">No hay visitas registradas aún</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+function copyScript() {
+    const scriptCode = document.getElementById('scriptCode').textContent;
+    navigator.clipboard.writeText(scriptCode).then(() => {
+        alert('Código copiado al portapapeles');
+    });
+}
+
+// Gráfico de visitas
+const ctx = document.getElementById('visitsChart').getContext('2d');
+const chartData = {{ last_30_days|safe }};
+
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: chartData.map(d => d.date),
+        datasets: [{
+            label: 'Visitas',
+            data: chartData.map(d => d.count),
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

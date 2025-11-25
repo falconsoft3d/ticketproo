@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .test-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 800px;
+            width: 100%;
+            margin: 20px;
+        }
+        .counter-badge {
+            display: inline-block;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50px;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .page-counter {
+            font-size: 48px;
+            font-weight: bold;
+            color: #667eea;
+            margin: 20px 0;
+        }
+        .info-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+        .feature-list i {
+            color: #667eea;
+            margin-right: 10px;
+        }
+        .test-actions {
+            margin-top: 30px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="text-center">
+            <span class="counter-badge">
+                <i class="bi bi-graph-up"></i> Contador Web Activo
+            </span>
+            <h1 class="mt-3">{{ counter.title }}</h1>
+            <p class="text-muted">Página de Prueba del Contador</p>
+        </div>
+
+        <div class="info-card">
+            <div class="text-center">
+                <p class="mb-2">Esta página está siendo rastreada por el contador web:</p>
+                <div class="page-counter">
+                    <i class="bi bi-eye pulse"></i> Visita Registrada
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="bi bi-people-fill text-primary" style="font-size: 2rem;"></i>
+                        <h5 class="mt-2" id="total-visits">{{ counter.total_visits }}</h5>
+                        <small class="text-muted">Visitas Únicas</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="bi bi-file-earmark-text text-success" style="font-size: 2rem;"></i>
+                        <h5 class="mt-2" id="total-page-views">{{ counter.total_page_views }}</h5>
+                        <small class="text-muted">Páginas Vistas</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-card mt-4">
+            <h5><i class="bi bi-info-circle"></i> ¿Qué está rastreando?</h5>
+            <ul class="feature-list">
+                <li><i class="bi bi-check-circle-fill"></i> URL de la página visitada</li>
+                <li><i class="bi bi-check-circle-fill"></i> Navegador y versión</li>
+                <li><i class="bi bi-check-circle-fill"></i> Sistema operativo</li>
+                <li><i class="bi bi-check-circle-fill"></i> Tipo de dispositivo (móvil, tablet, escritorio)</li>
+                <li><i class="bi bi-check-circle-fill"></i> Resolución de pantalla</li>
+                <li><i class="bi bi-check-circle-fill"></i> Idioma del navegador</li>
+                <li><i class="bi bi-check-circle-fill"></i> País de origen</li>
+                <li><i class="bi bi-check-circle-fill"></i> Página de referencia</li>
+            </ul>
+        </div>
+
+        <div class="test-actions">
+            <button class="btn btn-primary" onclick="location.reload()">
+                <i class="bi bi-arrow-clockwise"></i> Recargar Página
+            </button>
+            <button class="btn btn-success" onclick="openNewTab()">
+                <i class="bi bi-box-arrow-up-right"></i> Abrir en Nueva Pestaña
+            </button>
+            <button class="btn btn-info" onclick="testMobile()">
+                <i class="bi bi-phone"></i> Simular Móvil
+            </button>
+        </div>
+
+        <div class="alert alert-success mt-4">
+            <i class="bi bi-lightbulb"></i> <strong>Consejo:</strong> 
+            Recarga esta página varias veces, ábrela en diferentes navegadores o dispositivos 
+            para ver cómo el contador registra cada visita.
+        </div>
+
+        <div class="text-center mt-4">
+            <small class="text-muted">
+                Token: <code>{{ counter.token }}</code>
+            </small>
+        </div>
+    </div>
+
+    <script>
+        function openNewTab() {
+            window.open(window.location.href, '_blank');
+        }
+
+        function testMobile() {
+            alert('Para simular móvil, abre las DevTools de tu navegador (F12) y activa el modo de dispositivo móvil.');
+        }
+
+        // Mostrar información del navegador
+        console.log('=== Información del Navegador ===');
+        console.log('User Agent:', navigator.userAgent);
+        console.log('Idioma:', navigator.language);
+        console.log('Plataforma:', navigator.platform);
+        console.log('Resolución:', window.screen.width + 'x' + window.screen.height);
+        console.log('Referrer:', document.referrer);
+        console.log('URL:', window.location.href);
+
+        // Actualizar KPIs después de cargar la página
+        function updateStats() {
+            fetch('/api/web-counter/stats/{{ counter.token }}/')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('total-visits').textContent = data.total_visits;
+                        document.getElementById('total-page-views').textContent = data.total_page_views;
+                        console.log('Stats updated:', data);
+                    }
+                })
+                .catch(error => console.error('Error updating stats:', error));
+        }
+
+        // Actualizar stats después de 2 segundos (para que el script de tracking se ejecute primero)
+        setTimeout(updateStats, 2000);
+        
+        // Actualizar cada 10 segundos
+        setInterval(updateStats, 10000);
+    </script>
+
+    {{ script_code|safe }}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

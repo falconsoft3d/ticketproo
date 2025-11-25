@@ -684,6 +684,12 @@
                             <li><hr class="dropdown-divider"></li>
                             <li class="dropdown-header">Contadores</li>
                             <li>
+                                <a class="dropdown-item {% if 'web_counter' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'web_counter_list' %}">
+                                    <i class="bi bi-globe"></i> Contadores Web
+                                </a>
+                            </li>
+                            <li>
                                 <a class="dropdown-item {% if 'game_counter' in request.resolver_match.url_name %}active{% endif %}" 
                                    href="{% url 'game_counter_list' %}">
                                     <i class="bi bi-joystick"></i> Contador de Juegos

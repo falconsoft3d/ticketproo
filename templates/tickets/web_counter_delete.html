@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> Eliminar Contador Web
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i> <strong>¡Atención!</strong>
+                        Esta acción no se puede deshacer.
+                    </div>
+
+                    <p class="mb-3">¿Estás seguro de que deseas eliminar el contador <strong>"{{ counter.title }}"</strong>?</p>
+
+                    <div class="card mb-3 bg-light">
+                        <div class="card-body">
+                            <p class="mb-2"><strong>Título:</strong> {{ counter.title }}</p>
+                            {% if counter.domain %}
+                                <p class="mb-2"><strong>Dominio:</strong> {{ counter.domain }}</p>
+                            {% endif %}
+                            <p class="mb-2"><strong>Total de visitas:</strong> {{ counter.total_visits }}</p>
+                            <p class="mb-0"><strong>Creado:</strong> {{ counter.created_at|date:"d/m/Y H:i" }}</p>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-danger mb-3">
+                        <strong>Se eliminarán:</strong>
+                        <ul class="mb-0">
+                            <li>Todos los registros de visitas</li>
+                            <li>Todas las estadísticas</li>
+                            <li>El token de acceso</li>
+                        </ul>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Sí, Eliminar Contador
+                            </button>
+                            <a href="{% url 'web_counter_detail' counter.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-x-lg"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

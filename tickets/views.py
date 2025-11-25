@@ -40843,3 +40843,187 @@ Sugiere otro lugar similar pero diferente en la misma ciudad/región. Devuelve S
         import traceback
         traceback.print_exc()
         return JsonResponse({'success': False, 'error': f'Error al generar alternativa: {str(e)}'}, status=500)
+
+
+# ==================== Web Counter Views ====================
+
+@login_required
+def web_counter_list(request):
+    """Lista de contadores web del usuario"""
+    from .models import WebCounter
+    from django.db.models import Count, Q
+    from datetime import timedelta
+    
+    counters = WebCounter.objects.filter(user=request.user).annotate(
+        visits_count=Count('visits'),
+        visits_today=Count('visits', filter=Q(visits__created_at__date=timezone.now().date())),
+        visits_week=Count('visits', filter=Q(visits__created_at__gte=timezone.now() - timedelta(days=7))),
+    )
+    
+    context = {
+        'counters': counters,
+        'page_title': 'Contadores Web',
+    }
+    return render(request, 'tickets/web_counter_list.html', context)
+
+
+@login_required
+def web_counter_create(request):
+    """Crear nuevo contador web"""
+    from .models import WebCounter
+    
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        domain = request.POST.get('domain', '')
+        
+        if not title:
+            messages.error(request, 'El título es obligatorio')
+            return redirect('web_counter_list')
+        
+        counter = WebCounter.objects.create(
+            user=request.user,
+            title=title,
+            domain=domain
+        )
+        
+        messages.success(request, f'Contador "{counter.title}" creado exitosamente')
+        return redirect('web_counter_detail', pk=counter.pk)
+    
+    context = {
+        'page_title': 'Crear Contador Web',
+    }
+    return render(request, 'tickets/web_counter_form.html', context)
+
+
+@login_required
+def web_counter_detail(request, pk):
+    """Detalle y estadísticas de un contador web"""
+    from .models import WebCounter, WebCounterVisit
+    from django.db.models import Count, Q
+    from datetime import timedelta, datetime
+    import json
+    
+    counter = get_object_or_404(WebCounter, pk=pk, user=request.user)
+    
+    # Estadísticas generales
+    today = timezone.now().date()
+    week_ago = timezone.now() - timedelta(days=7)
+    month_ago = timezone.now() - timedelta(days=30)
+    
+    total_visits = counter.visits.count()
+    visits_today = counter.visits.filter(created_at__date=today).count()
+    visits_week = counter.visits.filter(created_at__gte=week_ago).count()
+    visits_month = counter.visits.filter(created_at__gte=month_ago).count()
+    
+    # Páginas más visitadas
+    top_pages = counter.visits.values('url').annotate(
+        count=Count('id')
+    ).order_by('-count')[:10]
+    
+    # Países más visitantes
+    top_countries = counter.visits.exclude(country='').values('country').annotate(
+        count=Count('id')
+    ).order_by('-count')[:10]
+    
+    # Navegadores
+    top_browsers = counter.visits.exclude(browser='').values('browser').annotate(
+        count=Count('id')
+    ).order_by('-count')[:5]
+    
+    # Sistemas operativos
+    top_os = counter.visits.exclude(os='').values('os').annotate(
+        count=Count('id')
+    ).order_by('-count')[:5]
+    
+    # Dispositivos
+    device_stats = counter.visits.exclude(device_type='').values('device_type').annotate(
+        count=Count('id')
+    ).order_by('-count')
+    
+    # Visitas de los últimos 30 días (para gráfico)
+    last_30_days = []
+    for i in range(30):
+        day = today - timedelta(days=29-i)
+        count = counter.visits.filter(created_at__date=day).count()
+        last_30_days.append({
+            'date': day.strftime('%d/%m'),
+            'count': count
+        })
+    
+    # Visitas recientes
+    recent_visits = counter.visits.all()[:50]
+    
+    context = {
+        'counter': counter,
+        'total_visits': total_visits,
+        'visits_today': visits_today,
+        'visits_week': visits_week,
+        'visits_month': visits_month,
+        'top_pages': top_pages,
+        'top_countries': top_countries,
+        'top_browsers': top_browsers,
+        'top_os': top_os,
+        'device_stats': device_stats,
+        'last_30_days': json.dumps(last_30_days),
+        'recent_visits': recent_visits,
+        'script_code': counter.get_script_html(request),
+        'page_title': f'Contador: {counter.title}',
+    }
+    return render(request, 'tickets/web_counter_detail.html', context)
+
+
+@login_required
+def web_counter_edit(request, pk):
+    """Editar contador web"""
+    from .models import WebCounter
+    
+    counter = get_object_or_404(WebCounter, pk=pk, user=request.user)
+    
+    if request.method == 'POST':
+        counter.title = request.POST.get('title', counter.title)
+        counter.domain = request.POST.get('domain', '')
+        counter.is_active = request.POST.get('is_active') == 'on'
+        counter.save()
+        
+        messages.success(request, 'Contador actualizado exitosamente')
+        return redirect('web_counter_detail', pk=counter.pk)
+    
+    context = {
+        'counter': counter,
+        'page_title': f'Editar: {counter.title}',
+    }
+    return render(request, 'tickets/web_counter_form.html', context)
+
+
+@login_required
+def web_counter_delete(request, pk):
+    """Eliminar contador web"""
+    from .models import WebCounter
+    
+    counter = get_object_or_404(WebCounter, pk=pk, user=request.user)
+    
+    if request.method == 'POST':
+        title = counter.title
+        counter.delete()
+        messages.success(request, f'Contador "{title}" eliminado exitosamente')
+        return redirect('web_counter_list')
+    
+    context = {
+        'counter': counter,
+        'page_title': f'Eliminar: {counter.title}',
+    }
+    return render(request, 'tickets/web_counter_delete.html', context)
+
+
+def web_counter_test_page(request, token):
+    """Página pública de prueba para el contador web"""
+    from .models import WebCounter
+    
+    counter = get_object_or_404(WebCounter, token=token, is_active=True)
+    
+    context = {
+        'counter': counter,
+        'script_code': counter.get_script_html(request),
+        'page_title': f'Prueba: {counter.title}',
+    }
+    return render(request, 'tickets/web_counter_test_page.html', context)

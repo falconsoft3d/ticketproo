@@ -1,11 +1,13 @@
 from rest_framework import viewsets, status, permissions
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q
 from django.utils import timezone
 from django.http import JsonResponse
+import json
 import psutil
 import platform
 import socket
@@ -897,3 +899,123 @@ def short_url_stats_api(request):
             'status': 'error',
             'error': str(e)
         }, status=500)
+
+
+# ==================== Web Counter API ====================
+
+@csrf_exempt
+def web_counter_track(request):
+    """API pública para rastrear visitas del contador web"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    
+    from .models import WebCounter, WebCounterVisit
+    import hashlib
+    from user_agents import parse
+    
+    try:
+        data = json.loads(request.body)
+        token = data.get('token')
+        
+        if not token:
+            return JsonResponse({'error': 'Token requerido'}, status=400)
+        
+        # Buscar el contador
+        try:
+            counter = WebCounter.objects.get(token=token, is_active=True)
+        except WebCounter.DoesNotExist:
+            return JsonResponse({'error': 'Contador no encontrado'}, status=404)
+        
+        # Obtener IP del visitante
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip_address = x_forwarded_for.split(',')[0]
+        else:
+            ip_address = request.META.get('REMOTE_ADDR')
+        
+        # Parse user agent
+        user_agent_string = data.get('user_agent', request.META.get('HTTP_USER_AGENT', ''))
+        user_agent = parse(user_agent_string)
+        
+        # Determinar tipo de dispositivo
+        if user_agent.is_mobile:
+            device_type = 'mobile'
+        elif user_agent.is_tablet:
+            device_type = 'tablet'
+        else:
+            device_type = 'desktop'
+        
+        # Generar session ID único basado en IP + User Agent
+        session_string = f"{ip_address}_{user_agent_string}_{counter.token}"
+        session_id = hashlib.md5(session_string.encode()).hexdigest()
+        
+        # Verificar si es una nueva visita (sesión nueva en las últimas 30 minutos)
+        from datetime import timedelta
+        recent_visit = WebCounterVisit.objects.filter(
+            counter=counter,
+            session_id=session_id,
+            created_at__gte=timezone.now() - timedelta(minutes=30)
+        ).first()
+        
+        is_new_visit = not recent_visit
+        
+        # Obtener geolocalización (simplificada - se puede mejorar con servicios externos)
+        country = ''
+        city = ''
+        # Aquí podrías integrar un servicio de geolocalización como ipinfo.io o geoip2
+        
+        # Crear registro de visita
+        visit = WebCounterVisit.objects.create(
+            counter=counter,
+            url=data.get('url', '')[:2048],
+            referrer=data.get('referrer', '')[:2048],
+            ip_address=ip_address,
+            country=country,
+            city=city,
+            user_agent=user_agent_string[:1000],
+            browser=f"{user_agent.browser.family} {user_agent.browser.version_string}",
+            os=f"{user_agent.os.family} {user_agent.os.version_string}",
+            device_type=device_type,
+            screen_resolution=data.get('screen_resolution', ''),
+            language=data.get('language', ''),
+            session_id=session_id
+        )
+        
+        # Actualizar contadores
+        counter.total_page_views += 1
+        if is_new_visit:
+            counter.total_visits += 1
+        counter.save()
+        
+        return JsonResponse({
+            'success': True,
+            'visit_id': visit.id,
+            'is_new_visit': is_new_visit
+        })
+        
+    except Exception as e:
+        print(f"Error en web_counter_track: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@api_view(['GET'])
+@permission_classes([])  # Público
+def web_counter_stats(request, token):
+    """Obtener estadísticas actualizadas del contador"""
+    from .models import WebCounter
+    
+    try:
+        counter = WebCounter.objects.get(token=token, is_active=True)
+        
+        return Response({
+            'success': True,
+            'total_visits': counter.total_visits,
+            'total_page_views': counter.total_page_views
+        })
+        
+    except WebCounter.DoesNotExist:
+        return Response({'error': 'Contador no encontrado'}, status=404)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
