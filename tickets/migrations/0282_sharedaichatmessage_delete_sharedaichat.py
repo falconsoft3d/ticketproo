@@ -33,7 +33,9 @@ class Migration(migrations.Migration):
                 'ordering': ['-created_at'],
             },
         ),
-        migrations.DeleteModel(
-            name='SharedAIChat',
+        # Eliminar tabla de forma segura solo si existe
+        migrations.RunSQL(
+            sql='DROP TABLE IF EXISTS tickets_sharedaichat CASCADE;',
+            reverse_sql='-- No reverse operation',
         ),
     ]
