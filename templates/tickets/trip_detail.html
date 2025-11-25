@@ -1,0 +1,425 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stop-card {
+        transition: transform 0.2s;
+    }
+    .stop-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .stop-number {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>
+                    <i class="bi bi-airplane"></i> {{ trip.title }}
+                </h2>
+                <div>
+                    <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#aiGenerateModal">
+                        <i class="bi bi-stars"></i> Generar con IA
+                    </button>
+                    {% if trip.is_public %}
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#shareModal">
+                        <i class="bi bi-share"></i> Compartir
+                    </button>
+                    {% endif %}
+                    <a href="{% url 'trip_edit' trip.pk %}" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a>
+                    <a href="{% url 'trip_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h4><i class="bi bi-geo-alt-fill"></i> {{ trip.destination }}</h4>
+                    {% if trip.description %}
+                    <p class="text-muted">{{ trip.description }}</p>
+                    {% endif %}
+                    
+                    <div class="d-flex gap-3">
+                        {% if trip.start_date %}
+                        <div>
+                            <i class="bi bi-calendar"></i>
+                            <strong>Inicio:</strong> {{ trip.start_date|date:"d/m/Y" }}
+                        </div>
+                        {% endif %}
+                        {% if trip.end_date %}
+                        <div>
+                            <i class="bi bi-calendar-check"></i>
+                            <strong>Fin:</strong> {{ trip.end_date|date:"d/m/Y" }}
+                        </div>
+                        {% endif %}
+                        <div>
+                            <i class="bi bi-pin-map"></i>
+                            <strong>Paradas:</strong> {{ stops.count }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <h4 class="mb-3"><i class="bi bi-map"></i> Itinerario</h4>
+            
+            {% if stops %}
+                {% for stop in stops %}
+                <div class="card stop-card mb-3 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex">
+                            <div class="stop-number me-3">
+                                {{ stop.order }}
+                            </div>
+                            <div class="flex-grow-1">
+                                <h5 class="mb-2">{{ stop.name }}</h5>
+                                
+                                {% if stop.description %}
+                                <p class="text-muted mb-2">{{ stop.description }}</p>
+                                {% endif %}
+                                
+                                <div class="row">
+                                    {% if stop.address %}
+                                    <div class="col-md-6 mb-2">
+                                        <small class="text-muted">
+                                            <i class="bi bi-geo-alt"></i> {{ stop.address }}
+                                        </small>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if stop.visit_date %}
+                                    <div class="col-md-3 mb-2">
+                                        <small class="text-muted">
+                                            <i class="bi bi-calendar"></i> {{ stop.visit_date|date:"d/m/Y" }}
+                                            {% if stop.visit_time %}{{ stop.visit_time|time:"H:i" }}{% endif %}
+                                        </small>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if stop.duration_minutes %}
+                                    <div class="col-md-3 mb-2">
+                                        <small class="text-muted">
+                                            <i class="bi bi-clock"></i> {{ stop.duration_minutes }} min
+                                        </small>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if stop.latitude and stop.longitude %}
+                                <div class="mb-2">
+                                    <small class="text-muted">
+                                        <i class="bi bi-pin"></i> {{ stop.latitude }}, {{ stop.longitude }}
+                                    </small>
+                                </div>
+                                {% endif %}
+                                
+                                {% if stop.notes %}
+                                <div class="alert alert-info alert-sm mb-2">
+                                    <small><strong>Notas:</strong> {{ stop.notes }}</small>
+                                </div>
+                                {% endif %}
+                                
+                                {% if stop.historical_info %}
+                                <div class="card bg-light mb-3">
+                                    <div class="card-body">
+                                        <h6 class="card-title">
+                                            <i class="bi bi-book"></i> Historia e Información
+                                        </h6>
+                                        <p class="card-text text-muted" style="text-align: justify;">{{ stop.historical_info }}</p>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                <div class="mt-2">
+                                    {% if stop.get_google_maps_url %}
+                                    <a href="{{ stop.get_google_maps_url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-map"></i> Ver en Google Maps
+                                    </a>
+                                    {% endif %}
+                                    <button type="button" class="btn btn-sm btn-outline-info" onclick="regenerateStop({{ stop.id }}, '{{ stop.name|escapejs }}')">
+                                        <i class="bi bi-stars"></i> Sugerir Alternativa
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteStop({{ stop.id }}, '{{ stop.name|escapejs }}')">
+                                        <i class="bi bi-trash"></i> Eliminar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-pin-map" style="font-size: 4rem; color: #ccc;"></i>
+                    <p class="text-muted mt-3">No hay paradas en este viaje</p>
+                    <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#aiGenerateModal">
+                        <i class="bi bi-stars"></i> Generar con IA
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal para compartir viaje -->
+<div class="modal fade" id="shareModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-share"></i> Compartir Viaje
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Comparte este viaje con quien quieras. El enlace es público y optimizado para móviles:</p>
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" id="shareUrl" readonly value="{{ request.scheme }}://{{ request.get_host }}{% url 'trip_public' trip.public_token %}">
+                    <button class="btn btn-outline-success" type="button" onclick="copyShareUrl()">
+                        <i class="bi bi-clipboard"></i> Copiar
+                    </button>
+                </div>
+                <div id="copySuccess" class="alert alert-success d-none">
+                    <i class="bi bi-check-circle"></i> ¡Enlace copiado al portapapeles!
+                </div>
+                <div class="d-grid gap-2">
+                    <a href="{{ request.scheme }}://{{ request.get_host }}{% url 'trip_public' trip.public_token %}" target="_blank" class="btn btn-outline-primary">
+                        <i class="bi bi-eye"></i> Ver Vista Previa
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para generar paradas con IA -->
+<div class="modal fade" id="aiGenerateModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-stars"></i> Generar Paradas con IA
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="aiGenerateForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="aiPrompt" class="form-label">
+                            <i class="bi bi-chat-left-text"></i> Describe qué lugares quieres visitar
+                        </label>
+                        <textarea 
+                            class="form-control" 
+                            id="aiPrompt" 
+                            rows="4" 
+                            placeholder="Ejemplo: Dame 10 lugares imprescindibles para visitar en {{ trip.destination }}"
+                            required
+                        ></textarea>
+                        <div class="form-text">
+                            La IA generará lugares de interés con coordenadas y descripciones.
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="numStops" class="form-label">
+                            <i class="bi bi-pin-map"></i> Número de paradas
+                        </label>
+                        <input 
+                            type="number" 
+                            class="form-control" 
+                            id="numStops" 
+                            value="10"
+                            min="1" 
+                            max="50"
+                        >
+                    </div>
+                    <div id="aiProgress" class="alert alert-info d-none">
+                        <div class="d-flex align-items-center">
+                            <div class="spinner-border spinner-border-sm me-2"></div>
+                            <span>Generando paradas con IA...</span>
+                        </div>
+                    </div>
+                    <div id="aiResult" class="alert d-none"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-info" onclick="generateStopsWithAI()">
+                    <i class="bi bi-stars"></i> Generar Paradas
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if trip.is_public %}
+<input type="hidden" id="publicUrl" value="{{ request.scheme }}://{{ request.get_host }}{% url 'trip_public' trip.public_token %}">
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function generateStopsWithAI() {
+    const prompt = document.getElementById('aiPrompt').value.trim();
+    const numStops = document.getElementById('numStops').value;
+    
+    if (!prompt) {
+        alert('Por favor, describe qué lugares quieres visitar');
+        return;
+    }
+    
+    document.getElementById('aiProgress').classList.remove('d-none');
+    document.getElementById('aiResult').classList.add('d-none');
+    
+    fetch('{% url "trip_generate_with_ai" trip.pk %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            prompt: prompt,
+            num_stops: parseInt(numStops)
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('aiProgress').classList.add('d-none');
+        
+        const resultDiv = document.getElementById('aiResult');
+        resultDiv.classList.remove('d-none');
+        
+        if (data.success) {
+            resultDiv.className = 'alert alert-success';
+            resultDiv.innerHTML = `
+                <h6><i class="bi bi-check-circle"></i> ¡Paradas generadas exitosamente!</h6>
+                <p class="mb-0">Se han creado ${data.count} paradas. Recargando...</p>
+            `;
+            
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            resultDiv.className = 'alert alert-danger';
+            resultDiv.innerHTML = `
+                <h6><i class="bi bi-exclamation-triangle"></i> Error</h6>
+                <p class="mb-0">${data.error || 'Ocurrió un error inesperado'}</p>
+            `;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('aiProgress').classList.add('d-none');
+        
+        const resultDiv = document.getElementById('aiResult');
+        resultDiv.classList.remove('d-none');
+        resultDiv.className = 'alert alert-danger';
+        resultDiv.innerHTML = `
+            <h6><i class="bi bi-exclamation-triangle"></i> Error</h6>
+            <p class="mb-0">No se pudo conectar con el servidor</p>
+        `;
+    });
+}
+
+function copyShareUrl() {
+    const url = document.getElementById('shareUrl').value;
+    navigator.clipboard.writeText(url).then(() => {
+        const successDiv = document.getElementById('copySuccess');
+        successDiv.classList.remove('d-none');
+        setTimeout(() => {
+            successDiv.classList.add('d-none');
+        }, 3000);
+    }).catch(err => {
+        alert('Error al copiar el enlace');
+    });
+}
+
+function deleteStop(stopId, stopName) {
+    if (!confirm(`¿Estás seguro de eliminar la parada "${stopName}"?`)) {
+        return;
+    }
+    
+    fetch(`/trips/{{ trip.pk }}/stop/${stopId}/delete/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error al eliminar la parada: ' + (data.error || 'Error desconocido'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('No se pudo conectar con el servidor');
+    });
+}
+
+function regenerateStop(stopId, stopName) {
+    if (!confirm(`¿Quieres que la IA te sugiera una alternativa para "${stopName}"?`)) {
+        return;
+    }
+    
+    // Mostrar indicador de carga
+    const btn = event.target.closest('button');
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Generando...';
+    
+    fetch(`/trips/{{ trip.pk }}/stop/${stopId}/regenerate/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error al generar alternativa: ' + (data.error || 'Error desconocido'));
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('No se pudo conectar con el servidor');
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+    });
+}
+</script>
+{% endblock %}

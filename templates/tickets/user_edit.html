@@ -217,6 +217,22 @@
                                             Descripción detallada de las responsabilidades del cargo
                                         </small>
                                     </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="{{ form.birth_date.id_for_label }}" class="form-label">
+                                            <i class="bi bi-calendar-heart me-1"></i>
+                                            {{ form.birth_date.label }}
+                                        </label>
+                                        {{ form.birth_date }}
+                                        {% if form.birth_date.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.birth_date.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                        <small class="form-text text-muted">
+                                            Fecha de nacimiento del usuario
+                                        </small>
+                                    </div>
                                 </div>
                             </div>
                         </div>

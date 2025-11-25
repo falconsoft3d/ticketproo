@@ -73,6 +73,9 @@
                                 </a>
                             </p>
                             {% endif %}
+
+                            <h6><i class="bi bi-person-plus"></i> Creado por</h6>
+                            <p>{{ contact.created_by.get_full_name|default:contact.created_by.username }}</p>
                         </div>
                         <div class="col-md-6">
                             {% if contact.company %}
@@ -101,8 +104,7 @@
                             <h6><i class="bi bi-calendar-event"></i> Fecha de Contacto</h6>
                             <p>{{ contact.contact_date|date:"d/m/Y H:i" }}</p>
                             
-                            <h6><i class="bi bi-person-plus"></i> Creado por</h6>
-                            <p>{{ contact.created_by.get_full_name|default:contact.created_by.username }}</p>
+                            
                         </div>
                     </div>
                     
@@ -207,7 +209,7 @@
                 </div>
                 <div class="card-body">
                     <!-- Formulario para nuevo comentario -->
-                    <form method="POST" class="mb-4">
+                    <form method="POST" class="mb-4" id="commentForm">
                         {% csrf_token %}
                         <div class="mb-3">
                             {{ comment_form.content }}
@@ -215,6 +217,56 @@
                                 <div class="text-danger small mt-1">{{ comment_form.content.errors.0 }}</div>
                             {% endif %}
                         </div>
+                        
+                        <!-- Botones de IA -->
+                        <div class="mb-3">
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-outline-info dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-robot"></i> Asistente IA
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><h6 class="dropdown-header">Sugerencias automáticas</h6></li>
+                                    <li>
+                                        <a class="dropdown-item" href="#" onclick="generateAIComment('company_info'); return false;">
+                                            <i class="bi bi-building me-2"></i>Info de la empresa
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="#" onclick="generateAIComment('contact_info'); return false;">
+                                            <i class="bi bi-person me-2"></i>Info del contacto
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="#" onclick="generateAIComment('sales_estimate'); return false;">
+                                            <i class="bi bi-currency-dollar me-2"></i>Estimar ventas anuales
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="#" onclick="generateAIComment('employees_estimate'); return false;">
+                                            <i class="bi bi-people me-2"></i>Estimar empleados
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="#" onclick="generateAIComment('next_steps'); return false;">
+                                            <i class="bi bi-arrow-right-circle me-2"></i>Próximos pasos
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#customPromptModal">
+                                            <i class="bi bi-chat-dots me-2"></i>Pregunta personalizada
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                            
+                            <!-- Indicador de carga -->
+                            <span id="aiLoadingIndicator" class="ms-2" style="display: none;">
+                                <span class="spinner-border spinner-border-sm" role="status"></span>
+                                <small class="text-muted ms-1">Generando con IA...</small>
+                            </span>
+                        </div>
+                        
                         <button type="submit" name="comment_submit" class="btn btn-primary">
                             <i class="bi bi-plus-circle"></i> Agregar Comentario
                         </button>
@@ -354,22 +406,31 @@
                     <!-- Estadísticas de actividades -->
                     <div class="row mb-3">
                         <div class="col-4 text-center">
-                            <div class="bg-warning text-dark rounded p-2">
-                                <small class="d-block">Pendientes</small>
-                                <strong>{{ pending_activities }}</strong>
-                            </div>
+                            <a href="{% url 'my_activities_dashboard' %}?status=pending&contact={{ contact.pk }}" 
+                               class="text-decoration-none" title="Ver actividades pendientes">
+                                <div class="bg-warning text-dark rounded p-2" style="cursor: pointer; transition: all 0.2s;">
+                                    <small class="d-block">Pendientes</small>
+                                    <strong>{{ pending_activities }}</strong>
+                                </div>
+                            </a>
                         </div>
                         <div class="col-4 text-center">
-                            <div class="bg-success text-white rounded p-2">
-                                <small class="d-block">Completadas</small>
-                                <strong>{{ completed_activities }}</strong>
-                            </div>
+                            <a href="{% url 'my_activities_dashboard' %}?status=completed&contact={{ contact.pk }}" 
+                               class="text-decoration-none" title="Ver actividades completadas">
+                                <div class="bg-success text-white rounded p-2" style="cursor: pointer; transition: all 0.2s;">
+                                    <small class="d-block">Completadas</small>
+                                    <strong>{{ completed_activities }}</strong>
+                                </div>
+                            </a>
                         </div>
                         <div class="col-4 text-center">
-                            <div class="bg-info text-white rounded p-2">
-                                <small class="d-block">Total</small>
-                                <strong>{{ total_activities }}</strong>
-                            </div>
+                            <a href="{% url 'my_activities_dashboard' %}?contact={{ contact.pk }}" 
+                               class="text-decoration-none" title="Ver todas las actividades">
+                                <div class="bg-info text-white rounded p-2" style="cursor: pointer; transition: all 0.2s;">
+                                    <small class="d-block">Total</small>
+                                    <strong>{{ total_activities }}</strong>
+                                </div>
+                            </a>
                         </div>
                     </div>
 
@@ -402,6 +463,33 @@
                                     <i class="bi bi-people"></i>
                                     <small class="d-block">Reunirnos en</small>
                                     <small class="d-block">1 semana</small>
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button type="button" class="btn btn-outline-success btn-sm w-100" 
+                                        onclick="crearActividadRapidaMes('call', '{{ contact.pk }}')"
+                                        title="Programar llamada para dentro de 1 mes">
+                                    <i class="bi bi-telephone"></i>
+                                    <small class="d-block">Llamar en</small>
+                                    <small class="d-block">1 mes</small>
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button type="button" class="btn btn-outline-info btn-sm w-100" 
+                                        onclick="crearActividadRapidaMes('meeting', '{{ contact.pk }}')"
+                                        title="Programar reunión para dentro de 1 mes">
+                                    <i class="bi bi-people"></i>
+                                    <small class="d-block">Reunirnos en</small>
+                                    <small class="d-block">1 mes</small>
+                                </button>
+                            </div>
+                            <div class="col-12">
+                                <button type="button" class="btn btn-outline-primary btn-sm w-100" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#aiQuickActionModal"
+                                        title="Crear actividad con asistencia de IA">
+                                    <i class="bi bi-stars"></i>
+                                    <small class="d-block">Acción Rápida con IA</small>
                                 </button>
                             </div>
                         </div>
@@ -600,5 +688,394 @@ function crearActividadRapida(tipo, contactId) {
         button.innerHTML = originalHTML;
     });
 }
+
+function crearActividadRapidaMes(tipo, contactId) {
+    console.log('🚀 Creando actividad rápida (1 mes):', tipo, 'para contacto:', contactId);
+    
+    // Mostrar feedback visual inmediatamente
+    const button = event.target.closest('button');
+    const originalHTML = button.innerHTML;
+    
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Creando...';
+    
+    // Preparar datos para AJAX - cambiar el tipo para indicar que es para 1 mes
+    const requestData = {
+        type: tipo + '_month'  // 'call_month' o 'meeting_month'
+    };
+    
+    // Token CSRF
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                     document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
+                     '{{ csrf_token }}';
+    
+    // Realizar petición AJAX
+    fetch(`{% url 'create_quick_activity' contact.pk %}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify(requestData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('✅ Actividad creada exitosamente:', data.activity_id);
+            
+            // Mostrar mensaje de éxito
+            button.innerHTML = '<i class="fas fa-check"></i> ¡Creada!';
+            button.classList.remove('btn-outline-primary', 'btn-outline-success', 'btn-outline-info');
+            button.classList.add('btn-success');
+            
+            // Opcional: Recargar la página después de un momento para mostrar la nueva actividad
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            console.error('❌ Error al crear actividad:', data.error);
+            alert('Error al crear la actividad: ' + data.error);
+            
+            // Restaurar botón
+            button.disabled = false;
+            button.innerHTML = originalHTML;
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error en la petición AJAX:', error);
+        alert('Error de conexión al crear la actividad');
+        
+        // Restaurar botón
+        button.disabled = false;
+        button.innerHTML = originalHTML;
+    });
+}
+
+// ============== Funciones para IA ==============
+
+function generateAIComment(promptType) {
+    console.log('🤖 Generando comentario con IA:', promptType);
+    
+    // Mostrar indicador de carga
+    const loadingIndicator = document.getElementById('aiLoadingIndicator');
+    const commentTextarea = document.querySelector('textarea[name="content"]');
+    
+    if (loadingIndicator) {
+        loadingIndicator.style.display = 'inline-block';
+    }
+    
+    // Token CSRF
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
+    
+    // Realizar petición AJAX
+    fetch('{% url "contact_ai_comment" contact.pk %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+            prompt_type: promptType
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            console.log('✅ Comentario generado exitosamente');
+            
+            // Insertar el comentario en el textarea
+            if (commentTextarea) {
+                commentTextarea.value = data.comment;
+                commentTextarea.focus();
+                
+                // Scroll al textarea
+                commentTextarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        } else {
+            console.error('❌ Error al generar comentario:', data.message);
+            alert('Error al generar comentario: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error en la petición AJAX:', error);
+        alert('Error de conexión al generar comentario con IA');
+    })
+    .finally(() => {
+        // Ocultar indicador de carga
+        if (loadingIndicator) {
+            loadingIndicator.style.display = 'none';
+        }
+    });
+}
+
+function generateCustomAIComment() {
+    const customPrompt = document.getElementById('customPromptInput').value.trim();
+    
+    if (!customPrompt) {
+        alert('Por favor, escribe tu pregunta personalizada.');
+        return;
+    }
+    
+    console.log('🤖 Generando comentario personalizado con IA');
+    
+    // Cerrar el modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('customPromptModal'));
+    if (modal) {
+        modal.hide();
+    }
+    
+    // Mostrar indicador de carga
+    const loadingIndicator = document.getElementById('aiLoadingIndicator');
+    const commentTextarea = document.querySelector('textarea[name="content"]');
+    
+    if (loadingIndicator) {
+        loadingIndicator.style.display = 'inline-block';
+    }
+    
+    // Token CSRF
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
+    
+    // Realizar petición AJAX
+    fetch('{% url "contact_ai_comment" contact.pk %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+            prompt_type: 'custom',
+            custom_prompt: customPrompt
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            console.log('✅ Comentario personalizado generado exitosamente');
+            
+            // Insertar el comentario en el textarea
+            if (commentTextarea) {
+                commentTextarea.value = data.comment;
+                commentTextarea.focus();
+                
+                // Scroll al textarea
+                commentTextarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            
+            // Limpiar el campo de prompt personalizado
+            document.getElementById('customPromptInput').value = '';
+        } else {
+            console.error('❌ Error al generar comentario:', data.message);
+            alert('Error al generar comentario: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error en la petición AJAX:', error);
+        alert('Error de conexión al generar comentario con IA');
+    })
+    .finally(() => {
+        // Ocultar indicador de carga
+        if (loadingIndicator) {
+            loadingIndicator.style.display = 'none';
+        }
+    });
+}
+
+function crearActividadesConIA() {
+    console.log('🤖 Creando actividades con IA...');
+    
+    // Obtener el prompt del usuario
+    const prompt = document.getElementById('aiActivitiesPrompt').value.trim();
+    
+    if (!prompt) {
+        alert('Por favor escribe las instrucciones para la IA');
+        return;
+    }
+    
+    console.log('📝 Prompt:', prompt);
+    
+    // Cerrar el modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('aiQuickActionModal'));
+    if (modal) {
+        modal.hide();
+    }
+    
+    // Mostrar indicador de carga
+    const loadingHTML = `
+        <div id="aiActivityLoading" class="alert alert-info text-center">
+            <div class="spinner-border spinner-border-sm me-2" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <strong>🤖 La IA está analizando el contacto y creando las actividades...</strong>
+            <p class="mb-0 small mt-2">Esto puede tomar unos segundos</p>
+        </div>
+    `;
+    
+    // Insertar loading al inicio de la página
+    const mainContent = document.querySelector('.container-fluid');
+    if (mainContent) {
+        const loadingDiv = document.createElement('div');
+        loadingDiv.innerHTML = loadingHTML;
+        mainContent.insertBefore(loadingDiv.firstElementChild, mainContent.firstElementChild);
+    }
+    
+    // Token CSRF
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
+    
+    // Realizar petición AJAX para crear actividades con IA
+    fetch(`{% url 'create_quick_activity' contact.pk %}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+            use_ai_bulk: true,
+            ai_prompt: prompt
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Quitar loading
+        const loadingElement = document.getElementById('aiActivityLoading');
+        if (loadingElement) {
+            loadingElement.remove();
+        }
+        
+        if (data.success) {
+            console.log('✅ Actividades creadas exitosamente:', data);
+            
+            // Mostrar mensaje de éxito detallado
+            const count = data.activities_created || 1;
+            const mensaje = `✨ ¡${count} actividad${count > 1 ? 'es' : ''} creada${count > 1 ? 's' : ''} con éxito!\n\n${data.message || ''}`;
+            alert(mensaje);
+            
+            // Recargar la página para mostrar las nuevas actividades
+            window.location.reload();
+        } else {
+            console.error('❌ Error al crear actividades con IA:', data.error);
+            alert('Error al crear las actividades: ' + data.error);
+        }
+    })
+    .catch(error => {
+        // Quitar loading
+        const loadingElement = document.getElementById('aiActivityLoading');
+        if (loadingElement) {
+            loadingElement.remove();
+        }
+        
+        console.error('❌ Error en la petición AJAX:', error);
+        alert('Error de conexión al crear las actividades con IA');
+    });
+}
 </script>
+
+<!-- Modal para pregunta personalizada -->
+<div class="modal fade" id="customPromptModal" tabindex="-1" aria-labelledby="customPromptModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="customPromptModalLabel">
+                    <i class="bi bi-robot me-2"></i>Pregunta Personalizada a la IA
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">
+                    Escribe tu pregunta o solicitud personalizada sobre este contacto. La IA utilizará toda la información disponible para generar un comentario útil.
+                </p>
+                <div class="mb-3">
+                    <label for="customPromptInput" class="form-label">Tu pregunta:</label>
+                    <textarea class="form-control" id="customPromptInput" rows="4" 
+                              placeholder="Ejemplo: ¿Qué estrategia de contacto recomiendas para este cliente? o ¿Cuál es el mejor momento para hacer seguimiento?"></textarea>
+                </div>
+                <div class="alert alert-light d-flex align-items-start" role="alert">
+                    <i class="bi bi-lightbulb text-warning me-2 mt-1"></i>
+                    <div>
+                        <strong>Ejemplos de preguntas:</strong>
+                        <ul class="mb-0 mt-1 small">
+                            <li>¿Qué productos o servicios podrían interesarle a esta empresa?</li>
+                            <li>¿Cuál es el perfil de decisión de este contacto?</li>
+                            <li>¿Qué competidores tiene probablemente esta empresa?</li>
+                            <li>¿Qué desafíos enfrenta esta industria?</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-info" onclick="generateCustomAIComment()">
+                    <i class="bi bi-robot"></i> Generar con IA
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Acción Rápida con IA -->
+<div class="modal fade" id="aiQuickActionModal" tabindex="-1" aria-labelledby="aiQuickActionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="aiQuickActionModalLabel">
+                    <i class="bi bi-stars me-2"></i>Planificar Actividades con IA
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">
+                    <i class="bi bi-lightbulb me-1"></i>
+                    Edita el prompt para indicarle a la IA qué actividades crear. Por defecto sugiere 3 actividades escalonadas.
+                </p>
+                
+                <div class="mb-3">
+                    <label for="aiActivitiesPrompt" class="form-label fw-bold">
+                        <i class="bi bi-chat-left-text"></i> Instrucciones para la IA:
+                    </label>
+                    <textarea class="form-control" id="aiActivitiesPrompt" rows="6" 
+                              placeholder="Escribe tu solicitud aquí...">Crea 3 actividades de seguimiento para este contacto:
+1. Una llamada de seguimiento en 15 días
+2. Una reunión comercial en 30 días  
+3. Una llamada de cierre en 60 días
+
+Para cada actividad genera un título profesional y una descripción detallada con objetivos específicos basados en la información del contacto.</textarea>
+                </div>
+                
+                <div class="alert alert-success d-flex align-items-start" role="alert">
+                    <i class="bi bi-magic me-2 mt-1"></i>
+                    <div>
+                        <strong>Ideas de prompts:</strong>
+                        <ul class="mb-0 mt-1 small">
+                            <li><strong>4 actividades:</strong> "Crea llamada en 7 días, reunión en 15, seguimiento en 30 y cierre en 60"</li>
+                            <li><strong>Frecuentes:</strong> "Crea llamadas de seguimiento cada 15 días durante 2 meses"</li>
+                            <li><strong>Específico:</strong> "Crea reunión de presentación en 10 días y demo técnica en 20 días"</li>
+                            <li><strong>Personalizado:</strong> Describe libremente qué actividades necesitas</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info d-flex align-items-start mb-0" role="alert">
+                    <i class="bi bi-info-circle me-2 mt-1"></i>
+                    <div class="small">
+                        <strong>¿Qué hará la IA?</strong> Analizará el contacto (empresa, cargo, ERP, notas, estado) y creará automáticamente todas las actividades solicitadas con títulos y descripciones inteligentes.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" onclick="crearActividadesConIA()">
+                    <i class="bi bi-stars"></i> Crear Actividades con IA
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}

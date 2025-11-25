@@ -1,0 +1,40 @@
+{% extends 'public_base.html' %}
+{% load static %}
+
+{% block title %}Viaje No Encontrado - TicketProo{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .error-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        padding: 3rem;
+        text-align: center;
+        max-width: 500px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="error-card mx-auto">
+        <i class="bi bi-airplane-engines" style="font-size: 5rem; color: #dc3545;"></i>
+        <h1 class="display-4 mt-3">404</h1>
+        <h3>Viaje No Encontrado</h3>
+        <p class="text-muted mt-3">
+            Lo sentimos, el viaje que buscas no existe o no está disponible públicamente.
+        </p>
+        <p class="text-muted">
+            Verifica que el enlace sea correcto o contacta con quien te compartió el viaje.
+        </p>
+    </div>
+</div>
+{% endblock %}

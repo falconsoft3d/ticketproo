@@ -5,7 +5,7 @@ from .api_views import (
     api_status, generate_api_token, toggle_api_access, whatsapp_receive_message,
     landing_page_meeting_click, landing_page_contact_click,
     active_users_count, active_users_list, open_tickets_count, direct_ai_chat,
-    system_info_api, short_url_stats_api
+    system_info_api, short_url_stats_api, upcoming_events_list
 )
 
 # Router para los ViewSets
@@ -34,6 +34,9 @@ api_urlpatterns = [
     # URLs de usuarios activos
     path('active-users/count/', active_users_count, name='api-active-users-count'),
     path('active-users/', active_users_list, name='api-active-users-list'),
+    
+    # URLs de eventos
+    path('upcoming-events/', upcoming_events_list, name='api-upcoming-events-list'),
     
     # URLs de tickets
     path('open-tickets/count/', open_tickets_count, name='api-open-tickets-count'),

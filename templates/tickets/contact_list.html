@@ -139,6 +139,20 @@
             </a>
         </div>
         <div class="col-md-2">
+            <a href="{% url 'contact_list' %}?status=neutral" class="text-decoration-none">
+                <div class="card text-center border-primary h-100 contact-kpi-card {% if request.GET.status == 'neutral' %}filter-active{% endif %}" style="cursor: pointer; transition: transform 0.2s;">
+                    <div class="card-body p-2">
+                        <i class="bi bi-emoji-neutral-fill text-primary mb-1" style="font-size: 1.5rem;"></i>
+                        <h4 class="text-primary mb-0">{{ neutral_contacts }}</h4>
+                        <p class="text-muted mb-0 small">😐 Neutros</p>
+                        {% if request.GET.status == 'neutral' %}
+                            <small class="text-primary fw-bold">✓ Activo</small>
+                        {% endif %}
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-2">
             <a href="{% url 'contact_list' %}?status=negative" class="text-decoration-none">
                 <div class="card text-center border-danger h-100 contact-kpi-card {% if request.GET.status == 'negative' %}filter-active{% endif %}" style="cursor: pointer; transition: transform 0.2s;">
                     <div class="card-body p-2">
@@ -161,20 +175,6 @@
                         <p class="text-muted mb-0 small">� Con Actividad</p>
                         {% if request.GET.has_activity == 'yes' %}
                             <small class="text-warning fw-bold">✓ Activo</small>
-                        {% endif %}
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-2">
-            <a href="{% url 'contact_list' %}?has_activity=no" class="text-decoration-none">
-                <div class="card text-center border-secondary h-100 contact-kpi-card {% if request.GET.has_activity == 'no' %}filter-active{% endif %}" style="cursor: pointer; transition: transform 0.2s;">
-                    <div class="card-body p-2">
-                        <i class="bi bi-telephone-x-fill text-secondary mb-1" style="font-size: 1.5rem;"></i>
-                        <h4 class="text-secondary mb-0">{{ contacts_without_activities }}</h4>
-                        <p class="text-muted mb-0 small">📵 Sin Actividad</p>
-                        {% if request.GET.has_activity == 'no' %}
-                            <small class="text-secondary fw-bold">✓ Activo</small>
                         {% endif %}
                     </div>
                 </div>

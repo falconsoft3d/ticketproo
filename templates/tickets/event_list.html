@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block extra_css %}
+<style>
+    tr.past-event {
+        background-color: #f5f5f5 !important;
+        opacity: 0.7;
+    }
+    
+    tr.past-event td {
+        color: #b0b0b0 !important;
+    }
+    
+    tr.past-event td a.text-decoration-none {
+        color: #b0b0b0 !important;
+    }
+    
+    tr.past-event td a.text-decoration-none strong {
+        color: #b0b0b0 !important;
+        font-weight: normal !important;
+    }
+    
+    tr.past-event td i {
+        color: #b0b0b0 !important;
+    }
+    
+    tr.past-event td span.text-muted {
+        color: #b0b0b0 !important;
+    }
+    
+    tr.past-event .badge.bg-info {
+        background-color: #d0d0d0 !important;
+        color: #808080 !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>
+                    <i class="bi bi-list-ul"></i> {{ page_title }}
+                </h2>
+                <div>
+                    <a href="{% url 'event_calendar' %}" class="btn btn-outline-primary">
+                        <i class="bi bi-calendar-event"></i> Ver Calendario
+                    </a>
+                    <a href="{% url 'event_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Nuevo Evento
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    {% if events %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 5%;">
+                                            <i class="bi bi-palette"></i>
+                                        </th>
+                                        <th style="width: 35%;">Título</th>
+                                        <th style="width: 25%;">Fecha</th>
+                                        <th style="width: 25%;">Ubicación</th>
+                                        <th style="width: 10%;" class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for event in events %}
+                                    <tr {% if event.event_date < now %}class="past-event"{% endif %}>
+                                        <td>
+                                            <span class="badge" style="background-color: {% if event.event_date < now %}#bdbdbd{% else %}{{ event.color }}{% endif %}; width: 20px; height: 20px; display: inline-block; border-radius: 50%;"></span>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'event_detail' event.pk %}" class="text-decoration-none" {% if event.event_date < now %}style="color: #b0b0b0 !important;"{% endif %}>
+                                                <strong {% if event.event_date < now %}style="color: #b0b0b0 !important;"{% endif %}>{{ event.title }}</strong>
+                                            </a>
+                                            {% if event.is_all_day %}
+                                                <span class="badge bg-info ms-2" {% if event.event_date < now %}style="background-color: #d0d0d0 !important; color: #808080 !important;"{% endif %}>Todo el día</span>
+                                            {% endif %}
+                                        </td>
+                                        <td {% if event.event_date < now %}style="color: #b0b0b0;"{% endif %}>
+                                            <i class="bi bi-calendar"></i>
+                                            {{ event.event_date|date:"d/m/Y H:i" }}
+                                        </td>
+                                        <td {% if event.event_date < now %}style="color: #b0b0b0;"{% endif %}>
+                                            {% if event.location %}
+                                                <i class="bi bi-geo-alt"></i>
+                                                {{ event.location|truncatewords:5 }}
+                                            {% else %}
+                                                <span class="text-muted">Sin ubicación</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a href="{% url 'event_detail' event.pk %}" 
+                                                   class="btn btn-outline-info" 
+                                                   title="Ver detalles">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <a href="{% url 'event_edit' event.pk %}" 
+                                                   class="btn btn-outline-primary" 
+                                                   title="Editar">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <a href="{% url 'event_delete' event.pk %}" 
+                                                   class="btn btn-outline-danger" 
+                                                   title="Eliminar">
+                                                    <i class="bi bi-trash"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-calendar-x" style="font-size: 4rem; color: #ccc;"></i>
+                            <p class="text-muted mt-3">No hay eventos registrados</p>
+                            <a href="{% url 'event_create' %}" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> Crear Primer Evento
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

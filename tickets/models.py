@@ -983,6 +983,14 @@ class UserProfile(models.Model):
         help_text='Código ISO de 2 letras del país (ej: ES, US, FR)'
     )
     
+    # Fecha de cumpleaños
+    birth_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de cumpleaños',
+        help_text='Fecha de nacimiento del usuario'
+    )
+    
     created_at = models.DateTimeField(
         default=timezone.now,
         verbose_name='Fecha de creación'
@@ -4294,6 +4302,7 @@ class Contact(models.Model):
     
     STATUS_CHOICES = [
         ('positive', 'Positivo'),
+        ('neutral', 'Neutral'),
         ('negative', 'Negativo'),
     ]
     
@@ -4421,11 +4430,21 @@ class Contact(models.Model):
     
     def get_status_color(self):
         """Retorna el color del estado"""
-        return 'success' if self.status == 'positive' else 'danger'
+        if self.status == 'positive':
+            return 'success'
+        elif self.status == 'neutral':
+            return 'primary'
+        else:
+            return 'danger'
     
     def get_status_icon(self):
         """Retorna el icono del estado"""
-        return 'bi-check-circle' if self.status == 'positive' else 'bi-x-circle'
+        if self.status == 'positive':
+            return 'bi-check-circle'
+        elif self.status == 'neutral':
+            return 'bi-dash-circle'
+        else:
+            return 'bi-x-circle'
 
 
 def contact_attachment_upload_path(instance, filename):
@@ -4862,6 +4881,78 @@ class AIChatMessage(models.Model):
     def is_from_ai(self):
         """Verifica si el mensaje es de la IA"""
         return self.role == 'assistant'
+
+
+class SharedAIChatMessage(models.Model):
+    """Modelo para mensajes individuales de chat IA compartidos públicamente"""
+    
+    message = models.ForeignKey(
+        'AIChatMessage',
+        on_delete=models.CASCADE,
+        related_name='shared_instances',
+        verbose_name='Mensaje'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='shared_ai_messages',
+        verbose_name='Usuario que compartió'
+    )
+    share_token = models.CharField(
+        max_length=64,
+        unique=True,
+        verbose_name='Token de compartición',
+        help_text='Token único para acceder al mensaje compartido'
+    )
+    title = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Título público',
+        help_text='Título opcional para el mensaje compartido'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Compartición activa'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de compartición'
+    )
+    views_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Número de vistas'
+    )
+    expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de expiración',
+        help_text='Fecha en que expira el enlace compartido (opcional)'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Mensaje IA Compartido'
+        verbose_name_plural = 'Mensajes IA Compartidos'
+    
+    def __str__(self):
+        title = self.title or f"Mensaje de {self.user.username}"
+        return f"{title} - {self.share_token[:8]}..."
+    
+    def get_public_url(self):
+        """Retorna la URL pública del mensaje compartido"""
+        from django.urls import reverse
+        return reverse('shared_ai_message_view', kwargs={'token': self.share_token})
+    
+    def is_expired(self):
+        """Verifica si el enlace ha expirado"""
+        if not self.expires_at:
+            return False
+        return timezone.now() > self.expires_at
+    
+    def increment_views(self):
+        """Incrementa el contador de vistas"""
+        self.views_count += 1
+        self.save(update_fields=['views_count'])
 
 
 class Concept(models.Model):
@@ -17365,6 +17456,250 @@ class SportGoalRecord(models.Model):
                 return False
         
         return True
+
+
+class Event(models.Model):
+    """Modelo para gestionar eventos del calendario"""
+    
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título',
+        help_text='Título del evento'
+    )
+    
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción',
+        help_text='Descripción detallada del evento'
+    )
+    
+    event_date = models.DateTimeField(
+        verbose_name='Fecha y Hora',
+        help_text='Fecha y hora del evento'
+    )
+    
+    location = models.CharField(
+        max_length=300,
+        blank=True,
+        verbose_name='Ubicación',
+        help_text='Lugar donde se realizará el evento'
+    )
+    
+    color = models.CharField(
+        max_length=7,
+        default='#007bff',
+        verbose_name='Color',
+        help_text='Color del evento en el calendario (formato hexadecimal)'
+    )
+    
+    is_all_day = models.BooleanField(
+        default=False,
+        verbose_name='Todo el día',
+        help_text='Marcar si el evento dura todo el día'
+    )
+    
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='created_events',
+        verbose_name='Creado por'
+    )
+    
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        ordering = ['event_date']
+        verbose_name = 'Evento'
+        verbose_name_plural = 'Eventos'
+    
+    def __str__(self):
+        return f"{self.title} - {self.event_date.strftime('%Y-%m-%d %H:%M')}"
+
+
+class Trip(models.Model):
+    """Modelo para gestionar viajes"""
+    
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título del Viaje'
+    )
+    
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción'
+    )
+    
+    destination = models.CharField(
+        max_length=200,
+        verbose_name='Destino Principal'
+    )
+    
+    start_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Inicio'
+    )
+    
+    end_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Fin'
+    )
+    
+    is_public = models.BooleanField(
+        default=False,
+        verbose_name='Público',
+        help_text='Permitir que el viaje sea visible públicamente'
+    )
+    
+    public_token = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        verbose_name='Token Público',
+        help_text='Token para compartir el viaje públicamente'
+    )
+    
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='trips',
+        verbose_name='Creado por'
+    )
+    
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Viaje'
+        verbose_name_plural = 'Viajes'
+    
+    def __str__(self):
+        return f"{self.title} - {self.destination}"
+    
+    def get_public_url(self):
+        """Obtener URL pública del viaje"""
+        from django.urls import reverse
+        return reverse('trip_public', kwargs={'token': self.public_token})
+
+
+class TripStop(models.Model):
+    """Modelo para puntos de interés en un viaje"""
+    
+    trip = models.ForeignKey(
+        Trip,
+        on_delete=models.CASCADE,
+        related_name='stops',
+        verbose_name='Viaje'
+    )
+    
+    name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre del Lugar'
+    )
+    
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción'
+    )
+    
+    address = models.CharField(
+        max_length=300,
+        blank=True,
+        verbose_name='Dirección'
+    )
+    
+    latitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        verbose_name='Latitud'
+    )
+    
+    longitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        verbose_name='Longitud'
+    )
+    
+    order = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Orden',
+        help_text='Orden de visita en el itinerario'
+    )
+    
+    visit_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Visita'
+    )
+    
+    visit_time = models.TimeField(
+        null=True,
+        blank=True,
+        verbose_name='Hora de Visita'
+    )
+    
+    duration_minutes = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name='Duración (minutos)',
+        help_text='Tiempo estimado de visita en minutos'
+    )
+    
+    notes = models.TextField(
+        blank=True,
+        verbose_name='Notas',
+        help_text='Notas adicionales sobre el lugar'
+    )
+    
+    historical_info = models.TextField(
+        blank=True,
+        verbose_name='Información Histórica',
+        help_text='Historia e información interesante sobre el lugar (aprox. 200 palabras)'
+    )
+    
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    
+    class Meta:
+        ordering = ['trip', 'order']
+        verbose_name = 'Parada de Viaje'
+        verbose_name_plural = 'Paradas de Viaje'
+    
+    def __str__(self):
+        return f"{self.order}. {self.name} - {self.trip.title}"
+    
+    def get_google_maps_url(self):
+        """Generar URL de Google Maps"""
+        if self.latitude and self.longitude:
+            return f"https://www.google.com/maps/search/?api=1&query={self.latitude},{self.longitude}"
+        elif self.address:
+            import urllib.parse
+            query = urllib.parse.quote(self.address)
+            return f"https://www.google.com/maps/search/?api=1&query={query}"
+        return None
 
 
 

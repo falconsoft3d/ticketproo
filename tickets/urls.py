@@ -314,6 +314,9 @@ urlpatterns = [
     path('contact-attachments/<int:pk>/delete/', views.contact_attachment_delete, name='contact_attachment_delete'),
     path('contact-attachments/<int:pk>/download/', views.contact_attachment_download, name='contact_attachment_download'),
     
+    # URL para comentarios asistidos por IA
+    path('contacts/<int:pk>/ai-comment/', views.contact_ai_comment, name='contact_ai_comment'),
+    
     # URL para crear actividad desde contacto
     path('contacts/<int:contact_id>/create-activity/', views.activity_create_from_contact, name='activity_create_from_contact'),
     
@@ -511,6 +514,7 @@ urlpatterns = [
     
     # URLs de Chat con IA
     path('ai-chat/', views.ai_chat_list_view, name='ai_chat_list'),
+    path('ai-chat/get-session/', views.get_or_create_user_chat_session, name='get_user_chat_session'),
     path('ai-chat/<int:session_id>/', views.ai_chat_session_view, name='ai_chat_session'),
     path('ai-chat/<int:session_id>/delete/', views.ai_chat_delete_session_view, name='ai_chat_delete_session'),
     path('ai-chat-debug/<int:session_id>/', views.ai_chat_debug_view, name='ai_chat_debug'),
@@ -520,6 +524,12 @@ urlpatterns = [
     
     # AJAX para Chat IA
     path('ai-chat/<int:session_id>/send/', views.ai_chat_ajax_send_message, name='ai_chat_ajax_send'),
+    path('api/ai-chat/<int:session_id>/messages/', views.ai_chat_get_messages, name='ai_chat_get_messages'),
+    path('ai-chat/message/<int:message_id>/share/', views.share_ai_chat_message, name='share_ai_chat_message'),
+    path('ai-chat/message/<int:message_id>/unshare/', views.unshare_ai_chat_message, name='unshare_ai_chat_message'),
+    path('ai-chat/<int:session_id>/share/', views.share_ai_chat_session, name='share_ai_chat_session'),
+    path('shared-chat/<str:share_token>/', views.shared_ai_chat_view, name='shared_ai_chat_view'),
+    path('shared/ai-message/<str:token>/', views.shared_ai_message_view, name='shared_ai_message_view'),
     
     # AJAX para mejorar tickets con IA
     path('tickets/<int:ticket_id>/improve-ai/', views.improve_ticket_with_ai, name='improve_ticket_with_ai'),
@@ -1297,6 +1307,26 @@ urlpatterns += [
     path('sport-goal/<int:pk>/delete/', views.sport_goal_delete, name='sport_goal_delete'),
     path('objetivo/<uuid:uuid>/', views.sport_goal_public, name='sport_goal_public'),
     path('objetivo/<uuid:uuid>/record/', views.sport_goal_record, name='sport_goal_record'),
+    
+    # URLs de Eventos
+    path('events/', views.event_list, name='event_list'),
+    path('events/calendar/', views.event_calendar, name='event_calendar'),
+    path('events/create/', views.event_create, name='event_create'),
+    path('events/generate-with-ai/', views.generate_events_with_ai, name='generate_events_with_ai'),
+    path('events/<int:pk>/', views.event_detail, name='event_detail'),
+    path('events/<int:pk>/edit/', views.event_edit, name='event_edit'),
+    path('events/<int:pk>/delete/', views.event_delete, name='event_delete'),
+    
+    # URLs de Viajes
+    path('trips/', views.trip_list, name='trip_list'),
+    path('trips/create/', views.trip_create, name='trip_create'),
+    path('trips/<int:pk>/', views.trip_detail, name='trip_detail'),
+    path('trips/<int:pk>/edit/', views.trip_edit, name='trip_edit'),
+    path('trips/<int:pk>/delete/', views.trip_delete, name='trip_delete'),
+    path('trips/<int:pk>/generate-with-ai/', views.trip_generate_with_ai, name='trip_generate_with_ai'),
+    path('trips/<int:pk>/stop/<int:stop_id>/delete/', views.trip_stop_delete, name='trip_stop_delete'),
+    path('trips/<int:pk>/stop/<int:stop_id>/regenerate/', views.trip_stop_regenerate, name='trip_stop_regenerate'),
+    path('trips/public/<uuid:token>/', views.trip_public, name='trip_public'),
     
     # URLs de API
     path('api/', include('tickets.api_urls')),

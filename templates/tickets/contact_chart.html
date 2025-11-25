@@ -57,7 +57,7 @@
         </div>
     </div>
     
-    <div class="row justify-content-center">
+    <div class="row justify-content-center mb-4">
         <div class="col-lg-12">
             <div class="card shadow-sm">
                 <div class="card-header d-flex justify-content-between align-items-center">
@@ -78,9 +78,30 @@
             </div>
         </div>
     </div>
+
+    <!-- Gráfico de Reuniones por Mes -->
+    <div class="row justify-content-center">
+        <div class="col-lg-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-calendar-check text-purple"></i> Reuniones por mes - Comparativa anual
+                    </h5>
+                    <small class="text-muted">
+                        <span class="badge bg-primary">{{ current_year }}: {{ total_meetings_current }} reunión{{ total_meetings_current|pluralize:"es" }}</span>
+                        <span class="badge bg-secondary ms-2">{{ previous_year }}: {{ total_meetings_previous }} reunión{{ total_meetings_previous|pluralize:"es" }}</span>
+                    </small>
+                </div>
+                <div class="card-body">
+                    <canvas id="meetingsChart" height="120"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+// Gráfico de contactos creados
 const ctx = document.getElementById('contactsChart').getContext('2d');
 const contactsChart = new Chart(ctx, {
     type: 'line',
@@ -103,6 +124,74 @@ const contactsChart = new Chart(ctx, {
             y: {
                 beginAtZero: true,
                 stepSize: 1
+            }
+        }
+    }
+});
+
+// Gráfico de reuniones por mes - Comparativa anual
+const ctxMeetings = document.getElementById('meetingsChart').getContext('2d');
+const meetingsChart = new Chart(ctxMeetings, {
+    type: 'line',
+    data: {
+        labels: {{ meetings_labels|safe }},
+        datasets: [
+            {
+                label: '{{ current_year }}',
+                data: {{ meetings_counts_current|safe }},
+                backgroundColor: 'rgba(13, 110, 253, 0.2)',
+                borderColor: 'rgba(13, 110, 253, 1)',
+                borderWidth: 3,
+                pointRadius: 5,
+                pointBackgroundColor: 'rgba(13, 110, 253, 1)',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointHoverRadius: 7,
+                fill: true,
+                tension: 0.3
+            },
+            {
+                label: '{{ previous_year }}',
+                data: {{ meetings_counts_previous|safe }},
+                backgroundColor: 'rgba(108, 117, 125, 0.2)',
+                borderColor: 'rgba(108, 117, 125, 1)',
+                borderWidth: 3,
+                pointRadius: 5,
+                pointBackgroundColor: 'rgba(108, 117, 125, 1)',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointHoverRadius: 7,
+                fill: true,
+                tension: 0.3
+            }
+        ]
+    },
+    options: {
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: true,
+                position: 'top'
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        let label = context.dataset.label || '';
+                        if (label) {
+                            label += ': ';
+                        }
+                        label += context.parsed.y;
+                        label += context.parsed.y === 1 ? ' reunión' : ' reuniones';
+                        return label;
+                    }
+                }
             }
         }
     }

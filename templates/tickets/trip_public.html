@@ -1,0 +1,215 @@
+{% extends 'public_base.html' %}
+{% load static %}
+
+{% block title %}{{ trip.title }} - TicketProo{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        margin: 0;
+        padding: 0;
+    }
+    .trip-container {
+        padding: 1rem;
+        max-width: 100%;
+    }
+    
+    @media (min-width: 768px) {
+        .trip-container {
+            padding: 2rem 0;
+        }
+    }
+    
+    .stop-card {
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .stop-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    }
+    .stop-number {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.2rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        flex-shrink: 0;
+    }
+    .header-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        margin-bottom: 1.5rem;
+    }
+    
+    .mobile-optimize {
+        font-size: 0.95rem;
+    }
+    
+    @media (max-width: 576px) {
+        .stop-number {
+            width: 40px;
+            height: 40px;
+            font-size: 1rem;
+        }
+        
+        .mobile-optimize {
+            font-size: 0.9rem;
+        }
+        
+        .header-card h1 {
+            font-size: 1.75rem;
+        }
+        
+        .header-card h3 {
+            font-size: 1.25rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container trip-container">
+    <div class="header-card p-4 mb-4">
+        <div class="text-center">
+            <h1 class="display-4">
+                <i class="bi bi-airplane text-primary"></i> {{ trip.title }}
+            </h1>
+            <h3 class="text-muted">
+                <i class="bi bi-geo-alt-fill"></i> {{ trip.destination }}
+            </h3>
+            {% if trip.description %}
+            <p class="lead mt-3 mobile-optimize">{{ trip.description }}</p>
+            {% endif %}
+            
+            <div class="d-flex flex-wrap justify-content-center gap-3 mt-3 mobile-optimize">
+                {% if trip.start_date %}
+                <div>
+                    <i class="bi bi-calendar"></i>
+                    <strong>Inicio:</strong> {{ trip.start_date|date:"d/m/Y" }}
+                </div>
+                {% endif %}
+                {% if trip.end_date %}
+                <div>
+                    <i class="bi bi-calendar-check"></i>
+                    <strong>Fin:</strong> {{ trip.end_date|date:"d/m/Y" }}
+                </div>
+                {% endif %}
+                <div>
+                    <i class="bi bi-pin-map"></i>
+                    <strong>{{ stops.count }}</strong> parada{{ stops.count|pluralize }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <h3 class="text-white mb-4">
+                <i class="bi bi-list-ol"></i> Itinerario
+            </h3>
+            
+            {% if stops %}
+                {% for stop in stops %}
+                <div class="card stop-card mb-3">
+                    <div class="card-body">
+                        <div class="d-flex">
+                            <div class="stop-number me-3">
+                                {{ stop.order }}
+                            </div>
+                            <div class="flex-grow-1">
+                                <h4 class="mb-2">{{ stop.name }}</h4>
+                                
+                                {% if stop.description %}
+                                <p class="text-muted mb-3">{{ stop.description }}</p>
+                                {% endif %}
+                                
+                                <div class="row mb-3">
+                                    {% if stop.address %}
+                                    <div class="col-md-6 mb-2">
+                                        <i class="bi bi-geo-alt text-primary"></i>
+                                        <strong>Dirección:</strong> {{ stop.address }}
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if stop.visit_date %}
+                                    <div class="col-md-3 mb-2">
+                                        <i class="bi bi-calendar text-primary"></i>
+                                        <strong>Fecha:</strong> {{ stop.visit_date|date:"d/m/Y" }}
+                                        {% if stop.visit_time %} {{ stop.visit_time|time:"H:i" }}{% endif %}
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if stop.duration_minutes %}
+                                    <div class="col-md-3 mb-2">
+                                        <i class="bi bi-clock text-primary"></i>
+                                        <strong>Duración:</strong> {{ stop.duration_minutes }} min
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if stop.latitude and stop.longitude %}
+                                <div class="mb-3">
+                                    <small class="text-muted">
+                                        <i class="bi bi-pin"></i> Coordenadas: {{ stop.latitude }}, {{ stop.longitude }}
+                                    </small>
+                                </div>
+                                {% endif %}
+                                
+                                {% if stop.notes %}
+                                <div class="alert alert-light mb-3">
+                                    <strong><i class="bi bi-info-circle"></i> Notas:</strong> {{ stop.notes }}
+                                </div>
+                                {% endif %}
+                                
+                                {% if stop.historical_info %}
+                                <div class="card bg-light mb-3">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-primary">
+                                            <i class="bi bi-book"></i> Historia e Información Interesante
+                                        </h6>
+                                        <p class="card-text" style="text-align: justify; line-height: 1.6;">{{ stop.historical_info }}</p>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if stop.get_google_maps_url %}
+                                <a href="{{ stop.get_google_maps_url }}" target="_blank" class="btn btn-primary">
+                                    <i class="bi bi-map"></i> Ver en Google Maps
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="bi bi-pin-map" style="font-size: 4rem; color: #ccc;"></i>
+                        <p class="text-muted mt-3">Este viaje aún no tiene paradas definidas</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="text-center mt-5">
+        <p class="text-white">
+            <small>Compartido desde <strong>TicketProo</strong></small>
+        </p>
+    </div>
+</div>
+{% endblock %}

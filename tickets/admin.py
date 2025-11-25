@@ -22,7 +22,7 @@ from .models import (
     AIBook, AIBookChapter, EmployeeRequest, InternalAgreement, Asset, AssetHistory, UrlManager,
     ExpenseReport, ExpenseItem, ExpenseComment, MonthlyCumplimiento, DailyCumplimiento, QRCode, Quotation, QuotationLine, QuotationView,
     Contact, ContactComment, ContactAttachment, QARating, GameCounter, ExerciseCounter, SportGoal, SportGoalRecord,
-    ClientRequest, ClientRequestResponse
+    ClientRequest, ClientRequestResponse, Event, Trip, TripStop
 )
 
 # Configuración del sitio de administración
@@ -4995,3 +4995,128 @@ class ClientRequestResponseAdmin(admin.ModelAdmin):
             '<span class="badge" style="background-color: #6c757d;">No</span>'
         )
     has_attachment.short_description = 'Adjunto'
+
+
+@admin.register(Event)
+class EventAdmin(admin.ModelAdmin):
+    """Administración de Eventos"""
+    list_display = ('title', 'event_date', 'location', 'color_badge', 'is_all_day', 'created_by')
+    list_filter = ('is_all_day', 'event_date', 'created_by')
+    search_fields = ('title', 'description', 'location')
+    date_hierarchy = 'event_date'
+    ordering = ('-event_date',)
+    readonly_fields = ('created_at', 'updated_at')
+    
+    fieldsets = (
+        ('Información del Evento', {
+            'fields': ('title', 'description', 'color')
+        }),
+        ('Fecha y Hora', {
+            'fields': ('event_date', 'is_all_day')
+        }),
+        ('Ubicación', {
+            'fields': ('location',)
+        }),
+        ('Información del Sistema', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def color_badge(self, obj):
+        """Mostrar color como badge"""
+        return format_html(
+            '<span style="display: inline-block; width: 20px; height: 20px; background-color: {}; border-radius: 50%; border: 1px solid #ccc;"></span>',
+            obj.color
+        )
+    color_badge.short_description = 'Color'
+    
+    def save_model(self, request, obj, form, change):
+        """Asignar el usuario que crea el evento"""
+        if not change:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+class TripStopInline(admin.TabularInline):
+    """Inline para paradas de viaje"""
+    model = TripStop
+    extra = 1
+    fields = ('order', 'name', 'address', 'latitude', 'longitude', 'visit_date', 'visit_time', 'duration_minutes')
+    ordering = ('order',)
+
+
+@admin.register(Trip)
+class TripAdmin(admin.ModelAdmin):
+    """Administración de Viajes"""
+    list_display = ('title', 'destination', 'start_date', 'end_date', 'stops_count', 'is_public', 'created_by', 'created_at')
+    list_filter = ('is_public', 'start_date', 'created_by')
+    search_fields = ('title', 'destination', 'description')
+    date_hierarchy = 'start_date'
+    ordering = ('-created_at',)
+    readonly_fields = ('public_token', 'created_at', 'updated_at', 'public_url_display')
+    inlines = [TripStopInline]
+    
+    fieldsets = (
+        ('Información del Viaje', {
+            'fields': ('title', 'destination', 'description')
+        }),
+        ('Fechas', {
+            'fields': ('start_date', 'end_date')
+        }),
+        ('Configuración', {
+            'fields': ('is_public', 'public_token', 'public_url_display')
+        }),
+        ('Información del Sistema', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def stops_count(self, obj):
+        """Mostrar cantidad de paradas"""
+        count = obj.stops.count()
+        return format_html(
+            '<span class="badge badge-info">{} parada{}</span>',
+            count,
+            's' if count != 1 else ''
+        )
+    stops_count.short_description = 'Paradas'
+    
+    def public_url_display(self, obj):
+        """Mostrar URL pública"""
+        if obj.is_public:
+            url = obj.get_public_url()
+            return format_html(
+                '<a href="{}" target="_blank">{}</a><br><button onclick="navigator.clipboard.writeText(\'{}\');alert(\'Copiado!\')">Copiar</button>',
+                url, url, url
+            )
+        return 'No público'
+    public_url_display.short_description = 'URL Pública'
+    
+    def save_model(self, request, obj, form, change):
+        """Asignar el usuario que crea el viaje"""
+        if not change:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(TripStop)
+class TripStopAdmin(admin.ModelAdmin):
+    """Administración de Paradas de Viaje"""
+    list_display = ('name', 'trip', 'order', 'address', 'visit_date', 'duration_minutes')
+    list_filter = ('trip', 'visit_date')
+    search_fields = ('name', 'address', 'description')
+    ordering = ('trip', 'order')
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('trip', 'name', 'description', 'order')
+        }),
+        ('Ubicación', {
+            'fields': ('address', 'latitude', 'longitude')
+        }),
+        ('Visita', {
+            'fields': ('visit_date', 'visit_time', 'duration_minutes', 'notes')
+        })
+    )

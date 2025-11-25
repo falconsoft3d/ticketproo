@@ -49,7 +49,7 @@ from .models import (
     DailyTaskSession, DailyTaskItem, ChatRoom, ChatMessage, ContactFormSubmission,
     Opportunity, OpportunityStatus, OpportunityNote, OpportunityStatusHistory, OpportunityActivity,
     Meeting, MeetingAttendee, MeetingQuestion, Contact,
-    BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, Concept,
+    BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, SharedAIChatMessage, Concept,
     Exam, ExamQuestion, ExamAttempt, ExamAnswer, ContactoWeb, PublicDocumentUpload,
     Employee, JobApplicationToken, EmployeePayroll, Agreement, AgreementSignature,
     LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry, SharedFile, SharedFileDownload,
@@ -116,6 +116,53 @@ def contact_chart(request):
     total_contributions = sum(activity_data.values())
     max_contributions = max(activity_data.values()) if activity_data.values() else 0
     
+    # Generar datos para el gráfico de reuniones por mes (año actual y anterior)
+    from django.db.models.functions import TruncMonth
+    from dateutil.relativedelta import relativedelta
+    
+    current_date = timezone.now().date()
+    current_year = current_date.year
+    previous_year = current_year - 1
+    
+    # Obtener reuniones del año actual
+    meetings_current_year = Contact.objects.filter(
+        had_meeting=True,
+        meeting_date__year=current_year
+    ).annotate(
+        month=TruncMonth('meeting_date')
+    ).values('month').annotate(
+        count=Count('id')
+    ).order_by('month')
+    
+    # Obtener reuniones del año anterior
+    meetings_previous_year = Contact.objects.filter(
+        had_meeting=True,
+        meeting_date__year=previous_year
+    ).annotate(
+        month=TruncMonth('meeting_date')
+    ).values('month').annotate(
+        count=Count('id')
+    ).order_by('month')
+    
+    # Crear diccionarios con datos de reuniones
+    current_year_dict = {item['month'].month: item['count'] for item in meetings_current_year if item['month']}
+    previous_year_dict = {item['month'].month: item['count'] for item in meetings_previous_year if item['month']}
+    
+    # Generar labels (meses del 1 al 12) y counts para ambos años
+    meetings_labels = []
+    meetings_counts_current = []
+    meetings_counts_previous = []
+    
+    month_names = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+    
+    for month_num in range(1, 13):
+        meetings_labels.append(month_names[month_num - 1])
+        meetings_counts_current.append(current_year_dict.get(month_num, 0))
+        meetings_counts_previous.append(previous_year_dict.get(month_num, 0))
+    
+    total_meetings_current = sum(meetings_counts_current)
+    total_meetings_previous = sum(meetings_counts_previous)
+    
     import json
     context = {
         'labels': json.dumps(labels),
@@ -127,6 +174,13 @@ def contact_chart(request):
         'activity_max': max_contributions,
         'activity_start_date': start_date,
         'activity_end_date': end_date,
+        'meetings_labels': json.dumps(meetings_labels),
+        'meetings_counts_current': json.dumps(meetings_counts_current),
+        'meetings_counts_previous': json.dumps(meetings_counts_previous),
+        'total_meetings_current': total_meetings_current,
+        'total_meetings_previous': total_meetings_previous,
+        'current_year': current_year,
+        'previous_year': previous_year,
     }
     return render(request, 'tickets/contact_chart.html', context)
 from django.shortcuts import render, redirect, get_object_or_404
@@ -161,7 +215,7 @@ from .models import (
     DailyTaskSession, DailyTaskItem, ChatRoom, ChatMessage, ContactFormSubmission,
     Opportunity, OpportunityStatus, OpportunityNote, OpportunityStatusHistory,
     Meeting, MeetingAttendee, MeetingQuestion, Contact,
-    BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, Concept,
+    BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, SharedAIChatMessage, Concept,
     Exam, ExamQuestion, ExamAttempt, ExamAnswer, ContactoWeb, PublicDocumentUpload,
     Employee, JobApplicationToken, EmployeePayroll, Agreement, AgreementSignature,
     LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry, SharedFile, SharedFileDownload,
@@ -7970,6 +8024,158 @@ def api_activities_calendar(request):
     return JsonResponse(events, safe=False)
 
 
+def create_bulk_activities_with_ai(contact, user_prompt, user):
+    """Helper para crear múltiples actividades usando IA"""
+    from .models import OpportunityActivity, SystemConfiguration
+    from django.http import JsonResponse
+    from django.utils import timezone
+    from datetime import timedelta
+    import json as json_module
+    import openai
+    
+    try:
+        config = SystemConfiguration.objects.first()
+        if not config or not config.openai_api_key:
+            return JsonResponse({'success': False, 'error': 'No se encontró la clave de API de OpenAI'})
+        
+        client = openai.OpenAI(api_key=config.openai_api_key)
+        
+        # Preparar contexto del contacto
+        contact_info = f"""
+Información del Contacto:
+- Nombre: {contact.name}
+- Empresa: {contact.company or 'No especificada'}
+- Email: {contact.email or 'No especificado'}
+- Teléfono: {contact.phone or 'No especificado'}
+- Cargo: {contact.position or 'No especificado'}
+- País: {contact.country or 'No especificado'}
+- ERP: {contact.erp or 'No especificado'}
+- Estado: {contact.get_status_display()}
+- Fuente: {contact.source or 'No especificada'}
+- Notas: {contact.notes or 'Sin notas'}
+"""
+        
+        system_prompt = """Eres un asistente experto en gestión de relaciones comerciales y ventas. 
+Tu tarea es crear un plan de actividades de seguimiento basado en las instrucciones del usuario.
+
+IMPORTANTE: Debes responder ÚNICAMENTE con un JSON válido con esta estructura exacta:
+{
+    "activities": [
+        {
+            "days": 15,
+            "type": "call",
+            "title": "título de la actividad",
+            "description": "descripción detallada con objetivos específicos",
+            "priority": "high"
+        }
+    ]
+}
+
+Reglas:
+- type puede ser: "call" (llamada) o "meeting" (reunión)
+- priority puede ser: "low", "medium", "high"
+- days debe ser un número entero (días desde hoy)
+- title debe ser conciso y profesional
+- description debe ser detallada, con contexto, objetivos y temas a tratar
+- NO uses formato markdown ni asteriscos en title ni description
+- Responde SOLO el JSON, sin texto adicional"""
+
+        user_message = f"""{contact_info}
+
+Instrucciones del usuario:
+{user_prompt}
+
+Genera las actividades solicitadas en formato JSON."""
+
+        response = client.chat.completions.create(
+            model=config.openai_model or "gpt-4",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message}
+            ],
+            temperature=0.7,
+            max_tokens=2000
+        )
+        
+        ai_response = response.choices[0].message.content.strip()
+        
+        # Limpiar respuesta (eliminar markdown code blocks si existen)
+        if ai_response.startswith('```'):
+            lines = ai_response.split('\n')
+            ai_response = '\n'.join(lines[1:-1]) if len(lines) > 2 else ai_response
+        ai_response = ai_response.replace('```json', '').replace('```', '').strip()
+        
+        # Parsear JSON
+        try:
+            ai_data = json_module.loads(ai_response)
+        except json_module.JSONDecodeError as e:
+            return JsonResponse({
+                'success': False, 
+                'error': f'Error al parsear respuesta de IA: {str(e)}',
+                'ai_response': ai_response
+            })
+        
+        activities_data = ai_data.get('activities', [])
+        if not activities_data:
+            return JsonResponse({'success': False, 'error': 'La IA no generó actividades'})
+        
+        # Crear las actividades
+        created_activities = []
+        for activity_data in activities_data:
+            days = activity_data.get('days', 7)
+            activity_type = activity_data.get('type', 'call')
+            title = activity_data.get('title', f'Actividad - {contact.name}')
+            description = activity_data.get('description', '')
+            priority = activity_data.get('priority', 'medium')
+            
+            # Calcular fecha
+            scheduled_date = timezone.now() + timedelta(days=int(days))
+            
+            # Ajustar hora según tipo
+            if activity_type == 'call':
+                scheduled_date = scheduled_date.replace(hour=10, minute=0, second=0, microsecond=0)
+                duration_minutes = 30
+            else:  # meeting
+                scheduled_date = scheduled_date.replace(hour=14, minute=0, second=0, microsecond=0)
+                duration_minutes = 60
+            
+            # Crear actividad
+            activity = OpportunityActivity.objects.create(
+                title=title,
+                description=description,
+                activity_type=activity_type,
+                scheduled_date=scheduled_date,
+                priority=priority,
+                duration_minutes=duration_minutes,
+                status='pending',
+                contact=contact,
+                opportunity=None,
+                assigned_to=user,
+                created_by=user
+            )
+            
+            created_activities.append({
+                'id': activity.id,
+                'title': title,
+                'date': scheduled_date.strftime('%d/%m/%Y'),
+                'type': activity_type
+            })
+        
+        # Preparar mensaje de resumen
+        summary_lines = [f"✓ {act['title']} ({act['type']}) - {act['date']}" for act in created_activities]
+        summary = '\n'.join(summary_lines)
+        
+        return JsonResponse({
+            'success': True,
+            'activities_created': len(created_activities),
+            'message': f'Se crearon {len(created_activities)} actividades:\n\n{summary}',
+            'activities': created_activities
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Error al crear actividades: {str(e)}'})
+
+
 @login_required
 @require_POST
 def create_quick_activity(request, contact_id):
@@ -7982,23 +8188,142 @@ def create_quick_activity(request, contact_id):
     
     try:
         # Obtener el contacto
-        contact = Contact.objects.get(pk=contact_id, created_by=request.user)
+        contact = Contact.objects.get(pk=contact_id)
         
         # Obtener datos del request
         data = json.loads(request.body)
-        activity_type = data.get('type')
         
-        if activity_type not in ['call', 'meeting']:
+        # Modo bulk: crear múltiples actividades con IA
+        use_ai_bulk = data.get('use_ai_bulk', False)
+        if use_ai_bulk:
+            ai_prompt = data.get('ai_prompt', '')
+            if not ai_prompt:
+                return JsonResponse({'success': False, 'error': 'Prompt de IA requerido'})
+            
+            return create_bulk_activities_with_ai(contact, ai_prompt, request.user)
+        
+        # Modo individual: crear una actividad
+        activity_type = data.get('type')
+        use_ai = data.get('use_ai', False)
+        custom_days = data.get('days')  # Días personalizados desde el modal de IA
+        
+        # Determinar si es para 1 semana o 1 mes
+        is_month = activity_type.endswith('_month')
+        base_type = activity_type.replace('_month', '') if is_month else activity_type
+        
+        if base_type not in ['call', 'meeting']:
             return JsonResponse({'success': False, 'error': 'Tipo de actividad inválido'})
         
-        # Calcular fecha para 1 semana desde hoy
-        scheduled_date = timezone.now() + timedelta(days=7)
+        # Calcular días adelante
+        if custom_days:
+            days_ahead = int(custom_days)
+        elif is_month:
+            days_ahead = 30
+        else:
+            days_ahead = 7
+            
+        # Calcular fecha programada
+        scheduled_date = timezone.now() + timedelta(days=days_ahead)
         
         # Ajustar hora según el tipo de actividad
-        if activity_type == 'call':
+        if base_type == 'call':
             scheduled_date = scheduled_date.replace(hour=10, minute=0, second=0, microsecond=0)
-            title = f"Llamada de seguimiento - {contact.name}"
-            description = f"""Llamada de seguimiento programada automáticamente.
+            duration_minutes = 30
+            priority = 'medium'
+        else:  # meeting
+            scheduled_date = scheduled_date.replace(hour=14, minute=0, second=0, microsecond=0)
+            duration_minutes = 60
+            priority = 'high'
+        
+        # Generar título y descripción con IA si se solicita
+        if use_ai:
+            try:
+                import openai
+                from .models import SystemConfiguration
+                
+                config = SystemConfiguration.objects.first()
+                if not config or not config.openai_api_key:
+                    raise Exception("No se encontró la clave de API de OpenAI")
+                
+                client = openai.OpenAI(api_key=config.openai_api_key)
+                
+                # Preparar contexto del contacto
+                contact_context = f"""
+Contacto: {contact.name}
+Empresa: {contact.company or 'No especificada'}
+Email: {contact.email or 'No especificado'}
+Teléfono: {contact.phone or 'No especificado'}
+Cargo: {contact.position or 'No especificado'}
+País: {contact.country or 'No especificado'}
+ERP: {contact.erp or 'No especificado'}
+Estado: {contact.get_status_display()}
+Notas: {contact.notes or 'Sin notas'}
+"""
+                
+                activity_type_es = 'llamada' if base_type == 'call' else 'reunión'
+                
+                prompt = f"""Eres un asistente de ventas experto. Debes crear una {activity_type_es} profesional programada para dentro de {days_ahead} días.
+
+{contact_context}
+
+Por favor, genera:
+1. Un título conciso y profesional para la {activity_type_es}
+2. Una descripción detallada que incluya:
+   - Contexto del contacto
+   - Objetivos específicos de la {activity_type_es}
+   - Temas a tratar
+   - Información relevante que el vendedor debe tener en cuenta
+
+IMPORTANTE: Responde SOLO en formato JSON con esta estructura exacta:
+{{
+    "title": "título de la actividad",
+    "description": "descripción detallada"
+}}
+
+NO uses formato markdown ni asteriscos. Escribe en texto plano."""
+
+                response = client.chat.completions.create(
+                    model=config.openai_model or "gpt-4",
+                    messages=[
+                        {"role": "system", "content": "Eres un asistente experto en ventas y gestión de contactos comerciales."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.7,
+                    max_tokens=500
+                )
+                
+                ai_response = response.choices[0].message.content.strip()
+                
+                # Intentar parsear como JSON
+                import json as json_module
+                try:
+                    ai_data = json_module.loads(ai_response)
+                    title = ai_data.get('title', f"{'Llamada' if base_type == 'call' else 'Reunión'} - {contact.name}")
+                    description = ai_data.get('description', f"Actividad generada con IA para {contact.name}")
+                except:
+                    # Si falla el parsing JSON, usar el texto directamente
+                    lines = ai_response.split('\n', 1)
+                    title = lines[0].strip().replace('"', '').replace('title:', '').strip()
+                    description = lines[1].strip() if len(lines) > 1 else ai_response
+                    
+            except Exception as e:
+                print(f"Error al generar con IA: {e}")
+                # Fallback a contenido estándar
+                title = f"{'Llamada' if base_type == 'call' else 'Reunión'} - {contact.name}"
+                description = f"""Actividad programada para dentro de {days_ahead} días.
+
+Contacto: {contact.name}
+Empresa: {contact.company or 'No especificada'}
+
+Objetivos:
+- Revisar estado del contacto
+- Evaluar necesidades actuales
+- Definir próximos pasos"""
+        else:
+            # Contenido estándar sin IA
+            if base_type == 'call':
+                title = f"Llamada de seguimiento - {contact.name}"
+                description = f"""Llamada de seguimiento programada automáticamente.
 
 Contacto: {contact.name}
 Empresa: {contact.company or 'No especificada'}
@@ -8009,13 +8334,9 @@ Objetivos:
 - Evaluar necesidades actuales
 - Definir próximos pasos
 - Mantener relación comercial"""
-            duration_minutes = 30
-            priority = 'medium'
-            
-        else:  # meeting
-            scheduled_date = scheduled_date.replace(hour=14, minute=0, second=0, microsecond=0)
-            title = f"Reunión comercial - {contact.name}"
-            description = f"""Reunión comercial programada automáticamente.
+            else:  # meeting
+                title = f"Reunión comercial - {contact.name}"
+                description = f"""Reunión comercial programada automáticamente.
 
 Contacto: {contact.name}
 Empresa: {contact.company or 'No especificada'}
@@ -8027,14 +8348,12 @@ Agenda:
 - Demostración si es necesario
 - Propuesta comercial
 - Definir siguientes pasos"""
-            duration_minutes = 60
-            priority = 'high'
         
         # Crear la actividad
         activity = OpportunityActivity.objects.create(
             title=title,
             description=description,
-            activity_type=activity_type,
+            activity_type=base_type,  # Usar el tipo base sin '_month'
             scheduled_date=scheduled_date,
             priority=priority,
             duration_minutes=duration_minutes,
@@ -10486,6 +10805,7 @@ def contact_list(request):
     # Estadísticas
     total_contacts = Contact.objects.count()
     positive_contacts = Contact.objects.filter(status='positive').count()
+    neutral_contacts = Contact.objects.filter(status='neutral').count()
     negative_contacts = Contact.objects.filter(status='negative').count()
     today_contacts = Contact.objects.filter(contact_date__date=timezone.now().date()).count()
     
@@ -10516,6 +10836,7 @@ def contact_list(request):
         'contacts': page_obj.object_list,
         'total_contacts': total_contacts,
         'positive_contacts': positive_contacts,
+        'neutral_contacts': neutral_contacts,
         'negative_contacts': negative_contacts,
         'today_contacts': today_contacts,
         'contacts_with_activities': contacts_with_activities,
@@ -10689,6 +11010,165 @@ def contact_attachment_delete(request, pk):
         return redirect('contact_detail', pk=contact.pk)
     
     return redirect('contact_detail', pk=contact.pk)
+
+
+@login_required
+def contact_ai_comment(request, pk):
+    """Generar comentario asistido por IA para un contacto"""
+    import json
+    from django.http import JsonResponse
+    from .models import SystemConfiguration
+    import openai
+    
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Método no permitido'}, status=405)
+    
+    contact = get_object_or_404(Contact, pk=pk)
+    
+    try:
+        data = json.loads(request.body)
+        prompt_type = data.get('prompt_type', '')
+        custom_prompt = data.get('custom_prompt', '')
+        
+        # Obtener configuración de IA
+        try:
+            config = SystemConfiguration.objects.first()
+            if not config or not config.openai_api_key:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'No se ha configurado la API de OpenAI en el sistema.'
+                }, status=400)
+            
+            model = config.openai_model or 'gpt-4'
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Error al obtener configuración: {str(e)}'
+            }, status=500)
+        
+        # Construir el contexto del contacto
+        contact_info = f"""
+Información del contacto:
+- Nombre: {contact.name}
+- Email: {contact.email or 'No disponible'}
+- Teléfono: {contact.phone or 'No disponible'}
+- Empresa: {contact.company or 'No disponible'}
+- Cargo: {contact.position or 'No disponible'}
+- País: {contact.country or 'No disponible'}
+- ERP: {contact.erp or 'No disponible'}
+- Estado: {contact.get_status_display()}
+- Fuente: {contact.source or 'No disponible'}
+- Notas previas: {contact.notes or 'Sin notas'}
+"""
+        
+        # Definir prompts según el tipo
+        prompts = {
+            'company_info': f"""Basándote en el email corporativo {contact.email} y la empresa {contact.company}, proporciona toda la información relevante que puedas inferir o conocer sobre esta empresa. Incluye detalles sobre su industria, tamaño aproximado, ubicación, servicios/productos principales y cualquier dato relevante. Si no tienes información específica, proporciona información general del sector y recomendaciones de qué investigar.
+
+{contact_info}
+
+IMPORTANTE: NO uses formato markdown ni asteriscos. Escribe en texto plano con saltos de línea normales.
+Responde en formato de comentario profesional, directo y útil para añadir al CRM (máximo 300 palabras).""",
+            
+            'contact_info': f"""Analiza toda la información disponible sobre este contacto: {contact.name} de {contact.company}. Proporciona insights sobre su perfil profesional, su rol probable en la toma de decisiones, y recomendaciones sobre cómo abordar la conversación comercial con esta persona.
+
+{contact_info}
+
+IMPORTANTE: NO uses formato markdown ni asteriscos. Escribe en texto plano con saltos de línea normales.
+Responde en formato de comentario profesional, directo y útil para añadir al CRM (máximo 300 palabras).""",
+            
+            'sales_estimate': f"""Basándote en la información de la empresa {contact.company} en {contact.country}, con ERP {contact.erp or 'no especificado'}, proporciona una estimación de:
+1. Ventas anuales aproximadas (rango)
+2. Presupuesto tecnológico probable
+3. Tamaño de oportunidad comercial estimada
+4. Ciclo de venta esperado
+
+{contact_info}
+
+IMPORTANTE: NO uses formato markdown ni asteriscos. Escribe en texto plano con saltos de línea normales.
+Proporciona rangos realistas y justifica brevemente cada estimación. Formato profesional para CRM (máximo 300 palabras).""",
+            
+            'employees_estimate': f"""Estima el número de empleados aproximado de {contact.company} en {contact.country}. Considera:
+1. Rango de empleados (ej: 50-100, 100-500, etc.)
+2. Departamentos clave probables
+3. Estructura organizacional estimada
+4. Nivel de madurez digital de la empresa
+
+{contact_info}
+
+IMPORTANTE: NO uses formato markdown ni asteriscos. Escribe en texto plano con saltos de línea normales.
+Proporciona estimaciones fundamentadas. Formato profesional para CRM (máximo 300 palabras).""",
+            
+            'next_steps': f"""Basándote en toda la información del contacto y su estado actual ({contact.get_status_display()}), sugiere los próximos pasos concretos y accionables para avanzar en la relación comercial. Incluye:
+1. Acciones inmediatas recomendadas
+2. Temas de conversación sugeridos
+3. Recursos o materiales a preparar
+4. Timing recomendado para el seguimiento
+
+{contact_info}
+
+IMPORTANTE: NO uses formato markdown ni asteriscos. Escribe en texto plano con saltos de línea normales.
+Sé específico y práctico. Formato profesional para CRM (máximo 300 palabras).""",
+            
+            'custom': f"""{custom_prompt}
+
+Contexto del contacto:
+{contact_info}
+
+IMPORTANTE: NO uses formato markdown ni asteriscos. Escribe en texto plano con saltos de línea normales.
+Responde de manera profesional y útil para añadir como comentario en el CRM (máximo 300 palabras)."""
+        }
+        
+        # Seleccionar el prompt apropiado
+        if prompt_type == 'custom' and custom_prompt:
+            system_prompt = "Eres un asistente comercial experto que ayuda a gestionar contactos y oportunidades de venta en un CRM. Proporciona información precisa, profesional y accionable."
+            user_prompt = prompts['custom']
+        elif prompt_type in prompts:
+            system_prompt = "Eres un asistente comercial experto que ayuda a gestionar contactos y oportunidades de venta en un CRM. Proporciona información precisa, profesional y accionable."
+            user_prompt = prompts[prompt_type]
+        else:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Tipo de prompt no válido.'
+            }, status=400)
+        
+        # Configurar cliente OpenAI (forma moderna que funciona)
+        try:
+            client = openai.OpenAI(api_key=config.openai_api_key)
+            
+            response = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                temperature=0.7,
+                max_tokens=800
+            )
+            
+            ai_response = response.choices[0].message.content.strip()
+            
+            return JsonResponse({
+                'status': 'success',
+                'comment': ai_response
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Error al comunicarse con OpenAI: {str(e)}'
+            }, status=500)
+            
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Error al decodificar JSON.'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': f'Error inesperado: {str(e)}'
+        }, status=500)
 
 
 @login_required
@@ -11063,6 +11543,36 @@ def blog_post_delete(request, pk):
 # ===========================================
 
 @login_required
+def get_or_create_user_chat_session(request):
+    """Obtiene o crea la sesión persistente de chat para el usuario"""
+    config = SystemConfiguration.get_config()
+    
+    # Verificar si el chat IA está habilitado
+    if not config.ai_chat_enabled or not config.openai_api_key:
+        return JsonResponse({'error': 'Chat IA no disponible'}, status=400)
+    
+    # Buscar sesión persistente del usuario o crearla
+    session, created = AIChatSession.objects.get_or_create(
+        user=request.user,
+        title='Chat Persistente',
+        is_active=True,
+        defaults={
+            'ai_model': config.openai_model or 'gpt-4o-mini'
+        }
+    )
+    
+    # Si no es nueva, verificar que sea la única sesión persistente activa
+    if not created:
+        # Actualizar fecha de última actualización
+        session.save()
+    
+    # Retornar el ID de la sesión
+    return JsonResponse({
+        'session_id': session.id,
+        'created': created
+    })
+
+@login_required
 def ai_chat_list_view(request):
     """Vista principal del chat con IA - lista de sesiones"""
     config = SystemConfiguration.get_config()
@@ -11332,6 +11842,34 @@ def ai_chat_simple_view(request, session_id):
 
 
 @login_required
+def ai_chat_get_messages(request, session_id):
+    """Vista AJAX para obtener mensajes del chat IA"""
+    try:
+        # Obtener sesión
+        session = get_object_or_404(AIChatSession, id=session_id, user=request.user, is_active=True)
+        
+        # Obtener mensajes
+        messages = session.messages.all().order_by('created_at')
+        
+        messages_data = [{
+            'id': msg.id,
+            'role': msg.role,
+            'content': msg.content,
+            'created_at': msg.created_at.isoformat(),
+            'tokens_used': msg.tokens_used
+        } for msg in messages]
+        
+        return JsonResponse({
+            'status': 'success',
+            'messages': messages_data,
+            'session_id': session.id,
+            'session_title': session.title
+        })
+        
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
+
+@login_required
 def ai_chat_ajax_send_message(request, session_id):
     """Vista AJAX para enviar mensajes al chat IA"""
     if request.method != 'POST':
@@ -11350,8 +11888,13 @@ def ai_chat_ajax_send_message(request, session_id):
         except AIChatSession.DoesNotExist:
             return JsonResponse({'error': 'Sesión no encontrada'}, status=404)
         
-        # Obtener mensaje
-        message_content = request.POST.get('message', '').strip()
+        # Obtener mensaje desde JSON body
+        import json
+        try:
+            data = json.loads(request.body)
+            message_content = data.get('message', '').strip()
+        except json.JSONDecodeError:
+            message_content = request.POST.get('message', '').strip()
         
         if len(message_content) < 5:
             return JsonResponse({'error': 'El mensaje debe tener al menos 5 caracteres'}, status=400)
@@ -11375,16 +11918,17 @@ def ai_chat_ajax_send_message(request, session_id):
         )
         
         return JsonResponse({
-            'success': True,
+            'status': 'success',
+            'response': ai_response['content'],
             'user_message': {
                 'id': user_msg.id,
                 'content': user_msg.content,
-                'created_at': user_msg.created_at.strftime('%H:%M')
+                'created_at': user_msg.created_at.isoformat()
             },
             'ai_message': {
                 'id': ai_msg.id,
                 'content': ai_msg.content,
-                'created_at': ai_msg.created_at.strftime('%H:%M'),
+                'created_at': ai_msg.created_at.isoformat(),
                 'tokens_used': ai_msg.tokens_used
             }
         })
@@ -11392,7 +11936,7 @@ def ai_chat_ajax_send_message(request, session_id):
     except Exception as e:
         import traceback
         print(f"Error completo: {traceback.format_exc()}")
-        return JsonResponse({'error': f'Error al procesar mensaje: {str(e)}'}, status=500)
+        return JsonResponse({'status': 'error', 'error': f'Error al procesar mensaje: {str(e)}'}, status=500)
 
 
 @login_required
@@ -11451,6 +11995,139 @@ def ai_chat_modern_view(request, session_id):
     }
     
     return render(request, 'tickets/ai_chat_modern.html', context)
+
+
+@login_required
+def share_ai_chat_session(request, session_id):
+    """Vista AJAX para compartir una sesión de chat (DEPRECATED - usar share_ai_chat_message)"""
+    # Esta funcionalidad ha sido reemplazada por el compartir mensajes individuales
+    return JsonResponse({
+        'status': 'error', 
+        'error': 'Esta funcionalidad ha sido desactivada. Ahora se comparten mensajes individuales.'
+    }, status=410)  # 410 Gone - recurso ya no disponible
+
+
+def shared_ai_chat_view(request, share_token):
+    """Vista pública para ver una conversación compartida (DEPRECATED - usar shared_ai_message_view)"""
+    # Esta funcionalidad ha sido reemplazada por el compartir mensajes individuales
+    from django.http import HttpResponseNotFound
+    return HttpResponseNotFound('<h1>Esta funcionalidad ha sido desactivada</h1><p>Ahora se comparten mensajes individuales en lugar de conversaciones completas.</p>')
+
+
+@login_required
+def share_ai_chat_message(request, message_id):
+    """Vista AJAX para compartir un mensaje individual del chat IA"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    
+    try:
+        # Obtener el mensaje
+        message = get_object_or_404(AIChatMessage, id=message_id, session__user=request.user)
+        
+        # Verificar si ya está compartido
+        existing_share = SharedAIChatMessage.objects.filter(
+            message=message,
+            user=request.user,
+            is_active=True
+        ).first()
+        
+        if existing_share:
+            return JsonResponse({
+                'status': 'success',
+                'share_url': request.build_absolute_uri(existing_share.get_public_url()),
+                'share_token': existing_share.share_token,
+                'message': 'Este mensaje ya estaba compartido'
+            })
+        
+        # Crear nuevo share
+        import secrets
+        share_token = secrets.token_urlsafe(24)
+        
+        shared_message = SharedAIChatMessage.objects.create(
+            message=message,
+            user=request.user,
+            share_token=share_token,
+            title=''
+        )
+        
+        return JsonResponse({
+            'status': 'success',
+            'share_url': request.build_absolute_uri(shared_message.get_public_url()),
+            'share_token': shared_message.share_token,
+            'message': 'Mensaje compartido exitosamente'
+        })
+        
+    except Exception as e:
+        import traceback
+        print(f"❌ Error al compartir mensaje: {str(e)}")
+        print(f"Traceback completo: {traceback.format_exc()}")
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+def shared_ai_message_view(request, token):
+    """Vista pública para ver un mensaje compartido"""
+    try:
+        # Obtener mensaje compartido
+        shared = get_object_or_404(SharedAIChatMessage, share_token=token, is_active=True)
+        
+        # Verificar si ha expirado
+        if shared.is_expired():
+            return render(request, 'tickets/shared_ai_message_expired.html', {
+                'shared': shared
+            })
+        
+        # Incrementar vistas
+        shared.increment_views()
+        
+        # Obtener mensaje previo del usuario (contexto)
+        user_message = None
+        if shared.message.role == 'assistant':
+            user_message = shared.message.session.messages.filter(
+                role='user',
+                created_at__lt=shared.message.created_at
+            ).order_by('-created_at').first()
+        
+        context = {
+            'shared': shared,
+            'message': shared.message,
+            'user_message': user_message,
+            'page_title': shared.title or 'Mensaje compartido'
+        }
+        
+        return render(request, 'tickets/shared_ai_message_public.html', context)
+        
+    except Exception as e:
+        return render(request, 'tickets/shared_ai_message_error.html', {
+            'error': str(e)
+        })
+
+
+@login_required
+def unshare_ai_chat_message(request, message_id):
+    """Vista AJAX para dejar de compartir un mensaje"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    
+    try:
+        # Obtener el share
+        shared = get_object_or_404(
+            SharedAIChatMessage, 
+            message_id=message_id, 
+            user=request.user,
+            is_active=True
+        )
+        
+        # Desactivar el share
+        shared.is_active = False
+        shared.save()
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Compartición desactivada'
+        })
+        
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
 
 
 # Helper function for AI analysis
@@ -39553,3 +40230,616 @@ def sport_goal_record(request, uuid):
             'status': 'error',
             'message': str(e)
         }, status=400)
+
+
+# ===========================
+# VISTAS DE EVENTOS
+# ===========================
+
+@login_required
+def event_list(request):
+    """Vista de lista de eventos"""
+    from .models import Event
+    from django.utils import timezone
+    
+    events = Event.objects.all().order_by('-event_date')
+    now = timezone.now()
+    
+    context = {
+        'events': events,
+        'page_title': 'Lista de Eventos',
+        'now': now,
+    }
+    
+    return render(request, 'tickets/event_list.html', context)
+
+
+@login_required
+def event_calendar(request):
+    """Vista de calendario de eventos"""
+    from .models import Event
+    import json
+    from datetime import datetime
+    from django.utils import timezone
+    
+    # Obtener todos los eventos
+    events = Event.objects.all()
+    now = timezone.now()
+    
+    # Preparar datos para FullCalendar
+    events_data = []
+    for event in events:
+        # Marcar si el evento ya pasó
+        is_past = event.event_date < now
+        
+        events_data.append({
+            'id': event.id,
+            'title': event.title,
+            'start': event.event_date.isoformat(),
+            'color': event.color,
+            'allDay': event.is_all_day,
+            'description': event.description,
+            'location': event.location,
+            'className': 'past-event' if is_past else '',
+        })
+    
+    context = {
+        'events_json': json.dumps(events_data),
+        'page_title': 'Calendario de Eventos',
+    }
+    
+    return render(request, 'tickets/event_calendar.html', context)
+
+
+@login_required
+def event_create(request):
+    """Crear un nuevo evento"""
+    from .forms import EventForm
+    
+    if request.method == 'POST':
+        form = EventForm(request.POST)
+        if form.is_valid():
+            event = form.save(commit=False)
+            event.created_by = request.user
+            event.save()
+            messages.success(request, 'Evento creado exitosamente.')
+            return redirect('event_calendar')
+    else:
+        form = EventForm()
+    
+    context = {
+        'form': form,
+        'page_title': 'Crear Evento',
+    }
+    
+    return render(request, 'tickets/event_form.html', context)
+
+
+@login_required
+def event_edit(request, pk):
+    """Editar un evento existente"""
+    from .models import Event
+    from .forms import EventForm
+    
+    event = get_object_or_404(Event, pk=pk)
+    
+    if request.method == 'POST':
+        form = EventForm(request.POST, instance=event)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Evento actualizado exitosamente.')
+            return redirect('event_calendar')
+    else:
+        form = EventForm(instance=event)
+    
+    context = {
+        'form': form,
+        'event': event,
+        'page_title': 'Editar Evento',
+    }
+    
+    return render(request, 'tickets/event_form.html', context)
+
+
+@login_required
+def event_delete(request, pk):
+    """Eliminar un evento"""
+    from .models import Event
+    
+    event = get_object_or_404(Event, pk=pk)
+    
+    if request.method == 'POST':
+        event.delete()
+        messages.success(request, 'Evento eliminado exitosamente.')
+        return redirect('event_calendar')
+    
+    context = {
+        'event': event,
+        'page_title': 'Eliminar Evento',
+    }
+    
+    return render(request, 'tickets/event_delete.html', context)
+
+
+@login_required
+def event_detail(request, pk):
+    """Ver detalles de un evento"""
+    from .models import Event
+    
+    event = get_object_or_404(Event, pk=pk)
+    
+    context = {
+        'event': event,
+        'page_title': f'Evento: {event.title}',
+    }
+    
+    return render(request, 'tickets/event_detail.html', context)
+
+
+@login_required
+def generate_events_with_ai(request):
+    """Generar eventos automáticamente usando IA"""
+    import json
+    from django.http import JsonResponse
+    from .models import Event
+    from django.utils import timezone
+    from datetime import datetime
+    import openai
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        prompt = data.get('prompt', '').strip()
+        year = data.get('year', timezone.now().year)
+        
+        if not prompt:
+            return JsonResponse({'success': False, 'error': 'El prompt es requerido'}, status=400)
+        
+        # Obtener configuración de OpenAI
+        from .models import SystemConfiguration
+        config = SystemConfiguration.objects.first()
+        if not config or not config.ai_chat_enabled or not config.openai_api_key:
+            return JsonResponse({
+                'success': False,
+                'error': 'OpenAI no está configurado. Por favor configura la API key en Configuración del Sistema.'
+            }, status=400)
+        
+        # Configurar cliente OpenAI
+        client = openai.OpenAI(api_key=config.openai_api_key)
+        
+        # Crear el prompt para la IA
+        system_prompt = f"""Eres un asistente experto en generar calendarios de eventos.
+Tu tarea es generar una lista de eventos en formato JSON basándote en la solicitud del usuario.
+
+Para cada evento, devuelve un objeto JSON con los siguientes campos:
+- title: Título del evento (string)
+- description: Descripción breve del evento (string)
+- event_date: Fecha y hora en formato ISO 8601 (string, ejemplo: "2026-01-01T00:00:00")
+- location: Ubicación del evento (string, puede estar vacío)
+- color: Color en formato hexadecimal (string, ejemplo: "#FF5733")
+- is_all_day: Si es un evento de día completo (boolean, true/false)
+
+Devuelve SOLO un array JSON válido con los eventos, sin texto adicional antes ni después.
+Ejemplo de formato esperado:
+[
+  {{
+    "title": "Año Nuevo",
+    "description": "Celebración de Año Nuevo",
+    "event_date": "2026-01-01T00:00:00",
+    "location": "Valencia, España",
+    "color": "#FF5733",
+    "is_all_day": true
+  }}
+]"""
+        
+        user_prompt = f"{prompt}\nAño: {year}"
+        
+        # Llamar a la API de OpenAI
+        response = client.chat.completions.create(
+            model=config.openai_model or "gpt-4",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.7,
+            max_tokens=2000
+        )
+        
+        # Extraer la respuesta
+        ai_response = response.choices[0].message.content.strip()
+        
+        # Limpiar la respuesta si viene con markdown
+        if ai_response.startswith('```json'):
+            ai_response = ai_response.replace('```json', '').replace('```', '').strip()
+        elif ai_response.startswith('```'):
+            ai_response = ai_response.replace('```', '').strip()
+        
+        # Parsear JSON
+        events_data = json.loads(ai_response)
+        
+        # Crear eventos en la base de datos
+        created_count = 0
+        for event_data in events_data:
+            try:
+                # Parsear fecha
+                event_date = datetime.fromisoformat(event_data['event_date'])
+                
+                # Crear evento
+                Event.objects.create(
+                    title=event_data['title'],
+                    description=event_data.get('description', ''),
+                    event_date=event_date,
+                    location=event_data.get('location', ''),
+                    color=event_data.get('color', '#007bff'),
+                    is_all_day=event_data.get('is_all_day', False),
+                    created_by=request.user
+                )
+                created_count += 1
+            except Exception as e:
+                print(f"Error al crear evento: {e}")
+                continue
+        
+        return JsonResponse({
+            'success': True,
+            'count': created_count,
+            'message': f'Se han creado {created_count} eventos exitosamente'
+        })
+        
+    except json.JSONDecodeError as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Error al procesar la respuesta de la IA: {str(e)}'
+        }, status=500)
+    except Exception as e:
+        print(f"Error en generate_events_with_ai: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'error': f'Error al generar eventos: {str(e)}'
+        }, status=500)
+
+
+# ============================================
+# VISTAS DE VIAJES
+# ============================================
+
+@login_required
+def trip_list(request):
+    """Lista de viajes"""
+    from .models import Trip
+    
+    trips = Trip.objects.filter(created_by=request.user).order_by('-created_at')
+    
+    context = {
+        'trips': trips,
+        'page_title': 'Mis Viajes',
+    }
+    
+    return render(request, 'tickets/trip_list.html', context)
+
+
+@login_required
+def trip_create(request):
+    """Crear un nuevo viaje"""
+    from .forms import TripForm
+    
+    if request.method == 'POST':
+        form = TripForm(request.POST)
+        if form.is_valid():
+            trip = form.save(commit=False)
+            trip.created_by = request.user
+            trip.save()
+            messages.success(request, 'Viaje creado exitosamente.')
+            return redirect('trip_detail', pk=trip.pk)
+    else:
+        form = TripForm()
+    
+    context = {
+        'form': form,
+        'page_title': 'Crear Viaje',
+    }
+    
+    return render(request, 'tickets/trip_form.html', context)
+
+
+@login_required
+def trip_detail(request, pk):
+    """Ver detalles de un viaje"""
+    from .models import Trip
+    
+    trip = get_object_or_404(Trip, pk=pk, created_by=request.user)
+    stops = trip.stops.all().order_by('order')
+    
+    context = {
+        'trip': trip,
+        'stops': stops,
+        'page_title': trip.title,
+    }
+    
+    return render(request, 'tickets/trip_detail.html', context)
+
+
+@login_required
+def trip_edit(request, pk):
+    """Editar un viaje"""
+    from .models import Trip
+    from .forms import TripForm
+    
+    trip = get_object_or_404(Trip, pk=pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        form = TripForm(request.POST, instance=trip)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Viaje actualizado exitosamente.')
+            return redirect('trip_detail', pk=trip.pk)
+    else:
+        form = TripForm(instance=trip)
+    
+    context = {
+        'form': form,
+        'trip': trip,
+        'page_title': f'Editar {trip.title}',
+    }
+    
+    return render(request, 'tickets/trip_form.html', context)
+
+
+@login_required
+def trip_delete(request, pk):
+    """Eliminar un viaje"""
+    from .models import Trip
+    
+    trip = get_object_or_404(Trip, pk=pk, created_by=request.user)
+    
+    if request.method == 'POST':
+        trip.delete()
+        messages.success(request, 'Viaje eliminado exitosamente.')
+        return redirect('trip_list')
+    
+    context = {
+        'trip': trip,
+        'page_title': f'Eliminar {trip.title}',
+    }
+    
+    return render(request, 'tickets/trip_delete.html', context)
+
+
+@login_required
+def trip_generate_with_ai(request, pk):
+    """Generar paradas de viaje con IA"""
+    import json
+    from django.http import JsonResponse
+    from .models import Trip, TripStop, SystemConfiguration
+    import openai
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+    
+    trip = get_object_or_404(Trip, pk=pk, created_by=request.user)
+    
+    try:
+        data = json.loads(request.body)
+        prompt = data.get('prompt', '').strip()
+        num_stops = data.get('num_stops', 10)
+        
+        if not prompt:
+            return JsonResponse({'success': False, 'error': 'Prompt requerido'}, status=400)
+        
+        # Obtener configuración de OpenAI
+        config = SystemConfiguration.objects.first()
+        if not config or not config.ai_chat_enabled or not config.openai_api_key:
+            return JsonResponse({
+                'success': False,
+                'error': 'OpenAI no está configurado.'
+            }, status=400)
+        
+        # Configurar cliente OpenAI
+        client = openai.OpenAI(api_key=config.openai_api_key)
+        
+        # System prompt
+        system_prompt = f"""Eres un experto planificador de viajes e historiador.
+Genera una lista de {num_stops} lugares para visitar basado en la solicitud del usuario.
+Devuelve SOLO un array JSON válido con los lugares, sin texto adicional.
+Cada lugar debe incluir: name, description, address, latitude, longitude, duration_minutes, notes, historical_info
+El campo historical_info debe contener un párrafo de aproximadamente 200 palabras con información histórica fascinante y datos curiosos sobre el lugar.
+Formato: [{{"name": "...", "description": "...", "address": "...", "latitude": 40.416775, "longitude": -3.703790, "duration_minutes": 120, "notes": "...", "historical_info": "párrafo de ~200 palabras sobre la historia del lugar..."}}]"""
+        
+        user_prompt = f"{prompt}\nDestino: {trip.destination}"
+        
+        # Llamar a OpenAI
+        response = client.chat.completions.create(
+            model=config.openai_model or "gpt-4",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.7,
+            max_tokens=3000
+        )
+        
+        ai_response = response.choices[0].message.content.strip()
+        
+        # Limpiar markdown si existe
+        if ai_response.startswith('```json'):
+            ai_response = ai_response.replace('```json', '').replace('```', '').strip()
+        
+        # Parse JSON
+        stops_data = json.loads(ai_response)
+        
+        # Crear paradas
+        created_count = 0
+        for idx, stop_data in enumerate(stops_data, start=1):
+            try:
+                TripStop.objects.create(
+                    trip=trip,
+                    name=stop_data['name'],
+                    description=stop_data.get('description', ''),
+                    address=stop_data.get('address', ''),
+                    latitude=stop_data.get('latitude'),
+                    longitude=stop_data.get('longitude'),
+                    duration_minutes=stop_data.get('duration_minutes'),
+                    notes=stop_data.get('notes', ''),
+                    historical_info=stop_data.get('historical_info', ''),
+                    order=idx
+                )
+                created_count += 1
+            except Exception as e:
+                print(f"Error al crear parada: {e}")
+                continue
+        
+        return JsonResponse({
+            'success': True,
+            'count': created_count,
+            'message': f'Se han creado {created_count} paradas exitosamente'
+        })
+        
+    except json.JSONDecodeError as e:
+        return JsonResponse({'success': False, 'error': f'Error al procesar la respuesta de la IA: {str(e)}'}, status=500)
+    except Exception as e:
+        print(f"Error en trip_generate_with_ai: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'error': f'Error al generar paradas: {str(e)}'}, status=500)
+
+
+def trip_public(request, token):
+    """Vista pública de un viaje compartido"""
+    from .models import Trip
+    import uuid
+    
+    try:
+        trip = get_object_or_404(Trip, public_token=token, is_public=True)
+        stops = trip.stops.all().order_by('order')
+        
+        context = {
+            'trip': trip,
+            'stops': stops,
+            'page_title': trip.title,
+            'is_public_view': True,
+        }
+        
+        return render(request, 'tickets/trip_public.html', context)
+    except:
+        return render(request, 'tickets/trip_not_found.html', status=404)
+
+
+@login_required
+def trip_stop_delete(request, pk, stop_id):
+    """Eliminar una parada de un viaje"""
+    from .models import Trip, TripStop
+    from django.http import JsonResponse
+    
+    trip = get_object_or_404(Trip, pk=pk, created_by=request.user)
+    stop = get_object_or_404(TripStop, pk=stop_id, trip=trip)
+    
+    if request.method == 'POST':
+        stop.delete()
+        return JsonResponse({'success': True, 'message': 'Parada eliminada exitosamente'})
+    
+    return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+
+
+@login_required
+def trip_stop_regenerate(request, pk, stop_id):
+    """Regenerar una parada de viaje con IA (sugerir alternativa)"""
+    import json
+    from django.http import JsonResponse
+    from .models import Trip, TripStop, SystemConfiguration
+    import openai
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+    
+    trip = get_object_or_404(Trip, pk=pk, created_by=request.user)
+    stop = get_object_or_404(TripStop, pk=stop_id, trip=trip)
+    
+    try:
+        # Obtener configuración de OpenAI
+        config = SystemConfiguration.objects.first()
+        if not config or not config.ai_chat_enabled or not config.openai_api_key:
+            return JsonResponse({
+                'success': False,
+                'error': 'OpenAI no está configurado.'
+            }, status=400)
+        
+        # Configurar cliente OpenAI
+        client = openai.OpenAI(api_key=config.openai_api_key)
+        
+        # System prompt
+        system_prompt = """Eres un experto planificador de viajes e historiador.
+Sugiere un lugar alternativo similar al que el usuario te proporciona.
+IMPORTANTE: Devuelve ÚNICAMENTE un objeto JSON válido, sin ningún texto adicional antes o después.
+El lugar debe incluir estos campos exactos: name, description, address, latitude, longitude, duration_minutes, notes, historical_info
+- Todos los textos deben usar comillas dobles y escapar caracteres especiales correctamente
+- El campo historical_info debe ser un párrafo de aproximadamente 200 palabras
+- No uses saltos de línea dentro de los valores de texto
+- latitude y longitude deben ser números decimales
+- duration_minutes debe ser un número entero
+
+Ejemplo de formato correcto:
+{"name": "Nombre del lugar", "description": "Descripción breve", "address": "Dirección completa", "latitude": 40.416775, "longitude": -3.703790, "duration_minutes": 120, "notes": "Recomendaciones", "historical_info": "Párrafo histórico de aproximadamente 200 palabras..."}"""
+        
+        user_prompt = f"""Necesito una alternativa a este lugar de interés:
+Nombre: {stop.name}
+Descripción: {stop.description}
+Ubicación: {stop.address}
+Destino del viaje: {trip.destination}
+
+Sugiere otro lugar similar pero diferente en la misma ciudad/región. Devuelve SOLO el objeto JSON, sin explicaciones."""
+        
+        # Llamar a OpenAI
+        response = client.chat.completions.create(
+            model=config.openai_model or "gpt-4",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.7,
+            max_tokens=2000,
+            response_format={"type": "json_object"}
+        )
+        
+        ai_response = response.choices[0].message.content.strip()
+        
+        # Limpiar markdown y espacios
+        if ai_response.startswith('```json'):
+            ai_response = ai_response.replace('```json', '').replace('```', '').strip()
+        if ai_response.startswith('```'):
+            ai_response = ai_response.replace('```', '').strip()
+        
+        # Remover texto antes y después del JSON
+        import re
+        json_match = re.search(r'\{.*\}', ai_response, re.DOTALL)
+        if json_match:
+            ai_response = json_match.group(0)
+        
+        # Parse JSON
+        new_stop_data = json.loads(ai_response)
+        
+        # Actualizar la parada actual con los nuevos datos
+        stop.name = new_stop_data['name']
+        stop.description = new_stop_data.get('description', '')
+        stop.address = new_stop_data.get('address', '')
+        stop.latitude = new_stop_data.get('latitude')
+        stop.longitude = new_stop_data.get('longitude')
+        stop.duration_minutes = new_stop_data.get('duration_minutes')
+        stop.notes = new_stop_data.get('notes', '')
+        stop.historical_info = new_stop_data.get('historical_info', '')
+        stop.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Se ha generado una alternativa: {stop.name}'
+        })
+        
+    except json.JSONDecodeError as e:
+        return JsonResponse({'success': False, 'error': f'Error al procesar la respuesta de la IA: {str(e)}'}, status=500)
+    except Exception as e:
+        print(f"Error en trip_stop_regenerate: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'error': f'Error al generar alternativa: {str(e)}'}, status=500)

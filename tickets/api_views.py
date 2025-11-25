@@ -2,6 +2,7 @@ from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.utils import timezone
 from django.http import JsonResponse
@@ -437,6 +438,52 @@ def active_users_count(request):
 
 @api_view(['GET'])
 @permission_classes([])  # No requiere autenticación para acceso público
+@login_required
+def upcoming_events_list(request):
+    """
+    Devuelve la lista de próximos eventos
+    """
+    try:
+        from .models import Event
+        from django.utils import timezone
+        from datetime import datetime
+        
+        now = timezone.now()
+        
+        # Obtener eventos futuros ordenados por fecha
+        upcoming_events = Event.objects.filter(
+            event_date__gte=now
+        ).order_by('event_date')[:20]  # Limitar a 20 eventos
+        
+        events_data = []
+        for event in upcoming_events:
+            # Calcular días hasta el evento
+            days_until = (event.event_date.date() - now.date()).days
+            
+            events_data.append({
+                'id': event.id,
+                'title': event.title,
+                'description': event.description[:100] + '...' if len(event.description) > 100 else event.description,
+                'event_date': event.event_date.strftime('%d/%m/%Y %H:%M'),
+                'event_date_iso': event.event_date.isoformat(),
+                'location': event.location or 'Sin ubicación',
+                'color': event.color,
+                'is_all_day': event.is_all_day,
+                'days_until': days_until,
+                'created_by': event.created_by.get_full_name() if event.created_by else 'Sistema',
+            })
+        
+        return JsonResponse({
+            'count': len(events_data),
+            'events': events_data
+        })
+    
+    except Exception as e:
+        print(f"Error en upcoming_events_list: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'count': 0, 'events': [], 'error': str(e)})
+
 def active_users_list(request):
     """
     Devuelve la lista de usuarios activos en oficina con detalles
@@ -471,9 +518,26 @@ def active_users_list(request):
             # Obtener información del perfil del usuario
             phone = ''
             email = user.email or ''
+            birth_date = None
+            days_to_birthday = None
             
-            if hasattr(user, 'userprofile') and user.userprofile:
-                phone = user.userprofile.phone or ''
+            if hasattr(user, 'profile') and user.profile:
+                phone = user.profile.phone or ''
+                
+                # Obtener fecha de cumpleaños y calcular días restantes
+                if user.profile.birth_date:
+                    birth_date = user.profile.birth_date.strftime('%d/%m/%Y')
+                    
+                    # Calcular próximo cumpleaños
+                    today_date = today
+                    next_birthday = user.profile.birth_date.replace(year=today_date.year)
+                    
+                    # Si el cumpleaños ya pasó este año, calcular para el próximo año
+                    if next_birthday < today_date:
+                        next_birthday = next_birthday.replace(year=today_date.year + 1)
+                    
+                    # Calcular días restantes
+                    days_to_birthday = (next_birthday - today_date).days
             
             # Formatear nombre completo
             full_name = f"{user.first_name} {user.last_name}".strip()
@@ -493,7 +557,9 @@ def active_users_list(request):
                 'entry_datetime': entry.fecha_entrada.isoformat(),
                 'avatar_url': f"https://ui-avatars.com/api/?name={user.first_name}+{user.last_name}&background=28a745&color=fff&size=40",
                 'status': 'active',
-                'hours_worked': None  # Se podría calcular las horas desde la entrada
+                'hours_worked': None,  # Se podría calcular las horas desde la entrada
+                'birth_date': birth_date,
+                'days_to_birthday': days_to_birthday
             })
         
         # Calcular horas trabajadas para cada usuario

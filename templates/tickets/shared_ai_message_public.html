@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ shared.title|default:"Mensaje compartido de IA" }} - TicketProo</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 20px;
+        }
+        .message-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .message-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px 15px 0 0;
+        }
+        .message-body {
+            padding: 30px;
+        }
+        .user-message {
+            background: #f8f9fa;
+            border-left: 4px solid #6c757d;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        .ai-message {
+            background: #f0f7ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .message-content {
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .message-footer {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-radius: 0 0 15px 15px;
+            border-top: 1px solid #dee2e6;
+        }
+        .icon-wrapper {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        .user-icon {
+            background: #6c757d;
+            color: white;
+        }
+        .ai-icon {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="message-card">
+            <!-- Header -->
+            <div class="message-header text-center">
+                <div class="d-flex align-items-center justify-content-center mb-3">
+                    <i class="bi bi-robot" style="font-size: 48px;"></i>
+                </div>
+                <h2 class="mb-2">{{ shared.title|default:"Mensaje compartido de IA" }}</h2>
+                <p class="mb-0 opacity-75">
+                    <i class="bi bi-calendar3"></i> 
+                    {{ message.created_at|date:"d/m/Y H:i" }}
+                </p>
+            </div>
+
+            <!-- Body -->
+            <div class="message-body">
+                {% if user_message %}
+                <!-- Mensaje del usuario (contexto) -->
+                <div class="user-message">
+                    <div class="d-flex align-items-start mb-2">
+                        <div class="icon-wrapper user-icon me-3">
+                            <i class="bi bi-person"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h5 class="mb-0">Pregunta del usuario</h5>
+                            <small class="text-muted">{{ user_message.created_at|date:"d/m/Y H:i" }}</small>
+                        </div>
+                    </div>
+                    <div class="message-content">{{ user_message.content }}</div>
+                </div>
+                {% endif %}
+
+                <!-- Mensaje de la IA -->
+                <div class="ai-message">
+                    <div class="d-flex align-items-start mb-2">
+                        <div class="icon-wrapper ai-icon me-3">
+                            <i class="bi bi-robot"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h5 class="mb-0">Respuesta de la IA</h5>
+                            <small class="text-muted">{{ message.created_at|date:"d/m/Y H:i" }}</small>
+                        </div>
+                    </div>
+                    <div class="message-content">{{ message.content }}</div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="message-footer">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <small class="text-muted">
+                            <i class="bi bi-person-circle"></i> 
+                            Compartido por {{ shared.user.get_full_name|default:shared.user.username }}
+                        </small>
+                    </div>
+                    <div>
+                        <small class="text-muted">
+                            <i class="bi bi-eye"></i> 
+                            {{ shared.views_count }} vista{{ shared.views_count|pluralize }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información adicional -->
+        <div class="text-center mt-4">
+            <p class="text-white mb-2">
+                <i class="bi bi-info-circle"></i> 
+                Este mensaje fue generado por inteligencia artificial
+            </p>
+            <a href="/" class="btn btn-light">
+                <i class="bi bi-house"></i> Ir a TicketProo
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

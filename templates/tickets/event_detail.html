@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card shadow-sm">
+                <div class="card-header" style="background-color: {{ event.color }}; color: white;">
+                    <h3 class="mb-0">
+                        <i class="bi bi-calendar-event"></i> {{ event.title }}
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <!-- Fecha -->
+                    <div class="mb-3">
+                        <h6><i class="bi bi-calendar"></i> Fecha y Hora</h6>
+                        <p class="ms-4">{{ event.event_date|date:"l, d \d\e F \d\e Y \a \l\a\s H:i" }}</p>
+                    </div>
+
+                    <!-- Todo el día -->
+                    {% if event.is_all_day %}
+                    <div class="mb-3">
+                        <span class="badge bg-info">
+                            <i class="bi bi-clock"></i> Evento de todo el día
+                        </span>
+                    </div>
+                    {% endif %}
+
+                    <!-- Ubicación -->
+                    {% if event.location %}
+                    <div class="mb-3">
+                        <h6><i class="bi bi-geo-alt"></i> Ubicación</h6>
+                        <p class="ms-4">{{ event.location }}</p>
+                    </div>
+                    {% endif %}
+
+                    <!-- Descripción -->
+                    {% if event.description %}
+                    <div class="mb-3">
+                        <h6><i class="bi bi-file-text"></i> Descripción</h6>
+                        <div class="ms-4">
+                            {{ event.description|linebreaks }}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Información adicional -->
+                    <hr>
+                    <div class="row text-muted small">
+                        <div class="col-md-6">
+                            <p><i class="bi bi-person"></i> Creado por: {{ event.created_by.get_full_name|default:event.created_by.username }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><i class="bi bi-clock-history"></i> Fecha de creación: {{ event.created_at|date:"d/m/Y H:i" }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'event_calendar' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver al Calendario
+                        </a>
+                        <div>
+                            <a href="{% url 'event_edit' event.pk %}" class="btn btn-primary">
+                                <i class="bi bi-pencil"></i> Editar
+                            </a>
+                            <a href="{% url 'event_delete' event.pk %}" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Eliminar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

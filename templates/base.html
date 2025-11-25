@@ -702,6 +702,28 @@
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Eventos</li>
+                            <li>
+                                <a class="dropdown-item {% if 'event_calendar' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'event_calendar' %}">
+                                    <i class="bi bi-calendar-event"></i> Calendario de Eventos
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'event_list' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'event_list' %}">
+                                    <i class="bi bi-list-ul"></i> Lista de Eventos
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Viajes</li>
+                            <li>
+                                <a class="dropdown-item {% if 'trip_list' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'trip_list' %}">
+                                    <i class="bi bi-airplane"></i> Mis Viajes
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
                             <li class="dropdown-header">Generadores</li>
                             <!-- Aquí se pueden agregar futuros generadores de código -->
                             <li><hr class="dropdown-divider"></li>
@@ -1466,6 +1488,22 @@
         <i class="bi bi-sticky"></i>
     </button>
 
+    <!-- Botón flotante para eventos (izquierda) - Solo para agentes -->
+    {% load tickets_tags %}
+    {% if user.is_authenticated and user|is_agent %}
+    <button id="eventsSidebarToggle" class="btn btn-primary shadow-lg" 
+            style="position: fixed; left: 0; top: calc(50% - 200px); transform: translateY(-50%); z-index: 1050; 
+                   border-radius: 0 8px 8px 0; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
+                   border-left: none; transition: all 0.3s ease;"
+            onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
+            onmouseout="this.style.transform = 'translateY(-50%) scale(1)'">
+        <i class="bi bi-calendar-event-fill"></i>
+        <span id="upcomingEventsBadge" class="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger" style="font-size: 0.7em;">
+            0
+        </span>
+    </button>
+    {% endif %}
+
     <!-- Botón flotante para mostrar/ocultar la barra lateral -->
     <button id="activeUsersSidebarToggle" class="btn btn-success shadow-lg" 
             style="position: fixed; right: 0; top: 50%; transform: translateY(-50%); z-index: 1050; 
@@ -1513,6 +1551,51 @@
             onmouseout="this.style.transform = 'translateY(-50%) scale(1)'">
         <i class="bi bi-speedometer2" style="color: white; font-size: 1.2em;"></i>
     </button>
+
+    <!-- Barra lateral de eventos (izquierda) -->
+    <div id="eventsSidebar" class="shadow-lg" 
+         style="position: fixed; left: -400px; top: 0; width: 400px; height: 100vh; 
+                background: white; z-index: 1040; transition: left 0.3s ease; border-right: 3px solid #0d6efd;
+                overflow: hidden; display: flex; flex-direction: column;">
+        
+        <!-- Header de la barra lateral -->
+        <div class="p-3 bg-primary text-white d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <i class="bi bi-calendar-event-fill me-2"></i>
+                    Próximos Eventos
+                </h6>
+                <small class="opacity-75">Calendario de actividades</small>
+            </div>
+            <button id="closeEventsSidebar" class="btn btn-sm btn-outline-light">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <!-- Información de actualización -->
+        <div class="px-3 py-2 bg-light border-bottom">
+            <small class="text-muted d-flex justify-content-between">
+                <span>
+                    <i class="bi bi-clock me-1"></i>
+                    Última actualización
+                </span>
+                <strong id="lastUpdateEventsSidebar">--:--</strong>
+            </small>
+        </div>
+
+        <!-- Contenedor del listado (con scroll) -->
+        <div id="eventsListSidebar" class="flex-grow-1 overflow-auto p-3">
+            <!-- Aquí se cargarán los eventos dinámicamente -->
+        </div>
+
+        <!-- Footer con botón para ver todos -->
+        <div class="p-3 border-top bg-light">
+            <a href="{% url 'event_calendar' %}" class="btn btn-primary w-100">
+                <i class="bi bi-calendar3 me-2"></i>
+                Ver Calendario Completo
+            </a>
+        </div>
+    </div>
 
     <!-- Barra lateral deslizante -->
     <div id="activeUsersSidebar" class="shadow-lg" 
@@ -1980,7 +2063,7 @@
 
         <!-- Área de entrada de texto -->
         <div class="p-3 border-top bg-white">
-            <div class="d-flex">
+            <div class="d-flex mb-2">
                 <input type="text" id="aiChatInput" class="form-control me-2" 
                        placeholder="Escribe tu mensaje aquí..."
                        onkeypress="if(event.key==='Enter') sendAIMessage()">
@@ -1988,10 +2071,12 @@
                     <i class="bi bi-send"></i>
                 </button>
             </div>
-            <small class="text-muted">
-                <i class="bi bi-info-circle me-1"></i>
-                Presiona Enter para enviar tu mensaje
-            </small>
+            <div class="d-flex justify-content-between align-items-center">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Presiona Enter para enviar • Usa el botón <i class="bi bi-share"></i> en cada mensaje para compartir
+                </small>
+            </div>
         </div>
     </div>
 
@@ -2435,6 +2520,11 @@
             // Ocultar todos los demás botones flotantes
             hideOtherFloatingButtons(['aiChatToggle']);
             
+            // Cargar sesión persistente y mensajes
+            if (!userChatSessionId) {
+                loadUserChatSession();
+            }
+            
             // Focus en el input de chat
             setTimeout(() => {
                 const input = document.getElementById('aiChatInput');
@@ -2525,6 +2615,136 @@
             showAllFloatingButtons();
         }
 
+        // DEPRECATED: Compartir conversación completa ha sido reemplazado por compartir mensajes individuales
+        // async function shareAIChat() { ... }
+
+        async function shareAIChatMessage(messageId) {
+            if (!messageId) {
+                alert('No se puede compartir este mensaje');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/ai-chat/message/${messageId}/share/`, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    // Copiar URL al portapapeles
+                    await navigator.clipboard.writeText(data.share_url);
+                    
+                    // Mostrar notificación de éxito
+                    showNotification('¡Mensaje compartido! URL copiada al portapapeles', 'success');
+                } else {
+                    showNotification('Error al compartir: ' + (data.message || 'Error desconocido'), 'error');
+                }
+            } catch (error) {
+                console.error('Error al compartir mensaje:', error);
+                showNotification('Error de conexión al intentar compartir', 'error');
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            // Crear elemento de notificación
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed`;
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            notification.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Remover después de 3 segundos
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transition = 'opacity 0.3s';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Variable global para almacenar el ID de sesión del usuario
+        let userChatSessionId = null;
+
+        // Cargar sesión persistente y mensajes al abrir el chat
+        async function loadUserChatSession() {
+            try {
+                // Obtener o crear sesión persistente
+                const response = await fetch('/ai-chat/get-session/', {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                const data = await response.json();
+                userChatSessionId = data.session_id;
+                
+                // Cargar mensajes existentes
+                await loadChatMessages(userChatSessionId);
+                
+            } catch (error) {
+                console.error('❌ Error al cargar sesión de chat:', error);
+            }
+        }
+
+        // Cargar mensajes de la sesión
+        async function loadChatMessages(sessionId) {
+            try {
+                const response = await fetch(`/api/ai-chat/${sessionId}/messages/`, {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                const data = await response.json();
+                const messagesContainer = document.getElementById('aiChatMessages');
+                
+                // Limpiar mensajes de bienvenida
+                messagesContainer.innerHTML = '';
+                
+                // Agregar mensajes históricos
+                if (data.messages && data.messages.length > 0) {
+                    data.messages.forEach(msg => {
+                        if (msg.role !== 'system') {
+                            addChatMessage(msg.content, msg.role === 'user' ? 'user' : 'ai', false, msg.created_at, msg.id);
+                        }
+                    });
+                } else {
+                    // Mensaje de bienvenida si no hay mensajes
+                    messagesContainer.innerHTML = `
+                        <div class="d-flex mb-3">
+                            <div class="me-2">
+                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                     style="width: 40px; height: 40px;">
+                                    <i class="bi bi-robot"></i>
+                                </div>
+                            </div>
+                            <div class="bg-white p-3 rounded-3 shadow-sm flex-grow-1">
+                                <p class="mb-0">¡Hola! Soy tu asistente de IA. ¿En qué puedo ayudarte hoy?</p>
+                                <small class="text-muted">Puedes preguntarme sobre tickets, tareas, o cualquier cosa relacionada con el sistema.</small>
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('❌ Error al cargar mensajes:', error);
+            }
+        }
+
         function sendAIMessage() {
             const input = document.getElementById('aiChatInput');
             const messagesContainer = document.getElementById('aiChatMessages');
@@ -2538,6 +2758,14 @@
             const message = input.value.trim();
             if (!message) return;
             
+            // Si no hay sesión, cargarla primero
+            if (!userChatSessionId) {
+                loadUserChatSession().then(() => {
+                    sendAIMessage();
+                });
+                return;
+            }
+            
             // Agregar mensaje del usuario
             addChatMessage(message, 'user');
             
@@ -2549,8 +2777,8 @@
             // Agregar mensaje de "escribiendo..."
             const typingId = addChatMessage('IA está escribiendo...', 'ai', true);
             
-            // Enviar mensaje directamente a la API de ChatGPT
-            fetch('/api/ai-chat/direct/', {
+            // Enviar mensaje a la sesión persistente
+            fetch(`/ai-chat/${userChatSessionId}/send/`, {
                 method: 'POST',
                 credentials: 'same-origin',
                 headers: {
@@ -2570,7 +2798,10 @@
                 
                 // Agregar respuesta de la IA
                 if (data.status === 'success') {
-                    addChatMessage(data.response, 'ai');
+                    const aiMessageId = data.ai_message ? data.ai_message.id : null;
+                    const aiTimestamp = data.ai_message ? data.ai_message.created_at : null;
+                    console.log('📩 Respuesta IA recibida:', { aiMessageId, aiTimestamp, data });
+                    addChatMessage(data.response, 'ai', false, aiTimestamp, aiMessageId);
                 } else {
                     const errorMsg = data.error || 'Lo siento, hubo un error al procesar tu mensaje.';
                     addChatMessage(errorMsg, 'ai');
@@ -2592,15 +2823,34 @@
             });
         }
 
-        function addChatMessage(message, sender, isTyping = false) {
+        function addChatMessage(message, sender, isTyping = false, timestamp = null, dbMessageId = null) {
             const messagesContainer = document.getElementById('aiChatMessages');
             if (!messagesContainer) return;
             
             const messageId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
             const isUser = sender === 'user';
             
+            // Debug: ver qué ID estamos recibiendo
+            if (sender === 'ai' && !isTyping) {
+                console.log('🤖 Agregando mensaje IA:', { dbMessageId, message: message.substring(0, 50) });
+            }
+            
             // Formatear mensaje para mostrar saltos de línea
             const formattedMessage = message.replace(/\n/g, '<br>');
+            
+            // Formatear timestamp
+            let timeString;
+            if (timestamp) {
+                const date = new Date(timestamp);
+                timeString = date.toLocaleString('es-ES', { 
+                    day: '2-digit', 
+                    month: '2-digit', 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+            } else {
+                timeString = new Date().toLocaleTimeString();
+            }
             
             const messageDiv = document.createElement('div');
             messageDiv.id = messageId;
@@ -2610,7 +2860,7 @@
                 messageDiv.innerHTML = `
                     <div class="bg-primary text-white p-3 rounded-3 shadow-sm" style="max-width: 80%;">
                         <div class="mb-0">${formattedMessage}</div>
-                        <small class="opacity-75 d-block mt-2">${new Date().toLocaleTimeString()}</small>
+                        <small class="opacity-75 d-block mt-2">${timeString}</small>
                     </div>
                     <div class="ms-2">
                         <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center" 
@@ -2623,6 +2873,14 @@
                 const content = isTyping ? 
                     `<span class="text-muted"><i>${formattedMessage}</i></span>` : 
                     formattedMessage;
+                
+                // Botón de compartir solo para mensajes de IA y si tenemos el ID de la base de datos
+                const shareButton = dbMessageId && !isTyping ? 
+                    `<button class="btn btn-sm btn-outline-secondary ms-2" 
+                             onclick="shareAIChatMessage(${dbMessageId})" 
+                             title="Compartir este mensaje">
+                        <i class="bi bi-share"></i>
+                    </button>` : '';
                     
                 messageDiv.innerHTML = `
                     <div class="me-2">
@@ -2632,8 +2890,13 @@
                         </div>
                     </div>
                     <div class="bg-white p-3 rounded-3 shadow-sm flex-grow-1" style="max-width: 80%;">
-                        <div class="mb-0">${content}</div>
-                        <small class="text-muted d-block mt-2">${new Date().toLocaleTimeString()}</small>
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <div class="mb-0">${content}</div>
+                                <small class="text-muted d-block mt-2">${timeString}</small>
+                            </div>
+                            ${shareButton}
+                        </div>
                     </div>
                 `;
             }
@@ -4262,8 +4525,26 @@
                         </div>
                         ` : ''}
                         
+                        ${user.birth_date ? `
+                        <div class="small text-muted mb-2">
+                            <i class="bi bi-calendar-heart me-1"></i>
+                            <span title="Fecha de cumpleaños">${user.birth_date}</span>
+                            ${user.days_to_birthday !== null ? `
+                                <span class="badge bg-info ms-1" title="Días hasta el cumpleaños">
+                                    ${user.days_to_birthday === 0 ? '🎂 ¡HOY!' : user.days_to_birthday === 1 ? '🎂 Mañana' : `${user.days_to_birthday} días`}
+                                </span>
+                            ` : ''}
+                        </div>
+                        ` : ''}
+                        
                         <!-- Botones de acción -->
                         <div class="d-flex gap-1 mt-2">
+                            <button class="btn btn-sm btn-outline-primary" 
+                                    onclick="startUserChat('${user.id}', '${user.name}')"
+                                    title="Iniciar chat">
+                                <i class="bi bi-chat-dots"></i>
+                            </button>
+                            
                             ${user.phone ? `
                             <button class="btn btn-sm btn-outline-success" 
                                     onclick="openWhatsApp('${user.phone}', '${user.name}')"
@@ -4327,7 +4608,182 @@
                 });
         }
 
+        // ========== FUNCIONES PARA SIDEBAR DE EVENTOS ==========
+        let eventsSidebarOpen = false;
+        let eventsAutoRefreshInterval = null;
+
+        function toggleEventsSidebar() {
+            const sidebar = document.getElementById('eventsSidebar');
+            const toggle = document.getElementById('eventsSidebarToggle');
+            
+            if (!eventsSidebarOpen) {
+                // Abrir barra lateral
+                sidebar.style.left = '0px';
+                toggle.style.left = '400px'; // Mover el botón al lado de la barra
+                eventsSidebarOpen = true;
+                
+                // Cargar eventos cuando se abre
+                loadUpcomingEvents();
+                
+                // Iniciar auto-refresh
+                startEventsAutoRefresh();
+            } else {
+                // Cerrar barra lateral
+                closeEventsSidebar();
+            }
+        }
+
+        function closeEventsSidebar() {
+            const sidebar = document.getElementById('eventsSidebar');
+            const toggle = document.getElementById('eventsSidebarToggle');
+            
+            sidebar.style.left = '-400px';
+            toggle.style.left = '0'; // Volver al borde izquierdo
+            eventsSidebarOpen = false;
+            
+            // Detener auto-refresh
+            stopEventsAutoRefresh();
+        }
+
+        function loadUpcomingEvents() {
+            const listContainer = document.getElementById('eventsListSidebar');
+            const lastUpdateElement = document.getElementById('lastUpdateEventsSidebar');
+            
+            // Mostrar loading
+            listContainer.innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Cargando eventos...</p>
+                </div>
+            `;
+            
+            // Llamada a la API
+            fetch('/api/upcoming-events/')
+                .then(response => response.json())
+                .then(data => {
+                    displayUpcomingEvents(data.events);
+                    updateUpcomingEventsCount(data.count);
+                    
+                    // Actualizar tiempo
+                    const now = new Date();
+                    lastUpdateElement.textContent = now.toLocaleTimeString('es-ES', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                })
+                .catch(error => {
+                    console.log('[Eventos] Error al cargar eventos:', error);
+                    listContainer.innerHTML = `
+                        <div class="text-center py-4">
+                            <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-2">Error al cargar eventos</p>
+                        </div>
+                    `;
+                });
+        }
+
+        function displayUpcomingEvents(events) {
+            const listContainer = document.getElementById('eventsListSidebar');
+            
+            if (events.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="bi bi-calendar-x text-muted" style="font-size: 3rem;"></i>
+                        <p class="text-muted mt-2">No hay eventos próximos</p>
+                        <a href="/events/create/" class="btn btn-sm btn-primary mt-2">
+                            <i class="bi bi-plus-circle me-1"></i>
+                            Crear Evento
+                        </a>
+                    </div>
+                `;
+                return;
+            }
+            
+            const eventsHtml = events.map(event => {
+                const daysText = event.days_until === 0 ? '¡HOY!' : 
+                                event.days_until === 1 ? 'Mañana' : 
+                                `En ${event.days_until} días`;
+                
+                const badgeClass = event.days_until === 0 ? 'bg-danger' : 
+                                  event.days_until <= 3 ? 'bg-warning' : 
+                                  'bg-info';
+                
+                return `
+                    <div class="card mb-3 hover-bg-light" onclick="window.location.href='/events/${event.id}/'">
+                        <div class="card-body">
+                            <div class="d-flex align-items-start mb-2">
+                                <div class="me-2" style="width: 4px; height: 100%; background-color: ${event.color};"></div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">${event.title}</h6>
+                                    <span class="badge ${badgeClass} mb-2">${daysText}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="small text-muted mb-1">
+                                <i class="bi bi-calendar3 me-1"></i>
+                                ${event.event_date}
+                            </div>
+                            
+                            ${event.location !== 'Sin ubicación' ? `
+                            <div class="small text-muted mb-1">
+                                <i class="bi bi-geo-alt me-1"></i>
+                                ${event.location}
+                            </div>
+                            ` : ''}
+                            
+                            ${event.description ? `
+                            <p class="small text-muted mb-2 mt-2">${event.description}</p>
+                            ` : ''}
+                            
+                            <div class="small text-muted">
+                                <i class="bi bi-person me-1"></i>
+                                ${event.created_by}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            listContainer.innerHTML = eventsHtml;
+        }
+
+        function updateUpcomingEventsCount(count) {
+            const badge = document.getElementById('upcomingEventsBadge');
+            if (badge) {
+                badge.textContent = count;
+                badge.className = count > 0 
+                    ? 'position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger'
+                    : 'position-absolute top-0 end-0 translate-middle badge rounded-pill bg-secondary';
+                badge.style.fontSize = '0.7em';
+            }
+        }
+
+        function startEventsAutoRefresh() {
+            eventsAutoRefreshInterval = setInterval(() => {
+                if (eventsSidebarOpen) {
+                    loadUpcomingEvents();
+                }
+            }, 60000); // Refrescar cada minuto
+        }
+
+        function stopEventsAutoRefresh() {
+            if (eventsAutoRefreshInterval) {
+                clearInterval(eventsAutoRefreshInterval);
+                eventsAutoRefreshInterval = null;
+            }
+        }
+        // ========== FIN FUNCIONES PARA SIDEBAR DE EVENTOS ==========
+
         // Funciones para acciones de usuario
+        function startUserChat(userId, userName) {
+            console.log(`[Chat] Iniciando conversación con ${userName} (ID: ${userId})`);
+            
+            // Redirigir a la URL para iniciar chat 1:1
+            window.location.href = `/chat/start/${userId}/`;
+        }
+
         function openWhatsApp(phone, userName) {
             console.log(`[WhatsApp] Abriendo chat con ${userName} - ${phone}`);
             
@@ -4973,6 +5429,10 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Solo si el usuario está autenticado
             if (document.getElementById('activeUsersSidebarToggle')) {
+                // Event listeners para sidebar de eventos
+                document.getElementById('eventsSidebarToggle').addEventListener('click', toggleEventsSidebar);
+                document.getElementById('closeEventsSidebar').addEventListener('click', closeEventsSidebar);
+                
                 // Event listeners para usuarios activos
                 document.getElementById('activeUsersSidebarToggle').addEventListener('click', toggleActiveUsersSidebar);
                 document.getElementById('closeSidebar').addEventListener('click', closeSidebar);
@@ -5028,13 +5488,16 @@
                 loadActiveUsersCount();
                 loadPendingTodosCount();
                 loadActiveUsersSidebar(); // Cargar lista inicial de usuarios activos
+                loadUpcomingEvents(); // Cargar lista inicial de eventos
                 
                 // Recargar conteo cada 2 minutos
                 setInterval(loadActiveUsersCount, 120000);
                 setInterval(loadPendingTodosCount, 120000);
                 setInterval(loadActiveUsersSidebar, 120000); // Recargar lista cada 2 minutos
+                setInterval(loadUpcomingEvents, 120000); // Recargar eventos cada 2 minutos
                 
                 console.log('[Barra Lateral] Sistema de usuarios activos inicializado');
+                console.log('[Eventos] Sistema de eventos inicializado');
                 console.log('[Calculadora] Sistema de calculadora inicializado');
                 console.log('[Quick TODO] Sistema de tareas rápidas inicializado');
             }
@@ -5048,6 +5511,15 @@
                 cursor: pointer;
             }
             
+            #eventsSidebarToggle {
+                transition: left 0.3s ease, transform 0.2s ease;
+            }
+            
+            #eventsSidebarToggle:hover {
+                transform: translateY(-50%) translateX(5px);
+                box-shadow: 0 8px 25px rgba(0,0,0,0.3) !important;
+            }
+
             #activeUsersSidebarToggle {
                 transition: right 0.3s ease, transform 0.2s ease;
             }
@@ -5066,6 +5538,30 @@
                 box-shadow: 0 8px 25px rgba(0,0,0,0.3) !important;
             }
             
+            /* Estilos para el scroll de la lista de eventos */
+            #eventsListSidebar {
+                scrollbar-width: thin;
+                scrollbar-color: rgba(13, 110, 253, 0.3) transparent;
+            }
+            
+            #eventsListSidebar::-webkit-scrollbar {
+                width: 6px;
+            }
+            
+            #eventsListSidebar::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            
+            #eventsListSidebar::-webkit-scrollbar-thumb {
+                background-color: rgba(13, 110, 253, 0.3);
+                border-radius: 3px;
+                transition: background-color 0.2s ease;
+            }
+            
+            #eventsListSidebar::-webkit-scrollbar-thumb:hover {
+                background-color: rgba(13, 110, 253, 0.5);
+            }
+
             /* Estilos para el scroll de la lista de usuarios */
             #activeUsersListSidebar {
                 scrollbar-width: thin;
@@ -5483,11 +5979,11 @@
             <span class="rating-emoji">😊</span>
             <span class="rating-count" id="happy-count">0</span>
         </a>
-        <a href="{% url 'qa_rating_public' %}?rating=neutral" class="rating-float-btn rating-neutral" title="Servicio aceptable 😐" data-rating="neutral">
+        <a href="{% url 'qa_rating_public' %}?rating=neutral" class="rating-float-btn rating-neutral rating-hidden" title="Servicio aceptable 😐" data-rating="neutral">
             <span class="rating-emoji">😐</span>
             <span class="rating-count" id="neutral-count">0</span>
         </a>
-        <a href="{% url 'qa_rating_public' %}?rating=sad" class="rating-float-btn rating-sad" title="Servicio deficiente 😞" data-rating="sad">
+        <a href="{% url 'qa_rating_public' %}?rating=sad" class="rating-float-btn rating-sad rating-hidden" title="Servicio deficiente 😞" data-rating="sad">
             <span class="rating-emoji">😞</span>
             <span class="rating-count" id="sad-count">0</span>
         </a>
@@ -5516,10 +6012,33 @@
             justify-content: center;
             text-decoration: none;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
             cursor: pointer;
             border: 2px solid transparent;
             position: relative;
+        }
+
+        /* Ocultar botones por defecto (excepto el feliz) */
+        .rating-float-btn.rating-hidden {
+            opacity: 0;
+            transform: translateY(-60px) scale(0.3);
+            pointer-events: none;
+        }
+
+        /* Mostrar todos los botones al hacer hover en el contenedor */
+        .rating-float-buttons:hover .rating-float-btn.rating-hidden {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+        }
+
+        /* Animación de rebote al expandirse */
+        .rating-float-buttons:hover .rating-float-btn.rating-neutral {
+            transition-delay: 0.05s;
+        }
+
+        .rating-float-buttons:hover .rating-float-btn.rating-sad {
+            transition-delay: 0.1s;
         }
 
         .rating-float-btn:hover {

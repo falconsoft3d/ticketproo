@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <h2>
+                <i class="bi bi-exclamation-triangle text-danger"></i> {{ page_title }}
+            </h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-danger">
+                <div class="card-body">
+                    <h4 class="card-title text-danger">¿Estás seguro?</h4>
+                    <p class="card-text">
+                        Estás a punto de eliminar el viaje <strong>"{{ trip.title }}"</strong> a <strong>{{ trip.destination }}</strong>.
+                    </p>
+                    
+                    {% if trip.stops.count > 0 %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Advertencia:</strong> Este viaje tiene {{ trip.stops.count }} parada{{ trip.stops.count|pluralize }} que también serán eliminadas.
+                    </div>
+                    {% endif %}
+                    
+                    <p class="text-muted">
+                        <strong>Esta acción no se puede deshacer.</strong>
+                    </p>
+
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'trip_detail' trip.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Sí, Eliminar Viaje
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

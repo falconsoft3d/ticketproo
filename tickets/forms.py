@@ -50,7 +50,7 @@ from .models import (
     AITutor, AITutorProgressReport, AITutorAttachment, ExpenseReport, ExpenseItem, ExpenseComment,
     VideoMeeting, MeetingNote, QuoteGenerator, CountdownTimer, AbsenceType,
     MonthlyCumplimiento, DailyCumplimiento, QRCode, CrmQuestion, SupportMeeting, SupportMeetingPoint, ScheduledTask,
-    ClientRequest, ClientRequestResponse, ClientRequestTemplate, ClientRequestTemplateItem
+    ClientRequest, ClientRequestResponse, ClientRequestTemplate, ClientRequestTemplateItem, Event, Trip, TripStop
 )
 
 class CategoryForm(forms.ModelForm):
@@ -619,6 +619,20 @@ class UserEditForm(forms.ModelForm):
         help_text='Descripción detallada de las responsabilidades del cargo'
     )
     
+    birth_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(
+            attrs={
+                'class': 'form-control',
+                'type': 'date'
+            },
+            format='%Y-%m-%d'
+        ),
+        input_formats=['%Y-%m-%d'],
+        label='Fecha de cumpleaños',
+        help_text='Fecha de nacimiento del usuario'
+    )
+    
     # Campos para acceso público al control de horario
     enable_public_time_access = forms.BooleanField(
         required=False,
@@ -699,6 +713,8 @@ class UserEditForm(forms.ModelForm):
                 # Cargar valores de cargo
                 self.fields['cargo'].initial = profile.cargo
                 self.fields['descripcion_cargo'].initial = profile.descripcion_cargo
+                # Cargar fecha de cumpleaños
+                self.fields['birth_date'].initial = profile.birth_date
             except UserProfile.DoesNotExist:
                 pass
                 
@@ -722,12 +738,14 @@ class UserEditForm(forms.ModelForm):
             coste_hora = self.cleaned_data.get('coste_hora', 0.00)
             cargo = self.cleaned_data.get('cargo', '')
             descripcion_cargo = self.cleaned_data.get('descripcion_cargo', '')
+            birth_date = self.cleaned_data.get('birth_date')
             
             profile.company = company
             profile.precio_hora = precio_hora
             profile.coste_hora = coste_hora
             profile.cargo = cargo
             profile.descripcion_cargo = descripcion_cargo
+            profile.birth_date = birth_date
             profile.save()
             
             # Manejar configuración de acceso público
@@ -895,7 +913,7 @@ class UserProfileForm(forms.ModelForm):
     
     class Meta:
         model = UserProfile
-        fields = ['phone', 'bio', 'cargo', 'descripcion_cargo', 'company', 'enable_public_contact_form']
+        fields = ['phone', 'bio', 'cargo', 'descripcion_cargo', 'company', 'birth_date', 'enable_public_contact_form']
         widgets = {
             'phone': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -918,6 +936,10 @@ class UserProfileForm(forms.ModelForm):
             'company': forms.Select(attrs={
                 'class': 'form-select'
             }),
+            'birth_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
             'enable_public_contact_form': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
@@ -928,6 +950,7 @@ class UserProfileForm(forms.ModelForm):
             'cargo': 'Cargo',
             'descripcion_cargo': 'Descripción del Cargo',
             'company': 'Empresa',
+            'birth_date': 'Fecha de cumpleaños',
             'enable_public_contact_form': 'Activar formulario de contacto público',
         }
         help_texts = {
@@ -8486,3 +8509,189 @@ print(f"Hora actual: {current_time}")
             raise forms.ValidationError(f'Error de sintaxis en el código: {e}')
         
         return code
+
+
+class EventForm(forms.ModelForm):
+    """Formulario para crear y editar eventos"""
+    
+    event_date = forms.DateTimeField(
+        widget=forms.DateTimeInput(
+            attrs={
+                'class': 'form-control',
+                'type': 'datetime-local'
+            },
+            format='%Y-%m-%dT%H:%M'
+        ),
+        input_formats=['%Y-%m-%dT%H:%M'],
+        label='Fecha y Hora',
+        help_text='Fecha y hora del evento'
+    )
+    
+    class Meta:
+        model = Event
+        fields = ['title', 'description', 'event_date', 'location', 'color', 'is_all_day']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título del evento'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Descripción detallada del evento...'
+            }),
+            'location': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ubicación del evento'
+            }),
+            'color': forms.TextInput(attrs={
+                'class': 'form-control',
+                'type': 'color'
+            }),
+            'is_all_day': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'title': 'Título',
+            'description': 'Descripción',
+            'location': 'Ubicación',
+            'color': 'Color',
+            'is_all_day': 'Todo el día',
+        }
+        help_texts = {
+            'title': 'Título del evento',
+            'description': 'Descripción detallada del evento',
+            'location': 'Lugar donde se realizará el evento',
+            'color': 'Color para identificar el evento en el calendario',
+            'is_all_day': 'Marcar si el evento dura todo el día',
+        }
+
+
+class TripForm(forms.ModelForm):
+    """Formulario para crear y editar viajes"""
+    
+    start_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(
+            attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }
+        ),
+        label='Fecha de Inicio'
+    )
+    
+    end_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(
+            attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }
+        ),
+        label='Fecha de Fin'
+    )
+    
+    class Meta:
+        model = Trip
+        fields = ['title', 'description', 'destination', 'start_date', 'end_date', 'is_public']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Viaje a Madrid 2025'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción del viaje...'
+            }),
+            'destination': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Madrid, España'
+            }),
+            'is_public': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'title': 'Título del Viaje',
+            'description': 'Descripción',
+            'destination': 'Destino Principal',
+            'is_public': 'Hacer público',
+        }
+        help_texts = {
+            'is_public': 'Permitir que otras personas vean este viaje mediante un enlace',
+        }
+
+
+class TripStopForm(forms.ModelForm):
+    """Formulario para crear y editar paradas de viaje"""
+    
+    visit_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(
+            attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }
+        ),
+        label='Fecha de Visita'
+    )
+    
+    visit_time = forms.TimeField(
+        required=False,
+        widget=forms.TimeInput(
+            attrs={
+                'class': 'form-control',
+                'type': 'time'
+            }
+        ),
+        label='Hora de Visita'
+    )
+    
+    class Meta:
+        model = TripStop
+        fields = ['name', 'description', 'address', 'latitude', 'longitude', 
+                  'order', 'visit_date', 'visit_time', 'duration_minutes', 'notes']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Museo del Prado'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'Descripción del lugar...'
+            }),
+            'address': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Dirección completa'
+            }),
+            'latitude': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.000001',
+                'placeholder': '40.416775'
+            }),
+            'longitude': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.000001',
+                'placeholder': '-3.703790'
+            }),
+            'order': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '1'
+            }),
+            'duration_minutes': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '0',
+                'placeholder': '120'
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'Notas adicionales...'
+            }),
+        }
+
+
