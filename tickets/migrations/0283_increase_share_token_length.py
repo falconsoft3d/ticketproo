@@ -10,9 +10,23 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterField(
-            model_name='sharedaichatmessage',
-            name='share_token',
-            field=models.CharField(help_text='Token único para acceder al mensaje compartido', max_length=64, unique=True, verbose_name='Token de compartición'),
+        # Modificar columna de forma segura solo si la tabla existe
+        migrations.RunSQL(
+            sql="""
+            DO $$
+            BEGIN
+                IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'tickets_sharedaichatmessage') THEN
+                    ALTER TABLE tickets_sharedaichatmessage ALTER COLUMN share_token TYPE VARCHAR(64);
+                END IF;
+            END $$;
+            """,
+            reverse_sql="""
+            DO $$
+            BEGIN
+                IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'tickets_sharedaichatmessage') THEN
+                    ALTER TABLE tickets_sharedaichatmessage ALTER COLUMN share_token TYPE VARCHAR(32);
+                END IF;
+            END $$;
+            """,
         ),
     ]
