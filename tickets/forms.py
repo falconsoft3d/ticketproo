@@ -633,6 +633,17 @@ class UserEditForm(forms.ModelForm):
         help_text='Fecha de nacimiento del usuario'
     )
     
+    quote_terms_conditions = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 6,
+            'placeholder': 'Términos y condiciones que aparecerán en las cotizaciones rápidas...'
+        }),
+        label='Términos y Condiciones de Cotizaciones',
+        help_text='Estos términos se mostrarán automáticamente en todas las cotizaciones rápidas'
+    )
+    
     # Campos para acceso público al control de horario
     enable_public_time_access = forms.BooleanField(
         required=False,
@@ -715,6 +726,8 @@ class UserEditForm(forms.ModelForm):
                 self.fields['descripcion_cargo'].initial = profile.descripcion_cargo
                 # Cargar fecha de cumpleaños
                 self.fields['birth_date'].initial = profile.birth_date
+                # Cargar términos y condiciones
+                self.fields['quote_terms_conditions'].initial = profile.quote_terms_conditions
             except UserProfile.DoesNotExist:
                 pass
                 
@@ -746,6 +759,7 @@ class UserEditForm(forms.ModelForm):
             profile.cargo = cargo
             profile.descripcion_cargo = descripcion_cargo
             profile.birth_date = birth_date
+            profile.quote_terms_conditions = self.cleaned_data.get('quote_terms_conditions', '')
             profile.save()
             
             # Manejar configuración de acceso público

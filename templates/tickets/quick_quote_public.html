@@ -247,6 +247,106 @@
                     </div>
                 {% endif %}
 
+                <!-- Términos y Condiciones -->
+                {% if quote.user.profile.quote_terms_conditions %}
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <strong><i class="bi bi-file-text"></i> Términos y Condiciones</strong>
+                        </div>
+                        <div class="card-body">
+                            <small>{{ quote.user.profile.quote_terms_conditions|linebreaks }}</small>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Información del Comercial -->
+                <div class="card mt-4 border-primary">
+                    <div class="card-header">
+                        <strong><i class="bi bi-person-badge"></i> Información del Comercial</strong>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-2">
+                                    <i class="bi bi-person"></i> <strong>Nombre:</strong> {{ quote.user.first_name }} {{ quote.user.last_name }}
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-2">
+                                    <i class="bi bi-envelope"></i> <strong>Email:</strong> 
+                                    <a href="mailto:{{ quote.user.email }}">{{ quote.user.email }}</a>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Comentarios -->
+                <div class="card mt-4">
+                    <div class="card-header bg-info text-white">
+                        <strong><i class="bi bi-chat-left-text"></i> Comentarios ({{ comments.count }})</strong>
+                    </div>
+                    <div class="card-body">
+                        <!-- Lista de comentarios existentes -->
+                        {% if comments %}
+                            <div class="mb-4">
+                                {% for comment in comments %}
+                                    <div class="card mb-3 border-light">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <div>
+                                                    <strong class="text-primary">{{ comment.author_name }}</strong>
+                                                    <small class="text-muted d-block">{{ comment.author_email }}</small>
+                                                </div>
+                                                <small class="text-muted">
+                                                    <i class="bi bi-clock"></i> {{ comment.created_at|date:"d/m/Y H:i" }}
+                                                </small>
+                                            </div>
+                                            <p class="mb-0">{{ comment.comment|linebreaks }}</p>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted text-center py-3">
+                                <i class="bi bi-chat-left-text"></i> Aún no hay comentarios. ¡Sé el primero en comentar!
+                            </p>
+                        {% endif %}
+
+                        <!-- Formulario para agregar comentario -->
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title"><i class="bi bi-plus-circle"></i> Agregar un comentario</h6>
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="comment">
+                                    
+                                    <div class="row g-3 mb-3">
+                                        <div class="col-md-6">
+                                            <label for="author_name" class="form-label">Nombre *</label>
+                                            <input type="text" class="form-control" id="author_name" name="author_name" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="author_email" class="form-label">Email *</label>
+                                            <input type="email" class="form-control" id="author_email" name="author_email" required>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="comment" class="form-label">Comentario *</label>
+                                        <textarea class="form-control" id="comment" name="comment" rows="3" required 
+                                                  placeholder="Escribe tu comentario o pregunta aquí..."></textarea>
+                                    </div>
+                                    
+                                    <button type="submit" class="btn btn-info text-white">
+                                        <i class="bi bi-send"></i> Enviar Comentario
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Información adicional -->
                 <div class="text-center mt-4 text-muted">
                     <small>

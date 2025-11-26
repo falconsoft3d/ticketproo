@@ -22,7 +22,7 @@ from .models import (
     AIBook, AIBookChapter, EmployeeRequest, InternalAgreement, Asset, AssetHistory, UrlManager,
     ExpenseReport, ExpenseItem, ExpenseComment, MonthlyCumplimiento, DailyCumplimiento, QRCode, Quotation, QuotationLine, QuotationView,
     Contact, ContactComment, ContactAttachment, QARating, GameCounter, ExerciseCounter, SportGoal, SportGoalRecord,
-    ClientRequest, ClientRequestResponse, Event, Trip, TripStop, WebCounter, WebCounterVisit, QuickQuote, QuickQuoteView
+    ClientRequest, ClientRequestResponse, Event, Trip, TripStop, WebCounter, WebCounterVisit, QuickQuote, QuickQuoteView, QuickQuoteComment
 )
 
 # Configuración del sitio de administración
@@ -5203,6 +5203,26 @@ class QuickQuoteAdmin(admin.ModelAdmin):
     def has_add_permission(self, request):
         """Permitir crear cotizaciones desde el admin"""
         return True
+
+
+@admin.register(QuickQuoteComment)
+class QuickQuoteCommentAdmin(admin.ModelAdmin):
+    """Administración de Comentarios de Cotizaciones"""
+    list_display = ('quote', 'author_name', 'author_email', 'comment_short', 'created_at', 'ip_address')
+    list_filter = ('created_at',)
+    search_fields = ('quote__title', 'quote__sequence_number', 'author_name', 'author_email', 'comment')
+    readonly_fields = ('quote', 'author_name', 'author_email', 'comment', 'created_at', 'ip_address')
+    ordering = ('-created_at',)
+    date_hierarchy = 'created_at'
+    
+    def comment_short(self, obj):
+        """Comentario truncado"""
+        return obj.comment[:50] + '...' if len(obj.comment) > 50 else obj.comment
+    comment_short.short_description = 'Comentario'
+    
+    def has_add_permission(self, request):
+        """No permitir agregar comentarios manualmente"""
+        return False
 
 
 @admin.register(QuickQuoteView)

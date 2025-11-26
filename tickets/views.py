@@ -41311,7 +41311,26 @@ def quick_quote_public(request, token):
         action = request.POST.get('action')
         response_notes = request.POST.get('response_notes', '')
         
-        if action in ['accept', 'reject']:
+        # Manejar comentarios
+        if action == 'comment':
+            from .models import QuickQuoteComment
+            author_name = request.POST.get('author_name', '').strip()
+            author_email = request.POST.get('author_email', '').strip()
+            comment_text = request.POST.get('comment', '').strip()
+            
+            if author_name and author_email and comment_text:
+                QuickQuoteComment.objects.create(
+                    quote=quote,
+                    author_name=author_name,
+                    author_email=author_email,
+                    comment=comment_text,
+                    ip_address=request.META.get('REMOTE_ADDR')
+                )
+                messages.success(request, 'Comentario enviado exitosamente')
+            else:
+                messages.error(request, 'Por favor complete todos los campos del comentario')
+        
+        elif action in ['accept', 'reject']:
             quote.status = 'accepted' if action == 'accept' else 'rejected'
             quote.response_date = timezone.now()
             quote.response_notes = response_notes
@@ -41349,10 +41368,14 @@ def quick_quote_public(request, token):
             id=quote.id
         ).order_by('-created_at')[:5]
     
+    # Obtener comentarios de la cotización
+    comments = quote.comments.all().order_by('-created_at')
+    
     context = {
         'quote': quote,
         'page_title': f'Cotización: {quote.title}',
         'other_quotes': other_quotes,
+        'comments': comments,
     }
     return render(request, 'tickets/quick_quote_public.html', context)
 

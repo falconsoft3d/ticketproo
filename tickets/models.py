@@ -991,6 +991,13 @@ class UserProfile(models.Model):
         help_text='Fecha de nacimiento del usuario'
     )
     
+    # Términos y condiciones para cotizaciones
+    quote_terms_conditions = models.TextField(
+        blank=True,
+        verbose_name='Términos y Condiciones de Cotizaciones',
+        help_text='Términos y condiciones que se mostrarán en las cotizaciones rápidas'
+    )
+    
     created_at = models.DateTimeField(
         default=timezone.now,
         verbose_name='Fecha de creación'
@@ -18044,6 +18051,49 @@ class QuickQuote(models.Model):
     
     def __str__(self):
         return f"{self.title} - {self.get_status_display()} - ${self.total_amount}"
+
+
+class QuickQuoteComment(models.Model):
+    """Modelo para comentarios públicos en cotizaciones"""
+    
+    quote = models.ForeignKey(
+        QuickQuote,
+        on_delete=models.CASCADE,
+        related_name='comments',
+        verbose_name='Cotización'
+    )
+    
+    author_name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre'
+    )
+    
+    author_email = models.EmailField(
+        verbose_name='Email'
+    )
+    
+    comment = models.TextField(
+        verbose_name='Comentario'
+    )
+    
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de Creación'
+    )
+    
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name='Dirección IP'
+    )
+    
+    class Meta:
+        verbose_name = 'Comentario de Cotización'
+        verbose_name_plural = 'Comentarios de Cotizaciones'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.author_name} - {self.quote.sequence_number}"
 
 
 class QuickQuoteView(models.Model):
