@@ -41027,3 +41027,357 @@ def web_counter_test_page(request, token):
         'page_title': f'Prueba: {counter.title}',
     }
     return render(request, 'tickets/web_counter_test_page.html', context)
+
+
+# ==================== COTIZACIONES RÁPIDAS ====================
+
+@login_required
+def quick_quote_list(request):
+    """Lista de cotizaciones rápidas"""
+    from .models import QuickQuote
+    from django.db.models import Q, Sum, Count
+    
+    quotes = QuickQuote.objects.filter(user=request.user)
+    
+    # Calcular KPIs
+    total_quotes = quotes.count()
+    pending_quotes = quotes.filter(status='pending').count()
+    accepted_quotes = quotes.filter(status='accepted').count()
+    rejected_quotes = quotes.filter(status='rejected').count()
+    
+    # Total facturado (aceptadas)
+    total_revenue = quotes.filter(status='accepted').aggregate(total=Sum('total_amount'))['total'] or 0
+    
+    # Total pendiente
+    total_pending = quotes.filter(status='pending').aggregate(total=Sum('total_amount'))['total'] or 0
+    
+    # Filtros
+    status_filter = request.GET.get('status')
+    if status_filter:
+        quotes = quotes.filter(status=status_filter)
+    
+    quotes = quotes.order_by('-created_at')
+    
+    context = {
+        'quotes': quotes,
+        'status_filter': status_filter,
+        'page_title': 'Cotizaciones Rápidas',
+        'total_quotes': total_quotes,
+        'pending_quotes': pending_quotes,
+        'accepted_quotes': accepted_quotes,
+        'rejected_quotes': rejected_quotes,
+        'total_revenue': total_revenue,
+        'total_pending': total_pending,
+    }
+    return render(request, 'tickets/quick_quote_list.html', context)
+
+
+@login_required
+def quick_quote_create(request):
+    """Crear nueva cotización rápida"""
+    from .models import QuickQuote
+    from datetime import timedelta
+    
+    if request.method == 'POST':
+        from .models import Company
+        
+        title = request.POST.get('title')
+        hours = request.POST.get('hours')
+        hourly_rate = request.POST.get('hourly_rate')
+        client_name = request.POST.get('client_name', '')
+        client_email = request.POST.get('client_email', '')
+        notes = request.POST.get('notes', '')
+        valid_days = int(request.POST.get('valid_days', 7))
+        
+        # Obtener empresa si se seleccionó
+        company = None
+        client_selector = request.POST.get('client_selector', '')
+        if client_selector.startswith('company_'):
+            company_id = client_selector.replace('company_', '')
+            try:
+                company = Company.objects.get(id=company_id)
+            except Company.DoesNotExist:
+                pass
+        
+        quote = QuickQuote.objects.create(
+            user=request.user,
+            title=title,
+            hours=hours,
+            hourly_rate=hourly_rate,
+            company=company,
+            client_name=client_name,
+            client_email=client_email,
+            notes=notes,
+            valid_until=timezone.now() + timedelta(days=valid_days)
+        )
+        
+        messages.success(request, 'Cotización creada exitosamente')
+        return redirect('quick_quote_detail', pk=quote.pk)
+    
+    # Obtener empresas y contactos para selector
+    from .models import Company, Contact, UserProfile
+    import json
+    
+    # Obtener UserProfile del usuario actual
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+        companies = Company.objects.filter(users=user_profile).values('id', 'name', 'email')
+    except UserProfile.DoesNotExist:
+        companies = []
+    
+    contacts = Contact.objects.filter(created_by=request.user).values('id', 'name', 'email')
+    
+    # Crear diccionario combinado
+    clients_data = {}
+    for company in companies:
+        clients_data[f'company_{company["id"]}'] = {
+            'name': company['name'],
+            'email': company['email'] or ''
+        }
+    for contact in contacts:
+        clients_data[f'contact_{contact["id"]}'] = {
+            'name': contact['name'],
+            'email': contact['email'] or ''
+        }
+    
+    context = {
+        'page_title': 'Nueva Cotización Rápida',
+        'companies': companies,
+        'contacts': contacts,
+        'clients_data_json': json.dumps(clients_data),
+    }
+    return render(request, 'tickets/quick_quote_form.html', context)
+
+
+@login_required
+def quick_quote_detail(request, pk):
+    """Detalle de cotización rápida"""
+    from .models import QuickQuote
+    
+    quote = get_object_or_404(QuickQuote, pk=pk, user=request.user)
+    
+    # Actualizar estado si expiró
+    if quote.is_expired() and quote.status == 'pending':
+        quote.status = 'expired'
+        quote.save()
+    
+    # Obtener estadísticas de visualizaciones
+    views = quote.views.all()
+    total_views = views.count()
+    unique_ips = views.values('ip_address').distinct().count()
+    
+    # Últimas visualizaciones
+    recent_views = views[:10]
+    
+    # Estadísticas por dispositivo
+    device_stats = {}
+    for view in views:
+        device = view.device_type or 'Unknown'
+        device_stats[device] = device_stats.get(device, 0) + 1
+    
+    # Estadísticas por país
+    country_stats = {}
+    for view in views:
+        country = view.country or 'Unknown'
+        country_stats[country] = country_stats.get(country, 0) + 1
+    
+    context = {
+        'quote': quote,
+        'public_url': quote.get_public_url(request),
+        'page_title': f'Cotización: {quote.title}',
+        'total_views': total_views,
+        'unique_ips': unique_ips,
+        'recent_views': recent_views,
+        'device_stats': device_stats,
+        'country_stats': country_stats,
+    }
+    return render(request, 'tickets/quick_quote_detail.html', context)
+
+
+@login_required
+def quick_quote_edit(request, pk):
+    """Editar cotización rápida"""
+    from .models import QuickQuote
+    from datetime import timedelta
+    
+    quote = get_object_or_404(QuickQuote, pk=pk, user=request.user)
+    
+    # Solo se pueden editar cotizaciones pendientes
+    if quote.status != 'pending':
+        messages.error(request, 'Solo se pueden editar cotizaciones pendientes')
+        return redirect('quick_quote_detail', pk=quote.pk)
+    
+    if request.method == 'POST':
+        quote.title = request.POST.get('title')
+        quote.hours = request.POST.get('hours')
+        quote.hourly_rate = request.POST.get('hourly_rate')
+        quote.client_name = request.POST.get('client_name', '')
+        quote.client_email = request.POST.get('client_email', '')
+        quote.notes = request.POST.get('notes', '')
+        
+        valid_days = int(request.POST.get('valid_days', 7))
+        quote.valid_until = timezone.now() + timedelta(days=valid_days)
+        
+        quote.save()
+        
+        messages.success(request, 'Cotización actualizada exitosamente')
+        return redirect('quick_quote_detail', pk=quote.pk)
+    
+    # Calcular días de validez restantes
+    days_remaining = (quote.valid_until - timezone.now()).days
+    
+    context = {
+        'quote': quote,
+        'days_remaining': days_remaining,
+        'page_title': f'Editar: {quote.title}',
+    }
+    return render(request, 'tickets/quick_quote_form.html', context)
+
+
+@login_required
+def quick_quote_delete(request, pk):
+    """Eliminar cotización rápida"""
+    from .models import QuickQuote
+    
+    quote = get_object_or_404(QuickQuote, pk=pk, user=request.user)
+    
+    if request.method == 'POST':
+        title = quote.title
+        quote.delete()
+        messages.success(request, f'Cotización "{title}" eliminada exitosamente')
+        return redirect('quick_quote_list')
+    
+    context = {
+        'quote': quote,
+        'page_title': f'Eliminar: {quote.title}',
+    }
+    return render(request, 'tickets/quick_quote_delete.html', context)
+
+
+def quick_quote_public(request, token):
+    """Vista pública para que el cliente acepte o rechace la cotización"""
+    from .models import QuickQuote, QuickQuoteView
+    
+    quote = get_object_or_404(QuickQuote, public_token=token)
+    
+    # Registrar visualización
+    try:
+        from user_agents import parse
+        import requests
+        
+        # Obtener IP
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        
+        # Parsear user agent
+        user_agent_string = request.META.get('HTTP_USER_AGENT', '')
+        user_agent = parse(user_agent_string)
+        
+        # Obtener geolocalización (opcional)
+        country = ''
+        city = ''
+        try:
+            geo_response = requests.get(f'http://ip-api.com/json/{ip}', timeout=2)
+            if geo_response.status_code == 200:
+                geo_data = geo_response.json()
+                country = geo_data.get('country', '')
+                city = geo_data.get('city', '')
+        except:
+            pass
+        
+        # Registrar vista
+        QuickQuoteView.objects.create(
+            quote=quote,
+            ip_address=ip,
+            user_agent=user_agent_string,
+            country=country,
+            city=city,
+            browser=f"{user_agent.browser.family} {user_agent.browser.version_string}",
+            device_type='Mobile' if user_agent.is_mobile else 'Tablet' if user_agent.is_tablet else 'Desktop'
+        )
+    except Exception as e:
+        # Si falla el tracking, continuar sin problemas
+        pass
+    
+    # Verificar si expiró
+    if quote.is_expired():
+        quote.status = 'expired'
+        quote.save()
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        response_notes = request.POST.get('response_notes', '')
+        
+        if action in ['accept', 'reject']:
+            quote.status = 'accepted' if action == 'accept' else 'rejected'
+            quote.response_date = timezone.now()
+            quote.response_notes = response_notes
+            quote.save()
+            
+            # Enviar notificación al usuario (opcional)
+            # TODO: Implementar envío de email
+            
+            messages.success(
+                request, 
+                f'Cotización {"aceptada" if action == "accept" else "rechazada"} exitosamente'
+            )
+    
+    # Obtener otras cotizaciones del mismo cliente
+    other_quotes = []
+    if quote.company:
+        # Si tiene empresa, buscar por empresa
+        other_quotes = QuickQuote.objects.filter(
+            company=quote.company
+        ).exclude(
+            id=quote.id
+        ).order_by('-created_at')[:5]
+    elif quote.client_email:
+        # Si no tiene empresa pero tiene email, buscar por email
+        other_quotes = QuickQuote.objects.filter(
+            client_email=quote.client_email
+        ).exclude(
+            id=quote.id
+        ).order_by('-created_at')[:5]
+    elif quote.client_name:
+        # Si solo tiene nombre, buscar por nombre
+        other_quotes = QuickQuote.objects.filter(
+            client_name=quote.client_name
+        ).exclude(
+            id=quote.id
+        ).order_by('-created_at')[:5]
+    
+    context = {
+        'quote': quote,
+        'page_title': f'Cotización: {quote.title}',
+        'other_quotes': other_quotes,
+    }
+    return render(request, 'tickets/quick_quote_public.html', context)
+
+
+@login_required
+def quick_quote_duplicate(request, pk):
+    """Duplicar cotización rápida"""
+    from .models import QuickQuote
+    from datetime import timedelta
+    
+    original = get_object_or_404(QuickQuote, pk=pk, user=request.user)
+    
+    # Crear copia
+    duplicate = QuickQuote.objects.create(
+        user=request.user,
+        title=f"{original.title} (Copia)",
+        hours=original.hours,
+        hourly_rate=original.hourly_rate,
+        company=original.company,
+        client_name=original.client_name,
+        client_email=original.client_email,
+        notes=original.notes,
+        valid_until=timezone.now() + timedelta(days=7),
+        status='pending'
+    )
+    
+    messages.success(request, 'Cotización duplicada exitosamente')
+    return redirect('quick_quote_detail', pk=duplicate.pk)

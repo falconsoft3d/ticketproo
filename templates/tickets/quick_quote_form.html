@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4>
+                        <i class="bi bi-lightning-charge"></i> 
+                        {% if quote %}Editar{% else %}Nueva{% endif %} Cotización Rápida
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if not quote %}
+                        <div class="mb-3">
+                            <label for="client_selector" class="form-label">Seleccionar Cliente Existente (Opcional)</label>
+                            <select class="form-select" id="client_selector">
+                                <option value="">-- Seleccionar empresa o contacto --</option>
+                                {% if companies %}
+                                    <optgroup label="Empresas">
+                                        {% for company in companies %}
+                                            <option value="company_{{ company.id }}">{{ company.name }}</option>
+                                        {% endfor %}
+                                    </optgroup>
+                                {% endif %}
+                                {% if contacts %}
+                                    <optgroup label="Contactos">
+                                        {% for contact in contacts %}
+                                            <option value="contact_{{ contact.id }}">{{ contact.name }}</option>
+                                        {% endfor %}
+                                    </optgroup>
+                                {% endif %}
+                            </select>
+                            <small class="text-muted">Selecciona una empresa o contacto para autocompletar nombre y email</small>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Título <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="title" name="title" 
+                                   value="{{ quote.title|default:'' }}" required>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="hours" class="form-label">Cantidad de Horas <span class="text-danger">*</span></label>
+                                <input type="number" step="0.01" class="form-control" id="hours" name="hours" 
+                                       value="{% if quote %}{{ quote.hours|stringformat:'s' }}{% endif %}" required min="0">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="hourly_rate" class="form-label">Costo por Hora (€) <span class="text-danger">*</span></label>
+                                <input type="number" step="0.01" class="form-control" id="hourly_rate" name="hourly_rate" 
+                                       value="{% if quote %}{{ quote.hourly_rate|stringformat:'s' }}{% endif %}" required min="0">
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info" id="total-preview">
+                            <strong>Importe Total: €<span id="total-amount">0.00</span></strong>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="client_name" class="form-label">Nombre del Cliente</label>
+                                <input type="text" class="form-control" id="client_name" name="client_name" 
+                                       value="{{ quote.client_name|default:'' }}">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="client_email" class="form-label">Email del Cliente</label>
+                                <input type="email" class="form-control" id="client_email" name="client_email" 
+                                       value="{{ quote.client_email|default:'' }}">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="valid_days" class="form-label">Días de Validez</label>
+                            <input type="number" class="form-control" id="valid_days" name="valid_days" 
+                                   value="{% if quote %}{{ days_remaining }}{% else %}7{% endif %}" min="1" max="90">
+                            <small class="text-muted">La cotización será válida por esta cantidad de días (por defecto 7)</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notas / Descripción</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="4">{{ quote.notes|default:'' }}</textarea>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <i class="bi bi-info-circle"></i> Una vez creada la cotización, se generará un enlace público que podrás compartir con el cliente para que acepte o rechace la propuesta.
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% if quote %}{% url 'quick_quote_detail' quote.pk %}{% else %}{% url 'quick_quote_list' %}{% endif %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Guardar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Datos de clientes
+    const clientsData = {{ clients_data_json|safe|default:'{}' }};
+    
+    // Autocompletar datos al seleccionar cliente
+    const clientSelector = document.getElementById('client_selector');
+    if (clientSelector) {
+        clientSelector.addEventListener('change', function() {
+            const selectedValue = this.value;
+            if (selectedValue && clientsData[selectedValue]) {
+                const clientData = clientsData[selectedValue];
+                document.getElementById('client_name').value = clientData.name;
+                document.getElementById('client_email').value = clientData.email;
+            }
+        });
+    }
+    
+    // Calcular total automáticamente
+    function updateTotal() {
+        const hours = parseFloat(document.getElementById('hours').value) || 0;
+        const rate = parseFloat(document.getElementById('hourly_rate').value) || 0;
+        const total = hours * rate;
+        document.getElementById('total-amount').textContent = total.toFixed(2);
+    }
+    
+    document.getElementById('hours').addEventListener('input', updateTotal);
+    document.getElementById('hourly_rate').addEventListener('input', updateTotal);
+    
+    // Calcular al cargar
+    updateTotal();
+</script>
+{% endblock %}

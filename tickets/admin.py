@@ -22,7 +22,7 @@ from .models import (
     AIBook, AIBookChapter, EmployeeRequest, InternalAgreement, Asset, AssetHistory, UrlManager,
     ExpenseReport, ExpenseItem, ExpenseComment, MonthlyCumplimiento, DailyCumplimiento, QRCode, Quotation, QuotationLine, QuotationView,
     Contact, ContactComment, ContactAttachment, QARating, GameCounter, ExerciseCounter, SportGoal, SportGoalRecord,
-    ClientRequest, ClientRequestResponse, Event, Trip, TripStop, WebCounter, WebCounterVisit
+    ClientRequest, ClientRequestResponse, Event, Trip, TripStop, WebCounter, WebCounterVisit, QuickQuote, QuickQuoteView
 )
 
 # Configuración del sitio de administración
@@ -5168,4 +5168,58 @@ class WebCounterVisitAdmin(admin.ModelAdmin):
     
     def has_add_permission(self, request):
         """No permitir agregar visitas manualmente"""
+        return False
+
+
+@admin.register(QuickQuote)
+class QuickQuoteAdmin(admin.ModelAdmin):
+    """Administración de Cotizaciones Rápidas"""
+    list_display = ('title', 'user', 'client_name', 'hours', 'hourly_rate', 'total_amount', 'status', 'created_at', 'valid_until')
+    list_filter = ('status', 'created_at', 'valid_until', 'user')
+    search_fields = ('title', 'client_name', 'client_email', 'public_token')
+    readonly_fields = ('public_token', 'total_amount', 'created_at', 'response_date')
+    ordering = ('-created_at',)
+    date_hierarchy = 'created_at'
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('user', 'title', 'status')
+        }),
+        ('Cliente', {
+            'fields': ('client_name', 'client_email')
+        }),
+        ('Cotización', {
+            'fields': ('hours', 'hourly_rate', 'total_amount', 'notes')
+        }),
+        ('Validez', {
+            'fields': ('created_at', 'valid_until', 'public_token')
+        }),
+        ('Respuesta del Cliente', {
+            'fields': ('response_date', 'response_notes'),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def has_add_permission(self, request):
+        """Permitir crear cotizaciones desde el admin"""
+        return True
+
+
+@admin.register(QuickQuoteView)
+class QuickQuoteViewAdmin(admin.ModelAdmin):
+    """Administración de Visualizaciones de Cotizaciones"""
+    list_display = ('quote', 'viewed_at', 'ip_address', 'country', 'city', 'device_type', 'browser_short')
+    list_filter = ('device_type', 'country', 'viewed_at')
+    search_fields = ('quote__title', 'ip_address', 'country', 'city')
+    readonly_fields = ('quote', 'viewed_at', 'ip_address', 'user_agent', 'country', 'city', 'browser', 'device_type')
+    ordering = ('-viewed_at',)
+    date_hierarchy = 'viewed_at'
+    
+    def browser_short(self, obj):
+        """Navegador truncado"""
+        return obj.browser[:30] if obj.browser else '-'
+    browser_short.short_description = 'Navegador'
+    
+    def has_add_permission(self, request):
+        """No permitir agregar visualizaciones manualmente"""
         return False

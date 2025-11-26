@@ -17879,4 +17879,204 @@ class WebCounterVisit(models.Model):
         return f"{self.counter.title} - {self.url} ({self.created_at})"
 
 
+class QuickQuote(models.Model):
+    """Modelo para cotizaciones rápidas"""
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pendiente'),
+        ('accepted', 'Aceptado'),
+        ('rejected', 'Rechazado'),
+        ('expired', 'Expirado'),
+    ]
+    
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='quick_quotes',
+        verbose_name='Usuario'
+    )
+    
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título'
+    )
+    
+    hours = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name='Cantidad de Horas'
+    )
+    
+    hourly_rate = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name='Costo por Hora'
+    )
+    
+    total_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name='Importe Total',
+        editable=False
+    )
+    
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        verbose_name='Estado'
+    )
+    
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de Creación'
+    )
+    
+    valid_until = models.DateTimeField(
+        verbose_name='Válido Hasta'
+    )
+    
+    public_token = models.CharField(
+        max_length=64,
+        unique=True,
+        verbose_name='Token Público',
+        help_text='Token único para acceso público'
+    )
+    
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='quick_quotes',
+        verbose_name='Empresa'
+    )
+    
+    client_name = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Nombre del Cliente'
+    )
+    
+    client_email = models.EmailField(
+        blank=True,
+        verbose_name='Email del Cliente'
+    )
+    
+    notes = models.TextField(
+        blank=True,
+        verbose_name='Notas'
+    )
+    
+    response_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Respuesta'
+    )
+    
+    response_notes = models.TextField(
+        blank=True,
+        verbose_name='Notas de Respuesta del Cliente'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Cotización Rápida'
+        verbose_name_plural = 'Cotizaciones Rápidas'
+    
+    def save(self, *args, **kwargs):
+        # Calcular el total automáticamente
+        from decimal import Decimal
+        self.total_amount = Decimal(str(self.hours)) * Decimal(str(self.hourly_rate))
+        
+        # Generar token público si no existe
+        if not self.public_token:
+            import secrets
+            self.public_token = secrets.token_urlsafe(32)
+        
+        # Establecer fecha de vencimiento si no existe
+        if not self.valid_until:
+            from datetime import timedelta
+            self.valid_until = timezone.now() + timedelta(days=7)
+        
+        super().save(*args, **kwargs)
+    
+    def is_expired(self):
+        """Verifica si la cotización ha expirado"""
+        return timezone.now() > self.valid_until and self.status == 'pending'
+    
+    def get_public_url(self, request=None):
+        """Retorna la URL pública para que el cliente responda"""
+        from django.urls import reverse
+        path = reverse('quick_quote_public', kwargs={'token': self.public_token})
+        if request:
+            return request.build_absolute_uri(path)
+        from django.conf import settings
+        base_url = getattr(settings, 'SITE_DOMAIN', 'localhost:8000')
+        protocol = 'https' if 'localhost' not in base_url else 'http'
+        return f"{protocol}://{base_url}{path}"
+    
+    def __str__(self):
+        return f"{self.title} - {self.get_status_display()} - ${self.total_amount}"
+
+
+class QuickQuoteView(models.Model):
+    """Modelo para registrar visualizaciones de cotizaciones públicas"""
+    
+    quote = models.ForeignKey(
+        QuickQuote,
+        on_delete=models.CASCADE,
+        related_name='views',
+        verbose_name='Cotización'
+    )
+    
+    viewed_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de Visualización'
+    )
+    
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name='Dirección IP'
+    )
+    
+    user_agent = models.TextField(
+        blank=True,
+        verbose_name='User Agent'
+    )
+    
+    country = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='País'
+    )
+    
+    city = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Ciudad'
+    )
+    
+    browser = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Navegador'
+    )
+    
+    device_type = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name='Tipo de Dispositivo'
+    )
+    
+    class Meta:
+        ordering = ['-viewed_at']
+        verbose_name = 'Visualización de Cotización'
+        verbose_name_plural = 'Visualizaciones de Cotizaciones'
+    
+    def __str__(self):
+        return f"Vista de {self.quote.title} - {self.viewed_at.strftime('%d/%m/%Y %H:%M')}"
+
+
 

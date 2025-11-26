@@ -1,0 +1,253 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="bi bi-lightning-charge"></i> {{ quote.title }}
+                    </h4>
+                    <span class="badge 
+                        {% if quote.status == 'accepted' %}bg-success
+                        {% elif quote.status == 'rejected' %}bg-danger
+                        {% elif quote.status == 'expired' %}bg-secondary
+                        {% else %}bg-warning text-dark{% endif %} fs-6">
+                        {{ quote.get_status_display }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <!-- Información del Cliente -->
+                    {% if quote.client_name or quote.client_email %}
+                        <div class="mb-4">
+                            <h5><i class="bi bi-person"></i> Cliente</h5>
+                            {% if quote.client_name %}
+                                <p class="mb-1"><strong>Nombre:</strong> {{ quote.client_name }}</p>
+                            {% endif %}
+                            {% if quote.client_email %}
+                                <p class="mb-1"><strong>Email:</strong> {{ quote.client_email }}</p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Detalle de la Cotización -->
+                    <div class="mb-4">
+                        <h5><i class="bi bi-file-earmark-text"></i> Detalle</h5>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <small class="text-muted">Horas</small>
+                                        <h3 class="mb-0">{{ quote.hours }}</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <small class="text-muted">Costo/Hora</small>
+                                        <h3 class="mb-0">€{{ quote.hourly_rate }}</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card bg-primary text-white">
+                                    <div class="card-body text-center">
+                                        <small>Total</small>
+                                        <h3 class="mb-0">€{{ quote.total_amount }}</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Notas -->
+                    {% if quote.notes %}
+                        <div class="mb-4">
+                            <h5><i class="bi bi-sticky"></i> Notas</h5>
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    {{ quote.notes|linebreaks }}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Fechas -->
+                    <div class="mb-4">
+                        <h5><i class="bi bi-calendar"></i> Fechas</h5>
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="bi bi-calendar-plus"></i> <strong>Creada:</strong> {{ quote.created_at|date:"d/m/Y H:i" }}
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-clock"></i> <strong>Válida hasta:</strong> {{ quote.valid_until|date:"d/m/Y H:i" }}
+                                {% if quote.is_expired %}
+                                    <span class="badge bg-danger ms-2">Expirado</span>
+                                {% endif %}
+                            </li>
+                            {% if quote.response_date %}
+                                <li class="mb-2">
+                                    <i class="bi bi-check-circle"></i> <strong>Respondida:</strong> {{ quote.response_date|date:"d/m/Y H:i" }}
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    
+                    <!-- Respuesta del Cliente -->
+                    {% if quote.response_notes %}
+                        <div class="mb-4">
+                            <h5><i class="bi bi-chat-quote"></i> Respuesta del Cliente</h5>
+                            <div class="card {% if quote.status == 'accepted' %}border-success{% elif quote.status == 'rejected' %}border-danger{% endif %}">
+                                <div class="card-body">
+                                    {{ quote.response_notes|linebreaks }}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <div class="btn-group" role="group">
+                        <a href="{% url 'quick_quote_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver
+                        </a>
+                        {% if quote.status == 'pending' %}
+                            <a href="{% url 'quick_quote_edit' quote.pk %}" class="btn btn-warning">
+                                <i class="bi bi-pencil"></i> Editar
+                            </a>
+                        {% endif %}
+                        <a href="{% url 'quick_quote_duplicate' quote.pk %}" class="btn btn-info">
+                            <i class="bi bi-files"></i> Duplicar
+                        </a>
+                        <a href="{% url 'quick_quote_delete' quote.pk %}" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Panel Lateral -->
+        <div class="col-md-4">
+            <!-- Enlace Público -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-link-45deg"></i> Enlace Público</h5>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted">Comparte este enlace con el cliente para que pueda aceptar o rechazar la cotización:</p>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control form-control-sm" id="public-url" value="{{ public_url }}" readonly>
+                        <button class="btn btn-outline-secondary btn-sm" type="button" onclick="copyToClipboard()">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+                    <a href="{{ public_url }}" target="_blank" class="btn btn-sm btn-primary w-100">
+                        <i class="bi bi-box-arrow-up-right"></i> Abrir Vista Pública
+                    </a>
+                </div>
+            </div>
+            
+            <!-- QR Code (opcional) -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-qr-code"></i> Código QR</h5>
+                </div>
+                <div class="card-body text-center">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ public_url|urlencode }}" 
+                         alt="QR Code" class="img-fluid">
+                    <p class="small text-muted mt-2">Escanea para abrir la cotización</p>
+                </div>
+            </div>
+            
+            <!-- Estadísticas de Visualización -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-graph-up"></i> Estadísticas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center mb-3">
+                        <div class="col-6">
+                            <div class="border rounded p-2">
+                                <h4 class="text-primary mb-0">{{ total_views }}</h4>
+                                <small class="text-muted">Total Vistas</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="border rounded p-2">
+                                <h4 class="text-success mb-0">{{ unique_ips }}</h4>
+                                <small class="text-muted">IPs Únicas</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if device_stats %}
+                    <div class="mb-3">
+                        <strong class="small">Por Dispositivo:</strong>
+                        <ul class="list-unstyled small mt-1">
+                            {% for device, count in device_stats.items %}
+                                <li>
+                                    <i class="bi bi-{% if device == 'Mobile' %}phone{% elif device == 'Tablet' %}tablet{% else %}laptop{% endif %}"></i> 
+                                    {{ device }}: <span class="badge bg-secondary">{{ count }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    {% if country_stats %}
+                    <div class="mb-3">
+                        <strong class="small">Por País:</strong>
+                        <ul class="list-unstyled small mt-1">
+                            {% for country, count in country_stats.items %}
+                                <li>
+                                    <i class="bi bi-geo-alt"></i> 
+                                    {{ country }}: <span class="badge bg-secondary">{{ count }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    {% if recent_views %}
+                    <div>
+                        <strong class="small">Últimas Visualizaciones:</strong>
+                        <div class="list-group list-group-flush mt-1">
+                            {% for view in recent_views %}
+                                <div class="list-group-item px-0 py-2 small">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span>
+                                            <i class="bi bi-{% if view.device_type == 'Mobile' %}phone{% elif view.device_type == 'Tablet' %}tablet{% else %}laptop{% endif %}"></i>
+                                            {% if view.city %}{{ view.city }}, {% endif %}{{ view.country|default:"Unknown" }}
+                                        </span>
+                                        <small class="text-muted">{{ view.viewed_at|date:"d/m H:i" }}</small>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function copyToClipboard() {
+        const input = document.getElementById('public-url');
+        input.select();
+        document.execCommand('copy');
+        
+        // Mostrar feedback
+        const btn = event.target.closest('button');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check"></i>';
+        setTimeout(() => {
+            btn.innerHTML = originalHTML;
+        }, 2000);
+    }
+</script>
+{% endblock %}

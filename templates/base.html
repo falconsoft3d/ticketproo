@@ -173,8 +173,15 @@
                                     {% endif %}
                                 </a>
                             </li>
-
                             
+                            <li><hr class="dropdown-divider"></li>
+                            
+                            <li>
+                                <a class="dropdown-item {% if 'quick_quote' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'quick_quote_list' %}">
+                                    <i class="bi bi-lightning-charge"></i> Cotizaciones Rápidas
+                                </a>
+                            </li>
                             
                         </ul>
                     </li>

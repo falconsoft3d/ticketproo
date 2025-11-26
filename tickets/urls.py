@@ -1336,6 +1336,15 @@ urlpatterns += [
     path('web-counters/<int:pk>/delete/', views.web_counter_delete, name='web_counter_delete'),
     path('web-counters/test/<str:token>/', views.web_counter_test_page, name='web_counter_test_page'),
     
+    # Cotizaciones Rápidas
+    path('quick-quotes/', views.quick_quote_list, name='quick_quote_list'),
+    path('quick-quotes/create/', views.quick_quote_create, name='quick_quote_create'),
+    path('quick-quotes/<int:pk>/', views.quick_quote_detail, name='quick_quote_detail'),
+    path('quick-quotes/<int:pk>/edit/', views.quick_quote_edit, name='quick_quote_edit'),
+    path('quick-quotes/<int:pk>/delete/', views.quick_quote_delete, name='quick_quote_delete'),
+    path('quick-quotes/<int:pk>/duplicate/', views.quick_quote_duplicate, name='quick_quote_duplicate'),
+    path('quote/<str:token>/', views.quick_quote_public, name='quick_quote_public'),
+    
     # URLs de API
     path('api/', include('tickets.api_urls')),
 ]

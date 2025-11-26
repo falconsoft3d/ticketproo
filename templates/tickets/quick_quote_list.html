@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="bi bi-lightning-charge"></i> Cotizaciones Rápidas</h2>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'quick_quote_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Nueva Cotización
+            </a>
+        </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="row mb-4">
+        <div class="col-md-2">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="text-muted mb-1">Total</h6>
+                    <h3 class="mb-0">{{ total_quotes }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center border-warning">
+                <div class="card-body">
+                    <h6 class="text-muted mb-1">Pendientes</h6>
+                    <h3 class="mb-0 text-warning">{{ pending_quotes }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center border-success">
+                <div class="card-body">
+                    <h6 class="text-muted mb-1">Aceptadas</h6>
+                    <h3 class="mb-0 text-success">{{ accepted_quotes }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center border-danger">
+                <div class="card-body">
+                    <h6 class="text-muted mb-1">Rechazadas</h6>
+                    <h3 class="mb-0 text-danger">{{ rejected_quotes }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center bg-success text-white">
+                <div class="card-body">
+                    <h6 class="mb-1">Facturado</h6>
+                    <h3 class="mb-0">€{{ total_revenue }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center bg-info text-white">
+                <div class="card-body">
+                    <h6 class="mb-1">Pendiente</h6>
+                    <h3 class="mb-0">€{{ total_pending }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Estado</label>
+                    <select name="status" class="form-select" onchange="this.form.submit()">
+                        <option value="">Todos</option>
+                        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pendiente</option>
+                        <option value="accepted" {% if status_filter == 'accepted' %}selected{% endif %}>Aceptado</option>
+                        <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rechazado</option>
+                        <option value="expired" {% if status_filter == 'expired' %}selected{% endif %}>Expirado</option>
+                    </select>
+                </div>
+                <div class="col-md-9 d-flex align-items-end">
+                    {% if status_filter %}
+                        <a href="{% url 'quick_quote_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Limpiar Filtros
+                        </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Cotizaciones -->
+    {% if quotes %}
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Título</th>
+                            <th>Cliente</th>
+                            <th>Horas</th>
+                            <th>Costo/Hora</th>
+                            <th>Total</th>
+                            <th>Estado</th>
+                            <th>Fecha</th>
+                            <th>Válido Hasta</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for quote in quotes %}
+                        <tr>
+                            <td>
+                                <strong>{{ quote.title }}</strong>
+                            </td>
+                            <td>
+                                {% if quote.client_name %}
+                                    <i class="bi bi-person"></i> {{ quote.client_name }}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ quote.hours }}</td>
+                            <td>€{{ quote.hourly_rate }}</td>
+                            <td><strong class="text-primary">€{{ quote.total_amount }}</strong></td>
+                            <td>
+                                <span class="badge 
+                                    {% if quote.status == 'accepted' %}bg-success
+                                    {% elif quote.status == 'rejected' %}bg-danger
+                                    {% elif quote.status == 'expired' %}bg-secondary
+                                    {% else %}bg-warning text-dark{% endif %}">
+                                    {{ quote.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <small>{{ quote.created_at|date:"d/m/Y" }}</small>
+                            </td>
+                            <td>
+                                <small>{{ quote.valid_until|date:"d/m/Y" }}</small>
+                                {% if quote.is_expired %}
+                                    <br><span class="badge bg-danger">Expirado</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{% url 'quick_quote_detail' quote.pk %}" class="btn btn-outline-primary" title="Ver">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    {% if quote.status == 'pending' %}
+                                        <a href="{% url 'quick_quote_edit' quote.pk %}" class="btn btn-outline-secondary" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                    {% endif %}
+                                    <a href="{% url 'quick_quote_duplicate' quote.pk %}" class="btn btn-outline-info" title="Duplicar">
+                                        <i class="bi bi-files"></i>
+                                    </a>
+                                    <a href="{% url 'quick_quote_delete' quote.pk %}" class="btn btn-outline-danger" title="Eliminar">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> No hay cotizaciones disponibles.
+            <a href="{% url 'quick_quote_create' %}">Crear la primera cotización</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
