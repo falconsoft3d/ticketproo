@@ -17896,6 +17896,13 @@ class QuickQuote(models.Model):
         verbose_name='Usuario'
     )
     
+    sequence_number = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name='Número de Secuencia',
+        help_text='Formato: CR-YYYY-XX'
+    )
+    
     title = models.CharField(
         max_length=200,
         verbose_name='Título'
@@ -17998,6 +18005,25 @@ class QuickQuote(models.Model):
         if not self.valid_until:
             from datetime import timedelta
             self.valid_until = timezone.now() + timedelta(days=7)
+        
+        # Generar número de secuencia si no existe
+        if not self.sequence_number:
+            year = timezone.now().year
+            # Obtener el último número del año actual
+            last_quote = QuickQuote.objects.filter(
+                sequence_number__startswith=f'CR-{year}-'
+            ).order_by('-sequence_number').first()
+            
+            if last_quote and last_quote.sequence_number:
+                try:
+                    last_num = int(last_quote.sequence_number.split('-')[-1])
+                    new_num = last_num + 1
+                except (ValueError, IndexError):
+                    new_num = 1
+            else:
+                new_num = 1
+            
+            self.sequence_number = f'CR-{year}-{new_num:02d}'
         
         super().save(*args, **kwargs)
     

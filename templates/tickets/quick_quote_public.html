@@ -98,6 +98,7 @@
             <!-- Header -->
             <div class="quote-header">
                 <h1><i class="bi bi-file-earmark-text"></i> Cotización</h1>
+                <p class="mb-2"><strong>{{ quote.sequence_number }}</strong></p>
                 <h2>{{ quote.title }}</h2>
                 {% if quote.client_name %}
                     <p class="mb-0"><i class="bi bi-person"></i> {{ quote.client_name }}</p>
@@ -223,6 +224,7 @@
                                 <a href="{% url 'quick_quote_public' other.public_token %}" class="list-group-item list-group-item-action">
                                     <div class="d-flex w-100 justify-content-between align-items-center">
                                         <div>
+                                            <small class="text-muted">{{ other.sequence_number }}</small>
                                             <h6 class="mb-1">{{ other.title }}</h6>
                                             <small class="text-muted">
                                                 <i class="bi bi-calendar"></i> {{ other.created_at|date:"d/m/Y" }}

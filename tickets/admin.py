@@ -5174,16 +5174,16 @@ class WebCounterVisitAdmin(admin.ModelAdmin):
 @admin.register(QuickQuote)
 class QuickQuoteAdmin(admin.ModelAdmin):
     """Administración de Cotizaciones Rápidas"""
-    list_display = ('title', 'user', 'client_name', 'hours', 'hourly_rate', 'total_amount', 'status', 'created_at', 'valid_until')
+    list_display = ('sequence_number', 'title', 'user', 'client_name', 'hours', 'hourly_rate', 'total_amount', 'status', 'created_at', 'valid_until')
     list_filter = ('status', 'created_at', 'valid_until', 'user')
-    search_fields = ('title', 'client_name', 'client_email', 'public_token')
-    readonly_fields = ('public_token', 'total_amount', 'created_at', 'response_date')
+    search_fields = ('sequence_number', 'title', 'client_name', 'client_email', 'public_token')
+    readonly_fields = ('sequence_number', 'public_token', 'total_amount', 'created_at', 'response_date')
     ordering = ('-created_at',)
     date_hierarchy = 'created_at'
     
     fieldsets = (
         ('Información Básica', {
-            'fields': ('user', 'title', 'status')
+            'fields': ('sequence_number', 'user', 'title', 'status')
         }),
         ('Cliente', {
             'fields': ('client_name', 'client_email')

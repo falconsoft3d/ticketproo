@@ -98,6 +98,7 @@
                 <table class="table table-hover mb-0">
                     <thead>
                         <tr>
+                            <th>Número</th>
                             <th>Título</th>
                             <th>Cliente</th>
                             <th>Horas</th>
@@ -112,6 +113,9 @@
                     <tbody>
                         {% for quote in quotes %}
                         <tr>
+                            <td>
+                                <span class="badge bg-secondary">{{ quote.sequence_number }}</span>
+                            </td>
                             <td>
                                 <strong>{{ quote.title }}</strong>
                             </td>
