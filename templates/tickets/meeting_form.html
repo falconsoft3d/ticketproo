@@ -1331,8 +1331,15 @@ function addLink() {
         return;
     }
     
+    // Obtener el ID de la reunión
+    const meetingId = {{ form.instance.pk|default:"null" }};
+    if (!meetingId) {
+        showToast('error', 'Error', 'Debes guardar la reunión primero');
+        return;
+    }
+    
     // Enviar al servidor
-    fetch('{% url "meeting_add_link" form.instance.pk %}', {
+    fetch(`/meetings/${meetingId}/add-link/`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

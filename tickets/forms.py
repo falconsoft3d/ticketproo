@@ -2928,16 +2928,20 @@ class MeetingForm(forms.ModelForm):
         widget=forms.DateInput(attrs={
             'class': 'form-control',
             'type': 'date'
-        }),
-        label='Fecha de la reunión'
+        }, format='%Y-%m-%d'),
+        label='Fecha de la reunión',
+        required=True,
+        input_formats=['%Y-%m-%d']
     )
     
     meeting_time = forms.TimeField(
         widget=forms.TimeInput(attrs={
             'class': 'form-control',
             'type': 'time'
-        }),
-        label='Hora de la reunión'
+        }, format='%H:%M'),
+        label='Hora de la reunión',
+        required=True,
+        input_formats=['%H:%M']
     )
     
     class Meta:
@@ -3008,10 +3012,20 @@ class MeetingForm(forms.ModelForm):
         self.fields['product'].required = False
         self.fields['product'].help_text = 'Selecciona el producto principal que se discutirá en la reunión'
         
-        # Si estamos editando, llenar los campos de fecha y hora
-        if self.instance and self.instance.pk and self.instance.date:
-            self.fields['meeting_date'].initial = self.instance.date.date()
-            self.fields['meeting_time'].initial = self.instance.date.time()
+        # Establecer valores por defecto para fecha y hora
+        from datetime import datetime, timedelta
+        from django.utils import timezone
+        
+        # Si estamos editando, llenar los campos de fecha y hora desde la instancia
+        if self.instance.pk and self.instance.date:
+            self.initial['meeting_date'] = self.instance.date.date()
+            self.initial['meeting_time'] = self.instance.date.time()
+        # Si estamos creando, establecer fecha de hoy y hora actual + 1 hora
+        elif not self.instance.pk:
+            now = timezone.now()
+            default_time = (now + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
+            self.initial['meeting_date'] = now.date()
+            self.initial['meeting_time'] = default_time.time()
     
     def save(self, commit=True):
         meeting = super().save(commit=False)

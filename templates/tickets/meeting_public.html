@@ -135,67 +135,62 @@
                         </div>
 
                         <!-- Participantes Registrados -->
+                        {% if meeting.meetingattendee_set.all %}
                         <div class="card info-card mb-4">
                             <div class="card-body bg-white">
                                 <h5 class="card-title">
                                     <i class="fas fa-users text-primary"></i> Participantes Registrados 
                                     <span class="badge bg-primary">{{ meeting.get_attendees_count }}</span>
                                 </h5>
-                                {% if meeting.meetingattendee_set.all %}
-                                    <div class="table-responsive">
-                                        <table class="table table-hover">
-                                            <thead>
-                                                <tr>
-                                                    <th><i class="fas fa-user"></i> Nombre</th>
-                                                    <th><i class="fas fa-envelope"></i> Email</th>
-                                                    <th><i class="fas fa-calendar"></i> Registrado</th>
-                                                    <th><i class="fas fa-check-circle"></i> Estado</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {% for attendee in meeting.meetingattendee_set.all %}
-                                                <tr>
-                                                    <td>
-                                                        <strong>{{ attendee.name }}</strong>
-                                                    </td>
-                                                    <td>
-                                                        {% if attendee.email %}
-                                                            <a href="mailto:{{ attendee.email }}">{{ attendee.email }}</a>
-                                                        {% else %}
-                                                            <span class="text-muted">No proporcionado</span>
-                                                        {% endif %}
-                                                    </td>
-                                                    <td>
-                                                        <small class="text-muted">{{ attendee.registered_at|date:"d/m/Y H:i" }}</small>
-                                                    </td>
-                                                    <td>
-                                                        {% if attendee.response_status == 'accepted' %}
-                                                            <span class="badge bg-success">
-                                                                <i class="fas fa-check"></i> Aceptada
-                                                            </span>
-                                                        {% elif attendee.response_status == 'declined' %}
-                                                            <span class="badge bg-danger">
-                                                                <i class="fas fa-times"></i> Rechazada
-                                                            </span>
-                                                        {% else %}
-                                                            <span class="badge bg-warning text-dark">
-                                                                <i class="fas fa-clock"></i> Pendiente
-                                                            </span>
-                                                        {% endif %}
-                                                    </td>
-                                                </tr>
-                                                {% endfor %}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                {% else %}
-                                    <div class="text-center py-3">
-                                        <i class="fas fa-users fa-2x text-muted mb-2"></i>
-                                        <p class="text-muted">Aún no hay participantes registrados. ¡Sé el primero en registrarte!</p>
-                                    </div>
-                                {% endif %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th><i class="fas fa-user"></i> Nombre</th>
+                                                <th><i class="fas fa-envelope"></i> Email</th>
+                                                <th><i class="fas fa-calendar"></i> Registrado</th>
+                                                <th><i class="fas fa-check-circle"></i> Estado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for attendee in meeting.meetingattendee_set.all %}
+                                            <tr>
+                                                <td>
+                                                    <strong>{{ attendee.name }}</strong>
+                                                </td>
+                                                <td>
+                                                    {% if attendee.email %}
+                                                        <a href="mailto:{{ attendee.email }}">{{ attendee.email }}</a>
+                                                    {% else %}
+                                                        <span class="text-muted">No proporcionado</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <small class="text-muted">{{ attendee.registered_at|date:"d/m/Y H:i" }}</small>
+                                                </td>
+                                                <td>
+                                                    {% if attendee.response_status == 'accepted' %}
+                                                        <span class="badge bg-success">
+                                                            <i class="fas fa-check"></i> Aceptada
+                                                        </span>
+                                                    {% elif attendee.response_status == 'declined' %}
+                                                        <span class="badge bg-danger">
+                                                            <i class="fas fa-times"></i> Rechazada
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="badge bg-warning text-dark">
+                                                            <i class="fas fa-clock"></i> Pendiente
+                                                        </span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
+                        {% endif %}
 
                         <!-- Descripción de la reunión -->
                         {% if meeting.description %}
