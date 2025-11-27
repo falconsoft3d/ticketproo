@@ -22,7 +22,9 @@ from .models import (
     AIBook, AIBookChapter, EmployeeRequest, InternalAgreement, Asset, AssetHistory, UrlManager,
     ExpenseReport, ExpenseItem, ExpenseComment, MonthlyCumplimiento, DailyCumplimiento, QRCode, Quotation, QuotationLine, QuotationView,
     Contact, ContactComment, ContactAttachment, QARating, GameCounter, ExerciseCounter, SportGoal, SportGoalRecord,
-    ClientRequest, ClientRequestResponse, Event, Trip, TripStop, WebCounter, WebCounterVisit, QuickQuote, QuickQuoteView, QuickQuoteComment
+    ClientRequest, ClientRequestResponse, Event, Trip, TripStop, WebCounter, WebCounterVisit, QuickQuote, QuickQuoteView, QuickQuoteComment,
+    MultiMeasurement, MultiMeasurementRecord,
+    PersonalBudget, BudgetIncomeItem, BudgetExpenseItem, BudgetTransaction
 )
 
 # Configuración del sitio de administración
@@ -5243,3 +5245,240 @@ class QuickQuoteViewAdmin(admin.ModelAdmin):
     def has_add_permission(self, request):
         """No permitir agregar visualizaciones manualmente"""
         return False
+
+
+@admin.register(MultiMeasurement)
+class MultiMeasurementAdmin(admin.ModelAdmin):
+    """Administración de Mediciones Múltiples"""
+    list_display = ('sequence_number', 'title', 'user', 'records_count', 'is_active', 'created_at')
+    list_filter = ('is_active', 'created_at', 'user')
+    search_fields = ('sequence_number', 'title', 'user__username')
+    readonly_fields = ('sequence_number', 'public_token', 'created_at')
+    ordering = ('-created_at',)
+    date_hierarchy = 'created_at'
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('user', 'sequence_number', 'title', 'is_active')
+        }),
+        ('Etiquetas de Mediciones', {
+            'fields': ('label_1', 'label_2', 'label_3', 'label_4', 'label_5')
+        }),
+        ('Acceso Público', {
+            'fields': ('public_token',),
+            'description': 'Token para acceso público'
+        }),
+        ('Información del Sistema', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def records_count(self, obj):
+        """Cantidad de registros"""
+        return obj.records.count()
+    records_count.short_description = 'Registros'
+
+
+@admin.register(MultiMeasurementRecord)
+class MultiMeasurementRecordAdmin(admin.ModelAdmin):
+    """Administración de Registros de Mediciones"""
+    list_display = ('measurement', 'date', 'value_1', 'value_2', 'value_3', 'value_4', 'value_5', 'created_at')
+    list_filter = ('measurement', 'date', 'created_at')
+    search_fields = ('measurement__title', 'measurement__sequence_number', 'notes')
+    readonly_fields = ('created_at', 'ip_address')
+    ordering = ('-date',)
+    date_hierarchy = 'date'
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('measurement', 'date')
+        }),
+        ('Valores', {
+            'fields': ('value_1', 'value_2', 'value_3', 'value_4', 'value_5')
+        }),
+        ('Notas', {
+            'fields': ('notes',)
+        }),
+        ('Información del Sistema', {
+            'fields': ('created_at', 'ip_address'),
+            'classes': ('collapse',)
+        }),
+    )
+
+
+# ==========================================
+# PRESUPUESTO PERSONAL
+# ==========================================
+
+class BudgetIncomeItemInline(admin.TabularInline):
+    """Inline para partidas de ingreso"""
+    model = BudgetIncomeItem
+    extra = 1
+    fields = ('name', 'budgeted_amount', 'order')
+    ordering = ('order', 'name')
+
+
+class BudgetExpenseItemInline(admin.TabularInline):
+    """Inline para partidas de egreso"""
+    model = BudgetExpenseItem
+    extra = 1
+    fields = ('name', 'budgeted_amount', 'order')
+    ordering = ('order', 'name')
+
+
+class BudgetTransactionInline(admin.TabularInline):
+    """Inline para transacciones"""
+    model = BudgetTransaction
+    extra = 0
+    fields = ('transaction_date', 'transaction_type', 'income_item', 'expense_item', 'amount', 'description')
+    readonly_fields = ('created_at',)
+    ordering = ('-transaction_date', '-created_at')
+    
+    def get_max_num(self, request, obj=None, **kwargs):
+        return 10  # Limitar a 10 transacciones visibles en el inline
+
+
+@admin.register(PersonalBudget)
+class PersonalBudgetAdmin(admin.ModelAdmin):
+    """Administración de Presupuestos Personales"""
+    list_display = ('name', 'user', 'year', 'total_income', 'total_expense', 'balance', 'is_active', 'is_private', 'created_at')
+    list_filter = ('is_active', 'is_private', 'year', 'user', 'created_at')
+    search_fields = ('name', 'user__username', 'user__email')
+    readonly_fields = ('created_at',)
+    ordering = ('-year', 'name')
+    date_hierarchy = 'created_at'
+    inlines = [BudgetIncomeItemInline, BudgetExpenseItemInline, BudgetTransactionInline]
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('user', 'name', 'year', 'is_active', 'is_private')
+        }),
+        ('Información del Sistema', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def total_income(self, obj):
+        total_budget = obj.get_total_income_budget()
+        total_actual = obj.get_total_income_actual()
+        return format_html(
+            '<span style="color: green;">Pres: ${}<br>Real: ${}</span>',
+            total_budget, total_actual
+        )
+    total_income.short_description = 'Ingresos'
+    
+    def total_expense(self, obj):
+        total_budget = obj.get_total_expense_budget()
+        total_actual = obj.get_total_expense_actual()
+        return format_html(
+            '<span style="color: red;">Pres: ${}<br>Real: ${}</span>',
+            total_budget, total_actual
+        )
+    total_expense.short_description = 'Egresos'
+    
+    def balance(self, obj):
+        net_actual = obj.get_total_income_actual() - obj.get_total_expense_actual()
+        color = 'green' if net_actual >= 0 else 'red'
+        return format_html(
+            '<strong style="color: {};">${}</strong>',
+            color, net_actual
+        )
+    balance.short_description = 'Balance Real'
+
+
+@admin.register(BudgetIncomeItem)
+class BudgetIncomeItemAdmin(admin.ModelAdmin):
+    """Administración de Partidas de Ingreso"""
+    list_display = ('name', 'budget', 'budgeted_amount', 'actual_amount', 'percentage', 'order')
+    list_filter = ('budget__user', 'budget__year')
+    search_fields = ('name', 'budget__name', 'budget__user__username')
+    ordering = ('budget', 'order', 'name')
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('budget', 'name', 'budgeted_amount', 'order')
+        }),
+    )
+    
+    def actual_amount(self, obj):
+        amount = obj.get_actual_amount()
+        return format_html('<span style="color: green;">${}</span>', amount)
+    actual_amount.short_description = 'Monto Real'
+    
+    def percentage(self, obj):
+        pct = obj.get_percentage_actual()
+        return f'{pct:.1f}%'
+    percentage.short_description = '% Real'
+
+
+@admin.register(BudgetExpenseItem)
+class BudgetExpenseItemAdmin(admin.ModelAdmin):
+    """Administración de Partidas de Egreso"""
+    list_display = ('name', 'budget', 'budgeted_amount', 'actual_amount', 'percentage', 'order')
+    list_filter = ('budget__user', 'budget__year')
+    search_fields = ('name', 'budget__name', 'budget__user__username')
+    ordering = ('budget', 'order', 'name')
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('budget', 'name', 'budgeted_amount', 'order')
+        }),
+    )
+    
+    def actual_amount(self, obj):
+        amount = obj.get_actual_amount()
+        return format_html('<span style="color: red;">${}</span>', amount)
+    actual_amount.short_description = 'Monto Real'
+    
+    def percentage(self, obj):
+        pct = obj.get_percentage_actual()
+        return f'{pct:.1f}%'
+    percentage.short_description = '% Real'
+
+
+@admin.register(BudgetTransaction)
+class BudgetTransactionAdmin(admin.ModelAdmin):
+    """Administración de Transacciones de Presupuesto"""
+    list_display = ('budget', 'transaction_date', 'transaction_type_display', 'related_item', 'amount', 'description_short', 'created_at')
+    list_filter = ('transaction_type', 'budget__user', 'budget__year', 'transaction_date')
+    search_fields = ('budget__name', 'description', 'budget__user__username')
+    readonly_fields = ('created_at',)
+    ordering = ('-transaction_date', '-created_at')
+    date_hierarchy = 'transaction_date'
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('budget', 'transaction_type', 'transaction_date')
+        }),
+        ('Detalles de la Transacción', {
+            'fields': ('income_item', 'expense_item', 'amount', 'description')
+        }),
+        ('Información del Sistema', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def transaction_type_display(self, obj):
+        if obj.transaction_type == 'income':
+            return format_html('<span style="color: green;">⬆ Ingreso</span>')
+        else:
+            return format_html('<span style="color: red;">⬇ Egreso</span>')
+    transaction_type_display.short_description = 'Tipo'
+    transaction_type_display.admin_order_field = 'transaction_type'
+    
+    def related_item(self, obj):
+        if obj.income_item:
+            return obj.income_item.name
+        elif obj.expense_item:
+            return obj.expense_item.name
+        return '-'
+    related_item.short_description = 'Partida'
+    
+    def description_short(self, obj):
+        if obj.description:
+            return obj.description[:50] + '...' if len(obj.description) > 50 else obj.description
+        return '-'
+    description_short.short_description = 'Descripción'

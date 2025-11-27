@@ -1,0 +1,208 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .chart-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .chart-body {
+            padding: 30px;
+        }
+        .chart-canvas {
+            position: relative;
+            height: 400px;
+            margin-bottom: 20px;
+        }
+        .table-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        .table-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+        }
+        .table-body {
+            padding: 20px;
+        }
+        .badge-custom {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid" style="max-width: 1200px;">
+        <!-- Gráfico -->
+        <div class="chart-container">
+            <div class="chart-header">
+                <h2 class="mb-2">
+                    <i class="bi bi-graph-up"></i> {{ measurement.title }}
+                </h2>
+                <p class="mb-0">
+                    <span class="badge bg-light text-dark">{{ measurement.sequence_number }}</span>
+                </p>
+            </div>
+
+            <div class="chart-body">
+                {% if records %}
+                    <div class="chart-canvas">
+                        <canvas id="measurementChart"></canvas>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-graph-up" style="font-size: 3rem; color: #ccc;"></i>
+                        <p class="text-muted mt-3">No hay registros aún</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Etiquetas -->
+        <div class="table-container mb-3">
+            <div class="table-header">
+                <h5 class="mb-0"><i class="bi bi-tags"></i> Etiquetas de Mediciones</h5>
+            </div>
+            <div class="table-body">
+                <div class="row">
+                    <div class="col-md-6 mb-2">
+                        <span class="badge-custom" style="background: rgba(54, 162, 235, 1);">1</span>
+                        <strong>{{ measurement.label_1 }}</strong>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <span class="badge-custom" style="background: rgba(255, 99, 132, 1);">2</span>
+                        <strong>{{ measurement.label_2 }}</strong>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <span class="badge-custom" style="background: rgba(255, 206, 86, 1);">3</span>
+                        <strong>{{ measurement.label_3 }}</strong>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <span class="badge-custom" style="background: rgba(75, 192, 192, 1);">4</span>
+                        <strong>{{ measurement.label_4 }}</strong>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <span class="badge-custom" style="background: rgba(153, 102, 255, 1);">5</span>
+                        <strong>{{ measurement.label_5 }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de Registros -->
+        <div class="table-container">
+            <div class="table-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-table"></i> Registros ({{ records.count }})
+                </h5>
+            </div>
+            <div class="table-body">
+                {% if records %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Fecha y Hora</th>
+                                    <th>{{ measurement.label_1 }}</th>
+                                    <th>{{ measurement.label_2 }}</th>
+                                    <th>{{ measurement.label_3 }}</th>
+                                    <th>{{ measurement.label_4 }}</th>
+                                    <th>{{ measurement.label_5 }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in records %}
+                                    <tr>
+                                        <td><strong>{{ record.date|date:"d/m/Y H:i" }}</strong></td>
+                                        <td>{{ record.value_1|default:"-" }}</td>
+                                        <td>{{ record.value_2|default:"-" }}</td>
+                                        <td>{{ record.value_3|default:"-" }}</td>
+                                        <td>{{ record.value_4|default:"-" }}</td>
+                                        <td>{{ record.value_5|default:"-" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center py-3">No hay registros aún</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-4">
+            <small class="text-white">
+                <i class="bi bi-shield-check"></i> Visualización pública de datos
+            </small>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script>
+        {% if records %}
+        // Crear gráfico
+        const ctx = document.getElementById('measurementChart').getContext('2d');
+        const chartData = {{ chart_data|safe }};
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: chartData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Evolución de Mediciones',
+                        font: {
+                            size: 16
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        {% endif %}
+    </script>
+</body>
+</html>

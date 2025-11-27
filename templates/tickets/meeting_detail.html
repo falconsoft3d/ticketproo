@@ -122,6 +122,7 @@
                                                     <tr>
                                                         <th>Nombre</th>
                                                         <th>Email</th>
+                                                        <th>Respuesta</th>
                                                         <th>Fecha de Registro</th>
                                                     </tr>
                                                 </thead>
@@ -130,6 +131,21 @@
                                                     <tr>
                                                         <td>{{ attendee.name }}</td>
                                                         <td>{{ attendee.email|default:"No proporcionado" }}</td>
+                                                        <td>
+                                                            {% if attendee.response_status == 'accepted' %}
+                                                                <span class="badge bg-success">
+                                                                    <i class="fas fa-check"></i> Aceptada
+                                                                </span>
+                                                            {% elif attendee.response_status == 'declined' %}
+                                                                <span class="badge bg-danger">
+                                                                    <i class="fas fa-times"></i> Rechazada
+                                                                </span>
+                                                            {% else %}
+                                                                <span class="badge bg-warning text-dark">
+                                                                    <i class="fas fa-clock"></i> Pendiente
+                                                                </span>
+                                                            {% endif %}
+                                                        </td>
                                                         <td>{{ attendee.registered_at|date:"d/m/Y H:i" }}</td>
                                                     </tr>
                                                     {% endfor %}
@@ -147,29 +163,8 @@
                         </div>
 
                         <div class="col-md-4">
-                            <!-- Estadísticas -->
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Estadísticas</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="text-center">
-                                        <div class="row">
-                                            <div class="col-6">
-                                                <h3 class="text-primary">{{ meeting.get_attendees_count }}</h3>
-                                                <small class="text-muted">Asistentes</small>
-                                            </div>
-                                            <div class="col-6">
-                                                <h3 class="text-info">{{ meeting.get_questions_count }}</h3>
-                                                <small class="text-muted">Preguntas</small>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
                             <!-- Preguntas -->
-                            <div class="card">
+                            <div class="card mb-4">
                                 <div class="card-header d-flex justify-content-between align-items-center">
                                     <h5 class="mb-0"><i class="fas fa-question-circle"></i> Preguntas</h5>
                                     <button class="btn btn-sm btn-outline-primary" onclick="refreshQuestions()">
@@ -222,6 +217,127 @@
                                             <i class="fas fa-question-circle fa-2x text-muted mb-2"></i>
                                             <p class="text-muted">No hay preguntas aún</p>
                                         </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Estadísticas -->
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Estadísticas</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="text-center">
+                                        <div class="row">
+                                            <div class="col-4">
+                                                <h3 class="text-primary">{{ meeting.get_attendees_count }}</h3>
+                                                <small class="text-muted">Asistentes</small>
+                                            </div>
+                                            <div class="col-4">
+                                                <h3 class="text-info">{{ meeting.get_questions_count }}</h3>
+                                                <small class="text-muted">Preguntas</small>
+                                            </div>
+                                            <div class="col-4">
+                                                <h3 class="text-success">{{ access_stats.total_accesses }}</h3>
+                                                <small class="text-muted">Accesos totales</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Estadísticas de Acceso -->
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5 class="mb-0"><i class="fas fa-globe"></i> Estadísticas de Acceso</h5>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Por País -->
+                                    <h6 class="mb-3"><i class="fas fa-flag"></i> Por País</h6>
+                                    {% if access_stats.by_country %}
+                                        <div class="mb-3">
+                                            {% for stat in access_stats.by_country %}
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <span>{{ stat.country|default:"Desconocido" }}</span>
+                                                <span class="badge bg-primary">{{ stat.count }}</span>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <p class="text-muted small">No hay datos aún</p>
+                                    {% endif %}
+
+                                    <hr>
+
+                                    <!-- Por Dispositivo -->
+                                    <h6 class="mb-3"><i class="fas fa-mobile-alt"></i> Por Dispositivo</h6>
+                                    {% if access_stats.by_device %}
+                                        <div class="mb-3">
+                                            {% for stat in access_stats.by_device %}
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <span>
+                                                    {% if stat.device_type == 'mobile' %}
+                                                        <i class="fas fa-mobile-alt text-info"></i> Móvil
+                                                    {% elif stat.device_type == 'tablet' %}
+                                                        <i class="fas fa-tablet-alt text-warning"></i> Tablet
+                                                    {% else %}
+                                                        <i class="fas fa-desktop text-primary"></i> Escritorio
+                                                    {% endif %}
+                                                </span>
+                                                <span class="badge bg-info">{{ stat.count }}</span>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <p class="text-muted small">No hay datos aún</p>
+                                    {% endif %}
+
+                                    <hr>
+
+                                    <!-- Por Navegador -->
+                                    <h6 class="mb-3"><i class="fab fa-chrome"></i> Por Navegador</h6>
+                                    {% if access_stats.by_browser %}
+                                        <div class="mb-3">
+                                            {% for stat in access_stats.by_browser %}
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <span>{{ stat.browser }}</span>
+                                                <span class="badge bg-success">{{ stat.count }}</span>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <p class="text-muted small">No hay datos aún</p>
+                                    {% endif %}
+
+                                    <hr>
+
+                                    <!-- Últimos Accesos -->
+                                    <h6 class="mb-3"><i class="fas fa-clock"></i> Últimos Accesos</h6>
+                                    {% if access_logs %}
+                                        <div style="max-height: 200px; overflow-y: auto;">
+                                            {% for log in access_logs|slice:":10" %}
+                                            <div class="small mb-2 pb-2 border-bottom">
+                                                <div class="d-flex justify-content-between">
+                                                    <span>
+                                                        {% if log.device_type == 'mobile' %}
+                                                            <i class="fas fa-mobile-alt text-info"></i>
+                                                        {% elif log.device_type == 'tablet' %}
+                                                            <i class="fas fa-tablet-alt text-warning"></i>
+                                                        {% else %}
+                                                            <i class="fas fa-desktop text-primary"></i>
+                                                        {% endif %}
+                                                        {{ log.country|default:"?" }}
+                                                    </span>
+                                                    <span class="text-muted">{{ log.accessed_at|date:"d/m H:i" }}</span>
+                                                </div>
+                                                <div class="text-muted" style="font-size: 0.8rem;">
+                                                    {{ log.browser }} - {{ log.os }}
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <p class="text-muted small">No hay accesos registrados</p>
                                     {% endif %}
                                 </div>
                             </div>

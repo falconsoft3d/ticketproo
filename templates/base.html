@@ -183,6 +183,20 @@
                                 </a>
                             </li>
                             
+                            <li>
+                                <a class="dropdown-item {% if 'multi_measurement' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'multi_measurement_list' %}">
+                                    <i class="bi bi-graph-up"></i> Mediciones Múltiples
+                                </a>
+                            </li>
+                            
+                            <li>
+                                <a class="dropdown-item {% if 'budget' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'budget_list' %}">
+                                    <i class="bi bi-calculator"></i> Presupuesto Personal
+                                </a>
+                            </li>
+                            
                         </ul>
                     </li>
                     

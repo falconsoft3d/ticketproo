@@ -229,7 +229,8 @@ from .models import (
     AIManager, AIManagerMeeting, AIManagerSummary, CompanyAISummary, UserAIPerformanceEvaluation,
     WebsiteTracker, LegalContract, Asset, AssetHistory,
     AITutor, AITutorProgressReport, AITutorAttachment,
-    ExpenseReport, ExpenseItem, ExpenseComment, VideoMeeting, MeetingNote, QuoteGenerator, Procedure
+    ExpenseReport, ExpenseItem, ExpenseComment, VideoMeeting, MeetingNote, QuoteGenerator, Procedure,
+    PersonalBudget, BudgetIncomeItem, BudgetExpenseItem, BudgetTransaction
 )
 from .forms import (
     TicketForm, AgentTicketForm, UserManagementForm, UserEditForm, 
@@ -250,7 +251,8 @@ from .forms import (
     AITutorForm, AITutorProgressReportForm, AITutorAttachmentForm, AITutorFilterForm,
     ExpenseReportForm, ExpenseItemForm, ExpenseCommentForm, ExpenseReportFilterForm,
     VideoMeetingForm, MeetingTranscriptionForm, MeetingFilterForm, QuoteGeneratorForm, AbsenceTypeForm,
-    CrmQuestionForm, PublicCrmQuestionForm, ScheduledTaskForm
+    CrmQuestionForm, PublicCrmQuestionForm, ScheduledTaskForm,
+    PersonalBudgetForm, BudgetIncomeItemForm, BudgetExpenseItemForm, BudgetTransactionForm
 )
 from .utils import is_agent, is_regular_user, is_teacher, can_manage_courses, get_user_role, assign_user_to_group
 
@@ -8455,13 +8457,26 @@ def meeting_create_view(request):
 @user_passes_test(is_agent, login_url='/')
 def meeting_detail_view(request, pk):
     """Vista detallada de una reunión"""
-    from .models import Meeting
+    from .models import Meeting, MeetingAccessLog
+    from django.db.models import Count
     
     meeting = get_object_or_404(Meeting, pk=pk, organizer=request.user)
     
     # Obtener asistentes y preguntas
     attendees = meeting.meetingattendee_set.all().order_by('registered_at')
     questions = meeting.meetingquestion_set.all().order_by('-asked_at')
+    
+    # Obtener logs de acceso
+    access_logs = meeting.access_logs.all().order_by('-accessed_at')[:50]  # Últimos 50 accesos
+    
+    # Estadísticas de acceso
+    access_stats = {
+        'by_country': meeting.access_logs.values('country').annotate(count=Count('id')).order_by('-count')[:10],
+        'by_device': meeting.access_logs.values('device_type').annotate(count=Count('id')).order_by('-count'),
+        'by_browser': meeting.access_logs.values('browser').annotate(count=Count('id')).order_by('-count'),
+        'by_os': meeting.access_logs.values('os').annotate(count=Count('id')).order_by('-count'),
+        'total_accesses': meeting.access_logs.count(),
+    }
     
     # Estadísticas
     stats = {
@@ -8477,6 +8492,8 @@ def meeting_detail_view(request, pk):
         'attendees': attendees,
         'questions': questions,
         'stats': stats,
+        'access_logs': access_logs,
+        'access_stats': access_stats,
     }
     return render(request, 'tickets/meeting_detail.html', context)
 
@@ -8535,6 +8552,80 @@ def meeting_edit_view(request, pk):
         'meeting': meeting,
     }
     return render(request, 'tickets/meeting_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+@require_http_methods(["POST"])
+def meeting_add_link_view(request, pk):
+    """Vista para agregar un enlace a una reunión"""
+    from .models import Meeting, MeetingLink
+    
+    meeting = get_object_or_404(Meeting, pk=pk, organizer=request.user)
+    
+    try:
+        data = json.loads(request.body)
+        title = data.get('title', '').strip()
+        url = data.get('url', '').strip()
+        description = data.get('description', '').strip()
+        
+        if not title or not url:
+            return JsonResponse({
+                'success': False,
+                'message': 'El título y la URL son requeridos'
+            })
+        
+        # Crear el enlace
+        link = MeetingLink.objects.create(
+            meeting=meeting,
+            title=title,
+            url=url,
+            description=description
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Enlace agregado exitosamente',
+            'link': {
+                'id': link.id,
+                'title': link.title,
+                'url': link.url,
+                'description': link.description
+            }
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'message': 'Datos JSON inválidos'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error al agregar enlace: {str(e)}'
+        }, status=500)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+@require_http_methods(["POST"])
+def meeting_delete_link_view(request, link_id):
+    """Vista para eliminar un enlace de una reunión"""
+    from .models import MeetingLink
+    
+    link = get_object_or_404(MeetingLink, pk=link_id, meeting__organizer=request.user)
+    
+    try:
+        link.delete()
+        return JsonResponse({
+            'success': True,
+            'message': 'Enlace eliminado exitosamente'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error al eliminar enlace: {str(e)}'
+        }, status=500)
 
 
 @login_required
@@ -8604,10 +8695,88 @@ def meeting_attendees_view(request, pk):
 
 def meeting_public_view(request, token):
     """Vista pública de una reunión"""
-    from .models import Meeting, MeetingAttendee, MeetingQuestion
+    from .models import Meeting, MeetingAttendee, MeetingQuestion, MeetingAccessLog
     from .forms import MeetingAttendeeForm, MeetingQuestionForm
+    from django.db.models import F
+    import requests
     
     meeting = get_object_or_404(Meeting, public_token=token, is_active=True)
+    
+    # Incrementar el contador de vistas del enlace público
+    Meeting.objects.filter(id=meeting.id).update(public_views_count=F('public_views_count') + 1)
+    meeting.refresh_from_db()
+    
+    # Registrar estadísticas de acceso
+    try:
+        ip_address = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', ''))
+        if ip_address:
+            ip_address = ip_address.split(',')[0].strip()
+        
+        user_agent = request.META.get('HTTP_USER_AGENT', '')
+        
+        # Detectar tipo de dispositivo
+        device_type = 'desktop'
+        if user_agent:
+            ua_lower = user_agent.lower()
+            if 'mobile' in ua_lower or 'android' in ua_lower or 'iphone' in ua_lower:
+                device_type = 'mobile'
+            elif 'tablet' in ua_lower or 'ipad' in ua_lower:
+                device_type = 'tablet'
+        
+        # Detectar navegador
+        browser = 'Unknown'
+        if 'chrome' in user_agent.lower() and 'edg' not in user_agent.lower():
+            browser = 'Chrome'
+        elif 'firefox' in user_agent.lower():
+            browser = 'Firefox'
+        elif 'safari' in user_agent.lower() and 'chrome' not in user_agent.lower():
+            browser = 'Safari'
+        elif 'edg' in user_agent.lower():
+            browser = 'Edge'
+        elif 'opera' in user_agent.lower() or 'opr' in user_agent.lower():
+            browser = 'Opera'
+        
+        # Detectar sistema operativo
+        os_name = 'Unknown'
+        if 'windows' in user_agent.lower():
+            os_name = 'Windows'
+        elif 'mac' in user_agent.lower():
+            os_name = 'macOS'
+        elif 'linux' in user_agent.lower():
+            os_name = 'Linux'
+        elif 'android' in user_agent.lower():
+            os_name = 'Android'
+        elif 'iphone' in user_agent.lower() or 'ipad' in user_agent.lower():
+            os_name = 'iOS'
+        
+        # Obtener información de geolocalización (país y ciudad)
+        country = ''
+        city = ''
+        try:
+            # Usar servicio gratuito de geolocalización
+            if ip_address and ip_address != '127.0.0.1':
+                geo_response = requests.get(f'http://ip-api.com/json/{ip_address}', timeout=2)
+                if geo_response.status_code == 200:
+                    geo_data = geo_response.json()
+                    if geo_data.get('status') == 'success':
+                        country = geo_data.get('country', '')
+                        city = geo_data.get('city', '')
+        except:
+            pass
+        
+        # Crear registro de acceso
+        MeetingAccessLog.objects.create(
+            meeting=meeting,
+            ip_address=ip_address or '0.0.0.0',
+            user_agent=user_agent,
+            device_type=device_type,
+            browser=browser,
+            os=os_name,
+            country=country,
+            city=city
+        )
+    except Exception as e:
+        print(f"Error registrando acceso: {e}")
     
     # Verificar si hay un usuario registrado en la sesión para esta reunión
     session_key = f'meeting_{meeting.id}_attendee_id'
@@ -8635,12 +8804,22 @@ def meeting_public_view(request, token):
     
     question_form = MeetingQuestionForm() if meeting.allow_questions and user_registered else None
     
+    # Verificar si ya evaluó la reunión
+    from .models import MeetingRating
+    user_rating = None
+    if user_registered:
+        try:
+            user_rating = MeetingRating.objects.get(meeting=meeting, attendee=user_attendee)
+        except MeetingRating.DoesNotExist:
+            pass
+    
     context = {
         'page_title': f'Reunión: {meeting.title}',
         'meeting': meeting,
         'user_registered': user_registered,
         'user_attendee': user_attendee,
         'user_questions': user_questions,
+        'user_rating': user_rating,
         'register_form': register_form,
         'question_form': question_form,
     }
@@ -8754,6 +8933,106 @@ def meeting_ask_question_view(request, token):
         'form': form,
     }
     return render(request, 'tickets/meeting_ask_question.html', context)
+
+
+@require_http_methods(["POST"])
+def meeting_respond_view(request, token):
+    """Vista pública para aceptar o rechazar una reunión"""
+    from .models import Meeting, MeetingAttendee
+    from django.utils import timezone
+    
+    meeting = get_object_or_404(Meeting, public_token=token, is_active=True)
+    
+    # Verificar si hay un asistente registrado en la sesión
+    session_key = f'meeting_{meeting.id}_attendee_id'
+    
+    if session_key not in request.session:
+        messages.error(request, 'Debes registrarte primero para responder a la reunión.')
+        return redirect('meeting_public', token=token)
+    
+    try:
+        attendee_id = request.session[session_key]
+        attendee = MeetingAttendee.objects.get(id=attendee_id, meeting=meeting)
+    except MeetingAttendee.DoesNotExist:
+        messages.error(request, 'No se encontró tu registro.')
+        return redirect('meeting_public', token=token)
+    
+    # Obtener la respuesta del formulario
+    response = request.POST.get('response')
+    
+    if response not in ['accepted', 'declined']:
+        messages.error(request, 'Respuesta inválida.')
+        return redirect('meeting_public', token=token)
+    
+    # Actualizar el estado de respuesta
+    attendee.response_status = response
+    attendee.response_date = timezone.now()
+    attendee.save()
+    
+    if response == 'accepted':
+        messages.success(request, '¡Has aceptado la reunión! Nos vemos allí.')
+    else:
+        messages.info(request, 'Has rechazado la reunión. Gracias por tu respuesta.')
+    
+    return redirect('meeting_public', token=token)
+
+
+@require_http_methods(["POST"])
+def meeting_rate_view(request, token):
+    """Vista pública para evaluar una reunión con caras"""
+    from .models import Meeting, MeetingAttendee, MeetingRating, QARating
+    
+    meeting = get_object_or_404(Meeting, public_token=token, is_active=True)
+    
+    # Verificar si hay un asistente registrado en la sesión
+    session_key = f'meeting_{meeting.id}_attendee_id'
+    
+    if session_key not in request.session:
+        messages.error(request, 'Debes registrarte primero para evaluar la reunión.')
+        return redirect('meeting_public', token=token)
+    
+    try:
+        attendee_id = request.session[session_key]
+        attendee = MeetingAttendee.objects.get(id=attendee_id, meeting=meeting)
+    except MeetingAttendee.DoesNotExist:
+        messages.error(request, 'No se encontró tu registro.')
+        return redirect('meeting_public', token=token)
+    
+    # Obtener la calificación del formulario
+    rating = request.POST.get('rating')
+    comment = request.POST.get('comment', '')
+    
+    if rating not in ['sad', 'neutral', 'happy']:
+        messages.error(request, 'Calificación inválida.')
+        return redirect('meeting_public', token=token)
+    
+    # Crear o actualizar la evaluación de la reunión
+    MeetingRating.objects.update_or_create(
+        meeting=meeting,
+        attendee=attendee,
+        defaults={
+            'rating': rating,
+            'comment': comment,
+            'ip_address': request.META.get('REMOTE_ADDR')
+        }
+    )
+    
+    # También guardar en QARating para el sistema general de evaluaciones
+    opinion_text = comment if comment else f"Evaluación de reunión: {meeting.title}"
+    
+    QARating.objects.create(
+        rating=rating,
+        opinion=opinion_text,
+        name=attendee.name,
+        email=attendee.email,
+        company=meeting.company,  # Asociar con la empresa de la reunión si existe
+        ip_address=request.META.get('REMOTE_ADDR'),
+        user_agent=request.META.get('HTTP_USER_AGENT', ''),
+        is_public=True
+    )
+    
+    messages.success(request, '¡Gracias por tu evaluación!')
+    return redirect('meeting_public', token=token)
     
     context = {
         'page_title': f'Hacer Pregunta: {meeting.title}',
@@ -20842,6 +21121,146 @@ Haz que las preguntas sean profesionales, directas y adaptadas específicamente 
         print(f"Error generando contenido SPIN con IA: {e}")
         # Fallback a función original si la IA falla
         return generate_spin_questions_fallback(description, company_info, product_info)
+
+
+@login_required
+@require_http_methods(["POST"])
+def improve_meeting_description_view(request):
+    """
+    Mejora la descripción de una reunión usando IA
+    """
+    try:
+        data = json.loads(request.body)
+        description = data.get('description', '').strip()
+        title = data.get('title', '').strip()
+        company_id = data.get('company_id', '')
+        product_id = data.get('product_id', '')
+        
+        if not description:
+            return JsonResponse({
+                'success': False,
+                'message': 'Se requiere una descripción para mejorar'
+            })
+        
+        # Obtener información de la empresa si está disponible
+        company_info = ""
+        if company_id:
+            try:
+                from .models import Company
+                company = Company.objects.get(id=company_id)
+                company_info = f"\nEmpresa: {company.name}"
+            except:
+                pass
+        
+        # Obtener información del producto si está disponible
+        product_info = ""
+        if product_id:
+            try:
+                from .models import Product
+                product = Product.objects.get(id=product_id, is_active=True)
+                product_info = f"\nProducto a discutir: {product.name} - {product.description}"
+            except:
+                pass
+        
+        # Mejorar descripción usando IA
+        improved_description = improve_description_with_ai(description, title, company_info, product_info)
+        
+        if improved_description is None:
+            return JsonResponse({
+                'success': False,
+                'message': 'Error: La IA no está configurada o no está disponible'
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'improved_description': improved_description,
+            'message': 'Descripción mejorada exitosamente con IA'
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'message': 'Datos JSON inválidos'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error mejorando descripción: {str(e)}'
+        }, status=500)
+
+
+def improve_description_with_ai(description, title="", company_info="", product_info=""):
+    """
+    Mejora la descripción de la reunión usando la IA configurada
+    """
+    from .models import SystemConfiguration
+    
+    config = SystemConfiguration.objects.first()
+    if not config or not config.ai_chat_enabled or not config.openai_api_key:
+        return None
+        
+    try:
+        import openai
+        client = openai.OpenAI(api_key=config.openai_api_key)
+        
+        prompt = f"""
+Eres un asistente experto en redacción profesional de reuniones de negocios. Tu tarea es mejorar y optimizar la descripción de una reunión, haciéndola más clara, profesional y efectiva.
+
+TÍTULO DE LA REUNIÓN:
+{title}
+
+DESCRIPCIÓN ACTUAL:
+{description}
+
+{company_info}
+{product_info}
+
+INSTRUCCIONES CRÍTICAS:
+- NO uses formato markdown, NO uses asteriscos dobles, NO uses negritas markdown
+- Mejora la redacción haciéndola más clara, profesional y estructurada
+- Mantén toda la información importante del texto original
+- Agrega estructura con secciones si la descripción es larga (Objetivo, Agenda, Temas a tratar, etc.)
+- Usa emojis profesionales para mejorar la legibilidad (📌 🎯 📋 ✅ 💡 etc.)
+- Si hay productos mencionados, resalta sus beneficios
+- Mantén un tono profesional pero cercano
+- Si falta contexto importante, sugiere incluirlo entre [corchetes]
+- No inventes información que no esté en el original
+- Máximo 500 palabras
+- IMPORTANTE: NO uses negritas (**texto**), NO uses cursivas (*texto*), solo texto plano con emojis
+
+FORMATO SUGERIDO (SIN NEGRITAS):
+🎯 Objetivo Principal:
+[Objetivo claro y conciso]
+
+📋 Agenda:
+• Punto 1
+• Punto 2
+• Punto 3
+
+💡 Temas a Discutir:
+[Listado de temas importantes]
+
+✅ Resultados Esperados:
+[Qué se espera lograr]
+
+Genera la descripción mejorada directamente, sin explicaciones adicionales, sin markdown.
+"""
+        
+        response = client.chat.completions.create(
+            model=config.openai_model or "gpt-4o",
+            messages=[
+                {"role": "system", "content": "Eres un experto en redacción profesional de reuniones de negocios. Tu objetivo es mejorar la claridad, estructura y profesionalismo de las descripciones, manteniendo toda la información relevante."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=2000,
+            temperature=0.7
+        )
+        
+        return response.choices[0].message.content
+        
+    except Exception as e:
+        print(f"Error mejorando descripción con IA: {e}")
+        return None
 
 
 def generate_spin_questions_fallback(description, company_info="", product_info=""):
@@ -41404,3 +41823,629 @@ def quick_quote_duplicate(request, pk):
     
     messages.success(request, 'Cotización duplicada exitosamente')
     return redirect('quick_quote_detail', pk=duplicate.pk)
+
+
+# ============================================
+# VISTAS DE MEDICIONES MÚLTIPLES
+# ============================================
+
+@login_required
+def multi_measurement_list(request):
+    """Lista de mediciones múltiples"""
+    from .models import MultiMeasurement
+    
+    measurements = MultiMeasurement.objects.filter(user=request.user).order_by('-created_at')
+    
+    context = {
+        'measurements': measurements,
+        'page_title': 'Mediciones Múltiples',
+    }
+    return render(request, 'tickets/multi_measurement_list.html', context)
+
+
+@login_required
+def multi_measurement_create(request):
+    """Crear nueva medición múltiple"""
+    from .models import MultiMeasurement
+    from .forms import MultiMeasurementForm
+    
+    if request.method == 'POST':
+        form = MultiMeasurementForm(request.POST)
+        if form.is_valid():
+            measurement = form.save(commit=False)
+            measurement.user = request.user
+            measurement.save()
+            messages.success(request, 'Medición creada exitosamente')
+            return redirect('multi_measurement_detail', pk=measurement.pk)
+    else:
+        form = MultiMeasurementForm()
+    
+    context = {
+        'form': form,
+        'page_title': 'Nueva Medición Múltiple',
+    }
+    return render(request, 'tickets/multi_measurement_form.html', context)
+
+
+@login_required
+def multi_measurement_detail(request, pk):
+    """Detalle de medición múltiple con gráfico"""
+    from .models import MultiMeasurement
+    import json
+    
+    measurement = get_object_or_404(MultiMeasurement, pk=pk, user=request.user)
+    records = measurement.records.all().order_by('date')
+    
+    # Preparar datos para el gráfico
+    chart_data = {
+        'labels': [record.date.strftime('%d/%m/%Y %H:%M') for record in records],
+        'datasets': []
+    }
+    
+    # Agregar cada dataset si tiene valores
+    colors = [
+        {'bg': 'rgba(54, 162, 235, 0.2)', 'border': 'rgba(54, 162, 235, 1)'},
+        {'bg': 'rgba(255, 99, 132, 0.2)', 'border': 'rgba(255, 99, 132, 1)'},
+        {'bg': 'rgba(255, 206, 86, 0.2)', 'border': 'rgba(255, 206, 86, 1)'},
+        {'bg': 'rgba(75, 192, 192, 0.2)', 'border': 'rgba(75, 192, 192, 1)'},
+        {'bg': 'rgba(153, 102, 255, 0.2)', 'border': 'rgba(153, 102, 255, 1)'},
+    ]
+    
+    for i in range(1, 6):
+        label = getattr(measurement, f'label_{i}')
+        values = [float(getattr(record, f'value_{i}')) if getattr(record, f'value_{i}') else None for record in records]
+        
+        if any(v is not None for v in values):
+            chart_data['datasets'].append({
+                'label': label,
+                'data': values,
+                'backgroundColor': colors[i-1]['bg'],
+                'borderColor': colors[i-1]['border'],
+                'borderWidth': 2,
+                'tension': 0.1
+            })
+    
+    context = {
+        'measurement': measurement,
+        'records': records,
+        'chart_data': json.dumps(chart_data),
+        'page_title': f'Medición: {measurement.title}',
+    }
+    return render(request, 'tickets/multi_measurement_detail.html', context)
+
+
+@login_required
+def multi_measurement_edit(request, pk):
+    """Editar medición múltiple"""
+    from .models import MultiMeasurement
+    from .forms import MultiMeasurementForm
+    
+    measurement = get_object_or_404(MultiMeasurement, pk=pk, user=request.user)
+    
+    if request.method == 'POST':
+        form = MultiMeasurementForm(request.POST, instance=measurement)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Medición actualizada exitosamente')
+            return redirect('multi_measurement_detail', pk=measurement.pk)
+    else:
+        form = MultiMeasurementForm(instance=measurement)
+    
+    context = {
+        'form': form,
+        'measurement': measurement,
+        'page_title': 'Editar Medición',
+    }
+    return render(request, 'tickets/multi_measurement_form.html', context)
+
+
+@login_required
+def multi_measurement_delete(request, pk):
+    """Eliminar medición múltiple"""
+    from .models import MultiMeasurement
+    
+    measurement = get_object_or_404(MultiMeasurement, pk=pk, user=request.user)
+    
+    if request.method == 'POST':
+        measurement.delete()
+        messages.success(request, 'Medición eliminada exitosamente')
+        return redirect('multi_measurement_list')
+    
+    context = {
+        'measurement': measurement,
+        'page_title': 'Eliminar Medición',
+    }
+    return render(request, 'tickets/multi_measurement_delete.html', context)
+
+
+@csrf_exempt
+def multi_measurement_public(request, token):
+    """Vista pública para cargar registros diarios"""
+    from .models import MultiMeasurement, MultiMeasurementRecord
+    from datetime import datetime
+    
+    measurement = get_object_or_404(MultiMeasurement, public_token=token)
+    
+    if not measurement.is_active:
+        return render(request, 'tickets/multi_measurement_inactive.html', {
+            'measurement': measurement
+        })
+    
+    if request.method == 'POST':
+        # Crear nuevo registro
+        record = MultiMeasurementRecord(
+            measurement=measurement,
+            ip_address=request.META.get('REMOTE_ADDR')
+        )
+        
+        # Guardar valores
+        for i in range(1, 6):
+            value = request.POST.get(f'value_{i}')
+            if value:
+                try:
+                    setattr(record, f'value_{i}', float(value))
+                except ValueError:
+                    pass
+        
+        record.notes = request.POST.get('notes', '')
+        record.save()
+        
+        messages.success(request, 'Mediciones guardadas exitosamente')
+        return redirect('multi_measurement_public', token=token)
+    
+    # Obtener el último registro para mostrar como referencia
+    last_record = measurement.records.first()
+    
+    context = {
+        'measurement': measurement,
+        'last_record': last_record,
+        'page_title': f'Registro de Mediciones: {measurement.title}',
+    }
+    return render(request, 'tickets/multi_measurement_public.html', context)
+
+
+@login_required
+def multi_measurement_record_delete(request, measurement_pk, record_pk):
+    """Eliminar registro de medición"""
+    from .models import MultiMeasurement, MultiMeasurementRecord
+    
+    measurement = get_object_or_404(MultiMeasurement, pk=measurement_pk, user=request.user)
+    record = get_object_or_404(MultiMeasurementRecord, pk=record_pk, measurement=measurement)
+    
+    if request.method == 'POST':
+        record.delete()
+        messages.success(request, 'Registro eliminado exitosamente')
+    
+    return redirect('multi_measurement_detail', pk=measurement_pk)
+
+
+@csrf_exempt
+def multi_measurement_public_chart(request, token):
+    """Vista pública del gráfico y tabla de mediciones"""
+    from .models import MultiMeasurement
+    import json
+    
+    measurement = get_object_or_404(MultiMeasurement, public_token=token)
+    
+    if not measurement.is_active:
+        return render(request, 'tickets/multi_measurement_inactive.html', {
+            'measurement': measurement
+        })
+    
+    records = measurement.records.all().order_by('date')
+    
+    # Preparar datos para el gráfico
+    chart_data = {
+        'labels': [record.date.strftime('%d/%m/%Y %H:%M') for record in records],
+        'datasets': []
+    }
+    
+    # Agregar cada dataset si tiene valores
+    colors = [
+        {'bg': 'rgba(54, 162, 235, 0.2)', 'border': 'rgba(54, 162, 235, 1)'},
+        {'bg': 'rgba(255, 99, 132, 0.2)', 'border': 'rgba(255, 99, 132, 1)'},
+        {'bg': 'rgba(255, 206, 86, 0.2)', 'border': 'rgba(255, 206, 86, 1)'},
+        {'bg': 'rgba(75, 192, 192, 0.2)', 'border': 'rgba(75, 192, 192, 1)'},
+        {'bg': 'rgba(153, 102, 255, 0.2)', 'border': 'rgba(153, 102, 255, 1)'},
+    ]
+    
+    for i in range(1, 6):
+        label = getattr(measurement, f'label_{i}')
+        values = [float(getattr(record, f'value_{i}')) if getattr(record, f'value_{i}') else None for record in records]
+        
+        if any(v is not None for v in values):
+            chart_data['datasets'].append({
+                'label': label,
+                'data': values,
+                'backgroundColor': colors[i-1]['bg'],
+                'borderColor': colors[i-1]['border'],
+                'borderWidth': 2,
+                'tension': 0.1
+            })
+    
+    context = {
+        'measurement': measurement,
+        'records': records,
+        'chart_data': json.dumps(chart_data),
+        'page_title': f'{measurement.title} - Gráfico',
+    }
+    return render(request, 'tickets/multi_measurement_public_chart.html', context)
+
+
+# ==========================================
+# PRESUPUESTO PERSONAL
+# ==========================================
+
+@login_required
+def budget_list(request):
+    """Lista todos los presupuestos del usuario y los públicos"""
+    from django.db.models import Q
+    
+    # Mostrar: presupuestos propios (privados o públicos) + presupuestos públicos de otros
+    budgets = PersonalBudget.objects.filter(
+        Q(user=request.user) | Q(is_private=False)
+    ).order_by('-year', 'name')
+    
+    context = {
+        'budgets': budgets,
+        'page_title': 'Presupuestos Personales',
+    }
+    return render(request, 'tickets/budget_list.html', context)
+
+
+@login_required
+def budget_create(request):
+    """Crea un nuevo presupuesto"""
+    if request.method == 'POST':
+        form = PersonalBudgetForm(request.POST)
+        if form.is_valid():
+            budget = form.save(commit=False)
+            budget.user = request.user
+            budget.save()
+            messages.success(request, f'Presupuesto "{budget.name}" creado exitosamente.')
+            return redirect('budget_detail', pk=budget.pk)
+    else:
+        form = PersonalBudgetForm()
+    
+    context = {
+        'form': form,
+        'page_title': 'Crear Presupuesto',
+    }
+    return render(request, 'tickets/budget_form.html', context)
+
+
+@login_required
+def budget_detail(request, pk):
+    """Muestra el detalle de un presupuesto anual con análisis mensual"""
+    budget = get_object_or_404(PersonalBudget, pk=pk)
+    
+    # Verificar permisos: si es privado, solo el creador puede verlo
+    if budget.is_private and budget.user != request.user:
+        from django.contrib import messages
+        messages.error(request, 'No tienes permisos para ver este presupuesto.')
+        return redirect('budget_list')
+    
+    # Obtener mes seleccionado (por defecto el mes actual)
+    from datetime import datetime
+    selected_month = int(request.GET.get('month', datetime.now().month))
+    view_type = request.GET.get('view', 'monthly')  # 'monthly' o 'annual'
+    
+    # Obtener items ordenados con sus montos actuales
+    income_items = budget.income_items.all().order_by('order', 'name')
+    expense_items = budget.expense_items.all().order_by('order', 'name')
+    
+    # Preparar datos de items con cálculos mensuales/anuales
+    from decimal import Decimal
+    income_items_data = []
+    for item in income_items:
+        # El monto presupuestado ya es mensual
+        monthly_budget = item.budgeted_amount
+        if view_type == 'monthly':
+            actual = item.get_actual_amount(month=selected_month, year=budget.year)
+            budget_amount = monthly_budget
+        else:
+            # Para vista anual, multiplicar el presupuesto mensual por 12
+            actual = item.get_actual_amount()
+            budget_amount = item.budgeted_amount * Decimal('12')
+        
+        variance = actual - budget_amount
+        percentage = float((actual / budget_amount * Decimal('100'))) if budget_amount > 0 else 0
+        
+        income_items_data.append({
+            'item': item,
+            'budget': budget_amount,
+            'actual': actual,
+            'variance': variance,
+            'percentage': percentage,
+        })
+    
+    expense_items_data = []
+    for item in expense_items:
+        # El monto presupuestado ya es mensual
+        monthly_budget = item.budgeted_amount
+        if view_type == 'monthly':
+            actual = item.get_actual_amount(month=selected_month, year=budget.year)
+            budget_amount = monthly_budget
+        else:
+            # Para vista anual, multiplicar el presupuesto mensual por 12
+            actual = item.get_actual_amount()
+            budget_amount = item.budgeted_amount * Decimal('12')
+        
+        variance = actual - budget_amount
+        percentage = float((actual / budget_amount * Decimal('100'))) if budget_amount > 0 else 0
+        
+        expense_items_data.append({
+            'item': item,
+            'budget': budget_amount,
+            'actual': actual,
+            'variance': variance,
+            'percentage': percentage,
+        })
+    
+    # Obtener transacciones según la vista
+    if view_type == 'monthly':
+        transactions = budget.transactions.filter(
+            month=selected_month, 
+            year=budget.year
+        ).order_by('-transaction_date', '-created_at')
+        total_income_budget = budget.get_total_income_budget(month=selected_month)
+        total_expense_budget = budget.get_total_expense_budget(month=selected_month)
+        total_income_actual = budget.get_total_income_actual(month=selected_month)
+        total_expense_actual = budget.get_total_expense_actual(month=selected_month)
+    else:
+        transactions = budget.transactions.all().order_by('-transaction_date', '-created_at')
+        total_income_budget = budget.get_total_income_budget()
+        total_expense_budget = budget.get_total_expense_budget()
+        total_income_actual = budget.get_total_income_actual()
+        total_expense_actual = budget.get_total_expense_actual()
+    
+    # Calcular diferencias y balance
+    income_difference = total_income_actual - total_income_budget
+    expense_difference = total_expense_actual - total_expense_budget
+    net_budget = total_income_budget - total_expense_budget
+    net_actual = total_income_actual - total_expense_actual
+    
+    # Calcular porcentajes totales
+    total_income_percentage = float((total_income_actual / total_income_budget * Decimal('100'))) if total_income_budget > 0 else 0
+    total_expense_percentage = float((total_expense_actual / total_expense_budget * Decimal('100'))) if total_expense_budget > 0 else 0
+    
+    # Lista de meses para el selector
+    months = [
+        (1, 'Enero'), (2, 'Febrero'), (3, 'Marzo'), (4, 'Abril'),
+        (5, 'Mayo'), (6, 'Junio'), (7, 'Julio'), (8, 'Agosto'),
+        (9, 'Septiembre'), (10, 'Octubre'), (11, 'Noviembre'), (12, 'Diciembre')
+    ]
+    
+    context = {
+        'budget': budget,
+        'income_items_data': income_items_data,
+        'expense_items_data': expense_items_data,
+        'transactions': transactions,
+        'total_income_budget': total_income_budget,
+        'total_expense_budget': total_expense_budget,
+        'total_income_actual': total_income_actual,
+        'total_expense_actual': total_expense_actual,
+        'total_income_percentage': total_income_percentage,
+        'total_expense_percentage': total_expense_percentage,
+        'income_difference': income_difference,
+        'expense_difference': expense_difference,
+        'net_budget': net_budget,
+        'net_actual': net_actual,
+        'selected_month': selected_month,
+        'view_type': view_type,
+        'months': months,
+        'page_title': f'{budget.name} - {budget.year}',
+    }
+    return render(request, 'tickets/budget_detail.html', context)
+
+
+@login_required
+def budget_edit(request, pk):
+    """Edita un presupuesto existente"""
+    budget = get_object_or_404(PersonalBudget, pk=pk, user=request.user)
+    
+    if request.method == 'POST':
+        form = PersonalBudgetForm(request.POST, instance=budget)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Presupuesto "{budget.name}" actualizado exitosamente.')
+            return redirect('budget_detail', pk=budget.pk)
+    else:
+        form = PersonalBudgetForm(instance=budget)
+    
+    context = {
+        'form': form,
+        'budget': budget,
+        'page_title': f'Editar Presupuesto: {budget.name}',
+    }
+    return render(request, 'tickets/budget_form.html', context)
+
+
+@login_required
+def budget_delete(request, pk):
+    """Elimina un presupuesto"""
+    budget = get_object_or_404(PersonalBudget, pk=pk, user=request.user)
+    
+    if request.method == 'POST':
+        budget_name = budget.name
+        budget.delete()
+        messages.success(request, f'Presupuesto "{budget_name}" eliminado exitosamente.')
+        return redirect('budget_list')
+    
+    context = {
+        'budget': budget,
+        'page_title': f'Eliminar Presupuesto: {budget.name}',
+    }
+    return render(request, 'tickets/budget_delete.html', context)
+
+
+@login_required
+def budget_income_item_create(request, budget_pk):
+    """Crea una partida de ingreso"""
+    budget = get_object_or_404(PersonalBudget, pk=budget_pk, user=request.user)
+    
+    if request.method == 'POST':
+        form = BudgetIncomeItemForm(request.POST)
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.budget = budget
+            item.save()
+            messages.success(request, f'Partida de ingreso "{item.name}" agregada.')
+            return redirect('budget_detail', pk=budget.pk)
+    else:
+        form = BudgetIncomeItemForm()
+    
+    context = {
+        'form': form,
+        'budget': budget,
+        'item_type': 'ingreso',
+        'page_title': f'Agregar Ingreso - {budget.name}',
+    }
+    return render(request, 'tickets/budget_item_form.html', context)
+
+
+@login_required
+def budget_expense_item_create(request, budget_pk):
+    """Crea una partida de egreso"""
+    budget = get_object_or_404(PersonalBudget, pk=budget_pk, user=request.user)
+    
+    if request.method == 'POST':
+        form = BudgetExpenseItemForm(request.POST)
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.budget = budget
+            item.save()
+            messages.success(request, f'Partida de egreso "{item.name}" agregada.')
+            return redirect('budget_detail', pk=budget.pk)
+    else:
+        form = BudgetExpenseItemForm()
+    
+    context = {
+        'form': form,
+        'budget': budget,
+        'item_type': 'egreso',
+        'page_title': f'Agregar Egreso - {budget.name}',
+    }
+    return render(request, 'tickets/budget_item_form.html', context)
+
+
+@login_required
+def budget_income_item_edit(request, budget_pk, item_pk):
+    """Edita una partida de ingreso"""
+    budget = get_object_or_404(PersonalBudget, pk=budget_pk, user=request.user)
+    item = get_object_or_404(BudgetIncomeItem, pk=item_pk, budget=budget)
+    
+    if request.method == 'POST':
+        form = BudgetIncomeItemForm(request.POST, instance=item)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Partida de ingreso "{item.name}" actualizada.')
+            return redirect('budget_detail', pk=budget.pk)
+    else:
+        form = BudgetIncomeItemForm(instance=item)
+    
+    context = {
+        'form': form,
+        'budget': budget,
+        'item': item,
+        'item_type': 'ingreso',
+        'page_title': f'Editar Ingreso - {item.name}',
+    }
+    return render(request, 'tickets/budget_item_form.html', context)
+
+
+@login_required
+def budget_expense_item_edit(request, budget_pk, item_pk):
+    """Edita una partida de egreso"""
+    budget = get_object_or_404(PersonalBudget, pk=budget_pk, user=request.user)
+    item = get_object_or_404(BudgetExpenseItem, pk=item_pk, budget=budget)
+    
+    if request.method == 'POST':
+        form = BudgetExpenseItemForm(request.POST, instance=item)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Partida de egreso "{item.name}" actualizada.')
+            return redirect('budget_detail', pk=budget.pk)
+    else:
+        form = BudgetExpenseItemForm(instance=item)
+    
+    context = {
+        'form': form,
+        'budget': budget,
+        'item': item,
+        'item_type': 'egreso',
+        'page_title': f'Editar Egreso - {item.name}',
+    }
+    return render(request, 'tickets/budget_item_form.html', context)
+
+
+@login_required
+def budget_income_item_delete(request, budget_pk, item_pk):
+    """Elimina una partida de ingreso"""
+    budget = get_object_or_404(PersonalBudget, pk=budget_pk, user=request.user)
+    item = get_object_or_404(BudgetIncomeItem, pk=item_pk, budget=budget)
+    
+    if request.method == 'POST':
+        item_name = item.name
+        item.delete()
+        messages.success(request, f'Partida de ingreso "{item_name}" eliminada.')
+        return redirect('budget_detail', pk=budget.pk)
+    
+    return redirect('budget_detail', pk=budget.pk)
+
+
+@login_required
+def budget_expense_item_delete(request, budget_pk, item_pk):
+    """Elimina una partida de egreso"""
+    budget = get_object_or_404(PersonalBudget, pk=budget_pk, user=request.user)
+    item = get_object_or_404(BudgetExpenseItem, pk=item_pk, budget=budget)
+    
+    if request.method == 'POST':
+        item_name = item.name
+        item.delete()
+        messages.success(request, f'Partida de egreso "{item_name}" eliminada.')
+        return redirect('budget_detail', pk=budget.pk)
+    
+    return redirect('budget_detail', pk=budget.pk)
+
+
+@login_required
+def budget_transaction_create(request, budget_pk):
+    """Crea una transacción (ingreso o egreso)"""
+    budget = get_object_or_404(PersonalBudget, pk=budget_pk, user=request.user)
+    
+    if request.method == 'POST':
+        form = BudgetTransactionForm(request.POST, budget=budget)
+        if form.is_valid():
+            transaction = form.save(commit=False)
+            transaction.budget = budget
+            transaction.save()
+            
+            trans_type = 'ingreso' if transaction.transaction_type == 'income' else 'egreso'
+            messages.success(request, f'Transacción de {trans_type} registrada por ${transaction.amount}.')
+            return redirect('budget_detail', pk=budget.pk)
+    else:
+        form = BudgetTransactionForm(budget=budget)
+    
+    context = {
+        'form': form,
+        'budget': budget,
+        'page_title': f'Registrar Transacción - {budget.name}',
+    }
+    return render(request, 'tickets/budget_transaction_form.html', context)
+
+
+@login_required
+def budget_transaction_delete(request, budget_pk, trans_pk):
+    """Elimina una transacción"""
+    budget = get_object_or_404(PersonalBudget, pk=budget_pk, user=request.user)
+    transaction = get_object_or_404(BudgetTransaction, pk=trans_pk, budget=budget)
+    
+    if request.method == 'POST':
+        trans_type = 'ingreso' if transaction.transaction_type == 'income' else 'egreso'
+        amount = transaction.amount
+        transaction.delete()
+        messages.success(request, f'Transacción de {trans_type} por ${amount} eliminada.')
+        return redirect('budget_detail', pk=budget.pk)
+    
+    return redirect('budget_detail', pk=budget.pk)

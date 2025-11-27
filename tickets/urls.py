@@ -371,6 +371,8 @@ urlpatterns = [
     path('meetings/<int:pk>/pdf/', views.meeting_pdf_download_view, name='meeting_pdf_download'),
     path('meetings/<int:pk>/questions/', views.meeting_questions_view, name='meeting_questions'),
     path('meetings/<int:pk>/attendees/', views.meeting_attendees_view, name='meeting_attendees'),
+    path('meetings/<int:pk>/add-link/', views.meeting_add_link_view, name='meeting_add_link'),
+    path('meetings/link/<int:link_id>/delete/', views.meeting_delete_link_view, name='meeting_delete_link'),
     
     # URLs de Reuniones Soporte
     path('support-meetings/', views.support_meeting_list, name='support_meeting_list'),
@@ -426,6 +428,8 @@ urlpatterns = [
     path('quotations/<int:quotation_id>/lines/', views.quotation_get_lines_view, name='quotation_get_lines'),
     path('ajax/products/', views.get_products_ajax_view, name='get_products_ajax'),
     path('meetings/public/<str:token>/ask/', views.meeting_ask_question_view, name='meeting_ask_question'),
+    path('meetings/public/<str:token>/respond/', views.meeting_respond_view, name='meeting_respond'),
+    path('meetings/public/<str:token>/rate/', views.meeting_rate_view, name='meeting_rate'),
     
     # AJAX para reuniones
     path('meetings/<int:pk>/questions/<int:question_id>/answer/', views.meeting_answer_question_view, name='meeting_answer_question'),
@@ -781,6 +785,7 @@ urlpatterns = [
     # API para recomendaciones de IA en reuniones
     path('api/meetings/ai-recommendations/', views.meeting_ai_recommendations_view, name='meeting_ai_recommendations'),
     path('api/meetings/generate-spin/', views.generate_spin_methodology_view, name='generate_spin_methodology'),
+    path('api/meetings/improve-description/', views.improve_meeting_description_view, name='improve_meeting_description'),
 
     # ============= URLs ASISTENCIA DE CLIENTE =============
     # URLs de gestión de asistencia de cliente (solo para agentes)
@@ -1344,6 +1349,31 @@ urlpatterns += [
     path('quick-quotes/<int:pk>/delete/', views.quick_quote_delete, name='quick_quote_delete'),
     path('quick-quotes/<int:pk>/duplicate/', views.quick_quote_duplicate, name='quick_quote_duplicate'),
     path('quote/<str:token>/', views.quick_quote_public, name='quick_quote_public'),
+    
+    # URLs de Mediciones Múltiples
+    path('multi-measurements/', views.multi_measurement_list, name='multi_measurement_list'),
+    path('multi-measurements/create/', views.multi_measurement_create, name='multi_measurement_create'),
+    path('multi-measurements/<int:pk>/', views.multi_measurement_detail, name='multi_measurement_detail'),
+    path('multi-measurements/<int:pk>/edit/', views.multi_measurement_edit, name='multi_measurement_edit'),
+    path('multi-measurements/<int:pk>/delete/', views.multi_measurement_delete, name='multi_measurement_delete'),
+    path('multi-measurements/<int:measurement_pk>/record/<int:record_pk>/delete/', views.multi_measurement_record_delete, name='multi_measurement_record_delete'),
+    path('measurement/<str:token>/', views.multi_measurement_public, name='multi_measurement_public'),
+    path('measurement-chart/<str:token>/', views.multi_measurement_public_chart, name='multi_measurement_public_chart'),
+    
+    # Presupuesto Personal
+    path('budgets/', views.budget_list, name='budget_list'),
+    path('budgets/create/', views.budget_create, name='budget_create'),
+    path('budgets/<int:pk>/', views.budget_detail, name='budget_detail'),
+    path('budgets/<int:pk>/edit/', views.budget_edit, name='budget_edit'),
+    path('budgets/<int:pk>/delete/', views.budget_delete, name='budget_delete'),
+    path('budgets/<int:budget_pk>/income/create/', views.budget_income_item_create, name='budget_income_item_create'),
+    path('budgets/<int:budget_pk>/expense/create/', views.budget_expense_item_create, name='budget_expense_item_create'),
+    path('budgets/<int:budget_pk>/income/<int:item_pk>/edit/', views.budget_income_item_edit, name='budget_income_item_edit'),
+    path('budgets/<int:budget_pk>/expense/<int:item_pk>/edit/', views.budget_expense_item_edit, name='budget_expense_item_edit'),
+    path('budgets/<int:budget_pk>/income/<int:item_pk>/delete/', views.budget_income_item_delete, name='budget_income_item_delete'),
+    path('budgets/<int:budget_pk>/expense/<int:item_pk>/delete/', views.budget_expense_item_delete, name='budget_expense_item_delete'),
+    path('budgets/<int:budget_pk>/transaction/create/', views.budget_transaction_create, name='budget_transaction_create'),
+    path('budgets/<int:budget_pk>/transaction/<int:trans_pk>/delete/', views.budget_transaction_delete, name='budget_transaction_delete'),
     
     # URLs de API
     path('api/', include('tickets.api_urls')),

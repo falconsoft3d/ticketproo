@@ -3925,6 +3925,9 @@ class Meeting(models.Model):
     require_email = models.BooleanField(default=False, verbose_name='Requerir email')
     is_active = models.BooleanField(default=True, verbose_name='Activa')
     
+    # Estadísticas
+    public_views_count = models.IntegerField(default=0, verbose_name='Vistas del enlace público')
+    
     # Metadata
     created_at = models.DateTimeField(default=timezone.now, verbose_name='Creada el')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Actualizada el')
@@ -3963,12 +3966,25 @@ class Meeting(models.Model):
 class MeetingAttendee(models.Model):
     """Modelo para asistentes a reuniones"""
     
+    RESPONSE_CHOICES = [
+        ('pending', 'Pendiente'),
+        ('accepted', 'Aceptada'),
+        ('declined', 'Rechazada'),
+    ]
+    
     meeting = models.ForeignKey(Meeting, on_delete=models.CASCADE, verbose_name='Reunión')
     name = models.CharField(max_length=100, verbose_name='Nombre')
     email = models.EmailField(blank=True, verbose_name='Email')
     company = models.CharField(max_length=100, blank=True, verbose_name='Empresa')
     registered_at = models.DateTimeField(default=timezone.now, verbose_name='Registrado el')
     ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name='IP')
+    response_status = models.CharField(
+        max_length=20, 
+        choices=RESPONSE_CHOICES, 
+        default='pending',
+        verbose_name='Estado de respuesta'
+    )
+    response_date = models.DateTimeField(null=True, blank=True, verbose_name='Fecha de respuesta')
     
     class Meta:
         ordering = ['registered_at']
@@ -4035,6 +4051,89 @@ class MeetingQuestion(models.Model):
         if self.attendee:
             return self.attendee.name
         return self.asker_name or "Anónimo"
+
+
+class MeetingRating(models.Model):
+    """Modelo para calificaciones de reuniones con caras (triste, neutro, feliz)"""
+    
+    RATING_CHOICES = [
+        ('sad', '😞 Triste'),
+        ('neutral', '😐 Neutro'),
+        ('happy', '😊 Feliz'),
+    ]
+    
+    meeting = models.ForeignKey(Meeting, on_delete=models.CASCADE, verbose_name='Reunión', related_name='ratings')
+    attendee = models.ForeignKey(
+        MeetingAttendee, 
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Asistente'
+    )
+    rating = models.CharField(
+        max_length=10,
+        choices=RATING_CHOICES,
+        verbose_name='Calificación'
+    )
+    comment = models.TextField(blank=True, verbose_name='Comentario')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha de evaluación')
+    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name='IP')
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Evaluación de reunión'
+        verbose_name_plural = 'Evaluaciones de reuniones'
+        # Un asistente puede evaluar solo una vez
+        unique_together = ['meeting', 'attendee']
+    
+    def __str__(self):
+        return f"Evaluación de {self.meeting.title}: {self.get_rating_display()}"
+
+
+class MeetingAccessLog(models.Model):
+    """Modelo para registrar estadísticas de acceso al enlace público de reuniones"""
+    
+    meeting = models.ForeignKey(Meeting, on_delete=models.CASCADE, verbose_name='Reunión', related_name='access_logs')
+    ip_address = models.GenericIPAddressField(verbose_name='Dirección IP')
+    user_agent = models.TextField(blank=True, verbose_name='User Agent')
+    device_type = models.CharField(max_length=50, blank=True, verbose_name='Tipo de Dispositivo')  # mobile, tablet, desktop
+    browser = models.CharField(max_length=100, blank=True, verbose_name='Navegador')
+    os = models.CharField(max_length=100, blank=True, verbose_name='Sistema Operativo')
+    country = models.CharField(max_length=100, blank=True, verbose_name='País')
+    city = models.CharField(max_length=100, blank=True, verbose_name='Ciudad')
+    accessed_at = models.DateTimeField(default=timezone.now, verbose_name='Fecha y hora de acceso')
+    
+    class Meta:
+        ordering = ['-accessed_at']
+        verbose_name = 'Registro de acceso'
+        verbose_name_plural = 'Registros de acceso'
+        indexes = [
+            models.Index(fields=['meeting', '-accessed_at']),
+            models.Index(fields=['country']),
+            models.Index(fields=['device_type']),
+        ]
+    
+    def __str__(self):
+        return f"{self.meeting.title} - {self.country} - {self.device_type} - {self.accessed_at.strftime('%d/%m/%Y %H:%M')}"
+
+
+class MeetingLink(models.Model):
+    """Modelo para gestionar enlaces relacionados con reuniones"""
+    
+    meeting = models.ForeignKey(Meeting, on_delete=models.CASCADE, verbose_name='Reunión', related_name='links')
+    title = models.CharField(max_length=200, verbose_name='Título del enlace')
+    url = models.URLField(max_length=500, verbose_name='URL')
+    description = models.TextField(blank=True, verbose_name='Descripción')
+    order = models.IntegerField(default=0, verbose_name='Orden')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Creado el')
+    
+    class Meta:
+        ordering = ['order', 'created_at']
+        verbose_name = 'Enlace de reunión'
+        verbose_name_plural = 'Enlaces de reunión'
+    
+    def __str__(self):
+        return f"{self.meeting.title} - {self.title}"
 
 
 class Course(models.Model):
@@ -18153,6 +18252,500 @@ class QuickQuoteView(models.Model):
     
     def __str__(self):
         return f"Vista de {self.quote.title} - {self.viewed_at.strftime('%d/%m/%Y %H:%M')}"
+
+
+class MultiMeasurement(models.Model):
+    """Modelo para mediciones múltiples"""
+    
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='multi_measurements',
+        verbose_name='Usuario'
+    )
+    
+    sequence_number = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name='Número de Secuencia',
+        help_text='Formato: MM-YYYY-XX'
+    )
+    
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título'
+    )
+    
+    public_token = models.CharField(
+        max_length=64,
+        unique=True,
+        verbose_name='Token Público',
+        help_text='Token único para acceso público'
+    )
+    
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de Creación'
+    )
+    
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo'
+    )
+    
+    # Etiquetas para las 5 mediciones
+    label_1 = models.CharField(
+        max_length=100,
+        default='Medición 1',
+        verbose_name='Etiqueta Medición 1'
+    )
+    
+    label_2 = models.CharField(
+        max_length=100,
+        default='Medición 2',
+        verbose_name='Etiqueta Medición 2'
+    )
+    
+    label_3 = models.CharField(
+        max_length=100,
+        default='Medición 3',
+        verbose_name='Etiqueta Medición 3'
+    )
+    
+    label_4 = models.CharField(
+        max_length=100,
+        default='Medición 4',
+        verbose_name='Etiqueta Medición 4'
+    )
+    
+    label_5 = models.CharField(
+        max_length=100,
+        default='Medición 5',
+        verbose_name='Etiqueta Medición 5'
+    )
+    
+    class Meta:
+        verbose_name = 'Medición Múltiple'
+        verbose_name_plural = 'Mediciones Múltiples'
+        ordering = ['-created_at']
+    
+    def save(self, *args, **kwargs):
+        # Generar token público si no existe
+        if not self.public_token:
+            import secrets
+            self.public_token = secrets.token_urlsafe(32)
+        
+        # Generar número de secuencia si no existe
+        if not self.sequence_number:
+            year = timezone.now().year
+            # Obtener el último número del año actual
+            last_measurement = MultiMeasurement.objects.filter(
+                sequence_number__startswith=f'MM-{year}-'
+            ).order_by('-sequence_number').first()
+            
+            if last_measurement and last_measurement.sequence_number:
+                try:
+                    last_num = int(last_measurement.sequence_number.split('-')[-1])
+                    new_num = last_num + 1
+                except (ValueError, IndexError):
+                    new_num = 1
+            else:
+                new_num = 1
+            
+            self.sequence_number = f'MM-{year}-{new_num:02d}'
+        
+        super().save(*args, **kwargs)
+    
+    def get_public_url(self, request=None):
+        """Retorna la URL pública para cargar mediciones"""
+        from django.urls import reverse
+        path = reverse('multi_measurement_public', kwargs={'token': self.public_token})
+        if request:
+            return request.build_absolute_uri(path)
+        from django.conf import settings
+        base_url = getattr(settings, 'SITE_DOMAIN', 'localhost:8000')
+        protocol = 'https' if 'localhost' not in base_url else 'http'
+        return f"{protocol}://{base_url}{path}"
+    
+    def __str__(self):
+        return f"{self.sequence_number} - {self.title}"
+
+
+class MultiMeasurementRecord(models.Model):
+    """Modelo para registros diarios de mediciones"""
+    
+    measurement = models.ForeignKey(
+        MultiMeasurement,
+        on_delete=models.CASCADE,
+        related_name='records',
+        verbose_name='Medición'
+    )
+    
+    date = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha y Hora'
+    )
+    
+    value_1 = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Valor 1'
+    )
+    
+    value_2 = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Valor 2'
+    )
+    
+    value_3 = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Valor 3'
+    )
+    
+    value_4 = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Valor 4'
+    )
+    
+    value_5 = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Valor 5'
+    )
+    
+    notes = models.TextField(
+        blank=True,
+        verbose_name='Notas'
+    )
+    
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de Creación'
+    )
+    
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name='Dirección IP'
+    )
+    
+    class Meta:
+        verbose_name = 'Registro de Medición'
+        verbose_name_plural = 'Registros de Mediciones'
+        ordering = ['-date']
+    
+    def __str__(self):
+        return f"{self.measurement.sequence_number} - {self.date.strftime('%d/%m/%Y %H:%M')}"
+
+
+class PersonalBudget(models.Model):
+    """Modelo para presupuestos personales anuales"""
+    
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='personal_budgets',
+        verbose_name='Usuario'
+    )
+    
+    name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre del Presupuesto'
+    )
+    
+    year = models.IntegerField(
+        verbose_name='Año'
+    )
+    
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de Creación'
+    )
+    
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo'
+    )
+    
+    is_private = models.BooleanField(
+        default=True,
+        verbose_name='Privado',
+        help_text='Si está marcado, solo el creador puede ver este presupuesto'
+    )
+    
+    class Meta:
+        verbose_name = 'Presupuesto Personal'
+        verbose_name_plural = 'Presupuestos Personales'
+        ordering = ['-year', 'name']
+        unique_together = ['user', 'name', 'year']
+    
+    def __str__(self):
+        return f"{self.name} - {self.year}"
+    
+    def get_month_display(self):
+        """Retorna el nombre del mes"""
+        months = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+        return months[1]  # Placeholder, no se usa más
+    
+    def get_total_income_budget(self, month=None):
+        """Total presupuestado de ingresos (mensual o anual)"""
+        from decimal import Decimal
+        total_monthly = self.income_items.aggregate(total=models.Sum('budgeted_amount'))['total'] or Decimal('0')
+        # Si se pide vista mensual, retornar el total mensual; si es anual, multiplicar por 12
+        return total_monthly if month else total_monthly * Decimal('12')
+    
+    def get_total_expense_budget(self, month=None):
+        """Total presupuestado de egresos (mensual o anual)"""
+        from decimal import Decimal
+        total_monthly = self.expense_items.aggregate(total=models.Sum('budgeted_amount'))['total'] or Decimal('0')
+        # Si se pide vista mensual, retornar el total mensual; si es anual, multiplicar por 12
+        return total_monthly if month else total_monthly * Decimal('12')
+    
+    def get_total_income_actual(self, month=None):
+        """Total real de ingresos (filtrado por mes si se especifica)"""
+        from decimal import Decimal
+        qs = self.transactions.filter(transaction_type='income')
+        if month:
+            qs = qs.filter(month=month, year=self.year)
+        return qs.aggregate(total=models.Sum('amount'))['total'] or Decimal('0')
+    
+    def get_total_expense_actual(self, month=None):
+        """Total real de egresos (filtrado por mes si se especifica)"""
+        from decimal import Decimal
+        qs = self.transactions.filter(transaction_type='expense')
+        if month:
+            qs = qs.filter(month=month, year=self.year)
+        return qs.aggregate(total=models.Sum('amount'))['total'] or Decimal('0')
+
+
+class BudgetIncomeItem(models.Model):
+    """Partidas de ingresos del presupuesto"""
+    
+    budget = models.ForeignKey(
+        PersonalBudget,
+        on_delete=models.CASCADE,
+        related_name='income_items',
+        verbose_name='Presupuesto'
+    )
+    
+    name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre de la Partida'
+    )
+    
+    budgeted_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name='Monto Presupuestado Mensual (€)',
+        help_text='Monto mensual en euros para esta partida'
+    )
+    
+    order = models.IntegerField(
+        default=0,
+        verbose_name='Orden'
+    )
+    
+    class Meta:
+        verbose_name = 'Partida de Ingreso'
+        verbose_name_plural = 'Partidas de Ingresos'
+        ordering = ['order', 'name']
+    
+    def __str__(self):
+        return f"{self.budget} - {self.name}"
+    
+    def get_actual_amount(self, month=None, year=None):
+        """Monto real de transacciones de ingreso (filtrado por mes/año si se especifica)"""
+        from decimal import Decimal
+        qs = self.transactions.all()
+        if month and year:
+            qs = qs.filter(month=month, year=year)
+        return qs.aggregate(total=models.Sum('amount'))['total'] or Decimal('0')
+    
+    def get_percentage_budget(self):
+        """Porcentaje respecto al presupuesto total de ingresos"""
+        total = self.budget.get_total_income_budget()
+        if total > 0:
+            return (float(self.budgeted_amount) / float(total)) * 100
+        return 0
+    
+    def get_percentage_actual(self):
+        """Porcentaje real respecto al total real de ingresos"""
+        total = self.budget.get_total_income_actual()
+        if total > 0:
+            return (float(self.get_actual_amount()) / float(total)) * 100
+        return 0
+
+
+class BudgetExpenseItem(models.Model):
+    """Partidas de egresos del presupuesto"""
+    
+    budget = models.ForeignKey(
+        PersonalBudget,
+        on_delete=models.CASCADE,
+        related_name='expense_items',
+        verbose_name='Presupuesto'
+    )
+    
+    name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre de la Partida'
+    )
+    
+    budgeted_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name='Monto Presupuestado Mensual (€)',
+        help_text='Monto mensual en euros para esta partida'
+    )
+    
+    order = models.IntegerField(
+        default=0,
+        verbose_name='Orden'
+    )
+    
+    class Meta:
+        verbose_name = 'Partida de Egreso'
+        verbose_name_plural = 'Partidas de Egresos'
+        ordering = ['order', 'name']
+    
+    def __str__(self):
+        return f"{self.budget} - {self.name}"
+    
+    def get_actual_amount(self, month=None, year=None):
+        """Monto real de transacciones de egreso (filtrado por mes/año si se especifica)"""
+        from decimal import Decimal
+        qs = self.transactions.all()
+        if month and year:
+            qs = qs.filter(month=month, year=year)
+        return qs.aggregate(total=models.Sum('amount'))['total'] or Decimal('0')
+    
+    def get_percentage_budget(self):
+        """Porcentaje respecto al presupuesto total de egresos"""
+        total = self.budget.get_total_expense_budget()
+        if total > 0:
+            return (float(self.budgeted_amount) / float(total)) * 100
+        return 0
+    
+    def get_percentage_actual(self):
+        """Porcentaje real respecto al total real de egresos"""
+        total = self.budget.get_total_expense_actual()
+        if total > 0:
+            return (float(self.get_actual_amount()) / float(total)) * 100
+        return 0
+
+
+class BudgetTransaction(models.Model):
+    """Transacciones (ingresos o egresos) del presupuesto"""
+    
+    TRANSACTION_TYPE_CHOICES = [
+        ('income', 'Ingreso'),
+        ('expense', 'Egreso'),
+    ]
+    
+    budget = models.ForeignKey(
+        PersonalBudget,
+        on_delete=models.CASCADE,
+        related_name='transactions',
+        verbose_name='Presupuesto'
+    )
+    
+    transaction_type = models.CharField(
+        max_length=10,
+        choices=TRANSACTION_TYPE_CHOICES,
+        verbose_name='Tipo'
+    )
+    
+    income_item = models.ForeignKey(
+        BudgetIncomeItem,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='transactions',
+        verbose_name='Partida de Ingreso'
+    )
+    
+    expense_item = models.ForeignKey(
+        BudgetExpenseItem,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='transactions',
+        verbose_name='Partida de Egreso'
+    )
+    
+    amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name='Monto'
+    )
+    
+    description = models.CharField(
+        max_length=500,
+        blank=True,
+        verbose_name='Descripción'
+    )
+    
+    transaction_date = models.DateField(
+        verbose_name='Fecha de Transacción'
+    )
+    
+    month = models.IntegerField(
+        default=1,
+        verbose_name='Mes',
+        help_text='Mes de la transacción (1-12)'
+    )
+    
+    year = models.IntegerField(
+        default=2025,
+        verbose_name='Año',
+        help_text='Año de la transacción'
+    )
+    
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de Registro'
+    )
+    
+    class Meta:
+        verbose_name = 'Transacción'
+        verbose_name_plural = 'Transacciones'
+        ordering = ['-transaction_date', '-created_at']
+    
+    def __str__(self):
+        return f"{self.get_transaction_type_display()} - ${self.amount} - {self.transaction_date}"
+    
+    def save(self, *args, **kwargs):
+        # Extraer mes y año de la fecha de transacción
+        if self.transaction_date:
+            self.month = self.transaction_date.month
+            self.year = self.transaction_date.year
+        super().save(*args, **kwargs)
+
+
+# Añadir campos Many-to-Many al modelo PersonalBudget
+PersonalBudget.add_to_class('income_transactions', 
+    models.ManyToManyField(BudgetTransaction, related_name='income_budgets', blank=True))
+PersonalBudget.add_to_class('expense_transactions', 
+    models.ManyToManyField(BudgetTransaction, related_name='expense_budgets', blank=True))
+
+
+
 
 
 

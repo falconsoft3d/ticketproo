@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-graph-up"></i> {{ page_title }}</h2>
+        <a href="{% url 'multi_measurement_list' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">
+                                <strong>Título *</strong>
+                            </label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.title.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <strong>Estado</strong>
+                            </label>
+                            <div class="form-check">
+                                {{ form.is_active }}
+                                <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                    Medición Activa (permite registros públicos)
+                                </label>
+                            </div>
+                        </div>
+
+                        <hr>
+                        <h5 class="mb-3"><i class="bi bi-tags"></i> Etiquetas de Mediciones</h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.label_1.id_for_label }}" class="form-label">
+                                    Etiqueta Medición 1 *
+                                </label>
+                                {{ form.label_1 }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.label_2.id_for_label }}" class="form-label">
+                                    Etiqueta Medición 2 *
+                                </label>
+                                {{ form.label_2 }}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.label_3.id_for_label }}" class="form-label">
+                                    Etiqueta Medición 3 *
+                                </label>
+                                {{ form.label_3 }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.label_4.id_for_label }}" class="form-label">
+                                    Etiqueta Medición 4 *
+                                </label>
+                                {{ form.label_4 }}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.label_5.id_for_label }}" class="form-label">
+                                    Etiqueta Medición 5 *
+                                </label>
+                                {{ form.label_5 }}
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'multi_measurement_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Guardar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <strong><i class="bi bi-info-circle"></i> Información</strong>
+                </div>
+                <div class="card-body">
+                    <p class="small">
+                        <strong>Etiquetas:</strong> Personaliza los nombres de las 5 mediciones que deseas registrar diariamente.
+                    </p>
+                    <p class="small">
+                        <strong>URL Pública:</strong> Después de crear la medición, obtendrás una URL pública para que cualquier persona pueda registrar las mediciones diarias.
+                    </p>
+                    <p class="small">
+                        <strong>Registros:</strong> Se puede registrar una vez al día las 5 mediciones configuradas.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -58,10 +58,12 @@
                     <div class="meeting-header">
                         <i class="fas fa-video fa-3x mb-3"></i>
                         <h1 class="mb-3">{{ meeting.title }}</h1>
-                        <p class="lead mb-0">{{ meeting.description|default:"Bienvenido a esta reunión" }}</p>
                     </div>
                     
                     <div class="p-4">
+                        
+                        
+                        
                         <!-- Información de la reunión -->
                         <div class="meeting-info mb-4">
                             <div class="row text-center">
@@ -96,7 +98,172 @@
                                     </p>
                                 </div>
                             </div>
+                        </div><!-- Descripción de la reunión -->
+
+                        <!-- Información del Organizador -->
+                        <div class="card info-card mb-4">
+                            <div class="card-body bg-white">
+                                <h5 class="card-title"><i class="fas fa-user-tie text-primary"></i> Organizado por</h5>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <p class="mb-2">
+                                            <i class="fas fa-user text-primary"></i> 
+                                            <strong>Nombre:</strong><br>
+                                            <span class="ms-4">{{ meeting.organizer.get_full_name|default:meeting.organizer.username }}</span>
+                                        </p>
+                                    </div>
+                                    {% if meeting.organizer.email %}
+                                    <div class="col-md-4">
+                                        <p class="mb-2">
+                                            <i class="fas fa-envelope text-primary"></i> 
+                                            <strong>Email:</strong><br>
+                                            <a href="mailto:{{ meeting.organizer.email }}" class="ms-4">{{ meeting.organizer.email }}</a>
+                                        </p>
+                                    </div>
+                                    {% endif %}
+                                    {% if meeting.organizer.profile.phone %}
+                                    <div class="col-md-4">
+                                        <p class="mb-2">
+                                            <i class="fas fa-phone text-primary"></i> 
+                                            <strong>Teléfono:</strong><br>
+                                            <a href="tel:{{ meeting.organizer.profile.phone }}" class="ms-4">{{ meeting.organizer.profile.phone }}</a>
+                                        </p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
                         </div>
+
+                        <!-- Participantes Registrados -->
+                        <div class="card info-card mb-4">
+                            <div class="card-body bg-white">
+                                <h5 class="card-title">
+                                    <i class="fas fa-users text-primary"></i> Participantes Registrados 
+                                    <span class="badge bg-primary">{{ meeting.get_attendees_count }}</span>
+                                </h5>
+                                {% if meeting.meetingattendee_set.all %}
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th><i class="fas fa-user"></i> Nombre</th>
+                                                    <th><i class="fas fa-envelope"></i> Email</th>
+                                                    <th><i class="fas fa-calendar"></i> Registrado</th>
+                                                    <th><i class="fas fa-check-circle"></i> Estado</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for attendee in meeting.meetingattendee_set.all %}
+                                                <tr>
+                                                    <td>
+                                                        <strong>{{ attendee.name }}</strong>
+                                                    </td>
+                                                    <td>
+                                                        {% if attendee.email %}
+                                                            <a href="mailto:{{ attendee.email }}">{{ attendee.email }}</a>
+                                                        {% else %}
+                                                            <span class="text-muted">No proporcionado</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        <small class="text-muted">{{ attendee.registered_at|date:"d/m/Y H:i" }}</small>
+                                                    </td>
+                                                    <td>
+                                                        {% if attendee.response_status == 'accepted' %}
+                                                            <span class="badge bg-success">
+                                                                <i class="fas fa-check"></i> Aceptada
+                                                            </span>
+                                                        {% elif attendee.response_status == 'declined' %}
+                                                            <span class="badge bg-danger">
+                                                                <i class="fas fa-times"></i> Rechazada
+                                                            </span>
+                                                        {% else %}
+                                                            <span class="badge bg-warning text-dark">
+                                                                <i class="fas fa-clock"></i> Pendiente
+                                                            </span>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                {% else %}
+                                    <div class="text-center py-3">
+                                        <i class="fas fa-users fa-2x text-muted mb-2"></i>
+                                        <p class="text-muted">Aún no hay participantes registrados. ¡Sé el primero en registrarte!</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Descripción de la reunión -->
+                        {% if meeting.description %}
+                        <div class="card info-card mb-4">
+                            <div class="card-body bg-white">
+                                <h5 class="card-title"><i class="fas fa-info-circle text-primary"></i> Descripción</h5>
+                                <p class="card-text" style="white-space: pre-wrap;">{{ meeting.description }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Enlaces de la reunión -->
+                        {% if meeting.links.all %}
+                        <div class="card info-card mb-4">
+                            <div class="card-body bg-white">
+                                <h5 class="card-title"><i class="fas fa-external-link-alt text-primary"></i> Enlaces Útiles</h5>
+                                <div class="list-group list-group-flush">
+                                    {% for link in meeting.links.all %}
+                                    <a href="{{ link.url }}" target="_blank" class="list-group-item list-group-item-action d-flex justify-content-between align-items-start">
+                                        <div class="ms-2 me-auto">
+                                            <div class="fw-bold">
+                                                <i class="fas fa-link text-primary"></i> {{ link.title }}
+                                            </div>
+                                            {% if link.description %}
+                                            <small class="text-muted">{{ link.description }}</small>
+                                            {% endif %}
+                                        </div>
+                                        <i class="fas fa-external-link-alt text-muted"></i>
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Respuesta a la reunión (Aceptar/Rechazar) -->
+                        {% if user_registered %}
+                        <div class="card info-card mb-4">
+                            <div class="card-body bg-white">
+                                <h5 class="card-title"><i class="fas fa-reply text-primary"></i> Tu Respuesta</h5>
+                                
+                                {% if user_attendee.response_status == 'pending' %}
+                                    <p class="text-muted mb-3">¿Confirmas que Aceptas los puntos de la reunión?</p>
+                                    <form method="post" action="{% url 'meeting_respond' meeting.public_token %}" class="d-flex gap-2 justify-content-center">
+                                        {% csrf_token %}
+                                        <button type="submit" name="response" value="accepted" class="btn btn-success btn-custom">
+                                            <i class="fas fa-check"></i> Aceptar
+                                        </button>
+                                        <button type="submit" name="response" value="declined" class="btn btn-danger btn-custom">
+                                            <i class="fas fa-times"></i> Rechazar
+                                        </button>
+                                    </form>
+                                {% elif user_attendee.response_status == 'accepted' %}
+                                    <div class="alert alert-success mb-0">
+                                        <i class="fas fa-check-circle"></i> 
+                                        <strong>Has aceptado esta reunión</strong>
+                                        <br><small class="text-muted">Respondido el {{ user_attendee.response_date|date:"d/m/Y H:i" }}</small>
+                                    </div>
+                                {% elif user_attendee.response_status == 'declined' %}
+                                    <div class="alert alert-danger mb-0">
+                                        <i class="fas fa-times-circle"></i> 
+                                        <strong>Has rechazado esta reunión</strong>
+                                        <br><small class="text-muted">Respondido el {{ user_attendee.response_date|date:"d/m/Y H:i" }}</small>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
 
                         <!-- Registro de asistentes -->
                         <div class="card info-card mb-4">
@@ -218,11 +385,98 @@
                         </div>
                         {% endif %}
 
+                        <!-- Evaluación de la reunión -->
+                        {% if user_registered %}
+                        <div class="card info-card mb-4">
+                            <div class="card-body bg-white">
+                                <h5 class="card-title"><i class="fas fa-star text-warning"></i> Evalúa esta reunión</h5>
+                                
+                                {% if user_rating %}
+                                    <div class="alert alert-success mb-0">
+                                        <i class="fas fa-check-circle"></i>
+                                        <strong>Ya has evaluado esta reunión</strong>
+                                        <div class="mt-3 text-center">
+                                            <div style="font-size: 3rem;">
+                                                {% if user_rating.rating == 'happy' %}
+                                                    😊
+                                                {% elif user_rating.rating == 'neutral' %}
+                                                    😐
+                                                {% else %}
+                                                    😞
+                                                {% endif %}
+                                            </div>
+                                            {% if user_rating.comment %}
+                                                <p class="mt-3 mb-0"><em>"{{ user_rating.comment }}"</em></p>
+                                            {% endif %}
+                                            <small class="text-muted d-block mt-2">
+                                                Evaluado el {{ user_rating.created_at|date:"d/m/Y H:i" }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <p class="text-muted mb-3">¿Cómo te pareció la reunión?</p>
+                                    <form method="post" action="{% url 'meeting_rate' meeting.public_token %}">
+                                        {% csrf_token %}
+                                        
+                                        <!-- Caras de evaluación -->
+                                        <div class="d-flex justify-content-center gap-4 mb-4">
+                                            <label class="rating-option" style="cursor: pointer;">
+                                                <input type="radio" name="rating" value="sad" required style="display: none;">
+                                                <div class="rating-face" style="font-size: 4rem; transition: transform 0.2s;" 
+                                                     onmouseover="this.style.transform='scale(1.2)'" 
+                                                     onmouseout="this.style.transform='scale(1)'"
+                                                     onclick="this.parentElement.querySelector('input').checked=true; document.querySelectorAll('.rating-face').forEach(f => f.style.opacity='0.3'); this.style.opacity='1';">
+                                                    😞
+                                                </div>
+                                                <div class="text-center"><small>Triste</small></div>
+                                            </label>
+                                            
+                                            <label class="rating-option" style="cursor: pointer;">
+                                                <input type="radio" name="rating" value="neutral" required style="display: none;">
+                                                <div class="rating-face" style="font-size: 4rem; transition: transform 0.2s;" 
+                                                     onmouseover="this.style.transform='scale(1.2)'" 
+                                                     onmouseout="this.style.transform='scale(1)'"
+                                                     onclick="this.parentElement.querySelector('input').checked=true; document.querySelectorAll('.rating-face').forEach(f => f.style.opacity='0.3'); this.style.opacity='1';">
+                                                    😐
+                                                </div>
+                                                <div class="text-center"><small>Neutral</small></div>
+                                            </label>
+                                            
+                                            <label class="rating-option" style="cursor: pointer;">
+                                                <input type="radio" name="rating" value="happy" required style="display: none;">
+                                                <div class="rating-face" style="font-size: 4rem; transition: transform 0.2s;" 
+                                                     onmouseover="this.style.transform='scale(1.2)'" 
+                                                     onmouseout="this.style.transform='scale(1)'"
+                                                     onclick="this.parentElement.querySelector('input').checked=true; document.querySelectorAll('.rating-face').forEach(f => f.style.opacity='0.3'); this.style.opacity='1';">
+                                                    😊
+                                                </div>
+                                                <div class="text-center"><small>Feliz</small></div>
+                                            </label>
+                                        </div>
+                                        
+                                        <!-- Comentario opcional -->
+                                        <div class="mb-3">
+                                            <label class="form-label">Comentario (opcional)</label>
+                                            <textarea name="comment" class="form-control" rows="3" 
+                                                      placeholder="Cuéntanos más sobre tu experiencia..."></textarea>
+                                        </div>
+                                        
+                                        <div class="text-center">
+                                            <button type="submit" class="btn btn-warning btn-custom">
+                                                <i class="fas fa-star"></i> Enviar Evaluación
+                                            </button>
+                                        </div>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
                         <!-- Preguntas y respuestas -->
                         {% if user_questions %}
                         <div class="card info-card">
                             <div class="card-header bg-secondary text-white">
-                                <h5 class="mb-0"><i class="fas fa-comments"></i> Mis Preguntas</h5>
+                                <h5 class="mb-0"><i class="fas fa-comments"></i> Tus Registros</h5>
                             </div>
                             <div class="card-body">
                                 {% for question in user_questions %}

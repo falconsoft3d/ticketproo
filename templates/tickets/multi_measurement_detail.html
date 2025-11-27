@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chart-container {
+        position: relative;
+        height: 400px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="bi bi-graph-up"></i> 
+            <span class="badge bg-primary">{{ measurement.sequence_number }}</span>
+            {{ measurement.title }}
+        </h2>
+        <div>
+            <a href="{% url 'multi_measurement_list' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+            <a href="{% url 'multi_measurement_edit' measurement.pk %}" class="btn btn-warning">
+                <i class="bi bi-pencil"></i> Editar
+            </a>
+            <a href="{% url 'multi_measurement_delete' measurement.pk %}" class="btn btn-danger">
+                <i class="bi bi-trash"></i> Eliminar
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <!-- Gráfico -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <strong><i class="bi bi-bar-chart"></i> Gráfico de Mediciones</strong>
+                </div>
+                <div class="card-body">
+                    {% if records %}
+                        <div class="chart-container">
+                            <canvas id="measurementChart"></canvas>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-graph-up" style="font-size: 3rem; color: #ccc;"></i>
+                            <p class="text-muted mt-3">No hay registros aún</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Tabla de Registros -->
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <strong><i class="bi bi-table"></i> Registros ({{ records.count }})</strong>
+                </div>
+                <div class="card-body">
+                    {% if records %}
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha y Hora</th>
+                                        <th>{{ measurement.label_1 }}</th>
+                                        <th>{{ measurement.label_2 }}</th>
+                                        <th>{{ measurement.label_3 }}</th>
+                                        <th>{{ measurement.label_4 }}</th>
+                                        <th>{{ measurement.label_5 }}</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for record in records %}
+                                        <tr>
+                                            <td>{{ record.date|date:"d/m/Y H:i" }}</td>
+                                            <td>{{ record.value_1|default:"-" }}</td>
+                                            <td>{{ record.value_2|default:"-" }}</td>
+                                            <td>{{ record.value_3|default:"-" }}</td>
+                                            <td>{{ record.value_4|default:"-" }}</td>
+                                            <td>{{ record.value_5|default:"-" }}</td>
+                                            <td>
+                                                <form method="post" action="{% url 'multi_measurement_record_delete' measurement.pk record.pk %}" 
+                                                      style="display: inline;"
+                                                      onsubmit="return confirm('¿Estás seguro de eliminar este registro?');">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-sm btn-danger" title="Eliminar">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center py-3">No hay registros aún</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-md-4">
+            <!-- URL Pública para Registrar -->
+            <div class="card mb-3">
+                <div class="card-header bg-success text-white">
+                    <strong><i class="bi bi-link-45deg"></i> URL Registro Público</strong>
+                </div>
+                <div class="card-body">
+                    <div class="input-group mb-2">
+                        <input type="text" class="form-control form-control-sm" id="publicUrl" 
+                               value="{{ request.scheme }}://{{ request.get_host }}{% url 'multi_measurement_public' measurement.public_token %}" 
+                               readonly>
+                        <button class="btn btn-outline-secondary btn-sm" type="button" onclick="copyUrl('publicUrl')">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+                    <small class="text-muted">
+                        Para registrar mediciones diarias
+                    </small>
+                </div>
+            </div>
+
+            <!-- URL Pública del Gráfico -->
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <strong><i class="bi bi-bar-chart"></i> URL Gráfico Público</strong>
+                </div>
+                <div class="card-body">
+                    <div class="input-group mb-2">
+                        <input type="text" class="form-control form-control-sm" id="chartUrl" 
+                               value="{{ request.scheme }}://{{ request.get_host }}{% url 'multi_measurement_public_chart' measurement.public_token %}" 
+                               readonly>
+                        <button class="btn btn-outline-secondary btn-sm" type="button" onclick="copyUrl('chartUrl')">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+                    <small class="text-muted">
+                        Para ver el gráfico y tabla de datos
+                    </small>
+                    <div class="mt-2">
+                        <a href="{% url 'multi_measurement_public_chart' measurement.public_token %}" 
+                           target="_blank" class="btn btn-sm btn-primary w-100">
+                            <i class="bi bi-eye"></i> Ver Gráfico Público
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QR Code Gráfico -->
+            <div class="card mb-3">
+                <div class="card-header bg-info text-white">
+                    <strong><i class="bi bi-qr-code"></i> QR Gráfico</strong>
+                </div>
+                <div class="card-body text-center">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ request.scheme }}://{{ request.get_host }}{% url 'multi_measurement_public_chart' measurement.public_token %}" 
+                         alt="QR Code Gráfico" class="img-fluid mb-2">
+                    <small class="text-muted d-block">Escanea para ver el gráfico</small>
+                </div>
+            </div>
+
+            <!-- Información -->
+            <div class="card mb-3">
+                <div class="card-header bg-info text-white">
+                    <strong><i class="bi bi-info-circle"></i> Información</strong>
+                </div>
+                <div class="card-body">
+                    <p class="small mb-2">
+                        <strong>Estado:</strong> 
+                        {% if measurement.is_active %}
+                            <span class="badge bg-success">Activo</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Inactivo</span>
+                        {% endif %}
+                    </p>
+                    <p class="small mb-2">
+                        <strong>Creado:</strong> {{ measurement.created_at|date:"d/m/Y H:i" }}
+                    </p>
+                    <p class="small mb-0">
+                        <strong>Total Registros:</strong> {{ records.count }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Etiquetas -->
+            <div class="card">
+                <div class="card-header bg-warning">
+                    <strong><i class="bi bi-tags"></i> Etiquetas</strong>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-1"><span class="badge bg-primary">1</span> {{ measurement.label_1 }}</li>
+                        <li class="mb-1"><span class="badge bg-danger">2</span> {{ measurement.label_2 }}</li>
+                        <li class="mb-1"><span class="badge bg-warning text-dark">3</span> {{ measurement.label_3 }}</li>
+                        <li class="mb-1"><span class="badge bg-info">4</span> {{ measurement.label_4 }}</li>
+                        <li class="mb-0"><span class="badge bg-secondary">5</span> {{ measurement.label_5 }}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+    function copyUrl(inputId) {
+        const urlInput = document.getElementById(inputId);
+        urlInput.select();
+        document.execCommand('copy');
+        
+        // Mostrar feedback
+        const btn = event.target.closest('button');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check"></i>';
+        setTimeout(() => {
+            btn.innerHTML = originalHTML;
+        }, 2000);
+    }
+
+    {% if records %}
+    // Crear gráfico
+    const ctx = document.getElementById('measurementChart').getContext('2d');
+    const chartData = {{ chart_data|safe }};
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: chartData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Evolución de Mediciones'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    {% endif %}
+</script>
+{% endblock %}

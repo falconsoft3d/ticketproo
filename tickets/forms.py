@@ -50,7 +50,8 @@ from .models import (
     AITutor, AITutorProgressReport, AITutorAttachment, ExpenseReport, ExpenseItem, ExpenseComment,
     VideoMeeting, MeetingNote, QuoteGenerator, CountdownTimer, AbsenceType,
     MonthlyCumplimiento, DailyCumplimiento, QRCode, CrmQuestion, SupportMeeting, SupportMeetingPoint, ScheduledTask,
-    ClientRequest, ClientRequestResponse, ClientRequestTemplate, ClientRequestTemplateItem, Event, Trip, TripStop
+    ClientRequest, ClientRequestResponse, ClientRequestTemplate, ClientRequestTemplateItem, Event, Trip, TripStop,
+    MultiMeasurement, MultiMeasurementRecord, PersonalBudget, BudgetIncomeItem, BudgetExpenseItem, BudgetTransaction
 )
 
 class CategoryForm(forms.ModelForm):
@@ -8707,5 +8708,200 @@ class TripStopForm(forms.ModelForm):
                 'placeholder': 'Notas adicionales...'
             }),
         }
+
+
+class MultiMeasurementForm(forms.ModelForm):
+    """Formulario para mediciones múltiples"""
+    
+    class Meta:
+        model = MultiMeasurement
+        fields = ['title', 'label_1', 'label_2', 'label_3', 'label_4', 'label_5', 'is_active']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Mediciones de Temperatura'
+            }),
+            'label_1': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Temperatura Ambiente'
+            }),
+            'label_2': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Temperatura Corporal'
+            }),
+            'label_3': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Humedad'
+            }),
+            'label_4': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Presión Atmosférica'
+            }),
+            'label_5': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Velocidad del Viento'
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'title': 'Título',
+            'label_1': 'Etiqueta Medición 1',
+            'label_2': 'Etiqueta Medición 2',
+            'label_3': 'Etiqueta Medición 3',
+            'label_4': 'Etiqueta Medición 4',
+            'label_5': 'Etiqueta Medición 5',
+            'is_active': 'Activo',
+        }
+
+
+class PersonalBudgetForm(forms.ModelForm):
+    """Formulario para presupuestos personales anuales"""
+    
+    class Meta:
+        model = PersonalBudget
+        fields = ['name', 'year', 'is_active', 'is_private']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Presupuesto Familiar'
+            }),
+            'year': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': '2025'
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'is_private': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        help_texts = {
+            'name': 'Nombre del presupuesto anual',
+            'year': 'Año del presupuesto',
+            'is_private': 'Solo tú podrás ver este presupuesto',
+        }
+
+
+class BudgetIncomeItemForm(forms.ModelForm):
+    """Formulario para partidas de ingreso"""
+    
+    class Meta:
+        model = BudgetIncomeItem
+        fields = ['name', 'budgeted_amount', 'order']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Nómina, Aguinaldo, etc.'
+            }),
+            'budgeted_amount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'placeholder': '0.00 €'
+            }),
+            'order': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': '0'
+            }),
+        }
+        labels = {
+            'budgeted_amount': 'Monto Mensual (€)',
+        }
+        help_texts = {
+            'budgeted_amount': 'Ingresa el monto mensual que esperas recibir en euros',
+        }
+
+
+class BudgetExpenseItemForm(forms.ModelForm):
+    """Formulario para partidas de egreso"""
+    
+    class Meta:
+        model = BudgetExpenseItem
+        fields = ['name', 'budgeted_amount', 'order']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Comida, Vivienda, Transporte, etc.'
+            }),
+            'budgeted_amount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'placeholder': '400.00 €'
+            }),
+            'order': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': '0'
+            }),
+        }
+        labels = {
+            'budgeted_amount': 'Monto Mensual (€)',
+        }
+        help_texts = {
+            'budgeted_amount': 'Ingresa el monto mensual que planeas gastar en euros (ej: 400 € en comida)',
+        }
+
+
+class BudgetTransactionForm(forms.ModelForm):
+    """Formulario para transacciones"""
+    
+    class Meta:
+        model = BudgetTransaction
+        fields = ['transaction_type', 'income_item', 'expense_item', 'amount', 'description', 'transaction_date']
+        widgets = {
+            'transaction_type': forms.Select(attrs={
+                'class': 'form-select',
+                'onchange': 'toggleItems()'
+            }),
+            'income_item': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'expense_item': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'amount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'placeholder': '0.00'
+            }),
+            'description': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Descripción opcional'
+            }),
+            'transaction_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        budget = kwargs.pop('budget', None)
+        super().__init__(*args, **kwargs)
+        
+        # Hacer los items opcionales
+        self.fields['income_item'].required = False
+        self.fields['expense_item'].required = False
+        
+        if budget:
+            self.fields['income_item'].queryset = budget.income_items.all()
+            self.fields['expense_item'].queryset = budget.expense_items.all()
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        transaction_type = cleaned_data.get('transaction_type')
+        income_item = cleaned_data.get('income_item')
+        expense_item = cleaned_data.get('expense_item')
+        
+        # Validar que se seleccione el item correcto según el tipo
+        if transaction_type == 'income' and not income_item:
+            self.add_error('income_item', 'Debe seleccionar una partida de ingreso.')
+        
+        if transaction_type == 'expense' and not expense_item:
+            self.add_error('expense_item', 'Debe seleccionar una partida de egreso.')
+        
+        return cleaned_data
+
+
 
 

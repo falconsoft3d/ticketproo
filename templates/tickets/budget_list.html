@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2><i class="bi bi-calculator me-2"></i>{{ page_title }}</h2>
+                <a href="{% url 'budget_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-1"></i>Nuevo Presupuesto
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {% if budgets %}
+    <div class="row g-4">
+        {% for budget in budgets %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm hover-shadow">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h5 class="mb-0">
+                                <i class="bi bi-calendar-year me-2"></i>{{ budget.name }}
+                            </h5>
+                            <small>Año {{ budget.year }}</small>
+                        </div>
+                        <div>
+                            {% if budget.is_private %}
+                            <span class="badge bg-warning text-dark" title="Presupuesto Privado">
+                                <i class="bi bi-lock-fill"></i>
+                            </span>
+                            {% else %}
+                            <span class="badge bg-success" title="Presupuesto Público">
+                                <i class="bi bi-unlock-fill"></i>
+                            </span>
+                            {% endif %}
+                            {% if budget.user != request.user %}
+                            <span class="badge bg-info text-dark ms-1" title="Creado por {{ budget.user.username }}">
+                                <i class="bi bi-person-fill"></i> {{ budget.user.username }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-success"><i class="bi bi-arrow-up-circle me-1"></i>Ingresos:</span>
+                            <strong class="text-success">€{{ budget.get_total_income_budget|floatformat:2 }}</strong>
+                        </div>
+                        <div class="progress mb-2" style="height: 8px;">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {% if budget.get_total_income_budget > 0 %}{{ budget.get_total_income_actual|floatformat:2|cut:' ' }} / {{ budget.get_total_income_budget|floatformat:2|cut:' ' }} * 100{% else %}0{% endif %}%" 
+                                 aria-valuenow="{{ budget.get_total_income_actual }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="{{ budget.get_total_income_budget }}">
+                            </div>
+                        </div>
+                        <small class="text-muted">Actual: €{{ budget.get_total_income_actual|floatformat:2 }}</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-danger"><i class="bi bi-arrow-down-circle me-1"></i>Egresos:</span>
+                            <strong class="text-danger">€{{ budget.get_total_expense_budget|floatformat:2 }}</strong>
+                        </div>
+                        <div class="progress mb-2" style="height: 8px;">
+                            <div class="progress-bar bg-danger" role="progressbar" 
+                                 style="width: {% if budget.get_total_expense_budget > 0 %}{% widthratio budget.get_total_expense_actual 1 budget.get_total_expense_budget %}{% else %}0{% endif %}%" 
+                                 aria-valuenow="{{ budget.get_total_expense_actual }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="{{ budget.get_total_expense_budget }}">
+                            </div>
+                        </div>
+                        <small class="text-muted">Actual: €{{ budget.get_total_expense_actual|floatformat:2 }}</small>
+                    </div>
+                    
+                    {% with net_budget=budget.get_total_income_budget|add:"-"|add:budget.get_total_expense_budget %}
+                    {% with net_actual=budget.get_total_income_actual|add:"-"|add:budget.get_total_expense_actual %}
+                    <div class="border-top pt-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-wallet2 me-1"></i>Balance:</span>
+                            <strong class="{% if net_actual >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                €{{ net_actual|floatformat:2 }}
+                            </strong>
+                        </div>
+                    </div>
+                    {% endwith %}
+                    {% endwith %}
+                </div>
+                <div class="card-footer bg-light">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'budget_detail' budget.pk %}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-eye me-1"></i>Ver Detalle
+                        </a>
+                        {% if budget.user == request.user %}
+                        <div>
+                            <a href="{% url 'budget_edit' budget.pk %}" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{% url 'budget_delete' budget.pk %}" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-info text-center">
+                <i class="bi bi-info-circle me-2"></i>
+                No tienes presupuestos creados. 
+                <a href="{% url 'budget_create' %}" class="alert-link">Crea tu primer presupuesto</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.hover-shadow {
+    transition: box-shadow 0.3s ease;
+}
+.hover-shadow:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15)!important;
+}
+</style>
+{% endblock %}
