@@ -1519,13 +1519,27 @@
     {% load tickets_tags %}
     {% if user.is_authenticated and user|is_agent %}
     <button id="eventsSidebarToggle" class="btn btn-primary shadow-lg" 
-            style="position: fixed; left: 0; top: calc(50% - 200px); transform: translateY(-50%); z-index: 1050; 
+            style="position: fixed; left: 0; top: calc(50% - 70px); transform: translateY(-50%); z-index: 1050; 
                    border-radius: 0 8px 8px 0; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
                    border-left: none; transition: all 0.3s ease;"
             onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
             onmouseout="this.style.transform = 'translateY(-50%) scale(1)'">
         <i class="bi bi-calendar-event-fill"></i>
         <span id="upcomingEventsBadge" class="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger" style="font-size: 0.7em;">
+            0
+        </span>
+    </button>
+    
+    <!-- Botón flotante para tareas rápidas (izquierda) - Solo para agentes -->
+    <button id="quickTaskToggle" class="btn btn-success shadow-lg" 
+            style="position: fixed; left: 0; top: calc(50% - 150px); transform: translateY(-50%); z-index: 1050; 
+                   border-radius: 0 8px 8px 0; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
+                   border-left: none; transition: all 0.3s ease;"
+            onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
+            onmouseout="this.style.transform = 'translateY(-50%) scale(1)'"
+            title="Crear Tarea Rápida">
+        <i class="bi bi-clipboard-check-fill"></i>
+        <span id="pendingTasksBadge" class="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger" style="font-size: 0.7em;">
             0
         </span>
     </button>
@@ -2181,6 +2195,86 @@
                         <button type="button" class="btn btn-warning" id="saveQuickNote" onclick="window.saveQuickNote()">
                             <i class="bi bi-save me-1"></i>
                             Guardar Nota
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para crear tarea rápida -->
+    <div class="modal fade" id="quickTaskModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-clipboard-check me-2"></i>
+                        Crear Tarea Rápida
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="quickTaskForm">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="quickTaskTitle" class="form-label">
+                                <i class="bi bi-card-heading me-1"></i>
+                                Título de la tarea *
+                            </label>
+                            <input type="text" class="form-control" id="quickTaskTitle" 
+                                   placeholder="¿Qué necesitas hacer?" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="quickTaskDescription" class="form-label">
+                                <i class="bi bi-textarea-t me-1"></i>
+                                Descripción
+                            </label>
+                            <textarea class="form-control" id="quickTaskDescription" rows="3" 
+                                      placeholder="Detalles adicionales..."></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="quickTaskAssignedUser" class="form-label">
+                                <i class="bi bi-person me-1"></i>
+                                Asignar a (opcional)
+                            </label>
+                            <select class="form-select" id="quickTaskAssignedUser">
+                                <option value="">-- Asignarme a mí (por defecto) --</option>
+                            </select>
+                            <small class="text-muted">Si no seleccionas nadie, la tarea se te asignará automáticamente</small>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="quickTaskPriority" class="form-label">
+                                        <i class="bi bi-exclamation-triangle me-1"></i>
+                                        Prioridad
+                                    </label>
+                                    <select class="form-select" id="quickTaskPriority">
+                                        <option value="low">Baja</option>
+                                        <option value="medium" selected>Media</option>
+                                        <option value="high">Alta</option>
+                                        <option value="urgent">Urgente</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="quickTaskDueDate" class="form-label">
+                                        <i class="bi bi-calendar me-1"></i>
+                                        Fecha límite
+                                    </label>
+                                    <input type="date" class="form-control" id="quickTaskDueDate">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle me-1"></i>
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-save me-1"></i>
+                            Crear Tarea
                         </button>
                     </div>
                 </form>
@@ -4803,6 +4897,204 @@
         }
         // ========== FIN FUNCIONES PARA SIDEBAR DE EVENTOS ==========
 
+        // ========== FUNCIONES PARA TAREAS RÁPIDAS ==========
+        function createQuickTask() {
+            // Buscar elementos con logging para debug
+            const titleElement = document.getElementById('quickTaskTitle');
+            const descriptionElement = document.getElementById('quickTaskDescription');
+            const priorityElement = document.getElementById('quickTaskPriority');
+            const dueDateElement = document.getElementById('quickTaskDueDate');
+            const assignedUserElement = document.getElementById('quickTaskAssignedUser');
+            
+            console.log('Elementos encontrados:', {
+                titleElement: titleElement,
+                descriptionElement: descriptionElement,
+                priorityElement: priorityElement,
+                dueDateElement: dueDateElement,
+                assignedUserElement: assignedUserElement
+            });
+            
+            if (!titleElement) {
+                console.error('No se encontró el elemento quickTaskTitle');
+                alert('Error: No se encontró el campo de título');
+                return;
+            }
+            
+            if (!descriptionElement) {
+                console.error('No se encontró el elemento quickTaskDescription');
+                alert('Error: No se encontró el campo de descripción');
+                return;
+            }
+            
+            if (!priorityElement) {
+                console.error('No se encontró el elemento quickTaskPriority');
+                alert('Error: No se encontró el campo de prioridad');
+                return;
+            }
+            
+            const title = titleElement.value.trim();
+            const description = descriptionElement.value.trim();
+            const priority = priorityElement.value;
+            const dueDate = dueDateElement ? dueDateElement.value : '';
+            const assignedUserId = assignedUserElement ? assignedUserElement.value : '';
+            
+            console.log('Valores capturados:', {title, description, priority, dueDate, assignedUserId});
+            
+            if (!title) {
+                alert('El título es requerido');
+                return;
+            }
+            
+            // Crear el objeto de la tarea
+            const taskData = {
+                title: title,
+                description: description || '',
+                priority: priority,
+                due_date: dueDate || null,
+                assigned_user_id: assignedUserId || null
+            };
+            
+            // Obtener CSRF token
+            const csrfToken = getCookie('csrftoken') || document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+            
+            if (!csrfToken) {
+                console.error('No se encontró el token CSRF');
+                alert('Error: No se pudo obtener el token de seguridad');
+                return;
+            }
+            
+            console.log('Enviando tarea al servidor...', taskData);
+            
+            // Enviar al servidor
+            fetch('/api/tasks/quick-create/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify(taskData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => Promise.reject(err));
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Cerrar modal
+                    const modalElement = document.getElementById('quickTaskModal');
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    if (modal) {
+                        modal.hide();
+                    }
+                    
+                    // Limpiar formulario
+                    const form = document.getElementById('quickTaskForm');
+                    if (form) {
+                        form.reset();
+                    }
+                    
+                    // Actualizar contador
+                    loadPendingTasksCount();
+                    
+                    // Mostrar notificación
+                    if (typeof showToast === 'function') {
+                        showToast('success', 'Tarea creada', data.message || 'Tarea creada exitosamente');
+                    } else {
+                        alert('Tarea creada exitosamente');
+                    }
+                    
+                    // Redirigir a la lista de tareas
+                    setTimeout(() => {
+                        window.location.href = '/tasks/';
+                    }, 1000);
+                } else {
+                    alert('Error al crear la tarea: ' + (data.error || 'Error desconocido'));
+                    console.error('Error del servidor:', data);
+                }
+            })
+            .catch(error => {
+                console.error('Error completo:', error);
+                alert('Error al crear la tarea: ' + (error.error || error.message || 'Error desconocido'));
+            });
+        }
+        
+        function loadPendingTasksCount() {
+            fetch('/api/tasks/pending-count/', {
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error en la respuesta: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('[Tareas] Contador recibido:', data);
+                    const badge = document.getElementById('pendingTasksBadge');
+                    if (badge && data.success) {
+                        const count = data.count || 0;
+                        badge.textContent = count;
+                        badge.className = count > 0 
+                            ? 'position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger'
+                            : 'position-absolute top-0 end-0 translate-middle badge rounded-pill bg-secondary';
+                        badge.style.fontSize = '0.7em';
+                        badge.style.display = count > 0 ? 'inline-block' : 'none';
+                        console.log('[Tareas] Badge actualizado con count:', count);
+                    } else {
+                        console.warn('[Tareas] Badge no encontrado o datos inválidos');
+                    }
+                })
+                .catch(error => {
+                    console.error('[Tareas] Error al cargar contador:', error);
+                });
+        }
+        
+        function loadUsersForTaskModal() {
+            const select = document.getElementById('quickTaskAssignedUser');
+            if (!select || select.options.length > 1) {
+                console.log('[Tareas] Usuarios ya cargados en el select');
+                return; // Ya está cargado
+            }
+            
+            console.log('[Tareas] Cargando lista de usuarios...');
+            
+            fetch('/api/tasks/users/', {
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error en la respuesta: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('[Tareas] Usuarios recibidos:', data);
+                    if (data.success && data.users && data.users.length > 0) {
+                        data.users.forEach(user => {
+                            const option = document.createElement('option');
+                            option.value = user.id;
+                            option.textContent = user.full_name || user.username;
+                            select.appendChild(option);
+                        });
+                        console.log('[Tareas] Se agregaron', data.users.length, 'usuarios al select');
+                    } else {
+                        console.warn('[Tareas] No se recibieron usuarios o la respuesta no fue exitosa', data);
+                    }
+                })
+                .catch(error => {
+                    console.error('[Tareas] Error al cargar usuarios:', error);
+                });
+        }
+        // ========== FIN FUNCIONES PARA TAREAS RÁPIDAS ==========
+
         // Funciones para acciones de usuario
         function startUserChat(userId, userName) {
             console.log(`[Chat] Iniciando conversación con ${userName} (ID: ${userId})`);
@@ -5511,17 +5803,38 @@
                 document.getElementById('closeAIChat').addEventListener('click', closeAIChat);
                 document.getElementById('aiChatOverlay').addEventListener('click', closeAIChat);
                 
+                // Event listener para tareas rápidas
+                const quickTaskToggle = document.getElementById('quickTaskToggle');
+                if (quickTaskToggle) {
+                    quickTaskToggle.addEventListener('click', function() {
+                        loadUsersForTaskModal();
+                        const modal = new bootstrap.Modal(document.getElementById('quickTaskModal'));
+                        modal.show();
+                    });
+                }
+                
+                // Manejar el formulario de tareas rápidas
+                const quickTaskForm = document.getElementById('quickTaskForm');
+                if (quickTaskForm) {
+                    quickTaskForm.addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        createQuickTask();
+                    });
+                }
+                
                 // Cargar conteo inicial
                 loadActiveUsersCount();
                 loadPendingTodosCount();
                 loadActiveUsersSidebar(); // Cargar lista inicial de usuarios activos
                 loadUpcomingEvents(); // Cargar lista inicial de eventos
+                loadPendingTasksCount(); // Cargar conteo de tareas pendientes
                 
                 // Recargar conteo cada 2 minutos
                 setInterval(loadActiveUsersCount, 120000);
                 setInterval(loadPendingTodosCount, 120000);
                 setInterval(loadActiveUsersSidebar, 120000); // Recargar lista cada 2 minutos
                 setInterval(loadUpcomingEvents, 120000); // Recargar eventos cada 2 minutos
+                setInterval(loadPendingTasksCount, 120000); // Recargar contador de tareas cada 2 minutos
                 
                 console.log('[Barra Lateral] Sistema de usuarios activos inicializado');
                 console.log('[Eventos] Sistema de eventos inicializado');

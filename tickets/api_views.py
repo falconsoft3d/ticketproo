@@ -1019,3 +1019,133 @@ def web_counter_stats(request, token):
         return Response({'error': 'Contador no encontrado'}, status=404)
     except Exception as e:
         return Response({'error': str(e)}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def quick_create_task(request):
+    """Crear tarea rápida desde el botón flotante"""
+    from .models import Task
+    from datetime import datetime
+    
+    try:
+        # Usar request.data en lugar de json.loads(request.body) para DRF
+        data = request.data
+        title = data.get('title', '').strip()
+        description = data.get('description', '').strip()
+        priority = data.get('priority', 'medium')
+        due_date_str = data.get('due_date')
+        assigned_user_id = data.get('assigned_user_id')
+        
+        if not title:
+            return JsonResponse({
+                'success': False,
+                'error': 'El título es requerido'
+            }, status=400)
+        
+        # Convertir fecha si existe
+        due_date = None
+        if due_date_str:
+            try:
+                # Convertir fecha string (YYYY-MM-DD) a datetime
+                due_date = datetime.strptime(due_date_str, '%Y-%m-%d')
+                # Establecer la hora al final del día
+                due_date = due_date.replace(hour=23, minute=59, second=59)
+            except ValueError:
+                pass  # Si hay error en la fecha, simplemente la ignoramos
+        
+        # Crear la tarea
+        task = Task.objects.create(
+            title=title,
+            description=description if description else '',
+            priority=priority,
+            due_date=due_date,
+            created_by=request.user,
+            status='pending'
+        )
+        
+        # Asignar usuario: si se seleccionó uno, asignarlo, sino asignar al creador
+        if assigned_user_id:
+            try:
+                from django.contrib.auth.models import User
+                assigned_user = User.objects.get(id=assigned_user_id)
+                task.assigned_users.add(assigned_user)
+            except User.DoesNotExist:
+                # Si el usuario no existe, asignar al creador
+                task.assigned_users.add(request.user)
+        else:
+            # Si no se seleccionó usuario, asignar al creador
+            task.assigned_users.add(request.user)
+        
+        return JsonResponse({
+            'success': True,
+            'task_id': task.id,
+            'message': 'Tarea creada exitosamente'
+        })
+        
+    except Exception as e:
+        import traceback
+        return JsonResponse({
+            'success': False,
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }, status=500)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def pending_tasks_count(request):
+    """Obtener cantidad de tareas pendientes del usuario"""
+    from .models import Task
+    
+    try:
+        # Contar tareas pendientes o en progreso asignadas al usuario
+        count = Task.objects.filter(
+            assigned_users=request.user,
+            status__in=['pending', 'in_progress']
+        ).count()
+        
+        return JsonResponse({
+            'success': True,
+            'count': count
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e),
+            'count': 0
+        }, status=500)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_all_users_for_tasks(request):
+    """Obtener todos los usuarios para asignar tareas"""
+    from django.contrib.auth.models import User
+    
+    try:
+        users = User.objects.filter(is_active=True).order_by('first_name', 'last_name', 'username')
+        
+        users_data = []
+        for user in users:
+            full_name = user.get_full_name() or user.username
+            users_data.append({
+                'id': user.id,
+                'username': user.username,
+                'full_name': full_name,
+                'email': user.email
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'users': users_data
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e),
+            'users': []
+        }, status=500)
+
