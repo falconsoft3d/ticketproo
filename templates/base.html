@@ -1519,7 +1519,7 @@
     {% load tickets_tags %}
     {% if user.is_authenticated and user|is_agent %}
     <button id="eventsSidebarToggle" class="btn btn-primary shadow-lg" 
-            style="position: fixed; left: 0; top: calc(50% - 70px); transform: translateY(-50%); z-index: 1050; 
+            style="position: fixed; left: 0; top: calc(50% - 145px); transform: translateY(-50%); z-index: 1050; 
                    border-radius: 0 8px 8px 0; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
                    border-left: none; transition: all 0.3s ease;"
             onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
@@ -1532,7 +1532,7 @@
     
     <!-- Botón flotante para tareas rápidas (izquierda) - Solo para agentes -->
     <button id="quickTaskToggle" class="btn btn-success shadow-lg" 
-            style="position: fixed; left: 0; top: calc(50% - 150px); transform: translateY(-50%); z-index: 1050; 
+            style="position: fixed; left: 0; top: calc(50% - 225px); transform: translateY(-50%); z-index: 1050; 
                    border-radius: 0 8px 8px 0; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
                    border-left: none; transition: all 0.3s ease;"
             onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
