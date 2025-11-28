@@ -7,7 +7,7 @@ from .api_views import (
     active_users_count, active_users_list, open_tickets_count, direct_ai_chat,
     system_info_api, short_url_stats_api, upcoming_events_list, web_counter_track,
     web_counter_stats, quick_create_task, pending_tasks_count, get_all_users_for_tasks,
-    dynamic_table_api_list, dynamic_table_api_detail
+    dynamic_table_api_list, dynamic_table_api_detail, my_pending_work_orders
 )
 
 # Router para los ViewSets
@@ -39,6 +39,9 @@ api_urlpatterns = [
     
     # URLs de eventos
     path('upcoming-events/', upcoming_events_list, name='api-upcoming-events-list'),
+    
+    # URLs de órdenes de trabajo
+    path('my-pending-work-orders/', my_pending_work_orders, name='api-my-pending-work-orders'),
     
     # URLs de tickets
     path('open-tickets/count/', open_tickets_count, name='api-open-tickets-count'),

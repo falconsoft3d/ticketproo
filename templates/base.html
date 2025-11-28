@@ -1548,6 +1548,20 @@
         </span>
     </button>
     
+    <!-- Botón flotante para órdenes de trabajo pendientes (izquierda) - Solo para agentes -->
+    <button id="workOrdersSidebarToggle" class="btn btn-warning shadow-lg" 
+            style="position: fixed; left: 0; top: calc(50% - 65px); transform: translateY(-50%); z-index: 1050; 
+                   border-radius: 0 8px 8px 0; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
+                   border-left: none; transition: all 0.3s ease;"
+            onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
+            onmouseout="this.style.transform = 'translateY(-50%) scale(1)'"
+            title="Mis Órdenes de Trabajo Pendientes">
+        <i class="bi bi-tools"></i>
+        <span id="pendingWorkOrdersBadge" class="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger" style="font-size: 0.7em;">
+            0
+        </span>
+    </button>
+    
     <!-- Botón flotante para Red Social (izquierda) -->
     <a href="{% url 'social_feed' %}" class="btn btn-info shadow-lg" 
             style="position: fixed; left: 0; top: calc(50% - 305px); transform: translateY(-50%); z-index: 1050; 
@@ -1663,6 +1677,51 @@
             <a href="{% url 'event_calendar' %}" class="btn btn-primary w-100">
                 <i class="bi bi-calendar3 me-2"></i>
                 Ver Calendario Completo
+            </a>
+        </div>
+    </div>
+
+    <!-- Barra lateral para órdenes de trabajo pendientes -->
+    <div id="workOrdersSidebar" class="shadow-lg" 
+         style="position: fixed; left: -400px; top: 0; width: 400px; height: 100vh; 
+                background: white; z-index: 1040; transition: left 0.3s ease; border-right: 3px solid #ffc107;
+                overflow: hidden; display: flex; flex-direction: column;">
+        
+        <!-- Header de la barra lateral -->
+        <div class="p-3 bg-warning text-dark d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <i class="bi bi-tools me-2"></i>
+                    Mis Órdenes de Trabajo
+                </h6>
+                <small class="opacity-75">Pendientes de terminar</small>
+            </div>
+            <button id="closeWorkOrdersSidebar" class="btn btn-sm btn-outline-dark">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <!-- Información de actualización -->
+        <div class="px-3 py-2 bg-light border-bottom">
+            <small class="text-muted d-flex justify-content-between">
+                <span>
+                    <i class="bi bi-clock me-1"></i>
+                    Última actualización
+                </span>
+                <strong id="lastUpdateWorkOrdersSidebar">--:--</strong>
+            </small>
+        </div>
+
+        <!-- Contenedor del listado (con scroll) -->
+        <div id="workOrdersListSidebar" class="flex-grow-1 overflow-auto p-3">
+            <!-- Aquí se cargarán las órdenes de trabajo dinámicamente -->
+        </div>
+
+        <!-- Footer con botón para ver todas -->
+        <div class="p-3 border-top bg-light">
+            <a href="{% url 'work_order_list' %}" class="btn btn-warning w-100">
+                <i class="bi bi-list-check me-2"></i>
+                Ver Todas las Órdenes
             </a>
         </div>
     </div>
@@ -4938,6 +4997,179 @@
         }
         // ========== FIN FUNCIONES PARA SIDEBAR DE EVENTOS ==========
 
+        // ========== FUNCIONES PARA SIDEBAR DE ÓRDENES DE TRABAJO ==========
+        let workOrdersSidebarOpen = false;
+        let workOrdersAutoRefreshInterval = null;
+
+        function toggleWorkOrdersSidebar() {
+            const sidebar = document.getElementById('workOrdersSidebar');
+            const toggle = document.getElementById('workOrdersSidebarToggle');
+            
+            if (!workOrdersSidebarOpen) {
+                // Abrir barra lateral
+                sidebar.style.left = '0px';
+                toggle.style.left = '400px';
+                workOrdersSidebarOpen = true;
+                
+                // Cargar órdenes de trabajo cuando se abre
+                loadPendingWorkOrders();
+                
+                // Iniciar auto-refresh
+                startWorkOrdersAutoRefresh();
+            } else {
+                // Cerrar barra lateral
+                closeWorkOrdersSidebar();
+            }
+        }
+
+        function closeWorkOrdersSidebar() {
+            const sidebar = document.getElementById('workOrdersSidebar');
+            const toggle = document.getElementById('workOrdersSidebarToggle');
+            
+            sidebar.style.left = '-400px';
+            toggle.style.left = '0';
+            workOrdersSidebarOpen = false;
+            
+            // Detener auto-refresh
+            stopWorkOrdersAutoRefresh();
+        }
+
+        function loadPendingWorkOrders() {
+            const listContainer = document.getElementById('workOrdersListSidebar');
+            const lastUpdateElement = document.getElementById('lastUpdateWorkOrdersSidebar');
+            
+            // Mostrar loading
+            listContainer.innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-warning" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Cargando órdenes de trabajo...</p>
+                </div>
+            `;
+            
+            // Llamada a la API
+            fetch('/api/my-pending-work-orders/')
+                .then(response => response.json())
+                .then(data => {
+                    displayPendingWorkOrders(data.work_orders);
+                    updatePendingWorkOrdersCount(data.count);
+                    
+                    // Actualizar tiempo
+                    const now = new Date();
+                    lastUpdateElement.textContent = now.toLocaleTimeString('es-ES', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                })
+                .catch(error => {
+                    console.log('[Órdenes] Error al cargar órdenes de trabajo:', error);
+                    listContainer.innerHTML = `
+                        <div class="text-center py-4">
+                            <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-2">Error al cargar órdenes de trabajo</p>
+                        </div>
+                    `;
+                });
+        }
+
+        function displayPendingWorkOrders(workOrders) {
+            const listContainer = document.getElementById('workOrdersListSidebar');
+            
+            if (workOrders.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
+                        <p class="text-muted mt-2">¡No tienes órdenes pendientes!</p>
+                        <p class="text-muted small">Todas tus tareas están completadas</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const ordersHtml = workOrders.map(order => {
+                const statusBadge = order.status === 'pending' ? 'bg-warning' : 
+                                   order.status === 'in_progress' ? 'bg-info' : 'bg-secondary';
+                const statusText = order.status === 'pending' ? 'Pendiente' : 
+                                  order.status === 'in_progress' ? 'En Progreso' : order.status;
+                
+                const priorityIcon = order.priority === 'high' ? '🔴' : 
+                                    order.priority === 'medium' ? '🟡' : '🟢';
+                
+                return `
+                    <div class="card mb-2 border-0 shadow-sm hover-shadow" style="transition: all 0.2s;">
+                        <div class="card-body p-2">
+                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                <h6 class="mb-0 fw-bold" style="font-size: 0.9rem;">
+                                    ${priorityIcon} ${order.title || 'Sin título'}
+                                </h6>
+                                <span class="badge ${statusBadge} ms-2" style="font-size: 0.7rem;">
+                                    ${statusText}
+                                </span>
+                            </div>
+                            ${order.client ? `
+                                <p class="mb-1 text-muted" style="font-size: 0.75rem;">
+                                    <i class="bi bi-building me-1"></i>${order.client}
+                                </p>
+                            ` : ''}
+                            ${order.due_date ? `
+                                <p class="mb-1 text-muted" style="font-size: 0.75rem;">
+                                    <i class="bi bi-calendar me-1"></i>${order.due_date}
+                                </p>
+                            ` : ''}
+                            <div class="mt-2">
+                                <a href="${order.url}" class="btn btn-sm btn-outline-warning w-100" style="font-size: 0.75rem;">
+                                    <i class="bi bi-eye me-1"></i>Ver Detalle
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            listContainer.innerHTML = ordersHtml;
+        }
+
+        function updatePendingWorkOrdersCount(count) {
+            const badge = document.getElementById('pendingWorkOrdersBadge');
+            if (badge) {
+                badge.textContent = count;
+                badge.className = count > 0 
+                    ? 'position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger'
+                    : 'position-absolute top-0 end-0 translate-middle badge rounded-pill bg-secondary';
+                badge.style.fontSize = '0.7em';
+            }
+        }
+
+        function startWorkOrdersAutoRefresh() {
+            workOrdersAutoRefreshInterval = setInterval(() => {
+                if (workOrdersSidebarOpen) {
+                    loadPendingWorkOrders();
+                }
+            }, 60000); // Refrescar cada minuto
+        }
+
+        function stopWorkOrdersAutoRefresh() {
+            if (workOrdersAutoRefreshInterval) {
+                clearInterval(workOrdersAutoRefreshInterval);
+                workOrdersAutoRefreshInterval = null;
+            }
+        }
+
+        function loadPendingWorkOrdersCount() {
+            // Cargar solo el contador sin abrir el sidebar
+            fetch('/api/my-pending-work-orders/')
+                .then(response => response.json())
+                .then(data => {
+                    updatePendingWorkOrdersCount(data.count);
+                    console.log('[Órdenes] Contador actualizado:', data.count);
+                })
+                .catch(error => {
+                    console.log('[Órdenes] Error al cargar contador:', error);
+                });
+        }
+        // ========== FIN FUNCIONES PARA SIDEBAR DE ÓRDENES DE TRABAJO ==========
+
         // ========== FUNCIONES PARA TAREAS RÁPIDAS ==========
         function createQuickTask() {
             // Buscar elementos con logging para debug
@@ -5793,6 +6025,10 @@
                 document.getElementById('eventsSidebarToggle').addEventListener('click', toggleEventsSidebar);
                 document.getElementById('closeEventsSidebar').addEventListener('click', closeEventsSidebar);
                 
+                // Event listeners para sidebar de órdenes de trabajo
+                document.getElementById('workOrdersSidebarToggle').addEventListener('click', toggleWorkOrdersSidebar);
+                document.getElementById('closeWorkOrdersSidebar').addEventListener('click', closeWorkOrdersSidebar);
+                
                 // Event listeners para usuarios activos
                 document.getElementById('activeUsersSidebarToggle').addEventListener('click', toggleActiveUsersSidebar);
                 document.getElementById('closeSidebar').addEventListener('click', closeSidebar);
@@ -5869,6 +6105,7 @@
                 loadActiveUsersSidebar(); // Cargar lista inicial de usuarios activos
                 loadUpcomingEvents(); // Cargar lista inicial de eventos
                 loadPendingTasksCount(); // Cargar conteo de tareas pendientes
+                loadPendingWorkOrdersCount(); // Cargar conteo de órdenes de trabajo pendientes
                 
                 // Recargar conteo cada 2 minutos
                 setInterval(loadActiveUsersCount, 120000);
@@ -5876,9 +6113,11 @@
                 setInterval(loadActiveUsersSidebar, 120000); // Recargar lista cada 2 minutos
                 setInterval(loadUpcomingEvents, 120000); // Recargar eventos cada 2 minutos
                 setInterval(loadPendingTasksCount, 120000); // Recargar contador de tareas cada 2 minutos
+                setInterval(loadPendingWorkOrdersCount, 120000); // Recargar contador de órdenes cada 2 minutos
                 
                 console.log('[Barra Lateral] Sistema de usuarios activos inicializado');
                 console.log('[Eventos] Sistema de eventos inicializado');
+                console.log('[Órdenes] Sistema de órdenes de trabajo inicializado');
                 console.log('[Calculadora] Sistema de calculadora inicializado');
                 console.log('[Quick TODO] Sistema de tareas rápidas inicializado');
             }
@@ -5897,6 +6136,15 @@
             }
             
             #eventsSidebarToggle:hover {
+                transform: translateY(-50%) translateX(5px);
+                box-shadow: 0 8px 25px rgba(0,0,0,0.3) !important;
+            }
+
+            #workOrdersSidebarToggle {
+                transition: left 0.3s ease, transform 0.2s ease;
+            }
+            
+            #workOrdersSidebarToggle:hover {
                 transform: translateY(-50%) translateX(5px);
                 box-shadow: 0 8px 25px rgba(0,0,0,0.3) !important;
             }
@@ -6374,7 +6622,7 @@
         .rating-float-buttons {
             position: fixed;
             left: 20px;
-            top: 50%;
+            top: calc(50% + 6cm);
             transform: translateY(-50%);
             display: flex;
             flex-direction: column;

@@ -486,6 +486,52 @@ def upcoming_events_list(request):
         traceback.print_exc()
         return JsonResponse({'count': 0, 'events': [], 'error': str(e)})
 
+
+@login_required
+def my_pending_work_orders(request):
+    """
+    Devuelve las órdenes de trabajo pendientes del usuario actual
+    """
+    try:
+        from .models import WorkOrder
+        from django.db.models import Q
+        
+        # Obtener órdenes de trabajo del usuario que no estén terminadas
+        # Estados del modelo: 'draft', 'accepted', 'finished'
+        work_orders = WorkOrder.objects.filter(
+            Q(assigned_to=request.user) | Q(created_by=request.user)
+        ).exclude(
+            status='finished'
+        ).select_related(
+            'company', 'project', 'created_by', 'assigned_to'
+        ).order_by('-priority', 'due_date')[:20]  # Limitar a 20
+        
+        orders_data = []
+        for order in work_orders:
+            orders_data.append({
+                'id': order.id,
+                'title': order.title,
+                'description': order.description[:100] + '...' if order.description and len(order.description) > 100 else (order.description or ''),
+                'status': order.status,
+                'priority': order.priority,
+                'client': order.company.name if order.company else None,
+                'due_date': order.due_date.strftime('%d/%m/%Y') if order.due_date else None,
+                'assigned_to': order.assigned_to.get_full_name() if order.assigned_to else None,
+                'url': f'/work-orders/{order.id}/',
+            })
+        
+        return JsonResponse({
+            'count': len(orders_data),
+            'work_orders': orders_data
+        })
+    
+    except Exception as e:
+        print(f"Error en my_pending_work_orders: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'count': 0, 'work_orders': [], 'error': str(e)})
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def active_users_list(request):
