@@ -7,10 +7,18 @@
 <div class="row">
     <div class="col-md-8 offset-md-2">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h3 class="mb-0">
                     <i class="bi bi-pencil"></i> Editar Usuario: {{ user_to_edit.username }}
                 </h3>
+                <div class="btn-group" role="group">
+                    <a href="{% url 'user_tasks' user_to_edit.id %}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-clipboard-check"></i> Ver Tareas
+                    </a>
+                    <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#publicTasksModal">
+                        <i class="bi bi-share"></i> Compartir Tareas
+                    </button>
+                </div>
             </div>
             <div class="card-body">
                 <form method="post">
@@ -448,5 +456,96 @@ function copyToClipboard(elementId) {
         alert('Error al copiar la URL al portapapeles');
     });
 }
+
+function showPublicTasksUrl() {
+    const modal = new bootstrap.Modal(document.getElementById('publicTasksModal'));
+    modal.show();
+}
+
+function copyPublicTasksUrl() {
+    const urlElement = document.getElementById('publicTasksUrl');
+    const text = urlElement.textContent;
+    
+    navigator.clipboard.writeText(text).then(function() {
+        const btn = document.getElementById('copyPublicTasksBtn');
+        const originalContent = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check"></i> ¡Copiado!';
+        btn.classList.remove('btn-outline-success');
+        btn.classList.add('btn-success');
+        
+        setTimeout(function() {
+            btn.innerHTML = originalContent;
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline-success');
+        }, 2000);
+    }).catch(function(err) {
+        console.error('Error al copiar: ', err);
+        alert('Error al copiar la URL al portapapeles');
+    });
+}
 </script>
+
+<!-- Modal para compartir URL pública de tareas -->
+<div class="modal fade" id="publicTasksModal" tabindex="-1" aria-labelledby="publicTasksModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="publicTasksModalLabel">
+                    <i class="bi bi-share"></i> Compartir Tareas Pendientes
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                {% if user_to_edit.profile.public_token %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    Esta URL pública permite ver las tareas pendientes de <strong>{{ user_to_edit.get_full_name|default:user_to_edit.username }}</strong> 
+                    con los días que lleva cada tarea asignada. No requiere autenticación.
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">URL Pública:</label>
+                    <div class="input-group">
+                        <span class="form-control" id="publicTasksUrl">{{ request.scheme }}://{{ request.get_host }}/public/users/{{ user_to_edit.profile.public_token }}/tasks/</span>
+                        <button class="btn btn-outline-success" type="button" id="copyPublicTasksBtn" onclick="copyPublicTasksUrl()">
+                            <i class="bi bi-clipboard"></i> Copiar
+                        </button>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    No se pudo generar el token público. Por favor, recarga la página e intenta nuevamente.
+                </div>
+                {% endif %}
+
+                <div class="card border-secondary">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <i class="bi bi-eye"></i> Vista previa del enlace:
+                        </h6>
+                        <p class="mb-2">Al abrir esta URL, cualquier persona podrá ver:</p>
+                        <ul class="mb-0">
+                            <li>Nombre del usuario</li>
+                            <li>Lista de tareas pendientes y en progreso</li>
+                            <li>Días transcurridos desde que se asignó cada tarea</li>
+                            <li>Prioridad y estado de cada tarea</li>
+                            <li>Fechas de creación y vencimiento</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="/public/users/{{ user_to_edit.profile.public_token }}/tasks/" 
+                   target="_blank" 
+                   class="btn btn-primary">
+                    <i class="bi bi-box-arrow-up-right"></i> Abrir en nueva pestaña
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

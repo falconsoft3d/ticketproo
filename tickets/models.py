@@ -2774,6 +2774,14 @@ class Task(models.Model):
         ('urgent', 'Urgente'),
     ]
     
+    task_number = models.CharField(
+        max_length=20,
+        unique=True,
+        editable=False,
+        verbose_name='Número de Tarea',
+        null=True,
+        blank=True
+    )
     title = models.CharField(
         max_length=200,
         verbose_name='Título'
@@ -2829,7 +2837,32 @@ class Task(models.Model):
         verbose_name = 'Tarea'
         verbose_name_plural = 'Tareas'
     
+    def save(self, *args, **kwargs):
+        if not self.task_number:
+            from django.db import transaction
+            with transaction.atomic():
+                # Obtener el último número de tarea con bloqueo
+                last_task = Task.objects.select_for_update().order_by('-id').first()
+                if last_task and last_task.task_number:
+                    try:
+                        last_number = int(last_task.task_number.split('-')[1])
+                        new_number = last_number + 1
+                    except (IndexError, ValueError):
+                        new_number = 1
+                else:
+                    new_number = 1
+                
+                # Verificar que el número no exista
+                while Task.objects.filter(task_number=f'TASK-{new_number:04d}').exists():
+                    new_number += 1
+                
+                self.task_number = f'TASK-{new_number:04d}'
+        
+        super().save(*args, **kwargs)
+    
     def __str__(self):
+        if self.task_number:
+            return f'{self.task_number} - {self.title}'
         return f'{self.title} - {self.get_status_display()}'
     
     def get_priority_color(self):

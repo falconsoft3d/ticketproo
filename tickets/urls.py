@@ -42,6 +42,9 @@ urlpatterns = [
     # Vista pública de conceptos (sin autenticación requerida)
     path('public/concepts/', views.public_concepts_view, name='public_concepts'),
     
+    # Vista pública de tareas de usuario (sin autenticación requerida)
+    path('public/users/<uuid:token>/tasks/', views.user_tasks_public_view, name='user_tasks_public'),
+    
     # URL para vista pública de tickets (sin autenticación requerida)
     path('public/<uuid:token>/', views.public_ticket_view, name='public_ticket'),
     path('public/<uuid:token>/approve/', views.public_ticket_approve, name='public_ticket_approve'),
@@ -108,6 +111,7 @@ urlpatterns = [
     path('users/create/', views.user_create_view, name='user_create'),
     path('users/<int:user_id>/edit/', views.user_edit_view, name='user_edit'),
     path('users/<int:user_id>/toggle-status/', views.user_toggle_status_view, name='user_toggle_status'),
+    path('users/<int:user_id>/tasks/', views.user_tasks_view, name='user_tasks'),
     
     # API para obtener tickets de usuario (AJAX)
     path('api/user-tickets/<int:user_id>/', views.api_user_tickets, name='api_user_tickets'),

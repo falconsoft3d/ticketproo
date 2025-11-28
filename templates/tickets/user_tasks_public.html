@@ -1,0 +1,140 @@
+{% extends "public_base.html" %}
+{% load static %}
+
+{% block title %}Tareas de {{ user_obj.get_full_name|default:user_obj.username }}{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Encabezado -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body text-center">
+                    <h1 class="h3 mb-3">
+                        <i class="bi bi-clipboard-check text-primary me-2"></i>
+                        Tareas Pendientes
+                    </h1>
+                    <h2 class="h5 text-muted mb-0">
+                        {{ user_obj.get_full_name|default:user_obj.username }}
+                    </h2>
+                </div>
+            </div>
+
+            <!-- Resumen de tareas -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card border-warning shadow-sm">
+                        <div class="card-body text-center">
+                            <h3 class="display-4 text-warning mb-2">{{ tasks_with_days|length }}</h3>
+                            <p class="text-muted mb-0">Tareas Pendientes</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border-info shadow-sm">
+                        <div class="card-body text-center">
+                            <h3 class="display-4 text-info mb-2">
+                                {% if tasks_with_days %}
+                                    {{ tasks_with_days.0.days_assigned }}
+                                {% else %}
+                                    0
+                                {% endif %}
+                            </h3>
+                            <p class="text-muted mb-0">Días Tarea Más Antigua</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista de tareas -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-task me-2"></i>
+                        Listado de Tareas
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if tasks_with_days %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 120px;">Número</th>
+                                        <th>Tarea</th>
+                                        <th style="width: 120px;">Prioridad</th>
+                                        <th style="width: 120px;">Estado</th>
+                                        <th style="width: 150px;">Días Asignada</th>
+                                        <th style="width: 150px;">Fecha Límite</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in tasks_with_days %}
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-secondary">
+                                                {{ item.task.task_number|default:"N/A" }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <strong>{{ item.task.title }}</strong>
+                                            {% if item.task.description %}
+                                                <br>
+                                                <small class="text-muted">
+                                                    {{ item.task.description|truncatewords:15 }}
+                                                </small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if item.task.priority == 'high' %}
+                                                <span class="badge bg-danger">Alta</span>
+                                            {% elif item.task.priority == 'medium' %}
+                                                <span class="badge bg-warning text-dark">Media</span>
+                                            {% else %}
+                                                <span class="badge bg-info">Baja</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if item.task.status == 'pending' %}
+                                                <span class="badge bg-secondary">Pendiente</span>
+                                            {% elif item.task.status == 'in_progress' %}
+                                                <span class="badge bg-primary">En Progreso</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge {% if item.days_assigned > 7 %}bg-danger{% elif item.days_assigned > 3 %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                                                {{ item.days_assigned }} {% if item.days_assigned == 1 %}día{% else %}días{% endif %}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if item.task.due_date %}
+                                                <small>{{ item.task.due_date|date:"d/m/Y" }}</small>
+                                            {% else %}
+                                                <small class="text-muted">Sin fecha</small>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="p-5 text-center text-muted">
+                            <i class="bi bi-check-circle display-1 mb-3"></i>
+                            <h5>¡No hay tareas pendientes!</h5>
+                            <p>Todas las tareas están completas.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Información adicional -->
+            <div class="alert alert-info mt-4">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>Nota:</strong> Esta vista muestra únicamente las tareas en estado <strong>Pendiente</strong> y <strong>En Progreso</strong>.
+                La cantidad de días se calcula desde la fecha de creación de cada tarea.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

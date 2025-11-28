@@ -4658,6 +4658,18 @@
                         </div>
                         ` : ''}
                         
+                        <!-- Tareas pendientes -->
+                        ${user.pending_tasks > 0 ? `
+                        <div class="mb-2">
+                            <a href="/users/${user.id}/tasks/" class="text-decoration-none">
+                                <span class="badge bg-warning text-dark">
+                                    <i class="bi bi-clipboard-check me-1"></i>
+                                    ${user.pending_tasks} ${user.pending_tasks === 1 ? 'tarea pendiente' : 'tareas pendientes'}
+                                </span>
+                            </a>
+                        </div>
+                        ` : ''}
+                        
                         <!-- Botones de acción -->
                         <div class="d-flex gap-1 mt-2">
                             <button class="btn btn-sm btn-outline-primary" 

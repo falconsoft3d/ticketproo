@@ -1535,6 +1535,15 @@ def user_edit_view(request, user_id):
     except PublicTimeAccess.DoesNotExist:
         context['public_access'] = None
     
+    # Crear o actualizar UserProfile con public_token
+    from .models import UserProfile
+    import uuid
+    
+    profile, created = UserProfile.objects.get_or_create(user=user_to_edit)
+    if not profile.public_token:
+        profile.public_token = uuid.uuid4()
+        profile.save()
+    
     return render(request, 'tickets/user_edit.html', context)
 
 @login_required
@@ -1553,6 +1562,73 @@ def user_toggle_status_view(request, user_id):
         messages.success(request, f'Usuario "{user_to_toggle.username}" {status} exitosamente.')
     
     return redirect('user_management')
+
+
+@login_required
+@user_passes_test(agent_required, login_url='dashboard')
+def user_tasks_view(request, user_id):
+    """Vista para mostrar las tareas pendientes asignadas a un usuario con días transcurridos"""
+    from datetime import timedelta
+    from django.utils import timezone
+    
+    user = get_object_or_404(User, pk=user_id)
+    
+    # Obtener tareas pendientes y en progreso del usuario
+    tasks = Task.objects.filter(
+        assigned_users=user,
+        status__in=['pending', 'in_progress']
+    ).order_by('-priority', 'created_at')
+    
+    # Calcular días transcurridos para cada tarea
+    now = timezone.now()
+    tasks_with_days = []
+    for task in tasks:
+        days_assigned = (now - task.created_at).days
+        tasks_with_days.append({
+            'task': task,
+            'days_assigned': days_assigned,
+        })
+    
+    context = {
+        'user_obj': user,
+        'tasks_with_days': tasks_with_days,
+    }
+    
+    return render(request, 'tickets/user_tasks.html', context)
+
+
+def user_tasks_public_view(request, token):
+    """Vista pública para mostrar las tareas pendientes de un usuario mediante token UUID"""
+    from datetime import timedelta
+    from django.utils import timezone
+    
+    # Buscar el usuario por el token público
+    user_profile = get_object_or_404(UserProfile, public_token=token)
+    user = user_profile.user
+    
+    # Obtener tareas pendientes y en progreso del usuario
+    tasks = Task.objects.filter(
+        assigned_users=user,
+        status__in=['pending', 'in_progress']
+    ).order_by('-priority', 'created_at')
+    
+    # Calcular días transcurridos para cada tarea
+    now = timezone.now()
+    tasks_with_days = []
+    for task in tasks:
+        days_assigned = (now - task.created_at).days
+        tasks_with_days.append({
+            'task': task,
+            'days_assigned': days_assigned,
+        })
+    
+    context = {
+        'user_obj': user,
+        'tasks_with_days': tasks_with_days,
+        'is_public': True,
+    }
+    
+    return render(request, 'tickets/user_tasks_public.html', context)
 
 
 @login_required

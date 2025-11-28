@@ -551,6 +551,13 @@ def active_users_list(request):
             # Formatear hora de entrada
             entry_time = entry.fecha_entrada.strftime('%H:%M')
             
+            # Contar tareas pendientes del usuario
+            from .models import Task
+            pending_tasks_count = Task.objects.filter(
+                assigned_users=user,
+                status__in=['pending', 'in_progress']
+            ).count()
+            
             users_data.append({
                 'id': user.id,
                 'name': full_name,
@@ -563,7 +570,8 @@ def active_users_list(request):
                 'status': 'active',
                 'hours_worked': None,  # Se podría calcular las horas desde la entrada
                 'birth_date': birth_date,
-                'days_to_birthday': days_to_birthday
+                'days_to_birthday': days_to_birthday,
+                'pending_tasks': pending_tasks_count
             })
         
         # Calcular horas trabajadas para cada usuario
