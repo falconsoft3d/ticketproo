@@ -51,7 +51,8 @@ from .models import (
     VideoMeeting, MeetingNote, QuoteGenerator, CountdownTimer, AbsenceType,
     MonthlyCumplimiento, DailyCumplimiento, QRCode, CrmQuestion, SupportMeeting, SupportMeetingPoint, ScheduledTask,
     ClientRequest, ClientRequestResponse, ClientRequestTemplate, ClientRequestTemplateItem, Event, Trip, TripStop,
-    MultiMeasurement, MultiMeasurementRecord, PersonalBudget, BudgetIncomeItem, BudgetExpenseItem, BudgetTransaction
+    MultiMeasurement, MultiMeasurementRecord, PersonalBudget, BudgetIncomeItem, BudgetExpenseItem, BudgetTransaction,
+    DynamicTable, DynamicTableField
 )
 
 class CategoryForm(forms.ModelForm):
@@ -8915,6 +8916,113 @@ class BudgetTransactionForm(forms.ModelForm):
             self.add_error('expense_item', 'Debe seleccionar una partida de egreso.')
         
         return cleaned_data
+
+
+class DynamicTableForm(forms.ModelForm):
+    """Formulario para crear/editar tablas dinámicas"""
+    
+    class Meta:
+        model = DynamicTable
+        fields = [
+            'name', 'display_name', 'description', 
+            'allow_public_read', 'allow_public_create',
+            'public_form_enabled', 'public_form_password',
+            'public_form_title', 'public_form_description', 
+            'public_form_success_message'
+        ]
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'ejemplo_tabla_api'
+            }),
+            'display_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ejemplo de Tabla API'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción de la tabla...'
+            }),
+            'public_form_password': forms.PasswordInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Dejar vacío para formulario sin contraseña'
+            }),
+            'public_form_title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título del formulario público'
+            }),
+            'public_form_description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'Descripción que verán los usuarios...'
+            }),
+            'public_form_success_message': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '¡Gracias! Tu información ha sido registrada.'
+            }),
+        }
+        labels = {
+            'name': 'Nombre de la Tabla',
+            'display_name': 'Nombre de Visualización',
+            'description': 'Descripción',
+            'allow_public_read': 'Permitir lectura pública (API)',
+            'allow_public_create': 'Permitir creación pública (API)',
+            'public_form_enabled': 'Habilitar Formulario Público Móvil',
+            'public_form_password': 'Contraseña del Formulario',
+            'public_form_title': 'Título del Formulario',
+            'public_form_description': 'Descripción del Formulario',
+            'public_form_success_message': 'Mensaje de Éxito',
+        }
+
+
+class DynamicTableFieldForm(forms.ModelForm):
+    """Formulario para crear/editar campos de tablas dinámicas"""
+    
+    class Meta:
+        model = DynamicTableField
+        fields = ['name', 'display_name', 'field_type', 'is_required', 'is_unique', 'max_length', 'help_text', 'default_value', 'order']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'nombre_campo'
+            }),
+            'display_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre para mostrar'
+            }),
+            'field_type': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'help_text': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'Texto de ayuda...'
+            }),
+            'default_value': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Valor por defecto'
+            }),
+            'max_length': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': '255'
+            }),
+            'order': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'value': '0'
+            }),
+        }
+        labels = {
+            'name': 'Nombre del Campo',
+            'display_name': 'Nombre de Visualización',
+            'field_type': 'Tipo de Campo',
+            'help_text': 'Texto de Ayuda',
+            'default_value': 'Valor por Defecto',
+            'is_required': 'Campo requerido',
+            'is_unique': 'Valor único',
+            'max_length': 'Longitud Máxima',
+            'order': 'Orden',
+        }
 
 
 

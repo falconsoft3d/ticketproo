@@ -5023,18 +5023,18 @@ class AIChatMessage(models.Model):
 
 
 class SharedAIChatMessage(models.Model):
-    """Modelo para mensajes individuales de chat IA compartidos públicamente"""
+    """DEPRECATED - Usar PublicAIMessageShare en su lugar"""
     
     message = models.ForeignKey(
         'AIChatMessage',
         on_delete=models.CASCADE,
-        related_name='shared_instances',
+        related_name='shared_instances_old',
         verbose_name='Mensaje'
     )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='shared_ai_messages',
+        related_name='shared_ai_messages_old',
         verbose_name='Usuario que compartió'
     )
     share_token = models.CharField(
@@ -5070,8 +5070,9 @@ class SharedAIChatMessage(models.Model):
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Mensaje IA Compartido'
-        verbose_name_plural = 'Mensajes IA Compartidos'
+        verbose_name = 'Mensaje IA Compartido (Deprecated)'
+        verbose_name_plural = 'Mensajes IA Compartidos (Deprecated)'
+        db_table = 'tickets_sharedaichatmessage_old'
     
     def __str__(self):
         title = self.title or f"Mensaje de {self.user.username}"
@@ -5092,6 +5093,87 @@ class SharedAIChatMessage(models.Model):
         """Incrementa el contador de vistas"""
         self.views_count += 1
         self.save(update_fields=['views_count'])
+
+
+class PublicAIMessageShare(models.Model):
+    """Modelo nuevo para mensajes de chat IA compartidos públicamente"""
+    
+    chat_message = models.ForeignKey(
+        'AIChatMessage',
+        on_delete=models.CASCADE,
+        related_name='public_shares',
+        verbose_name='Mensaje de Chat'
+    )
+    shared_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='ai_message_shares',
+        verbose_name='Compartido por'
+    )
+    token = models.CharField(
+        max_length=64,
+        unique=True,
+        db_index=True,
+        verbose_name='Token de compartición',
+        help_text='Token único para acceder al mensaje compartido'
+    )
+    public_title = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Título público',
+        help_text='Título opcional para el mensaje compartido'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        db_index=True,
+        verbose_name='Compartición activa'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        db_index=True,
+        verbose_name='Fecha de compartición'
+    )
+    views_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Número de vistas'
+    )
+    expiration_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de expiración',
+        help_text='Fecha en que expira el enlace compartido (opcional)'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Compartición de Mensaje IA'
+        verbose_name_plural = 'Comparticiones de Mensajes IA'
+        indexes = [
+            models.Index(fields=['token']),
+            models.Index(fields=['shared_by', '-created_at']),
+            models.Index(fields=['is_active', '-created_at']),
+        ]
+    
+    def __str__(self):
+        title = self.public_title or f"Mensaje de {self.shared_by.username}"
+        return f"{title} - {self.token[:8]}..."
+    
+    def get_public_url(self):
+        """Retorna la URL pública del mensaje compartido"""
+        from django.urls import reverse
+        return reverse('shared_ai_message_view', kwargs={'token': self.token})
+    
+    def is_expired(self):
+        """Verifica si el enlace ha expirado"""
+        if not self.expiration_date:
+            return False
+        return timezone.now() > self.expiration_date
+    
+    def increment_views(self):
+        """Incrementa el contador de vistas de forma atómica"""
+        from django.db.models import F
+        PublicAIMessageShare.objects.filter(pk=self.pk).update(views_count=F('views_count') + 1)
+        self.refresh_from_db()
 
 
 class Concept(models.Model):
@@ -18776,6 +18858,711 @@ PersonalBudget.add_to_class('income_transactions',
     models.ManyToManyField(BudgetTransaction, related_name='income_budgets', blank=True))
 PersonalBudget.add_to_class('expense_transactions', 
     models.ManyToManyField(BudgetTransaction, related_name='expense_budgets', blank=True))
+
+
+# ============= MODELOS PARA TABLAS DINÁMICAS API =============
+
+class DynamicTable(models.Model):
+    """Modelo para definir tablas dinámicas con API CRUD"""
+    
+    name = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name='Nombre de la tabla',
+        help_text='Nombre único de la tabla (ej: usuarios, comentarios)'
+    )
+    display_name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre de visualización',
+        help_text='Nombre amigable para mostrar'
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción',
+        help_text='Descripción del propósito de la tabla'
+    )
+    api_token = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+        verbose_name='Token de API',
+        help_text='Token de seguridad para acceder a la API de esta tabla'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activa',
+        help_text='Si la tabla y su API están activas'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='dynamic_tables_created',
+        verbose_name='Creado por'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    # Configuración de permisos
+    allow_public_read = models.BooleanField(
+        default=False,
+        verbose_name='Permitir lectura pública',
+        help_text='Permitir GET sin autenticación'
+    )
+    allow_public_create = models.BooleanField(
+        default=False,
+        verbose_name='Permitir creación pública',
+        help_text='Permitir POST sin autenticación'
+    )
+    
+    # Configuración de formulario público móvil
+    public_form_enabled = models.BooleanField(
+        default=False,
+        verbose_name='Formulario público habilitado',
+        help_text='Habilitar formulario web público para crear registros'
+    )
+    public_form_token = models.UUIDField(
+        default=uuid.uuid4,
+        null=True,
+        blank=True,
+        unique=True,
+        verbose_name='Token del formulario público',
+        help_text='Token único para acceder al formulario público'
+    )
+    public_form_password = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Contraseña del formulario',
+        help_text='Contraseña opcional para proteger el formulario público'
+    )
+    public_form_title = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Título del formulario',
+        help_text='Título personalizado para el formulario público'
+    )
+    public_form_description = models.TextField(
+        blank=True,
+        verbose_name='Descripción del formulario',
+        help_text='Texto descriptivo que se muestra en el formulario'
+    )
+    public_form_success_message = models.CharField(
+        max_length=500,
+        default='¡Gracias! Tu información ha sido registrada correctamente.',
+        verbose_name='Mensaje de éxito',
+        help_text='Mensaje que se muestra después de enviar el formulario'
+    )
+    
+    class Meta:
+        verbose_name = 'Tabla Dinámica'
+        verbose_name_plural = 'Tablas Dinámicas'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return self.display_name
+    
+    def get_api_url(self):
+        """Retorna la URL base de la API para esta tabla"""
+        return f'/api/dynamic-tables/{self.name}/'
+    
+    def regenerate_token(self):
+        """Regenera el token de API"""
+        self.api_token = uuid.uuid4()
+        self.save()
+        return self.api_token
+    
+    def get_public_form_url(self):
+        """Retorna la URL del formulario público"""
+        return f'/public-form/{self.public_form_token}/'
+    
+    def regenerate_public_form_token(self):
+        """Regenera el token del formulario público"""
+        self.public_form_token = uuid.uuid4()
+        self.save()
+        return self.public_form_token
+
+
+class DynamicTableField(models.Model):
+    """Modelo para definir campos de una tabla dinámica"""
+    
+    FIELD_TYPES = [
+        ('text', 'Texto corto'),
+        ('textarea', 'Texto largo'),
+        ('number', 'Número'),
+        ('decimal', 'Decimal'),
+        ('boolean', 'Verdadero/Falso'),
+        ('date', 'Fecha'),
+        ('datetime', 'Fecha y hora'),
+        ('email', 'Email'),
+        ('url', 'URL'),
+        ('json', 'JSON'),
+    ]
+    
+    table = models.ForeignKey(
+        DynamicTable,
+        on_delete=models.CASCADE,
+        related_name='fields',
+        verbose_name='Tabla'
+    )
+    name = models.CharField(
+        max_length=100,
+        verbose_name='Nombre del campo',
+        help_text='Nombre del campo (ej: titulo, email, contenido)'
+    )
+    display_name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre de visualización',
+        help_text='Nombre amigable para mostrar'
+    )
+    field_type = models.CharField(
+        max_length=20,
+        choices=FIELD_TYPES,
+        default='text',
+        verbose_name='Tipo de campo'
+    )
+    is_required = models.BooleanField(
+        default=False,
+        verbose_name='Requerido',
+        help_text='Si el campo es obligatorio'
+    )
+    default_value = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Valor por defecto',
+        help_text='Valor por defecto del campo'
+    )
+    max_length = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name='Longitud máxima',
+        help_text='Longitud máxima para campos de texto'
+    )
+    help_text = models.CharField(
+        max_length=500,
+        blank=True,
+        verbose_name='Texto de ayuda',
+        help_text='Descripción o ayuda del campo'
+    )
+    order = models.IntegerField(
+        default=0,
+        verbose_name='Orden',
+        help_text='Orden de visualización del campo'
+    )
+    is_unique = models.BooleanField(
+        default=False,
+        verbose_name='Único',
+        help_text='Si el valor debe ser único en la tabla'
+    )
+    is_indexed = models.BooleanField(
+        default=False,
+        verbose_name='Indexado',
+        help_text='Si el campo debe ser indexado para búsquedas rápidas'
+    )
+    
+    class Meta:
+        verbose_name = 'Campo de Tabla'
+        verbose_name_plural = 'Campos de Tablas'
+        ordering = ['table', 'order', 'id']
+        unique_together = [['table', 'name']]
+    
+    def __str__(self):
+        return f'{self.table.name}.{self.name}'
+
+
+class DynamicTableRecord(models.Model):
+    """Modelo para almacenar registros de tablas dinámicas"""
+    
+    table = models.ForeignKey(
+        DynamicTable,
+        on_delete=models.CASCADE,
+        related_name='records',
+        verbose_name='Tabla'
+    )
+    data = models.JSONField(
+        verbose_name='Datos',
+        help_text='Datos del registro en formato JSON'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    created_by_ip = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name='IP de creación',
+        help_text='Dirección IP desde donde se creó el registro'
+    )
+    
+    class Meta:
+        verbose_name = 'Registro de Tabla'
+        verbose_name_plural = 'Registros de Tablas'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['table', '-created_at']),
+        ]
+    
+    def __str__(self):
+        return f'{self.table.name} #{self.id}'
+
+
+class SavedApiRequest(models.Model):
+    """Modelo para guardar configuraciones de peticiones API"""
+    
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título',
+        help_text='Nombre descriptivo para identificar esta petición'
+    )
+    url = models.URLField(
+        max_length=500,
+        verbose_name='URL',
+        help_text='URL completa del endpoint'
+    )
+    method = models.CharField(
+        max_length=10,
+        choices=[
+            ('GET', 'GET'),
+            ('POST', 'POST'),
+            ('PUT', 'PUT'),
+            ('PATCH', 'PATCH'),
+            ('DELETE', 'DELETE'),
+        ],
+        default='GET',
+        verbose_name='Método HTTP'
+    )
+    headers = models.TextField(
+        blank=True,
+        verbose_name='Headers',
+        help_text='Headers personalizados (formato: Name: Value, uno por línea)'
+    )
+    body = models.TextField(
+        blank=True,
+        verbose_name='Body',
+        help_text='Cuerpo de la petición (JSON)'
+    )
+    token = models.CharField(
+        max_length=500,
+        blank=True,
+        verbose_name='Token',
+        help_text='Token de autenticación (Bearer, API Key, etc.)'
+    )
+    api_type = models.CharField(
+        max_length=20,
+        choices=[
+            ('internal', 'API Interna'),
+            ('external', 'API Externa'),
+        ],
+        default='external',
+        verbose_name='Tipo de API'
+    )
+    dynamic_table = models.ForeignKey(
+        DynamicTable,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='saved_requests',
+        verbose_name='Tabla Dinámica',
+        help_text='Solo si es API interna'
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción',
+        help_text='Notas sobre esta petición'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='saved_api_requests',
+        verbose_name='Creado por'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    is_favorite = models.BooleanField(
+        default=False,
+        verbose_name='Favorito',
+        help_text='Marcar como favorito para acceso rápido'
+    )
+    last_used = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Último uso',
+        help_text='Última vez que se ejecutó esta petición'
+    )
+    
+    class Meta:
+        verbose_name = 'API Guardada'
+        verbose_name_plural = 'APIs Guardadas'
+        ordering = ['-is_favorite', '-last_used', '-created_at']
+        indexes = [
+            models.Index(fields=['created_by', '-created_at']),
+            models.Index(fields=['created_by', 'is_favorite']),
+        ]
+    
+    def __str__(self):
+        return self.title
+    
+    def mark_as_used(self):
+        """Actualiza el timestamp de último uso"""
+        self.last_used = timezone.now()
+        self.save(update_fields=['last_used'])
+
+
+class SocialPost(models.Model):
+    """Publicación en la red social interna"""
+    
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='social_posts',
+        verbose_name='Usuario'
+    )
+    content = models.TextField(
+        blank=True,
+        verbose_name='Contenido',
+        help_text='Texto de la publicación'
+    )
+    image = models.ImageField(
+        upload_to='social_posts/%Y/%m/',
+        blank=True,
+        null=True,
+        verbose_name='Imagen',
+        help_text='Imagen de la publicación'
+    )
+    youtube_url = models.URLField(
+        blank=True,
+        null=True,
+        verbose_name='URL de YouTube',
+        help_text='URL del video de YouTube'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo'
+    )
+    is_private = models.BooleanField(
+        default=False,
+        verbose_name='Privado',
+        help_text='Solo visible para el creador'
+    )
+    share_token = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        unique=True,
+        verbose_name='Token de compartir',
+        help_text='Token único para compartir públicamente'
+    )
+    company_only = models.BooleanField(
+        default=True,
+        verbose_name='Solo mi empresa',
+        help_text='Si está marcado, solo los usuarios de la misma empresa pueden ver esta publicación'
+    )
+    public_views_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Vistas públicas',
+        help_text='Número de veces que se ha visto la publicación pública'
+    )
+    
+    class Meta:
+        verbose_name = 'Publicación Social'
+        verbose_name_plural = 'Publicaciones Sociales'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['-created_at']),
+            models.Index(fields=['user', '-created_at']),
+            models.Index(fields=['share_token']),
+            models.Index(fields=['company_only', '-created_at']),
+        ]
+    
+    def __str__(self):
+        content_preview = self.content[:50] if self.content else 'Sin texto'
+        return f'{self.user.username} - {content_preview}'
+    
+    def get_likes_count(self):
+        """Retorna el número de me gusta"""
+        return self.likes.filter(reaction_type='like').count()
+    
+    def get_loves_count(self):
+        """Retorna el número de me encanta"""
+        return self.likes.filter(reaction_type='love').count()
+    
+    def get_dislikes_count(self):
+        """Retorna el número de no me gusta"""
+        return self.likes.filter(reaction_type='dislike').count()
+    
+    def get_comments_count(self):
+        """Retorna el número de comentarios"""
+        return self.comments.filter(is_active=True).count()
+    
+    def user_has_liked(self, user):
+        """Verifica si un usuario ha dado like"""
+        if not user.is_authenticated:
+            return False
+        return self.likes.filter(user=user).exists()
+    
+    def get_youtube_embed_url(self):
+        """Convierte URL de YouTube a URL embebida"""
+        if not self.youtube_url:
+            return None
+        
+        import re
+        # Patrones para diferentes formatos de URL de YouTube
+        patterns = [
+            r'(?:https?://)?(?:www\.)?youtube\.com/watch\?v=([\w-]+)',
+            r'(?:https?://)?(?:www\.)?youtu\.be/([\w-]+)',
+            r'(?:https?://)?(?:www\.)?youtube\.com/embed/([\w-]+)'
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, self.youtube_url)
+            if match:
+                video_id = match.group(1)
+                return f'https://www.youtube.com/embed/{video_id}'
+        
+        return None
+    
+    def generate_share_token(self):
+        """Genera un token único para compartir"""
+        import uuid
+        if not self.share_token:
+            self.share_token = str(uuid.uuid4())
+            self.save()
+        return self.share_token
+    
+    def get_public_share_url(self):
+        """Obtiene la URL pública para compartir"""
+        if not self.share_token:
+            return None
+        from django.urls import reverse
+        return reverse('social_post_public', kwargs={'token': self.share_token})
+
+
+class SocialPostLike(models.Model):
+    """Reacción en una publicación"""
+    
+    REACTION_CHOICES = [
+        ('like', 'Me gusta'),
+        ('love', 'Me encanta'),
+        ('dislike', 'No me gusta'),
+    ]
+    
+    post = models.ForeignKey(
+        SocialPost,
+        on_delete=models.CASCADE,
+        related_name='likes',
+        verbose_name='Publicación'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='social_likes',
+        verbose_name='Usuario'
+    )
+    reaction_type = models.CharField(
+        max_length=10,
+        choices=REACTION_CHOICES,
+        default='like',
+        verbose_name='Tipo de reacción'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha'
+    )
+    
+    class Meta:
+        verbose_name = 'Like'
+        verbose_name_plural = 'Likes'
+        unique_together = ('post', 'user')
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['post', 'user']),
+        ]
+    
+    def __str__(self):
+        return f'{self.user.username} - Post #{self.post.id}'
+
+
+class SocialPostComment(models.Model):
+    """Comentario en una publicación"""
+    
+    post = models.ForeignKey(
+        SocialPost,
+        on_delete=models.CASCADE,
+        related_name='comments',
+        verbose_name='Publicación'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='social_comments',
+        verbose_name='Usuario',
+        blank=True,
+        null=True
+    )
+    # Campos para usuarios anónimos (comentarios públicos)
+    guest_name = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='Nombre del invitado'
+    )
+    guest_email = models.EmailField(
+        blank=True,
+        null=True,
+        verbose_name='Email del invitado'
+    )
+    content = models.TextField(
+        verbose_name='Comentario'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo'
+    )
+    
+    class Meta:
+        verbose_name = 'Comentario'
+        verbose_name_plural = 'Comentarios'
+        ordering = ['created_at']
+        indexes = [
+            models.Index(fields=['post', 'created_at']),
+        ]
+    
+    def __str__(self):
+        content_preview = self.content[:50]
+        username = self.user.username if self.user else self.guest_name or 'Anónimo'
+        return f'{username} - {content_preview}'
+    
+    def get_display_name(self):
+        """Retorna el nombre a mostrar (usuario o invitado)"""
+        if self.user:
+            return self.user.get_full_name() or self.user.username
+        return self.guest_name or 'Anónimo'
+    
+    def get_likes_count(self):
+        """Retorna el número de me gusta en el comentario"""
+        return self.comment_reactions.filter(reaction_type='like').count()
+    
+    def get_loves_count(self):
+        """Retorna el número de me encanta en el comentario"""
+        return self.comment_reactions.filter(reaction_type='love').count()
+    
+    def get_dislikes_count(self):
+        """Retorna el número de no me gusta en el comentario"""
+        return self.comment_reactions.filter(reaction_type='dislike').count()
+
+
+class SocialCommentReaction(models.Model):
+    """Reacción en un comentario"""
+    
+    REACTION_CHOICES = [
+        ('like', 'Me gusta'),
+        ('love', 'Me encanta'),
+        ('dislike', 'No me gusta'),
+    ]
+    
+    comment = models.ForeignKey(
+        SocialPostComment,
+        on_delete=models.CASCADE,
+        related_name='comment_reactions',
+        verbose_name='Comentario'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='social_comment_reactions',
+        verbose_name='Usuario'
+    )
+    reaction_type = models.CharField(
+        max_length=10,
+        choices=REACTION_CHOICES,
+        default='like',
+        verbose_name='Tipo de reacción'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha'
+    )
+    
+    class Meta:
+        verbose_name = 'Reacción de Comentario'
+        verbose_name_plural = 'Reacciones de Comentarios'
+        unique_together = ('comment', 'user')
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['comment', 'user']),
+        ]
+    
+    def __str__(self):
+        return f'{self.user.username} - {self.reaction_type} - Comment #{self.comment.id}'
+
+
+class SocialPostFavorite(models.Model):
+    """Publicación marcada como favorita por un usuario"""
+    
+    post = models.ForeignKey(
+        SocialPost,
+        on_delete=models.CASCADE,
+        related_name='favorites',
+        verbose_name='Publicación'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='favorite_posts',
+        verbose_name='Usuario'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha'
+    )
+    
+    class Meta:
+        verbose_name = 'Favorito'
+        verbose_name_plural = 'Favoritos'
+        unique_together = ('post', 'user')
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', '-created_at']),
+            models.Index(fields=['post', 'user']),
+        ]
+    
+    def __str__(self):
+        return f'{self.user.username} - Post #{self.post.id}'
+
+
+
+
 
 
 

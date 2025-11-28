@@ -49,7 +49,7 @@ from .models import (
     DailyTaskSession, DailyTaskItem, ChatRoom, ChatMessage, ContactFormSubmission,
     Opportunity, OpportunityStatus, OpportunityNote, OpportunityStatusHistory, OpportunityActivity,
     Meeting, MeetingAttendee, MeetingQuestion, Contact,
-    BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, SharedAIChatMessage, Concept,
+    BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, PublicAIMessageShare, Concept,
     Exam, ExamQuestion, ExamAttempt, ExamAnswer, ContactoWeb, PublicDocumentUpload,
     Employee, JobApplicationToken, EmployeePayroll, Agreement, AgreementSignature,
     LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry, SharedFile, SharedFileDownload,
@@ -215,7 +215,7 @@ from .models import (
     DailyTaskSession, DailyTaskItem, ChatRoom, ChatMessage, ContactFormSubmission,
     Opportunity, OpportunityStatus, OpportunityNote, OpportunityStatusHistory,
     Meeting, MeetingAttendee, MeetingQuestion, Contact,
-    BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, SharedAIChatMessage, Concept,
+    BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, PublicAIMessageShare, Concept,
     Exam, ExamQuestion, ExamAttempt, ExamAnswer, ContactoWeb, PublicDocumentUpload,
     Employee, JobApplicationToken, EmployeePayroll, Agreement, AgreementSignature,
     LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry, SharedFile, SharedFileDownload,
@@ -12380,9 +12380,9 @@ def share_ai_chat_message(request, message_id):
         message = get_object_or_404(AIChatMessage, id=message_id, session__user=request.user)
         
         # Verificar si ya está compartido
-        existing_share = SharedAIChatMessage.objects.filter(
-            message=message,
-            user=request.user,
+        existing_share = PublicAIMessageShare.objects.filter(
+            chat_message=message,
+            shared_by=request.user,
             is_active=True
         ).first()
         
@@ -12390,7 +12390,7 @@ def share_ai_chat_message(request, message_id):
             return JsonResponse({
                 'status': 'success',
                 'share_url': request.build_absolute_uri(existing_share.get_public_url()),
-                'share_token': existing_share.share_token,
+                'share_token': existing_share.token,
                 'message': 'Este mensaje ya estaba compartido'
             })
         
@@ -12398,17 +12398,17 @@ def share_ai_chat_message(request, message_id):
         import secrets
         share_token = secrets.token_urlsafe(24)
         
-        shared_message = SharedAIChatMessage.objects.create(
-            message=message,
-            user=request.user,
-            share_token=share_token,
-            title=''
+        shared_message = PublicAIMessageShare.objects.create(
+            chat_message=message,
+            shared_by=request.user,
+            token=share_token,
+            public_title=''
         )
         
         return JsonResponse({
             'status': 'success',
             'share_url': request.build_absolute_uri(shared_message.get_public_url()),
-            'share_token': shared_message.share_token,
+            'share_token': shared_message.token,
             'message': 'Mensaje compartido exitosamente'
         })
         
@@ -12421,9 +12421,29 @@ def share_ai_chat_message(request, message_id):
 
 def shared_ai_message_view(request, token):
     """Vista pública para ver un mensaje compartido"""
+    import traceback
+    
     try:
-        # Obtener mensaje compartido
-        shared = get_object_or_404(SharedAIChatMessage, share_token=token, is_active=True)
+        # Intentar obtener el mensaje compartido del nuevo modelo
+        try:
+            shared = PublicAIMessageShare.objects.select_related('chat_message', 'chat_message__session').get(
+                token=token, 
+                is_active=True
+            )
+        except PublicAIMessageShare.DoesNotExist:
+            print(f"❌ Token no encontrado en PublicAIMessageShare: {token}")
+            
+            # Verificar si existe pero está inactivo
+            inactive = PublicAIMessageShare.objects.filter(token=token, is_active=False).exists()
+            if inactive:
+                print(f"ℹ️ El token existe pero está inactivo")
+            
+            raise
+        
+        # Verificar que el mensaje relacionado exista
+        if not hasattr(shared, 'chat_message') or shared.chat_message is None:
+            print(f"❌ El mensaje relacionado no existe para token: {token}")
+            raise Exception("El mensaje original fue eliminado")
         
         # Verificar si ha expirado
         if shared.is_expired():
@@ -12436,24 +12456,36 @@ def shared_ai_message_view(request, token):
         
         # Obtener mensaje previo del usuario (contexto)
         user_message = None
-        if shared.message.role == 'assistant':
-            user_message = shared.message.session.messages.filter(
+        if shared.chat_message.role == 'assistant':
+            user_message = shared.chat_message.session.messages.filter(
                 role='user',
-                created_at__lt=shared.message.created_at
+                created_at__lt=shared.chat_message.created_at
             ).order_by('-created_at').first()
         
         context = {
             'shared': shared,
-            'message': shared.message,
+            'message': shared.chat_message,
             'user_message': user_message,
-            'page_title': shared.title or 'Mensaje compartido'
+            'page_title': shared.public_title or 'Mensaje compartido'
         }
         
         return render(request, 'tickets/shared_ai_message_public.html', context)
         
-    except Exception as e:
+    except PublicAIMessageShare.DoesNotExist:
+        print(f"❌ No se encontró mensaje compartido con token: {token}")
+        print(f"Traceback: {traceback.format_exc()}")
+        
         return render(request, 'tickets/shared_ai_message_error.html', {
-            'error': str(e)
+            'error_message': 'Token no encontrado en la base de datos' if request.user.is_authenticated and request.user.is_staff else None
+        })
+        
+    except Exception as e:
+        print(f"❌ Error en shared_ai_message_view: {str(e)}")
+        print(f"Token recibido: {token}")
+        print(f"Traceback: {traceback.format_exc()}")
+        
+        return render(request, 'tickets/shared_ai_message_error.html', {
+            'error_message': str(e) if request.user.is_authenticated and request.user.is_staff else None
         })
 
 
@@ -12466,9 +12498,9 @@ def unshare_ai_chat_message(request, message_id):
     try:
         # Obtener el share
         shared = get_object_or_404(
-            SharedAIChatMessage, 
-            message_id=message_id, 
-            user=request.user,
+            PublicAIMessageShare, 
+            chat_message_id=message_id, 
+            shared_by=request.user,
             is_active=True
         )
         
@@ -42525,3 +42557,1136 @@ def budget_transaction_delete(request, budget_pk, trans_pk):
         return redirect('budget_detail', pk=budget.pk)
     
     return redirect('budget_detail', pk=budget.pk)
+
+
+# ============= VISTAS PARA TABLAS DINÁMICAS API =============
+
+@login_required
+@user_passes_test(agent_required, login_url='dashboard')
+def dynamic_table_list(request):
+    """Lista todas las tablas dinámicas"""
+    from .models import DynamicTable
+    tables = DynamicTable.objects.all().order_by('-created_at')
+    
+    context = {
+        'tables': tables,
+    }
+    return render(request, 'tickets/dynamic_table_list.html', context)
+
+
+@login_required
+@user_passes_test(agent_required, login_url='dashboard')
+def dynamic_table_create(request):
+    """Crea una nueva tabla dinámica"""
+    from .models import DynamicTable
+    from .forms import DynamicTableForm
+    
+    if request.method == 'POST':
+        form = DynamicTableForm(request.POST)
+        if form.is_valid():
+            table = form.save(commit=False)
+            table.created_by = request.user
+            table.save()
+            messages.success(request, f'Tabla "{table.name}" creada exitosamente.')
+            return redirect('dynamic_table_detail', pk=table.pk)
+    else:
+        form = DynamicTableForm()
+    
+    context = {'form': form}
+    return render(request, 'tickets/dynamic_table_form.html', context)
+
+
+@login_required
+@user_passes_test(agent_required, login_url='dashboard')
+def dynamic_table_detail(request, pk):
+    """Muestra los detalles de una tabla dinámica"""
+    from .models import DynamicTable
+    table = get_object_or_404(DynamicTable, pk=pk)
+    
+    context = {
+        'table': table,
+    }
+    return render(request, 'tickets/dynamic_table_detail.html', context)
+
+
+@login_required
+@user_passes_test(agent_required, login_url='dashboard')
+def dynamic_table_edit(request, pk):
+    """Edita una tabla dinámica"""
+    from .models import DynamicTable
+    from .forms import DynamicTableForm
+    table = get_object_or_404(DynamicTable, pk=pk)
+    
+    if request.method == 'POST':
+        form = DynamicTableForm(request.POST, instance=table)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Tabla "{table.name}" actualizada exitosamente.')
+            return redirect('dynamic_table_detail', pk=table.pk)
+    else:
+        form = DynamicTableForm(instance=table)
+    
+    context = {'form': form, 'table': table}
+    return render(request, 'tickets/dynamic_table_form.html', context)
+
+
+@login_required
+@user_passes_test(agent_required, login_url='dashboard')
+def dynamic_table_delete(request, pk):
+    """Elimina una tabla dinámica"""
+    from .models import DynamicTable
+    table = get_object_or_404(DynamicTable, pk=pk)
+    
+    if request.method == 'POST':
+        name = table.display_name
+        table.delete()
+        messages.success(request, f'Tabla "{name}" eliminada exitosamente.')
+        return redirect('dynamic_table_list')
+    
+    return redirect('dynamic_table_detail', pk=pk)
+
+
+@login_required
+@user_passes_test(agent_required, login_url='dashboard')
+def dynamic_table_regenerate_token(request, pk):
+    """Regenera el token de una tabla"""
+    from .models import DynamicTable
+    table = get_object_or_404(DynamicTable, pk=pk)
+    
+    if request.method == 'POST':
+        table.regenerate_token()
+        messages.success(request, f'Token regenerado para "{table.display_name}".')
+        return redirect('dynamic_table_detail', pk=pk)
+    
+    return redirect('dynamic_table_detail', pk=pk)
+
+
+@login_required
+@user_passes_test(agent_required, login_url='dashboard')
+def dynamic_table_field_create(request, table_pk):
+    """Crea un nuevo campo para una tabla"""
+    from .models import DynamicTable, DynamicTableField
+    from .forms import DynamicTableFieldForm
+    table = get_object_or_404(DynamicTable, pk=table_pk)
+    
+    if request.method == 'POST':
+        form = DynamicTableFieldForm(request.POST)
+        if form.is_valid():
+            field = form.save(commit=False)
+            field.table = table
+            field.save()
+            messages.success(request, f'Campo "{field.name}" creado exitosamente.')
+            return redirect('dynamic_table_detail', pk=table.pk)
+    else:
+        form = DynamicTableFieldForm()
+    
+    context = {'form': form, 'table': table}
+    return render(request, 'tickets/dynamic_table_field_form.html', context)
+
+
+@login_required
+@user_passes_test(agent_required, login_url='dashboard')
+def dynamic_table_field_edit(request, table_pk, field_pk):
+    """Edita un campo de una tabla"""
+    from .models import DynamicTable, DynamicTableField
+    from .forms import DynamicTableFieldForm
+    table = get_object_or_404(DynamicTable, pk=table_pk)
+    field = get_object_or_404(DynamicTableField, pk=field_pk, table=table)
+    
+    if request.method == 'POST':
+        form = DynamicTableFieldForm(request.POST, instance=field)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Campo "{field.name}" actualizado exitosamente.')
+            return redirect('dynamic_table_detail', pk=table.pk)
+    else:
+        form = DynamicTableFieldForm(instance=field)
+    
+    context = {'form': form, 'table': table, 'field': field}
+    return render(request, 'tickets/dynamic_table_field_form.html', context)
+
+
+@login_required
+@user_passes_test(agent_required, login_url='dashboard')
+def dynamic_table_field_delete(request, table_pk, field_pk):
+    """Elimina un campo de una tabla"""
+    from .models import DynamicTable, DynamicTableField
+    table = get_object_or_404(DynamicTable, pk=table_pk)
+    field = get_object_or_404(DynamicTableField, pk=field_pk, table=table)
+    
+    if request.method == 'POST':
+        name = field.display_name
+        field.delete()
+        messages.success(request, f'Campo "{name}" eliminado exitosamente.')
+        return redirect('dynamic_table_detail', pk=table.pk)
+    
+    return redirect('dynamic_table_detail', pk=table.pk)
+
+
+@login_required
+@user_passes_test(agent_required, login_url='dashboard')
+def dynamic_table_records(request, table_pk):
+    """Muestra los registros de una tabla"""
+    from .models import DynamicTable, DynamicTableRecord
+    table = get_object_or_404(DynamicTable, pk=table_pk)
+    records = DynamicTableRecord.objects.filter(table=table).order_by('-created_at')
+    fields = table.fields.all().order_by('order')
+    
+    context = {
+        'table': table,
+        'records': records,
+        'fields': fields,
+    }
+    return render(request, 'tickets/dynamic_table_records.html', context)
+
+
+@login_required
+@user_passes_test(agent_required, login_url='dashboard')
+def api_tester(request):
+    """Página principal del API Tester - Lista de APIs guardadas"""
+    return render(request, 'tickets/api_tester_list.html')
+
+
+@login_required
+@user_passes_test(agent_required, login_url='dashboard')
+def api_tester_interface(request):
+    """Interfaz estilo Postman para probar APIs de tablas dinámicas"""
+    from .models import DynamicTable, SavedApiRequest
+    tables = DynamicTable.objects.filter(is_active=True).order_by('name')
+    
+    # Si viene un parámetro load, cargar esa API
+    load_api_id = request.GET.get('load')
+    load_api = None
+    if load_api_id:
+        try:
+            load_api = SavedApiRequest.objects.get(pk=load_api_id, created_by=request.user)
+        except SavedApiRequest.DoesNotExist:
+            pass
+    
+    context = {
+        'tables': tables,
+        'load_api': load_api,
+    }
+    return render(request, 'tickets/api_tester.html', context)
+
+
+@login_required
+@user_passes_test(agent_required, login_url='dashboard')
+def api_tester_saved_list(request):
+    """Lista todas las APIs guardadas del usuario"""
+    from .models import SavedApiRequest
+    from django.http import JsonResponse
+    
+    if request.method == 'GET':
+        saved_apis = SavedApiRequest.objects.filter(created_by=request.user)
+        data = [{
+            'id': api.id,
+            'title': api.title,
+            'url': api.url,
+            'method': api.method,
+            'api_type': api.api_type,
+            'is_favorite': api.is_favorite,
+            'last_used': api.last_used.isoformat() if api.last_used else None,
+        } for api in saved_apis]
+        return JsonResponse(data, safe=False)
+    
+    elif request.method == 'POST':
+        import json
+        from .models import SavedApiRequest, DynamicTable
+        
+        data = json.loads(request.body)
+        saved_api = SavedApiRequest.objects.create(
+            title=data.get('title'),
+            description=data.get('description', ''),
+            url=data.get('url'),
+            method=data.get('method'),
+            headers=data.get('headers', ''),
+            body=data.get('body', ''),
+            token=data.get('token', ''),
+            api_type=data.get('api_type', 'external'),
+            is_favorite=data.get('is_favorite', False),
+            created_by=request.user
+        )
+        
+        return JsonResponse({
+            'id': saved_api.id,
+            'title': saved_api.title,
+            'message': 'API guardada correctamente'
+        })
+
+
+@login_required
+@user_passes_test(agent_required, login_url='dashboard')
+def api_tester_saved_detail(request, pk):
+    """Obtiene, actualiza o elimina una API guardada"""
+    from .models import SavedApiRequest
+    from django.http import JsonResponse, HttpResponse
+    
+    saved_api = get_object_or_404(SavedApiRequest, pk=pk, created_by=request.user)
+    
+    if request.method == 'GET':
+        data = {
+            'id': saved_api.id,
+            'title': saved_api.title,
+            'description': saved_api.description,
+            'url': saved_api.url,
+            'method': saved_api.method,
+            'headers': saved_api.headers,
+            'body': saved_api.body,
+            'token': saved_api.token,
+            'api_type': saved_api.api_type,
+            'is_favorite': saved_api.is_favorite,
+        }
+        return JsonResponse(data)
+    
+    elif request.method == 'DELETE':
+        saved_api.delete()
+        return HttpResponse(status=204)
+
+
+@login_required
+@user_passes_test(agent_required, login_url='dashboard')
+def api_tester_saved_update(request, pk):
+    """Actualiza una API guardada"""
+    from .models import SavedApiRequest
+    from django.http import JsonResponse
+    import json
+    
+    if request.method == 'PUT':
+        saved_api = get_object_or_404(SavedApiRequest, pk=pk, created_by=request.user)
+        data = json.loads(request.body)
+        
+        saved_api.title = data.get('title', saved_api.title)
+        saved_api.description = data.get('description', saved_api.description)
+        saved_api.url = data.get('url', saved_api.url)
+        saved_api.method = data.get('method', saved_api.method)
+        saved_api.headers = data.get('headers', saved_api.headers)
+        saved_api.body = data.get('body', saved_api.body)
+        saved_api.token = data.get('token', saved_api.token)
+        saved_api.is_favorite = data.get('is_favorite', saved_api.is_favorite)
+        saved_api.save()
+        
+        return JsonResponse({'message': 'API actualizada correctamente'})
+
+
+@login_required
+@user_passes_test(agent_required, login_url='dashboard')
+def api_tester_saved_use(request, pk):
+    """Marca una API como usada (actualiza last_used)"""
+    from .models import SavedApiRequest
+    from django.http import JsonResponse
+    
+    if request.method == 'POST':
+        saved_api = get_object_or_404(SavedApiRequest, pk=pk, created_by=request.user)
+        saved_api.mark_as_used()
+        return JsonResponse({'message': 'Marcado como usado'})
+
+
+def public_dynamic_form(request, token):
+    """Formulario público para crear registros en una tabla dinámica"""
+    from .models import DynamicTable, DynamicTableRecord
+    import json
+    
+    table = get_object_or_404(DynamicTable, public_form_token=token)
+    
+    if not table.public_form_enabled:
+        return render(request, 'tickets/public_dynamic_form.html', {
+            'error': 'Este formulario no está disponible.',
+            'authenticated': False
+        })
+    
+    # Verificar autenticación por contraseña
+    authenticated = False
+    if table.public_form_password:
+        # Verificar si ya está autenticado en la sesión
+        session_key = f'public_form_auth_{token}'
+        authenticated = request.session.get(session_key, False)
+        
+        # Si se envió el formulario de autenticación
+        if request.method == 'POST' and request.POST.get('authenticate'):
+            password = request.POST.get('password', '')
+            if password == table.public_form_password:
+                request.session[session_key] = True
+                authenticated = True
+            else:
+                return render(request, 'tickets/public_dynamic_form.html', {
+                    'table': table,
+                    'authenticated': False,
+                    'error': 'Contraseña incorrecta'
+                })
+    else:
+        authenticated = True
+    
+    # Si no está autenticado, mostrar pantalla de contraseña
+    if not authenticated:
+        return render(request, 'tickets/public_dynamic_form.html', {
+            'table': table,
+            'authenticated': False
+        })
+    
+    # Obtener campos de la tabla
+    fields = table.fields.all().order_by('order')
+    
+    # Procesar envío del formulario
+    success = False
+    errors = []
+    
+    if request.method == 'POST' and not request.POST.get('authenticate'):
+        data = {}
+        
+        # Validar y recopilar datos
+        for field in fields:
+            value = request.POST.get(field.name, '').strip()
+            
+            # Validación de campos requeridos
+            if field.is_required and not value:
+                errors.append(f'{field.label or field.name} es requerido')
+                continue
+            
+            # Convertir tipos de datos
+            if value:
+                if field.field_type == 'number':
+                    try:
+                        value = float(value)
+                    except ValueError:
+                        errors.append(f'{field.label or field.name} debe ser un número')
+                        continue
+                elif field.field_type == 'boolean':
+                    value = value.lower() == 'true'
+                elif field.field_type in ['date', 'datetime']:
+                    # Mantener como string, se puede parsear después si es necesario
+                    pass
+            
+            if value != '':  # Solo agregar si tiene valor
+                data[field.name] = value
+        
+        # Si no hay errores, crear el registro
+        if not errors:
+            try:
+                # Capturar IP
+                x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+                if x_forwarded_for:
+                    ip = x_forwarded_for.split(',')[0]
+                else:
+                    ip = request.META.get('REMOTE_ADDR', '127.0.0.1')
+                
+                record = DynamicTableRecord.objects.create(
+                    table=table,
+                    data=data,
+                    created_by_ip=ip
+                )
+                success = True
+            except Exception as e:
+                errors.append(f'Error al guardar: {str(e)}')
+    
+    context = {
+        'table': table,
+        'fields': fields,
+        'authenticated': True,
+        'success': success,
+        'errors': errors,
+    }
+    
+    return render(request, 'tickets/public_dynamic_form.html', context)
+
+
+@login_required
+@user_passes_test(agent_required, login_url='dashboard')
+def dynamic_table_record_delete(request, table_pk, record_pk):
+    """Elimina un registro de una tabla"""
+    from .models import DynamicTable, DynamicTableRecord
+    table = get_object_or_404(DynamicTable, pk=table_pk)
+    record = get_object_or_404(DynamicTableRecord, pk=record_pk, table=table)
+    
+    if request.method == 'POST':
+        record.delete()
+        messages.success(request, f'Registro #{record_pk} eliminado exitosamente.')
+        return redirect('dynamic_table_records', table_pk=table.pk)
+    
+    return redirect('dynamic_table_records', table_pk=table.pk)
+
+
+@login_required
+@user_passes_test(agent_required, login_url='dashboard')
+def dynamic_table_record_create(request, table_pk):
+    """Crea un nuevo registro en una tabla"""
+    from .models import DynamicTable, DynamicTableRecord
+    import json
+    
+    table = get_object_or_404(DynamicTable, pk=table_pk)
+    
+    if request.method == 'POST':
+        # Obtener datos del formulario
+        data = {}
+        errors = []
+        
+        for field in table.fields.all():
+            value = request.POST.get(field.name, '').strip()
+            
+            # Validar campo requerido
+            if field.is_required and not value:
+                errors.append(f'El campo {field.display_name} es requerido')
+                continue
+            
+            # Si no hay valor y no es requerido, usar default
+            if not value:
+                if field.default_value:
+                    value = field.default_value
+                else:
+                    continue
+            
+            # Validar y convertir según tipo de campo
+            try:
+                if field.field_type == 'number':
+                    data[field.name] = int(value)
+                elif field.field_type == 'decimal':
+                    data[field.name] = float(value)
+                elif field.field_type == 'boolean':
+                    data[field.name] = value.lower() in ['true', '1', 'yes', 'sí']
+                elif field.field_type == 'json':
+                    data[field.name] = json.loads(value)
+                else:
+                    # Validar longitud máxima
+                    if field.max_length and len(value) > field.max_length:
+                        errors.append(f'El campo {field.display_name} excede la longitud máxima de {field.max_length}')
+                        continue
+                    data[field.name] = value
+                    
+                # Validar unicidad
+                if field.is_unique:
+                    existing = DynamicTableRecord.objects.filter(
+                        table=table,
+                        data__contains={field.name: data[field.name]}
+                    ).exists()
+                    if existing:
+                        errors.append(f'El campo {field.display_name} debe ser único')
+                        
+            except (ValueError, json.JSONDecodeError) as e:
+                errors.append(f'Error en el campo {field.display_name}: {str(e)}')
+        
+        if errors:
+            for error in errors:
+                messages.error(request, error)
+        else:
+            # Obtener IP del cliente
+            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+            if x_forwarded_for:
+                ip = x_forwarded_for.split(',')[0]
+            else:
+                ip = request.META.get('REMOTE_ADDR', '127.0.0.1')
+            
+            # Crear registro
+            record = DynamicTableRecord.objects.create(
+                table=table,
+                data=data,
+                created_by_ip=ip
+            )
+            messages.success(request, f'Registro #{record.id} creado exitosamente.')
+        
+        return redirect('dynamic_table_records', table_pk=table.pk)
+    
+    return redirect('dynamic_table_records', table_pk=table.pk)
+
+
+@login_required
+@user_passes_test(agent_required, login_url='dashboard')
+def dynamic_table_record_update(request, table_pk, record_pk):
+    """Actualiza un registro de una tabla"""
+    from .models import DynamicTable, DynamicTableRecord
+    import json
+    
+    table = get_object_or_404(DynamicTable, pk=table_pk)
+    record = get_object_or_404(DynamicTableRecord, pk=record_pk, table=table)
+    
+    if request.method == 'POST':
+        # Obtener datos del formulario
+        data = {}
+        errors = []
+        
+        for field in table.fields.all():
+            value = request.POST.get(field.name, '').strip()
+            
+            # Validar campo requerido
+            if field.is_required and not value:
+                errors.append(f'El campo {field.display_name} es requerido')
+                continue
+            
+            # Si no hay valor y no es requerido, usar default
+            if not value:
+                if field.default_value:
+                    value = field.default_value
+                else:
+                    continue
+            
+            # Validar y convertir según tipo de campo
+            try:
+                if field.field_type == 'number':
+                    data[field.name] = int(value)
+                elif field.field_type == 'decimal':
+                    data[field.name] = float(value)
+                elif field.field_type == 'boolean':
+                    data[field.name] = value.lower() in ['true', '1', 'yes', 'sí']
+                elif field.field_type == 'json':
+                    data[field.name] = json.loads(value)
+                else:
+                    # Validar longitud máxima
+                    if field.max_length and len(value) > field.max_length:
+                        errors.append(f'El campo {field.display_name} excede la longitud máxima de {field.max_length}')
+                        continue
+                    data[field.name] = value
+                    
+                # Validar unicidad (excluyendo el registro actual)
+                if field.is_unique:
+                    existing = DynamicTableRecord.objects.filter(
+                        table=table,
+                        data__contains={field.name: data[field.name]}
+                    ).exclude(pk=record.pk).exists()
+                    if existing:
+                        errors.append(f'El campo {field.display_name} debe ser único')
+                        
+            except (ValueError, json.JSONDecodeError) as e:
+                errors.append(f'Error en el campo {field.display_name}: {str(e)}')
+        
+        if errors:
+            for error in errors:
+                messages.error(request, error)
+        else:
+            # Actualizar registro
+            record.data = data
+            record.save()
+            messages.success(request, f'Registro #{record.id} actualizado exitosamente.')
+        
+        return redirect('dynamic_table_records', table_pk=table.pk)
+
+
+# ============================================================================
+# VISTAS DE RED SOCIAL INTERNA
+# ============================================================================
+
+@login_required
+def social_feed(request):
+    """Vista principal del feed social"""
+    from .models import SocialPost, SocialPostLike, SocialPostComment
+    from django.db.models import Q
+    
+    # Verificar si el usuario es agente
+    is_agent = request.user.groups.filter(name='Agentes').exists()
+    
+    # Parámetro de búsqueda
+    search_query = request.GET.get('q', '').strip()
+    
+    # Parámetro de favoritos
+    show_favorites = request.GET.get('favorites') == '1'
+    
+    # Parámetro de "me encantan"
+    show_loved = request.GET.get('loved') == '1'
+    
+    # Filtrar posts base: solo activos
+    posts = SocialPost.objects.filter(is_active=True)
+    
+    # Si se solicita solo favoritos, filtrar por favoritos del usuario
+    if show_favorites:
+        from .models import SocialPostFavorite
+        favorite_post_ids = SocialPostFavorite.objects.filter(user=request.user).values_list('post_id', flat=True)
+        posts = posts.filter(id__in=favorite_post_ids)
+    
+    # Si se solicita solo "me encantan", filtrar por publicaciones con reacción "love"
+    if show_loved:
+        loved_post_ids = SocialPostLike.objects.filter(user=request.user, reaction_type='love').values_list('post_id', flat=True)
+        posts = posts.filter(id__in=loved_post_ids)
+    
+    # Aplicar filtros de privacidad y empresa
+    if is_agent:
+        # Los agentes ven todas las publicaciones activas (públicas y privadas)
+        posts = posts.filter(Q(is_private=False) | Q(user=request.user))
+    else:
+        # Usuarios regulares: solo públicos, propios privados, y filtro de empresa
+        user_company = request.user.profile.company if hasattr(request.user, 'profile') else None
+        
+        posts = posts.filter(
+            Q(is_private=False) | Q(user=request.user)
+        )
+        
+        # Filtro adicional por empresa
+        if user_company:
+            posts = posts.filter(
+                Q(company_only=False) | Q(user__profile__company=user_company)
+            )
+        else:
+            # Si el usuario no tiene empresa, solo ve publicaciones no restringidas por empresa
+            posts = posts.filter(company_only=False)
+    
+    posts = posts.select_related('user', 'user__profile', 'user__profile__company').prefetch_related(
+        'likes', 'comments'
+    )
+    
+    # Aplicar búsqueda si existe
+    if search_query:
+        posts = posts.filter(
+            Q(content__icontains=search_query) | 
+            Q(user__username__icontains=search_query) |
+            Q(user__first_name__icontains=search_query) |
+            Q(user__last_name__icontains=search_query)
+        )
+    
+    posts = posts.order_by('-created_at')
+    
+    # Agregar información de reacciones del usuario actual a cada post
+    for post in posts:
+        user_reaction = post.likes.filter(user=request.user).first()
+        post.user_reaction = user_reaction.reaction_type if user_reaction else None
+    
+    # Obtener favoritos del usuario
+    from .models import SocialPostFavorite
+    user_favorites = list(SocialPostFavorite.objects.filter(user=request.user).values_list('post_id', flat=True))
+    
+    context = {
+        'posts': posts,
+        'search_query': search_query,
+        'is_agent': is_agent,
+        'user_favorites': user_favorites,
+        'show_favorites': show_favorites,
+        'show_loved': show_loved,
+    }
+    
+    return render(request, 'tickets/social_feed.html', context)
+
+
+@login_required
+def social_post_create(request):
+    """Crear nueva publicación"""
+    from .models import SocialPost
+    
+    if request.method == 'POST':
+        content = request.POST.get('content', '').strip()
+        image = request.FILES.get('image')
+        youtube_url = request.POST.get('youtube_url', '').strip()
+        is_private = request.POST.get('is_private') == 'true'
+        company_only = request.POST.get('company_only', 'true') == 'true'
+        
+        if not content and not image and not youtube_url:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Debes escribir algo, subir una imagen o agregar un video'
+            }, status=400)
+        
+        post = SocialPost.objects.create(
+            user=request.user,
+            content=content,
+            image=image,
+            youtube_url=youtube_url if youtube_url else None,
+            is_private=is_private,
+            company_only=company_only
+        )
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Publicación creada exitosamente',
+            'post_id': post.id
+        })
+    
+    return JsonResponse({'status': 'error', 'message': 'Método no permitido'}, status=405)
+
+
+@login_required
+def social_post_delete(request, post_id):
+    """Eliminar publicación (autor o agentes)"""
+    from .models import SocialPost
+    
+    if request.method == 'POST':
+        # Verificar si el usuario es agente
+        is_agent = request.user.groups.filter(name='Agentes').exists()
+        
+        # Obtener post - si es agente puede eliminar cualquiera, si no, solo el propio
+        if is_agent:
+            post = get_object_or_404(SocialPost, id=post_id)
+        else:
+            post = get_object_or_404(SocialPost, id=post_id, user=request.user)
+        
+        post.is_active = False
+        post.save()
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Publicación eliminada'
+        })
+    
+    return JsonResponse({'status': 'error', 'message': 'Método no permitido'}, status=405)
+
+
+@login_required
+def social_post_get_data(request, post_id):
+    """Obtener datos de una publicación para editar"""
+    from .models import SocialPost
+    
+    if request.method == 'GET':
+        # Verificar si el usuario es agente
+        is_agent = request.user.groups.filter(name='Agentes').exists()
+        
+        # Obtener post - si es agente puede ver cualquiera, si no, solo el propio
+        if is_agent:
+            post = get_object_or_404(SocialPost, id=post_id, is_active=True)
+        else:
+            post = get_object_or_404(SocialPost, id=post_id, user=request.user, is_active=True)
+        
+        return JsonResponse({
+            'status': 'success',
+            'post': {
+                'id': post.id,
+                'content': post.content,
+                'youtube_url': post.youtube_url or '',
+                'is_private': post.is_private,
+                'company_only': post.company_only,
+                'image_url': post.image.url if post.image else None
+            }
+        })
+    
+    return JsonResponse({'status': 'error', 'message': 'Método no permitido'}, status=405)
+
+
+@login_required
+def social_post_edit(request, post_id):
+    """Editar publicación (autor o agentes)"""
+    from .models import SocialPost
+    
+    if request.method == 'POST':
+        # Verificar si el usuario es agente
+        is_agent = request.user.groups.filter(name='Agentes').exists()
+        
+        # Obtener post - si es agente puede editar cualquiera, si no, solo el propio
+        if is_agent:
+            post = get_object_or_404(SocialPost, id=post_id, is_active=True)
+        else:
+            post = get_object_or_404(SocialPost, id=post_id, user=request.user, is_active=True)
+        
+        # Actualizar campos
+        content = request.POST.get('content', '').strip()
+        youtube_url = request.POST.get('youtube_url', '').strip()
+        is_private = request.POST.get('is_private') == 'true'
+        company_only = request.POST.get('company_only', 'true') == 'true'
+        
+        # Si se sube nueva imagen
+        if 'image' in request.FILES:
+            post.image = request.FILES['image']
+        
+        # Validar que hay contenido
+        if not content and not post.image and not youtube_url:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'La publicación debe tener al menos contenido, imagen o video'
+            }, status=400)
+        
+        post.content = content
+        post.youtube_url = youtube_url if youtube_url else None
+        post.is_private = is_private
+        post.company_only = company_only
+        post.save()
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Publicación actualizada exitosamente',
+            'content': post.content,
+            'youtube_url': post.youtube_url or '',
+            'youtube_embed': post.get_youtube_embed_url() if post.youtube_url else '',
+            'is_private': post.is_private,
+            'company_only': post.company_only,
+            'has_image': bool(post.image)
+        })
+    
+    return JsonResponse({'status': 'error', 'message': 'Método no permitido'}, status=405)
+
+
+@login_required
+def social_post_like(request, post_id):
+    """Dar o cambiar reacción a una publicación"""
+    from .models import SocialPost, SocialPostLike
+    
+    if request.method == 'POST':
+        post = get_object_or_404(SocialPost, id=post_id, is_active=True)
+        reaction_type = request.POST.get('reaction_type', 'like')
+        
+        # Validar tipo de reacción
+        if reaction_type not in ['like', 'love', 'dislike']:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Tipo de reacción no válido'
+            }, status=400)
+        
+        # Buscar si ya existe una reacción del usuario
+        existing_reaction = SocialPostLike.objects.filter(
+            post=post,
+            user=request.user
+        ).first()
+        
+        if existing_reaction:
+            if existing_reaction.reaction_type == reaction_type:
+                # Si es la misma reacción, eliminarla
+                existing_reaction.delete()
+                reaction = None
+            else:
+                # Si es diferente, actualizarla
+                existing_reaction.reaction_type = reaction_type
+                existing_reaction.save()
+                reaction = reaction_type
+        else:
+            # Crear nueva reacción
+            SocialPostLike.objects.create(
+                post=post,
+                user=request.user,
+                reaction_type=reaction_type
+            )
+            reaction = reaction_type
+        
+        return JsonResponse({
+            'status': 'success',
+            'reaction': reaction,
+            'likes_count': post.get_likes_count(),
+            'loves_count': post.get_loves_count(),
+            'dislikes_count': post.get_dislikes_count()
+        })
+    
+    return JsonResponse({'status': 'error', 'message': 'Método no permitido'}, status=405)
+
+
+@login_required
+def social_post_comment(request, post_id):
+    """Agregar comentario a una publicación"""
+    from .models import SocialPost, SocialPostComment
+    
+    if request.method == 'POST':
+        post = get_object_or_404(SocialPost, id=post_id, is_active=True)
+        content = request.POST.get('content', '').strip()
+        
+        if not content:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'El comentario no puede estar vacío'
+            }, status=400)
+        
+        comment = SocialPostComment.objects.create(
+            post=post,
+            user=request.user,
+            content=content
+        )
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Comentario agregado',
+            'comment': {
+                'id': comment.id,
+                'user': comment.user.get_full_name() or comment.user.username,
+                'content': comment.content,
+                'created_at': comment.created_at.strftime('%d/%m/%Y %H:%M')
+            }
+        })
+    
+    return JsonResponse({'status': 'error', 'message': 'Método no permitido'}, status=405)
+
+
+@login_required
+def social_comment_delete(request, comment_id):
+    """Eliminar comentario (solo el autor)"""
+    from .models import SocialPostComment
+    
+    if request.method == 'POST':
+        comment = get_object_or_404(SocialPostComment, id=comment_id, user=request.user)
+        comment.is_active = False
+        comment.save()
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Comentario eliminado'
+        })
+    
+    return JsonResponse({'status': 'error', 'message': 'Método no permitido'}, status=405)
+
+
+@login_required
+def social_post_toggle_privacy(request, post_id):
+    """Cambiar privacidad de una publicación"""
+    from .models import SocialPost
+    
+    if request.method == 'POST':
+        post = get_object_or_404(SocialPost, id=post_id, user=request.user)
+        post.is_private = not post.is_private
+        post.save()
+        
+        return JsonResponse({
+            'status': 'success',
+            'is_private': post.is_private,
+            'message': 'Privacidad actualizada'
+        })
+    
+    return JsonResponse({'status': 'error', 'message': 'Método no permitido'}, status=405)
+
+
+@login_required
+def social_post_share(request, post_id):
+    """Generar token para compartir públicamente"""
+    from .models import SocialPost
+    
+    post = get_object_or_404(SocialPost, id=post_id, user=request.user, is_active=True)
+    
+    if not post.share_token:
+        post.generate_share_token()
+    
+    share_url = request.build_absolute_uri(post.get_public_share_url())
+    
+    return JsonResponse({
+        'status': 'success',
+        'share_url': share_url,
+        'token': post.share_token
+    })
+
+
+def social_post_public(request, token):
+    """Vista pública de una publicación compartida"""
+    from .models import SocialPost
+    from django.db.models import F
+    
+    post = get_object_or_404(SocialPost, share_token=token, is_active=True)
+    
+    # Incrementar contador de vistas públicas
+    SocialPost.objects.filter(id=post.id).update(public_views_count=F('public_views_count') + 1)
+    post.refresh_from_db()
+    
+    context = {
+        'post': post,
+    }
+    
+    return render(request, 'tickets/social_post_public.html', context)
+
+
+def social_post_public_comment(request, token):
+    """Agregar comentario público (sin autenticación)"""
+    from .models import SocialPost, SocialPostComment
+    
+    if request.method == 'POST':
+        post = get_object_or_404(SocialPost, share_token=token, is_active=True)
+        content = request.POST.get('content', '').strip()
+        guest_name = request.POST.get('guest_name', '').strip()
+        guest_email = request.POST.get('guest_email', '').strip()
+        
+        if not content:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'El comentario no puede estar vacío'
+            }, status=400)
+        
+        if not guest_name:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Debes proporcionar tu nombre'
+            }, status=400)
+        
+        if not guest_email:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Debes proporcionar tu email'
+            }, status=400)
+        
+        comment = SocialPostComment.objects.create(
+            post=post,
+            content=content,
+            guest_name=guest_name,
+            guest_email=guest_email
+        )
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Comentario agregado',
+            'comment': {
+                'id': comment.id,
+                'user': guest_name,
+                'content': comment.content,
+                'created_at': comment.created_at.strftime('%d/%m/%Y %H:%M')
+            }
+        })
+    
+    return JsonResponse({'status': 'error', 'message': 'Método no permitido'}, status=405)
+
+
+@login_required
+def social_comment_react(request, comment_id):
+    """Dar o cambiar reacción a un comentario"""
+    from .models import SocialPostComment, SocialCommentReaction
+    
+    if request.method == 'POST':
+        comment = get_object_or_404(SocialPostComment, id=comment_id, is_active=True)
+        reaction_type = request.POST.get('reaction_type', 'like')
+        
+        # Validar tipo de reacción
+        if reaction_type not in ['like', 'love', 'dislike']:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Tipo de reacción no válido'
+            }, status=400)
+        
+        # Buscar si ya existe una reacción del usuario
+        existing_reaction = SocialCommentReaction.objects.filter(
+            comment=comment,
+            user=request.user
+        ).first()
+        
+        if existing_reaction:
+            if existing_reaction.reaction_type == reaction_type:
+                # Si es la misma reacción, eliminarla
+                existing_reaction.delete()
+                reaction = None
+            else:
+                # Si es diferente, actualizarla
+                existing_reaction.reaction_type = reaction_type
+                existing_reaction.save()
+                reaction = reaction_type
+        else:
+            # Crear nueva reacción
+            SocialCommentReaction.objects.create(
+                comment=comment,
+                user=request.user,
+                reaction_type=reaction_type
+            )
+            reaction = reaction_type
+        
+        return JsonResponse({
+            'status': 'success',
+            'reaction': reaction,
+            'likes_count': comment.get_likes_count(),
+            'loves_count': comment.get_loves_count(),
+            'dislikes_count': comment.get_dislikes_count()
+        })
+    
+    return JsonResponse({'status': 'error', 'message': 'Método no permitido'}, status=405)
+
+
+@login_required
+def social_post_favorite(request, post_id):
+    """Toggle favorito en una publicación"""
+    from .models import SocialPost, SocialPostFavorite
+    
+    if request.method == 'POST':
+        post = get_object_or_404(SocialPost, id=post_id, is_active=True)
+        
+        # Buscar si ya existe el favorito
+        favorite = SocialPostFavorite.objects.filter(
+            post=post,
+            user=request.user
+        ).first()
+        
+        if favorite:
+            # Si existe, eliminarlo
+            favorite.delete()
+            favorited = False
+        else:
+            # Si no existe, crearlo
+            SocialPostFavorite.objects.create(
+                post=post,
+                user=request.user
+            )
+            favorited = True
+        
+        return JsonResponse({
+            'status': 'success',
+            'favorited': favorited
+        })
+    
+    return JsonResponse({'status': 'error', 'message': 'Método no permitido'}, status=405)

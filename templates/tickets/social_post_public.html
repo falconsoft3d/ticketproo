@@ -1,0 +1,327 @@
+{% load static %}
+{% load tickets_tags %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ post.user.get_full_name|default:post.user.username }} - Publicación | TicketProo</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="{{ post.content|truncatewords:30|striptags }}">
+    <meta name="author" content="{{ post.user.get_full_name|default:post.user.username }}">
+    {% if post.youtube_url %}
+    <meta name="keywords" content="video, youtube, publicación, red social, {{ post.user.username }}">
+    {% elif post.image %}
+    <meta name="keywords" content="imagen, foto, publicación, red social, {{ post.user.username }}">
+    {% else %}
+    <meta name="keywords" content="publicación, red social, {{ post.user.username }}">
+    {% endif %}
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <!-- Open Graph Meta Tags (Facebook, LinkedIn, WhatsApp) -->
+    <meta property="og:site_name" content="TicketProo - Red Social Interna">
+    <meta property="og:title" content="{{ post.user.get_full_name|default:post.user.username }} compartió una publicación">
+    <meta property="og:description" content="{{ post.content|truncatewords:50|striptags|default:'¡Mira esta publicación!' }}">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
+    {% if post.image %}
+    <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ post.image.url }}">
+    <meta property="og:image:secure_url" content="{{ request.scheme }}://{{ request.get_host }}{{ post.image.url }}">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Imagen compartida por {{ post.user.get_full_name|default:post.user.username }}">
+    {% elif post.youtube_url %}
+    {% with thumb_id=post.youtube_url|slice:"32:" %}
+    <meta property="og:image" content="https://img.youtube.com/vi/{{ thumb_id }}/maxresdefault.jpg">
+    <meta property="og:image:secure_url" content="https://img.youtube.com/vi/{{ thumb_id }}/maxresdefault.jpg">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:width" content="1280">
+    <meta property="og:image:height" content="720">
+    <meta property="og:video" content="{{ post.youtube_url }}">
+    {% endwith %}
+    {% else %}
+    <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'img/default-share.jpg' %}">
+    {% endif %}
+    <meta property="article:published_time" content="{{ post.created_at|date:'c' }}">
+    <meta property="article:author" content="{{ post.user.get_full_name|default:post.user.username }}">
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="{% if post.image or post.youtube_url %}summary_large_image{% else %}summary{% endif %}">
+    <meta name="twitter:site" content="@TicketProo">
+    <meta name="twitter:title" content="{{ post.user.get_full_name|default:post.user.username }} compartió una publicación">
+    <meta name="twitter:description" content="{{ post.content|truncatewords:50|striptags|default:'¡Mira esta publicación!' }}">
+    {% if post.image %}
+    <meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{{ post.image.url }}">
+    <meta name="twitter:image:alt" content="Imagen compartida por {{ post.user.get_full_name|default:post.user.username }}">
+    {% elif post.youtube_url %}
+    {% with thumb_id=post.youtube_url|slice:"32:" %}
+    <meta name="twitter:image" content="https://img.youtube.com/vi/{{ thumb_id }}/maxresdefault.jpg">
+    <meta name="twitter:player" content="{{ post.youtube_url }}">
+    {% endwith %}
+    {% endif %}
+    
+    <!-- WhatsApp & Telegram specific -->
+    <meta property="og:locale" content="es_ES">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 0;
+        }
+        .post-card {
+            max-width: 600px;
+            margin: 0 auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .post-content {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .branding {
+            text-align: center;
+            color: white;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Logo/Branding -->
+        <div class="text-center mb-4">
+            <h2 class="text-white">
+                <i class="bi bi-ticket-perforated"></i> Red Social Interna
+            </h2>
+        </div>
+
+        <!-- Post Card -->
+        <div class="card post-card">
+            <div class="card-body p-4">
+                <!-- Header del post -->
+                <div class="d-flex align-items-center mb-3">
+                    <i class="bi bi-person-circle me-3" style="font-size: 50px; color: #6c757d;"></i>
+                    <div>
+                        <h5 class="mb-0">{{ post.user.get_full_name|default:post.user.username }}</h5>
+                        <small class="text-muted">{{ post.created_at|date:"d/m/Y H:i" }}</small>
+                    </div>
+                </div>
+
+                <!-- Contenido del post -->
+                {% if post.content %}
+                <p class="post-content mb-3">{{ post.content|highlight_hashtags|linebreaks }}</p>
+                {% endif %}
+
+                <!-- Imagen del post -->
+                {% if post.image %}
+                <img src="{{ post.image.url }}" class="img-fluid rounded mb-3" alt="Post image">
+                {% endif %}
+
+                <!-- Video de YouTube -->
+                {% if post.youtube_url %}
+                {% with embed_url=post.get_youtube_embed_url %}
+                {% if embed_url %}
+                <div class="ratio ratio-16x9 mb-3">
+                    <iframe 
+                        src="{{ embed_url }}" 
+                        title="YouTube video player" 
+                        frameborder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                        referrerpolicy="strict-origin-when-cross-origin"
+                        allowfullscreen>
+                    </iframe>
+                </div>
+                {% endif %}
+                {% endwith %}
+                {% endif %}
+
+                <!-- Estadísticas -->
+                <div class="d-flex justify-content-between align-items-center border-top pt-3 mb-3">
+                    <div>
+                        <span class="badge bg-primary">
+                            <i class="bi bi-hand-thumbs-up"></i> {{ post.get_likes_count }}
+                        </span>
+                        <span class="badge bg-danger">
+                            <i class="bi bi-heart-fill"></i> {{ post.get_loves_count }}
+                        </span>
+                        <span class="badge bg-warning text-dark">
+                            <i class="bi bi-hand-thumbs-down"></i> {{ post.get_dislikes_count }}
+                        </span>
+                    </div>
+                    <div>
+                        <span class="badge bg-secondary">
+                            <i class="bi bi-chat"></i> {{ post.get_comments_count }} comentarios
+                        </span>
+                        <span class="badge bg-info">
+                            <i class="bi bi-eye-fill"></i> {{ post.public_views_count }} vistas
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Sección de comentarios -->
+                <div class="border-top pt-3">
+                    <h6 class="mb-3"><i class="bi bi-chat-dots"></i> Comentarios</h6>
+                    
+                    <!-- Lista de comentarios -->
+                    <div class="comments-list mb-3" id="commentsList">
+                        {% for comment in post.comments.all %}
+                        {% if comment.is_active %}
+                        <div class="d-flex mb-3 comment-item" id="comment-{{ comment.id }}">
+                            <i class="bi bi-person-circle me-2" style="font-size: 35px; color: #6c757d;"></i>
+                            <div class="flex-grow-1">
+                                <div class="bg-light rounded p-2">
+                                    <strong>{{ comment.get_display_name }}</strong>
+                                    <p class="mb-0">{{ comment.content }}</p>
+                                </div>
+                                <small class="text-muted">{{ comment.created_at|date:"d/m/Y H:i" }}</small>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% empty %}
+                        <p class="text-muted text-center py-3">Aún no hay comentarios. ¡Sé el primero!</p>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Formulario para nuevos comentarios -->
+                    <div class="border-top pt-3">
+                        <h6 class="mb-3">Deja tu comentario</h6>
+                        <form id="commentForm">
+                            <div class="row g-2 mb-2">
+                                <div class="col-md-6">
+                                    <input 
+                                        type="text" 
+                                        class="form-control" 
+                                        id="guestName" 
+                                        placeholder="Tu nombre *"
+                                        required
+                                    >
+                                </div>
+                                <div class="col-md-6">
+                                    <input 
+                                        type="email" 
+                                        class="form-control" 
+                                        id="guestEmail" 
+                                        placeholder="Tu email *"
+                                        required
+                                    >
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <textarea 
+                                    class="form-control" 
+                                    id="commentContent" 
+                                    rows="3" 
+                                    placeholder="Escribe tu comentario..."
+                                    required
+                                ></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-send"></i> Enviar comentario
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer con CTA -->
+            <div class="card-footer text-center bg-light">
+                <p class="mb-2">
+                    <i class="bi bi-info-circle"></i> Esta publicación fue compartida desde TicketProo
+                </p>
+                <a href="{% url 'login' %}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-box-arrow-in-right"></i> Inicia sesión para unirte a nuestra comunidad
+                </a>
+            </div>
+        </div>
+
+        <!-- Branding footer -->
+        <div class="branding">
+            <p>Powered by <strong>TicketProo</strong></p>
+            <small>Sistema de Gestión Empresarial</small>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Enviar comentario público
+    document.getElementById('commentForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const guestName = document.getElementById('guestName').value.trim();
+        const guestEmail = document.getElementById('guestEmail').value.trim();
+        const content = document.getElementById('commentContent').value.trim();
+        
+        if (!guestName || !guestEmail || !content) {
+            alert('Por favor completa todos los campos');
+            return;
+        }
+        
+        try {
+            const response = await fetch('{% url "social_post_public_comment" post.share_token %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: `guest_name=${encodeURIComponent(guestName)}&guest_email=${encodeURIComponent(guestEmail)}&content=${encodeURIComponent(content)}`
+            });
+            
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                // Agregar comentario a la lista
+                const commentsList = document.getElementById('commentsList');
+                const commentHTML = `
+                    <div class="d-flex mb-3 comment-item" id="comment-${data.comment.id}">
+                        <i class="bi bi-person-circle me-2" style="font-size: 35px; color: #6c757d;"></i>
+                        <div class="flex-grow-1">
+                            <div class="bg-light rounded p-2">
+                                <strong>${data.comment.user}</strong>
+                                <p class="mb-0">${data.comment.content}</p>
+                            </div>
+                            <small class="text-muted">${data.comment.created_at}</small>
+                        </div>
+                    </div>
+                `;
+                commentsList.insertAdjacentHTML('beforeend', commentHTML);
+                
+                // Limpiar formulario
+                document.getElementById('commentContent').value = '';
+                
+                // Mensaje de éxito
+                alert('¡Comentario enviado exitosamente!');
+            } else {
+                alert(data.message);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al enviar el comentario');
+        }
+    });
+    </script>
+</body>
+</html>

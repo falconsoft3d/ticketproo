@@ -1,0 +1,399 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mis APIs - Tester{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="bi bi-code-square"></i> Mis APIs Guardadas</h2>
+            <p class="text-muted">Gestiona y prueba tus configuraciones de API guardadas</p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary" onclick="showCreateModal()">
+                <i class="bi bi-plus-circle"></i> Nueva Prueba de API
+            </button>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div id="savedApisList">
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                            <p class="mt-2 text-muted">Cargando APIs guardadas...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para crear nueva API -->
+<div class="modal fade" id="createModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Nueva Prueba de API</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createForm">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre de la API <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="createTitle" required autofocus placeholder="Ej: API de Clientes">
+                        <small class="text-muted">Dale un nombre descriptivo para identificarla fácilmente</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción (opcional)</label>
+                        <textarea class="form-control" id="createDescription" rows="2" placeholder="Descripción breve de para qué sirve esta API"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="createAndOpenApi()">
+                    <i class="bi bi-arrow-right-circle"></i> Crear y Configurar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para editar API -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-pencil"></i> Editar API</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <input type="hidden" id="editApiId">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Título <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="editTitle" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-control" id="editDescription" rows="2"></textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label">URL <span class="text-danger">*</span></label>
+                            <input type="url" class="form-control" id="editUrl" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Método</label>
+                            <select class="form-select" id="editMethod">
+                                <option value="GET">GET</option>
+                                <option value="POST">POST</option>
+                                <option value="PUT">PUT</option>
+                                <option value="PATCH">PATCH</option>
+                                <option value="DELETE">DELETE</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Headers personalizados</label>
+                        <textarea class="form-control font-monospace" id="editHeaders" rows="3" placeholder="Header-Name: value"></textarea>
+                        <small class="text-muted">Un header por línea en formato: Nombre: Valor</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Token de autenticación</label>
+                        <input type="text" class="form-control" id="editToken" placeholder="Bearer token, API key, etc.">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Body (JSON)</label>
+                        <textarea class="form-control font-monospace" id="editBody" rows="6"></textarea>
+                    </div>
+
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="editIsFavorite">
+                        <label class="form-check-label" for="editIsFavorite">
+                            <i class="bi bi-star"></i> Marcar como favorito
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveEditedApi()">
+                    <i class="bi bi-save"></i> Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .api-card {
+        transition: all 0.2s;
+        border-left: 4px solid transparent;
+    }
+    .api-card:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        border-left-color: #0d6efd;
+    }
+    .api-card.favorite {
+        border-left-color: #ffc107;
+    }
+    .method-badge {
+        font-weight: bold;
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+</style>
+
+<script>
+function showCreateModal() {
+    document.getElementById('createTitle').value = '';
+    document.getElementById('createDescription').value = '';
+    new bootstrap.Modal(document.getElementById('createModal')).show();
+}
+
+function createAndOpenApi() {
+    const title = document.getElementById('createTitle').value.trim();
+    if (!title) {
+        alert('Por favor ingresa un nombre para la API');
+        return;
+    }
+    
+    const description = document.getElementById('createDescription').value.trim();
+    
+    const data = {
+        title: title,
+        description: description,
+        url: '',
+        method: 'GET',
+        token: '',
+        headers: '',
+        body: '',
+        api_type: 'external',
+        is_favorite: false
+    };
+    
+    fetch('/api-tester/saved/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.id) {
+            window.location.href = `/api-tester/interface/?load=${result.id}`;
+        } else {
+            alert('Error al crear la API');
+        }
+    })
+    .catch(error => {
+        console.error('Error creating API:', error);
+        alert('Error al crear la API');
+    });
+}
+
+function loadSavedApis() {
+    fetch('/api-tester/saved/')
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('savedApisList');
+            
+            if (data.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox" style="font-size: 4rem; color: #ccc;"></i>
+                        <h4 class="mt-3 text-muted">No hay APIs guardadas</h4>
+                        <p class="text-muted">Crea tu primera prueba de API para comenzar</p>
+                        <a href="{% url 'api_tester_interface' %}" class="btn btn-primary mt-2">
+                            <i class="bi bi-plus-circle"></i> Crear Primera API
+                        </a>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<div class="row">';
+            data.forEach(api => {
+                const methodColor = getMethodColor(api.method);
+                const favoriteIcon = api.is_favorite ? '<i class="bi bi-star-fill text-warning"></i>' : '<i class="bi bi-star text-muted"></i>';
+                const lastUsed = api.last_used ? new Date(api.last_used).toLocaleDateString('es-ES') : 'Nunca usado';
+                const apiTypeIcon = api.api_type === 'internal' ? '<i class="bi bi-house text-primary"></i>' : '<i class="bi bi-globe text-success"></i>';
+                
+                html += `
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card api-card h-100 ${api.is_favorite ? 'favorite' : ''}">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0">
+                                        ${favoriteIcon}
+                                        ${apiTypeIcon}
+                                        ${api.title}
+                                    </h5>
+                                    <span class="badge bg-${methodColor} method-badge">${api.method}</span>
+                                </div>
+                                
+                                <p class="card-text text-muted small mb-2" style="max-height: 3rem; overflow: hidden;">
+                                    ${api.url}
+                                </p>
+                                
+                                <div class="text-muted small mb-3">
+                                    <i class="bi bi-clock"></i> ${lastUsed}
+                                </div>
+
+                                <div class="btn-group w-100" role="group">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="testApi(${api.id})">
+                                        <i class="bi bi-play-circle"></i> Probar
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="editApi(${api.id})">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteApi(${api.id}, '${api.title}')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error loading APIs:', error);
+            document.getElementById('savedApisList').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i> Error al cargar las APIs guardadas
+                </div>
+            `;
+        });
+}
+
+function getMethodColor(method) {
+    const colors = {
+        'GET': 'success',
+        'POST': 'primary',
+        'PUT': 'warning',
+        'PATCH': 'info',
+        'DELETE': 'danger'
+    };
+    return colors[method] || 'secondary';
+}
+
+function testApi(id) {
+    window.location.href = `/api-tester/interface/?load=${id}`;
+}
+
+function editApi(id) {
+    fetch(`/api-tester/saved/${id}/`)
+        .then(response => response.json())
+        .then(api => {
+            document.getElementById('editApiId').value = api.id;
+            document.getElementById('editTitle').value = api.title;
+            document.getElementById('editDescription').value = api.description || '';
+            document.getElementById('editUrl').value = api.url;
+            document.getElementById('editMethod').value = api.method;
+            document.getElementById('editHeaders').value = api.headers || '';
+            document.getElementById('editToken').value = api.token || '';
+            document.getElementById('editBody').value = api.body || '';
+            document.getElementById('editIsFavorite').checked = api.is_favorite;
+            
+            new bootstrap.Modal(document.getElementById('editModal')).show();
+        })
+        .catch(error => {
+            console.error('Error loading API:', error);
+            alert('Error al cargar la API');
+        });
+}
+
+function saveEditedApi() {
+    const id = document.getElementById('editApiId').value;
+    const data = {
+        title: document.getElementById('editTitle').value,
+        description: document.getElementById('editDescription').value,
+        url: document.getElementById('editUrl').value,
+        method: document.getElementById('editMethod').value,
+        headers: document.getElementById('editHeaders').value,
+        token: document.getElementById('editToken').value,
+        body: document.getElementById('editBody').value,
+        is_favorite: document.getElementById('editIsFavorite').checked,
+        api_type: 'external'
+    };
+
+    fetch(`/api-tester/saved/${id}/update/`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        if (response.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+            loadSavedApis();
+        } else {
+            alert('Error al actualizar la API');
+        }
+    })
+    .catch(error => {
+        console.error('Error updating API:', error);
+        alert('Error al actualizar la API');
+    });
+}
+
+function deleteApi(id, title) {
+    if (!confirm(`¿Eliminar "${title}"?`)) return;
+    
+    fetch(`/api-tester/saved/${id}/`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRFToken': getCsrfToken()
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            loadSavedApis();
+        } else {
+            alert('Error al eliminar la API');
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting API:', error);
+        alert('Error al eliminar la API');
+    });
+}
+
+function getCsrfToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+           document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1] || '';
+}
+
+document.addEventListener('DOMContentLoaded', loadSavedApis);
+</script>
+{% endblock %}

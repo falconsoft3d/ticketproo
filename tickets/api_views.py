@@ -1157,3 +1157,275 @@ def get_all_users_for_tasks(request):
             'users': []
         }, status=500)
 
+
+# ============= API PARA TABLAS DINÁMICAS =============
+
+def validate_dynamic_table_token(table_name, token):
+    """Valida el token de una tabla dinámica"""
+    from .models import DynamicTable
+    try:
+        table = DynamicTable.objects.get(name=table_name, api_token=token, is_active=True)
+        return table
+    except DynamicTable.DoesNotExist:
+        return None
+
+
+def validate_record_data(table, data):
+    """Valida los datos de un registro según los campos definidos"""
+    errors = []
+    validated_data = {}
+    
+    for field in table.fields.all():
+        value = data.get(field.name)
+        
+        # Verificar campos requeridos
+        if field.is_required and not value:
+            errors.append(f'El campo "{field.display_name}" es requerido')
+            continue
+        
+        # Si el campo no es requerido y está vacío, usar valor por defecto
+        if not value and field.default_value:
+            value = field.default_value
+        
+        # Validación por tipo de campo
+        if value:
+            try:
+                if field.field_type == 'number':
+                    value = int(value)
+                elif field.field_type == 'decimal':
+                    value = float(value)
+                elif field.field_type == 'boolean':
+                    value = bool(value)
+                elif field.field_type == 'json':
+                    if isinstance(value, str):
+                        import json
+                        value = json.loads(value)
+                elif field.field_type == 'text' and field.max_length:
+                    if len(str(value)) > field.max_length:
+                        errors.append(f'El campo "{field.display_name}" excede la longitud máxima de {field.max_length}')
+            except (ValueError, json.JSONDecodeError) as e:
+                errors.append(f'Valor inválido para el campo "{field.display_name}": {str(e)}')
+                continue
+        
+        # Verificar unicidad
+        if field.is_unique and value:
+            from .models import DynamicTableRecord
+            existing = DynamicTableRecord.objects.filter(
+                table=table,
+                data__contains={field.name: value}
+            ).exists()
+            if existing:
+                errors.append(f'El valor para "{field.display_name}" ya existe')
+        
+        validated_data[field.name] = value
+    
+    return validated_data, errors
+
+
+@csrf_exempt
+@api_view(['GET', 'POST'])
+@permission_classes([AllowAny])
+def dynamic_table_api_list(request, table_name):
+    """API para listar o crear registros en una tabla dinámica"""
+    from .models import DynamicTable, DynamicTableRecord
+    
+    # Obtener token del header o query param
+    token = request.headers.get('X-API-Token') or request.GET.get('token')
+    
+    if not token:
+        return JsonResponse({
+            'success': False,
+            'error': 'Token de API requerido'
+        }, status=401)
+    
+    # Validar token y obtener tabla
+    table = validate_dynamic_table_token(table_name, token)
+    if not table:
+        return JsonResponse({
+            'success': False,
+            'error': 'Token inválido o tabla inactiva'
+        }, status=403)
+    
+    # GET - Listar registros
+    if request.method == 'GET':
+        if not table.allow_public_read:
+            return JsonResponse({
+                'success': False,
+                'error': 'Lectura no permitida para esta tabla'
+            }, status=403)
+        
+        records = DynamicTableRecord.objects.filter(table=table)
+        
+        # Filtros opcionales
+        search = request.GET.get('search')
+        if search:
+            # Buscar en todos los campos de texto
+            q_objects = Q()
+            for field in table.fields.filter(field_type__in=['text', 'textarea', 'email']):
+                q_objects |= Q(data__contains={field.name: search})
+            records = records.filter(q_objects)
+        
+        # Paginación
+        page = int(request.GET.get('page', 1))
+        per_page = int(request.GET.get('per_page', 20))
+        start = (page - 1) * per_page
+        end = start + per_page
+        
+        total = records.count()
+        records = records[start:end]
+        
+        data = []
+        for record in records:
+            record_data = {
+                'id': record.id,
+                'created_at': record.created_at.isoformat(),
+                'updated_at': record.updated_at.isoformat(),
+                **record.data
+            }
+            data.append(record_data)
+        
+        return JsonResponse({
+            'success': True,
+            'table': table.name,
+            'total': total,
+            'page': page,
+            'per_page': per_page,
+            'data': data
+        })
+    
+    # POST - Crear registro
+    elif request.method == 'POST':
+        if not table.allow_public_create:
+            return JsonResponse({
+                'success': False,
+                'error': 'Creación no permitida para esta tabla'
+            }, status=403)
+        
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'error': 'JSON inválido'
+            }, status=400)
+        
+        # Validar datos
+        validated_data, errors = validate_record_data(table, data)
+        
+        if errors:
+            return JsonResponse({
+                'success': False,
+                'errors': errors
+            }, status=400)
+        
+        # Crear registro
+        record = DynamicTableRecord.objects.create(
+            table=table,
+            data=validated_data,
+            created_by_ip=request.META.get('REMOTE_ADDR')
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Registro creado exitosamente',
+            'id': record.id,
+            'data': {
+                'id': record.id,
+                'created_at': record.created_at.isoformat(),
+                **record.data
+            }
+        }, status=201)
+
+
+@csrf_exempt
+@api_view(['GET', 'PUT', 'DELETE'])
+@permission_classes([AllowAny])
+def dynamic_table_api_detail(request, table_name, record_id):
+    """API para obtener, actualizar o eliminar un registro específico"""
+    from .models import DynamicTable, DynamicTableRecord
+    
+    # Obtener token
+    token = request.headers.get('X-API-Token') or request.GET.get('token')
+    
+    if not token:
+        return JsonResponse({
+            'success': False,
+            'error': 'Token de API requerido'
+        }, status=401)
+    
+    # Validar token y obtener tabla
+    table = validate_dynamic_table_token(table_name, token)
+    if not table:
+        return JsonResponse({
+            'success': False,
+            'error': 'Token inválido o tabla inactiva'
+        }, status=403)
+    
+    # Obtener registro
+    try:
+        record = DynamicTableRecord.objects.get(id=record_id, table=table)
+    except DynamicTableRecord.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Registro no encontrado'
+        }, status=404)
+    
+    # GET - Obtener registro
+    if request.method == 'GET':
+        if not table.allow_public_read:
+            return JsonResponse({
+                'success': False,
+                'error': 'Lectura no permitida para esta tabla'
+            }, status=403)
+        
+        return JsonResponse({
+            'success': True,
+            'data': {
+                'id': record.id,
+                'created_at': record.created_at.isoformat(),
+                'updated_at': record.updated_at.isoformat(),
+                **record.data
+            }
+        })
+    
+    # PUT - Actualizar registro
+    elif request.method == 'PUT':
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'error': 'JSON inválido'
+            }, status=400)
+        
+        # Validar datos
+        validated_data, errors = validate_record_data(table, data)
+        
+        if errors:
+            return JsonResponse({
+                'success': False,
+                'errors': errors
+            }, status=400)
+        
+        # Actualizar registro
+        record.data = validated_data
+        record.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Registro actualizado exitosamente',
+            'data': {
+                'id': record.id,
+                'updated_at': record.updated_at.isoformat(),
+                **record.data
+            }
+        })
+    
+    # DELETE - Eliminar registro
+    elif request.method == 'DELETE':
+        record.delete()
+        return JsonResponse({
+            'success': True,
+            'message': 'Registro eliminado exitosamente'
+        })
+

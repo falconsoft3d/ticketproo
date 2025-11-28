@@ -1,0 +1,968 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load tickets_tags %}
+
+{% block title %}Red Social - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-people-fill"></i> Red Social Interna</h2>
+            </div>
+
+            <!-- Buscador -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get" action="{% url 'social_feed' %}" id="searchForm">
+                        <div class="input-group mb-2">
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                name="q" 
+                                placeholder="Buscar publicaciones por contenido o usuario..." 
+                                value="{{ search_query }}"
+                            >
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-search"></i> Buscar
+                            </button>
+                            {% if search_query or show_favorites or show_loved %}
+                            <a href="{% url 'social_feed' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x"></i> Limpiar
+                            </a>
+                            {% endif %}
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="?favorites=1" class="btn btn-sm {% if show_favorites %}btn-warning{% else %}btn-outline-warning{% endif %}">
+                                <i class="bi bi-star-fill"></i> Mis Favoritos
+                            </a>
+                            <a href="?loved=1" class="btn btn-sm {% if show_loved %}btn-danger{% else %}btn-outline-danger{% endif %}">
+                                <i class="bi bi-heart-fill"></i> Me encantan
+                            </a>
+                            {% if show_favorites %}
+                            <span class="badge bg-warning text-dark align-self-center">
+                                Mostrando solo favoritos
+                            </span>
+                            {% endif %}
+                            {% if show_loved %}
+                            <span class="badge bg-danger align-self-center">
+                                Mostrando publicaciones que me encantan
+                            </span>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Crear nueva publicación -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex align-items-start">
+                        <div class="avatar-circle me-3">
+                            <i class="bi bi-person-circle" style="font-size: 40px; color: #6c757d;"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <form id="createPostForm" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <textarea 
+                                    class="form-control mb-3" 
+                                    id="postContent" 
+                                    rows="3" 
+                                    placeholder="¿Qué estás pensando, {{ user.get_full_name|default:user.username }}?"
+                                ></textarea>
+                                
+                                <!-- URL de YouTube -->
+                                <input 
+                                    type="url" 
+                                    class="form-control mb-3" 
+                                    id="youtubeUrl" 
+                                    placeholder="URL de video de YouTube (opcional)"
+                                >
+                                
+                                <!-- Preview de imagen -->
+                                <div id="imagePreview" class="mb-3" style="display: none;">
+                                    <img id="previewImg" src="" class="img-fluid rounded" style="max-height: 300px;">
+                                    <button type="button" class="btn btn-sm btn-danger mt-2" onclick="removeImage()">
+                                        <i class="bi bi-x"></i> Quitar imagen
+                                    </button>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex gap-2 align-items-center">
+                                        <label for="postImage" class="btn btn-outline-primary btn-sm mb-0">
+                                            <i class="bi bi-image"></i> Foto
+                                        </label>
+                                        <input type="file" id="postImage" accept="image/*" style="display: none;" onchange="previewImage(this)">
+                                        
+                                        <div class="form-check mb-0 me-2">
+                                            <input type="checkbox" class="form-check-input" id="isPrivate">
+                                            <label class="form-check-label" for="isPrivate">
+                                                <i class="bi bi-lock"></i> Privado
+                                            </label>
+                                        </div>
+                                        
+                                        <div class="form-check mb-0">
+                                            <input type="checkbox" class="form-check-input" id="companyOnly" checked>
+                                            <label class="form-check-label" for="companyOnly">
+                                                <i class="bi bi-building"></i> Solo mi empresa
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-send"></i> Publicar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feed de publicaciones -->
+            <div id="postsContainer">
+                {% for post in posts %}
+                <div class="card mb-3 post-card" id="post-{{ post.id }}">
+                    <div class="card-body">
+                        <!-- Header del post -->
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-person-circle me-2" style="font-size: 40px; color: #6c757d;"></i>
+                                <div>
+                                    <h6 class="mb-0">
+                                        {{ post.user.get_full_name|default:post.user.username }}
+                                        {% if post.is_private %}
+                                        <span class="badge bg-secondary ms-2"><i class="bi bi-lock"></i> Privado</span>
+                                        {% endif %}
+                                        {% if post.company_only %}
+                                        <span class="badge bg-info ms-2"><i class="bi bi-building"></i> Solo empresa</span>
+                                        {% endif %}
+                                    </h6>
+                                    <small class="text-muted">{{ post.created_at|date:"d/m/Y H:i" }}</small>
+                                </div>
+                            </div>
+                            {% if post.user == user or is_agent %}
+                            <div class="dropdown">
+                                <button class="btn btn-link text-muted" type="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-three-dots"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    {% if post.user == user %}
+                                    <li>
+                                        <a class="dropdown-item" href="#" onclick="editPost({{ post.id }}); return false;">
+                                            <i class="bi bi-pencil"></i> Editar
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="#" onclick="togglePrivacy({{ post.id }}, {{ post.is_private|yesno:'true,false' }}); return false;">
+                                            <i class="bi bi-{% if post.is_private %}unlock{% else %}lock{% endif %}"></i> 
+                                            {% if post.is_private %}Hacer público{% else %}Hacer privado{% endif %}
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="#" onclick="sharePost({{ post.id }}); return false;">
+                                            <i class="bi bi-share"></i> Compartir
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    {% endif %}
+                                    <li>
+                                        <a class="dropdown-item text-danger" href="#" onclick="deletePost({{ post.id }}); return false;">
+                                            <i class="bi bi-trash"></i> Eliminar{% if is_agent and post.user != user %} (Agente){% endif %}
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Contenido del post -->
+                        {% if post.content %}
+                        <p class="post-content">{{ post.content|highlight_hashtags|linebreaks }}</p>
+                        {% endif %}
+
+                        <!-- Imagen del post -->
+                        {% if post.image %}
+                        <img src="{{ post.image.url }}" class="img-fluid rounded mb-3" alt="Post image">
+                        {% endif %}
+
+                        <!-- Video de YouTube -->
+                        {% if post.youtube_url %}
+                        {% with embed_url=post.get_youtube_embed_url %}
+                        {% if embed_url %}
+                        <div class="ratio ratio-16x9 mb-3">
+                            <iframe 
+                                src="{{ embed_url }}" 
+                                title="YouTube video player" 
+                                frameborder="0" 
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                                referrerpolicy="strict-origin-when-cross-origin"
+                                allowfullscreen>
+                            </iframe>
+                        </div>
+                        {% endif %}
+                        {% endwith %}
+                        {% endif %}
+
+                        <!-- Estadísticas -->
+                        <div class="d-flex justify-content-between align-items-center border-top pt-2 mb-2">
+                            <small class="text-muted">
+                                👍 <span id="likes-count-{{ post.id }}">{{ post.get_likes_count }}</span>
+                                ❤️ <span id="loves-count-{{ post.id }}">{{ post.get_loves_count }}</span>
+                                👎 <span id="dislikes-count-{{ post.id }}">{{ post.get_dislikes_count }}</span>
+                            </small>
+                            <small class="text-muted">
+                                💬 <span id="comments-count-{{ post.id }}">{{ post.get_comments_count }}</span>
+                                {% if post.share_token %}
+                                | 👁️ <span id="views-count-{{ post.id }}" title="Vistas públicas">{{ post.public_views_count }}</span>
+                                {% endif %}
+                            </small>
+                        </div>
+
+                        <!-- Botones de acción -->
+                        <div class="d-flex gap-2 border-top border-bottom py-2">
+                            <button 
+                                class="btn btn-link text-decoration-none flex-grow-1 reaction-btn {% if post.user_reaction == 'like' %}active-like{% endif %}" 
+                                onclick="toggleReaction({{ post.id }}, 'like')"
+                                id="like-btn-{{ post.id }}"
+                            >
+                                <i class="bi bi-hand-thumbs-up"></i> Me gusta
+                            </button>
+                            <button 
+                                class="btn btn-link text-decoration-none flex-grow-1 reaction-btn {% if post.user_reaction == 'love' %}active-love{% endif %}" 
+                                onclick="toggleReaction({{ post.id }}, 'love')"
+                                id="love-btn-{{ post.id }}"
+                            >
+                                <i class="bi bi-heart-fill"></i> Me encanta
+                            </button>
+                            <button 
+                                class="btn btn-link text-decoration-none flex-grow-1 reaction-btn {% if post.user_reaction == 'dislike' %}active-dislike{% endif %}" 
+                                onclick="toggleReaction({{ post.id }}, 'dislike')"
+                                id="dislike-btn-{{ post.id }}"
+                            >
+                                <i class="bi bi-hand-thumbs-down"></i> No me gusta
+                            </button>
+                            <button 
+                                class="btn btn-link text-decoration-none flex-grow-1" 
+                                onclick="toggleComments({{ post.id }})"
+                            >
+                                <i class="bi bi-chat"></i> Comentar
+                            </button>
+                            <button 
+                                class="btn btn-link text-decoration-none flex-grow-1 favorite-btn {% if post.id in user_favorites %}active-favorite{% endif %}" 
+                                onclick="toggleFavorite({{ post.id }})"
+                                id="favorite-btn-{{ post.id }}"
+                                title="Guardar como favorito"
+                            >
+                                <i class="bi bi-star{% if post.id in user_favorites %}-fill{% endif %}"></i> Favorito
+                            </button>
+                        </div>
+
+                        <!-- Sección de comentarios -->
+                        <div class="comments-section mt-3" id="comments-{{ post.id }}">
+                            <!-- Lista de comentarios -->
+                            <div class="comments-list mb-3" id="comments-list-{{ post.id }}">
+                                {% with active_comments=post.comments.all|dictsort:"created_at" %}
+                                {% for comment in active_comments %}
+                                {% if comment.is_active %}
+                                <div class="d-flex mb-2 comment-item {% if forloop.counter > 3 %}extra-comment{% endif %}" 
+                                     id="comment-{{ comment.id }}"
+                                     {% if forloop.counter > 3 %}style="display: none;"{% endif %}>
+                                    <i class="bi bi-person-circle me-2" style="font-size: 30px; color: #6c757d;"></i>
+                                    <div class="flex-grow-1">
+                                        <div class="bg-light rounded p-2">
+                                            <strong>{{ comment.get_display_name }}</strong>
+                                            <p class="mb-0">{{ comment.content|highlight_hashtags }}</p>
+                                        </div>
+                                        <small class="text-muted d-flex align-items-center gap-2 flex-wrap">
+                                            <span>{{ comment.created_at|date:"d/m/Y H:i" }}</span>
+                                            
+                                            <!-- Contadores de reacciones -->
+                                            <span class="comment-reaction-counts">
+                                                <span id="comment-likes-{{ comment.id }}">{{ comment.get_likes_count }}</span> 👍
+                                                <span id="comment-loves-{{ comment.id }}">{{ comment.get_loves_count }}</span> ❤️
+                                                <span id="comment-dislikes-{{ comment.id }}">{{ comment.get_dislikes_count }}</span> 👎
+                                            </span>
+                                            
+                                            <!-- Botones de reacciones del comentario -->
+                                            <span class="comment-reactions">
+                                                <a href="#" class="text-decoration-none text-muted" onclick="reactToComment({{ comment.id }}, 'like'); return false;" title="Me gusta">
+                                                    Me gusta
+                                                </a>
+                                                <a href="#" class="text-decoration-none text-muted" onclick="reactToComment({{ comment.id }}, 'love'); return false;" title="Me encanta">
+                                                    Me encanta
+                                                </a>
+                                                <a href="#" class="text-decoration-none text-muted" onclick="reactToComment({{ comment.id }}, 'dislike'); return false;" title="No me gusta">
+                                                    No me gusta
+                                                </a>
+                                            </span>
+                                            
+                                            {% if comment.user == user %}
+                                            <a href="#" class="text-danger" onclick="deleteComment({{ comment.id }}); return false;">
+                                                <i class="bi bi-trash"></i> Eliminar
+                                            </a>
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% endfor %}
+                                
+                                <!-- Botón Ver más -->
+                                {% if active_comments|length > 3 %}
+                                <button class="btn btn-link btn-sm text-muted p-0 mb-2" onclick="showAllComments({{ post.id }}, this)">
+                                    <i class="bi bi-chevron-down"></i> Ver más comentarios ({{ active_comments|length|add:"-3" }})
+                                </button>
+                                {% endif %}
+                                {% endwith %}
+                            </div>
+
+                            <!-- Formulario de nuevo comentario -->
+                            <div class="d-flex">
+                                <i class="bi bi-person-circle me-2" style="font-size: 30px; color: #6c757d;"></i>
+                                <div class="flex-grow-1">
+                                    <form onsubmit="addComment(event, {{ post.id }})">
+                                        {% csrf_token %}
+                                        <div class="input-group">
+                                            <input 
+                                                type="text" 
+                                                class="form-control" 
+                                                id="comment-input-{{ post.id }}"
+                                                placeholder="Escribe un comentario..."
+                                                required
+                                            >
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="bi bi-send"></i>
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="bi bi-chat-left-text" style="font-size: 4rem; color: #ccc;"></i>
+                        <h4 class="mt-3 text-muted">No hay publicaciones aún</h4>
+                        <p class="text-muted">¡Sé el primero en compartir algo!</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Edición de Publicación -->
+<div class="modal fade" id="editPostModal" tabindex="-1" aria-labelledby="editPostModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editPostModalLabel">
+                    <i class="bi bi-pencil"></i> Editar Publicación
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editPostForm">
+                    <input type="hidden" id="editPostId" name="post_id">
+                    
+                    <!-- Contenido -->
+                    <div class="mb-3">
+                        <label for="editContent" class="form-label">
+                            <i class="bi bi-chat-left-text"></i> Contenido
+                        </label>
+                        <textarea class="form-control" id="editContent" name="content" rows="4" placeholder="¿Qué estás pensando?"></textarea>
+                    </div>
+                    
+                    <!-- Vista previa de imagen actual -->
+                    <div id="editCurrentImagePreview" class="mb-3" style="display: none;">
+                        <label class="form-label">
+                            <i class="bi bi-image"></i> Imagen actual
+                        </label>
+                        <div class="position-relative d-inline-block">
+                            <img id="editCurrentImage" src="" class="img-thumbnail" style="max-width: 200px;">
+                            <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1" 
+                                    onclick="removeCurrentImage()" title="Eliminar imagen">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Nueva imagen -->
+                    <div class="mb-3">
+                        <label for="editImage" class="form-label">
+                            <i class="bi bi-image"></i> Cambiar imagen
+                        </label>
+                        <input type="file" class="form-control" id="editImage" name="image" accept="image/*">
+                        <small class="text-muted">Selecciona una nueva imagen para reemplazar la actual</small>
+                    </div>
+                    
+                    <!-- URL de YouTube -->
+                    <div class="mb-3">
+                        <label for="editYoutubeUrl" class="form-label">
+                            <i class="bi bi-youtube"></i> URL de YouTube
+                        </label>
+                        <input type="url" class="form-control" id="editYoutubeUrl" name="youtube_url" 
+                               placeholder="https://www.youtube.com/watch?v=...">
+                        <small class="text-muted">Deja vacío para eliminar el video</small>
+                    </div>
+                    
+                    <!-- Opciones de privacidad -->
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="editIsPrivate" name="is_private">
+                            <label class="form-check-label" for="editIsPrivate">
+                                <i class="bi bi-lock"></i> Publicación privada (solo tú puedes verla)
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="editCompanyOnly" name="company_only">
+                            <label class="form-check-label" for="editCompanyOnly">
+                                <i class="bi bi-building"></i> Solo para mi empresa
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" onclick="saveEditPost()">
+                    <i class="bi bi-check-circle"></i> Guardar cambios
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .post-card {
+        transition: box-shadow 0.2s;
+    }
+    .post-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .post-content {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+    .reaction-btn {
+        color: #6c757d;
+        transition: all 0.2s;
+    }
+    .reaction-btn:hover {
+        transform: scale(1.05);
+    }
+    .reaction-btn.active-like {
+        color: #0d6efd;
+        font-weight: bold;
+    }
+    .reaction-btn.active-love {
+        color: #dc3545;
+        font-weight: bold;
+    }
+    .reaction-btn.active-dislike {
+        color: #ffc107;
+        font-weight: bold;
+    }
+    .favorite-btn.active-favorite {
+        color: #ffc107;
+        font-weight: bold;
+    }
+    .comment-item {
+        animation: fadeIn 0.3s;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .comment-reaction-counts {
+        font-weight: 500;
+        padding: 2px 8px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        font-size: 0.85em;
+    }
+    .comment-reactions a {
+        font-size: 0.85em;
+        transition: color 0.2s;
+    }
+    .comment-reactions a:hover {
+        color: #0d6efd !important;
+        text-decoration: underline !important;
+    }
+</style>
+
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Mostrar fallback de YouTube si el iframe falla
+function showYoutubeFallback(postId) {
+    const fallback = document.querySelector(`.youtube-fallback-${postId}`);
+    if (fallback) {
+        fallback.classList.remove('d-none');
+    }
+}
+
+// Preview de imagen
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('previewImg').src = e.target.result;
+            document.getElementById('imagePreview').style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function removeImage() {
+    document.getElementById('postImage').value = '';
+    document.getElementById('imagePreview').style.display = 'none';
+}
+
+// Crear publicación
+document.getElementById('createPostForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const content = document.getElementById('postContent').value.trim();
+    const imageFile = document.getElementById('postImage').files[0];
+    const youtubeUrl = document.getElementById('youtubeUrl').value.trim();
+    const isPrivate = document.getElementById('isPrivate').checked;
+    const companyOnly = document.getElementById('companyOnly').checked;
+    
+    if (!content && !imageFile && !youtubeUrl) {
+        alert('Debes escribir algo, subir una imagen o agregar un video');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('content', content);
+    formData.append('is_private', isPrivate);
+    formData.append('company_only', companyOnly);
+    if (imageFile) {
+        formData.append('image', imageFile);
+    }
+    if (youtubeUrl) {
+        formData.append('youtube_url', youtubeUrl);
+    }
+    
+    try {
+        const response = await fetch('{% url "social_post_create" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            location.reload();
+        } else {
+            alert(data.message);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al crear la publicación');
+    }
+});
+
+// Toggle reaction
+async function toggleReaction(postId, reactionType) {
+    try {
+        const response = await fetch(`/social/post/${postId}/like/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: `reaction_type=${reactionType}`
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            // Actualizar contadores
+            document.getElementById(`likes-count-${postId}`).textContent = data.likes_count;
+            document.getElementById(`loves-count-${postId}`).textContent = data.loves_count;
+            document.getElementById(`dislikes-count-${postId}`).textContent = data.dislikes_count;
+            
+            // Actualizar botones
+            const likeBtn = document.getElementById(`like-btn-${postId}`);
+            const loveBtn = document.getElementById(`love-btn-${postId}`);
+            const dislikeBtn = document.getElementById(`dislike-btn-${postId}`);
+            
+            // Remover todas las clases activas
+            likeBtn.classList.remove('active-like');
+            loveBtn.classList.remove('active-love');
+            dislikeBtn.classList.remove('active-dislike');
+            
+            // Agregar clase activa si hay reacción
+            if (data.reaction === 'like') {
+                likeBtn.classList.add('active-like');
+            } else if (data.reaction === 'love') {
+                loveBtn.classList.add('active-love');
+            } else if (data.reaction === 'dislike') {
+                dislikeBtn.classList.add('active-dislike');
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+// Toggle comments section
+function toggleComments(postId) {
+    const section = document.getElementById(`comments-${postId}`);
+    section.style.display = section.style.display === 'none' ? 'block' : 'none';
+}
+
+// Agregar comentario
+async function addComment(event, postId) {
+    event.preventDefault();
+    
+    const input = document.getElementById(`comment-input-${postId}`);
+    const content = input.value.trim();
+    
+    if (!content) return;
+    
+    try {
+        const response = await fetch(`/social/post/${postId}/comment/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: `content=${encodeURIComponent(content)}`
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            // Agregar comentario a la lista
+            const commentsList = document.getElementById(`comments-list-${postId}`);
+            const commentHTML = `
+                <div class="d-flex mb-2 comment-item" id="comment-${data.comment.id}">
+                    <i class="bi bi-person-circle me-2" style="font-size: 30px; color: #6c757d;"></i>
+                    <div class="flex-grow-1">
+                        <div class="bg-light rounded p-2">
+                            <strong>${data.comment.user}</strong>
+                            <p class="mb-0">${data.comment.content}</p>
+                        </div>
+                        <small class="text-muted">
+                            ${data.comment.created_at}
+                            <a href="#" class="text-danger ms-2" onclick="deleteComment(${data.comment.id}); return false;">
+                                <i class="bi bi-trash"></i> Eliminar
+                            </a>
+                        </small>
+                    </div>
+                </div>
+            `;
+            commentsList.insertAdjacentHTML('beforeend', commentHTML);
+            
+            // Actualizar contador
+            const count = document.getElementById(`comments-count-${postId}`);
+            count.textContent = parseInt(count.textContent) + 1;
+            
+            // Limpiar input
+            input.value = '';
+        } else {
+            alert(data.message);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al agregar comentario');
+    }
+}
+
+// Eliminar publicación
+async function deletePost(postId) {
+    if (!confirm('¿Eliminar esta publicación?')) return;
+    
+    try {
+        const response = await fetch(`/social/post/${postId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            document.getElementById(`post-${postId}`).remove();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+// Editar publicación
+// Abrir modal de edición
+async function editPost(postId) {
+    try {
+        // Obtener datos del post desde el backend
+        const response = await fetch(`/social/post/${postId}/get-data/`, {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            const post = data.post;
+            
+            // Llenar el formulario con los datos del post
+            document.getElementById('editPostId').value = postId;
+            document.getElementById('editContent').value = post.content || '';
+            document.getElementById('editYoutubeUrl').value = post.youtube_url || '';
+            document.getElementById('editIsPrivate').checked = post.is_private;
+            document.getElementById('editCompanyOnly').checked = post.company_only;
+            
+            // Mostrar imagen actual si existe
+            if (post.image_url) {
+                document.getElementById('editCurrentImage').src = post.image_url;
+                document.getElementById('editCurrentImagePreview').style.display = 'block';
+            } else {
+                document.getElementById('editCurrentImagePreview').style.display = 'none';
+            }
+            
+            // Limpiar input de nueva imagen
+            document.getElementById('editImage').value = '';
+            
+            // Abrir modal
+            const modal = new bootstrap.Modal(document.getElementById('editPostModal'));
+            modal.show();
+        } else {
+            alert('Error al cargar los datos del post');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al cargar los datos del post');
+    }
+}
+
+// Guardar edición
+async function saveEditPost() {
+    const postId = document.getElementById('editPostId').value;
+    const content = document.getElementById('editContent').value;
+    const youtubeUrl = document.getElementById('editYoutubeUrl').value;
+    const isPrivate = document.getElementById('editIsPrivate').checked;
+    const companyOnly = document.getElementById('editCompanyOnly').checked;
+    const imageInput = document.getElementById('editImage');
+    
+    const formData = new FormData();
+    formData.append('content', content);
+    formData.append('youtube_url', youtubeUrl);
+    formData.append('is_private', isPrivate);
+    formData.append('company_only', companyOnly);
+    
+    // Agregar imagen si se seleccionó una nueva
+    if (imageInput.files.length > 0) {
+        formData.append('image', imageInput.files[0]);
+    }
+    
+    try {
+        const response = await fetch(`/social/post/${postId}/edit/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editPostModal'));
+            modal.hide();
+            
+            // Recargar página para mostrar cambios
+            location.reload();
+        } else {
+            alert(data.message || 'Error al editar la publicación');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al editar la publicación');
+    }
+}
+
+// Remover imagen actual (marcar para eliminación)
+function removeCurrentImage() {
+    // Ocultar preview
+    document.getElementById('editCurrentImagePreview').style.display = 'none';
+    // Nota: La imagen se eliminará en el backend si no se proporciona una nueva
+}
+
+// Eliminar comentario
+async function deleteComment(commentId) {
+    if (!confirm('¿Eliminar este comentario?')) return;
+    
+    try {
+        const response = await fetch(`/social/comment/${commentId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            document.getElementById(`comment-${commentId}`).remove();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+// Mostrar todos los comentarios
+function showAllComments(postId, button) {
+    const commentsList = document.getElementById(`comments-list-${postId}`);
+    const extraComments = commentsList.querySelectorAll('.extra-comment');
+    
+    extraComments.forEach(comment => {
+        comment.style.display = 'flex';
+    });
+    
+    button.style.display = 'none';
+}
+
+// Cambiar privacidad
+async function togglePrivacy(postId, isPrivate) {
+    try {
+        const response = await fetch(`/social/post/${postId}/toggle-privacy/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            location.reload();
+        } else {
+            alert(data.message);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al cambiar privacidad');
+    }
+}
+
+// Compartir publicación
+async function sharePost(postId) {
+    try {
+        const response = await fetch(`/social/post/${postId}/share/`, {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            // Copiar al portapapeles
+            navigator.clipboard.writeText(data.share_url).then(() => {
+                alert('¡Link copiado al portapapeles!\n\n' + data.share_url);
+            }).catch(() => {
+                // Fallback si no funciona el clipboard
+                prompt('Copia este link:', data.share_url);
+            });
+        } else {
+            alert('Error al generar link de compartir');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al compartir');
+    }
+}
+
+// Reaccionar a comentario
+async function reactToComment(commentId, reactionType) {
+    try {
+        const response = await fetch(`/social/comment/${commentId}/react/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: `reaction_type=${reactionType}`
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            // Actualizar contadores
+            document.getElementById(`comment-likes-${commentId}`).textContent = data.likes_count;
+            document.getElementById(`comment-loves-${commentId}`).textContent = data.loves_count;
+            document.getElementById(`comment-dislikes-${commentId}`).textContent = data.dislikes_count;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+// Toggle favorito
+async function toggleFavorite(postId) {
+    try {
+        const response = await fetch(`/social/post/${postId}/favorite/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            const btn = document.getElementById(`favorite-btn-${postId}`);
+            const icon = btn.querySelector('i');
+            
+            if (data.favorited) {
+                btn.classList.add('active-favorite');
+                icon.classList.remove('bi-star');
+                icon.classList.add('bi-star-fill');
+            } else {
+                btn.classList.remove('active-favorite');
+                icon.classList.remove('bi-star-fill');
+                icon.classList.add('bi-star');
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al guardar favorito');
+    }
+}
+</script>
+{% endblock %}

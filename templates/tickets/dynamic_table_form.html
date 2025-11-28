@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if form.instance.pk %}Editar{% else %}Nueva{% endif %} Tabla API{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>
+                <i class="fas fa-table"></i> 
+                {% if form.instance.pk %}Editar{% else %}Nueva{% endif %} Tabla API
+            </h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'dynamic_table_list' %}">Tablas API</a>
+                    </li>
+                    <li class="breadcrumb-item active">
+                        {% if form.instance.pk %}Editar{% else %}Crear{% endif %}
+                    </li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Información de la Tabla</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">
+                                Nombre de la Tabla <span class="text-danger">*</span>
+                            </label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.name.errors }}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                Identificador único (sin espacios, solo letras, números y guiones bajos)
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.display_name.id_for_label }}" class="form-label">
+                                Nombre de Visualización <span class="text-danger">*</span>
+                            </label>
+                            {{ form.display_name }}
+                            {% if form.display_name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.display_name.errors }}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                Nombre amigable para mostrar en la interfaz
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">
+                                Descripción
+                            </label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.description.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Permisos API -->
+                        <div class="card mb-3 border-info">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0"><i class="bi bi-key"></i> Permisos de API</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-2">
+                                        <div class="form-check">
+                                            {{ form.allow_public_read }}
+                                            <label class="form-check-label" for="{{ form.allow_public_read.id_for_label }}">
+                                                Permitir lectura pública (API)
+                                            </label>
+                                        </div>
+                                        <small class="form-text text-muted">Cualquiera con el token puede leer registros</small>
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <div class="form-check">
+                                            {{ form.allow_public_create }}
+                                            <label class="form-check-label" for="{{ form.allow_public_create.id_for_label }}">
+                                                Permitir creación pública (API)
+                                            </label>
+                                        </div>
+                                        <small class="form-text text-muted">Cualquiera con el token puede crear registros</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Formulario Público Móvil -->
+                        <div class="card mb-3 border-success">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="mb-0"><i class="bi bi-phone"></i> Formulario Público Móvil</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check mb-3">
+                                    {{ form.public_form_enabled }}
+                                    <label class="form-check-label" for="{{ form.public_form_enabled.id_for_label }}">
+                                        <strong>Habilitar formulario público</strong>
+                                    </label>
+                                    <small class="form-text text-muted d-block">
+                                        Genera una URL pública con formulario web optimizado para móvil
+                                    </small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.public_form_title.id_for_label }}" class="form-label">
+                                        Título del Formulario
+                                    </label>
+                                    {{ form.public_form_title }}
+                                    <small class="form-text text-muted">Título que verán los usuarios</small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.public_form_description.id_for_label }}" class="form-label">
+                                        Descripción del Formulario
+                                    </label>
+                                    {{ form.public_form_description }}
+                                    <small class="form-text text-muted">Texto descriptivo del formulario</small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.public_form_success_message.id_for_label }}" class="form-label">
+                                        Mensaje de Éxito
+                                    </label>
+                                    {{ form.public_form_success_message }}
+                                    <small class="form-text text-muted">Mensaje después de enviar</small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.public_form_password.id_for_label }}" class="form-label">
+                                        <i class="bi bi-lock"></i> Contraseña (Opcional)
+                                    </label>
+                                    {{ form.public_form_password }}
+                                    <small class="form-text text-muted">
+                                        Protege el formulario con contraseña. Dejar vacío para acceso libre.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Guardar
+                            </button>
+                            <a href="{% url 'dynamic_table_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h5><i class="fas fa-info-circle"></i> Ayuda</h5>
+                    <p class="mb-2"><strong>Nombre de la Tabla:</strong></p>
+                    <ul class="small">
+                        <li>Debe ser único</li>
+                        <li>Solo letras, números y guiones bajos (_)</li>
+                        <li>Ejemplo: comentarios_blog, usuarios_externos</li>
+                    </ul>
+                    
+                    <p class="mb-2 mt-3"><strong>Permisos:</strong></p>
+                    <ul class="small">
+                        <li><strong>Lectura pública:</strong> Permite consultar registros con el token</li>
+                        <li><strong>Creación pública:</strong> Permite crear nuevos registros con el token</li>
+                        <li>Útil para formularios externos sin autenticación</li>
+                    </ul>
+
+                    <p class="mb-2 mt-3"><strong>Después de crear:</strong></p>
+                    <ul class="small mb-0">
+                        <li>Define los campos de la tabla</li>
+                        <li>Obtén el token de API</li>
+                        <li>Usa el API REST para CRUD</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    #id_name, #id_display_name, #id_description {
+        width: 100%;
+        padding: 0.375rem 0.75rem;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+    }
+    #id_description {
+        min-height: 100px;
+    }
+</style>
+{% endblock %}

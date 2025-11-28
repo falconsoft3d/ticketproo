@@ -1,0 +1,322 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load tickets_tags %}
+
+{% block title %}Registros - {{ table.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-database"></i> Registros de {{ table.name }}</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dynamic_table_list' %}">Tablas API</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'dynamic_table_detail' table.pk %}">{{ table.name }}</a></li>
+                    <li class="breadcrumb-item active">Registros</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'dynamic_table_detail' table.pk %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list"></i> 
+                        {{ records|length }} registro{{ records|length|pluralize }}
+                    </h5>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createRecordModal">
+                        <i class="fas fa-plus"></i> Agregar Registro
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if records %}
+                        <!-- Vista en Lista (Cards) -->
+                        <div class="row">
+                            {% for record in records %}
+                            <div class="col-12 mb-3">
+                                <div class="card border-start border-primary border-3">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h6 class="mb-0">
+                                                <span class="badge bg-secondary">ID: {{ record.id }}</span>
+                                                <small class="text-muted ms-2">
+                                                    <i class="fas fa-calendar"></i> {{ record.created_at|date:"d/m/Y H:i" }}
+                                                </small>
+                                                {% if record.created_by_ip %}
+                                                <small class="text-muted ms-2">
+                                                    <i class="fas fa-network-wired"></i> {{ record.created_by_ip }}
+                                                </small>
+                                                {% endif %}
+                                            </h6>
+                                            <div class="btn-group" role="group">
+                                                <button type="button" 
+                                                        class="btn btn-sm btn-info" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#viewModal{{ record.id }}"
+                                                        title="Ver detalles">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button type="button" 
+                                                        class="btn btn-sm btn-warning" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#editModal{{ record.id }}"
+                                                        title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <form method="post" 
+                                                      action="{% url 'dynamic_table_record_delete' table.pk record.pk %}" 
+                                                      style="display:inline;"
+                                                      onsubmit="return confirm('¿Estás seguro de eliminar este registro?');">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-sm btn-danger" title="Eliminar">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                        <hr class="my-2">
+                                        <div class="row">
+                                            {% for field in fields %}
+                                            <div class="col-md-6 col-lg-4 mb-2">
+                                                <small class="text-muted d-block">
+                                                    <i class="fas fa-tag"></i> {{ field.display_name }}:
+                                                </small>
+                                                <strong>
+                                                    {% if field.field_type == 'boolean' %}
+                                                        {% if record.data|get_item:field.name %}
+                                                            <span class="badge bg-success">Sí</span>
+                                                        {% else %}
+                                                            <span class="badge bg-danger">No</span>
+                                                        {% endif %}
+                                                    {% elif field.field_type == 'json' %}
+                                                        <code class="small">{{ record.data|get_item:field.name|truncatechars:50 }}</code>
+                                                    {% elif field.field_type == 'email' %}
+                                                        <a href="mailto:{{ record.data|get_item:field.name }}">{{ record.data|get_item:field.name|default:"-" }}</a>
+                                                    {% elif field.field_type == 'url' %}
+                                                        <a href="{{ record.data|get_item:field.name }}" target="_blank">{{ record.data|get_item:field.name|truncatechars:40|default:"-" }}</a>
+                                                    {% else %}
+                                                        {{ record.data|get_item:field.name|default:"-" }}
+                                                    {% endif %}
+                                                </strong>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                                    <!-- Modal para ver datos completos -->
+                                    <div class="modal fade" id="viewModal{{ record.id }}" tabindex="-1">
+                                        <div class="modal-dialog modal-lg">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Registro #{{ record.id }}</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <table class="table table-bordered">
+                                                        {% for field in fields %}
+                                                        <tr>
+                                                            <th style="width: 30%">{{ field.display_name }}</th>
+                                                            <td>
+                                                                {% if field.field_type == 'json' %}
+                                                                    <pre class="mb-0"><code>{{ record.data|get_item:field.name|default:"-" }}</code></pre>
+                                                                {% else %}
+                                                                    {{ record.data|get_item:field.name|default:"-" }}
+                                                                {% endif %}
+                                                            </td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                        <tr>
+                                                            <th>IP Origen</th>
+                                                            <td>{{ record.created_by_ip|default:"-" }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th>Fecha Creación</th>
+                                                            <td>{{ record.created_at }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th>Fecha Actualización</th>
+                                                            <td>{{ record.updated_at }}</td>
+                                                        </tr>
+                                                    </table>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                        Cerrar
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Modal para editar registro -->
+                                    <div class="modal fade" id="editModal{{ record.id }}" tabindex="-1">
+                                        <div class="modal-dialog modal-lg">
+                                            <div class="modal-content">
+                                                <form method="post" action="{% url 'dynamic_table_record_update' table.pk record.pk %}">
+                                                    {% csrf_token %}
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Editar Registro #{{ record.id }}</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        {% for field in fields %}
+                                                        <div class="mb-3">
+                                                            <label class="form-label">
+                                                                {{ field.display_name }}
+                                                                {% if field.is_required %}<span class="text-danger">*</span>{% endif %}
+                                                            </label>
+                                                            {% if field.field_type == 'textarea' %}
+                                                                <textarea name="{{ field.name }}" class="form-control" rows="3" {% if field.is_required %}required{% endif %}>{{ record.data|get_item:field.name|default:field.default_value }}</textarea>
+                                                            {% elif field.field_type == 'boolean' %}
+                                                                <select name="{{ field.name }}" class="form-control" {% if field.is_required %}required{% endif %}>
+                                                                    <option value="true" {% if record.data|get_item:field.name %}selected{% endif %}>Sí</option>
+                                                                    <option value="false" {% if not record.data|get_item:field.name %}selected{% endif %}>No</option>
+                                                                </select>
+                                                            {% elif field.field_type == 'date' %}
+                                                                <input type="date" name="{{ field.name }}" class="form-control" value="{{ record.data|get_item:field.name|default:field.default_value }}" {% if field.is_required %}required{% endif %}>
+                                                            {% elif field.field_type == 'datetime' %}
+                                                                <input type="datetime-local" name="{{ field.name }}" class="form-control" value="{{ record.data|get_item:field.name|default:field.default_value }}" {% if field.is_required %}required{% endif %}>
+                                                            {% elif field.field_type == 'number' %}
+                                                                <input type="number" name="{{ field.name }}" class="form-control" value="{{ record.data|get_item:field.name|default:field.default_value }}" {% if field.is_required %}required{% endif %}>
+                                                            {% elif field.field_type == 'decimal' %}
+                                                                <input type="number" step="0.01" name="{{ field.name }}" class="form-control" value="{{ record.data|get_item:field.name|default:field.default_value }}" {% if field.is_required %}required{% endif %}>
+                                                            {% elif field.field_type == 'email' %}
+                                                                <input type="email" name="{{ field.name }}" class="form-control" value="{{ record.data|get_item:field.name|default:field.default_value }}" {% if field.is_required %}required{% endif %}>
+                                                            {% elif field.field_type == 'url' %}
+                                                                <input type="url" name="{{ field.name }}" class="form-control" value="{{ record.data|get_item:field.name|default:field.default_value }}" {% if field.is_required %}required{% endif %}>
+                                                            {% else %}
+                                                                <input type="text" name="{{ field.name }}" class="form-control" value="{{ record.data|get_item:field.name|default:field.default_value }}" {% if field.is_required %}required{% endif %} {% if field.max_length %}maxlength="{{ field.max_length }}"{% endif %}>
+                                                            {% endif %}
+                                                            {% if field.help_text %}
+                                                                <small class="form-text text-muted">{{ field.help_text }}</small>
+                                                            {% endif %}
+                                                        </div>
+                                                        {% endfor %}
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                        <button type="submit" class="btn btn-warning">
+                                                            <i class="fas fa-save"></i> Guardar Cambios
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
+                            <p class="text-muted">No hay registros todavía</p>
+                            <p class="small text-muted">Usa el botón "Agregar Registro" o el API REST para crear registros</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if records %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h5><i class="fas fa-code"></i> Ejemplo de Creación vía API</h5>
+                    <pre class="bg-dark text-light p-3 rounded mb-0"><code>curl -X POST \
+  -H "X-API-Token: {{ table.api_token }}" \
+  -H "Content-Type: application/json" \
+  -d '{
+{% for field in fields %}    "{{ field.name }}": "valor_ejemplo"{% if not forloop.last %},{% endif %}
+{% endfor %}  }' \
+  {{ request.scheme }}://{{ request.get_host }}{{ table.get_api_url }}</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal para crear nuevo registro -->
+<div class="modal fade" id="createRecordModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post" action="{% url 'dynamic_table_record_create' table.pk %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Crear Nuevo Registro</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    {% for field in fields %}
+                    <div class="mb-3">
+                        <label class="form-label">
+                            {{ field.display_name }}
+                            {% if field.is_required %}<span class="text-danger">*</span>{% endif %}
+                        </label>
+                        {% if field.field_type == 'textarea' %}
+                            <textarea name="{{ field.name }}" class="form-control" rows="3" {% if field.is_required %}required{% endif %}>{{ field.default_value }}</textarea>
+                        {% elif field.field_type == 'boolean' %}
+                            <select name="{{ field.name }}" class="form-control" {% if field.is_required %}required{% endif %}>
+                                <option value="true">Sí</option>
+                                <option value="false" selected>No</option>
+                            </select>
+                        {% elif field.field_type == 'date' %}
+                            <input type="date" name="{{ field.name }}" class="form-control" value="{{ field.default_value }}" {% if field.is_required %}required{% endif %}>
+                        {% elif field.field_type == 'datetime' %}
+                            <input type="datetime-local" name="{{ field.name }}" class="form-control" value="{{ field.default_value }}" {% if field.is_required %}required{% endif %}>
+                        {% elif field.field_type == 'number' %}
+                            <input type="number" name="{{ field.name }}" class="form-control" value="{{ field.default_value }}" {% if field.is_required %}required{% endif %}>
+                        {% elif field.field_type == 'decimal' %}
+                            <input type="number" step="0.01" name="{{ field.name }}" class="form-control" value="{{ field.default_value }}" {% if field.is_required %}required{% endif %}>
+                        {% elif field.field_type == 'email' %}
+                            <input type="email" name="{{ field.name }}" class="form-control" value="{{ field.default_value }}" {% if field.is_required %}required{% endif %}>
+                        {% elif field.field_type == 'url' %}
+                            <input type="url" name="{{ field.name }}" class="form-control" value="{{ field.default_value }}" {% if field.is_required %}required{% endif %}>
+                        {% else %}
+                            <input type="text" name="{{ field.name }}" class="form-control" value="{{ field.default_value }}" {% if field.is_required %}required{% endif %} {% if field.max_length %}maxlength="{{ field.max_length }}"{% endif %}>
+                        {% endif %}
+                        {% if field.help_text %}
+                            <small class="form-text text-muted">{{ field.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Crear Registro
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    pre code {
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}

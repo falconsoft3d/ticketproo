@@ -18,14 +18,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
-<body class="bg-light">
+<body class="bg-light" style="padding-top: 70px;">
     {% if user.is_authenticated %}
             {% if is_working %}
                 <!-- Navbar verde cuando está trabajando -->
-                <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+                <nav class="navbar navbar-expand-lg navbar-dark bg-success fixed-top">
             {% else %}
                 <!-- Navbar normal cuando no está trabajando -->
-                <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+                <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
             {% endif %}
             <div class="container">
                 <a class="navbar-brand fw-bold" href="{% url 'home' %}">
@@ -347,6 +347,12 @@
                             <i class="bi bi-book"></i> CAP
                         </a>
                         <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'social_feed' %}active{% endif %}" 
+                                   href="{% url 'social_feed' %}">
+                                    <i class="bi bi-people-fill"></i> Red Social
+                                </a>
+                            </li>
                             <li>
                                 <a class="dropdown-item {% if request.resolver_match.url_name == 'course_list' %}active{% endif %}" 
                                    href="{% url 'course_list' %}">
@@ -1095,6 +1101,18 @@
                                     <i class="bi bi-paypal"></i> Enlaces de Pago PayPal
                                 </a>
                             </li>
+                            <li>
+                                <a class="dropdown-item {% if 'dynamic_table' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'dynamic_table_list' %}">
+                                    <i class="bi bi-table"></i> Tablas API
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'api_tester' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'api_tester' %}">
+                                    <i class="bi bi-code-square"></i> Probar API
+                                </a>
+                            </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <h6 class="dropdown-header">Captura de Leads</h6>
@@ -1529,6 +1547,17 @@
             0
         </span>
     </button>
+    
+    <!-- Botón flotante para Red Social (izquierda) -->
+    <a href="{% url 'social_feed' %}" class="btn btn-info shadow-lg" 
+            style="position: fixed; left: 0; top: calc(50% - 305px); transform: translateY(-50%); z-index: 1050; 
+                   border-radius: 0 8px 8px 0; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
+                   border-left: none; transition: all 0.3s ease;"
+            onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
+            onmouseout="this.style.transform = 'translateY(-50%) scale(1)'"
+            title="Red Social Interna">
+        <i class="bi bi-people-fill"></i>
+    </a>
     
     <!-- Botón flotante para tareas rápidas (izquierda) - Solo para agentes -->
     <button id="quickTaskToggle" class="btn btn-success shadow-lg" 

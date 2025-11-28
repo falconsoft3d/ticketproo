@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Tablas API Dinámicas{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-table"></i> Tablas API Dinámicas</h2>
+            <p class="text-muted">Sistema de tablas dinámicas con API REST para integraciones externas</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'dynamic_table_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Nueva Tabla
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    {% if tables %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Descripción</th>
+                                        <th>Campos</th>
+                                        <th>Registros</th>
+                                        <th>Lectura Pública</th>
+                                        <th>Creación Pública</th>
+                                        <th>Creado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for table in tables %}
+                                    <tr>
+                                        <td>
+                                            <a href="{% url 'dynamic_table_detail' table.pk %}" class="fw-bold">
+                                                {{ table.name }}
+                                            </a>
+                                        </td>
+                                        <td>{{ table.description|default:"-"|truncatewords:10 }}</td>
+                                        <td>
+                                            <span class="badge bg-info">
+                                                {{ table.fields.count }} campo{{ table.fields.count|pluralize }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">
+                                                {{ table.records.count }} registro{{ table.records.count|pluralize }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if table.allow_public_read %}
+                                                <span class="badge bg-success">Sí</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">No</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if table.allow_public_create %}
+                                                <span class="badge bg-success">Sí</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">No</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">
+                                                {{ table.created_at|date:"d/m/Y H:i" }}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="{% url 'dynamic_table_detail' table.pk %}" 
+                                                   class="btn btn-sm btn-info" 
+                                                   title="Ver detalles">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{% url 'dynamic_table_edit' table.pk %}" 
+                                                   class="btn btn-sm btn-warning" 
+                                                   title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <a href="{% url 'dynamic_table_records' table.pk %}" 
+                                                   class="btn btn-sm btn-success" 
+                                                   title="Ver registros">
+                                                    <i class="fas fa-database"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-table fa-4x text-muted mb-3"></i>
+                            <p class="text-muted">No hay tablas creadas todavía</p>
+                            <a href="{% url 'dynamic_table_create' %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Crear primera tabla
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if tables %}
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h5><i class="fas fa-info-circle"></i> Información</h5>
+                        <ul class="mb-0">
+                            <li>Cada tabla tiene un <strong>token único</strong> para acceder a su API</li>
+                            <li>Puedes definir permisos de <strong>lectura pública</strong> y <strong>creación pública</strong></li>
+                            <li>Los campos soportan validación: requeridos, únicos, longitud máxima</li>
+                            <li>Ideal para integraciones externas como formularios de contacto, comentarios de blog, etc.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

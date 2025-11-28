@@ -6,7 +6,8 @@ from .api_views import (
     landing_page_meeting_click, landing_page_contact_click,
     active_users_count, active_users_list, open_tickets_count, direct_ai_chat,
     system_info_api, short_url_stats_api, upcoming_events_list, web_counter_track,
-    web_counter_stats, quick_create_task, pending_tasks_count, get_all_users_for_tasks
+    web_counter_stats, quick_create_task, pending_tasks_count, get_all_users_for_tasks,
+    dynamic_table_api_list, dynamic_table_api_detail
 )
 
 # Router para los ViewSets
@@ -59,6 +60,10 @@ api_urlpatterns = [
     path('tasks/quick-create/', quick_create_task, name='api-quick-create-task'),
     path('tasks/pending-count/', pending_tasks_count, name='api-pending-tasks-count'),
     path('tasks/users/', get_all_users_for_tasks, name='api-get-all-users-for-tasks'),
+    
+    # URLs para Tablas Dinámicas API (sin autenticación - usa token de tabla)
+    path('dynamic-tables/<str:table_name>/', dynamic_table_api_list, name='api-dynamic-table-list'),
+    path('dynamic-tables/<str:table_name>/<int:record_id>/', dynamic_table_api_detail, name='api-dynamic-table-detail'),
 ]
 
 # Django espera que la variable se llame urlpatterns

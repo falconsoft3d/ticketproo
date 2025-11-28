@@ -1,0 +1,1122 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Probar API - Tester{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'api_tester' %}"><i class="bi bi-list"></i> Mis APIs</a>
+                    </li>
+                    <li class="breadcrumb-item active">Probador</li>
+                </ol>
+            </nav>
+            <h2><i class="bi bi-code-square"></i> Probador de API</h2>
+            <p class="text-muted">Interfaz estilo Postman para probar APIs internas y externas</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Panel de Configuración -->
+        <div class="col-lg-4">
+            <!-- APIs Guardadas -->
+            <div class="card mb-3">
+                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="bi bi-bookmark-star"></i> Mis APIs Guardadas</h6>
+                    <button class="btn btn-sm btn-light" onclick="toggleSavedApis()">
+                        <i class="bi bi-chevron-down" id="toggleIcon"></i>
+                    </button>
+                </div>
+                <div class="card-body p-2" id="savedApisPanel" style="display: none; max-height: 300px; overflow-y: auto;">
+                    <div id="savedApisList">
+                        <div class="text-center text-muted py-3">
+                            <small>Cargando...</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-gear"></i> Configuración</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Modo: Interno o Externo -->
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Modo:</strong></label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="apiMode" id="modeInternal" value="internal" checked onchange="toggleApiMode()">
+                            <label class="btn btn-outline-primary" for="modeInternal">
+                                <i class="bi bi-house"></i> API Interna
+                            </label>
+                            <input type="radio" class="btn-check" name="apiMode" id="modeExternal" value="external" onchange="toggleApiMode()">
+                            <label class="btn btn-outline-success" for="modeExternal">
+                                <i class="bi bi-globe"></i> API Externa
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Selección de Tabla (solo modo interno) -->
+                    <div class="mb-3" id="tableSelectGroup">
+                        <label class="form-label"><strong>Tabla:</strong></label>
+                        <select class="form-select" id="tableSelect" onchange="updateEndpoint()">
+                            <option value="">Selecciona una tabla...</option>
+                            {% for table in tables %}
+                            <option value="{{ table.name }}" 
+                                    data-token="{{ table.api_token }}"
+                                    data-url="{{ request.scheme }}://{{ request.get_host }}/api/dynamic-tables/{{ table.name }}/"
+                                    data-fields='[{% for field in table.fields.all %}{"name":"{{ field.name }}","type":"{{ field.field_type }}","required":{% if field.is_required %}true{% else %}false{% endif %}}{% if not forloop.last %},{% endif %}{% endfor %}]'>
+                                {{ table.display_name }} ({{ table.name }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Ejemplos de APIs (solo modo externo) -->
+                    <div class="mb-3" id="examplesGroup" style="display: none;">
+                        <label class="form-label"><strong>Ejemplos de APIs:</strong></label>
+                        <select class="form-select" id="apiExamples" onchange="loadApiExample()">
+                            <option value="">Selecciona un ejemplo...</option>
+                            <optgroup label="APIs Públicas">
+                                <option value="weather">🌤️ API del Tiempo (OpenWeather)</option>
+                                <option value="exchange">💱 API Cambio de Moneda</option>
+                                <option value="jsonplaceholder">📝 JSONPlaceholder (Posts)</option>
+                                <option value="github">🐙 GitHub API (Repos)</option>
+                            </optgroup>
+                            <optgroup label="APIs Empresariales">
+                                <option value="odoo">🟣 Odoo JSON-RPC (Authenticate)</option>
+                                <option value="odoo-search">🟣 Odoo JSON-RPC (Search)</option>
+                                <option value="odoo-create">🟣 Odoo JSON-RPC (Create)</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <!-- URL Manual (solo modo externo) -->
+                    <div class="mb-3" id="manualUrlGroup" style="display: none;">
+                        <label class="form-label"><strong>URL de la API:</strong></label>
+                        <input type="text" class="form-control" id="manualUrl" placeholder="https://api.ejemplo.com/endpoint" oninput="updateManualEndpoint()">
+                        <small class="text-muted">Ingresa la URL completa del endpoint</small>
+                    </div>
+
+                    <!-- Método HTTP -->
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Método:</strong></label>
+                        <select class="form-select" id="methodSelect" onchange="updateMethodUI()">
+                            <option value="GET">GET - Listar/Obtener</option>
+                            <option value="POST">POST - Crear</option>
+                            <option value="PUT">PUT - Actualizar</option>
+                            <option value="DELETE">DELETE - Eliminar</option>
+                            <option value="PATCH">PATCH - Actualización Parcial</option>
+                        </select>
+                    </div>
+
+                    <!-- ID de Registro (para GET, PUT, DELETE específicos) -->
+                    <div class="mb-3" id="recordIdGroup" style="display: none;">
+                        <label class="form-label"><strong>ID de Registro:</strong></label>
+                        <input type="number" class="form-control" id="recordId" placeholder="Dejar vacío para listar todos (GET)" onchange="updateEndpoint()">
+                        <small class="text-muted">Opcional para GET, requerido para PUT/DELETE</small>
+                    </div>
+
+                    <!-- Token/Auth (modo interno automático, externo manual) -->
+                    <div class="mb-3" id="tokenGroup">
+                        <label class="form-label"><strong>Token API:</strong></label>
+                        <div class="input-group">
+                            <input type="text" class="form-control font-monospace small" id="apiToken" placeholder="Token automático o manual">
+                            <button class="btn btn-outline-secondary" type="button" onclick="copyToken()">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted" id="tokenHelp">Se rellena automáticamente para APIs internas</small>
+                    </div>
+
+                    <!-- URL Completa -->
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Endpoint:</strong></label>
+                        <input type="text" class="form-control font-monospace small" id="endpoint" placeholder="URL completa del endpoint">
+                    </div>
+
+                    <!-- Headers Personalizados (modo externo) -->
+                    <div class="mb-3" id="customHeadersGroup" style="display: none;">
+                        <label class="form-label"><strong>Headers Personalizados:</strong></label>
+                        <textarea class="form-control font-monospace small" id="customHeaders" rows="4" placeholder='Authorization: Bearer token123
+Accept: application/json
+Custom-Header: valor'></textarea>
+                        <small class="text-muted">Un header por línea en formato "Nombre: Valor"</small>
+                    </div>
+
+                    <!-- Parámetros de Query (solo GET) -->
+                    <div id="queryParamsGroup" style="display: none;">
+                        <label class="form-label"><strong>Parámetros de Query:</strong></label>
+                        <div class="mb-2">
+                            <label class="form-label small">Búsqueda:</label>
+                            <input type="text" class="form-control form-control-sm" id="searchParam" placeholder="Buscar...">
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <label class="form-label small">Página:</label>
+                                <input type="number" class="form-control form-control-sm" id="pageParam" value="1">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small">Por página:</label>
+                                <input type="number" class="form-control form-control-sm" id="perPageParam" value="50">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Generador de Body JSON -->
+            <div class="card" id="bodyJsonCard" style="display: none;">
+                <div class="card-header bg-warning">
+                    <h6 class="mb-0"><i class="bi bi-braces"></i> Body (JSON)</h6>
+                </div>
+                <div class="card-body">
+                    <div id="jsonFieldsContainer"></div>
+                    <button class="btn btn-sm btn-secondary w-100 mt-2" onclick="generateJSON()">
+                        <i class="bi bi-arrow-down"></i> Generar JSON
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de Petición y Respuesta -->
+        <div class="col-lg-8">
+            <!-- Editor de Request -->
+            <div class="card mb-3">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-send"></i> Petición</h5>
+                    <div>
+                        <button class="btn btn-outline-light btn-sm me-2" onclick="showSaveModal()">
+                            <i class="bi bi-bookmark-plus"></i> Guardar
+                        </button>
+                        <button class="btn btn-success btn-sm" onclick="sendRequest()">
+                            <i class="bi bi-play-fill"></i> Enviar
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Headers que se enviarán:</strong></label>
+                        <textarea class="form-control font-monospace small" id="headersInput" rows="3" readonly>Content-Type: application/json</textarea>
+                    </div>
+                    <div class="mb-3" id="bodyGroup" style="display: none;">
+                        <label class="form-label"><strong>Body (JSON):</strong></label>
+                        <textarea class="form-control font-monospace small" id="bodyInput" rows="10" placeholder='{
+  "campo1": "valor1",
+  "campo2": "valor2"
+}'></textarea>
+                        <small class="text-muted">Escribe el JSON manualmente o usa el generador</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Comando cURL equivalente:</strong></label>
+                        <textarea class="form-control font-monospace small bg-dark text-light" id="curlCommand" rows="6" readonly></textarea>
+                        <button class="btn btn-sm btn-outline-secondary mt-2" onclick="copyCurl()">
+                            <i class="bi bi-clipboard"></i> Copiar cURL
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel de Respuesta -->
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-arrow-down-circle"></i> Respuesta</h5>
+                </div>
+                <div class="card-body">
+                    <div id="loadingIndicator" style="display: none;" class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                        <p class="mt-2">Enviando petición...</p>
+                    </div>
+                    <div id="responseContainer" style="display: none;">
+                        <div class="mb-3">
+                            <span class="badge bg-secondary" id="statusCode">200</span>
+                            <span class="badge bg-info" id="responseTime">0ms</span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Headers de Respuesta:</strong></label>
+                            <pre class="bg-light p-2 rounded small" id="responseHeaders"></pre>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Body:</strong></label>
+                            <pre class="bg-dark text-light p-3 rounded" id="responseBody" style="max-height: 500px; overflow-y: auto;"></pre>
+                        </div>
+                    </div>
+                    <div id="noResponseMessage" class="text-center py-5 text-muted">
+                        <i class="bi bi-arrow-up-circle" style="font-size: 3rem;"></i>
+                        <p class="mt-3">Configura y envía una petición para ver la respuesta aquí</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para guardar API -->
+<div class="modal fade" id="saveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-bookmark-plus"></i> Guardar Configuración de API</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="saveForm">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre de la API <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="saveTitle" required autofocus placeholder="Ej: API de Productos">
+                        <small class="text-muted">Dale un nombre descriptivo para identificarla fácilmente</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción (opcional)</label>
+                        <textarea class="form-control" id="saveDescription" rows="2" placeholder="Descripción breve de para qué sirve esta API"></textarea>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="saveIsFavorite">
+                        <label class="form-check-label" for="saveIsFavorite">
+                            <i class="bi bi-star"></i> Marcar como favorita
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveApiConfiguration()">
+                    <i class="bi bi-save"></i> Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-control[readonly] {
+        background-color: #f8f9fa;
+    }
+    pre {
+        margin-bottom: 0;
+    }
+    .font-monospace {
+        font-family: 'Courier New', monospace;
+    }
+</style>
+
+<script>
+let currentTable = null;
+let isInternalMode = true;
+
+function toggleApiMode() {
+    isInternalMode = document.getElementById('modeInternal').checked;
+    
+    const tableSelectGroup = document.getElementById('tableSelectGroup');
+    const manualUrlGroup = document.getElementById('manualUrlGroup');
+    const recordIdGroup = document.getElementById('recordIdGroup');
+    const queryParamsGroup = document.getElementById('queryParamsGroup');
+    const bodyJsonCard = document.getElementById('bodyJsonCard');
+    const customHeadersGroup = document.getElementById('customHeadersGroup');
+    const examplesGroup = document.getElementById('examplesGroup');
+    const tokenInput = document.getElementById('apiToken');
+    const tokenHelp = document.getElementById('tokenHelp');
+    const endpointInput = document.getElementById('endpoint');
+    
+    if (isInternalMode) {
+        // Modo Interno
+        tableSelectGroup.style.display = 'block';
+        manualUrlGroup.style.display = 'none';
+        customHeadersGroup.style.display = 'none';
+        examplesGroup.style.display = 'none';
+        tokenInput.readOnly = true;
+        tokenHelp.textContent = 'Se rellena automáticamente para APIs internas';
+        endpointInput.readOnly = true;
+        
+        // Resetear y actualizar
+        updateEndpoint();
+    } else {
+        // Modo Externo
+        tableSelectGroup.style.display = 'none';
+        manualUrlGroup.style.display = 'block';
+        customHeadersGroup.style.display = 'block';
+        examplesGroup.style.display = 'block';
+        recordIdGroup.style.display = 'none';
+        queryParamsGroup.style.display = 'none';
+        bodyJsonCard.style.display = 'none';
+        tokenInput.readOnly = false;
+        tokenInput.value = '';
+        tokenHelp.textContent = 'Opcional: Ingresa token Bearer, API Key, etc.';
+        endpointInput.readOnly = false;
+        endpointInput.value = '';
+        currentTable = null;
+        document.getElementById('apiExamples').value = '';
+    }
+    
+    updateMethodUI();
+    updateHeadersDisplay();
+}
+
+function loadApiExample() {
+    const example = document.getElementById('apiExamples').value;
+    if (!example) return;
+
+    const examples = {
+        weather: {
+            url: 'https://api.openweathermap.org/data/2.5/weather?q=Madrid&appid=YOUR_API_KEY&units=metric',
+            method: 'GET',
+            headers: 'Accept: application/json',
+            token: '',
+            body: '',
+            description: 'Obtiene el clima actual de una ciudad. Reemplaza YOUR_API_KEY con tu clave de OpenWeather.'
+        },
+        exchange: {
+            url: 'https://api.exchangerate-api.com/v4/latest/USD',
+            method: 'GET',
+            headers: 'Accept: application/json',
+            token: '',
+            body: '',
+            description: 'Obtiene tasas de cambio actuales basadas en USD.'
+        },
+        jsonplaceholder: {
+            url: 'https://jsonplaceholder.typicode.com/posts/1',
+            method: 'GET',
+            headers: 'Accept: application/json',
+            token: '',
+            body: '',
+            description: 'API de prueba pública con posts de ejemplo.'
+        },
+        github: {
+            url: 'https://api.github.com/users/octocat/repos',
+            method: 'GET',
+            headers: 'Accept: application/vnd.github+json\nUser-Agent: API-Tester',
+            token: '',
+            body: '',
+            description: 'Lista repositorios públicos de un usuario de GitHub.'
+        },
+        odoo: {
+            url: 'https://demo.odoo.com/jsonrpc',
+            method: 'POST',
+            headers: 'Content-Type: application/json\nAccept: application/json',
+            token: '',
+            body: JSON.stringify({
+                jsonrpc: "2.0",
+                method: "call",
+                params: {
+                    service: "common",
+                    method: "authenticate",
+                    args: ["demo", "admin", "admin", {}]
+                },
+                id: 1
+            }, null, 2),
+            description: 'Autenticación en Odoo vía JSON-RPC. Devuelve el UID del usuario.'
+        },
+        'odoo-search': {
+            url: 'https://demo.odoo.com/jsonrpc',
+            method: 'POST',
+            headers: 'Content-Type: application/json\nAccept: application/json',
+            token: '',
+            body: JSON.stringify({
+                jsonrpc: "2.0",
+                method: "call",
+                params: {
+                    service: "object",
+                    method: "execute_kw",
+                    args: [
+                        "demo",
+                        1,
+                        "admin",
+                        "res.partner",
+                        "search_read",
+                        [[]],
+                        {
+                            fields: ["name", "email", "phone"],
+                            limit: 5
+                        }
+                    ]
+                },
+                id: 2
+            }, null, 2),
+            description: 'Búsqueda de contactos en Odoo. Reemplaza el UID (1) con el obtenido en authenticate.'
+        },
+        'odoo-create': {
+            url: 'https://demo.odoo.com/jsonrpc',
+            method: 'POST',
+            headers: 'Content-Type: application/json\nAccept: application/json',
+            token: '',
+            body: JSON.stringify({
+                jsonrpc: "2.0",
+                method: "call",
+                params: {
+                    service: "object",
+                    method: "execute_kw",
+                    args: [
+                        "demo",
+                        1,
+                        "admin",
+                        "res.partner",
+                        "create",
+                        [{
+                            name: "Nuevo Cliente",
+                            email: "cliente@ejemplo.com",
+                            phone: "+34 600 000 000"
+                        }]
+                    ]
+                },
+                id: 3
+            }, null, 2),
+            description: 'Crear un contacto en Odoo. Reemplaza el UID (1) con el obtenido en authenticate.'
+        }
+    };
+
+    const config = examples[example];
+    if (config) {
+        document.getElementById('manualUrl').value = config.url;
+        document.getElementById('endpoint').value = config.url;
+        document.getElementById('method').value = config.method;
+        document.getElementById('customHeaders').value = config.headers;
+        document.getElementById('apiToken').value = config.token;
+        document.getElementById('bodyInput').value = config.body;
+        
+        // Mostrar descripción
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-info alert-dismissible fade show mt-2';
+        alert.innerHTML = `
+            <i class="bi bi-info-circle"></i> <strong>Info:</strong> ${config.description}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        const container = document.getElementById('examplesGroup');
+        const existingAlert = container.querySelector('.alert');
+        if (existingAlert) existingAlert.remove();
+        container.appendChild(alert);
+        
+        updateMethodUI();
+        updateHeadersDisplay();
+        updateCurlCommand();
+    }
+}
+
+function updateManualEndpoint() {
+    const manualUrl = document.getElementById('manualUrl').value;
+    const endpointInput = document.getElementById('endpoint');
+    endpointInput.value = manualUrl;
+    updateCurlCommand();
+}
+
+function updateEndpoint() {
+    if (!isInternalMode) return;
+    
+    const tableSelect = document.getElementById('tableSelect');
+    const methodSelect = document.getElementById('methodSelect');
+    const recordIdInput = document.getElementById('recordId');
+    const endpointInput = document.getElementById('endpoint');
+    const tokenInput = document.getElementById('apiToken');
+    
+    const selectedOption = tableSelect.options[tableSelect.selectedIndex];
+    
+    if (selectedOption.value) {
+        const baseUrl = selectedOption.getAttribute('data-url');
+        const token = selectedOption.getAttribute('data-token');
+        const recordId = recordIdInput.value;
+        
+        // Actualizar token
+        tokenInput.value = token;
+        
+        // Construir endpoint
+        let endpoint = baseUrl;
+        if (recordId && (methodSelect.value === 'GET' || methodSelect.value === 'PUT' || methodSelect.value === 'DELETE')) {
+            endpoint += recordId + '/';
+        }
+        
+        endpointInput.value = endpoint;
+        
+        // Actualizar campos para JSON
+        const fields = JSON.parse(selectedOption.getAttribute('data-fields'));
+        currentTable = {
+            name: selectedOption.value,
+            token: token,
+            url: baseUrl,
+            fields: fields
+        };
+        
+        updateJSONFields();
+        updateHeadersDisplay();
+        updateCurlCommand();
+    } else {
+        endpointInput.value = '';
+        tokenInput.value = '';
+        currentTable = null;
+    }
+}
+
+function updateMethodUI() {
+    const method = document.getElementById('methodSelect').value;
+    const recordIdGroup = document.getElementById('recordIdGroup');
+    const bodyGroup = document.getElementById('bodyGroup');
+    const bodyJsonCard = document.getElementById('bodyJsonCard');
+    const queryParamsGroup = document.getElementById('queryParamsGroup');
+    
+    if (isInternalMode) {
+        // Mostrar/ocultar ID de registro solo en modo interno
+        if (method === 'GET') {
+            recordIdGroup.style.display = 'block';
+            queryParamsGroup.style.display = 'block';
+        } else if (method === 'PUT' || method === 'DELETE') {
+            recordIdGroup.style.display = 'block';
+            queryParamsGroup.style.display = 'none';
+        } else {
+            recordIdGroup.style.display = 'none';
+            queryParamsGroup.style.display = 'none';
+        }
+        
+        // Mostrar generador de JSON solo en modo interno
+        if ((method === 'POST' || method === 'PUT') && currentTable) {
+            bodyJsonCard.style.display = 'block';
+        } else {
+            bodyJsonCard.style.display = 'none';
+        }
+    }
+    
+    // Mostrar/ocultar body para POST, PUT, PATCH
+    if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
+        bodyGroup.style.display = 'block';
+    } else {
+        bodyGroup.style.display = 'none';
+    }
+    
+    if (isInternalMode) {
+        updateEndpoint();
+    }
+    updateHeadersDisplay();
+    updateCurlCommand();
+}
+
+function updateHeadersDisplay() {
+    const headersInput = document.getElementById('headersInput');
+    let headers = 'Content-Type: application/json';
+    
+    if (isInternalMode) {
+        const token = document.getElementById('apiToken').value;
+        if (token) {
+            headers = `X-API-Token: ${token}\n${headers}`;
+        }
+    } else {
+        // Modo externo: mostrar headers personalizados
+        const customHeaders = document.getElementById('customHeaders').value;
+        if (customHeaders) {
+            headers = customHeaders + '\n' + headers;
+        }
+        
+        const token = document.getElementById('apiToken').value;
+        if (token) {
+            headers = `Authorization: Bearer ${token}\n${headers}`;
+        }
+    }
+    
+    headersInput.value = headers;
+}
+
+function updateJSONFields() {
+    if (!currentTable) return;
+    
+    const container = document.getElementById('jsonFieldsContainer');
+    container.innerHTML = '';
+    
+    currentTable.fields.forEach(field => {
+        const fieldDiv = document.createElement('div');
+        fieldDiv.className = 'mb-2';
+        
+        let inputHtml = '';
+        if (field.type === 'boolean') {
+            inputHtml = `<select class="form-control form-control-sm" data-field="${field.name}">
+                <option value="true">true</option>
+                <option value="false">false</option>
+            </select>`;
+        } else if (field.type === 'number' || field.type === 'decimal') {
+            inputHtml = `<input type="number" step="${field.type === 'decimal' ? '0.01' : '1'}" class="form-control form-control-sm" data-field="${field.name}" placeholder="123">`;
+        } else if (field.type === 'textarea') {
+            inputHtml = `<textarea class="form-control form-control-sm" data-field="${field.name}" rows="2" placeholder="Texto largo..."></textarea>`;
+        } else {
+            inputHtml = `<input type="text" class="form-control form-control-sm" data-field="${field.name}" placeholder="valor">`;
+        }
+        
+        fieldDiv.innerHTML = `
+            <label class="form-label small mb-1">
+                ${field.name} ${field.required ? '<span class="text-danger">*</span>' : ''}
+                <small class="text-muted">(${field.type})</small>
+            </label>
+            ${inputHtml}
+        `;
+        
+        container.appendChild(fieldDiv);
+    });
+}
+
+function generateJSON() {
+    if (!currentTable) return;
+    
+    const jsonObj = {};
+    const inputs = document.querySelectorAll('[data-field]');
+    
+    inputs.forEach(input => {
+        const fieldName = input.getAttribute('data-field');
+        const value = input.value;
+        
+        if (value) {
+            // Intentar convertir a número si es un campo numérico
+            const field = currentTable.fields.find(f => f.name === fieldName);
+            if (field.type === 'number') {
+                jsonObj[fieldName] = parseInt(value);
+            } else if (field.type === 'decimal') {
+                jsonObj[fieldName] = parseFloat(value);
+            } else if (field.type === 'boolean') {
+                jsonObj[fieldName] = value === 'true';
+            } else {
+                jsonObj[fieldName] = value;
+            }
+        }
+    });
+    
+    document.getElementById('bodyInput').value = JSON.stringify(jsonObj, null, 2);
+    updateCurlCommand();
+}
+
+function updateCurlCommand() {
+    const method = document.getElementById('methodSelect').value;
+    const endpoint = document.getElementById('endpoint').value;
+    const token = document.getElementById('apiToken').value;
+    const body = document.getElementById('bodyInput').value;
+    
+    if (!endpoint) return;
+    
+    let curl = `curl -X ${method} \\\n`;
+    
+    // Headers
+    if (isInternalMode) {
+        if (token) {
+            curl += `  -H "X-API-Token: ${token}" \\\n`;
+        }
+    } else {
+        // Modo externo: agregar headers personalizados
+        const customHeaders = document.getElementById('customHeaders').value;
+        if (customHeaders) {
+            const headerLines = customHeaders.split('\n');
+            headerLines.forEach(line => {
+                if (line.trim()) {
+                    curl += `  -H "${line.trim()}" \\\n`;
+                }
+            });
+        }
+        
+        if (token) {
+            curl += `  -H "Authorization: Bearer ${token}" \\\n`;
+        }
+    }
+    
+    if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
+        curl += `  -H "Content-Type: application/json" \\\n`;
+        if (body) {
+            curl += `  -d '${body}' \\\n`;
+        }
+    }
+    
+    // Agregar parámetros de query para GET (solo modo interno)
+    let finalEndpoint = endpoint;
+    if (method === 'GET' && isInternalMode) {
+        const search = document.getElementById('searchParam').value;
+        const page = document.getElementById('pageParam').value;
+        const perPage = document.getElementById('perPageParam').value;
+        
+        const params = [];
+        if (search) params.push(`search=${encodeURIComponent(search)}`);
+        if (page && page !== '1') params.push(`page=${page}`);
+        if (perPage && perPage !== '50') params.push(`per_page=${perPage}`);
+        
+        if (params.length > 0) {
+            finalEndpoint += '?' + params.join('&');
+        }
+    }
+    
+    curl += `  ${finalEndpoint}`;
+    
+    document.getElementById('curlCommand').value = curl;
+}
+
+async function sendRequest() {
+    const method = document.getElementById('methodSelect').value;
+    const token = document.getElementById('apiToken').value;
+    let endpoint = document.getElementById('endpoint').value;
+    const body = document.getElementById('bodyInput').value;
+    
+    if (!endpoint) {
+        alert('Por favor ingresa un endpoint');
+        return;
+    }
+    
+    // Agregar parámetros de query para GET (solo modo interno)
+    if (method === 'GET' && isInternalMode) {
+        const search = document.getElementById('searchParam').value;
+        const page = document.getElementById('pageParam').value;
+        const perPage = document.getElementById('perPageParam').value;
+        
+        const params = [];
+        if (search) params.push(`search=${encodeURIComponent(search)}`);
+        if (page && page !== '1') params.push(`page=${page}`);
+        if (perPage && perPage !== '50') params.push(`per_page=${perPage}`);
+        
+        if (params.length > 0) {
+            endpoint += '?' + params.join('&');
+        }
+    }
+    
+    // Mostrar loading
+    document.getElementById('loadingIndicator').style.display = 'block';
+    document.getElementById('responseContainer').style.display = 'none';
+    document.getElementById('noResponseMessage').style.display = 'none';
+    
+    const startTime = performance.now();
+    
+    try {
+        const options = {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        };
+        
+        // Configurar headers según el modo
+        if (isInternalMode) {
+            if (token) {
+                options.headers['X-API-Token'] = token;
+            }
+        } else {
+            // Modo externo: agregar headers personalizados
+            const customHeaders = document.getElementById('customHeaders').value;
+            if (customHeaders) {
+                const headerLines = customHeaders.split('\n');
+                headerLines.forEach(line => {
+                    if (line.trim() && line.includes(':')) {
+                        const [key, ...valueParts] = line.split(':');
+                        const value = valueParts.join(':').trim();
+                        options.headers[key.trim()] = value;
+                    }
+                });
+            }
+            
+            if (token) {
+                options.headers['Authorization'] = `Bearer ${token}`;
+            }
+        }
+        
+        // Agregar body si es necesario
+        if ((method === 'POST' || method === 'PUT' || method === 'PATCH') && body) {
+            options.body = body;
+        }
+        
+        const response = await fetch(endpoint, options);
+        const endTime = performance.now();
+        const responseTime = Math.round(endTime - startTime);
+        
+        // Intentar parsear como JSON
+        let responseData;
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            responseData = await response.json();
+        } else {
+            responseData = await response.text();
+        }
+        
+        // Mostrar respuesta
+        document.getElementById('loadingIndicator').style.display = 'none';
+        document.getElementById('responseContainer').style.display = 'block';
+        
+        // Status code
+        const statusBadge = document.getElementById('statusCode');
+        statusBadge.textContent = response.status + ' ' + response.statusText;
+        statusBadge.className = 'badge ' + (response.ok ? 'bg-success' : 'bg-danger');
+        
+        // Response time
+        document.getElementById('responseTime').textContent = responseTime + 'ms';
+        
+        // Headers
+        let headersText = '';
+        response.headers.forEach((value, key) => {
+            headersText += `${key}: ${value}\n`;
+        });
+        document.getElementById('responseHeaders').textContent = headersText || 'No headers';
+        
+        // Body
+        if (typeof responseData === 'object') {
+            document.getElementById('responseBody').textContent = JSON.stringify(responseData, null, 2);
+        } else {
+            document.getElementById('responseBody').textContent = responseData;
+        }
+        
+    } catch (error) {
+        const endTime = performance.now();
+        const responseTime = Math.round(endTime - startTime);
+        
+        document.getElementById('loadingIndicator').style.display = 'none';
+        document.getElementById('responseContainer').style.display = 'block';
+        
+        document.getElementById('statusCode').textContent = 'ERROR';
+        document.getElementById('statusCode').className = 'badge bg-danger';
+        document.getElementById('responseTime').textContent = responseTime + 'ms';
+        document.getElementById('responseHeaders').textContent = 'Error de red o CORS';
+        document.getElementById('responseBody').textContent = JSON.stringify({
+            error: error.message,
+            type: error.name,
+            note: 'Si es un error CORS, la API externa debe permitir peticiones desde este dominio'
+        }, null, 2);
+    }
+}
+
+function copyToken() {
+    const tokenInput = document.getElementById('apiToken');
+    tokenInput.select();
+    document.execCommand('copy');
+    
+    const button = event.target.closest('button');
+    const originalHTML = button.innerHTML;
+    button.innerHTML = '<i class="bi bi-check"></i>';
+    setTimeout(() => {
+        button.innerHTML = originalHTML;
+    }, 2000);
+}
+
+function copyCurl() {
+    const curlCommand = document.getElementById('curlCommand');
+    curlCommand.select();
+    document.execCommand('copy');
+    
+    const button = event.target;
+    const originalHTML = button.innerHTML;
+    button.innerHTML = '<i class="bi bi-check"></i> Copiado';
+    setTimeout(() => {
+        button.innerHTML = originalHTML;
+    }, 2000);
+}
+
+// Event listeners para actualizar headers en tiempo real
+document.getElementById('customHeaders').addEventListener('input', updateHeadersDisplay);
+document.getElementById('apiToken').addEventListener('input', function() {
+    updateHeadersDisplay();
+    updateCurlCommand();
+});
+document.getElementById('bodyInput').addEventListener('input', updateCurlCommand);
+document.getElementById('searchParam').addEventListener('input', updateCurlCommand);
+document.getElementById('pageParam').addEventListener('input', updateCurlCommand);
+document.getElementById('perPageParam').addEventListener('input', updateCurlCommand);
+
+// Funciones para gestionar APIs guardadas
+function toggleSavedApis() {
+    const panel = document.getElementById('savedApisPanel');
+    const icon = document.getElementById('toggleIcon');
+    if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+        icon.className = 'bi bi-chevron-up';
+        loadSavedApis();
+    } else {
+        panel.style.display = 'none';
+        icon.className = 'bi bi-chevron-down';
+    }
+}
+
+function loadSavedApis() {
+    fetch('/api-tester/saved/')
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('savedApisList');
+            if (data.length === 0) {
+                container.innerHTML = '<div class="text-center text-muted py-3"><small>No hay APIs guardadas</small></div>';
+                return;
+            }
+            
+            let html = '<div class="list-group list-group-flush">';
+            data.forEach(api => {
+                const icon = api.is_favorite ? '⭐' : '📋';
+                const methodBadge = `<span class="badge bg-${getMethodColor(api.method)}">${api.method}</span>`;
+                html += `
+                    <div class="list-group-item list-group-item-action p-2" onclick="loadSavedApi(${api.id})" style="cursor: pointer;">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div style="flex: 1;">
+                                <div class="d-flex align-items-center gap-1">
+                                    <span>${icon}</span>
+                                    <small class="fw-bold">${api.title}</small>
+                                </div>
+                                <div class="text-muted" style="font-size: 0.7rem;">${methodBadge} ${truncateUrl(api.url, 30)}</div>
+                            </div>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteSavedApi(${api.id}, event)" title="Eliminar">
+                                <i class="bi bi-trash" style="font-size: 0.7rem;"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error loading saved APIs:', error);
+            document.getElementById('savedApisList').innerHTML = '<div class="alert alert-danger p-2 m-0"><small>Error al cargar</small></div>';
+        });
+}
+
+function getMethodColor(method) {
+    const colors = {
+        'GET': 'success',
+        'POST': 'primary',
+        'PUT': 'warning',
+        'PATCH': 'info',
+        'DELETE': 'danger'
+    };
+    return colors[method] || 'secondary';
+}
+
+function truncateUrl(url, maxLength) {
+    return url.length > maxLength ? url.substring(0, maxLength) + '...' : url;
+}
+
+function loadSavedApi(id) {
+    fetch(`/api-tester/saved/${id}/`)
+        .then(response => response.json())
+        .then(api => {
+            // Configurar modo
+            if (api.api_type === 'internal') {
+                document.getElementById('modeInternal').checked = true;
+            } else {
+                document.getElementById('modeExternal').checked = true;
+            }
+            toggleApiMode();
+            
+            // Configurar campos
+            document.getElementById('endpoint').value = api.url;
+            document.getElementById('method').value = api.method;
+            document.getElementById('apiToken').value = api.token || '';
+            document.getElementById('customHeaders').value = api.headers || '';
+            document.getElementById('bodyInput').value = api.body || '';
+            
+            if (api.api_type === 'external') {
+                document.getElementById('manualUrl').value = api.url;
+            }
+            
+            // Actualizar UI
+            updateMethodUI();
+            updateHeadersDisplay();
+            updateCurlCommand();
+            
+            // Actualizar last_used
+            fetch(`/api-tester/saved/${id}/use/`, {method: 'POST'});
+            
+            // Mostrar toast
+            showToast('✅ API cargada: ' + api.title);
+        })
+        .catch(error => {
+            console.error('Error loading API:', error);
+            showToast('❌ Error al cargar la API', 'danger');
+        });
+}
+
+function deleteSavedApi(id, event) {
+    event.stopPropagation();
+    if (!confirm('¿Eliminar esta API guardada?')) return;
+    
+    fetch(`/api-tester/saved/${id}/`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRFToken': getCsrfToken()
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            loadSavedApis();
+            showToast('✅ API eliminada');
+        } else {
+            showToast('❌ Error al eliminar', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting API:', error);
+        showToast('❌ Error al eliminar', 'danger');
+    });
+}
+
+function showSaveModal() {
+    const urlValue = document.getElementById('endpoint').value;
+    if (!urlValue) {
+        alert('Por favor configura la URL antes de guardar');
+        return;
+    }
+    
+    // Limpiar formulario
+    document.getElementById('saveTitle').value = '';
+    document.getElementById('saveDescription').value = '';
+    document.getElementById('saveIsFavorite').checked = false;
+    
+    // Mostrar modal
+    new bootstrap.Modal(document.getElementById('saveModal')).show();
+}
+
+function saveApiConfiguration() {
+    const title = document.getElementById('saveTitle').value.trim();
+    if (!title) {
+        alert('Por favor ingresa un nombre para la API');
+        return;
+    }
+    
+    const data = {
+        title: title,
+        description: document.getElementById('saveDescription').value.trim(),
+        url: document.getElementById('endpoint').value,
+        method: document.getElementById('method').value,
+        token: document.getElementById('apiToken').value,
+        headers: document.getElementById('customHeaders').value,
+        body: document.getElementById('bodyInput').value,
+        api_type: document.getElementById('modeInternal').checked ? 'internal' : 'external',
+        is_favorite: document.getElementById('saveIsFavorite').checked
+    };
+    
+    fetch('/api-tester/saved/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.id) {
+            bootstrap.Modal.getInstance(document.getElementById('saveModal')).hide();
+            window.location.href = `/api-tester/?saved=${result.id}`;
+        } else {
+            alert('Error al guardar la API');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving API:', error);
+        alert('Error al guardar la API');
+    });
+}
+
+function getCsrfToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+}
+
+// Inicializar
+document.addEventListener('DOMContentLoaded', function() {
+    updateMethodUI();
+    toggleApiMode();
+    loadSavedApis();
+    
+    {% if load_api %}
+    // Cargar API automáticamente si viene del parámetro
+    setTimeout(function() {
+        loadSavedApi({{ load_api.id }});
+    }, 500);
+    {% endif %}
+});
+</script>
+{% endblock %}

@@ -24,7 +24,8 @@ from .models import (
     Contact, ContactComment, ContactAttachment, QARating, GameCounter, ExerciseCounter, SportGoal, SportGoalRecord,
     ClientRequest, ClientRequestResponse, Event, Trip, TripStop, WebCounter, WebCounterVisit, QuickQuote, QuickQuoteView, QuickQuoteComment,
     MultiMeasurement, MultiMeasurementRecord,
-    PersonalBudget, BudgetIncomeItem, BudgetExpenseItem, BudgetTransaction
+    PersonalBudget, BudgetIncomeItem, BudgetExpenseItem, BudgetTransaction,
+    DynamicTable, DynamicTableField, DynamicTableRecord, SavedApiRequest, PublicAIMessageShare
 )
 
 # Configuración del sitio de administración
@@ -5482,3 +5483,299 @@ class BudgetTransactionAdmin(admin.ModelAdmin):
             return obj.description[:50] + '...' if len(obj.description) > 50 else obj.description
         return '-'
     description_short.short_description = 'Descripción'
+
+
+# ============= ADMIN PARA TABLAS DINÁMICAS =============
+
+from .models import DynamicTable, DynamicTableField, DynamicTableRecord
+
+
+class DynamicTableFieldInline(admin.TabularInline):
+    model = DynamicTableField
+    extra = 1
+    fields = ('name', 'display_name', 'field_type', 'is_required', 'is_unique', 'order')
+    ordering = ('order', 'id')
+
+
+@admin.register(DynamicTable)
+class DynamicTableAdmin(admin.ModelAdmin):
+    list_display = ('display_name', 'name', 'is_active', 'field_count', 'record_count', 'api_url_link', 'created_at')
+    list_filter = ('is_active', 'allow_public_read', 'allow_public_create', 'created_at')
+    search_fields = ('name', 'display_name', 'description')
+    list_editable = ('is_active',)
+    readonly_fields = ('api_token', 'created_at', 'updated_at', 'api_info_display')
+    inlines = [DynamicTableFieldInline]
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('name', 'display_name', 'description', 'is_active')
+        }),
+        ('Configuración de API', {
+            'fields': ('api_token', 'api_info_display', 'allow_public_read', 'allow_public_create')
+        }),
+        ('Información del Sistema', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+    
+    def field_count(self, obj):
+        return obj.fields.count()
+    field_count.short_description = 'Campos'
+    
+    def record_count(self, obj):
+        count = obj.records.count()
+        return format_html('<strong>{}</strong>', count)
+    record_count.short_description = 'Registros'
+    
+    def api_url_link(self, obj):
+        url = obj.get_api_url()
+        return format_html(
+            '<a href="{}" target="_blank" style="color: #0066cc;">📡 Ver API</a>',
+            url
+        )
+    api_url_link.short_description = 'API'
+    
+    def api_info_display(self, obj):
+        if obj.pk:
+            return format_html(
+                '''
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #0066cc;">
+                    <h3 style="margin-top: 0;">🔌 Información de la API</h3>
+                    <p><strong>URL Base:</strong> <code>{}</code></p>
+                    <p><strong>Token:</strong> <code style="background: #fff; padding: 5px;">{}</code></p>
+                    <hr>
+                    <h4>Ejemplos de uso:</h4>
+                    <pre style="background: #fff; padding: 10px; border-radius: 3px;">
+# Listar registros (GET)
+curl -H "X-API-Token: {}" \\
+     {}
+
+# Crear registro (POST)
+curl -X POST \\
+     -H "X-API-Token: {}" \\
+     -H "Content-Type: application/json" \\
+     -d '{{"campo1": "valor1", "campo2": "valor2"}}' \\
+     {}
+
+# Obtener registro específico (GET)
+curl -H "X-API-Token: {}" \\
+     {}1/
+
+# Actualizar registro (PUT)
+curl -X PUT \\
+     -H "X-API-Token: {}" \\
+     -H "Content-Type: application/json" \\
+     -d '{{"campo1": "nuevo_valor"}}' \\
+     {}1/
+
+# Eliminar registro (DELETE)
+curl -X DELETE \\
+     -H "X-API-Token: {}" \\
+     {}1/
+                    </pre>
+                </div>
+                ''',
+                obj.get_api_url(),
+                obj.api_token,
+                obj.api_token,
+                obj.get_api_url(),
+                obj.api_token,
+                obj.get_api_url(),
+                obj.api_token,
+                obj.get_api_url(),
+                obj.api_token,
+                obj.get_api_url(),
+                obj.api_token,
+                obj.get_api_url()
+            )
+        return '-'
+    api_info_display.short_description = 'Documentación de API'
+    
+    actions = ['regenerate_tokens']
+    
+    def regenerate_tokens(self, request, queryset):
+        for table in queryset:
+            table.regenerate_token()
+        self.message_user(request, f'Tokens regenerados para {queryset.count()} tabla(s)')
+    regenerate_tokens.short_description = '🔄 Regenerar tokens de API'
+
+
+@admin.register(DynamicTableField)
+class DynamicTableFieldAdmin(admin.ModelAdmin):
+    list_display = ('__str__', 'display_name', 'field_type', 'is_required', 'is_unique', 'order')
+    list_filter = ('field_type', 'is_required', 'is_unique', 'table')
+    search_fields = ('name', 'display_name', 'table__name')
+    list_editable = ('is_required', 'is_unique', 'order')
+    ordering = ('table', 'order', 'id')
+
+
+@admin.register(DynamicTableRecord)
+class DynamicTableRecordAdmin(admin.ModelAdmin):
+    list_display = ('id', 'table', 'data_preview', 'created_at', 'created_by_ip')
+    list_filter = ('table', 'created_at')
+    search_fields = ('data',)
+    readonly_fields = ('created_at', 'updated_at', 'data_formatted')
+    
+    fieldsets = (
+        ('Información', {
+            'fields': ('table', 'data_formatted')
+        }),
+        ('Metadata', {
+            'fields': ('created_at', 'updated_at', 'created_by_ip'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def data_preview(self, obj):
+        import json
+        data_str = json.dumps(obj.data, ensure_ascii=False)
+        if len(data_str) > 100:
+            return data_str[:100] + '...'
+        return data_str
+    data_preview.short_description = 'Datos'
+    
+    def data_formatted(self, obj):
+        import json
+        formatted = json.dumps(obj.data, indent=2, ensure_ascii=False)
+        return format_html('<pre>{}</pre>', formatted)
+    data_formatted.short_description = 'Datos JSON'
+
+
+@admin.register(SavedApiRequest)
+class SavedApiRequestAdmin(admin.ModelAdmin):
+    list_display = ('title', 'method', 'api_type', 'is_favorite', 'created_by', 'last_used', 'created_at')
+    list_filter = ('method', 'api_type', 'is_favorite', 'created_at')
+    search_fields = ('title', 'url', 'description')
+    readonly_fields = ('created_at', 'updated_at', 'last_used')
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('title', 'description', 'api_type', 'is_favorite')
+        }),
+        ('Configuración de la Petición', {
+            'fields': ('url', 'method', 'dynamic_table', 'token', 'headers', 'body')
+        }),
+        ('Metadata', {
+            'fields': ('created_by', 'created_at', 'updated_at', 'last_used'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(PublicAIMessageShare)
+class PublicAIMessageShareAdmin(admin.ModelAdmin):
+    list_display = ('public_title', 'shared_by', 'token_preview', 'is_active', 'views_count', 'created_at', 'expiration_date')
+    list_filter = ('is_active', 'created_at', 'expiration_date')
+    search_fields = ('public_title', 'token', 'shared_by__username')
+    readonly_fields = ('token', 'created_at', 'views_count', 'public_url_display')
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('chat_message', 'shared_by', 'public_title', 'is_active')
+        }),
+        ('Compartición', {
+            'fields': ('token', 'public_url_display', 'expiration_date')
+        }),
+        ('Estadísticas', {
+            'fields': ('views_count', 'created_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def token_preview(self, obj):
+        return f"{obj.token[:16]}..." if obj.token else "-"
+    token_preview.short_description = 'Token'
+    
+    def public_url_display(self, obj):
+        url = obj.get_public_url()
+        return format_html('<a href="{}" target="_blank">{}</a>', url, url)
+    public_url_display.short_description = 'URL Pública'
+
+
+# Importar modelos de red social
+from .models import SocialPost, SocialPostLike, SocialPostComment
+
+@admin.register(SocialPost)
+class SocialPostAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'content_preview', 'has_image', 'likes_count', 'comments_count', 'created_at', 'is_active')
+    list_filter = ('is_active', 'created_at')
+    search_fields = ('user__username', 'content')
+    readonly_fields = ('created_at', 'updated_at', 'likes_count', 'comments_count')
+    
+    fieldsets = (
+        ('Información', {
+            'fields': ('user', 'content', 'image', 'is_active')
+        }),
+        ('Estadísticas', {
+            'fields': ('likes_count', 'comments_count', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def content_preview(self, obj):
+        return obj.content[:50] + '...' if len(obj.content) > 50 else obj.content
+    content_preview.short_description = 'Contenido'
+    
+    def has_image(self, obj):
+        return '✓' if obj.image else '✗'
+    has_image.short_description = 'Imagen'
+    has_image.boolean = True
+    
+    def likes_count(self, obj):
+        return obj.get_likes_count()
+    likes_count.short_description = 'Likes'
+    
+    def comments_count(self, obj):
+        return obj.get_comments_count()
+    comments_count.short_description = 'Comentarios'
+
+
+@admin.register(SocialPostLike)
+class SocialPostLikeAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'post_preview', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('user__username', 'post__content')
+    readonly_fields = ('created_at',)
+    
+    def post_preview(self, obj):
+        content = obj.post.content[:30] if obj.post.content else 'Sin texto'
+        return f'Post #{obj.post.id} - {content}'
+    post_preview.short_description = 'Publicación'
+
+
+@admin.register(SocialPostComment)
+class SocialPostCommentAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'post_preview', 'content_preview', 'created_at', 'is_active')
+    list_filter = ('is_active', 'created_at')
+    search_fields = ('user__username', 'content', 'post__content')
+    readonly_fields = ('created_at', 'updated_at')
+    
+    fieldsets = (
+        ('Información', {
+            'fields': ('post', 'user', 'content', 'is_active')
+        }),
+        ('Fechas', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def post_preview(self, obj):
+        content = obj.post.content[:30] if obj.post.content else 'Sin texto'
+        return f'Post #{obj.post.id} - {content}'
+    post_preview.short_description = 'Publicación'
+    
+    def content_preview(self, obj):
+        return obj.content[:50] + '...' if len(obj.content) > 50 else obj.content
+    content_preview.short_description = 'Comentario'

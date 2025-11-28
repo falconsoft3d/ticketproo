@@ -1,0 +1,673 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ table.name }} - Detalles{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-table"></i> {{ table.name }}</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dynamic_table_list' %}">Tablas API</a></li>
+                    <li class="breadcrumb-item active">{{ table.name }}</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="col-auto">
+            <div class="btn-group" role="group">
+                <a href="{% url 'dynamic_table_edit' table.pk %}" class="btn btn-warning">
+                    <i class="fas fa-edit"></i> Editar
+                </a>
+                <a href="{% url 'dynamic_table_records' table.pk %}" class="btn btn-success">
+                    <i class="fas fa-database"></i> Ver Registros
+                </a>
+                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                    <i class="fas fa-trash"></i> Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Información General -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Información General</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Nombre:</strong>
+                            <p>{{ table.name }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Creado:</strong>
+                            <p>{{ table.created_at|date:"d/m/Y H:i" }}</p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <strong>Descripción:</strong>
+                            <p>{{ table.description|default:"Sin descripción" }}</p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Lectura Pública:</strong>
+                            <p>
+                                {% if table.allow_public_read %}
+                                    <span class="badge bg-success">Activada</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Desactivada</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Creación Pública:</strong>
+                            <p>
+                                {% if table.allow_public_create %}
+                                    <span class="badge bg-success">Activada</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Desactivada</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulario Público Móvil -->
+            <div class="card mb-4 border-{% if table.public_form_enabled %}success{% else %}secondary{% endif %}">
+                <div class="card-header bg-{% if table.public_form_enabled %}success{% else %}secondary{% endif %} text-white">
+                    <h5 class="mb-0"><i class="bi bi-phone"></i> Formulario Público Móvil</h5>
+                </div>
+                <div class="card-body">
+                    {% if table.public_form_enabled %}
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle"></i> El formulario público está <strong>ACTIVADO</strong>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label"><strong>URL Pública:</strong></label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="publicFormUrl" 
+                                       value="{{ request.scheme }}://{{ request.get_host }}{% url 'public_dynamic_form' table.public_form_token %}" readonly>
+                                <button class="btn btn-outline-primary" onclick="copyPublicFormUrl()">
+                                    <i class="bi bi-clipboard"></i> Copiar
+                                </button>
+                                <a href="{% url 'public_dynamic_form' table.public_form_token %}" target="_blank" class="btn btn-outline-success">
+                                    <i class="bi bi-box-arrow-up-right"></i> Abrir
+                                </a>
+                            </div>
+                            <small class="text-muted">Comparte este enlace para que otros puedan enviar información</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <strong>QR Code:</strong>
+                            <div class="mt-2">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ request.scheme }}://{{ request.get_host }}{% url 'public_dynamic_form' table.public_form_token %}" 
+                                     alt="QR Code" class="img-thumbnail">
+                            </div>
+                            <small class="text-muted d-block mt-1">Escanea el código QR para acceder desde móvil</small>
+                        </div>
+
+                        {% if table.public_form_password %}
+                            <div class="alert alert-warning">
+                                <i class="bi bi-shield-lock"></i> Este formulario está <strong>protegido con contraseña</strong>
+                            </div>
+                        {% endif %}
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Título:</strong>
+                                <p>{{ table.public_form_title|default:"Sin título personalizado" }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Descripción:</strong>
+                                <p>{{ table.public_form_description|default:"Sin descripción" }}</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            <a href="{% url 'dynamic_table_edit' table.pk %}" class="btn btn-warning btn-sm">
+                                <i class="bi bi-gear"></i> Configurar Formulario
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-secondary">
+                            <i class="bi bi-x-circle"></i> El formulario público está <strong>DESACTIVADO</strong>
+                        </div>
+                        <p>Activa el formulario público para compartir un enlace móvil donde otros puedan enviar información.</p>
+                        <a href="{% url 'dynamic_table_edit' table.pk %}" class="btn btn-primary">
+                            <i class="bi bi-toggle-on"></i> Activar Formulario Público
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Campos -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-columns"></i> Campos de la Tabla</h5>
+                    <a href="{% url 'dynamic_table_field_create' table.pk %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus"></i> Agregar Campo
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if table.fields.all %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Orden</th>
+                                        <th>Nombre</th>
+                                        <th>Tipo</th>
+                                        <th>Requerido</th>
+                                        <th>Único</th>
+                                        <th>Long. Máx</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for field in table.fields.all %}
+                                    <tr>
+                                        <td>{{ field.order }}</td>
+                                        <td><strong>{{ field.name }}</strong></td>
+                                        <td><span class="badge bg-info">{{ field.get_field_type_display }}</span></td>
+                                        <td>
+                                            {% if field.is_required %}
+                                                <i class="fas fa-check text-success"></i>
+                                            {% else %}
+                                                <i class="fas fa-times text-danger"></i>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if field.is_unique %}
+                                                <i class="fas fa-check text-success"></i>
+                                            {% else %}
+                                                <i class="fas fa-times text-danger"></i>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ field.max_length|default:"-" }}</td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="{% url 'dynamic_table_field_edit' table.pk field.pk %}" 
+                                                   class="btn btn-sm btn-warning">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <form method="post" 
+                                                      action="{% url 'dynamic_table_field_delete' table.pk field.pk %}" 
+                                                      style="display:inline;">
+                                                    {% csrf_token %}
+                                                    <button type="submit" 
+                                                            class="btn btn-sm btn-danger"
+                                                            onclick="return confirm('¿Eliminar este campo?')">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-columns fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No hay campos definidos</p>
+                            <a href="{% url 'dynamic_table_field_create' table.pk %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Agregar primer campo
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Documentación API -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-book"></i> Documentación de la API</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="nav nav-tabs" id="apiDocTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="create-tab" data-bs-toggle="tab" data-bs-target="#create" type="button" role="tab">
+                                <i class="fas fa-plus"></i> Crear
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="read-tab" data-bs-toggle="tab" data-bs-target="#read" type="button" role="tab">
+                                <i class="fas fa-eye"></i> Leer
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="update-tab" data-bs-toggle="tab" data-bs-target="#update" type="button" role="tab">
+                                <i class="fas fa-edit"></i> Editar
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="delete-tab" data-bs-toggle="tab" data-bs-target="#delete" type="button" role="tab">
+                                <i class="fas fa-trash"></i> Eliminar
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="list-tab" data-bs-toggle="tab" data-bs-target="#list" type="button" role="tab">
+                                <i class="fas fa-list"></i> Listar
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="search-tab" data-bs-toggle="tab" data-bs-target="#search" type="button" role="tab">
+                                <i class="fas fa-search"></i> Buscar
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content p-3" id="apiDocTabsContent">
+                        <!-- Crear Registro -->
+                        <div class="tab-pane fade show active" id="create" role="tabpanel">
+                            <h6 class="mb-3"><i class="fas fa-plus text-success"></i> Crear un Registro</h6>
+                            <p><strong>Endpoint:</strong> <code>POST {{ request.scheme }}://{{ request.get_host }}{{ table.get_api_url }}</code></p>
+                            <p><strong>Headers:</strong></p>
+                            <pre class="bg-light p-2 rounded"><code>X-API-Token: {{ table.api_token }}
+Content-Type: application/json</code></pre>
+                            <p><strong>Ejemplo:</strong></p>
+                            <pre class="bg-dark text-light p-3 rounded"><code>curl -X POST \
+  -H "X-API-Token: {{ table.api_token }}" \
+  -H "Content-Type: application/json" \
+  -d '{
+{% for field in table.fields.all %}    "{{ field.name }}": "valor_ejemplo"{% if not forloop.last %},{% endif %}
+{% endfor %}  }' \
+  {{ request.scheme }}://{{ request.get_host }}{{ table.get_api_url }}</code></pre>
+                            <p><strong>Respuesta exitosa (201 Created):</strong></p>
+                            <pre class="bg-light p-2 rounded"><code>{
+  "success": true,
+  "message": "Registro creado exitosamente",
+  "id": 1,
+  "data": { ... }
+}</code></pre>
+                        </div>
+
+                        <!-- Leer Registro -->
+                        <div class="tab-pane fade" id="read" role="tabpanel">
+                            <h6 class="mb-3"><i class="fas fa-eye text-info"></i> Leer un Registro</h6>
+                            <p><strong>Endpoint:</strong> <code>GET {{ request.scheme }}://{{ request.get_host }}{{ table.get_api_url }}<span class="text-primary">{id}</span>/</code></p>
+                            <p><strong>Headers:</strong></p>
+                            <pre class="bg-light p-2 rounded"><code>X-API-Token: {{ table.api_token }}</code></pre>
+                            <p><strong>Ejemplo:</strong></p>
+                            <pre class="bg-dark text-light p-3 rounded"><code>curl -X GET \
+  -H "X-API-Token: {{ table.api_token }}" \
+  {{ request.scheme }}://{{ request.get_host }}{{ table.get_api_url }}1/</code></pre>
+                            <p><strong>Respuesta exitosa (200 OK):</strong></p>
+                            <pre class="bg-light p-2 rounded"><code>{
+  "success": true,
+  "id": 1,
+  "data": {
+{% for field in table.fields.all %}    "{{ field.name }}": "valor"{% if not forloop.last %},{% endif %}
+{% endfor %}  },
+  "created_at": "2024-01-15T10:30:45",
+  "updated_at": "2024-01-15T10:30:45"
+}</code></pre>
+                            <div class="alert alert-warning mt-3">
+                                <i class="fas fa-exclamation-triangle"></i> <strong>Error 404:</strong> Si el registro no existe
+                            </div>
+                        </div>
+
+                        <!-- Editar Registro -->
+                        <div class="tab-pane fade" id="update" role="tabpanel">
+                            <h6 class="mb-3"><i class="fas fa-edit text-warning"></i> Editar un Registro</h6>
+                            <p><strong>Endpoint:</strong> <code>PUT {{ request.scheme }}://{{ request.get_host }}{{ table.get_api_url }}<span class="text-primary">{id}</span>/</code></p>
+                            <p><strong>Headers:</strong></p>
+                            <pre class="bg-light p-2 rounded"><code>X-API-Token: {{ table.api_token }}
+Content-Type: application/json</code></pre>
+                            <p><strong>Ejemplo:</strong></p>
+                            <pre class="bg-dark text-light p-3 rounded"><code>curl -X PUT \
+  -H "X-API-Token: {{ table.api_token }}" \
+  -H "Content-Type: application/json" \
+  -d '{
+{% for field in table.fields.all %}    "{{ field.name }}": "nuevo_valor"{% if not forloop.last %},{% endif %}
+{% endfor %}  }' \
+  {{ request.scheme }}://{{ request.get_host }}{{ table.get_api_url }}1/</code></pre>
+                            <div class="alert alert-info mt-3">
+                                <i class="fas fa-info-circle"></i> <strong>Nota:</strong> PUT requiere enviar TODOS los campos (actualización completa)
+                            </div>
+                            <p><strong>Respuesta exitosa (200 OK):</strong></p>
+                            <pre class="bg-light p-2 rounded"><code>{
+  "success": true,
+  "message": "Registro actualizado exitosamente",
+  "id": 1,
+  "data": { ... }
+}</code></pre>
+                        </div>
+
+                        <!-- Eliminar Registro -->
+                        <div class="tab-pane fade" id="delete" role="tabpanel">
+                            <h6 class="mb-3"><i class="fas fa-trash text-danger"></i> Eliminar un Registro</h6>
+                            <p><strong>Endpoint:</strong> <code>DELETE {{ request.scheme }}://{{ request.get_host }}{{ table.get_api_url }}<span class="text-primary">{id}</span>/</code></p>
+                            <p><strong>Headers:</strong></p>
+                            <pre class="bg-light p-2 rounded"><code>X-API-Token: {{ table.api_token }}</code></pre>
+                            <p><strong>Ejemplo:</strong></p>
+                            <pre class="bg-dark text-light p-3 rounded"><code>curl -X DELETE \
+  -H "X-API-Token: {{ table.api_token }}" \
+  {{ request.scheme }}://{{ request.get_host }}{{ table.get_api_url }}1/</code></pre>
+                            <div class="alert alert-danger mt-3">
+                                <i class="fas fa-exclamation-triangle"></i> <strong>Advertencia:</strong> Esta acción es permanente y no se puede deshacer
+                            </div>
+                            <p><strong>Respuesta exitosa (200 OK):</strong></p>
+                            <pre class="bg-light p-2 rounded"><code>{
+  "success": true,
+  "message": "Registro eliminado exitosamente"
+}</code></pre>
+                        </div>
+
+                        <!-- Listar Todos -->
+                        <div class="tab-pane fade" id="list" role="tabpanel">
+                            <h6 class="mb-3"><i class="fas fa-list text-primary"></i> Listar Todos los Registros</h6>
+                            <p><strong>Endpoint:</strong> <code>GET {{ request.scheme }}://{{ request.get_host }}{{ table.get_api_url }}</code></p>
+                            <p><strong>Headers:</strong></p>
+                            <pre class="bg-light p-2 rounded"><code>X-API-Token: {{ table.api_token }}</code></pre>
+                            <p><strong>Ejemplo básico:</strong></p>
+                            <pre class="bg-dark text-light p-3 rounded"><code>curl -X GET \
+  -H "X-API-Token: {{ table.api_token }}" \
+  {{ request.scheme }}://{{ request.get_host }}{{ table.get_api_url }}</code></pre>
+                            
+                            <h6 class="mt-4 mb-3">Paginación</h6>
+                            <p><strong>Parámetros:</strong></p>
+                            <ul>
+                                <li><code>page</code>: Número de página (default: 1)</li>
+                                <li><code>per_page</code>: Registros por página (default: 50, máximo: 100)</li>
+                            </ul>
+                            <p><strong>Ejemplo con paginación:</strong></p>
+                            <pre class="bg-dark text-light p-3 rounded"><code>curl -X GET \
+  -H "X-API-Token: {{ table.api_token }}" \
+  "{{ request.scheme }}://{{ request.get_host }}{{ table.get_api_url }}?page=2&per_page=10"</code></pre>
+                            
+                            <p><strong>Respuesta (200 OK):</strong></p>
+                            <pre class="bg-light p-2 rounded"><code>{
+  "success": true,
+  "table": "{{ table.name }}",
+  "total": 45,
+  "page": 1,
+  "per_page": 50,
+  "data": [
+    {
+      "id": 1,
+      "data": { ... },
+      "created_at": "...",
+      "updated_at": "..."
+    }
+  ]
+}</code></pre>
+                        </div>
+
+                        <!-- Buscar -->
+                        <div class="tab-pane fade" id="search" role="tabpanel">
+                            <h6 class="mb-3"><i class="fas fa-search text-secondary"></i> Buscar Registros</h6>
+                            <p><strong>Endpoint:</strong> <code>GET {{ request.scheme }}://{{ request.get_host }}{{ table.get_api_url }}?search=<span class="text-primary">{término}</span></code></p>
+                            <p><strong>Headers:</strong></p>
+                            <pre class="bg-light p-2 rounded"><code>X-API-Token: {{ table.api_token }}</code></pre>
+                            
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> La búsqueda se realiza en campos de tipo: <strong>text</strong>, <strong>textarea</strong>, <strong>email</strong> y <strong>url</strong>
+                            </div>
+                            
+                            <p><strong>Ejemplo de búsqueda:</strong></p>
+                            <pre class="bg-dark text-light p-3 rounded"><code>curl -X GET \
+  -H "X-API-Token: {{ table.api_token }}" \
+  "{{ request.scheme }}://{{ request.get_host }}{{ table.get_api_url }}?search=ejemplo"</code></pre>
+                            
+                            <p><strong>Combinar búsqueda y paginación:</strong></p>
+                            <pre class="bg-dark text-light p-3 rounded"><code>curl -X GET \
+  -H "X-API-Token: {{ table.api_token }}" \
+  "{{ request.scheme }}://{{ request.get_host }}{{ table.get_api_url }}?search=ejemplo&page=1&per_page=20"</code></pre>
+                            
+                            <p><strong>Respuesta (200 OK):</strong></p>
+                            <pre class="bg-light p-2 rounded"><code>{
+  "success": true,
+  "table": "{{ table.name }}",
+  "total": 3,
+  "page": 1,
+  "per_page": 50,
+  "data": [ /* Solo registros que coinciden */ ]
+}</code></pre>
+                        </div>
+                    </div>
+
+                    <!-- Sección de Validaciones -->
+                    <div class="mt-4">
+                        <h6><i class="fas fa-shield-alt"></i> Validaciones</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Campo</th>
+                                        <th>Requerido</th>
+                                        <th>Único</th>
+                                        <th>Long. Máx</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for field in table.fields.all %}
+                                    <tr>
+                                        <td><code>{{ field.name }}</code></td>
+                                        <td>
+                                            {% if field.is_required %}
+                                                <span class="badge bg-danger">Sí</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">No</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if field.is_unique %}
+                                                <span class="badge bg-warning">Sí</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">No</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ field.max_length|default:"-" }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Sección de Errores Comunes -->
+                    <div class="mt-4">
+                        <h6><i class="fas fa-exclamation-circle"></i> Errores Comunes</h6>
+                        <div class="accordion" id="errorsAccordion">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#error401">
+                                        <span class="badge bg-danger me-2">401</span> Token inválido
+                                    </button>
+                                </h2>
+                                <div id="error401" class="accordion-collapse collapse" data-bs-parent="#errorsAccordion">
+                                    <div class="accordion-body">
+                                        <p><strong>Causa:</strong> Token incorrecto o ausente</p>
+                                        <p><strong>Solución:</strong></p>
+                                        <ul>
+                                            <li>Verifica que el token sea correcto</li>
+                                            <li>Confirma que estés usando el header <code>X-API-Token</code></li>
+                                            <li>O usa el parámetro <code>?token=...</code> en la URL</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#error400">
+                                        <span class="badge bg-warning me-2">400</span> Error de validación
+                                    </button>
+                                </h2>
+                                <div id="error400" class="accordion-collapse collapse" data-bs-parent="#errorsAccordion">
+                                    <div class="accordion-body">
+                                        <p><strong>Causa:</strong> Datos no válidos</p>
+                                        <p><strong>Solución:</strong></p>
+                                        <ul>
+                                            <li>Lee el array <code>errors</code> en la respuesta</li>
+                                            <li>Verifica que todos los campos requeridos estén presentes</li>
+                                            <li>Confirma que los tipos de datos sean correctos</li>
+                                            <li>Revisa las restricciones de longitud</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#error404">
+                                        <span class="badge bg-secondary me-2">404</span> Registro no encontrado
+                                    </button>
+                                </h2>
+                                <div id="error404" class="accordion-collapse collapse" data-bs-parent="#errorsAccordion">
+                                    <div class="accordion-body">
+                                        <p><strong>Causa:</strong> El ID no existe</p>
+                                        <p><strong>Solución:</strong></p>
+                                        <ul>
+                                            <li>Verifica que el ID del registro sea correcto</li>
+                                            <li>Confirma que el registro no haya sido eliminado</li>
+                                            <li>Lista los registros primero para ver los IDs disponibles</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Token API -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-key"></i> Token de API</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Token:</strong></label>
+                        <div class="input-group">
+                            <input type="text" 
+                                   class="form-control font-monospace small" 
+                                   value="{{ table.api_token }}" 
+                                   id="apiToken" 
+                                   readonly>
+                            <button class="btn btn-outline-secondary" 
+                                    type="button" 
+                                    onclick="copyToken()">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <form method="post" action="{% url 'dynamic_table_regenerate_token' table.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" 
+                                class="btn btn-warning btn-sm w-100"
+                                onclick="return confirm('¿Regenerar token? Las integraciones existentes dejarán de funcionar.')">
+                            <i class="fas fa-sync"></i> Regenerar Token
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Endpoint API -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-link"></i> Endpoint API</h5>
+                </div>
+                <div class="card-body">
+                    <p class="small mb-2"><strong>URL Base:</strong></p>
+                    <code class="d-block p-2 bg-light rounded mb-3">{{ request.scheme }}://{{ request.get_host }}{{ table.get_api_url }}</code>
+                </div>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Estadísticas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Campos:</span>
+                        <strong>{{ table.fields.count }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Registros:</span>
+                        <strong>{{ table.records.count }}</strong>
+                    </div>
+                    <hr>
+                    <a href="{% url 'dynamic_table_records' table.pk %}" class="btn btn-success btn-sm w-100">
+                        <i class="fas fa-database"></i> Ver Todos los Registros
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Eliminación -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de eliminar la tabla <strong>{{ table.name }}</strong>?</p>
+                <p class="text-danger mb-0">
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    Esta acción eliminará todos los campos y registros asociados.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="post" action="{% url 'dynamic_table_delete' table.pk %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToken() {
+    const tokenInput = document.getElementById('apiToken');
+    tokenInput.select();
+    document.execCommand('copy');
+    
+    const button = event.target.closest('button');
+    const originalHTML = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-check"></i>';
+    setTimeout(() => {
+        button.innerHTML = originalHTML;
+    }, 2000);
+}
+
+function copyPublicFormUrl() {
+    const urlInput = document.getElementById('publicFormUrl');
+    urlInput.select();
+    document.execCommand('copy');
+    
+    const button = event.target.closest('button');
+    const originalHTML = button.innerHTML;
+    button.innerHTML = '<i class="bi bi-check"></i> Copiado';
+    setTimeout(() => {
+        button.innerHTML = originalHTML;
+    }, 2000);
+}
+</script>
+{% endblock %}

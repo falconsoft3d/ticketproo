@@ -1,5 +1,7 @@
 from django import template
 from tickets.utils import is_agent
+import re
+from django.utils.safestring import mark_safe
 
 register = template.Library()
 
@@ -10,3 +12,28 @@ def is_agent_filter(user):
     Uso: {% if user|is_agent %}
     """
     return is_agent(user)
+
+@register.filter(name='get_item')
+def get_item(dictionary, key):
+    """
+    Filtro de template para obtener un valor de un diccionario.
+    Uso: {{ record.data|get_item:field.name }}
+    """
+    if dictionary is None:
+        return None
+    return dictionary.get(key)
+
+@register.filter(name='highlight_hashtags')
+def highlight_hashtags(text):
+    """
+    Filtro de template para resaltar hashtags en negrita.
+    Uso: {{ post.content|highlight_hashtags }}
+    """
+    if not text:
+        return text
+    
+    # Reemplazar hashtags con versión en negrita
+    pattern = r'(#\w+)'
+    highlighted = re.sub(pattern, r'<strong>\1</strong>', text)
+    
+    return mark_safe(highlighted)

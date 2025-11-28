@@ -565,6 +565,22 @@ urlpatterns = [
     path('concepts/<int:pk>/delete/', views.concept_delete_view, name='concept_delete'),
     
     # URLs de Exámenes
+    # URLs de Red Social Interna
+    path('social/', views.social_feed, name='social_feed'),
+    path('social/post/create/', views.social_post_create, name='social_post_create'),
+    path('social/post/<int:post_id>/get-data/', views.social_post_get_data, name='social_post_get_data'),
+    path('social/post/<int:post_id>/edit/', views.social_post_edit, name='social_post_edit'),
+    path('social/post/<int:post_id>/delete/', views.social_post_delete, name='social_post_delete'),
+    path('social/post/<int:post_id>/like/', views.social_post_like, name='social_post_like'),
+    path('social/post/<int:post_id>/comment/', views.social_post_comment, name='social_post_comment'),
+    path('social/post/<int:post_id>/toggle-privacy/', views.social_post_toggle_privacy, name='social_post_toggle_privacy'),
+    path('social/post/<int:post_id>/share/', views.social_post_share, name='social_post_share'),
+    path('social/post/<int:post_id>/favorite/', views.social_post_favorite, name='social_post_favorite'),
+    path('social/comment/<int:comment_id>/delete/', views.social_comment_delete, name='social_comment_delete'),
+    path('social/comment/<int:comment_id>/react/', views.social_comment_react, name='social_comment_react'),
+    path('p/<str:token>/', views.social_post_public, name='social_post_public'),
+    path('p/<str:token>/comment/', views.social_post_public_comment, name='social_post_public_comment'),
+    
     path('exams/', views.exam_list, name='exam_list'),
     path('exams/create/', views.exam_create, name='exam_create'),
     path('exams/<int:pk>/', views.exam_detail, name='exam_detail'),
@@ -790,6 +806,37 @@ urlpatterns = [
     path('api/meetings/ai-recommendations/', views.meeting_ai_recommendations_view, name='meeting_ai_recommendations'),
     path('api/meetings/generate-spin/', views.generate_spin_methodology_view, name='generate_spin_methodology'),
     path('api/meetings/improve-description/', views.improve_meeting_description_view, name='improve_meeting_description'),
+
+    # ============= URLs TABLAS DINÁMICAS API =============
+    # URLs de gestión de tablas dinámicas (solo para agentes)
+    path('dynamic-tables/', views.dynamic_table_list, name='dynamic_table_list'),
+    path('dynamic-tables/create/', views.dynamic_table_create, name='dynamic_table_create'),
+    path('dynamic-tables/<int:pk>/', views.dynamic_table_detail, name='dynamic_table_detail'),
+    path('dynamic-tables/<int:pk>/edit/', views.dynamic_table_edit, name='dynamic_table_edit'),
+    path('dynamic-tables/<int:pk>/delete/', views.dynamic_table_delete, name='dynamic_table_delete'),
+    path('dynamic-tables/<int:pk>/regenerate-token/', views.dynamic_table_regenerate_token, name='dynamic_table_regenerate_token'),
+    
+    # URLs para campos de tablas
+    path('dynamic-tables/<int:table_pk>/fields/create/', views.dynamic_table_field_create, name='dynamic_table_field_create'),
+    path('dynamic-tables/<int:table_pk>/fields/<int:field_pk>/edit/', views.dynamic_table_field_edit, name='dynamic_table_field_edit'),
+    path('dynamic-tables/<int:table_pk>/fields/<int:field_pk>/delete/', views.dynamic_table_field_delete, name='dynamic_table_field_delete'),
+    
+    # URLs para registros de tablas
+    path('dynamic-tables/<int:table_pk>/records/', views.dynamic_table_records, name='dynamic_table_records'),
+    path('dynamic-tables/<int:table_pk>/records/create/', views.dynamic_table_record_create, name='dynamic_table_record_create'),
+    path('dynamic-tables/<int:table_pk>/records/<int:record_pk>/update/', views.dynamic_table_record_update, name='dynamic_table_record_update'),
+    path('dynamic-tables/<int:table_pk>/records/<int:record_pk>/delete/', views.dynamic_table_record_delete, name='dynamic_table_record_delete'),
+    
+    # URL para probar API (API Tester)
+    path('api-tester/', views.api_tester, name='api_tester'),
+    path('api-tester/interface/', views.api_tester_interface, name='api_tester_interface'),
+    path('api-tester/saved/', views.api_tester_saved_list, name='api_tester_saved_list'),
+    path('api-tester/saved/<int:pk>/', views.api_tester_saved_detail, name='api_tester_saved_detail'),
+    path('api-tester/saved/<int:pk>/update/', views.api_tester_saved_update, name='api_tester_saved_update'),
+    path('api-tester/saved/<int:pk>/use/', views.api_tester_saved_use, name='api_tester_saved_use'),
+    
+    # Formulario público para tablas dinámicas
+    path('public-form/<uuid:token>/', views.public_dynamic_form, name='public_dynamic_form'),
 
     # ============= URLs ASISTENCIA DE CLIENTE =============
     # URLs de gestión de asistencia de cliente (solo para agentes)
