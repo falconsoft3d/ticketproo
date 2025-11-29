@@ -26,14 +26,18 @@ def get_item(dictionary, key):
 @register.filter(name='highlight_hashtags')
 def highlight_hashtags(text):
     """
-    Filtro de template para resaltar hashtags en negrita.
+    Filtro de template para resaltar hashtags y menciones.
     Uso: {{ post.content|highlight_hashtags }}
     """
     if not text:
         return text
     
     # Reemplazar hashtags con versión en negrita
-    pattern = r'(#\w+)'
-    highlighted = re.sub(pattern, r'<strong>\1</strong>', text)
+    pattern_hashtag = r'(#\w+)'
+    highlighted = re.sub(pattern_hashtag, r'<strong>\1</strong>', text)
+    
+    # Reemplazar menciones @ con versión en negrita verde oscuro
+    pattern_mention = r'(@\w+)'
+    highlighted = re.sub(pattern_mention, r'<strong style="color: #198754;">\1</strong>', highlighted)
     
     return mark_safe(highlighted)

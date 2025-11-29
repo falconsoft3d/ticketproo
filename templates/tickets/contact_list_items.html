@@ -1,0 +1,127 @@
+{% for contact in contacts %}
+<tr class="contact-item">
+    <td>
+        <div>
+            <strong>
+                <a href="{% url 'contact_detail' contact.pk %}" 
+                   class="text-decoration-none">
+                    {{ contact.name }}
+                </a>
+            </strong>
+            {% if contact.position %}
+                <br><small class="text-muted">{{ contact.position }}</small>
+            {% endif %}
+            {% if contact.email %}
+                <br><small class="text-muted">{{ contact.email }}</small>
+            {% endif %}
+            {% if contact.phone %}
+                <br><small class="text-muted">
+                    {{ contact.phone }}
+                </small>
+            {% endif %}
+        </div>
+    </td>
+    <td>
+        {% if contact.status == 'positive' %}
+            <span class="badge" style="background-color: #5cb85c; color: white;">
+                😊 <i class="{{ contact.get_status_icon }}"></i>
+                {{ contact.get_status_display }}
+            </span>
+        {% elif contact.status == 'won' %}
+            <span class="badge" style="background-color: #90ee90; color: #2d8659;">
+                <i class="{{ contact.get_status_icon }}"></i>
+                {{ contact.get_status_display }}
+            </span>
+        {% else %}
+            <span class="badge bg-{{ contact.get_status_color }}">
+                <i class="{{ contact.get_status_icon }}"></i>
+                {{ contact.get_status_display }}
+            </span>
+        {% endif %}
+    </td>
+    <td>{{ contact.company|default:"-" }}</td>
+    <td>
+        {% if contact.company_size %}
+            {% if contact.company_size == 'small' %}
+                <span class="badge bg-secondary"><i class="bi bi-building"></i> Pequeña</span>
+            {% elif contact.company_size == 'medium' %}
+                <span class="badge bg-primary"><i class="bi bi-building"></i> Mediana</span>
+            {% elif contact.company_size == 'large' %}
+                <span class="badge bg-success"><i class="bi bi-buildings"></i> Grande</span>
+            {% endif %}
+        {% else %}
+            <span class="text-muted">-</span>
+        {% endif %}
+    </td>
+    <td>{{ contact.country|default:"-" }}</td>
+    <td>
+        {% if contact.erp %}
+            <span class="badge bg-info">{{ contact.erp }}</span>
+        {% else %}
+            <span class="text-muted">-</span>
+        {% endif %}
+    </td>
+    <td class="text-center">
+        {% if contact.has_activities %}
+            <div class="activity-info">
+                <div class="d-flex align-items-center justify-content-center mb-1">
+                    <span class="badge bg-success me-1">{{ contact.activity_count }}</span>
+                    <i class="bi bi-telephone-fill text-success" title="Tiene actividades programadas"></i>
+                </div>
+                {% if contact.next_activity_date %}
+                    <small class="activity-date text-muted">
+                        <i class="bi bi-calendar-event"></i>
+                        {{ contact.next_activity_date|date:"d/m/Y" }}
+                        <br>
+                        <i class="bi bi-clock"></i>
+                        {{ contact.next_activity_date|time:"H:i" }}
+                    </small>
+                {% else %}
+                    <small class="activity-date text-warning">
+                        <i class="bi bi-exclamation-circle"></i>
+                        Sin fecha futura
+                    </small>
+                {% endif %}
+            </div>
+        {% else %}
+            <div class="activity-info">
+                <div class="d-flex align-items-center justify-content-center">
+                    <span class="badge bg-light text-muted me-1">0</span>
+                    <i class="bi bi-telephone-x text-muted" title="Sin actividades"></i>
+                </div>
+                <small class="activity-date text-muted">
+                    Sin actividades
+                </small>
+            </div>
+        {% endif %}
+    </td>
+    <td class="text-center">
+        {% if contact.had_meeting %}
+            <div>
+                <i class="bi bi-calendar-check-fill text-success" style="font-size: 1.2rem;" title="Reunión realizada"></i>
+                {% if contact.meeting_date %}
+                    <br><small class="text-muted">{{ contact.meeting_date|date:"d/m/Y" }}</small>
+                {% endif %}
+            </div>
+        {% else %}
+            <span class="text-muted">-</span>
+        {% endif %}
+    </td>
+    <td>
+        <div>
+            <strong>{{ contact.contact_date|date:"d/m/Y" }}</strong>
+            <br><small class="text-muted">{{ contact.contact_date|time:"H:i" }}</small>
+        </div>
+    </td>
+    <td>{{ contact.source|default:"-" }}</td>
+    <td>{{ contact.created_by.get_full_name|default:contact.created_by.username }}</td>
+    <td>
+        <div class="btn-group" role="group">
+            <a href="{% url 'contact_detail' contact.pk %}" 
+               class="btn btn-outline-primary btn-sm" title="Ver">
+                <i class="bi bi-eye"></i>
+            </a>
+        </div>
+    </td>
+</tr>
+{% endfor %}

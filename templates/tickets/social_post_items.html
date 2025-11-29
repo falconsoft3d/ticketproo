@@ -1,0 +1,235 @@
+{% load tickets_tags %}
+{% for post in posts %}
+<div class="card mb-3 post-card" id="post-{{ post.id }}">
+    <div class="card-body">
+        <!-- Header del post -->
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-person-circle me-2" style="font-size: 40px; color: #6c757d;"></i>
+                <div>
+                    <h6 class="mb-0">
+                        {{ post.user.get_full_name|default:post.user.username }}
+                        {% if post.is_private %}
+                        <span class="badge bg-secondary ms-2"><i class="bi bi-lock"></i> Privado</span>
+                        {% endif %}
+                        {% if post.company_only %}
+                        <span class="badge bg-info ms-2"><i class="bi bi-building"></i> Solo empresa</span>
+                        {% endif %}
+                    </h6>
+                    <small class="text-muted">{{ post.created_at|date:"d/m/Y H:i" }}</small>
+                </div>
+            </div>
+            {% if post.user == user or is_agent %}
+            <div class="dropdown">
+                <button class="btn btn-link text-muted" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-three-dots"></i>
+                </button>
+                <ul class="dropdown-menu">
+                    {% if post.user == user %}
+                    <li>
+                        <a class="dropdown-item" href="#" onclick="editPost({{ post.id }}); return false;">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#" onclick="togglePrivacy({{ post.id }}, {{ post.is_private|yesno:'true,false' }}); return false;">
+                            <i class="bi bi-{% if post.is_private %}unlock{% else %}lock{% endif %}"></i> 
+                            {% if post.is_private %}Hacer público{% else %}Hacer privado{% endif %}
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#" onclick="sharePost({{ post.id }}); return false;">
+                            <i class="bi bi-share"></i> Compartir
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    {% endif %}
+                    <li>
+                        <a class="dropdown-item text-danger" href="#" onclick="deletePost({{ post.id }}); return false;">
+                            <i class="bi bi-trash"></i> Eliminar{% if is_agent and post.user != user %} (Agente){% endif %}
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Contenido del post -->
+        {% if post.content %}
+        <p class="post-content">{{ post.content|highlight_hashtags|linebreaks }}</p>
+        {% endif %}
+
+        <!-- Imagen del post -->
+        {% if post.image %}
+        <img src="{{ post.image.url }}" class="img-fluid rounded mb-3" alt="Post image">
+        {% endif %}
+
+        <!-- Video de YouTube -->
+        {% if post.youtube_url %}
+        {% with embed_url=post.get_youtube_embed_url %}
+        {% if embed_url %}
+        <div class="ratio ratio-16x9 mb-3">
+            <iframe 
+                src="{{ embed_url }}" 
+                title="YouTube video player" 
+                frameborder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                referrerpolicy="strict-origin-when-cross-origin"
+                allowfullscreen>
+            </iframe>
+        </div>
+        {% endif %}
+        {% endwith %}
+        {% endif %}
+
+        <!-- Estadísticas -->
+        <div class="d-flex justify-content-between align-items-center border-top pt-2 mb-2">
+            <small class="text-muted">
+                👍 <span id="likes-count-{{ post.id }}">{{ post.get_likes_count }}</span>
+                ❤️ <span id="loves-count-{{ post.id }}">{{ post.get_loves_count }}</span>
+                👎 <span id="dislikes-count-{{ post.id }}">{{ post.get_dislikes_count }}</span>
+            </small>
+            <small class="text-muted">
+                💬 <span id="comments-count-{{ post.id }}">{{ post.get_comments_count }}</span>
+                {% if post.share_token %}
+                | 👁️ <span id="views-count-{{ post.id }}" title="Vistas públicas">{{ post.public_views_count }}</span>
+                {% endif %}
+            </small>
+        </div>
+
+        <!-- Botones de acción -->
+        <div class="d-flex gap-2 border-top border-bottom py-2">
+            <button 
+                class="btn btn-link text-decoration-none flex-grow-1 reaction-btn {% if post.user_reaction == 'like' %}active-like{% endif %}" 
+                onclick="toggleReaction({{ post.id }}, 'like')"
+                id="like-btn-{{ post.id }}"
+            >
+                <i class="bi bi-hand-thumbs-up"></i> Me gusta
+            </button>
+            <button 
+                class="btn btn-link text-decoration-none flex-grow-1 reaction-btn {% if post.user_reaction == 'love' %}active-love{% endif %}" 
+                onclick="toggleReaction({{ post.id }}, 'love')"
+                id="love-btn-{{ post.id }}"
+            >
+                <i class="bi bi-heart-fill"></i> Me encanta
+            </button>
+            <button 
+                class="btn btn-link text-decoration-none flex-grow-1 reaction-btn {% if post.user_reaction == 'dislike' %}active-dislike{% endif %}" 
+                onclick="toggleReaction({{ post.id }}, 'dislike')"
+                id="dislike-btn-{{ post.id }}"
+            >
+                <i class="bi bi-hand-thumbs-down"></i> No me gusta
+            </button>
+            <button 
+                class="btn btn-link text-decoration-none flex-grow-1" 
+                onclick="toggleComments({{ post.id }})"
+            >
+                <i class="bi bi-chat"></i> Comentar
+            </button>
+            <button 
+                class="btn btn-link text-decoration-none flex-grow-1 favorite-btn {% if post.id in user_favorites %}active-favorite{% endif %}" 
+                onclick="toggleFavorite({{ post.id }})"
+                id="favorite-btn-{{ post.id }}"
+                title="Guardar como favorito"
+            >
+                <i class="bi bi-star{% if post.id in user_favorites %}-fill{% endif %}"></i> Favorito
+            </button>
+        </div>
+
+        <!-- Sección de comentarios -->
+        <div class="comments-section mt-3" id="comments-{{ post.id }}">
+            <!-- Lista de comentarios -->
+            <div class="comments-list mb-3" id="comments-list-{{ post.id }}">
+                {% with active_comments=post.comments.all|dictsort:"created_at" %}
+                {% for comment in active_comments %}
+                {% if comment.is_active %}
+                <div class="d-flex mb-2 comment-item {% if forloop.counter > 3 %}extra-comment{% endif %}" 
+                     id="comment-{{ comment.id }}"
+                     {% if forloop.counter > 3 %}style="display: none;"{% endif %}>
+                    <i class="bi bi-person-circle me-2" style="font-size: 30px; color: #6c757d;"></i>
+                    <div class="flex-grow-1">
+                        <div class="bg-light rounded p-2">
+                            <strong>{{ comment.get_display_name }}</strong>
+                            <p class="mb-0">{{ comment.content|highlight_hashtags }}</p>
+                        </div>
+                        <small class="text-muted d-flex align-items-center gap-2 flex-wrap">
+                            <span>{{ comment.created_at|date:"d/m/Y H:i" }}</span>
+                            
+                            <!-- Contadores de reacciones -->
+                            <span class="comment-reaction-counts">
+                                <span id="comment-likes-{{ comment.id }}">{{ comment.get_likes_count }}</span> 👍
+                                <span id="comment-loves-{{ comment.id }}">{{ comment.get_loves_count }}</span> ❤️
+                                <span id="comment-dislikes-{{ comment.id }}">{{ comment.get_dislikes_count }}</span> 👎
+                            </span>
+                            
+                            <!-- Botones de reacciones del comentario -->
+                            <span class="comment-reactions">
+                                <a href="#" class="text-decoration-none text-muted" onclick="reactToComment({{ comment.id }}, 'like'); return false;" title="Me gusta">
+                                    Me gusta
+                                </a>
+                                <a href="#" class="text-decoration-none text-muted" onclick="reactToComment({{ comment.id }}, 'love'); return false;" title="Me encanta">
+                                    Me encanta
+                                </a>
+                                <a href="#" class="text-decoration-none text-muted" onclick="reactToComment({{ comment.id }}, 'dislike'); return false;" title="No me gusta">
+                                    No me gusta
+                                </a>
+                            </span>
+                            
+                            {% if comment.user == user %}
+                            <a href="#" class="text-danger" onclick="deleteComment({{ comment.id }}); return false;">
+                                <i class="bi bi-trash"></i> Eliminar
+                            </a>
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+                
+                <!-- Botón Ver más -->
+                {% if active_comments|length > 3 %}
+                <button class="btn btn-link btn-sm text-muted p-0 mb-2" onclick="showAllComments({{ post.id }}, this)">
+                    <i class="bi bi-chevron-down"></i> Ver más comentarios ({{ active_comments|length|add:"-3" }})
+                </button>
+                {% endif %}
+                {% endwith %}
+            </div>
+
+            <!-- Formulario de nuevo comentario -->
+            <div class="d-flex">
+                <i class="bi bi-person-circle me-2" style="font-size: 30px; color: #6c757d;"></i>
+                <div class="flex-grow-1">
+                    <form onsubmit="addComment(event, {{ post.id }})">
+                        {% csrf_token %}
+                        <div class="position-relative">
+                            <div class="input-group mb-2">
+                                <input 
+                                    type="text" 
+                                    class="form-control" 
+                                    id="comment-input-{{ post.id }}"
+                                    placeholder="Escribe un comentario..."
+                                    required
+                                    oninput="handleMentionInput(this)"
+                                >
+                                <button type="button" class="btn btn-outline-secondary" 
+                                        onclick="toggleEmojiPicker('comment-input-{{ post.id }}')">
+                                    😊
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-send"></i>
+                                </button>
+                            </div>
+                            <!-- Dropdown de autocompletado de menciones -->
+                            <div id="mentionDropdown-comment-input-{{ post.id }}" class="mention-dropdown" style="display: none;"></div>
+                            <!-- Selector de emojis para comentario -->
+                            <div id="emojiPicker-comment-input-{{ post.id }}" class="emoji-picker" style="display: none;">
+                                <div class="emoji-grid"></div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}

@@ -7,7 +7,31 @@
 {% block content %}
 <div class="container-fluid mt-4">
     <div class="row">
-        <div class="col-lg-8 mx-auto">
+        <!-- Panel izquierdo - Hashtags -->
+        <div class="col-lg-2 d-none d-lg-block">
+            <div class="sticky-sidebar">
+                <div class="card">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0"><i class="bi bi-hash"></i> Hashtags</h6>
+                        {% if search_query and '#' in search_query %}
+                        <a href="/social/" class="btn btn-sm btn-light" title="Limpiar filtro">
+                            <i class="bi bi-x"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                    <div class="card-body p-2" id="hashtagsList">
+                        <div class="d-flex justify-content-center py-3">
+                            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contenido central -->
+        <div class="col-lg-8">
             <!-- Header -->
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2><i class="bi bi-people-fill"></i> Red Social Interna</h2>
@@ -77,12 +101,27 @@
                         <div class="flex-grow-1">
                             <form id="createPostForm" enctype="multipart/form-data">
                                 {% csrf_token %}
-                                <textarea 
-                                    class="form-control mb-3" 
-                                    id="postContent" 
-                                    rows="3" 
-                                    placeholder="¿Qué estás pensando, {{ user.get_full_name|default:user.username }}?"
-                                ></textarea>
+                                <div class="position-relative">
+                                    <textarea 
+                                        class="form-control mb-2" 
+                                        id="postContent" 
+                                        rows="3" 
+                                        placeholder="¿Qué estás pensando, {{ user.get_full_name|default:user.username }}?"
+                                        oninput="handleMentionInput(this)"
+                                    ></textarea>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary position-absolute" 
+                                            style="bottom: 10px; right: 10px;" 
+                                            onclick="toggleEmojiPicker('postContent')">
+                                        😊
+                                    </button>
+                                    <!-- Dropdown de autocompletado de menciones -->
+                                    <div id="mentionDropdown-postContent" class="mention-dropdown" style="display: none;"></div>
+                                </div>
+                                
+                                <!-- Selector de emojis para publicación -->
+                                <div id="emojiPickerPost" class="emoji-picker mb-3" style="display: none;">
+                                    <div class="emoji-grid"></div>
+                                </div>
                                 
                                 <!-- URL de YouTube -->
                                 <input 
@@ -134,235 +173,56 @@
 
             <!-- Feed de publicaciones -->
             <div id="postsContainer">
-                {% for post in posts %}
-                <div class="card mb-3 post-card" id="post-{{ post.id }}">
-                    <div class="card-body">
-                        <!-- Header del post -->
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div class="d-flex align-items-center">
-                                <i class="bi bi-person-circle me-2" style="font-size: 40px; color: #6c757d;"></i>
-                                <div>
-                                    <h6 class="mb-0">
-                                        {{ post.user.get_full_name|default:post.user.username }}
-                                        {% if post.is_private %}
-                                        <span class="badge bg-secondary ms-2"><i class="bi bi-lock"></i> Privado</span>
-                                        {% endif %}
-                                        {% if post.company_only %}
-                                        <span class="badge bg-info ms-2"><i class="bi bi-building"></i> Solo empresa</span>
-                                        {% endif %}
-                                    </h6>
-                                    <small class="text-muted">{{ post.created_at|date:"d/m/Y H:i" }}</small>
-                                </div>
-                            </div>
-                            {% if post.user == user or is_agent %}
-                            <div class="dropdown">
-                                <button class="btn btn-link text-muted" type="button" data-bs-toggle="dropdown">
-                                    <i class="bi bi-three-dots"></i>
-                                </button>
-                                <ul class="dropdown-menu">
-                                    {% if post.user == user %}
-                                    <li>
-                                        <a class="dropdown-item" href="#" onclick="editPost({{ post.id }}); return false;">
-                                            <i class="bi bi-pencil"></i> Editar
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" href="#" onclick="togglePrivacy({{ post.id }}, {{ post.is_private|yesno:'true,false' }}); return false;">
-                                            <i class="bi bi-{% if post.is_private %}unlock{% else %}lock{% endif %}"></i> 
-                                            {% if post.is_private %}Hacer público{% else %}Hacer privado{% endif %}
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" href="#" onclick="sharePost({{ post.id }}); return false;">
-                                            <i class="bi bi-share"></i> Compartir
-                                        </a>
-                                    </li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    {% endif %}
-                                    <li>
-                                        <a class="dropdown-item text-danger" href="#" onclick="deletePost({{ post.id }}); return false;">
-                                            <i class="bi bi-trash"></i> Eliminar{% if is_agent and post.user != user %} (Agente){% endif %}
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Contenido del post -->
-                        {% if post.content %}
-                        <p class="post-content">{{ post.content|highlight_hashtags|linebreaks }}</p>
-                        {% endif %}
-
-                        <!-- Imagen del post -->
-                        {% if post.image %}
-                        <img src="{{ post.image.url }}" class="img-fluid rounded mb-3" alt="Post image">
-                        {% endif %}
-
-                        <!-- Video de YouTube -->
-                        {% if post.youtube_url %}
-                        {% with embed_url=post.get_youtube_embed_url %}
-                        {% if embed_url %}
-                        <div class="ratio ratio-16x9 mb-3">
-                            <iframe 
-                                src="{{ embed_url }}" 
-                                title="YouTube video player" 
-                                frameborder="0" 
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                                referrerpolicy="strict-origin-when-cross-origin"
-                                allowfullscreen>
-                            </iframe>
-                        </div>
-                        {% endif %}
-                        {% endwith %}
-                        {% endif %}
-
-                        <!-- Estadísticas -->
-                        <div class="d-flex justify-content-between align-items-center border-top pt-2 mb-2">
-                            <small class="text-muted">
-                                👍 <span id="likes-count-{{ post.id }}">{{ post.get_likes_count }}</span>
-                                ❤️ <span id="loves-count-{{ post.id }}">{{ post.get_loves_count }}</span>
-                                👎 <span id="dislikes-count-{{ post.id }}">{{ post.get_dislikes_count }}</span>
-                            </small>
-                            <small class="text-muted">
-                                💬 <span id="comments-count-{{ post.id }}">{{ post.get_comments_count }}</span>
-                                {% if post.share_token %}
-                                | 👁️ <span id="views-count-{{ post.id }}" title="Vistas públicas">{{ post.public_views_count }}</span>
-                                {% endif %}
-                            </small>
-                        </div>
-
-                        <!-- Botones de acción -->
-                        <div class="d-flex gap-2 border-top border-bottom py-2">
-                            <button 
-                                class="btn btn-link text-decoration-none flex-grow-1 reaction-btn {% if post.user_reaction == 'like' %}active-like{% endif %}" 
-                                onclick="toggleReaction({{ post.id }}, 'like')"
-                                id="like-btn-{{ post.id }}"
-                            >
-                                <i class="bi bi-hand-thumbs-up"></i> Me gusta
-                            </button>
-                            <button 
-                                class="btn btn-link text-decoration-none flex-grow-1 reaction-btn {% if post.user_reaction == 'love' %}active-love{% endif %}" 
-                                onclick="toggleReaction({{ post.id }}, 'love')"
-                                id="love-btn-{{ post.id }}"
-                            >
-                                <i class="bi bi-heart-fill"></i> Me encanta
-                            </button>
-                            <button 
-                                class="btn btn-link text-decoration-none flex-grow-1 reaction-btn {% if post.user_reaction == 'dislike' %}active-dislike{% endif %}" 
-                                onclick="toggleReaction({{ post.id }}, 'dislike')"
-                                id="dislike-btn-{{ post.id }}"
-                            >
-                                <i class="bi bi-hand-thumbs-down"></i> No me gusta
-                            </button>
-                            <button 
-                                class="btn btn-link text-decoration-none flex-grow-1" 
-                                onclick="toggleComments({{ post.id }})"
-                            >
-                                <i class="bi bi-chat"></i> Comentar
-                            </button>
-                            <button 
-                                class="btn btn-link text-decoration-none flex-grow-1 favorite-btn {% if post.id in user_favorites %}active-favorite{% endif %}" 
-                                onclick="toggleFavorite({{ post.id }})"
-                                id="favorite-btn-{{ post.id }}"
-                                title="Guardar como favorito"
-                            >
-                                <i class="bi bi-star{% if post.id in user_favorites %}-fill{% endif %}"></i> Favorito
-                            </button>
-                        </div>
-
-                        <!-- Sección de comentarios -->
-                        <div class="comments-section mt-3" id="comments-{{ post.id }}">
-                            <!-- Lista de comentarios -->
-                            <div class="comments-list mb-3" id="comments-list-{{ post.id }}">
-                                {% with active_comments=post.comments.all|dictsort:"created_at" %}
-                                {% for comment in active_comments %}
-                                {% if comment.is_active %}
-                                <div class="d-flex mb-2 comment-item {% if forloop.counter > 3 %}extra-comment{% endif %}" 
-                                     id="comment-{{ comment.id }}"
-                                     {% if forloop.counter > 3 %}style="display: none;"{% endif %}>
-                                    <i class="bi bi-person-circle me-2" style="font-size: 30px; color: #6c757d;"></i>
-                                    <div class="flex-grow-1">
-                                        <div class="bg-light rounded p-2">
-                                            <strong>{{ comment.get_display_name }}</strong>
-                                            <p class="mb-0">{{ comment.content|highlight_hashtags }}</p>
-                                        </div>
-                                        <small class="text-muted d-flex align-items-center gap-2 flex-wrap">
-                                            <span>{{ comment.created_at|date:"d/m/Y H:i" }}</span>
-                                            
-                                            <!-- Contadores de reacciones -->
-                                            <span class="comment-reaction-counts">
-                                                <span id="comment-likes-{{ comment.id }}">{{ comment.get_likes_count }}</span> 👍
-                                                <span id="comment-loves-{{ comment.id }}">{{ comment.get_loves_count }}</span> ❤️
-                                                <span id="comment-dislikes-{{ comment.id }}">{{ comment.get_dislikes_count }}</span> 👎
-                                            </span>
-                                            
-                                            <!-- Botones de reacciones del comentario -->
-                                            <span class="comment-reactions">
-                                                <a href="#" class="text-decoration-none text-muted" onclick="reactToComment({{ comment.id }}, 'like'); return false;" title="Me gusta">
-                                                    Me gusta
-                                                </a>
-                                                <a href="#" class="text-decoration-none text-muted" onclick="reactToComment({{ comment.id }}, 'love'); return false;" title="Me encanta">
-                                                    Me encanta
-                                                </a>
-                                                <a href="#" class="text-decoration-none text-muted" onclick="reactToComment({{ comment.id }}, 'dislike'); return false;" title="No me gusta">
-                                                    No me gusta
-                                                </a>
-                                            </span>
-                                            
-                                            {% if comment.user == user %}
-                                            <a href="#" class="text-danger" onclick="deleteComment({{ comment.id }}); return false;">
-                                                <i class="bi bi-trash"></i> Eliminar
-                                            </a>
-                                            {% endif %}
-                                        </small>
-                                    </div>
-                                </div>
-                                {% endif %}
-                                {% endfor %}
-                                
-                                <!-- Botón Ver más -->
-                                {% if active_comments|length > 3 %}
-                                <button class="btn btn-link btn-sm text-muted p-0 mb-2" onclick="showAllComments({{ post.id }}, this)">
-                                    <i class="bi bi-chevron-down"></i> Ver más comentarios ({{ active_comments|length|add:"-3" }})
-                                </button>
-                                {% endif %}
-                                {% endwith %}
-                            </div>
-
-                            <!-- Formulario de nuevo comentario -->
-                            <div class="d-flex">
-                                <i class="bi bi-person-circle me-2" style="font-size: 30px; color: #6c757d;"></i>
-                                <div class="flex-grow-1">
-                                    <form onsubmit="addComment(event, {{ post.id }})">
-                                        {% csrf_token %}
-                                        <div class="input-group">
-                                            <input 
-                                                type="text" 
-                                                class="form-control" 
-                                                id="comment-input-{{ post.id }}"
-                                                placeholder="Escribe un comentario..."
-                                                required
-                                            >
-                                            <button type="submit" class="btn btn-primary">
-                                                <i class="bi bi-send"></i>
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
+                {% if posts %}
+                    {% include 'tickets/social_post_items.html' with posts=posts user=user is_agent=is_agent user_favorites=user_favorites %}
+                {% else %}
+                    <div class="card">
+                        <div class="card-body text-center py-5">
+                            <i class="bi bi-chat-left-text" style="font-size: 4rem; color: #ccc;"></i>
+                            <h4 class="mt-3 text-muted">No hay publicaciones aún</h4>
+                            <p class="text-muted">¡Sé el primero en compartir algo!</p>
                         </div>
                     </div>
+                {% endif %}
+            </div>
+            
+            <!-- Loading spinner -->
+            <div id="loadingSpinner" class="text-center py-4" style="display: none;">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
                 </div>
-                {% empty %}
+                <p class="text-muted mt-2">Cargando más publicaciones...</p>
+            </div>
+            
+            <!-- Mensaje de fin -->
+            <div id="endMessage" class="text-center py-4" style="display: none;">
+                <p class="text-muted">No hay más publicaciones para mostrar</p>
+            </div>
+        </div>
+        
+        <!-- Panel derecho - Usuarios mencionados -->
+        <div class="col-lg-2 d-none d-lg-block">
+            <div class="sticky-sidebar">
                 <div class="card">
-                    <div class="card-body text-center py-5">
-                        <i class="bi bi-chat-left-text" style="font-size: 4rem; color: #ccc;"></i>
-                        <h4 class="mt-3 text-muted">No hay publicaciones aún</h4>
-                        <p class="text-muted">¡Sé el primero en compartir algo!</p>
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 d-flex align-items-center gap-2">
+                            <i class="bi bi-at"></i> Menciones
+                            <span id="myMentionsCount" class="badge bg-danger text-white" style="display: none; font-size: 0.85rem; padding: 0.35rem 0.6rem; font-weight: bold;">0</span>
+                        </h6>
+                        {% if search_query and '@' in search_query %}
+                        <a href="/social/" class="btn btn-sm btn-light" title="Limpiar filtro">
+                            <i class="bi bi-x"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                    <div class="card-body p-2" id="mentionsList">
+                        <div class="d-flex justify-content-center py-3">
+                            <div class="spinner-border spinner-border-sm text-success" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                {% endfor %}
             </div>
         </div>
     </div>
@@ -510,6 +370,144 @@
     .comment-reactions a:hover {
         color: #0d6efd !important;
         text-decoration: underline !important;
+    }
+    
+    /* Estilos para paneles laterales */
+    .sticky-sidebar {
+        position: sticky;
+        top: 80px;
+        max-height: calc(100vh - 100px);
+        overflow-y: auto;
+    }
+    
+    .hashtag-item, .mention-item {
+        padding: 8px 12px;
+        border-bottom: 1px solid #f0f0f0;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .hashtag-item:hover, .mention-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .hashtag-item:last-child, .mention-item:last-child {
+        border-bottom: none;
+    }
+    
+    .hashtag-count, .mention-count {
+        margin-left: auto;
+        font-size: 0.85em;
+        color: #6c757d;
+        background: #e9ecef;
+        padding: 2px 8px;
+        border-radius: 10px;
+    }
+    
+    .hashtag-link {
+        color: #0d6efd;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .mention-link {
+        color: #198754;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .active-filter {
+        background-color: #e7f3ff !important;
+        border-left: 3px solid #0d6efd;
+        font-weight: 600;
+    }
+    
+    .card-header .btn-light {
+        padding: 2px 8px;
+        font-size: 0.875rem;
+    }
+    
+    .card-header .btn-light:hover {
+        background-color: #fff;
+    }
+    
+    /* Estilos para selector de emojis */
+    .emoji-picker {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        max-height: 200px;
+        overflow-y: auto;
+        position: absolute;
+        z-index: 1000;
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    .emoji-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(35px, 1fr));
+        gap: 5px;
+    }
+    
+    .emoji-item {
+        font-size: 24px;
+        cursor: pointer;
+        padding: 5px;
+        text-align: center;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    }
+    
+    .emoji-item:hover {
+        background-color: #f0f0f0;
+        transform: scale(1.1);
+    }
+    
+    /* Estilos para dropdown de menciones */
+    .mention-dropdown {
+        position: absolute;
+        bottom: 100%;
+        left: 0;
+        width: 100%;
+        max-height: 200px;
+        overflow-y: auto;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        z-index: 1050;
+        margin-bottom: 5px;
+    }
+    
+    .mention-item {
+        padding: 10px 15px;
+        cursor: pointer;
+        border-bottom: 1px solid #f0f0f0;
+        transition: background-color 0.2s;
+    }
+    
+    .mention-item:last-child {
+        border-bottom: none;
+    }
+    
+    .mention-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .mention-item .username {
+        font-weight: bold;
+        color: #198754;
+    }
+    
+    .mention-item .fullname {
+        color: #6c757d;
+        font-size: 0.9em;
     }
 </style>
 
@@ -976,5 +974,368 @@ async function toggleFavorite(postId) {
         alert('Error al guardar favorito');
     }
 }
+
+// ============= SCROLL INFINITO =============
+let currentPage = 1;
+let isLoading = false;
+let hasMorePosts = {{ has_next|yesno:"true,false" }};
+
+function loadMorePosts() {
+    if (isLoading || !hasMorePosts) return;
+    
+    isLoading = true;
+    document.getElementById('loadingSpinner').style.display = 'block';
+    
+    currentPage++;
+    
+    // Construir URL con parámetros de filtro actuales
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.set('page', currentPage);
+    
+    fetch(`/social/load-more/?${urlParams.toString()}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.html) {
+                // Insertar nuevos posts al final del container
+                const postsContainer = document.getElementById('postsContainer');
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = data.html;
+                
+                // Agregar cada post individualmente para mantener los event listeners
+                while (tempDiv.firstChild) {
+                    postsContainer.appendChild(tempDiv.firstChild);
+                }
+                
+                hasMorePosts = data.has_next;
+                
+                if (!hasMorePosts) {
+                    document.getElementById('endMessage').style.display = 'block';
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error cargando más posts:', error);
+            alert('Error al cargar más publicaciones');
+        })
+        .finally(() => {
+            isLoading = false;
+            document.getElementById('loadingSpinner').style.display = 'none';
+        });
+}
+
+// Detectar scroll al final de la página
+window.addEventListener('scroll', function() {
+    // Calcular si estamos cerca del final (200px antes del final)
+    const scrollPosition = window.innerHeight + window.scrollY;
+    const pageHeight = document.documentElement.scrollHeight;
+    
+    if (scrollPosition >= pageHeight - 200) {
+        loadMorePosts();
+    }
+});
+
+// También detectar scroll dentro del container si tiene scroll propio
+const mainContent = document.querySelector('.col-lg-8');
+if (mainContent) {
+    mainContent.addEventListener('scroll', function() {
+        const scrollPosition = this.scrollTop + this.clientHeight;
+        const scrollHeight = this.scrollHeight;
+        
+        if (scrollPosition >= scrollHeight - 200) {
+            loadMorePosts();
+        }
+    });
+}
+
+// ============= CARGAR HASHTAGS Y MENCIONES =============
+function loadHashtags() {
+    fetch('/social/hashtags/')
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('hashtagsList');
+            if (data.hashtags && data.hashtags.length > 0) {
+                const currentSearch = new URLSearchParams(window.location.search).get('q') || '';
+                
+                container.innerHTML = data.hashtags.map(item => {
+                    const isActive = currentSearch.toLowerCase() === ('#' + item.tag).toLowerCase();
+                    return `
+                    <div class="hashtag-item ${isActive ? 'active-filter' : ''}" onclick="searchByHashtag('${item.tag}')">
+                        <i class="bi bi-hash text-primary"></i>
+                        <span class="hashtag-link">${item.tag}</span>
+                        <span class="hashtag-count">${item.count}</span>
+                        ${isActive ? '<i class="bi bi-check-circle-fill text-primary ms-1"></i>' : ''}
+                    </div>
+                    `;
+                }).join('');
+            } else {
+                container.innerHTML = '<p class="text-muted text-center py-2 mb-0 small">No hay hashtags aún</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Error cargando hashtags:', error);
+            document.getElementById('hashtagsList').innerHTML = 
+                '<p class="text-danger text-center py-2 mb-0 small">Error al cargar</p>';
+        });
+}
+
+function loadMentions() {
+    fetch('/social/mentions/')
+        .then(response => response.json())
+        .then(data => {
+            console.log('Datos de menciones recibidos:', data);
+            const container = document.getElementById('mentionsList');
+            const myMentionsCountBadge = document.getElementById('myMentionsCount');
+            
+            // Actualizar contador de mis menciones
+            console.log('Contador de mis menciones:', data.my_mentions_count);
+            if (data.my_mentions_count !== undefined && data.my_mentions_count > 0) {
+                myMentionsCountBadge.textContent = data.my_mentions_count;
+                myMentionsCountBadge.style.display = 'inline-block';
+                console.log('Badge mostrado con valor:', data.my_mentions_count);
+            } else {
+                myMentionsCountBadge.style.display = 'none';
+                console.log('Badge oculto, valor:', data.my_mentions_count);
+            }
+            
+            if (data.mentions && data.mentions.length > 0) {
+                const currentSearch = new URLSearchParams(window.location.search).get('q') || '';
+                
+                container.innerHTML = data.mentions.map(item => {
+                    const isActive = currentSearch.toLowerCase() === ('@' + item.username).toLowerCase();
+                    return `
+                    <div class="mention-item ${isActive ? 'active-filter' : ''}" onclick="searchByMention('${item.username}')">
+                        <i class="bi bi-person-circle text-success"></i>
+                        <div style="flex: 1; min-width: 0;">
+                            <div class="mention-link text-truncate">${item.full_name}</div>
+                            <small class="text-muted">@${item.username}</small>
+                        </div>
+                        <span class="mention-count">${item.count}</span>
+                        ${isActive ? '<i class="bi bi-check-circle-fill text-success ms-1"></i>' : ''}
+                    </div>
+                    `;
+                }).join('');
+            } else {
+                container.innerHTML = '<p class="text-muted text-center py-2 mb-0 small">No hay menciones aún</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Error cargando menciones:', error);
+            document.getElementById('mentionsList').innerHTML = 
+                '<p class="text-danger text-center py-2 mb-0 small">Error al cargar</p>';
+        });
+}
+
+function searchByHashtag(tag) {
+    window.location.href = `/social/?q=${encodeURIComponent('#' + tag)}`;
+}
+
+function searchByMention(username) {
+    window.location.href = `/social/?q=${encodeURIComponent('@' + username)}`;
+}
+
+// ============= AUTOCOMPLETADO DE MENCIONES =============
+let mentionSearchTimeout = null;
+let currentMentionField = null;
+let mentionStartPos = 0;
+
+function handleMentionInput(element) {
+    const value = element.value;
+    const cursorPos = element.selectionStart;
+    
+    // Buscar el último @ antes del cursor
+    const textBeforeCursor = value.substring(0, cursorPos);
+    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+    
+    // Verificar si hay un @ y no hay espacio después
+    if (lastAtIndex !== -1) {
+        const textAfterAt = textBeforeCursor.substring(lastAtIndex + 1);
+        
+        // Si hay espacio después del @, cerrar dropdown
+        if (textAfterAt.includes(' ')) {
+            closeMentionDropdown(element.id);
+            return;
+        }
+        
+        // Si hay texto después del @ (al menos 2 caracteres), buscar usuarios
+        if (textAfterAt.length >= 2) {
+            currentMentionField = element;
+            mentionStartPos = lastAtIndex;
+            searchUsers(textAfterAt, element.id);
+        } else if (textAfterAt.length === 0) {
+            // Si acabamos de escribir @, mostrar dropdown vacío o mensaje
+            closeMentionDropdown(element.id);
+        }
+    } else {
+        closeMentionDropdown(element.id);
+    }
+}
+
+function searchUsers(query, fieldId) {
+    clearTimeout(mentionSearchTimeout);
+    
+    mentionSearchTimeout = setTimeout(() => {
+        fetch(`/social/search-users/?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                showMentionDropdown(data.users, fieldId);
+            })
+            .catch(error => {
+                console.error('Error buscando usuarios:', error);
+            });
+    }, 300); // Debounce de 300ms
+}
+
+function showMentionDropdown(users, fieldId) {
+    const dropdown = document.getElementById('mentionDropdown-' + fieldId);
+    
+    if (!dropdown) return;
+    
+    if (users.length === 0) {
+        dropdown.style.display = 'none';
+        return;
+    }
+    
+    dropdown.innerHTML = users.map(user => `
+        <div class="mention-item" onclick="insertMention('${user.username}', '${fieldId}')">
+            <div class="username">@${user.username}</div>
+            <div class="fullname">${user.full_name}</div>
+        </div>
+    `).join('');
+    
+    dropdown.style.display = 'block';
+}
+
+function insertMention(username, fieldId) {
+    const field = document.getElementById(fieldId);
+    if (!field) return;
+    
+    const value = field.value;
+    const cursorPos = field.selectionStart;
+    
+    // Encontrar el inicio de la mención (último @)
+    const textBeforeCursor = value.substring(0, cursorPos);
+    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+    
+    // Reemplazar desde el @ hasta el cursor con @username
+    const newValue = value.substring(0, lastAtIndex) + '@' + username + ' ' + value.substring(cursorPos);
+    field.value = newValue;
+    
+    // Colocar cursor después de la mención
+    const newCursorPos = lastAtIndex + username.length + 2; // +2 por @ y espacio
+    field.setSelectionRange(newCursorPos, newCursorPos);
+    field.focus();
+    
+    // Cerrar dropdown
+    closeMentionDropdown(fieldId);
+}
+
+function closeMentionDropdown(fieldId) {
+    const dropdown = document.getElementById('mentionDropdown-' + fieldId);
+    if (dropdown) {
+        dropdown.style.display = 'none';
+    }
+}
+
+// Cerrar dropdown al hacer clic fuera
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.mention-dropdown') && !e.target.closest('input, textarea')) {
+        document.querySelectorAll('.mention-dropdown').forEach(d => d.style.display = 'none');
+    }
+});
+
+// ============= SELECTOR DE EMOJIS =============
+const emojis = [
+    '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃',
+    '😉', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗', '😚', '😙',
+    '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔',
+    '🤐', '🤨', '😐', '😑', '😶', '😏', '😒', '🙄', '😬', '🤥',
+    '😌', '😔', '😪', '🤤', '😴', '😷', '🤒', '🤕', '🤢', '🤮',
+    '🤧', '🥵', '🥶', '😶‍🌫️', '🥴', '😵', '🤯', '🤠', '🥳', '😎',
+    '🤓', '🧐', '😕', '😟', '🙁', '☹️', '😮', '😯', '😲', '😳',
+    '🥺', '😦', '😧', '😨', '😰', '😥', '😢', '😭', '😱', '😖',
+    '😣', '😞', '😓', '😩', '😫', '🥱', '😤', '😡', '😠', '🤬',
+    '👍', '👎', '👊', '✊', '🤛', '🤜', '🤞', '✌️', '🤟', '🤘',
+    '👌', '🤌', '🤏', '👈', '👉', '👆', '👇', '☝️', '👋', '🤚',
+    '🖐️', '✋', '🖖', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️',
+    '💪', '🦾', '🦿', '🦵', '🦶', '👂', '🦻', '👃', '🧠', '🫀',
+    '🫁', '🦷', '🦴', '👀', '👁️', '👅', '👄', '💋', '🩸', '❤️',
+    '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❤️‍🔥',
+    '❤️‍🩹', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '☮️',
+    '✝️', '☪️', '🕉️', '☸️', '✡️', '🔯', '🕎', '☯️', '☦️', '🛐',
+    '⚛️', '🆔', '⚜️', '🔱', '📛', '🔰', '⭐', '🌟', '✨', '⚡',
+    '💥', '💫', '💦', '💨', '🕊️', '🦅', '🦆', '🦉', '🐦', '🐧',
+    '🐥', '🐣', '🐤', '🦃', '🐔', '🐓', '🦜', '🦚', '🦩', '🦢'
+];
+
+let currentEmojiTarget = null;
+
+function initEmojiPicker() {
+    // Crear grids de emojis para todos los selectores
+    document.querySelectorAll('.emoji-grid').forEach(grid => {
+        grid.innerHTML = emojis.map(emoji => 
+            `<span class="emoji-item" onclick="insertEmoji('${emoji}')">${emoji}</span>`
+        ).join('');
+    });
+}
+
+function toggleEmojiPicker(targetId) {
+    const target = document.getElementById(targetId);
+    const picker = document.getElementById('emojiPicker-' + targetId) || 
+                   document.getElementById('emojiPickerPost');
+    
+    if (!picker) return;
+    
+    currentEmojiTarget = target;
+    
+    // Cerrar otros pickers
+    document.querySelectorAll('.emoji-picker').forEach(p => {
+        if (p !== picker) p.style.display = 'none';
+    });
+    
+    // Toggle actual picker
+    picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
+}
+
+function insertEmoji(emoji) {
+    if (!currentEmojiTarget) return;
+    
+    const start = currentEmojiTarget.selectionStart;
+    const end = currentEmojiTarget.selectionEnd;
+    const text = currentEmojiTarget.value;
+    
+    currentEmojiTarget.value = text.substring(0, start) + emoji + text.substring(end);
+    currentEmojiTarget.focus();
+    
+    // Colocar cursor después del emoji
+    const newPos = start + emoji.length;
+    currentEmojiTarget.setSelectionRange(newPos, newPos);
+    
+    // Cerrar picker
+    document.querySelectorAll('.emoji-picker').forEach(p => p.style.display = 'none');
+}
+
+// Cerrar picker al hacer clic fuera
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.emoji-picker') && !e.target.closest('[onclick*="toggleEmojiPicker"]')) {
+        document.querySelectorAll('.emoji-picker').forEach(p => p.style.display = 'none');
+    }
+});
+
+// Cargar al inicio
+document.addEventListener('DOMContentLoaded', function() {
+    loadHashtags();
+    loadMentions();
+    initEmojiPicker();
+});
+
+// Recargar cuando se crea un nuevo post
+const originalCreatePost = document.getElementById('createPostForm').onsubmit;
+document.getElementById('createPostForm').addEventListener('submit', async function(e) {
+    // Esperar a que se complete el envío del formulario
+    setTimeout(() => {
+        loadHashtags();
+        loadMentions();
+    }, 1000);
+});
 </script>
 {% endblock %}

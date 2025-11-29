@@ -43936,8 +43936,14 @@ def social_feed(request):
     
     posts = posts.order_by('-created_at')
     
+    # Paginación
+    from django.core.paginator import Paginator
+    paginator = Paginator(posts, 10)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+    
     # Agregar información de reacciones del usuario actual a cada post
-    for post in posts:
+    for post in page_obj:
         user_reaction = post.likes.filter(user=request.user).first()
         post.user_reaction = user_reaction.reaction_type if user_reaction else None
     
@@ -43946,15 +43952,241 @@ def social_feed(request):
     user_favorites = list(SocialPostFavorite.objects.filter(user=request.user).values_list('post_id', flat=True))
     
     context = {
-        'posts': posts,
+        'posts': page_obj,
         'search_query': search_query,
         'is_agent': is_agent,
         'user_favorites': user_favorites,
         'show_favorites': show_favorites,
         'show_loved': show_loved,
+        'has_next': page_obj.has_next(),
+        'next_page': page_obj.next_page_number() if page_obj.has_next() else None,
     }
     
     return render(request, 'tickets/social_feed.html', context)
+
+
+@login_required
+def social_feed_load_more(request):
+    """Endpoint AJAX para cargar más posts con scroll infinito"""
+    from django.http import JsonResponse
+    from django.template.loader import render_to_string
+    from .models import SocialPost, SocialPostLike, SocialPostFavorite
+    from django.db.models import Q
+    
+    page_number = int(request.GET.get('page', 1))
+    
+    # Verificar si el usuario es agente
+    is_agent = request.user.groups.filter(name='Agentes').exists()
+    
+    # Parámetros de filtro
+    search_query = request.GET.get('q', '').strip()
+    show_favorites = request.GET.get('favorites') == '1'
+    show_loved = request.GET.get('loved') == '1'
+    
+    # Filtrar posts base: solo activos
+    posts = SocialPost.objects.filter(is_active=True)
+    
+    # Aplicar filtros de favoritos y "me encantan"
+    if show_favorites:
+        favorite_post_ids = SocialPostFavorite.objects.filter(user=request.user).values_list('post_id', flat=True)
+        posts = posts.filter(id__in=favorite_post_ids)
+    
+    if show_loved:
+        loved_post_ids = SocialPostLike.objects.filter(user=request.user, reaction_type='love').values_list('post_id', flat=True)
+        posts = posts.filter(id__in=loved_post_ids)
+    
+    # Aplicar filtros de privacidad y empresa
+    if is_agent:
+        posts = posts.filter(Q(is_private=False) | Q(user=request.user))
+    else:
+        user_company = request.user.profile.company if hasattr(request.user, 'profile') else None
+        posts = posts.filter(Q(is_private=False) | Q(user=request.user))
+        
+        if user_company:
+            posts = posts.filter(Q(company_only=False) | Q(user__profile__company=user_company))
+        else:
+            posts = posts.filter(company_only=False)
+    
+    posts = posts.select_related('user', 'user__profile', 'user__profile__company').prefetch_related(
+        'likes', 'comments'
+    )
+    
+    # Aplicar búsqueda
+    if search_query:
+        posts = posts.filter(
+            Q(content__icontains=search_query) | 
+            Q(user__username__icontains=search_query) |
+            Q(user__first_name__icontains=search_query) |
+            Q(user__last_name__icontains=search_query)
+        )
+    
+    posts = posts.order_by('-created_at')
+    
+    # Paginación
+    from django.core.paginator import Paginator
+    paginator = Paginator(posts, 10)
+    page_obj = paginator.get_page(page_number)
+    
+    # Agregar información de reacciones del usuario
+    for post in page_obj:
+        user_reaction = post.likes.filter(user=request.user).first()
+        post.user_reaction = user_reaction.reaction_type if user_reaction else None
+    
+    # Obtener favoritos del usuario
+    user_favorites = list(SocialPostFavorite.objects.filter(user=request.user).values_list('post_id', flat=True))
+    
+    # Renderizar HTML de los posts
+    html = render_to_string('tickets/social_post_items.html', {
+        'posts': page_obj.object_list,
+        'is_agent': is_agent,
+        'user_favorites': user_favorites,
+        'user': request.user
+    })
+    
+    return JsonResponse({
+        'html': html,
+        'has_next': page_obj.has_next(),
+        'next_page': page_obj.next_page_number() if page_obj.has_next() else None
+    })
+
+
+@login_required
+def social_get_hashtags(request):
+    """Obtener hashtags populares de las publicaciones"""
+    from django.http import JsonResponse
+    from django.db.models import Q
+    from .models import SocialPost
+    import re
+    
+    # Verificar si el usuario es agente
+    is_agent = request.user.groups.filter(name='Agentes').exists()
+    
+    # Filtrar posts según permisos
+    posts = SocialPost.objects.filter(is_active=True)
+    
+    if is_agent:
+        posts = posts.filter(Q(is_private=False) | Q(user=request.user))
+    else:
+        user_company = request.user.profile.company if hasattr(request.user, 'profile') else None
+        posts = posts.filter(Q(is_private=False) | Q(user=request.user))
+        
+        if user_company:
+            posts = posts.filter(Q(company_only=False) | Q(user__profile__company=user_company))
+        else:
+            posts = posts.filter(company_only=False)
+    
+    # Extraer todos los hashtags
+    hashtag_counts = {}
+    for post in posts:
+        if post.content:
+            hashtags = re.findall(r'#(\w+)', post.content)
+            for tag in hashtags:
+                tag_lower = tag.lower()
+                if tag_lower in hashtag_counts:
+                    hashtag_counts[tag_lower] += 1
+                else:
+                    hashtag_counts[tag_lower] = 1
+    
+    # Ordenar por frecuencia y tomar top 15
+    sorted_hashtags = sorted(hashtag_counts.items(), key=lambda x: x[1], reverse=True)[:15]
+    
+    return JsonResponse({
+        'hashtags': [{'tag': tag, 'count': count} for tag, count in sorted_hashtags]
+    })
+
+
+@login_required
+def social_get_mentions(request):
+    """Obtener usuarios mencionados en las publicaciones"""
+    from django.http import JsonResponse
+    from django.db.models import Q
+    from django.contrib.auth.models import User
+    from .models import SocialPost
+    import re
+    
+    # Verificar si el usuario es agente
+    is_agent = request.user.groups.filter(name='Agentes').exists()
+    
+    # Filtrar posts según permisos
+    posts = SocialPost.objects.filter(is_active=True)
+    
+    if is_agent:
+        posts = posts.filter(Q(is_private=False) | Q(user=request.user))
+    else:
+        user_company = request.user.profile.company if hasattr(request.user, 'profile') else None
+        posts = posts.filter(Q(is_private=False) | Q(user=request.user))
+        
+        if user_company:
+            posts = posts.filter(Q(company_only=False) | Q(user__profile__company=user_company))
+        else:
+            posts = posts.filter(company_only=False)
+    
+    # Extraer todas las menciones
+    mention_counts = {}
+    for post in posts:
+        if post.content:
+            mentions = re.findall(r'@(\w+)', post.content)
+            for mention in mentions:
+                mention_lower = mention.lower()
+                if mention_lower in mention_counts:
+                    mention_counts[mention_lower] += 1
+                else:
+                    mention_counts[mention_lower] = 1
+    
+    # Obtener información de usuarios mencionados
+    mentioned_users = []
+    for username, count in mention_counts.items():
+        try:
+            user = User.objects.get(username__iexact=username)
+            mentioned_users.append({
+                'username': user.username,
+                'full_name': user.get_full_name() or user.username,
+                'count': count
+            })
+        except User.DoesNotExist:
+            pass
+    
+    # Ordenar por frecuencia y tomar top 15
+    mentioned_users.sort(key=lambda x: x['count'], reverse=True)
+    mentioned_users = mentioned_users[:15]
+    
+    # Contar menciones del usuario actual
+    current_user_mentions = mention_counts.get(request.user.username.lower(), 0)
+    
+    return JsonResponse({
+        'mentions': mentioned_users,
+        'my_mentions_count': current_user_mentions
+    })
+
+@login_required
+def social_search_users(request):
+    """Buscar usuarios para autocompletado de menciones"""
+    from django.http import JsonResponse
+    from django.contrib.auth.models import User
+    from django.db.models import Q
+    
+    query = request.GET.get('q', '').strip()
+    
+    if not query or len(query) < 2:
+        return JsonResponse({'users': []})
+    
+    # Buscar usuarios por username, first_name o last_name
+    users = User.objects.filter(
+        Q(username__icontains=query) |
+        Q(first_name__icontains=query) |
+        Q(last_name__icontains=query)
+    ).values('id', 'username', 'first_name', 'last_name')[:10]
+    
+    users_list = [
+        {
+            'id': user['id'],
+            'username': user['username'],
+            'full_name': f"{user['first_name']} {user['last_name']}".strip() or user['username']
+        }
+        for user in users
+    ]
+    
+    return JsonResponse({'users': users_list})
 
 
 @login_required

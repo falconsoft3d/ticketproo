@@ -575,6 +575,10 @@ urlpatterns = [
     # URLs de Exámenes
     # URLs de Red Social Interna
     path('social/', views.social_feed, name='social_feed'),
+    path('social/load-more/', views.social_feed_load_more, name='social_feed_load_more'),
+    path('social/hashtags/', views.social_get_hashtags, name='social_get_hashtags'),
+    path('social/mentions/', views.social_get_mentions, name='social_get_mentions'),
+    path('social/search-users/', views.social_search_users, name='social_search_users'),
     path('social/post/create/', views.social_post_create, name='social_post_create'),
     path('social/post/<int:post_id>/get-data/', views.social_post_get_data, name='social_post_get_data'),
     path('social/post/<int:post_id>/edit/', views.social_post_edit, name='social_post_edit'),
