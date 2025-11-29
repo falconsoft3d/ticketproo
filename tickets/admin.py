@@ -21,7 +21,7 @@ from .models import (
     WebsiteTracker, LegalContract, SupplierContractReview, PayPalPaymentLink, PayPalOrder, TodoItem,
     AIBook, AIBookChapter, EmployeeRequest, InternalAgreement, Asset, AssetHistory, UrlManager,
     ExpenseReport, ExpenseItem, ExpenseComment, MonthlyCumplimiento, DailyCumplimiento, QRCode, Quotation, QuotationLine, QuotationView,
-    Contact, ContactComment, ContactAttachment, QARating, GameCounter, ExerciseCounter, SportGoal, SportGoalRecord,
+    Contact, ContactComment, ContactAttachment, SalesPlan, QARating, GameCounter, ExerciseCounter, SportGoal, SportGoalRecord,
     ClientRequest, ClientRequestResponse, Event, Trip, TripStop, WebCounter, WebCounterVisit, QuickQuote, QuickQuoteView, QuickQuoteComment,
     MultiMeasurement, MultiMeasurementRecord,
     PersonalBudget, BudgetIncomeItem, BudgetExpenseItem, BudgetTransaction,
@@ -4542,8 +4542,8 @@ class ContactAttachmentInline(admin.TabularInline):
 
 @admin.register(Contact)
 class ContactAdmin(admin.ModelAdmin):
-    list_display = ('name', 'email', 'phone', 'company', 'status_badge', 'contact_date', 'created_by')
-    list_filter = ('status', 'contacted_by_phone', 'contacted_by_web', 'contact_date', 'created_by')
+    list_display = ('name', 'email', 'phone', 'company', 'status_badge', 'assigned_to', 'contact_date', 'created_by')
+    list_filter = ('status', 'assigned_to', 'contacted_by_phone', 'contacted_by_web', 'contact_date', 'created_by')
     search_fields = ('name', 'email', 'phone', 'company', 'position')
     date_hierarchy = 'contact_date'
     ordering = ('-contact_date',)
@@ -4551,10 +4551,10 @@ class ContactAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('Información Personal', {
-            'fields': ('name', 'email', 'phone', 'position', 'company')
+            'fields': ('name', 'email', 'phone', 'position', 'company', 'country')
         }),
         ('Información Comercial', {
-            'fields': ('erp', 'status', 'source', 'notes')
+            'fields': ('erp', 'status', 'assigned_to', 'source', 'company_size', 'notes')
         }),
         ('Seguimiento', {
             'fields': ('contacted_by_phone', 'contacted_by_web', 'contact_tracking_notes', 'last_contact_date')
@@ -4603,6 +4603,26 @@ class ContactAttachmentAdmin(admin.ModelAdmin):
     def file_size_display(self, obj):
         return obj.get_file_size_display()
     file_size_display.short_description = 'Tamaño'
+
+
+@admin.register(SalesPlan)
+class SalesPlanAdmin(admin.ModelAdmin):
+    list_display = ('user', 'monthly_contact_goal', 'monthly_positive_contact_goal', 'monthly_meeting_goal', 'is_active', 'created_at')
+    list_filter = ('is_active', 'created_at', 'user')
+    search_fields = ('user__username', 'user__first_name', 'user__last_name')
+    ordering = ('-created_at',)
+    
+    fieldsets = (
+        ('Usuario', {
+            'fields': ('user',)
+        }),
+        ('Objetivos Mensuales', {
+            'fields': ('monthly_contact_goal', 'monthly_positive_contact_goal', 'monthly_meeting_goal')
+        }),
+        ('Estado', {
+            'fields': ('is_active',)
+        }),
+    )
 
 
 # ============= ADMIN PARA REUNIONES DE SOPORTE =============

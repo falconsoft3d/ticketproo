@@ -24,10 +24,22 @@
                         <div class="card-body">
                             <h5 class="card-title">
                                 {{ contact.name }}
-                                <span class="badge bg-{{ contact.get_status_color }}">
-                                    <i class="{{ contact.get_status_icon }}"></i>
-                                    {{ contact.get_status_display }}
-                                </span>
+                                {% if contact.status == 'positive' %}
+                                    <span class="badge" style="background-color: #5cb85c; color: white;">
+                                        <i class="{{ contact.get_status_icon }}"></i>
+                                        {{ contact.get_status_display }}
+                                    </span>
+                                {% elif contact.status == 'won' %}
+                                    <span class="badge" style="background-color: #90ee90; color: #2d8659;">
+                                        <i class="{{ contact.get_status_icon }}"></i>
+                                        {{ contact.get_status_display }}
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-{{ contact.get_status_color }}">
+                                        <i class="{{ contact.get_status_icon }}"></i>
+                                        {{ contact.get_status_display }}
+                                    </span>
+                                {% endif %}
                             </h5>
                             {% if contact.company %}
                                 <p class="card-text"><strong>Empresa:</strong> {{ contact.company }}</p>

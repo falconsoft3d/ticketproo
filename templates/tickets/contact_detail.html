@@ -9,23 +9,58 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h2>
+                    <h1 class="text-uppercase">
                         <i class="bi bi-person-lines-fill text-primary"></i>
                         {{ contact.name }}
-                        <span class="badge bg-{{ contact.get_status_color }} ms-2">
-                            {% if contact.status == 'positive' %}
+                        {% if contact.status == 'positive' %}
+                            <span class="badge ms-2" style="background-color: #5cb85c; color: white;">
                                 😊 <i class="{{ contact.get_status_icon }}"></i>
-                            {% else %}
+                                {{ contact.get_status_display }}
+                            </span>
+                        {% elif contact.status == 'won' %}
+                            <span class="badge ms-2" style="background-color: #90ee90; color: #2d8659;">
                                 <i class="{{ contact.get_status_icon }}"></i>
-                            {% endif %}
-                            {{ contact.get_status_display }}
-                        </span>
-                    </h2>
+                                {{ contact.get_status_display }}
+                            </span>
+                        {% else %}
+                            <span class="badge bg-{{ contact.get_status_color }} ms-2">
+                                <i class="{{ contact.get_status_icon }}"></i>
+                                {{ contact.get_status_display }}
+                            </span>
+                        {% endif %}
+                    </h1>
                     {% if contact.company %}
                         <p class="text-muted mb-0">{{ contact.company }}</p>
                     {% endif %}
                 </div>
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 align-items-center">
+                    <!-- Navegación entre contactos -->
+                    <div class="btn-group" role="group">
+                        {% if previous_contact %}
+                            <a href="{% url 'contact_detail' previous_contact.pk %}" 
+                               class="btn btn-outline-secondary" 
+                               title="Anterior: {{ previous_contact.name }}">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        {% else %}
+                            <button class="btn btn-outline-secondary" disabled>
+                                <i class="bi bi-chevron-left"></i>
+                            </button>
+                        {% endif %}
+                        
+                        {% if next_contact %}
+                            <a href="{% url 'contact_detail' next_contact.pk %}" 
+                               class="btn btn-outline-secondary"
+                               title="Siguiente: {{ next_contact.name }}">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        {% else %}
+                            <button class="btn btn-outline-secondary" disabled>
+                                <i class="bi bi-chevron-right"></i>
+                            </button>
+                        {% endif %}
+                    </div>
+                    
                     <a href="{% url 'contact_edit' contact.pk %}" class="btn btn-primary">
                         <i class="bi bi-pencil"></i> Editar
                     </a>
@@ -76,6 +111,9 @@
 
                             <h6><i class="bi bi-person-plus"></i> Creado por</h6>
                             <p>{{ contact.created_by.get_full_name|default:contact.created_by.username }}</p>
+                            
+                            <h6><i class="bi bi-calendar-event"></i> Fecha de Contacto</h6>
+                            <p>{{ contact.contact_date|date:"d/m/Y H:i" }}</p>
                         </div>
                         <div class="col-md-6">
                             {% if contact.company %}
@@ -90,21 +128,28 @@
                             
                             <h6><i class="bi bi-flag"></i> Estado</h6>
                             <p>
-                                <span class="badge bg-{{ contact.get_status_color }} fs-6 p-2">
-                                    <i class="{{ contact.get_status_icon }}"></i>
-                                    {{ contact.get_status_display }}
-                                </span>
+                                {% if contact.status == 'positive' %}
+                                    <span class="badge fs-6 p-2" style="background-color: #5cb85c; color: white;">
+                                        <i class="{{ contact.get_status_icon }}"></i>
+                                        {{ contact.get_status_display }}
+                                    </span>
+                                {% elif contact.status == 'won' %}
+                                    <span class="badge fs-6 p-2" style="background-color: #90ee90; color: #2d8659;">
+                                        <i class="{{ contact.get_status_icon }}"></i>
+                                        {{ contact.get_status_display }}
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-{{ contact.get_status_color }} fs-6 p-2">
+                                        <i class="{{ contact.get_status_icon }}"></i>
+                                        {{ contact.get_status_display }}
+                                    </span>
+                                {% endif %}
                             </p>
                             
                             {% if contact.source %}
                             <h6><i class="bi bi-arrow-down-circle"></i> Fuente</h6>
                             <p>{{ contact.source }}</p>
                             {% endif %}
-                            
-                            <h6><i class="bi bi-calendar-event"></i> Fecha de Contacto</h6>
-                            <p>{{ contact.contact_date|date:"d/m/Y H:i" }}</p>
-                            
-                            
                         </div>
                     </div>
                     

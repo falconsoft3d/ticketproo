@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+
+{% block title %}Planes de Venta - TicketProo{% endblock %}
+
+{% block extra_css %}
+<style>
+    .progress {
+        background-color: #e9ecef !important;
+        height: 25px !important;
+        border-radius: 0.25rem;
+        display: flex !important;
+    }
+    .progress-bar {
+        transition: width 0.6s ease;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: bold;
+        white-space: nowrap;
+        padding: 0 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>
+                    <i class="bi bi-trophy text-warning"></i> Planes de Venta
+                </h2>
+                <a href="{% url 'sales_plan_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Nuevo Plan
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {% if plans %}
+    <div class="row">
+        {% for plan in plans %}
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-circle"></i>
+                        {{ plan.user.get_full_name|default:plan.user.username }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-3 text-center">
+                            <div class="border rounded p-3">
+                                <i class="bi bi-people-fill text-primary" style="font-size: 2rem;"></i>
+                                <h3 class="mt-2">{{ plan.monthly_contact_goal }}</h3>
+                                <p class="text-muted mb-0 small">Contactos/Mes</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="border rounded p-3">
+                                <i class="bi bi-hand-thumbs-up-fill text-success" style="font-size: 2rem;"></i>
+                                <h3 class="mt-2">{{ plan.monthly_positive_contact_goal }}</h3>
+                                <p class="text-muted mb-0 small">Positivos/Mes</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="border rounded p-3">
+                                <i class="bi bi-calendar-check-fill text-info" style="font-size: 2rem;"></i>
+                                <h3 class="mt-2">{{ plan.monthly_meeting_goal }}</h3>
+                                <p class="text-muted mb-0 small">Reuniones/Mes</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="border rounded p-3">
+                                <i class="bi bi-trophy-fill text-warning" style="font-size: 2rem;"></i>
+                                <h3 class="mt-2">{{ plan.monthly_won_goal }}</h3>
+                                <p class="text-muted mb-0 small">Ganados/Mes</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% with progress=plan.get_monthly_progress %}
+                    <div class="alert alert-light border">
+                        <h6 class="mb-3"><i class="bi bi-graph-up"></i> Progreso del Mes Actual</h6>
+                        
+                        <!-- Progreso de Contactos -->
+                        <div class="mb-3 p-2 bg-light rounded">
+                            <small class="text-muted d-block text-center mb-2"><strong>Contactos</strong></small>
+                            <div class="row g-2">
+                                <div class="col-6 text-center border-end">
+                                    <small class="text-muted d-block" style="font-size: 0.7rem;">vs Mes Pasado</small>
+                                    <div class="mb-0" style="font-size: 0.9rem;">{{ progress.contacts_last_month }}</div>
+                                    <span class="badge {% if progress.contacts_diff > 0 %}bg-success{% elif progress.contacts_diff < 0 %}bg-danger{% else %}bg-secondary{% endif %}" style="font-size: 0.7rem;">
+                                        {% if progress.contacts_diff > 0 %}+{% endif %}{{ progress.contacts_diff }}
+                                    </span>
+                                </div>
+                                <div class="col-6 text-center">
+                                    <small class="text-muted d-block" style="font-size: 0.7rem;">Objetivo Mes</small>
+                                    <div class="mb-0" style="font-size: 0.9rem;">{{ progress.contacts_created }}/{{ progress.contacts_goal }}</div>
+                                    <span class="badge bg-primary" style="font-size: 0.7rem;">{{ progress.contact_percentage }}%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Progreso de Positivos -->
+                        <div class="mb-3 p-2 bg-light rounded">
+                            <small class="text-muted d-block text-center mb-2"><strong>Positivos</strong></small>
+                            <div class="row g-2">
+                                <div class="col-6 text-center border-end">
+                                    <small class="text-muted d-block" style="font-size: 0.7rem;">vs Mes Pasado</small>
+                                    <div class="mb-0" style="font-size: 0.9rem;">{{ progress.positive_last_month }}</div>
+                                    <span class="badge {% if progress.positive_diff > 0 %}bg-success{% elif progress.positive_diff < 0 %}bg-danger{% else %}bg-secondary{% endif %}" style="font-size: 0.7rem;">
+                                        {% if progress.positive_diff > 0 %}+{% endif %}{{ progress.positive_diff }}
+                                    </span>
+                                </div>
+                                <div class="col-6 text-center">
+                                    <small class="text-muted d-block" style="font-size: 0.7rem;">Objetivo Mes</small>
+                                    <div class="mb-0" style="font-size: 0.9rem;">{{ progress.positive_contacts }}/{{ progress.positive_goal }}</div>
+                                    <span class="badge" style="background-color: #5cb85c; font-size: 0.7rem;">{{ progress.positive_percentage }}%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Progreso de Reuniones -->
+                        <div class="mb-3 p-2 bg-light rounded">
+                            <small class="text-muted d-block text-center mb-2"><strong>Reuniones</strong></small>
+                            <div class="row g-2">
+                                <div class="col-6 text-center border-end">
+                                    <small class="text-muted d-block" style="font-size: 0.7rem;">vs Mes Pasado</small>
+                                    <div class="mb-0" style="font-size: 0.9rem;">{{ progress.meetings_last_month }}</div>
+                                    <span class="badge {% if progress.meetings_diff > 0 %}bg-success{% elif progress.meetings_diff < 0 %}bg-danger{% else %}bg-secondary{% endif %}" style="font-size: 0.7rem;">
+                                        {% if progress.meetings_diff > 0 %}+{% endif %}{{ progress.meetings_diff }}
+                                    </span>
+                                </div>
+                                <div class="col-6 text-center">
+                                    <small class="text-muted d-block" style="font-size: 0.7rem;">Objetivo Mes</small>
+                                    <div class="mb-0" style="font-size: 0.9rem;">{{ progress.meetings_held }}/{{ progress.meeting_goal }}</div>
+                                    <span class="badge bg-info" style="font-size: 0.7rem;">{{ progress.meeting_percentage }}%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Progreso de Ganados -->
+                        <div class="mb-3 p-2 bg-light rounded">
+                            <small class="text-muted d-block text-center mb-2"><strong>Ganados</strong></small>
+                            <div class="row g-2">
+                                <div class="col-6 text-center border-end">
+                                    <small class="text-muted d-block" style="font-size: 0.7rem;">vs Mes Pasado</small>
+                                    <div class="mb-0" style="font-size: 0.9rem;">{{ progress.won_last_month }}</div>
+                                    <span class="badge {% if progress.won_diff > 0 %}bg-success{% elif progress.won_diff < 0 %}bg-danger{% else %}bg-secondary{% endif %}" style="font-size: 0.7rem;">
+                                        {% if progress.won_diff > 0 %}+{% endif %}{{ progress.won_diff }}
+                                    </span>
+                                </div>
+                                <div class="col-6 text-center">
+                                    <small class="text-muted d-block" style="font-size: 0.7rem;">Objetivo Mes</small>
+                                    <div class="mb-0" style="font-size: 0.9rem;">{{ progress.won_contacts }}/{{ progress.won_goal }}</div>
+                                    <span class="badge" style="background-color: #90ee90; color: #2d8659; font-size: 0.7rem;">{{ progress.won_percentage }}%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Progreso General -->
+                        <div class="text-center mt-3">
+                            <h4 class="mb-0">
+                                <span class="badge bg-{% if progress.overall_percentage >= 75 %}success{% elif progress.overall_percentage >= 50 %}warning{% else %}danger{% endif %}" 
+                                      style="font-size: 1.2rem;">
+                                    {{ progress.overall_percentage }}% Cumplimiento
+                                </span>
+                            </h4>
+                        </div>
+                    </div>
+                    {% endwith %}
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="bi bi-clock"></i> Creado: {{ plan.created_at|date:"d/m/Y" }}
+                        </small>
+                        <div>
+                            <a href="{% url 'sales_plan_edit' plan.pk %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil"></i> Editar
+                            </a>
+                            <a href="{% url 'sales_plan_delete' plan.pk %}" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash"></i> Eliminar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No hay planes de venta configurados.
+        <a href="{% url 'sales_plan_create' %}" class="alert-link">Crear el primer plan</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -181,6 +181,13 @@
                                 </a>
                             </li>
                             
+                            <li>
+                                <a class="dropdown-item {% if 'sales_plan' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'sales_plan_list' %}">
+                                    <i class="bi bi-trophy"></i> Plan de Venta
+                                </a>
+                            </li>
+                            
                             <li><hr class="dropdown-divider"></li>
                             
                             <li>

@@ -11189,6 +11189,7 @@ def contact_list(request):
     """Lista de contactos con filtros"""
     from django.db.models import Count, Exists, OuterRef, Min
     from django.utils import timezone
+    from datetime import timedelta
     
     # Subconsulta para verificar si tiene actividades
     has_activities = OpportunityActivity.objects.filter(contact=OuterRef('pk'))
@@ -11256,12 +11257,157 @@ def contact_list(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
+    # Verificar si se debe mostrar datos consolidados de todos los usuarios
+    from .models import SalesPlan
+    from dateutil.relativedelta import relativedelta
+    
+    show_all_users = request.GET.get('all_users') == 'true'
+    user_sales_plan = None
+    plan_progress = None
+    
+    if show_all_users:
+        # Calcular progreso consolidado de todos los usuarios
+        now = timezone.now()
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        last_month = now - relativedelta(months=1)
+        last_month_start = last_month.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        last_month_same_day = last_month.replace(hour=23, minute=59, second=59, microsecond=999999)
+        
+        # Sumar los objetivos de todos los planes activos
+        active_plans = SalesPlan.objects.filter(is_active=True)
+        total_contact_goal = active_plans.aggregate(Sum('monthly_contact_goal'))['monthly_contact_goal__sum'] or 0
+        total_positive_goal = active_plans.aggregate(Sum('monthly_positive_contact_goal'))['monthly_positive_contact_goal__sum'] or 0
+        total_meeting_goal = active_plans.aggregate(Sum('monthly_meeting_goal'))['monthly_meeting_goal__sum'] or 0
+        total_won_goal = active_plans.aggregate(Sum('monthly_won_goal'))['monthly_won_goal__sum'] or 0
+        
+        # Contactos creados este mes (todos los usuarios)
+        contacts_created = Contact.objects.filter(
+            created_at__gte=month_start,
+            created_at__lte=now
+        ).count()
+        
+        contacts_last_month = Contact.objects.filter(
+            created_at__gte=last_month_start,
+            created_at__lte=last_month_same_day
+        ).count()
+        
+        # Positivos
+        positive_contacts_count = Contact.objects.filter(
+            status='positive',
+            created_at__gte=month_start,
+            created_at__lte=now
+        ).count()
+        
+        positive_last_month = Contact.objects.filter(
+            status='positive',
+            created_at__gte=last_month_start,
+            created_at__lte=last_month_same_day
+        ).count()
+        
+        # Reuniones
+        meetings_held_count = Contact.objects.filter(
+            had_meeting=True,
+            meeting_date__gte=month_start.date(),
+            meeting_date__lte=now.date()
+        ).count()
+        
+        meetings_last_month = Contact.objects.filter(
+            had_meeting=True,
+            meeting_date__gte=last_month_start.date(),
+            meeting_date__lte=last_month_same_day.date()
+        ).count()
+        
+        # Ganados
+        won_contacts_count = Contact.objects.filter(
+            status='won',
+            created_at__gte=month_start,
+            created_at__lte=now
+        ).count()
+        
+        won_last_month = Contact.objects.filter(
+            status='won',
+            created_at__gte=last_month_start,
+            created_at__lte=last_month_same_day
+        ).count()
+        
+        # Calcular porcentajes y diferencias
+        contact_percentage = (contacts_created / total_contact_goal * 100) if total_contact_goal > 0 else 0
+        positive_percentage = (positive_contacts_count / total_positive_goal * 100) if total_positive_goal > 0 else 0
+        meeting_percentage = (meetings_held_count / total_meeting_goal * 100) if total_meeting_goal > 0 else 0
+        won_percentage = (won_contacts_count / total_won_goal * 100) if total_won_goal > 0 else 0
+        overall_percentage = (contact_percentage + positive_percentage + meeting_percentage + won_percentage) / 4
+        
+        plan_progress = {
+            'contacts_created': contacts_created,
+            'contacts_goal': total_contact_goal,
+            'contact_percentage': round(contact_percentage, 1),
+            'contacts_last_month': contacts_last_month,
+            'contacts_diff': contacts_created - contacts_last_month,
+            'positive_contacts': positive_contacts_count,
+            'positive_goal': total_positive_goal,
+            'positive_percentage': round(positive_percentage, 1),
+            'positive_last_month': positive_last_month,
+            'positive_diff': positive_contacts_count - positive_last_month,
+            'meetings_held': meetings_held_count,
+            'meeting_goal': total_meeting_goal,
+            'meeting_percentage': round(meeting_percentage, 1),
+            'meetings_last_month': meetings_last_month,
+            'meetings_diff': meetings_held_count - meetings_last_month,
+            'won_contacts': won_contacts_count,
+            'won_goal': total_won_goal,
+            'won_percentage': round(won_percentage, 1),
+            'won_last_month': won_last_month,
+            'won_diff': won_contacts_count - won_last_month,
+            'overall_percentage': round(overall_percentage, 1),
+            'is_consolidated': True
+        }
+        user_sales_plan = True  # Para que se muestre la sección
+    else:
+        # Mostrar solo el plan del usuario actual
+        user_sales_plan = SalesPlan.objects.filter(user=request.user, is_active=True).first()
+        if user_sales_plan:
+            plan_progress = user_sales_plan.get_monthly_progress()
+            plan_progress['is_consolidated'] = False
+    
     # Estadísticas
+    current_date = timezone.now()
     total_contacts = Contact.objects.count()
     positive_contacts = Contact.objects.filter(status='positive').count()
     neutral_contacts = Contact.objects.filter(status='neutral').count()
     negative_contacts = Contact.objects.filter(status='negative').count()
+    not_now_contacts = Contact.objects.filter(status='not_now').count()
+    do_not_contact_contacts = Contact.objects.filter(status='do_not_contact').count()
+    won_contacts = Contact.objects.filter(status='won').count()
+    my_positive_contacts = Contact.objects.filter(assigned_to=request.user, status='positive').count()
     today_contacts = Contact.objects.filter(contact_date__date=timezone.now().date()).count()
+    
+    # Estadísticas de ayer vs hoy
+    today = timezone.now().date()
+    
+    # Si es lunes (0), comparar con viernes (restar 3 días)
+    # Si es cualquier otro día, comparar con el día anterior
+    if today.weekday() == 0:  # Lunes
+        comparison_date = today - timedelta(days=3)  # Viernes
+        comparison_label = "Viernes"
+    else:
+        comparison_date = today - timedelta(days=1)
+        comparison_label = "Ayer"
+    
+    today_total_contacts = Contact.objects.filter(created_at__date=today).count()
+    comparison_total_contacts = Contact.objects.filter(created_at__date=comparison_date).count()
+    
+    # Calcular porcentaje de cambio
+    if comparison_total_contacts > 0:
+        contact_change_percentage = ((today_total_contacts - comparison_total_contacts) / comparison_total_contacts) * 100
+    else:
+        contact_change_percentage = 100 if today_total_contacts > 0 else 0
+    
+    # Ganados del mes actual
+    monthly_won_contacts = Contact.objects.filter(
+        status='won',
+        created_at__year=current_date.year,
+        created_at__month=current_date.month
+    ).count()
     
     # Estadísticas de actividades
     contacts_with_activities = Contact.objects.annotate(
@@ -11273,7 +11419,6 @@ def contact_list(request):
     ).filter(activity_count=0).count()
     
     # Estadísticas de reuniones
-    current_date = timezone.now()
     monthly_meetings = Contact.objects.filter(
         had_meeting=True,
         meeting_date__year=current_date.year,
@@ -11285,6 +11430,162 @@ def contact_list(request):
     # Fecha de hoy para comparaciones en template
     today_date = timezone.now().date().strftime('%Y-%m-%d')
     
+    # Tabla de estados por fecha
+    from datetime import timedelta
+    from django.db.models.functions import TruncMonth, TruncYear
+    
+    table_data = []
+    status_list = ['do_not_contact', 'negative', 'not_now', 'neutral', 'positive', 'won']
+    status_labels = {
+        'do_not_contact': 'No Contactar',
+        'negative': 'Negativos',
+        'not_now': 'No Ahora',
+        'neutral': 'Neutros',
+        'positive': 'Positivos',
+        'won': 'Ganados'
+    }
+    
+    # Obtener filtros de la tabla
+    table_view = request.GET.get('table_view', 'day')
+    table_user = request.GET.get('table_user', 'all')
+    table_days = int(request.GET.get('table_days', '30'))
+    table_weeks = int(request.GET.get('table_weeks', '12'))
+    table_year = int(request.GET.get('table_year', timezone.now().year))
+    
+    # Filtro base de contactos para la tabla
+    table_contacts = Contact.objects.all()
+    if table_user == 'me':
+        table_contacts = table_contacts.filter(created_by=request.user)
+    
+    # Generar años disponibles
+    first_contact = Contact.objects.order_by('created_at').first()
+    available_years = []
+    if first_contact:
+        start_year = first_contact.created_at.year
+        current_year_val = timezone.now().year
+        available_years = list(range(start_year, current_year_val + 1))
+    else:
+        available_years = [timezone.now().year]
+    
+    # Generar datos según la vista
+    if table_view == 'day':
+        # Vista por día
+        for i in range(table_days - 1, -1, -1):
+            date = timezone.now().date() - timedelta(days=i)
+            row = {
+                'date': date,
+                'day': date.day,
+                'month': date.strftime('%b'),
+                'year': date.year,
+                'label': f"{date.day} {date.strftime('%b')} {date.year}",
+                'counts': {}
+            }
+            
+            for status in status_list:
+                count = table_contacts.filter(
+                    status=status,
+                    created_at__date=date
+                ).count()
+                row['counts'][status] = count
+            
+            table_data.append(row)
+    
+    elif table_view == 'week':
+        # Vista por semana
+        from datetime import datetime
+        
+        # Calcular las últimas N semanas
+        for i in range(table_weeks - 1, -1, -1):
+            # Fecha de inicio de la semana (hace i semanas)
+            week_start = timezone.now().date() - timedelta(weeks=i, days=timezone.now().weekday())
+            week_end = week_start + timedelta(days=6)
+            
+            # Formatear etiqueta
+            week_num = week_start.isocalendar()[1]
+            year = week_start.year
+            
+            row = {
+                'week_start': week_start,
+                'week_end': week_end,
+                'week_num': week_num,
+                'year': year,
+                'label': f"Sem {week_num} ({week_start.day}/{week_start.month} - {week_end.day}/{week_end.month})",
+                'counts': {}
+            }
+            
+            for status in status_list:
+                count = table_contacts.filter(
+                    status=status,
+                    created_at__date__gte=week_start,
+                    created_at__date__lte=week_end
+                ).count()
+                row['counts'][status] = count
+            
+            table_data.append(row)
+    
+    elif table_view == 'month':
+        # Vista por mes del año seleccionado
+        month_names = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+        
+        for month_num in range(1, 13):
+            row = {
+                'month': month_num,
+                'month_name': month_names[month_num - 1],
+                'year': table_year,
+                'label': f"{month_names[month_num - 1]} {table_year}",
+                'counts': {}
+            }
+            
+            for status in status_list:
+                count = table_contacts.filter(
+                    status=status,
+                    created_at__year=table_year,
+                    created_at__month=month_num
+                ).count()
+                row['counts'][status] = count
+            
+            table_data.append(row)
+    
+    elif table_view == 'year':
+        # Vista por año
+        for year in available_years:
+            row = {
+                'year': year,
+                'label': str(year),
+                'counts': {}
+            }
+            
+            for status in status_list:
+                count = table_contacts.filter(
+                    status=status,
+                    created_at__year=year
+                ).count()
+                row['counts'][status] = count
+            
+            table_data.append(row)
+    
+    # Calcular totales de la tabla
+    table_totals = {
+        'do_not_contact': 0,
+        'negative': 0,
+        'not_now': 0,
+        'neutral': 0,
+        'positive': 0,
+        'won': 0,
+        'total': 0
+    }
+    
+    for row in table_data:
+        for status in status_list:
+            table_totals[status] += row['counts'][status]
+        table_totals['total'] += sum(row['counts'].values())
+    
+    # Calcular tasa de conversión promedio
+    if table_totals['total'] > 0:
+        table_totals['conversion_rate'] = round((table_totals['won'] / table_totals['total']) * 100, 1)
+    else:
+        table_totals['conversion_rate'] = 0
+    
     context = {
         'page_obj': page_obj,
         'contacts': page_obj.object_list,
@@ -11292,13 +11593,29 @@ def contact_list(request):
         'positive_contacts': positive_contacts,
         'neutral_contacts': neutral_contacts,
         'negative_contacts': negative_contacts,
+        'not_now_contacts': not_now_contacts,
+        'do_not_contact_contacts': do_not_contact_contacts,
+        'won_contacts': won_contacts,
+        'monthly_won_contacts': monthly_won_contacts,
+        'my_positive_contacts': my_positive_contacts,
         'today_contacts': today_contacts,
         'contacts_with_activities': contacts_with_activities,
         'contacts_without_activities': contacts_without_activities,
         'monthly_meetings': monthly_meetings,
         'total_meetings': total_meetings,
         'today_date': today_date,
-        'page_title': 'Contactos'
+        'user_sales_plan': user_sales_plan,
+        'plan_progress': plan_progress,
+        'table_data': table_data,
+        'table_totals': table_totals,
+        'status_labels': status_labels,
+        'available_years': available_years,
+        'current_year': timezone.now().year,
+        'page_title': 'Contactos',
+        'today_total_contacts': today_total_contacts,
+        'comparison_total_contacts': comparison_total_contacts,
+        'comparison_label': comparison_label,
+        'contact_change_percentage': contact_change_percentage,
     }
     
     return render(request, 'tickets/contact_list.html', context)
@@ -11310,16 +11627,19 @@ def contact_create(request):
     from .forms import ContactForm
     
     if request.method == 'POST':
-        form = ContactForm(request.POST)
+        form = ContactForm(request.POST, user=request.user)
         if form.is_valid():
             contact = form.save(commit=False)
             contact.created_by = request.user
+            # Asignar por defecto al usuario que lo crea si no se especificó otro
+            if not contact.assigned_to:
+                contact.assigned_to = request.user
             contact.save()
             
             messages.success(request, f'Contacto "{contact.name}" creado exitosamente.')
             return redirect('contact_detail', pk=contact.pk)
     else:
-        form = ContactForm()
+        form = ContactForm(user=request.user)
     
     context = {
         'form': form,
@@ -11327,6 +11647,172 @@ def contact_create(request):
     }
     
     return render(request, 'tickets/contact_form.html', context)
+
+
+@login_required
+def generate_sales_report(request):
+    """Generar informe de ventas con IA basado en estadísticas del período"""
+    from django.http import JsonResponse
+    from datetime import timedelta
+    from .ai_utils import AIContentOptimizer
+    
+    try:
+        # Obtener parámetros
+        table_view = request.GET.get('table_view', 'day')
+        table_user = request.GET.get('table_user', 'all')
+        table_days = int(request.GET.get('table_days', '30'))
+        table_weeks = int(request.GET.get('table_weeks', '12'))
+        table_year = int(request.GET.get('table_year', timezone.now().year))
+        
+        # Filtro base de contactos
+        contacts = Contact.objects.all()
+        if table_user == 'me':
+            contacts = contacts.filter(created_by=request.user)
+            user_context = f"tus resultados como vendedor ({request.user.get_full_name() or request.user.username})"
+        else:
+            user_context = "los resultados de toda la empresa"
+        
+        # Calcular estadísticas según el período
+        status_list = ['do_not_contact', 'negative', 'not_now', 'neutral', 'positive', 'won']
+        status_names = {
+            'do_not_contact': 'No Contactar',
+            'negative': 'Negativos',
+            'not_now': 'No Ahora',
+            'neutral': 'Neutros',
+            'positive': 'Positivos',
+            'won': 'Ganados'
+        }
+        
+        stats = {}
+        period_text = ""
+        
+        if table_view == 'day':
+            start_date = timezone.now().date() - timedelta(days=table_days - 1)
+            end_date = timezone.now().date()
+            period_text = f"últimos {table_days} días ({start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')})"
+            
+            for status in status_list:
+                count = contacts.filter(
+                    status=status,
+                    created_at__date__gte=start_date,
+                    created_at__date__lte=end_date
+                ).count()
+                stats[status] = count
+                
+        elif table_view == 'week':
+            period_text = f"últimas {table_weeks} semanas"
+            start_date = timezone.now().date() - timedelta(weeks=table_weeks)
+            end_date = timezone.now().date()
+            
+            for status in status_list:
+                count = contacts.filter(
+                    status=status,
+                    created_at__date__gte=start_date,
+                    created_at__date__lte=end_date
+                ).count()
+                stats[status] = count
+                
+        elif table_view == 'month':
+            period_text = f"año {table_year} (vista mensual)"
+            
+            for status in status_list:
+                count = contacts.filter(
+                    status=status,
+                    created_at__year=table_year
+                ).count()
+                stats[status] = count
+                
+        elif table_view == 'year':
+            first_contact = contacts.order_by('created_at').first()
+            if first_contact:
+                start_year = first_contact.created_at.year
+                end_year = timezone.now().year
+                period_text = f"años {start_year} - {end_year}"
+            else:
+                period_text = "todos los años"
+            
+            for status in status_list:
+                count = contacts.filter(status=status).count()
+                stats[status] = count
+        
+        # Calcular totales y métricas
+        total_contacts = sum(stats.values())
+        positive_rate = (stats['positive'] / total_contacts * 100) if total_contacts > 0 else 0
+        won_rate = (stats['won'] / total_contacts * 100) if total_contacts > 0 else 0
+        negative_rate = (stats['negative'] / total_contacts * 100) if total_contacts > 0 else 0
+        
+        # Generar prompt para IA
+        prompt = f"""Eres un analista de ventas experto. Analiza las siguientes estadísticas de contactos del período: {period_text}.
+
+Estos son {user_context}:
+
+ESTADÍSTICAS DEL PERÍODO:
+- Total de contactos: {total_contacts}
+- No Contactar: {stats['do_not_contact']} ({stats['do_not_contact']/total_contacts*100:.1f}% del total)
+- Negativos: {stats['negative']} ({negative_rate:.1f}% del total)
+- No Ahora: {stats['not_now']} ({stats['not_now']/total_contacts*100:.1f}% del total)
+- Neutros: {stats['neutral']} ({stats['neutral']/total_contacts*100:.1f}% del total)
+- Positivos: {stats['positive']} ({positive_rate:.1f}% del total)
+- Ganados: {stats['won']} ({won_rate:.1f}% del total)
+
+Genera un informe detallado de ventas en español que incluya:
+
+1. RESUMEN EJECUTIVO: Una visión general del desempeño en 2-3 líneas.
+
+2. ANÁLISIS DE RENDIMIENTO:
+   - Evalúa la tasa de conversión (positivos + ganados vs total)
+   - Identifica fortalezas y debilidades
+   - Compara las métricas con estándares de la industria (tasa de conversión típica: 2-5%)
+
+3. PUNTOS DESTACADOS:
+   - Qué está funcionando bien
+   - Áreas de preocupación
+
+4. RECOMENDACIONES ESPECÍFICAS:
+   - 3-4 acciones concretas para mejorar el rendimiento
+   - Enfócate en aumentar conversiones y reducir negativos
+
+5. PRONÓSTICO:
+   - Proyección optimista basada en las tendencias actuales
+
+Usa un tono profesional pero motivador. Sé específico con los números y porcentajes.
+
+IMPORTANTE: NO uses formato Markdown. Escribe texto plano sin asteriscos, sin almohadillas, sin guiones bajos, sin backticks. Usa solo texto simple y legible."""
+
+        # Generar informe con IA
+        ai_optimizer = AIContentOptimizer()
+        messages = [
+            {"role": "system", "content": "Eres un analista de ventas experto que genera informes detallados y accionables."},
+            {"role": "user", "content": prompt}
+        ]
+        
+        response = ai_optimizer._make_ai_request(messages, max_tokens=1500, temperature=0.7)
+        
+        if "error" in response:
+            return JsonResponse({
+                'success': False,
+                'error': response['error']
+            })
+        
+        report_text = response['choices'][0]['message']['content']
+        
+        return JsonResponse({
+            'success': True,
+            'report': report_text,
+            'period': period_text,
+            'view_type': {
+                'day': 'Por Día',
+                'week': 'Por Semana',
+                'month': 'Por Mes',
+                'year': 'Por Año'
+            }.get(table_view, 'Desconocido')
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
 
 
 @login_required
@@ -11346,6 +11832,15 @@ def contact_detail(request, pk):
     total_activities = activities.count()
     pending_activities = activities.filter(status__in=['pending', 'in_progress']).count()
     completed_activities = activities.filter(status='completed').count()
+    
+    # Obtener contacto anterior y siguiente
+    previous_contact = Contact.objects.filter(
+        contact_date__lt=contact.contact_date
+    ).order_by('-contact_date').first()
+    
+    next_contact = Contact.objects.filter(
+        contact_date__gt=contact.contact_date
+    ).order_by('contact_date').first()
     
     # Formularios para nuevos comentarios y adjuntos
     from .forms import ContactCommentForm, ContactAttachmentForm
@@ -11377,6 +11872,8 @@ def contact_detail(request, pk):
         'completed_activities': completed_activities,
         'comment_form': comment_form,
         'attachment_form': attachment_form,
+        'previous_contact': previous_contact,
+        'next_contact': next_contact,
         'page_title': f'Contacto: {contact.name}'
     }
     
@@ -11391,14 +11888,14 @@ def contact_edit(request, pk):
     contact = get_object_or_404(Contact, pk=pk)
     
     if request.method == 'POST':
-        form = ContactForm(request.POST, instance=contact)
+        form = ContactForm(request.POST, instance=contact, user=request.user)
         if form.is_valid():
             form.save()
             
             messages.success(request, f'Contacto "{contact.name}" actualizado exitosamente.')
             return redirect('contact_detail', pk=contact.pk)
     else:
-        form = ContactForm(instance=contact)
+        form = ContactForm(instance=contact, user=request.user)
     
     context = {
         'form': form,
@@ -11651,6 +12148,115 @@ def contact_attachment_download(request, pk):
     except Exception as e:
         messages.error(request, f'Error al descargar el archivo: {str(e)}')
         return redirect('contact_detail', pk=attachment.contact.pk)
+
+
+# ===== VISTAS DE PLAN DE VENTAS =====
+
+@login_required
+def sales_plan_list(request):
+    """Lista de planes de venta"""
+    from .models import SalesPlan
+    
+    plans = SalesPlan.objects.filter(is_active=True).select_related('user')
+    
+    # Si no es admin, solo mostrar su propio plan
+    if not request.user.is_staff:
+        plans = plans.filter(user=request.user)
+    
+    context = {
+        'plans': plans,
+        'page_title': 'Planes de Venta'
+    }
+    
+    return render(request, 'tickets/sales_plan_list.html', context)
+
+
+@login_required
+def sales_plan_create(request):
+    """Crear plan de venta"""
+    from .models import SalesPlan
+    from .forms import SalesPlanForm
+    
+    if request.method == 'POST':
+        form = SalesPlanForm(request.POST)
+        if form.is_valid():
+            plan = form.save(commit=False)
+            # Si no es admin, solo puede crear plan para sí mismo
+            if not request.user.is_staff:
+                plan.user = request.user
+            plan.save()
+            messages.success(request, 'Plan de venta creado exitosamente.')
+            return redirect('sales_plan_list')
+    else:
+        form = SalesPlanForm()
+        # Si no es admin, pre-seleccionar el usuario actual
+        if not request.user.is_staff:
+            form.fields['user'].initial = request.user
+            form.fields['user'].widget.attrs['readonly'] = True
+    
+    context = {
+        'form': form,
+        'page_title': 'Nuevo Plan de Venta'
+    }
+    
+    return render(request, 'tickets/sales_plan_form.html', context)
+
+
+@login_required
+def sales_plan_edit(request, pk):
+    """Editar plan de venta"""
+    from .models import SalesPlan
+    from .forms import SalesPlanForm
+    
+    plan = get_object_or_404(SalesPlan, pk=pk)
+    
+    # Verificar permisos
+    if not request.user.is_staff and plan.user != request.user:
+        messages.error(request, 'No tienes permiso para editar este plan.')
+        return redirect('sales_plan_list')
+    
+    if request.method == 'POST':
+        form = SalesPlanForm(request.POST, instance=plan)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Plan de venta actualizado exitosamente.')
+            return redirect('sales_plan_list')
+    else:
+        form = SalesPlanForm(instance=plan)
+    
+    context = {
+        'form': form,
+        'plan': plan,
+        'page_title': f'Editar Plan de {plan.user.get_full_name() or plan.user.username}'
+    }
+    
+    return render(request, 'tickets/sales_plan_form.html', context)
+
+
+@login_required
+def sales_plan_delete(request, pk):
+    """Eliminar plan de venta"""
+    from .models import SalesPlan
+    
+    plan = get_object_or_404(SalesPlan, pk=pk)
+    
+    # Verificar permisos
+    if not request.user.is_staff and plan.user != request.user:
+        messages.error(request, 'No tienes permiso para eliminar este plan.')
+        return redirect('sales_plan_list')
+    
+    if request.method == 'POST':
+        user_name = plan.user.get_full_name() or plan.user.username
+        plan.delete()
+        messages.success(request, f'Plan de {user_name} eliminado exitosamente.')
+        return redirect('sales_plan_list')
+    
+    context = {
+        'plan': plan,
+        'page_title': f'Eliminar Plan de {plan.user.get_full_name() or plan.user.username}'
+    }
+    
+    return render(request, 'tickets/sales_plan_delete.html', context)
 
 
 # ===== VISTAS DEL BLOG =====
@@ -44049,13 +44655,13 @@ def public_frd_view(request, token):
 
 @login_required
 def frd_download_pdf(request, pk):
-    """Genera y descarga un PDF del Documento de Requerimientos Funcionales"""
+    """Genera y descarga un PDF simple del Documento de Requerimientos Funcionales"""
     from reportlab.lib import colors
-    from reportlab.lib.pagesizes import letter, A4
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+    from reportlab.lib.pagesizes import A4
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.units import inch
-    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT
     from io import BytesIO
     from django.http import HttpResponse
     
@@ -44068,180 +44674,83 @@ def frd_download_pdf(request, pk):
     
     # Crear el PDF
     buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=18)
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=50)
     
     # Contenedor para los elementos del PDF
     elements = []
     
-    # Estilos
+    # Estilos simples en blanco y negro
     styles = getSampleStyleSheet()
+    
     title_style = ParagraphStyle(
-        'CustomTitle',
+        'Title',
         parent=styles['Heading1'],
-        fontSize=24,
-        textColor=colors.HexColor('#2c3e50'),
+        fontSize=20,
+        textColor=colors.black,
+        spaceAfter=10,
+        alignment=TA_CENTER,
+        fontName='Helvetica-Bold'
+    )
+    
+    company_style = ParagraphStyle(
+        'Company',
+        parent=styles['Normal'],
+        fontSize=12,
+        textColor=colors.black,
         spaceAfter=30,
-        alignment=TA_CENTER
+        alignment=TA_CENTER,
+        fontName='Helvetica'
     )
     
-    heading_style = ParagraphStyle(
-        'CustomHeading',
-        parent=styles['Heading2'],
-        fontSize=16,
-        textColor=colors.HexColor('#34495e'),
-        spaceAfter=12,
-        spaceBefore=12
+    req_number_style = ParagraphStyle(
+        'ReqNumber',
+        parent=styles['Normal'],
+        fontSize=12,
+        textColor=colors.black,
+        spaceAfter=5,
+        spaceBefore=15,
+        fontName='Helvetica-Bold'
     )
     
-    normal_style = styles['Normal']
+    req_title_style = ParagraphStyle(
+        'ReqTitle',
+        parent=styles['Normal'],
+        fontSize=11,
+        textColor=colors.black,
+        spaceAfter=5,
+        fontName='Helvetica-Bold',
+        leftIndent=20
+    )
     
-    # Título del documento
-    elements.append(Paragraph(document.sequence, title_style))
-    elements.append(Paragraph(document.title, heading_style))
+    req_desc_style = ParagraphStyle(
+        'ReqDesc',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=colors.black,
+        spaceAfter=10,
+        alignment=TA_LEFT,
+        leftIndent=20
+    )
+    
+    # CABECERA: Título y Empresa
+    elements.append(Paragraph(document.title, title_style))
+    company_name = document.get_company_display()
+    elements.append(Paragraph(company_name, company_style))
+    
+    # Línea separadora
     elements.append(Spacer(1, 0.2*inch))
     
-    # Información general
-    info_data = [
-        ['Empresa:', document.get_company_display()],
-        ['Creado por:', document.created_by.get_full_name() or document.created_by.username if document.created_by else 'N/A'],
-        ['Fecha de creación:', document.created_at.strftime('%d/%m/%Y')],
-    ]
-    
-    # Estado del documento
-    if document.is_document_accepted():
-        status_color = colors.green
-        status_text = 'ACEPTADO'
-        info_data.append(['Estado:', status_text])
-        info_data.append(['Revisado por:', document.document_reviewed_by_name])
-        info_data.append(['Fecha de revisión:', document.document_reviewed_at.strftime('%d/%m/%Y %H:%M') if document.document_reviewed_at else 'N/A'])
-    elif document.is_document_rejected():
-        status_color = colors.red
-        status_text = 'RECHAZADO'
-        info_data.append(['Estado:', status_text])
-        info_data.append(['Revisado por:', document.document_reviewed_by_name])
-        info_data.append(['Fecha de revisión:', document.document_reviewed_at.strftime('%d/%m/%Y %H:%M') if document.document_reviewed_at else 'N/A'])
-    else:
-        status_color = colors.orange
-        status_text = 'PENDIENTE'
-        info_data.append(['Estado:', status_text])
-    
-    info_table = Table(info_data, colWidths=[2*inch, 4*inch])
-    info_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#ecf0f1')),
-        ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-        ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 0), (-1, -1), 10),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-        ('TOPPADDING', (0, 0), (-1, -1), 8),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-    ]))
-    elements.append(info_table)
-    elements.append(Spacer(1, 0.3*inch))
-    
-    # Descripción general
-    if document.description:
-        elements.append(Paragraph('Descripción General', heading_style))
-        elements.append(Paragraph(document.description.replace('\n', '<br/>'), normal_style))
-        elements.append(Spacer(1, 0.3*inch))
-    
-    # Estadísticas
-    elements.append(Paragraph('Resumen de Requerimientos', heading_style))
-    stats_data = [
-        ['Total', 'Aprobados', 'Pendientes', '% Aprobación'],
-        [
-            str(document.get_total_count()),
-            str(document.get_approved_count()),
-            str(document.get_pending_count()),
-            f"{document.get_approval_percentage()}%"
-        ]
-    ]
-    
-    stats_table = Table(stats_data, colWidths=[1.5*inch, 1.5*inch, 1.5*inch, 1.5*inch])
-    stats_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#3498db')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 12),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black),
-        ('FONTSIZE', (0, 1), (-1, -1), 11),
-        ('TOPPADDING', (0, 1), (-1, -1), 8),
-        ('BOTTOMPADDING', (0, 1), (-1, -1), 8),
-    ]))
-    elements.append(stats_table)
-    elements.append(Spacer(1, 0.4*inch))
-    
-    # Lista de requerimientos
-    elements.append(Paragraph('Requerimientos Detallados', heading_style))
-    elements.append(Spacer(1, 0.1*inch))
-    
+    # DETALLE: Lista de requerimientos con título y descripción
     for req in requirements:
-        # Número y estado
-        req_title = f"Requerimiento #{req.number}"
-        if req.is_approved:
-            req_title += " - APROBADO ✓"
-            req_color = colors.HexColor('#2ecc71')
-        else:
-            req_title += " - PENDIENTE"
-            req_color = colors.HexColor('#f39c12')
+        # Número del requerimiento
+        elements.append(Paragraph(f"Requerimiento #{req.number}", req_number_style))
         
-        req_title_style = ParagraphStyle(
-            'ReqTitle',
-            parent=styles['Heading3'],
-            fontSize=12,
-            textColor=req_color,
-            spaceAfter=6,
-            spaceBefore=10
-        )
-        
-        elements.append(Paragraph(req_title, req_title_style))
-        
-        # Título del requerimiento
+        # Título del requerimiento (si existe)
         if req.title:
-            req_heading_style = ParagraphStyle(
-                'ReqHeading',
-                parent=styles['Normal'],
-                fontSize=11,
-                textColor=colors.HexColor('#34495e'),
-                spaceAfter=4,
-                leftIndent=20
-            )
-            elements.append(Paragraph(f"<b>{req.title}</b>", req_heading_style))
+            elements.append(Paragraph(req.title, req_title_style))
         
         # Descripción
-        req_desc_style = ParagraphStyle(
-            'ReqDesc',
-            parent=styles['Normal'],
-            fontSize=10,
-            leftIndent=20,
-            spaceAfter=8
-        )
         elements.append(Paragraph(req.description.replace('\n', '<br/>'), req_desc_style))
-        
-        # Información de aprobación
-        if req.is_approved:
-            approval_text = f"<i>Aprobado por: {req.approved_by_name} ({req.approved_by_email}) - {req.approved_at.strftime('%d/%m/%Y %H:%M')}</i>"
-            approval_style = ParagraphStyle(
-                'ApprovalInfo',
-                parent=styles['Normal'],
-                fontSize=8,
-                textColor=colors.grey,
-                leftIndent=20,
-                spaceAfter=10
-            )
-            elements.append(Paragraph(approval_text, approval_style))
-        
-        elements.append(Spacer(1, 0.1*inch))
-    
-    # Comentarios de revisión del documento
-    if document.document_review_comments:
-        elements.append(Spacer(1, 0.2*inch))
-        elements.append(Paragraph('Comentarios de Revisión', heading_style))
-        elements.append(Paragraph(document.document_review_comments.replace('\n', '<br/>'), normal_style))
     
     # Construir el PDF
     doc.build(elements)

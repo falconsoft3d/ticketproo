@@ -59,6 +59,375 @@
         $('#search').focus();
         {% endif %}
     });
+
+    // Sistema de toggle para secciones con persistencia en localStorage
+    $(document).ready(function() {
+        // Función para inicializar el estado de las secciones
+        function initializeSections() {
+            // Plan de Venta
+            const showPlan = localStorage.getItem('showSalesPlan');
+            if (showPlan === 'false') {
+                $('#salesPlanSection').hide();
+                $('#togglePlanBtn').removeClass('btn-outline-warning').addClass('btn-warning');
+            } else {
+                // Por defecto mostrar si no hay valor guardado
+                $('#salesPlanSection').show();
+                $('#togglePlanBtn').removeClass('btn-warning').addClass('btn-outline-warning');
+            }
+            
+            // KPIs
+            const showKpi = localStorage.getItem('showKpi');
+            if (showKpi === 'false') {
+                $('#kpiSection').hide();
+                $('#toggleKpiBtn').removeClass('btn-outline-primary').addClass('btn-primary');
+            } else {
+                // Por defecto mostrar si no hay valor guardado
+                $('#kpiSection').show();
+                $('#toggleKpiBtn').removeClass('btn-primary').addClass('btn-outline-primary');
+            }
+            
+            // Tabla
+            const showTable = localStorage.getItem('showTable');
+            if (showTable === 'true') {
+                $('#tableSection').show();
+                $('#toggleTableBtn').removeClass('btn-success').addClass('btn-outline-success');
+            } else {
+                // Por defecto ocultar si no hay valor guardado
+                $('#tableSection').hide();
+                $('#toggleTableBtn').removeClass('btn-outline-success').addClass('btn-success');
+            }
+            
+            // Filtros
+            const showFilters = localStorage.getItem('showFilters');
+            if (showFilters === 'false') {
+                $('#filtersSection').hide();
+                $('#toggleFiltersBtn').removeClass('btn-outline-secondary').addClass('btn-secondary');
+            } else {
+                // Por defecto mostrar si no hay valor guardado
+                $('#filtersSection').show();
+                $('#toggleFiltersBtn').removeClass('btn-secondary').addClass('btn-outline-secondary');
+            }
+        }
+        
+        // Inicializar al cargar la página
+        initializeSections();
+        
+        // Toggle Plan de Venta
+        $('#togglePlanBtn').click(function() {
+            const currentState = $('#salesPlanSection').is(':visible');
+            $('#salesPlanSection').slideToggle(300, function() {
+                // Guardar el estado después de la animación
+                const newState = !currentState;
+                localStorage.setItem('showSalesPlan', newState.toString());
+                
+                if (newState) {
+                    $('#togglePlanBtn').removeClass('btn-warning').addClass('btn-outline-warning');
+                } else {
+                    $('#togglePlanBtn').removeClass('btn-outline-warning').addClass('btn-warning');
+                }
+            });
+        });
+        
+        // Toggle KPIs
+        $('#toggleKpiBtn').click(function() {
+            const currentState = $('#kpiSection').is(':visible');
+            $('#kpiSection').slideToggle(300, function() {
+                // Guardar el estado después de la animación
+                const newState = !currentState;
+                localStorage.setItem('showKpi', newState.toString());
+                
+                if (newState) {
+                    $('#toggleKpiBtn').removeClass('btn-primary').addClass('btn-outline-primary');
+                } else {
+                    $('#toggleKpiBtn').removeClass('btn-outline-primary').addClass('btn-primary');
+                }
+            });
+        });
+        
+        // Toggle Tabla
+        $('#toggleTableBtn').click(function() {
+            const currentState = $('#tableSection').is(':visible');
+            $('#tableSection').slideToggle(300, function() {
+                // Guardar el estado después de la animación
+                const newState = !currentState;
+                localStorage.setItem('showTable', newState.toString());
+                
+                if (newState) {
+                    $('#toggleTableBtn').removeClass('btn-success').addClass('btn-outline-success');
+                } else {
+                    $('#toggleTableBtn').removeClass('btn-outline-success').addClass('btn-success');
+                }
+            });
+        });
+        
+        // Toggle Filtros
+        $('#toggleFiltersBtn').click(function() {
+            const currentState = $('#filtersSection').is(':visible');
+            $('#filtersSection').slideToggle(300, function() {
+                // Guardar el estado después de la animación
+                const newState = !currentState;
+                localStorage.setItem('showFilters', newState.toString());
+                
+                if (newState) {
+                    $('#toggleFiltersBtn').removeClass('btn-secondary').addClass('btn-outline-secondary');
+                } else {
+                    $('#toggleFiltersBtn').removeClass('btn-outline-secondary').addClass('btn-secondary');
+                }
+            });
+        });
+    });
+
+    // Generar Informe con IA
+    $('#generateAiReportBtn').click(function() {
+        const btn = $(this);
+        const originalHtml = btn.html();
+        
+        // Mostrar loading
+        btn.prop('disabled', true);
+        btn.html('<span class="spinner-border spinner-border-sm" role="status"></span> Generando...');
+        
+        // Obtener parámetros actuales
+        const params = new URLSearchParams(window.location.search);
+        
+        // Hacer petición AJAX
+        $.ajax({
+            url: '{% url "generate_sales_report" %}',
+            method: 'GET',
+            data: params.toString(),
+            success: function(response) {
+                if (response.success) {
+                    // Crear modal para mostrar el reporte
+                    const modal = `
+                        <div class="modal fade" id="aiReportModal" tabindex="-1">
+                            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                                <div class="modal-content">
+                                    <div class="modal-header bg-primary text-white">
+                                        <h5 class="modal-title">
+                                            <i class="bi bi-stars"></i> Informe de Ventas - Análisis IA
+                                        </h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="alert alert-info">
+                                            <strong>Período:</strong> ${response.period}<br>
+                                            <strong>Vista:</strong> ${response.view_type}
+                                        </div>
+                                        <div style="white-space: pre-wrap; line-height: 1.8;">${response.report}</div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                        <button type="button" class="btn btn-danger" id="downloadReportPdfBtn">
+                                            <i class="bi bi-file-pdf"></i> Descargar PDF
+                                        </button>
+                                        <button type="button" class="btn btn-primary" id="downloadReportBtn">
+                                            <i class="bi bi-download"></i> Descargar TXT
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Remover modal anterior si existe
+                    $('#aiReportModal').remove();
+                    
+                    // Agregar modal al body
+                    $('body').append(modal);
+                    
+                    // Mostrar modal
+                    const modalElement = new bootstrap.Modal(document.getElementById('aiReportModal'));
+                    modalElement.show();
+                    
+                    // Manejar descarga TXT
+                    $('#downloadReportBtn').click(function() {
+                        const blob = new Blob([response.report], { type: 'text/plain;charset=utf-8' });
+                        const link = document.createElement('a');
+                        const url = URL.createObjectURL(blob);
+                        link.setAttribute('href', url);
+                        link.setAttribute('download', 'informe_ventas_' + new Date().toISOString().slice(0,10) + '.txt');
+                        link.style.visibility = 'hidden';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    });
+                    
+                    // Manejar descarga PDF
+                    $('#downloadReportPdfBtn').click(function() {
+                        const printWindow = window.open('', '', 'height=600,width=800');
+                        
+                        // Limpiar texto de markdown
+                        let cleanText = response.report
+                            .replace(/\*\*([^*]+)\*\*/g, '$1')  // Negritas
+                            .replace(/\*([^*]+)\*/g, '$1')      // Itálicas
+                            .replace(/#{1,6}\s/g, '')           // Headers
+                            .replace(/`([^`]+)`/g, '$1')        // Código inline
+                            .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');  // Links
+                        
+                        // Separar en secciones
+                        const sections = cleanText.split('\n\n');
+                        let htmlContent = '';
+                        
+                        sections.forEach(section => {
+                            const lines = section.trim().split('\n');
+                            
+                            if (lines.length === 0 || !lines[0]) return;
+                            
+                            // Detectar si es título (primera línea en mayúsculas o con números)
+                            const firstLine = lines[0].trim();
+                            const isTitle = /^[0-9]+\./.test(firstLine) || 
+                                          firstLine === firstLine.toUpperCase() ||
+                                          firstLine.length < 50;
+                            
+                            if (isTitle && lines.length > 1) {
+                                htmlContent += `<h3 style="color: #0d6efd; margin-top: 20px; margin-bottom: 10px; font-size: 14pt;">${firstLine}</h3>`;
+                                htmlContent += '<div style="margin-left: 20px;">';
+                                for (let i = 1; i < lines.length; i++) {
+                                    if (lines[i].trim()) {
+                                        htmlContent += `<p style="margin: 8px 0; line-height: 1.6;">${lines[i].trim()}</p>`;
+                                    }
+                                }
+                                htmlContent += '</div>';
+                            } else {
+                                lines.forEach(line => {
+                                    if (line.trim()) {
+                                        htmlContent += `<p style="margin: 8px 0; line-height: 1.6;">${line.trim()}</p>`;
+                                    }
+                                });
+                            }
+                        });
+                        
+                        printWindow.document.write('<html><head><title>Informe de Ventas</title>');
+                        printWindow.document.write('<style>');
+                        printWindow.document.write('@page { size: A4; margin: 2cm; }');
+                        printWindow.document.write('body { font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.6; color: #333; }');
+                        printWindow.document.write('h1 { color: #0d6efd; font-size: 18pt; margin-bottom: 5px; }');
+                        printWindow.document.write('h2 { color: #6c757d; font-size: 12pt; margin-bottom: 15px; font-weight: normal; }');
+                        printWindow.document.write('h3 { color: #0d6efd; font-size: 14pt; margin-top: 20px; margin-bottom: 10px; }');
+                        printWindow.document.write('p { margin: 8px 0; }');
+                        printWindow.document.write('.header { border-bottom: 2px solid #0d6efd; padding-bottom: 15px; margin-bottom: 20px; }');
+                        printWindow.document.write('.info { background-color: #f8f9fa; padding: 15px; border-left: 4px solid #0d6efd; margin-bottom: 20px; }');
+                        printWindow.document.write('@media print { body { margin: 0; } }');
+                        printWindow.document.write('</style>');
+                        printWindow.document.write('</head><body>');
+                        printWindow.document.write('<div class="header">');
+                        printWindow.document.write('<h1>Informe de Ventas - Análisis con IA</h1>');
+                        printWindow.document.write('<h2>Generado el ' + new Date().toLocaleDateString('es-ES', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        }) + '</h2>');
+                        printWindow.document.write('</div>');
+                        printWindow.document.write('<div class="info">');
+                        printWindow.document.write('<p><strong>Período analizado:</strong> ' + response.period + '</p>');
+                        printWindow.document.write('<p><strong>Tipo de vista:</strong> ' + response.view_type + '</p>');
+                        printWindow.document.write('</div>');
+                        printWindow.document.write('<div style="margin-top: 20px;">');
+                        printWindow.document.write(htmlContent);
+                        printWindow.document.write('</div>');
+                        printWindow.document.write('</body></html>');
+                        printWindow.document.close();
+                        
+                        setTimeout(function() {
+                            printWindow.print();
+                            printWindow.close();
+                        }, 250);
+                    });
+                } else {
+                    alert('Error al generar el informe: ' + (response.error || 'Error desconocido'));
+                }
+            },
+            error: function(xhr, status, error) {
+                alert('Error al generar el informe. Por favor intenta de nuevo.');
+                console.error('Error:', error);
+            },
+            complete: function() {
+                // Restaurar botón
+                btn.prop('disabled', false);
+                btn.html(originalHtml);
+            }
+        });
+    });
+    
+    // Exportar a Excel
+    $('#exportExcelBtn').click(function() {
+        const table = $('#tableSection table')[0];
+        const rows = [];
+        
+        // Obtener encabezados
+        const headers = [];
+        $(table).find('thead tr th').each(function() {
+            headers.push($(this).text().trim().replace(/\n/g, ' '));
+        });
+        rows.push(headers);
+        
+        // Obtener datos
+        $(table).find('tbody tr').each(function() {
+            const row = [];
+            $(this).find('td').each(function() {
+                const text = $(this).text().trim();
+                row.push(text === '-' ? '0' : text);
+            });
+            if (row.length > 0 && !row[0].includes('No hay datos')) {
+                rows.push(row);
+            }
+        });
+        
+        // Crear CSV
+        let csv = '';
+        rows.forEach(function(row) {
+            csv += row.join(',') + '\n';
+        });
+        
+        // Descargar
+        const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'estados_contactos_' + new Date().toISOString().slice(0,10) + '.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+    
+    // Exportar a PDF
+    $('#exportPdfBtn').click(function() {
+        const table = $('#tableSection table')[0].cloneNode(true);
+        
+        // Limpiar badges y mantener solo texto
+        $(table).find('.badge').each(function() {
+            $(this).replaceWith($(this).text());
+        });
+        $(table).find('.text-muted').each(function() {
+            $(this).replaceWith('0');
+        });
+        
+        // Crear ventana de impresión
+        const printWindow = window.open('', '', 'height=600,width=800');
+        printWindow.document.write('<html><head><title>Estados de Contactos</title>');
+        printWindow.document.write('<style>');
+        printWindow.document.write('body { font-family: Arial, sans-serif; margin: 20px; }');
+        printWindow.document.write('h1 { color: #333; margin-bottom: 20px; }');
+        printWindow.document.write('table { border-collapse: collapse; width: 100%; margin-top: 20px; }');
+        printWindow.document.write('th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }');
+        printWindow.document.write('th { background-color: #f8f9fa; font-weight: bold; }');
+        printWindow.document.write('tr:nth-child(even) { background-color: #f9f9f9; }');
+        printWindow.document.write('@media print { body { margin: 0; } }');
+        printWindow.document.write('</style>');
+        printWindow.document.write('</head><body>');
+        printWindow.document.write('<h1>Estados de Contactos por Fecha</h1>');
+        printWindow.document.write('<p>Fecha de generación: ' + new Date().toLocaleDateString('es-ES') + '</p>');
+        printWindow.document.write(table.outerHTML);
+        printWindow.document.write('</body></html>');
+        printWindow.document.close();
+        
+        setTimeout(function() {
+            printWindow.print();
+            printWindow.close();
+        }, 250);
+    });
 </script>
 {% endblock %}
 
@@ -70,12 +439,34 @@
             <h2>
                 <i class="bi bi-person-lines-fill text-primary"></i>
                 Contactos
+                <span class="badge" style="background-color: #90ee90; color: #2d8659; font-size: 0.9rem;">
+                    <i class="bi bi-trophy-fill"></i> Ganados: {{ won_contacts }}
+                </span>
                 {% if request.GET.status or request.GET.search or request.GET.date_from or request.GET.date_to %}
                     <span class="badge bg-warning text-dark ms-2">Filtros activos</span>
                 {% endif %}
             </h2>
             <p class="text-muted mb-0">
                 Gestión de contactos de ventas
+                <span class="ms-3">
+                    <small>
+                        <i class="bi bi-calendar-minus"></i> {{ comparison_label }}: <strong>{{ comparison_total_contacts }}</strong>
+                        <i class="bi bi-calendar-check ms-2"></i> Hoy: <strong>{{ today_total_contacts }}</strong>
+                        {% if contact_change_percentage > 0 %}
+                            <span class="badge bg-success ms-2">
+                                <i class="bi bi-arrow-up"></i> +{{ contact_change_percentage|floatformat:0 }}%
+                            </span>
+                        {% elif contact_change_percentage < 0 %}
+                            <span class="badge bg-danger ms-2">
+                                <i class="bi bi-arrow-down"></i> {{ contact_change_percentage|floatformat:0 }}%
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary ms-2">
+                                <i class="bi bi-dash"></i> 0%
+                            </span>
+                        {% endif %}
+                    </small>
+                </span>
                 {% if request.GET.status or request.GET.search or request.GET.date_from or request.GET.date_to %}
                     <br><small class="text-primary">
                         <i class="bi bi-funnel-fill"></i>
@@ -99,6 +490,24 @@
             </p>
         </div>
         <div class="d-flex gap-2">
+            <!-- Botones de toggle para secciones -->
+            <div class="btn-group" role="group">
+                {% if user_sales_plan and plan_progress %}
+                <button type="button" class="btn btn-sm btn-outline-warning" id="togglePlanBtn" title="Mostrar/Ocultar Plan de Venta">
+                    <i class="bi bi-trophy"></i> Plan
+                </button>
+                {% endif %}
+                <button type="button" class="btn btn-sm btn-outline-primary" id="toggleKpiBtn" title="Mostrar/Ocultar KPIs">
+                    <i class="bi bi-bar-chart"></i> KPI
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-success" id="toggleTableBtn" title="Mostrar/Ocultar Tabla de Estados">
+                    <i class="bi bi-table"></i> Tabla
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="toggleFiltersBtn" title="Mostrar/Ocultar Filtros">
+                    <i class="bi bi-funnel"></i> Filtros
+                </button>
+            </div>
+            
             <a href="{% url 'contact_chart' %}" class="btn btn-outline-info">
                 <i class="bi bi-bar-chart-line"></i> Ver gráfico de creación
             </a>
@@ -108,128 +517,502 @@
         </div>
     </div>
 
-    <!-- Estadísticas -->
-    <div class="row mb-4">
-        <div class="col-md-2">
+    <!-- Progreso del Plan de Venta -->
+    {% if user_sales_plan and plan_progress %}
+    <div class="alert alert-light border mb-4" id="salesPlanSection">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h5 class="mb-0">
+                    <i class="bi bi-{% if plan_progress.is_consolidated %}building{% else %}trophy{% endif %} text-warning"></i> 
+                    {% if plan_progress.is_consolidated %}
+                        Plan de Venta de la Empresa
+                    {% else %}
+                        Mi Plan de Venta
+                    {% endif %}
+                </h5>
+                <small class="text-muted">
+                    {% if plan_progress.is_consolidated %}
+                        Consolidado de todos los usuarios - Progreso del mes actual
+                    {% else %}
+                        Progreso del mes actual
+                    {% endif %}
+                </small>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                {% if plan_progress.is_consolidated %}
+                    <a href="{% url 'contact_list' %}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-person-fill"></i> Ver Mi Plan
+                    </a>
+                {% else %}
+                    <a href="?all_users=true" class="btn btn-sm btn-outline-info">
+                        <i class="bi bi-building"></i> Ver Plan Empresa
+                    </a>
+                {% endif %}
+                <a href="{% url 'sales_plan_list' %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-people-fill"></i> Ver Todos los Usuarios
+                </a>
+                <h4 class="mb-0">
+                    <span class="badge bg-{% if plan_progress.overall_percentage >= 75 %}success{% elif plan_progress.overall_percentage >= 50 %}warning{% else %}danger{% endif %}" 
+                          style="font-size: 1.1rem;">
+                        {{ plan_progress.overall_percentage }}% Cumplimiento General
+                    </span>
+                </h4>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-md-3">
+                <div class="p-2 bg-light rounded">
+                    <small class="text-muted d-block text-center mb-2"><strong>Contactos</strong></small>
+                    <div class="row g-2">
+                        <div class="col-6 text-center border-end">
+                            <small class="text-muted d-block">vs Mes Pasado</small>
+                            <h6 class="mb-0">{{ plan_progress.contacts_last_month }}</h6>
+                            <span class="badge {% if plan_progress.contacts_diff > 0 %}bg-success{% elif plan_progress.contacts_diff < 0 %}bg-danger{% else %}bg-secondary{% endif %} mt-1">
+                                {% if plan_progress.contacts_diff > 0 %}+{% endif %}{{ plan_progress.contacts_diff }}
+                            </span>
+                        </div>
+                        <div class="col-6 text-center">
+                            <small class="text-muted d-block">Objetivo Mes</small>
+                            <h6 class="mb-0">{{ plan_progress.contacts_created }}/{{ plan_progress.contacts_goal }}</h6>
+                            <span class="badge bg-primary mt-1">{{ plan_progress.contact_percentage }}%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-2 bg-light rounded">
+                    <small class="text-muted d-block text-center mb-2"><strong>Positivos</strong></small>
+                    <div class="row g-2">
+                        <div class="col-6 text-center border-end">
+                            <small class="text-muted d-block">vs Mes Pasado</small>
+                            <h6 class="mb-0">{{ plan_progress.positive_last_month }}</h6>
+                            <span class="badge {% if plan_progress.positive_diff > 0 %}bg-success{% elif plan_progress.positive_diff < 0 %}bg-danger{% else %}bg-secondary{% endif %} mt-1">
+                                {% if plan_progress.positive_diff > 0 %}+{% endif %}{{ plan_progress.positive_diff }}
+                            </span>
+                        </div>
+                        <div class="col-6 text-center">
+                            <small class="text-muted d-block">Objetivo Mes</small>
+                            <h6 class="mb-0">{{ plan_progress.positive_contacts }}/{{ plan_progress.positive_goal }}</h6>
+                            <span class="badge mt-1" style="background-color: #5cb85c;">{{ plan_progress.positive_percentage }}%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-2 bg-light rounded">
+                    <small class="text-muted d-block text-center mb-2"><strong>Reuniones</strong></small>
+                    <div class="row g-2">
+                        <div class="col-6 text-center border-end">
+                            <small class="text-muted d-block">vs Mes Pasado</small>
+                            <h6 class="mb-0">{{ plan_progress.meetings_last_month }}</h6>
+                            <span class="badge {% if plan_progress.meetings_diff > 0 %}bg-success{% elif plan_progress.meetings_diff < 0 %}bg-danger{% else %}bg-secondary{% endif %} mt-1">
+                                {% if plan_progress.meetings_diff > 0 %}+{% endif %}{{ plan_progress.meetings_diff }}
+                            </span>
+                        </div>
+                        <div class="col-6 text-center">
+                            <small class="text-muted d-block">Objetivo Mes</small>
+                            <h6 class="mb-0">{{ plan_progress.meetings_held }}/{{ plan_progress.meeting_goal }}</h6>
+                            <span class="badge bg-info mt-1">{{ plan_progress.meeting_percentage }}%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-2 bg-light rounded">
+                    <small class="text-muted d-block text-center mb-2"><strong>Ganados</strong></small>
+                    <div class="row g-2">
+                        <div class="col-6 text-center border-end">
+                            <small class="text-muted d-block">vs Mes Pasado</small>
+                            <h6 class="mb-0">{{ plan_progress.won_last_month }}</h6>
+                            <span class="badge {% if plan_progress.won_diff > 0 %}bg-success{% elif plan_progress.won_diff < 0 %}bg-danger{% else %}bg-secondary{% endif %} mt-1">
+                                {% if plan_progress.won_diff > 0 %}+{% endif %}{{ plan_progress.won_diff }}
+                            </span>
+                        </div>
+                        <div class="col-6 text-center">
+                            <small class="text-muted d-block">Objetivo Mes</small>
+                            <h6 class="mb-0">{{ plan_progress.won_contacts }}/{{ plan_progress.won_goal }}</h6>
+                            <span class="badge mt-1" style="background-color: #90ee90; color: #2d8659;">{{ plan_progress.won_percentage }}%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Estadísticas - KPIs Compactos -->
+    <div id="kpiSection">
+    <div class="row mb-3 g-2">
+        <div class="col">
             <a href="{% url 'contact_list' %}" class="text-decoration-none">
-                <div class="card text-center border-primary h-100 contact-kpi-card {% if not request.GET.status and not request.GET.date_from and not request.GET.has_activity %}filter-active{% endif %}" style="cursor: pointer; transition: transform 0.2s;">
-                    <div class="card-body p-2">
-                        <i class="bi bi-people-fill text-primary mb-1" style="font-size: 1.5rem;"></i>
-                        <h4 class="text-primary mb-0">{{ total_contacts }}</h4>
-                        <p class="text-muted mb-0 small">Total</p>
-                        {% if not request.GET.status and not request.GET.date_from and not request.GET.has_activity %}
-                            <small class="text-primary fw-bold">✓ Activo</small>
-                        {% endif %}
+                <div class="card text-center border-primary h-100 contact-kpi-card {% if not request.GET.status and not request.GET.date_from and not request.GET.has_activity and not request.GET.has_meeting %}filter-active{% endif %}" style="cursor: pointer; transition: transform 0.2s;">
+                    <div class="card-body p-1">
+                        <i class="bi bi-people-fill text-primary" style="font-size: 1.2rem;"></i>
+                        <h6 class="text-primary mb-0 mt-1">{{ total_contacts }}</h6>
+                        <p class="text-muted mb-0" style="font-size: 0.7rem;">Total</p>
                     </div>
                 </div>
             </a>
         </div>
-        <div class="col-md-2">
-            <a href="{% url 'contact_list' %}?status=positive" class="text-decoration-none">
-                <div class="card text-center border-success h-100 contact-kpi-card {% if request.GET.status == 'positive' %}filter-active{% endif %}" style="cursor: pointer; transition: transform 0.2s;">
-                    <div class="card-body p-2">
-                        <i class="bi bi-emoji-smile-fill text-success mb-1" style="font-size: 1.5rem;"></i>
-                        <h4 class="text-success mb-0">{{ positive_contacts }}</h4>
-                        <p class="text-muted mb-0 small">😊 Positivos</p>
-                        {% if request.GET.status == 'positive' %}
-                            <small class="text-success fw-bold">✓ Activo</small>
-                        {% endif %}
+        <div class="col">
+            <a href="{% url 'contact_list' %}?status=do_not_contact" class="text-decoration-none">
+                <div class="card text-center border-dark h-100 contact-kpi-card {% if request.GET.status == 'do_not_contact' %}filter-active{% endif %}" style="cursor: pointer; transition: transform 0.2s;">
+                    <div class="card-body p-1">
+                        <i class="bi bi-slash-circle-fill text-dark" style="font-size: 1.2rem;"></i>
+                        <h6 class="text-dark mb-0 mt-1">{{ do_not_contact_contacts }}</h6>
+                        <p class="text-muted mb-0" style="font-size: 0.7rem;">No Contactar</p>
                     </div>
                 </div>
             </a>
         </div>
-        <div class="col-md-2">
-            <a href="{% url 'contact_list' %}?status=neutral" class="text-decoration-none">
-                <div class="card text-center border-primary h-100 contact-kpi-card {% if request.GET.status == 'neutral' %}filter-active{% endif %}" style="cursor: pointer; transition: transform 0.2s;">
-                    <div class="card-body p-2">
-                        <i class="bi bi-emoji-neutral-fill text-primary mb-1" style="font-size: 1.5rem;"></i>
-                        <h4 class="text-primary mb-0">{{ neutral_contacts }}</h4>
-                        <p class="text-muted mb-0 small">😐 Neutros</p>
-                        {% if request.GET.status == 'neutral' %}
-                            <small class="text-primary fw-bold">✓ Activo</small>
-                        {% endif %}
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-2">
+        <div class="col">
             <a href="{% url 'contact_list' %}?status=negative" class="text-decoration-none">
                 <div class="card text-center border-danger h-100 contact-kpi-card {% if request.GET.status == 'negative' %}filter-active{% endif %}" style="cursor: pointer; transition: transform 0.2s;">
-                    <div class="card-body p-2">
-                        <i class="bi bi-emoji-frown-fill text-danger mb-1" style="font-size: 1.5rem;"></i>
-                        <h4 class="text-danger mb-0">{{ negative_contacts }}</h4>
-                        <p class="text-muted mb-0 small">😞 Negativos</p>
-                        {% if request.GET.status == 'negative' %}
-                            <small class="text-danger fw-bold">✓ Activo</small>
-                        {% endif %}
+                    <div class="card-body p-1">
+                        <i class="bi bi-emoji-frown-fill text-danger" style="font-size: 1.2rem;"></i>
+                        <h6 class="text-danger mb-0 mt-1">{{ negative_contacts }}</h6>
+                        <p class="text-muted mb-0" style="font-size: 0.7rem;">Negativos</p>
                     </div>
                 </div>
             </a>
         </div>
-        <div class="col-md-2">
+        <div class="col">
+            <a href="{% url 'contact_list' %}?status=not_now" class="text-decoration-none">
+                <div class="card text-center border-warning h-100 contact-kpi-card {% if request.GET.status == 'not_now' %}filter-active{% endif %}" style="cursor: pointer; transition: transform 0.2s;">
+                    <div class="card-body p-1">
+                        <i class="bi bi-clock-fill text-warning" style="font-size: 1.2rem;"></i>
+                        <h6 class="text-warning mb-0 mt-1">{{ not_now_contacts }}</h6>
+                        <p class="text-muted mb-0" style="font-size: 0.7rem;">No Ahora</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col">
+            <a href="{% url 'contact_list' %}?status=neutral" class="text-decoration-none">
+                <div class="card text-center border-info h-100 contact-kpi-card {% if request.GET.status == 'neutral' %}filter-active{% endif %}" style="cursor: pointer; transition: transform 0.2s;">
+                    <div class="card-body p-1">
+                        <i class="bi bi-emoji-neutral-fill text-info" style="font-size: 1.2rem;"></i>
+                        <h6 class="text-info mb-0 mt-1">{{ neutral_contacts }}</h6>
+                        <p class="text-muted mb-0" style="font-size: 0.7rem;">Neutros</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col">
+            <a href="{% url 'contact_list' %}?status=positive" class="text-decoration-none">
+                <div class="card text-center h-100 contact-kpi-card {% if request.GET.status == 'positive' %}filter-active{% endif %}" style="cursor: pointer; transition: transform 0.2s; border: 2px solid #5cb85c;">
+                    <div class="card-body p-1">
+                        <i class="bi bi-emoji-smile-fill" style="font-size: 1.2rem; color: #5cb85c;"></i>
+                        <h6 class="mb-0 mt-1" style="color: #5cb85c;">{{ positive_contacts }}</h6>
+                        <p class="text-muted mb-0" style="font-size: 0.7rem;">Positivos</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col">
+            <a href="{% url 'contact_list' %}?status=won" class="text-decoration-none">
+                <div class="card text-center h-100 contact-kpi-card {% if request.GET.status == 'won' %}filter-active{% endif %}" style="cursor: pointer; transition: transform 0.2s; border: 2px solid #90ee90;">
+                    <div class="card-body p-1">
+                        <i class="bi bi-trophy-fill" style="font-size: 1.2rem; color: #2d8659;"></i>
+                        <h6 class="mb-0 mt-1" style="color: #2d8659;">{{ won_contacts }}</h6>
+                        <p class="text-muted mb-0" style="font-size: 0.7rem;">Ganados</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col">
+            <div class="card text-center h-100" style="border: 2px solid #90ee90;">
+                <div class="card-body p-1">
+                    <i class="bi bi-trophy" style="font-size: 1.2rem; color: #2d8659;"></i>
+                    <h6 class="mb-0 mt-1" style="color: #2d8659;">{{ monthly_won_contacts }}</h6>
+                    <p class="text-muted mb-0" style="font-size: 0.7rem;">Ganados Mes</p>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <a href="{% url 'contact_list' %}?has_meeting=monthly" class="text-decoration-none">
+                <div class="card text-center h-100 contact-kpi-card {% if request.GET.has_meeting == 'monthly' %}filter-active{% endif %}" style="cursor: pointer; transition: transform 0.2s; border: 2px solid #6f42c1;">
+                    <div class="card-body p-1">
+                        <i class="bi bi-calendar-check-fill" style="font-size: 1.2rem; color: #6f42c1;"></i>
+                        <h6 class="mb-0 mt-1" style="color: #6f42c1;">{{ monthly_meetings }}</h6>
+                        <p class="text-muted mb-0" style="font-size: 0.7rem;">Reuniones Mes</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col">
+            <a href="{% url 'contact_list' %}?has_meeting=all" class="text-decoration-none">
+                <div class="card text-center border-dark h-100 contact-kpi-card {% if request.GET.has_meeting == 'all' %}filter-active{% endif %}" style="cursor: pointer; transition: transform 0.2s;">
+                    <div class="card-body p-1">
+                        <i class="bi bi-calendar2-event-fill text-dark" style="font-size: 1.2rem;"></i>
+                        <h6 class="text-dark mb-0 mt-1">{{ total_meetings }}</h6>
+                        <p class="text-muted mb-0" style="font-size: 0.7rem;">Total Reuniones</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col">
             <a href="{% url 'contact_list' %}?has_activity=yes" class="text-decoration-none">
-                <div class="card text-center border-warning h-100 contact-kpi-card {% if request.GET.has_activity == 'yes' %}filter-active{% endif %}" style="cursor: pointer; transition: transform 0.2s;">
-                    <div class="card-body p-2">
-                        <i class="bi bi-telephone-fill text-warning mb-1" style="font-size: 1.5rem;"></i>
-                        <h4 class="text-warning mb-0">{{ contacts_with_activities }}</h4>
-                        <p class="text-muted mb-0 small">� Con Actividad</p>
-                        {% if request.GET.has_activity == 'yes' %}
-                            <small class="text-warning fw-bold">✓ Activo</small>
-                        {% endif %}
+                <div class="card text-center border-secondary h-100 contact-kpi-card {% if request.GET.has_activity == 'yes' %}filter-active{% endif %}" style="cursor: pointer; transition: transform 0.2s;">
+                    <div class="card-body p-1">
+                        <i class="bi bi-telephone-fill text-secondary" style="font-size: 1.2rem;"></i>
+                        <h6 class="text-secondary mb-0 mt-1">{{ contacts_with_activities }}</h6>
+                        <p class="text-muted mb-0" style="font-size: 0.7rem;">Con Actividad</p>
                     </div>
                 </div>
             </a>
         </div>
-        <div class="col-md-2">
+        <div class="col">
             <a href="{% url 'contact_list' %}?date_from={% now 'Y-m-d' %}&date_to={% now 'Y-m-d' %}" class="text-decoration-none">
-                <div class="card text-center border-info h-100 contact-kpi-card {% if request.GET.date_from == today_date and request.GET.date_to == today_date %}filter-active{% endif %}" style="cursor: pointer; transition: transform 0.2s;">
-                    <div class="card-body p-2">
-                        <i class="bi bi-calendar-day-fill text-info mb-1" style="font-size: 1.5rem;"></i>
-                        <h4 class="text-info mb-0">{{ today_contacts }}</h4>
-                        <p class="text-muted mb-0 small">Hoy</p>
-                        {% if request.GET.date_from == today_date and request.GET.date_to == today_date %}
-                            <small class="text-info fw-bold">✓ Activo</small>
-                        {% endif %}
+                <div class="card text-center border-secondary h-100 contact-kpi-card {% if request.GET.date_from == today_date and request.GET.date_to == today_date %}filter-active{% endif %}" style="cursor: pointer; transition: transform 0.2s;">
+                    <div class="card-body p-1">
+                        <i class="bi bi-calendar-day-fill text-secondary" style="font-size: 1.2rem;"></i>
+                        <h6 class="text-secondary mb-0 mt-1">{{ today_contacts }}</h6>
+                        <p class="text-muted mb-0" style="font-size: 0.7rem;">Hoy</p>
                     </div>
                 </div>
             </a>
         </div>
     </div>
+    </div><!-- Fin kpiSection -->
 
-    <!-- Estadísticas de Reuniones -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <a href="{% url 'contact_list' %}?has_meeting=monthly" class="text-decoration-none">
-                <div class="card text-center h-100 contact-kpi-card {% if request.GET.has_meeting == 'monthly' %}filter-active{% endif %}" style="cursor: pointer; transition: transform 0.2s; border: 2px solid #6f42c1;">
-                    <div class="card-body p-2">
-                        <i class="bi bi-calendar-check-fill mb-1" style="font-size: 1.5rem; color: #6f42c1;"></i>
-                        <h4 class="mb-0" style="color: #6f42c1;">{{ monthly_meetings }}</h4>
-                        <p class="text-muted mb-0 small">📊 Reuniones este mes</p>
-                        {% if request.GET.has_meeting == 'monthly' %}
-                            <small class="fw-bold" style="color: #6f42c1;">✓ Activo</small>
-                        {% endif %}
+    <!-- Tabla de Estados por Fecha -->
+    <div class="card mb-4" id="tableSection">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-3">
+                    <div>
+                        <h5 class="mb-0">
+                            <i class="bi bi-table"></i> Estados de Contactos por Fecha
+                        </h5>
+                        <small class="text-muted">Análisis temporal de contactos</small>
+                    </div>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn btn-outline-primary" id="generateAiReportBtn" title="Generar Informe con IA">
+                            <i class="bi bi-stars"></i> Informe IA
+                        </button>
+                        <button type="button" class="btn btn-outline-danger" id="exportPdfBtn" title="Exportar a PDF">
+                            <i class="bi bi-file-pdf"></i> PDF
+                        </button>
+                        <button type="button" class="btn btn-outline-success" id="exportExcelBtn" title="Exportar a Excel">
+                            <i class="bi bi-file-excel"></i> Excel
+                        </button>
                     </div>
                 </div>
-            </a>
+                <form method="GET" class="d-flex gap-2 align-items-end" id="tableFiltersForm">
+                    <!-- Mantener otros parámetros GET -->
+                    {% if request.GET.status %}
+                        <input type="hidden" name="status" value="{{ request.GET.status }}">
+                    {% endif %}
+                    {% if request.GET.search %}
+                        <input type="hidden" name="search" value="{{ request.GET.search }}">
+                    {% endif %}
+                    
+                    <div>
+                        <label class="form-label mb-0" style="font-size: 0.75rem;">Vista</label>
+                        <select name="table_view" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="day" {% if request.GET.table_view == 'day' or not request.GET.table_view %}selected{% endif %}>Por Día</option>
+                            <option value="week" {% if request.GET.table_view == 'week' %}selected{% endif %}>Por Semana</option>
+                            <option value="month" {% if request.GET.table_view == 'month' %}selected{% endif %}>Por Mes</option>
+                            <option value="year" {% if request.GET.table_view == 'year' %}selected{% endif %}>Por Año</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="form-label mb-0" style="font-size: 0.75rem;">Usuario</label>
+                        <select name="table_user" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="all" {% if request.GET.table_user == 'all' or not request.GET.table_user %}selected{% endif %}>Todos</option>
+                            <option value="me" {% if request.GET.table_user == 'me' %}selected{% endif %}>Mis Contactos</option>
+                        </select>
+                    </div>
+                    
+                    {% if request.GET.table_view == 'day' or not request.GET.table_view %}
+                    <div>
+                        <label class="form-label mb-0" style="font-size: 0.75rem;">Período (días)</label>
+                        <select name="table_days" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="7" {% if request.GET.table_days == '7' %}selected{% endif %}>7 días</option>
+                            <option value="15" {% if request.GET.table_days == '15' %}selected{% endif %}>15 días</option>
+                            <option value="30" {% if request.GET.table_days == '30' or not request.GET.table_days %}selected{% endif %}>30 días</option>
+                            <option value="60" {% if request.GET.table_days == '60' %}selected{% endif %}>60 días</option>
+                            <option value="90" {% if request.GET.table_days == '90' %}selected{% endif %}>90 días</option>
+                        </select>
+                    </div>
+                    {% endif %}
+                    
+                    {% if request.GET.table_view == 'week' %}
+                    <div>
+                        <label class="form-label mb-0" style="font-size: 0.75rem;">Período (semanas)</label>
+                        <select name="table_weeks" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="4" {% if request.GET.table_weeks == '4' %}selected{% endif %}>4 semanas</option>
+                            <option value="8" {% if request.GET.table_weeks == '8' %}selected{% endif %}>8 semanas</option>
+                            <option value="12" {% if request.GET.table_weeks == '12' or not request.GET.table_weeks %}selected{% endif %}>12 semanas</option>
+                            <option value="26" {% if request.GET.table_weeks == '26' %}selected{% endif %}>26 semanas</option>
+                            <option value="52" {% if request.GET.table_weeks == '52' %}selected{% endif %}>52 semanas</option>
+                        </select>
+                    </div>
+                    {% endif %}
+                    
+                    {% if request.GET.table_view == 'month' %}
+                    <div>
+                        <label class="form-label mb-0" style="font-size: 0.75rem;">Año</label>
+                        <select name="table_year" class="form-select form-select-sm" onchange="this.form.submit()">
+                            {% for year in available_years %}
+                                <option value="{{ year }}" {% if request.GET.table_year == year|stringformat:"s" or not request.GET.table_year and year == current_year %}selected{% endif %}>{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+                </form>
+            </div>
         </div>
-        <div class="col-md-3">
-            <a href="{% url 'contact_list' %}?has_meeting=all" class="text-decoration-none">
-                <div class="card text-center border-dark h-100 contact-kpi-card {% if request.GET.has_meeting == 'all' %}filter-active{% endif %}" style="cursor: pointer; transition: transform 0.2s;">
-                    <div class="card-body p-2">
-                        <i class="bi bi-calendar2-event-fill text-dark mb-1" style="font-size: 1.5rem;"></i>
-                        <h4 class="text-dark mb-0">{{ total_meetings }}</h4>
-                        <p class="text-muted mb-0 small">🗓️ Total reuniones</p>
-                        {% if request.GET.has_meeting == 'all' %}
-                            <small class="text-dark fw-bold">✓ Activo</small>
-                        {% endif %}
-                    </div>
-                </div>
-            </a>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light sticky-top">
+                        <tr>
+                            <th class="text-center" style="min-width: 100px;">Fecha</th>
+                            <th class="text-center" style="min-width: 80px;">
+                                <i class="bi bi-slash-circle-fill text-dark"></i><br>
+                                <small>No Contactar</small>
+                            </th>
+                            <th class="text-center" style="min-width: 80px;">
+                                <i class="bi bi-emoji-frown-fill text-danger"></i><br>
+                                <small>Negativos</small>
+                            </th>
+                            <th class="text-center" style="min-width: 80px;">
+                                <i class="bi bi-clock-fill text-warning"></i><br>
+                                <small>No Ahora</small>
+                            </th>
+                            <th class="text-center" style="min-width: 80px;">
+                                <i class="bi bi-emoji-neutral-fill text-info"></i><br>
+                                <small>Neutros</small>
+                            </th>
+                            <th class="text-center" style="min-width: 80px;">
+                                <i class="bi bi-emoji-smile-fill" style="color: #5cb85c;"></i><br>
+                                <small>Positivos</small>
+                            </th>
+                            <th class="text-center" style="min-width: 80px;">
+                                <i class="bi bi-trophy-fill" style="color: #2d8659;"></i><br>
+                                <small>Ganados</small>
+                            </th>
+                            <th class="text-center" style="min-width: 90px;">
+                                <i class="bi bi-people-fill text-primary"></i><br>
+                                <small>Contactados</small>
+                            </th>
+                            <th class="text-center" style="min-width: 90px;">
+                                <i class="bi bi-percent text-success"></i><br>
+                                <small>Tasa Conv.</small>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in table_data %}
+                            {% with total=row.counts.do_not_contact|add:row.counts.negative|add:row.counts.not_now|add:row.counts.neutral|add:row.counts.positive|add:row.counts.won %}
+                            {% if total > 0 %}
+                            <tr>
+                                <td class="text-center fw-bold">
+                                    {{ row.label }}
+                                </td>
+                                <td class="text-center">
+                                    {% if row.counts.do_not_contact > 0 %}
+                                        <span class="badge bg-dark">{{ row.counts.do_not_contact }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if row.counts.negative > 0 %}
+                                        <span class="badge bg-danger">{{ row.counts.negative }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if row.counts.not_now > 0 %}
+                                        <span class="badge bg-warning text-dark">{{ row.counts.not_now }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if row.counts.neutral > 0 %}
+                                        <span class="badge bg-info">{{ row.counts.neutral }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if row.counts.positive > 0 %}
+                                        <span class="badge" style="background-color: #5cb85c;">{{ row.counts.positive }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if row.counts.won > 0 %}
+                                        <span class="badge" style="background-color: #90ee90; color: #2d8659;">{{ row.counts.won }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-primary">{{ total }}</span>
+                                </td>
+                                <td class="text-center">
+                                    {% if row.counts.won > 0 and total > 0 %}
+                                        {% widthratio row.counts.won total 100 as conversion_rate %}
+                                        <span class="badge bg-success">{{ conversion_rate }}%</span>
+                                    {% else %}
+                                        <span class="text-muted">0%</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endwith %}
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-center text-muted py-3">
+                                <i class="bi bi-inbox"></i> No hay datos para mostrar
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="table-light">
+                        <tr style="font-weight: bold; border-top: 2px solid #dee2e6;">
+                            <td class="text-center">TOTALES</td>
+                            <td class="text-center">
+                                <span class="badge bg-dark">{{ table_totals.do_not_contact }}</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-danger">{{ table_totals.negative }}</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-warning text-dark">{{ table_totals.not_now }}</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-info">{{ table_totals.neutral }}</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge" style="background-color: #5cb85c;">{{ table_totals.positive }}</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge" style="background-color: #90ee90; color: #2d8659;">{{ table_totals.won }}</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-primary">{{ table_totals.total }}</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-success">{{ table_totals.conversion_rate }}%</span>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
         </div>
     </div>
 
     <!-- Filtros -->
-    <div class="card mb-4">
+    <div class="card mb-4" id="filtersSection">
         <div class="card-header">
             <h5 class="mb-0">
                 <i class="bi bi-funnel"></i> Filtros
@@ -298,6 +1081,7 @@
                                 <th>Contacto</th>
                                 <th>Estado</th>
                                 <th>Empresa</th>
+                                <th>Tamaño</th>
                                 <th>País</th>
                                 <th>ERP</th>
                                 <th>Actividades</th>
@@ -333,16 +1117,37 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="badge bg-{{ contact.get_status_color }}">
-                                        {% if contact.status == 'positive' %}
+                                    {% if contact.status == 'positive' %}
+                                        <span class="badge" style="background-color: #5cb85c; color: white;">
                                             😊 <i class="{{ contact.get_status_icon }}"></i>
-                                        {% else %}
+                                            {{ contact.get_status_display }}
+                                        </span>
+                                    {% elif contact.status == 'won' %}
+                                        <span class="badge" style="background-color: #90ee90; color: #2d8659;">
                                             <i class="{{ contact.get_status_icon }}"></i>
-                                        {% endif %}
-                                        {{ contact.get_status_display }}
-                                    </span>
+                                            {{ contact.get_status_display }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-{{ contact.get_status_color }}">
+                                            <i class="{{ contact.get_status_icon }}"></i>
+                                            {{ contact.get_status_display }}
+                                        </span>
+                                    {% endif %}
                                 </td>
                                 <td>{{ contact.company|default:"-" }}</td>
+                                <td>
+                                    {% if contact.company_size %}
+                                        {% if contact.company_size == 'small' %}
+                                            <span class="badge bg-secondary"><i class="bi bi-building"></i> Pequeña</span>
+                                        {% elif contact.company_size == 'medium' %}
+                                            <span class="badge bg-primary"><i class="bi bi-building"></i> Mediana</span>
+                                        {% elif contact.company_size == 'large' %}
+                                            <span class="badge bg-success"><i class="bi bi-buildings"></i> Grande</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
                                 <td>{{ contact.country|default:"-" }}</td>
                                 <td>
                                     {% if contact.erp %}

@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}Eliminar Plan de Venta - TicketProo{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> Eliminar Plan de Venta
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-circle"></i>
+                        ¿Estás seguro de que deseas eliminar el plan de venta de <strong>{{ plan.user.get_full_name|default:plan.user.username }}</strong>?
+                    </div>
+
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6><i class="bi bi-trophy"></i> Detalles del Plan:</h6>
+                            <ul class="mb-0">
+                                <li>Objetivo de contactos: <strong>{{ plan.monthly_contact_goal }}</strong></li>
+                                <li>Objetivo de positivos: <strong>{{ plan.monthly_positive_contact_goal }}</strong></li>
+                                <li>Objetivo de reuniones: <strong>{{ plan.monthly_meeting_goal }}</strong></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <p class="text-danger mb-0">
+                        <strong>Esta acción no se puede deshacer.</strong>
+                    </p>
+                </div>
+                <div class="card-footer">
+                    <form method="POST" class="d-flex justify-content-between">
+                        {% csrf_token %}
+                        <a href="{% url 'sales_plan_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Confirmar Eliminación
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

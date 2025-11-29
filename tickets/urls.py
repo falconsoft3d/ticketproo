@@ -306,6 +306,7 @@ urlpatterns = [
     
     # ============= URLs CONTACTOS =============
     path('contacts/', views.contact_list, name='contact_list'),
+    path('contacts/generate-sales-report/', views.generate_sales_report, name='generate_sales_report'),
     path('contacts/chart/', views.contact_chart, name='contact_chart'),
     path('contacts/create/', views.contact_create, name='contact_create'),
     path('contacts/<int:pk>/', views.contact_detail, name='contact_detail'),
@@ -327,6 +328,12 @@ urlpatterns = [
     
     # URL para crear actividad rápida desde contacto (AJAX)
     path('contacts/<int:contact_id>/quick-activity/', views.create_quick_activity, name='create_quick_activity'),
+    
+    # ============= URLs PLAN DE VENTAS =============
+    path('sales-plans/', views.sales_plan_list, name='sales_plan_list'),
+    path('sales-plans/create/', views.sales_plan_create, name='sales_plan_create'),
+    path('sales-plans/<int:pk>/edit/', views.sales_plan_edit, name='sales_plan_edit'),
+    path('sales-plans/<int:pk>/delete/', views.sales_plan_delete, name='sales_plan_delete'),
     
     # ============= URLs CRM =============
     path('crm/', views.crm_dashboard, name='crm_dashboard'),

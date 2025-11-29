@@ -4523,6 +4523,15 @@ class Contact(models.Model):
         ('positive', 'Positivo'),
         ('neutral', 'Neutral'),
         ('negative', 'Negativo'),
+        ('not_now', 'No ahora'),
+        ('do_not_contact', 'No Contactar'),
+        ('won', 'Ganado'),
+    ]
+    
+    COMPANY_SIZE_CHOICES = [
+        ('small', 'Pequeña (Menos de 10 empleados)'),
+        ('medium', 'Mediana (10 a 50 empleados)'),
+        ('large', 'Grande (Más de 50 empleados)'),
     ]
     
     name = models.CharField(
@@ -4567,9 +4576,9 @@ class Contact(models.Model):
         help_text='Sistema ERP actual del contacto'
     )
     status = models.CharField(
-        max_length=10,
+        max_length=20,
         choices=STATUS_CHOICES,
-        default='positive',
+        default='negative',
         verbose_name='Estado'
     )
     source = models.CharField(
@@ -4578,6 +4587,13 @@ class Contact(models.Model):
         null=True,
         verbose_name='Fuente',
         help_text='¿De dónde obtuviste este contacto?'
+    )
+    company_size = models.CharField(
+        max_length=10,
+        choices=COMPANY_SIZE_CHOICES,
+        default='small',
+        verbose_name='Tamaño de Empresa',
+        help_text='Tamaño de la empresa del contacto'
     )
     notes = models.TextField(
         blank=True,
@@ -4630,6 +4646,14 @@ class Contact(models.Model):
         related_name='contacts_created',
         verbose_name='Creado por'
     )
+    assigned_to = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='contacts_assigned',
+        verbose_name='Asignado a'
+    )
     created_at = models.DateTimeField(
         default=timezone.now,
         verbose_name='Fecha de creación'
@@ -4653,6 +4677,12 @@ class Contact(models.Model):
             return 'success'
         elif self.status == 'neutral':
             return 'primary'
+        elif self.status == 'not_now':
+            return 'warning'
+        elif self.status == 'do_not_contact':
+            return 'dark'
+        elif self.status == 'won':
+            return 'success'
         else:
             return 'danger'
     
@@ -4662,6 +4692,12 @@ class Contact(models.Model):
             return 'bi-check-circle'
         elif self.status == 'neutral':
             return 'bi-dash-circle'
+        elif self.status == 'not_now':
+            return 'bi-clock'
+        elif self.status == 'do_not_contact':
+            return 'bi-slash-circle'
+        elif self.status == 'won':
+            return 'bi-trophy-fill'
         else:
             return 'bi-x-circle'
 
@@ -4778,6 +4814,171 @@ class ContactAttachment(models.Model):
             if os.path.isfile(self.file.path):
                 os.remove(self.file.path)
         super().delete(*args, **kwargs)
+
+
+class SalesPlan(models.Model):
+    """Modelo para plan de ventas mensual de usuarios"""
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='sales_plans',
+        verbose_name='Usuario'
+    )
+    monthly_contact_goal = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Objetivo de contactos al mes',
+        help_text='Número de contactos nuevos que debe crear al mes'
+    )
+    monthly_positive_contact_goal = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Objetivo de contactos positivos al mes',
+        help_text='Número de contactos positivos que debe conseguir al mes'
+    )
+    monthly_meeting_goal = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Objetivo de reuniones mensuales',
+        help_text='Número de reuniones que debe realizar al mes'
+    )
+    monthly_won_goal = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Objetivo de ganados al mes',
+        help_text='Número de contactos ganados que debe conseguir al mes'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Plan activo'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Plan de Venta'
+        verbose_name_plural = 'Planes de Venta'
+    
+    def __str__(self):
+        return f"Plan de {self.user.get_full_name() or self.user.username}"
+    
+    def get_monthly_progress(self):
+        """Calcula el progreso del mes actual"""
+        from django.db.models import Count, Q
+        from datetime import timedelta
+        from dateutil.relativedelta import relativedelta
+        
+        now = timezone.now()
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        
+        # Calcular el mismo día del mes pasado
+        last_month = now - relativedelta(months=1)
+        last_month_start = last_month.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        last_month_same_day = last_month.replace(hour=23, minute=59, second=59, microsecond=999999)
+        
+        # Contactos creados este mes
+        contacts_created = Contact.objects.filter(
+            created_by=self.user,
+            created_at__gte=month_start,
+            created_at__lte=now
+        ).count()
+        
+        # Contactos del mismo día del mes pasado
+        contacts_last_month = Contact.objects.filter(
+            created_by=self.user,
+            created_at__gte=last_month_start,
+            created_at__lte=last_month_same_day
+        ).count()
+        
+        # Contactos positivos este mes
+        positive_contacts = Contact.objects.filter(
+            created_by=self.user,
+            status='positive',
+            created_at__gte=month_start,
+            created_at__lte=now
+        ).count()
+        
+        # Positivos del mes pasado
+        positive_last_month = Contact.objects.filter(
+            created_by=self.user,
+            status='positive',
+            created_at__gte=last_month_start,
+            created_at__lte=last_month_same_day
+        ).count()
+        
+        # Reuniones este mes
+        meetings_held = Contact.objects.filter(
+            created_by=self.user,
+            had_meeting=True,
+            meeting_date__gte=month_start.date(),
+            meeting_date__lte=now.date()
+        ).count()
+        
+        # Reuniones del mes pasado
+        meetings_last_month = Contact.objects.filter(
+            created_by=self.user,
+            had_meeting=True,
+            meeting_date__gte=last_month_start.date(),
+            meeting_date__lte=last_month_same_day.date()
+        ).count()
+        
+        # Contactos ganados este mes
+        won_contacts = Contact.objects.filter(
+            created_by=self.user,
+            status='won',
+            created_at__gte=month_start,
+            created_at__lte=now
+        ).count()
+        
+        # Ganados del mes pasado
+        won_last_month = Contact.objects.filter(
+            created_by=self.user,
+            status='won',
+            created_at__gte=last_month_start,
+            created_at__lte=last_month_same_day
+        ).count()
+        
+        # Calcular diferencias
+        contacts_diff = contacts_created - contacts_last_month
+        positive_diff = positive_contacts - positive_last_month
+        meetings_diff = meetings_held - meetings_last_month
+        won_diff = won_contacts - won_last_month
+        
+        # Calcular porcentajes
+        contact_percentage = (contacts_created / self.monthly_contact_goal * 100) if self.monthly_contact_goal > 0 else 0
+        positive_percentage = (positive_contacts / self.monthly_positive_contact_goal * 100) if self.monthly_positive_contact_goal > 0 else 0
+        meeting_percentage = (meetings_held / self.monthly_meeting_goal * 100) if self.monthly_meeting_goal > 0 else 0
+        won_percentage = (won_contacts / self.monthly_won_goal * 100) if self.monthly_won_goal > 0 else 0
+        
+        # Promedio general
+        overall_percentage = (contact_percentage + positive_percentage + meeting_percentage + won_percentage) / 4
+        
+        return {
+            'contacts_created': contacts_created,
+            'contacts_goal': self.monthly_contact_goal,
+            'contact_percentage': round(contact_percentage, 1),
+            'contacts_last_month': contacts_last_month,
+            'contacts_diff': contacts_diff,
+            'positive_contacts': positive_contacts,
+            'positive_goal': self.monthly_positive_contact_goal,
+            'positive_percentage': round(positive_percentage, 1),
+            'positive_last_month': positive_last_month,
+            'positive_diff': positive_diff,
+            'meetings_held': meetings_held,
+            'meeting_goal': self.monthly_meeting_goal,
+            'meeting_percentage': round(meeting_percentage, 1),
+            'meetings_last_month': meetings_last_month,
+            'meetings_diff': meetings_diff,
+            'won_contacts': won_contacts,
+            'won_goal': self.monthly_won_goal,
+            'won_percentage': round(won_percentage, 1),
+            'won_last_month': won_last_month,
+            'won_diff': won_diff,
+            'overall_percentage': round(overall_percentage, 1)
+        }
 
 
 class BlogCategory(models.Model):

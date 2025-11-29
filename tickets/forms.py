@@ -39,7 +39,7 @@ from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserProfile, 
     UserNote, TimeEntry, PublicTimeAccess, Project, Company, SystemConfiguration, Document, UrlManager, WorkOrder, Task,
     ChatRoom, ChatMessage, Command, ContactFormSubmission, Meeting, MeetingAttendee, MeetingQuestion, OpportunityActivity,
-    Course, CourseClass, Contact, ContactComment, ContactAttachment, BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, Concept, ContactoWeb, Employee, EmployeePayroll,
+    Course, CourseClass, Contact, ContactComment, ContactAttachment, SalesPlan, BlogCategory, BlogPost, BlogComment, AIChatSession, AIChatMessage, Concept, ContactoWeb, Employee, EmployeePayroll,
     Agreement, AgreementSignature, LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry, SharedFile, SharedFileDownload,
     Recording, RecordingPlayback, MultipleDocumentation, TaskSchedule, ScheduleTask, ScheduleComment, FinancialAction,
     ClientProjectAccess, ClientTimeEntry, ProductSet, ProductItem, Precotizador, PrecotizadorExample, PrecotizadorQuote,
@@ -3609,7 +3609,7 @@ class ContactForm(forms.ModelForm):
         model = Contact
         fields = [
             'name', 'email', 'phone', 'position', 'company', 'country', 'erp',
-            'status', 'source', 'notes', 'contact_date',
+            'status', 'assigned_to', 'source', 'company_size', 'notes', 'contact_date',
             'contacted_by_phone', 'contacted_by_web', 'had_meeting', 'meeting_date',
             'contact_tracking_notes', 'last_contact_date'
         ]
@@ -3645,9 +3645,15 @@ class ContactForm(forms.ModelForm):
             'status': forms.Select(attrs={
                 'class': 'form-select'
             }),
+            'assigned_to': forms.Select(attrs={
+                'class': 'form-select'
+            }),
             'source': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'LinkedIn, referencia, evento, etc.'
+            }),
+            'company_size': forms.Select(attrs={
+                'class': 'form-select'
             }),
             'notes': forms.Textarea(attrs={
                 'class': 'form-control',
@@ -3683,6 +3689,7 @@ class ContactForm(forms.ModelForm):
         }
     
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         
         from django.utils import timezone
@@ -3693,6 +3700,18 @@ class ContactForm(forms.ModelForm):
             # Contacto nuevo
             self.fields['contact_date'].initial = now.strftime('%Y-%m-%dT%H:%M')
             self.fields['last_contact_date'].initial = now.strftime('%Y-%m-%dT%H:%M')
+            # Establecer usuario actual como asignado por defecto
+            if user:
+                self.fields['assigned_to'].initial = user
+                # Obtener la última fuente usada por este usuario
+                last_contact = Contact.objects.filter(
+                    created_by=user,
+                    source__isnull=False
+                ).exclude(source='').order_by('-created_at').first()
+                if last_contact and last_contact.source:
+                    self.fields['source'].initial = last_contact.source
+            # País por defecto: España
+            self.fields['country'].initial = 'España'
         else:
             # Contacto existente - mantener valores actuales o sugerir fecha actual si está vacío
             if self.instance.contact_date:
@@ -3722,6 +3741,52 @@ class ContactForm(forms.ModelForm):
         self.fields['meeting_date'].label = 'Fecha de reunión'
         self.fields['contact_tracking_notes'].label = 'Notas de seguimiento'
         self.fields['last_contact_date'].label = 'Fecha del último contacto'
+
+
+class SalesPlanForm(forms.ModelForm):
+    """Formulario para crear y editar planes de venta"""
+    
+    class Meta:
+        model = SalesPlan
+        fields = ['user', 'monthly_contact_goal', 'monthly_positive_contact_goal', 'monthly_meeting_goal', 'monthly_won_goal', 'is_active']
+        widgets = {
+            'user': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'monthly_contact_goal': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: 50',
+                'min': '0'
+            }),
+            'monthly_positive_contact_goal': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: 20',
+                'min': '0'
+            }),
+            'monthly_meeting_goal': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: 10',
+                'min': '0'
+            }),
+            'monthly_won_goal': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: 5',
+                'min': '0'
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Personalizar labels
+        self.fields['user'].label = 'Usuario'
+        self.fields['monthly_contact_goal'].label = 'Objetivo de Contactos al Mes'
+        self.fields['monthly_positive_contact_goal'].label = 'Objetivo de Contactos Positivos al Mes'
+        self.fields['monthly_meeting_goal'].label = 'Objetivo de Reuniones Mensuales'
+        self.fields['is_active'].label = 'Plan Activo'
 
 
 class BlogCategoryForm(forms.ModelForm):
