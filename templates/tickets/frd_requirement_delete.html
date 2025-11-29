@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-exclamation-triangle me-2"></i>{{ page_title }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>¿Está seguro de que desea eliminar este requerimiento?</strong>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6>Documento:</h6>
+                        <p><strong>{{ document.sequence }}</strong> - {{ document.title }}</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6>Requerimiento #{{ requirement.number }}:</h6>
+                        <div class="border p-3 rounded bg-light">
+                            {{ requirement.description }}
+                        </div>
+                    </div>
+
+                    {% if requirement.is_approved %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Este requerimiento ya fue aprobado por <strong>{{ requirement.approved_by_name }}</strong>
+                    </div>
+                    {% endif %}
+
+                    <p class="text-muted small">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Nota: Los requerimientos restantes serán renumerados automáticamente.
+                    </p>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'frd_detail' document.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash me-1"></i>Eliminar Requerimiento
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

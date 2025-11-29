@@ -1427,6 +1427,15 @@ urlpatterns += [
     path('budgets/<int:budget_pk>/transaction/create/', views.budget_transaction_create, name='budget_transaction_create'),
     path('budgets/<int:budget_pk>/transaction/<int:trans_pk>/delete/', views.budget_transaction_delete, name='budget_transaction_delete'),
     
+    # URLs de Documentos de Requerimientos Funcionales (DRF)
+    path('frd/', views.frd_list_view, name='frd_list'),
+    path('frd/create/', views.frd_create_view, name='frd_create'),
+    path('frd/<int:pk>/', views.frd_detail_view, name='frd_detail'),
+    path('frd/<int:pk>/pdf/', views.frd_download_pdf, name='frd_download_pdf'),
+    path('frd/requirement/<int:pk>/delete/', views.frd_requirement_delete_view, name='frd_requirement_delete'),
+    path('frd/requirement/<int:requirement_pk>/create-ticket/', views.frd_requirement_create_ticket, name='frd_requirement_create_ticket'),
+    path('frd/public/<uuid:token>/', views.public_frd_view, name='public_frd'),
+    
     # URLs de API
     path('api/', include('tickets.api_urls')),
 ]

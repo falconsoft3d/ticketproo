@@ -25,7 +25,9 @@ from .models import (
     ClientRequest, ClientRequestResponse, Event, Trip, TripStop, WebCounter, WebCounterVisit, QuickQuote, QuickQuoteView, QuickQuoteComment,
     MultiMeasurement, MultiMeasurementRecord,
     PersonalBudget, BudgetIncomeItem, BudgetExpenseItem, BudgetTransaction,
-    DynamicTable, DynamicTableField, DynamicTableRecord, SavedApiRequest, PublicAIMessageShare
+    DynamicTable, DynamicTableField, DynamicTableRecord, SavedApiRequest, PublicAIMessageShare,
+    FunctionalRequirementDocument, FunctionalRequirement, FunctionalRequirementDocumentView,
+    FunctionalRequirementComment
 )
 
 # Configuración del sitio de administración
@@ -5827,4 +5829,104 @@ class SocialPostCommentAdmin(admin.ModelAdmin):
     
     def content_preview(self, obj):
         return obj.content[:50] + '...' if len(obj.content) > 50 else obj.content
-    content_preview.short_description = 'Comentario'
+
+
+class FunctionalRequirementInline(admin.TabularInline):
+    model = FunctionalRequirement
+    extra = 0
+    fields = ('number', 'description', 'is_approved', 'approved_by_name', 'approved_at')
+    readonly_fields = ('approved_at',)
+    ordering = ['number']
+
+
+@admin.register(FunctionalRequirementDocument)
+class FunctionalRequirementDocumentAdmin(admin.ModelAdmin):
+    list_display = ('sequence', 'title', 'company', 'created_by', 'requirement_count', 'approval_percentage', 'is_active', 'created_at')
+    list_filter = ('is_active', 'company', 'created_at')
+    search_fields = ('sequence', 'title', 'company__name')
+    readonly_fields = ('public_share_token', 'created_at', 'updated_at', 'public_url_display')
+    inlines = [FunctionalRequirementInline]
+    
+    fieldsets = (
+        ('Información General', {
+            'fields': ('company', 'title', 'sequence', 'created_by', 'is_active')
+        }),
+        ('URL Pública', {
+            'fields': ('public_share_token', 'public_url_display'),
+            'classes': ('collapse',)
+        }),
+        ('Fechas', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def requirement_count(self, obj):
+        return obj.requirements.count()
+    requirement_count.short_description = 'Total Req.'
+    
+    def approval_percentage(self, obj):
+        percentage = obj.get_approval_percentage()
+        color = 'green' if percentage >= 80 else 'orange' if percentage >= 50 else 'red'
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{:.1f}%</span>',
+            color, percentage
+        )
+    approval_percentage.short_description = '% Aprobado'
+    
+    def public_url_display(self, obj):
+        if obj.pk:
+            url = f'/frd/public/{obj.public_share_token}/'
+            return format_html('<a href="{}" target="_blank">{}</a>', url, url)
+        return '-'
+    public_url_display.short_description = 'URL Pública'
+
+
+@admin.register(FunctionalRequirement)
+class FunctionalRequirementAdmin(admin.ModelAdmin):
+    list_display = ('id', 'document', 'number', 'description_preview', 'is_approved', 'approved_by_name', 'approved_at')
+    list_filter = ('is_approved', 'document', 'approved_at')
+    search_fields = ('description', 'document__sequence', 'document__title')
+    readonly_fields = ('created_at', 'updated_at')
+    
+    fieldsets = (
+        ('Requerimiento', {
+            'fields': ('document', 'number', 'description')
+        }),
+        ('Aprobación', {
+            'fields': ('is_approved', 'approved_by_name', 'approved_by_email', 'approved_at')
+        }),
+        ('Fechas', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def description_preview(self, obj):
+        return obj.description[:100] + '...' if len(obj.description) > 100 else obj.description
+    description_preview.short_description = 'Descripción'
+
+
+@admin.register(FunctionalRequirementDocumentView)
+class FunctionalRequirementDocumentViewAdmin(admin.ModelAdmin):
+    list_display = ('document', 'ip_address', 'viewed_at')
+    list_filter = ('viewed_at', 'document')
+    search_fields = ('document__sequence', 'document__title', 'ip_address')
+    readonly_fields = ('document', 'ip_address', 'user_agent', 'referrer', 'viewed_at')
+    
+    def has_add_permission(self, request):
+        return False
+    
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(FunctionalRequirementComment)
+class FunctionalRequirementCommentAdmin(admin.ModelAdmin):
+    list_display = ('requirement', 'author_name', 'author_email', 'created_at')
+    list_filter = ('created_at', 'requirement__document')
+    search_fields = ('author_name', 'author_email', 'comment', 'requirement__title')
+    readonly_fields = ('requirement', 'author_name', 'author_email', 'comment', 'created_at')
+    
+    def has_add_permission(self, request):
+        return False

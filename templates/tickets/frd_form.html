@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2>
+                <i class="bi bi-plus-circle me-2"></i>{{ page_title }}
+            </h2>
+            <p class="text-muted">Crea un nuevo Documento de Requerimientos Funcionales</p>
+        </div>
+    </div>
+
+    <!-- Formulario -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Errores generales del formulario -->
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+
+                        <!-- Empresa del listado -->
+                        <div class="mb-4">
+                            <label for="{{ form.company.id_for_label }}" class="form-label fw-bold">
+                                <i class="bi bi-building me-1"></i>{{ form.company.label }}
+                            </label>
+                            {{ form.company }}
+                            {% if form.company.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.company.errors }}
+                                </div>
+                            {% endif %}
+                            <small class="text-muted d-block mt-1">{{ form.company.help_text }}</small>
+                        </div>
+
+                        <!-- Nombre libre de empresa -->
+                        <div class="mb-4">
+                            <label for="{{ form.company_name.id_for_label }}" class="form-label fw-bold">
+                                <i class="bi bi-pencil me-1"></i>{{ form.company_name.label }}
+                            </label>
+                            {{ form.company_name }}
+                            {% if form.company_name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.company_name.errors }}
+                                </div>
+                            {% endif %}
+                            <small class="text-muted d-block mt-1">{{ form.company_name.help_text }}</small>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-1"></i>
+                            <strong>Nota:</strong> Debe seleccionar una empresa del listado <strong>o</strong> escribir un nombre de empresa.
+                        </div>
+
+                        <!-- Título -->
+                        <div class="mb-4">
+                            <label for="{{ form.title.id_for_label }}" class="form-label fw-bold">
+                                <i class="bi bi-text-left me-1"></i>{{ form.title.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.title.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Secuencia (información automática) -->
+                        <div class="mb-4">
+                            <div class="alert alert-success">
+                                <i class="bi bi-magic me-1"></i>
+                                <strong>Secuencia automática:</strong> Se generará automáticamente en formato DRF-YYYY-NNN
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{% url 'frd_list' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-1"></i>Crear Documento
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información -->
+        <div class="col-lg-4">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-info-circle me-1"></i>Información
+                    </h6>
+                    <p class="card-text small">
+                        Un <strong>Documento de Requerimientos Funcionales (DRF)</strong> es un documento que contiene 
+                        todos los alcances y requerimientos de un proyecto.
+                    </p>
+                    <hr>
+                    <h6>Características:</h6>
+                    <ul class="small mb-0">
+                        <li>Asociado a una empresa específica</li>
+                        <li>Identificador único (secuencia)</li>
+                        <li>URL pública para compartir con clientes</li>
+                        <li>Los clientes pueden aprobar o editar cada requerimiento</li>
+                        <li>Seguimiento de aprobaciones con nombre, email y fecha</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Validación de formulario Bootstrap
+(function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms).forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+                event.preventDefault()
+                event.stopPropagation()
+            }
+            form.classList.add('was-validated')
+        }, false)
+    })
+})()
+</script>
+{% endblock %}

@@ -1,0 +1,499 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2>
+                        <i class="bi bi-file-earmark-ruled me-2"></i>{{ document.sequence }}
+                    </h2>
+                    <p class="text-muted mb-0">{{ document.title }}</p>
+                    {% if document.company %}
+                        <span class="badge rounded-pill mt-2" 
+                              style="background-color: {{ document.company.color }}; color: white;">
+                            {{ document.company.name }}
+                        </span>
+                    {% else %}
+                        <span class="badge bg-secondary mt-2">
+                            {{ document.company_name|default:"Sin empresa" }}
+                        </span>
+                    {% endif %}
+                </div>
+                <div>
+                    <a href="{% url 'frd_download_pdf' document.pk %}" 
+                       class="btn btn-danger me-2"
+                       target="_blank">
+                        <i class="bi bi-file-pdf me-1"></i>Descargar PDF
+                    </a>
+                    <a href="{% url 'public_frd' document.public_share_token %}" 
+                       class="btn btn-success me-2"
+                       target="_blank">
+                        <i class="bi bi-share me-1"></i>Vista Pública
+                    </a>
+                    <button type="button" 
+                            class="btn btn-outline-secondary"
+                            onclick="copyToClipboard('{{ request.scheme }}://{{ request.get_host }}{% url 'public_frd' document.public_share_token %}')">
+                        <i class="bi bi-clipboard me-1"></i>Copiar URL
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estado del Documento -->
+    {% if document.is_document_accepted or document.is_document_rejected %}
+    <div class="row mb-4">
+        <div class="col-md-12">
+            {% if document.is_document_accepted %}
+            <div class="alert alert-success">
+                <h5 class="alert-heading">
+                    <i class="bi bi-check-circle-fill me-2"></i>Documento Aceptado por el Cliente
+                </h5>
+                <hr>
+                <div class="row">
+                    <div class="col-md-4">
+                        <p class="mb-1"><strong>Revisado por:</strong> {{ document.document_reviewed_by_name }}</p>
+                    </div>
+                    <div class="col-md-4">
+                        <p class="mb-1"><strong>Email:</strong> {{ document.document_reviewed_by_email }}</p>
+                    </div>
+                    <div class="col-md-4">
+                        <p class="mb-1"><strong>Fecha:</strong> {{ document.document_reviewed_at|date:"d/m/Y H:i" }}</p>
+                    </div>
+                </div>
+                {% if document.document_review_comments %}
+                <hr>
+                <p class="mb-0"><strong>Comentarios:</strong></p>
+                <p class="mb-0" style="white-space: pre-wrap;">{{ document.document_review_comments }}</p>
+                {% endif %}
+            </div>
+            {% elif document.is_document_rejected %}
+            <div class="alert alert-danger">
+                <h5 class="alert-heading">
+                    <i class="bi bi-x-circle-fill me-2"></i>Documento Rechazado por el Cliente
+                </h5>
+                <hr>
+                <div class="row">
+                    <div class="col-md-4">
+                        <p class="mb-1"><strong>Revisado por:</strong> {{ document.document_reviewed_by_name }}</p>
+                    </div>
+                    <div class="col-md-4">
+                        <p class="mb-1"><strong>Email:</strong> {{ document.document_reviewed_by_email }}</p>
+                    </div>
+                    <div class="col-md-4">
+                        <p class="mb-1"><strong>Fecha:</strong> {{ document.document_reviewed_at|date:"d/m/Y H:i" }}</p>
+                    </div>
+                </div>
+                {% if document.document_review_comments %}
+                <hr>
+                <p class="mb-0"><strong>Motivos del rechazo:</strong></p>
+                <p class="mb-0" style="white-space: pre-wrap;">{{ document.document_review_comments }}</p>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Descripción General -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-card-text me-2"></i>Descripción General
+                    </h5>
+                    <button type="button" 
+                            class="btn btn-sm btn-outline-primary"
+                            onclick="toggleDescriptionEdit()">
+                        <i class="bi bi-pencil me-1"></i>Editar
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="descriptionView">
+                        {% if document.description %}
+                            <p class="mb-0" style="white-space: pre-wrap;">{{ document.description }}</p>
+                        {% else %}
+                            <p class="text-muted mb-0">
+                                <i>No se ha definido una descripción general para este documento.</i>
+                            </p>
+                        {% endif %}
+                    </div>
+                    <form method="POST" id="descriptionForm" style="display: none;">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <textarea name="description" 
+                                      class="form-control" 
+                                      rows="5" 
+                                      placeholder="Ingrese una descripción general del proyecto o alcance...">{{ document.description }}</textarea>
+                        </div>
+                        <button type="submit" name="edit_description" class="btn btn-primary me-2">
+                            <i class="bi bi-check-lg me-1"></i>Guardar
+                        </button>
+                        <button type="button" 
+                                class="btn btn-secondary"
+                                onclick="cancelDescriptionEdit()">
+                            <i class="bi bi-x-lg me-1"></i>Cancelar
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas de Requerimientos -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total Requerimientos</h6>
+                    <h2 class="mb-0">{{ document.get_total_count }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Aprobados</h6>
+                    <h2 class="mb-0">{{ document.get_approved_count }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Pendientes</h6>
+                    <h2 class="mb-0">{{ document.get_pending_count }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h6 class="card-title">% Aprobación</h6>
+                    <h2 class="mb-0">{{ document.get_approval_percentage }}%</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Lista de requerimientos -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-list-ol me-1"></i>Requerimientos
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if requirements %}
+                    <div class="list-group">
+                        {% for req in requirements %}
+                        <div class="list-group-item" id="req-{{ req.id }}">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <span class="badge bg-secondary me-2">#{{ req.number }}</span>
+                                        {% if req.is_approved %}
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle me-1"></i>Aprobado
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Pendiente</span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Descripción normal -->
+                                    <div class="req-description-{{ req.id }}">
+                                        {% if req.title %}
+                                            <h6 class="mb-2">{{ req.title }}</h6>
+                                        {% endif %}
+                                        <p class="mb-2">{{ req.description }}</p>
+                                    </div>
+                                    
+                                    <!-- Formulario de edición (oculto) -->
+                                    <div class="req-edit-form-{{ req.id }}" style="display: none;">
+                                        <form method="post" class="mb-2">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="requirement_id" value="{{ req.id }}">
+                                            <input type="text" name="title" class="form-control mb-2" placeholder="Título del requerimiento" value="{{ req.title }}">
+                                            <textarea name="description" class="form-control mb-2" rows="3" required>{{ req.description }}</textarea>
+                                            <div class="btn-group btn-group-sm">
+                                                <button type="submit" name="edit_requirement" class="btn btn-success">
+                                                    <i class="bi bi-check-lg me-1"></i>Guardar
+                                                </button>
+                                                <button type="button" class="btn btn-secondary" onclick="cancelEdit({{ req.id }})">
+                                                    <i class="bi bi-x-lg me-1"></i>Cancelar
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                    
+                                    {% if req.is_approved %}
+                                    <small class="text-muted">
+                                        <i class="bi bi-person me-1"></i>{{ req.approved_by_name }}
+                                        <i class="bi bi-envelope ms-2 me-1"></i>{{ req.approved_by_email }}
+                                        <i class="bi bi-calendar ms-2 me-1"></i>{{ req.approved_at|date:"d/m/Y H:i" }}
+                                    </small>
+                                    {% endif %}
+                                </div>
+                                <div class="btn-group-vertical btn-group-sm">
+                                    <!-- Botón crear ticket -->
+                                    <a href="{% url 'frd_requirement_create_ticket' req.pk %}" 
+                                       class="btn btn-outline-info" 
+                                       title="Crear Ticket de Soporte">
+                                        <i class="bi bi-ticket-detailed"></i>
+                                    </a>
+                                    
+                                    <!-- Botón de editar -->
+                                    <button type="button" class="btn btn-outline-primary" onclick="editRequirement({{ req.id }})" title="Editar">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    
+                                    <!-- Botón de comentarios -->
+                                    <button type="button" 
+                                            class="btn btn-outline-secondary" 
+                                            data-bs-toggle="collapse" 
+                                            data-bs-target="#commentsReq{{ req.id }}"
+                                            title="Ver comentarios ({{ req.comments.count }})">
+                                        <i class="bi bi-chat-left-text"></i>
+                                        {% if req.comments.count %}
+                                            <span class="badge bg-secondary">{{ req.comments.count }}</span>
+                                        {% endif %}
+                                    </button>
+                                    
+                                    <!-- Botón de cambiar estado -->
+                                    <form method="post" style="display: inline;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="requirement_id" value="{{ req.id }}">
+                                        {% if req.is_approved %}
+                                            <button type="submit" name="toggle_approval" class="btn btn-outline-warning" title="Marcar como pendiente">
+                                                <i class="bi bi-x-circle"></i>
+                                            </button>
+                                        {% else %}
+                                            <button type="submit" name="toggle_approval" class="btn btn-outline-success" title="Aprobar">
+                                                <i class="bi bi-check-circle"></i>
+                                            </button>
+                                        {% endif %}
+                                    </form>
+                                    
+                                    <!-- Botón de eliminar -->
+                                    <form method="post" action="{% url 'frd_requirement_delete' req.pk %}" 
+                                          onsubmit="return confirm('¿Eliminar este requerimiento?');"
+                                          style="display: inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-outline-danger" title="Eliminar">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                                
+                                <!-- Sección de comentarios colapsable -->
+                                <div class="collapse mt-3" id="commentsReq{{ req.id }}">
+                                    <div class="card border-secondary">
+                                        <div class="card-header bg-light">
+                                            <h6 class="mb-0">
+                                                <i class="bi bi-chat-left-text me-2"></i>Comentarios ({{ req.comments.count }})
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            {% if req.comments.all %}
+                                            <div class="mb-3">
+                                                {% for comment in req.comments.all %}
+                                                <div class="border-bottom pb-2 mb-2">
+                                                    <div class="d-flex justify-content-between align-items-start">
+                                                        <div>
+                                                            <strong class="text-primary">{{ comment.author_name }}</strong>
+                                                            <small class="text-muted">({{ comment.author_email }})</small>
+                                                        </div>
+                                                        <small class="text-muted">{{ comment.created_at|date:"d/m/Y H:i" }}</small>
+                                                    </div>
+                                                    <p class="mb-0 mt-1" style="white-space: pre-wrap;">{{ comment.comment }}</p>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                            {% else %}
+                                            <p class="text-muted mb-3">
+                                                <i>No hay comentarios aún.</i>
+                                            </p>
+                                            {% endif %}
+                                            
+                                            <small class="text-muted">
+                                                <i class="bi bi-info-circle me-1"></i>
+                                                Los comentarios se agregan desde la vista pública del documento.
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-list-ol text-muted" style="font-size: 3rem;"></i>
+                        <p class="text-muted mt-3">No hay requerimientos aún</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Agregar nuevo requerimiento -->
+        <div class="col-lg-4">
+            <div class="card sticky-top" style="top: 20px;">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-plus-circle me-1"></i>Agregar Requerimiento
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">
+                                {{ form.title.label }}
+                            </label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.title.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">
+                                {{ form.description.label }}
+                            </label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.description.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <button type="submit" name="add_requirement" class="btn btn-primary w-100">
+                            <i class="bi bi-plus-circle me-1"></i>Agregar
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        alert('URL copiada al portapapeles');
+    }, function(err) {
+        console.error('Error al copiar: ', err);
+    });
+}
+
+function toggleDescriptionEdit() {
+    document.getElementById('descriptionView').style.display = 'none';
+    document.getElementById('descriptionForm').style.display = 'block';
+}
+
+function cancelDescriptionEdit() {
+    document.getElementById('descriptionView').style.display = 'block';
+    document.getElementById('descriptionForm').style.display = 'none';
+}
+
+function editRequirement(reqId) {
+    // Ocultar la descripción y mostrar el formulario
+    document.querySelector('.req-description-' + reqId).style.display = 'none';
+    document.querySelector('.req-edit-form-' + reqId).style.display = 'block';
+}
+
+function cancelEdit(reqId) {
+    // Mostrar la descripción y ocultar el formulario
+    document.querySelector('.req-description-' + reqId).style.display = 'block';
+    document.querySelector('.req-edit-form-' + reqId).style.display = 'none';
+}
+</script>
+
+    <!-- Estadísticas de Visitas a Página Pública -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-graph-up me-2"></i>Estadísticas de Página Pública
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="text-center p-3 border rounded">
+                                <i class="bi bi-eye text-primary" style="font-size: 2rem;"></i>
+                                <h3 class="mt-2 mb-0">{{ document.get_total_views }}</h3>
+                                <p class="text-muted mb-0">Visitas Totales</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center p-3 border rounded">
+                                <i class="bi bi-people text-success" style="font-size: 2rem;"></i>
+                                <h3 class="mt-2 mb-0">{{ document.get_unique_visitors }}</h3>
+                                <p class="text-muted mb-0">Visitantes Únicos</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center p-3 border rounded">
+                                <i class="bi bi-clock-history text-info" style="font-size: 2rem;"></i>
+                                <h3 class="mt-2 mb-0">
+                                    {% if document.get_recent_views %}
+                                        {{ document.get_recent_views.0.viewed_at|date:"d/m/Y H:i" }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </h3>
+                                <p class="text-muted mb-0">Última Visita</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Últimas visitas -->
+                    {% if document.get_recent_views %}
+                    <div class="mt-4">
+                        <h6 class="mb-3">Últimas 10 Visitas:</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha y Hora</th>
+                                        <th>IP</th>
+                                        <th>Navegador</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for view in document.get_recent_views %}
+                                    <tr>
+                                        <td>{{ view.viewed_at|date:"d/m/Y H:i:s" }}</td>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ view.ip_address }}</span>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">{{ view.user_agent|truncatewords:10 }}</small>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

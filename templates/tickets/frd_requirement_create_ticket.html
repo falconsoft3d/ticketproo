@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'frd_list' %}">Documentos DRF</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'frd_detail' document.pk %}">{{ document.sequence }}</a></li>
+                    <li class="breadcrumb-item active">Crear Ticket desde Req #{{ requirement.number }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-ticket-detailed me-2"></i>Crear Ticket de Soporte
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <h6 class="alert-heading">
+                            <i class="bi bi-info-circle me-2"></i>Información del Requerimiento
+                        </h6>
+                        <hr>
+                        <p class="mb-1"><strong>Documento:</strong> {{ document.sequence }} - {{ document.title }}</p>
+                        <p class="mb-1"><strong>Requerimiento:</strong> #{{ requirement.number }}</p>
+                        {% if requirement.title %}
+                            <p class="mb-1"><strong>Título:</strong> {{ requirement.title }}</p>
+                        {% endif %}
+                        <p class="mb-1"><strong>Descripción:</strong></p>
+                        <p class="mb-0" style="white-space: pre-wrap;">{{ requirement.description }}</p>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Título del Ticket <span class="text-danger">*</span></label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="title" 
+                                   name="title" 
+                                   value="{{ requirement.title|default:'' }}"
+                                   placeholder="{% if requirement.title %}{{ requirement.title }}{% else %}Req #{{ requirement.number }} - {{ document.sequence }}{% endif %}"
+                                   required>
+                            <small class="form-text text-muted">
+                                El título por defecto se basa en el requerimiento.
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Descripción del Ticket <span class="text-danger">*</span></label>
+                            <textarea class="form-control" 
+                                      id="description" 
+                                      name="description" 
+                                      rows="6" 
+                                      required>{{ requirement.description }}</textarea>
+                            <small class="form-text text-muted">
+                                Puedes modificar la descripción según sea necesario.
+                            </small>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="priority" class="form-label">Prioridad</label>
+                                    <select class="form-select" id="priority" name="priority">
+                                        <option value="low">Baja</option>
+                                        <option value="medium" selected>Media</option>
+                                        <option value="high">Alta</option>
+                                        <option value="urgent">Urgente</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="ticket_type" class="form-label">Tipo de Ticket</label>
+                                    <select class="form-select" id="ticket_type" name="ticket_type">
+                                        <option value="desarrollo" selected>Desarrollo</option>
+                                        <option value="error">Error</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if document.company %}
+                        <div class="alert alert-secondary">
+                            <i class="bi bi-building me-2"></i>
+                            <strong>Empresa asociada:</strong> {{ document.company.name }}
+                        </div>
+                        {% endif %}
+
+                        <hr>
+
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a href="{% url 'frd_detail' document.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-ticket-detailed me-1"></i>Crear Ticket
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

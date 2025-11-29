@@ -73,6 +73,13 @@ def get_crm_submenu(request, active_item=None):
             'count': None,
             'active': active_item == 'quotations'
         },
+        {
+            'name': 'DRF',
+            'url': reverse('frd_list'),
+            'icon': 'bi bi-file-earmark-ruled',
+            'count': None,
+            'active': active_item == 'frd'
+        },
     ]
     
     return submenu

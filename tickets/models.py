@@ -19641,6 +19641,345 @@ class SocialPostFavorite(models.Model):
         return f'{self.user.username} - Post #{self.post.id}'
 
 
+class FunctionalRequirementDocument(models.Model):
+    """Documento de Requerimientos Funcionales (DRF)"""
+    
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name='functional_requirement_documents',
+        verbose_name='Empresa',
+        null=True,
+        blank=True
+    )
+    company_name = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Nombre de Empresa',
+        help_text='Nombre libre de la empresa si no está en el listado'
+    )
+    title = models.CharField(
+        max_length=300,
+        verbose_name='Título'
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción General',
+        help_text='Descripción general del proyecto o alcance'
+    )
+    sequence = models.CharField(
+        max_length=50,
+        verbose_name='Secuencia',
+        help_text='Se genera automáticamente',
+        unique=True,
+        editable=False
+    )
+    public_share_token = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        unique=True,
+        verbose_name='Token público'
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='created_frd_documents',
+        verbose_name='Creado por'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activo'
+    )
+    
+    # Campos de aceptación/rechazo del documento completo
+    document_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('pending', 'Pendiente'),
+            ('accepted', 'Aceptado'),
+            ('rejected', 'Rechazado')
+        ],
+        default='pending',
+        verbose_name='Estado del Documento'
+    )
+    document_reviewed_by_name = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Revisado por'
+    )
+    document_reviewed_by_email = models.EmailField(
+        blank=True,
+        verbose_name='Email del revisor'
+    )
+    document_reviewed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de revisión'
+    )
+    document_review_comments = models.TextField(
+        blank=True,
+        verbose_name='Comentarios de revisión'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Documento de Requerimientos Funcionales'
+        verbose_name_plural = 'Documentos de Requerimientos Funcionales'
+    
+    def __str__(self):
+        return f"{self.sequence} - {self.title}"
+    
+    def get_company_display(self):
+        """Retorna el nombre de la empresa (FK o libre)"""
+        if self.company:
+            return self.company.name
+        return self.company_name or 'Sin empresa'
+    
+    @staticmethod
+    def generate_sequence():
+        """Genera la secuencia automática en formato DRF-YYYY-NNN"""
+        from datetime import datetime
+        year = datetime.now().year
+        prefix = f"DRF-{year}-"
+        
+        # Buscar el último documento del año
+        last_doc = FunctionalRequirementDocument.objects.filter(
+            sequence__startswith=prefix
+        ).order_by('-sequence').first()
+        
+        if last_doc:
+            # Extraer el número y incrementar
+            last_number = int(last_doc.sequence.split('-')[-1])
+            new_number = last_number + 1
+        else:
+            new_number = 1
+        
+        return f"{prefix}{new_number:03d}"
+    
+    def get_public_url(self):
+        """Retorna la URL pública del documento"""
+        from django.urls import reverse
+        return reverse('public_frd', kwargs={'token': self.public_share_token})
+    
+    def get_approved_count(self):
+        """Retorna el número de requerimientos aprobados"""
+        return self.requirements.filter(is_approved=True).count()
+    
+    def get_total_count(self):
+        """Retorna el número total de requerimientos"""
+        return self.requirements.count()
+    
+    def get_approval_percentage(self):
+        """Retorna el porcentaje de aprobación"""
+        total = self.get_total_count()
+        if total == 0:
+            return 0
+        return round((self.get_approved_count() / total) * 100, 1)
+    
+    def get_pending_count(self):
+        """Retorna el número de requerimientos pendientes"""
+        return self.get_total_count() - self.get_approved_count()
+    
+    def get_total_views(self):
+        """Retorna el número total de visitas a la página pública"""
+        return self.views.count()
+    
+    def get_unique_visitors(self):
+        """Retorna el número de visitantes únicos por IP"""
+        return self.views.values('ip_address').distinct().count()
+    
+    def get_recent_views(self, limit=10):
+        """Retorna las últimas visitas"""
+        return self.views.order_by('-viewed_at')[:limit]
+    
+    def get_views_by_date(self):
+        """Retorna las visitas agrupadas por fecha"""
+        from django.db.models import Count
+        from django.db.models.functions import TruncDate
+        return self.views.annotate(
+            date=TruncDate('viewed_at')
+        ).values('date').annotate(
+            count=Count('id')
+        ).order_by('-date')
+    
+    def accept_document(self, name, email, comments=''):
+        """Acepta el documento completo"""
+        self.document_status = 'accepted'
+        self.document_reviewed_by_name = name
+        self.document_reviewed_by_email = email
+        self.document_review_comments = comments
+        self.document_reviewed_at = timezone.now()
+        self.save()
+    
+    def reject_document(self, name, email, comments=''):
+        """Rechaza el documento completo"""
+        self.document_status = 'rejected'
+        self.document_reviewed_by_name = name
+        self.document_reviewed_by_email = email
+        self.document_review_comments = comments
+        self.document_reviewed_at = timezone.now()
+        self.save()
+    
+    def is_document_accepted(self):
+        """Retorna True si el documento está aceptado"""
+        return self.document_status == 'accepted'
+    
+    def is_document_rejected(self):
+        """Retorna True si el documento está rechazado"""
+        return self.document_status == 'rejected'
+    
+    def is_document_pending(self):
+        """Retorna True si el documento está pendiente"""
+        return self.document_status == 'pending'
+
+
+class FunctionalRequirement(models.Model):
+    """Requerimiento individual dentro de un DRF"""
+    
+    document = models.ForeignKey(
+        FunctionalRequirementDocument,
+        on_delete=models.CASCADE,
+        related_name='requirements',
+        verbose_name='Documento'
+    )
+    number = models.PositiveIntegerField(
+        verbose_name='Número',
+        help_text='Número secuencial del requerimiento'
+    )
+    title = models.CharField(
+        max_length=300,
+        blank=True,
+        verbose_name='Título',
+        help_text='Título breve del requerimiento'
+    )
+    description = models.TextField(
+        verbose_name='Descripción',
+        help_text='Descripción del alcance o requerimiento'
+    )
+    is_approved = models.BooleanField(
+        default=False,
+        verbose_name='Aprobado'
+    )
+    approved_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de aprobación'
+    )
+    approved_by_name = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Aprobado por (nombre)'
+    )
+    approved_by_email = models.EmailField(
+        blank=True,
+        verbose_name='Aprobado por (email)'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última actualización'
+    )
+    
+    class Meta:
+        ordering = ['document', 'number']
+        verbose_name = 'Requerimiento Funcional'
+        verbose_name_plural = 'Requerimientos Funcionales'
+        unique_together = ['document', 'number']
+    
+    def __str__(self):
+        return f"{self.document.sequence} - Req #{self.number}"
+    
+    def approve(self, name, email):
+        """Aprueba el requerimiento"""
+        self.is_approved = True
+        self.approved_at = timezone.now()
+        self.approved_by_name = name
+        self.approved_by_email = email
+        self.save()
+
+
+class FunctionalRequirementDocumentView(models.Model):
+    """Registra las visitas a la página pública de un DRF"""
+    
+    document = models.ForeignKey(
+        FunctionalRequirementDocument,
+        on_delete=models.CASCADE,
+        related_name='views',
+        verbose_name='Documento'
+    )
+    ip_address = models.GenericIPAddressField(
+        verbose_name='Dirección IP',
+        null=True,
+        blank=True
+    )
+    user_agent = models.TextField(
+        verbose_name='User Agent',
+        blank=True
+    )
+    referrer = models.URLField(
+        verbose_name='Referrer',
+        blank=True,
+        max_length=500
+    )
+    viewed_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de visita'
+    )
+    
+    class Meta:
+        ordering = ['-viewed_at']
+        verbose_name = 'Vista de DRF'
+        verbose_name_plural = 'Vistas de DRF'
+    
+    def __str__(self):
+        return f"{self.document.sequence} - {self.viewed_at.strftime('%d/%m/%Y %H:%M')}"
+
+
+class FunctionalRequirementComment(models.Model):
+    """Comentarios en los requerimientos funcionales"""
+    
+    requirement = models.ForeignKey(
+        FunctionalRequirement,
+        on_delete=models.CASCADE,
+        related_name='comments',
+        verbose_name='Requerimiento'
+    )
+    author_name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre del autor'
+    )
+    author_email = models.EmailField(
+        verbose_name='Email del autor'
+    )
+    comment = models.TextField(
+        verbose_name='Comentario'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    
+    class Meta:
+        ordering = ['created_at']
+        verbose_name = 'Comentario de Requerimiento'
+        verbose_name_plural = 'Comentarios de Requerimientos'
+    
+    def __str__(self):
+        return f"Comentario de {self.author_name} en Req #{self.requirement.number}"
+
+
 
 
 

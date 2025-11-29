@@ -57,6 +57,7 @@ from .models import (
     TaskSchedule, ScheduleTask, ScheduleComment, SatisfactionSurvey, ClientProjectAccess, ClientTimeEntry, ShortUrl,
     ProductSet, ProductItem, Precotizador, PrecotizadorExample, PrecotizadorQuote, CrmQuestion,
     SupportMeeting, SupportMeetingPoint, ScheduledTask, ScheduledTaskExecution,
+    FunctionalRequirementDocument, FunctionalRequirement, FunctionalRequirementDocumentView,
     # ...existing code...
 )
 
@@ -252,7 +253,8 @@ from .forms import (
     ExpenseReportForm, ExpenseItemForm, ExpenseCommentForm, ExpenseReportFilterForm,
     VideoMeetingForm, MeetingTranscriptionForm, MeetingFilterForm, QuoteGeneratorForm, AbsenceTypeForm,
     CrmQuestionForm, PublicCrmQuestionForm, ScheduledTaskForm,
-    PersonalBudgetForm, BudgetIncomeItemForm, BudgetExpenseItemForm, BudgetTransactionForm
+    PersonalBudgetForm, BudgetIncomeItemForm, BudgetExpenseItemForm, BudgetTransactionForm,
+    FunctionalRequirementDocumentForm
 )
 from .utils import is_agent, is_regular_user, is_teacher, can_manage_courses, get_user_role, assign_user_to_group
 
@@ -43780,10 +43782,512 @@ def social_post_favorite(request, post_id):
                 user=request.user
             )
             favorited = True
-        
-        return JsonResponse({
-            'status': 'success',
-            'favorited': favorited
-        })
+
+
+# ==================== Vistas de Documentos de Requerimientos Funcionales ====================
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def frd_list_view(request):
+    """Lista de Documentos de Requerimientos Funcionales"""
+    from .submenu_utils import get_crm_submenu
     
-    return JsonResponse({'status': 'error', 'message': 'Método no permitido'}, status=405)
+    documents = FunctionalRequirementDocument.objects.filter(is_active=True).order_by('-created_at')
+    
+    context = {
+        'documents': documents,
+        'page_title': 'Documentos de Requerimientos Funcionales',
+        'submenu': get_crm_submenu(request, 'frd')
+    }
+    
+    return render(request, 'tickets/frd_list.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def frd_create_view(request):
+    """Crear nuevo Documento de Requerimientos Funcionales"""
+    from .submenu_utils import get_crm_submenu
+    
+    if request.method == 'POST':
+        form = FunctionalRequirementDocumentForm(request.POST)
+        if form.is_valid():
+            document = form.save(commit=False)
+            document.created_by = request.user
+            # Generar secuencia automática
+            document.sequence = FunctionalRequirementDocument.generate_sequence()
+            document.save()
+            messages.success(request, f'Documento {document.sequence} "{document.title}" creado exitosamente.')
+            return redirect('frd_detail', pk=document.pk)
+    else:
+        form = FunctionalRequirementDocumentForm()
+    
+    context = {
+        'form': form,
+        'page_title': 'Crear Documento de Requerimientos Funcionales',
+        'submenu': get_crm_submenu(request, 'frd')
+    }
+    
+    return render(request, 'tickets/frd_form.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def frd_detail_view(request, pk):
+    """Ver detalles del Documento de Requerimientos Funcionales"""
+    from .forms import FunctionalRequirementForm
+    
+    document = get_object_or_404(FunctionalRequirementDocument, pk=pk, is_active=True)
+    requirements = document.requirements.all().order_by('number')
+    
+    # Manejar creación de nuevo requerimiento
+    if request.method == 'POST' and 'add_requirement' in request.POST:
+        form = FunctionalRequirementForm(request.POST)
+        if form.is_valid():
+            requirement = form.save(commit=False)
+            requirement.document = document
+            # Asignar el siguiente número
+            last_number = document.requirements.aggregate(models.Max('number'))['number__max'] or 0
+            requirement.number = last_number + 1
+            requirement.save()
+            messages.success(request, 'Requerimiento agregado exitosamente.')
+            return redirect('frd_detail', pk=document.pk)
+    
+    # Manejar edición inline de requerimiento
+    elif request.method == 'POST' and 'edit_requirement' in request.POST:
+        requirement_id = request.POST.get('requirement_id')
+        requirement = get_object_or_404(FunctionalRequirement, pk=requirement_id, document=document)
+        requirement.title = request.POST.get('title', requirement.title)
+        requirement.description = request.POST.get('description', requirement.description)
+        requirement.save()
+        messages.success(request, f'Requerimiento #{requirement.number} actualizado.')
+        return redirect('frd_detail', pk=document.pk)
+    
+    # Manejar edición de descripción general
+    elif request.method == 'POST' and 'edit_description' in request.POST:
+        document.description = request.POST.get('description', document.description)
+        document.save()
+        messages.success(request, 'Descripción general actualizada.')
+        return redirect('frd_detail', pk=document.pk)
+    
+    # Manejar cambio de estado de aprobación
+    elif request.method == 'POST' and 'toggle_approval' in request.POST:
+        requirement_id = request.POST.get('requirement_id')
+        requirement = get_object_or_404(FunctionalRequirement, pk=requirement_id, document=document)
+        if requirement.is_approved:
+            # Desaprobar
+            requirement.is_approved = False
+            requirement.approved_at = None
+            requirement.approved_by_name = ''
+            requirement.approved_by_email = ''
+            requirement.save()
+            messages.info(request, f'Requerimiento #{requirement.number} marcado como no aprobado.')
+        else:
+            # Aprobar
+            requirement.is_approved = True
+            requirement.approved_at = timezone.now()
+            requirement.approved_by_name = request.user.get_full_name() or request.user.username
+            requirement.approved_by_email = request.user.email
+            requirement.save()
+            messages.success(request, f'Requerimiento #{requirement.number} aprobado.')
+        return redirect('frd_detail', pk=document.pk)
+    else:
+        form = FunctionalRequirementForm()
+    
+    from .submenu_utils import get_crm_submenu
+    
+    context = {
+        'document': document,
+        'requirements': requirements,
+        'form': form,
+        'page_title': f'DRF: {document.sequence}',
+        'submenu': get_crm_submenu(request, 'frd')
+    }
+    
+    return render(request, 'tickets/frd_detail.html', context)
+
+
+@login_required
+@user_passes_test(is_agent, login_url='/')
+def frd_requirement_delete_view(request, pk):
+    """Eliminar un requerimiento"""
+    requirement = get_object_or_404(FunctionalRequirement, pk=pk)
+    document = requirement.document
+    
+    if request.method == 'POST':
+        requirement.delete()
+        # Renumerar los requerimientos restantes
+        for idx, req in enumerate(document.requirements.order_by('number'), start=1):
+            if req.number != idx:
+                req.number = idx
+                req.save()
+        messages.success(request, 'Requerimiento eliminado exitosamente.')
+        return redirect('frd_detail', pk=document.pk)
+    
+    context = {
+        'requirement': requirement,
+        'document': document,
+        'page_title': 'Eliminar Requerimiento'
+    }
+    
+    return render(request, 'tickets/frd_requirement_delete.html', context)
+
+
+def public_frd_view(request, token):
+    """Vista pública del Documento de Requerimientos Funcionales"""
+    from .forms import FunctionalRequirementApprovalForm, FunctionalRequirementPublicEditForm, DocumentReviewForm, RequirementCommentForm
+    
+    document = get_object_or_404(FunctionalRequirementDocument, public_share_token=token, is_active=True)
+    requirements = document.requirements.all().order_by('number')
+    
+    # Registrar la visita
+    def get_client_ip(request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip
+    
+    FunctionalRequirementDocumentView.objects.create(
+        document=document,
+        ip_address=get_client_ip(request),
+        user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
+        referrer=request.META.get('HTTP_REFERER', '')[:500]
+    )
+    
+    # Manejar aprobación
+    if request.method == 'POST':
+        # Aceptar documento completo
+        if 'accept_document' in request.POST:
+            review_form = DocumentReviewForm(request.POST)
+            if review_form.is_valid():
+                document.accept_document(
+                    name=review_form.cleaned_data['reviewer_name'],
+                    email=review_form.cleaned_data['reviewer_email'],
+                    comments=review_form.cleaned_data['comments']
+                )
+                messages.success(request, '✓ Documento aceptado exitosamente.')
+                return redirect('public_frd', token=token)
+        
+        # Rechazar documento completo
+        elif 'reject_document' in request.POST:
+            review_form = DocumentReviewForm(request.POST)
+            if review_form.is_valid():
+                document.reject_document(
+                    name=review_form.cleaned_data['reviewer_name'],
+                    email=review_form.cleaned_data['reviewer_email'],
+                    comments=review_form.cleaned_data['comments']
+                )
+                messages.warning(request, '✗ Documento rechazado.')
+                return redirect('public_frd', token=token)
+        
+        elif 'approve_requirement' in request.POST:
+            requirement_id = request.POST.get('requirement_id')
+            requirement = get_object_or_404(FunctionalRequirement, pk=requirement_id, document=document)
+            
+            approval_form = FunctionalRequirementApprovalForm(request.POST)
+            if approval_form.is_valid():
+                requirement.approve(
+                    name=approval_form.cleaned_data['approver_name'],
+                    email=approval_form.cleaned_data['approver_email']
+                )
+                messages.success(request, f'Requerimiento #{requirement.number} aprobado exitosamente.')
+                return redirect('public_frd', token=token)
+        
+        # Manejar edición de descripción general
+        elif 'edit_description' in request.POST:
+            document.description = request.POST.get('description', document.description)
+            document.save()
+            messages.success(request, 'Descripción general actualizada.')
+            return redirect('public_frd', token=token)
+        
+        # Manejar edición
+        elif 'edit_requirement' in request.POST:
+            requirement_id = request.POST.get('requirement_id')
+            requirement = get_object_or_404(FunctionalRequirement, pk=requirement_id, document=document)
+            
+            edit_form = FunctionalRequirementPublicEditForm(request.POST, instance=requirement)
+            if edit_form.is_valid():
+                edit_form.save()
+                messages.success(request, f'Requerimiento #{requirement.number} editado exitosamente.')
+                return redirect('public_frd', token=token)
+        
+        # Manejar comentario
+        elif 'add_comment' in request.POST:
+            requirement_id = request.POST.get('requirement_id')
+            requirement = get_object_or_404(FunctionalRequirement, pk=requirement_id, document=document)
+            
+            comment_form = RequirementCommentForm(request.POST)
+            if comment_form.is_valid():
+                from .models import FunctionalRequirementComment
+                FunctionalRequirementComment.objects.create(
+                    requirement=requirement,
+                    author_name=comment_form.cleaned_data['author_name'],
+                    author_email=comment_form.cleaned_data['author_email'],
+                    comment=comment_form.cleaned_data['comment']
+                )
+                messages.success(request, f'Comentario agregado al Requerimiento #{requirement.number}.')
+                return redirect('public_frd', token=token)
+    
+    approval_form = FunctionalRequirementApprovalForm()
+    review_form = DocumentReviewForm()
+    comment_form = RequirementCommentForm()
+    
+    context = {
+        'document': document,
+        'requirements': requirements,
+        'approval_form': approval_form,
+        'review_form': review_form,
+        'comment_form': comment_form,
+        'page_title': f'DRF: {document.sequence}',
+        'is_public_view': True
+    }
+    
+    return render(request, 'tickets/frd_public.html', context)
+
+
+@login_required
+def frd_download_pdf(request, pk):
+    """Genera y descarga un PDF del Documento de Requerimientos Funcionales"""
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import letter, A4
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+    from io import BytesIO
+    from django.http import HttpResponse
+    
+    document = get_object_or_404(FunctionalRequirementDocument, pk=pk, is_active=True)
+    requirements = document.requirements.all().order_by('number')
+    
+    # Crear el objeto HttpResponse con el tipo de contenido apropiado
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="DRF_{document.sequence}.pdf"'
+    
+    # Crear el PDF
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=18)
+    
+    # Contenedor para los elementos del PDF
+    elements = []
+    
+    # Estilos
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=24,
+        textColor=colors.HexColor('#2c3e50'),
+        spaceAfter=30,
+        alignment=TA_CENTER
+    )
+    
+    heading_style = ParagraphStyle(
+        'CustomHeading',
+        parent=styles['Heading2'],
+        fontSize=16,
+        textColor=colors.HexColor('#34495e'),
+        spaceAfter=12,
+        spaceBefore=12
+    )
+    
+    normal_style = styles['Normal']
+    
+    # Título del documento
+    elements.append(Paragraph(document.sequence, title_style))
+    elements.append(Paragraph(document.title, heading_style))
+    elements.append(Spacer(1, 0.2*inch))
+    
+    # Información general
+    info_data = [
+        ['Empresa:', document.get_company_display()],
+        ['Creado por:', document.created_by.get_full_name() or document.created_by.username if document.created_by else 'N/A'],
+        ['Fecha de creación:', document.created_at.strftime('%d/%m/%Y')],
+    ]
+    
+    # Estado del documento
+    if document.is_document_accepted():
+        status_color = colors.green
+        status_text = 'ACEPTADO'
+        info_data.append(['Estado:', status_text])
+        info_data.append(['Revisado por:', document.document_reviewed_by_name])
+        info_data.append(['Fecha de revisión:', document.document_reviewed_at.strftime('%d/%m/%Y %H:%M') if document.document_reviewed_at else 'N/A'])
+    elif document.is_document_rejected():
+        status_color = colors.red
+        status_text = 'RECHAZADO'
+        info_data.append(['Estado:', status_text])
+        info_data.append(['Revisado por:', document.document_reviewed_by_name])
+        info_data.append(['Fecha de revisión:', document.document_reviewed_at.strftime('%d/%m/%Y %H:%M') if document.document_reviewed_at else 'N/A'])
+    else:
+        status_color = colors.orange
+        status_text = 'PENDIENTE'
+        info_data.append(['Estado:', status_text])
+    
+    info_table = Table(info_data, colWidths=[2*inch, 4*inch])
+    info_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#ecf0f1')),
+        ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+    ]))
+    elements.append(info_table)
+    elements.append(Spacer(1, 0.3*inch))
+    
+    # Descripción general
+    if document.description:
+        elements.append(Paragraph('Descripción General', heading_style))
+        elements.append(Paragraph(document.description.replace('\n', '<br/>'), normal_style))
+        elements.append(Spacer(1, 0.3*inch))
+    
+    # Estadísticas
+    elements.append(Paragraph('Resumen de Requerimientos', heading_style))
+    stats_data = [
+        ['Total', 'Aprobados', 'Pendientes', '% Aprobación'],
+        [
+            str(document.get_total_count()),
+            str(document.get_approved_count()),
+            str(document.get_pending_count()),
+            f"{document.get_approval_percentage()}%"
+        ]
+    ]
+    
+    stats_table = Table(stats_data, colWidths=[1.5*inch, 1.5*inch, 1.5*inch, 1.5*inch])
+    stats_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#3498db')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('FONTSIZE', (0, 1), (-1, -1), 11),
+        ('TOPPADDING', (0, 1), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 1), (-1, -1), 8),
+    ]))
+    elements.append(stats_table)
+    elements.append(Spacer(1, 0.4*inch))
+    
+    # Lista de requerimientos
+    elements.append(Paragraph('Requerimientos Detallados', heading_style))
+    elements.append(Spacer(1, 0.1*inch))
+    
+    for req in requirements:
+        # Número y estado
+        req_title = f"Requerimiento #{req.number}"
+        if req.is_approved:
+            req_title += " - APROBADO ✓"
+            req_color = colors.HexColor('#2ecc71')
+        else:
+            req_title += " - PENDIENTE"
+            req_color = colors.HexColor('#f39c12')
+        
+        req_title_style = ParagraphStyle(
+            'ReqTitle',
+            parent=styles['Heading3'],
+            fontSize=12,
+            textColor=req_color,
+            spaceAfter=6,
+            spaceBefore=10
+        )
+        
+        elements.append(Paragraph(req_title, req_title_style))
+        
+        # Título del requerimiento
+        if req.title:
+            req_heading_style = ParagraphStyle(
+                'ReqHeading',
+                parent=styles['Normal'],
+                fontSize=11,
+                textColor=colors.HexColor('#34495e'),
+                spaceAfter=4,
+                leftIndent=20
+            )
+            elements.append(Paragraph(f"<b>{req.title}</b>", req_heading_style))
+        
+        # Descripción
+        req_desc_style = ParagraphStyle(
+            'ReqDesc',
+            parent=styles['Normal'],
+            fontSize=10,
+            leftIndent=20,
+            spaceAfter=8
+        )
+        elements.append(Paragraph(req.description.replace('\n', '<br/>'), req_desc_style))
+        
+        # Información de aprobación
+        if req.is_approved:
+            approval_text = f"<i>Aprobado por: {req.approved_by_name} ({req.approved_by_email}) - {req.approved_at.strftime('%d/%m/%Y %H:%M')}</i>"
+            approval_style = ParagraphStyle(
+                'ApprovalInfo',
+                parent=styles['Normal'],
+                fontSize=8,
+                textColor=colors.grey,
+                leftIndent=20,
+                spaceAfter=10
+            )
+            elements.append(Paragraph(approval_text, approval_style))
+        
+        elements.append(Spacer(1, 0.1*inch))
+    
+    # Comentarios de revisión del documento
+    if document.document_review_comments:
+        elements.append(Spacer(1, 0.2*inch))
+        elements.append(Paragraph('Comentarios de Revisión', heading_style))
+        elements.append(Paragraph(document.document_review_comments.replace('\n', '<br/>'), normal_style))
+    
+    # Construir el PDF
+    doc.build(elements)
+    
+    # Obtener el valor del buffer y escribir en la respuesta
+    pdf = buffer.getvalue()
+    buffer.close()
+    response.write(pdf)
+    
+    return response
+
+
+@login_required
+def frd_requirement_create_ticket(request, requirement_pk):
+    """Crea un ticket de soporte desde un requerimiento funcional"""
+    requirement = get_object_or_404(FunctionalRequirement, pk=requirement_pk)
+    document = requirement.document
+    
+    if request.method == 'POST':
+        # Crear el ticket
+        ticket_title = request.POST.get('title', requirement.title or f"Req #{requirement.number} - {document.sequence}")
+        ticket_description = request.POST.get('description', requirement.description)
+        ticket_priority = request.POST.get('priority', 'medium')
+        ticket_type = request.POST.get('ticket_type', 'desarrollo')
+        
+        ticket = Ticket.objects.create(
+            title=ticket_title,
+            description=ticket_description,
+            priority=ticket_priority,
+            ticket_type=ticket_type,
+            created_by=request.user,
+            company=document.company,
+            status='open'
+        )
+        
+        # Generar número de ticket
+        ticket.generate_ticket_number()
+        
+        messages.success(request, f'Ticket {ticket.ticket_number} creado exitosamente desde el requerimiento #{requirement.number}.')
+        return redirect('ticket_detail', pk=ticket.id)
+    
+    # GET - Mostrar formulario de confirmación
+    context = {
+        'requirement': requirement,
+        'document': document,
+        'page_title': f'Crear Ticket desde Requerimiento #{requirement.number}'
+    }
+    
+    return render(request, 'tickets/frd_requirement_create_ticket.html', context)

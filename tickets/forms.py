@@ -52,7 +52,7 @@ from .models import (
     MonthlyCumplimiento, DailyCumplimiento, QRCode, CrmQuestion, SupportMeeting, SupportMeetingPoint, ScheduledTask,
     ClientRequest, ClientRequestResponse, ClientRequestTemplate, ClientRequestTemplateItem, Event, Trip, TripStop,
     MultiMeasurement, MultiMeasurementRecord, PersonalBudget, BudgetIncomeItem, BudgetExpenseItem, BudgetTransaction,
-    DynamicTable, DynamicTableField, WorkOrderRating, WorkOrderComment
+    DynamicTable, DynamicTableField, WorkOrderRating, WorkOrderComment, FunctionalRequirementDocument, FunctionalRequirement
 )
 
 class CategoryForm(forms.ModelForm):
@@ -9112,5 +9112,176 @@ class DynamicTableFieldForm(forms.ModelForm):
         }
 
 
+class FunctionalRequirementDocumentForm(forms.ModelForm):
+    """Formulario para crear y editar Documentos de Requerimientos Funcionales"""
+    
+    class Meta:
+        model = FunctionalRequirementDocument
+        fields = ['company', 'company_name', 'title']
+        widgets = {
+            'company': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'company_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'O escriba un nombre de empresa'
+            }),
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Sistema de Gestión de Inventarios'
+            }),
+        }
+        labels = {
+            'company': 'Empresa (Opcional)',
+            'company_name': 'Nombre Libre de Empresa',
+            'title': 'Título del Documento',
+        }
+        help_texts = {
+            'company': 'Seleccione una empresa del listado',
+            'company_name': 'O escriba un nombre si no está en el listado',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['company'].queryset = Company.objects.filter(is_active=True).order_by('name')
+        self.fields['company'].required = False
+        self.fields['company_name'].required = False
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        company = cleaned_data.get('company')
+        company_name = cleaned_data.get('company_name')
+        
+        # Validar que al menos uno esté presente
+        if not company and not company_name:
+            raise forms.ValidationError(
+                'Debe seleccionar una empresa del listado o escribir un nombre de empresa.'
+            )
+        
+        return cleaned_data
+        self.fields['company'].empty_label = "Seleccionar empresa"
+
+
+class FunctionalRequirementForm(forms.ModelForm):
+    """Formulario para crear y editar requerimientos funcionales"""
+    
+    class Meta:
+        model = FunctionalRequirement
+        fields = ['title', 'description']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título breve del requerimiento...'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Describe el requerimiento o alcance del proyecto...'
+            }),
+        }
+        labels = {
+            'title': 'Título',
+            'description': 'Descripción del Requerimiento',
+        }
+
+
+class FunctionalRequirementPublicEditForm(forms.ModelForm):
+    """Formulario público para editar requerimientos"""
+    
+    class Meta:
+        model = FunctionalRequirement
+        fields = ['title', 'description']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título breve del requerimiento...'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Edita la descripción del requerimiento...'
+            }),
+        }
+        labels = {
+            'title': 'Título',
+            'description': 'Descripción del Requerimiento',
+        }
+
+
+class FunctionalRequirementApprovalForm(forms.Form):
+    """Formulario para aprobar requerimientos"""
+    
+    approver_name = forms.CharField(
+        max_length=200,
+        label='Tu Nombre',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Ingresa tu nombre completo'
+        })
+    )
+    approver_email = forms.EmailField(
+        label='Tu Email',
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'tu@email.com'
+        })
+    )
+
+
+class DocumentReviewForm(forms.Form):
+    """Formulario para aceptar/rechazar documento completo"""
+    
+    reviewer_name = forms.CharField(
+        max_length=200,
+        label='Tu Nombre',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Ingresa tu nombre completo'
+        })
+    )
+    reviewer_email = forms.EmailField(
+        label='Tu Email',
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'tu@email.com'
+        })
+    )
+    comments = forms.CharField(
+        required=False,
+        label='Comentarios',
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'placeholder': 'Agrega comentarios adicionales (opcional)',
+            'rows': 4
+        })
+    )
+
+
+class RequirementCommentForm(forms.Form):
+    """Formulario para comentarios en requerimientos"""
+    
+    author_name = forms.CharField(
+        max_length=200,
+        label='Tu Nombre',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Ingresa tu nombre completo'
+        })
+    )
+    author_email = forms.EmailField(
+        label='Tu Email',
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'tu@email.com'
+        })
+    )
+    comment = forms.CharField(
+        label='Comentario',
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'placeholder': 'Escribe tu comentario sobre este requerimiento',
+            'rows': 3
+        })
+    )
 
 
