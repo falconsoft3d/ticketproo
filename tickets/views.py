@@ -4845,7 +4845,7 @@ def url_manager_password_view(request, url_id):
 @user_passes_test(is_agent, login_url='/')
 def work_order_list_view(request):
     """Vista para listar órdenes de trabajo"""
-    # Obtener todas las órdenes de trabajo
+    # Obtener todas las órdenes de trabajo, por defecto excluir las terminadas
     work_orders = WorkOrder.objects.all()
     
     # Aplicar filtros si existen
@@ -4868,12 +4868,18 @@ def work_order_list_view(request):
         
         if status:
             work_orders = work_orders.filter(status=status)
+        else:
+            # Si no se especifica status en los filtros, excluir las terminadas por defecto
+            work_orders = work_orders.exclude(status='finished')
         
         if priority:
             work_orders = work_orders.filter(priority=priority)
         
         if assigned_to:
             work_orders = work_orders.filter(assigned_to=assigned_to)
+    else:
+        # Si no hay filtros válidos, excluir las terminadas por defecto
+        work_orders = work_orders.exclude(status='finished')
     
     # Agregar información de permisos a cada orden
     for work_order in work_orders:
@@ -4899,7 +4905,7 @@ def work_order_list_view(request):
 def work_order_create_view(request):
     """Vista para crear nuevas órdenes de trabajo"""
     if request.method == 'POST':
-        form = WorkOrderForm(request.POST, request.FILES)
+        form = WorkOrderForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
             work_order = form.save(commit=False)
             work_order.created_by = request.user
@@ -4907,7 +4913,7 @@ def work_order_create_view(request):
             messages.success(request, f'Orden de trabajo "{work_order.title}" creada exitosamente.')
             return redirect('work_order_detail', pk=work_order.pk)
     else:
-        form = WorkOrderForm()
+        form = WorkOrderForm(user=request.user)
     
     context = {
         'form': form,
@@ -5057,6 +5063,7 @@ def work_order_public_view(request, token):
             if comment_form.is_valid():
                 comment = comment_form.save(commit=False)
                 comment.work_order = work_order
+                comment.is_public = True
                 comment.save()
                 messages.success(request, '¡Comentario agregado exitosamente!')
                 return redirect('public_work_order', token=token)

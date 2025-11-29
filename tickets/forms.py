@@ -1108,8 +1108,6 @@ class UserNoteForm(forms.ModelForm):
         title = self.cleaned_data.get('title')
         if title:
             title = title.strip()
-            if len(title) < 5:
-                raise forms.ValidationError('El título debe tener al menos 5 caracteres.')
             if len(title) > 200:
                 raise forms.ValidationError('El título no puede exceder 200 caracteres.')
         return title
@@ -2276,10 +2274,12 @@ class WorkOrderForm(forms.ModelForm):
     )
     
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         # Filtrar solo empresas activas
         self.fields['company'].queryset = Company.objects.filter(is_active=True).order_by('name')
         self.fields['company'].empty_label = "Seleccionar empresa"
+        self.fields['company'].required = False
         
         # Configurar campo proyecto
         self.fields['project'].queryset = Project.objects.filter(is_active=True).order_by('name')
@@ -2294,6 +2294,16 @@ class WorkOrderForm(forms.ModelForm):
             self.fields['assigned_to'].queryset = User.objects.filter(is_active=True)
         
         self.fields['assigned_to'].empty_label = "Sin asignar"
+        
+        # Si es una nueva orden (no tiene instance.pk)
+        if not self.instance.pk:
+            from django.utils import timezone
+            from datetime import timedelta
+            # Proponer fecha de entrega en 7 días
+            self.fields['due_date'].initial = timezone.now().date() + timedelta(days=7)
+            # Asignar al usuario que la crea por defecto
+            if user:
+                self.fields['assigned_to'].initial = user
     
     class Meta:
         model = WorkOrder
@@ -2378,9 +2388,6 @@ class WorkOrderForm(forms.ModelForm):
         if not title:
             raise forms.ValidationError('El título es requerido.')
         
-        if len(title) < 5:
-            raise forms.ValidationError('El título debe tener al menos 5 caracteres.')
-        
         if len(title) > 200:
             raise forms.ValidationError('El título no puede exceder 200 caracteres.')
         
@@ -2393,22 +2400,17 @@ class WorkOrderForm(forms.ModelForm):
         if not description:
             raise forms.ValidationError('La descripción es requerida.')
         
-        if len(description) < 20:
-            raise forms.ValidationError('La descripción debe tener al menos 20 caracteres.')
-        
         return description
     
     def clean_due_date(self):
         """Validar la fecha de entrega"""
         due_date = self.cleaned_data.get('due_date')
         
-        if not due_date:
-            raise forms.ValidationError('La fecha de entrega es requerida.')
-        
-        # Verificar que la fecha no sea en el pasado
-        from django.utils import timezone
-        if due_date < timezone.now().date():
-            raise forms.ValidationError('La fecha de entrega no puede ser en el pasado.')
+        # Verificar que la fecha no sea en el pasado (si se proporciona)
+        if due_date:
+            from django.utils import timezone
+            if due_date < timezone.now().date():
+                raise forms.ValidationError('La fecha de entrega no puede ser en el pasado.')
         
         return due_date
     
@@ -5917,8 +5919,6 @@ class ProductSetForm(forms.ModelForm):
     
     def clean_title(self):
         title = self.cleaned_data.get('title')
-        if len(title) < 5:
-            raise forms.ValidationError('El título debe tener al menos 5 caracteres')
         return title
 
 

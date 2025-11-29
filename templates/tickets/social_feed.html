@@ -11,53 +11,64 @@
             <!-- Header -->
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2><i class="bi bi-people-fill"></i> Red Social Interna</h2>
-            </div>
-
-            <!-- Buscador -->
-            <div class="card mb-4">
-                <div class="card-body">
-                    <form method="get" action="{% url 'social_feed' %}" id="searchForm">
-                        <div class="input-group mb-2">
-                            <input 
-                                type="text" 
-                                class="form-control" 
-                                name="q" 
-                                placeholder="Buscar publicaciones por contenido o usuario..." 
-                                value="{{ search_query }}"
-                            >
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-search"></i> Buscar
-                            </button>
-                            {% if search_query or show_favorites or show_loved %}
-                            <a href="{% url 'social_feed' %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-x"></i> Limpiar
-                            </a>
-                            {% endif %}
-                        </div>
-                        <div class="d-flex gap-2">
-                            <a href="?favorites=1" class="btn btn-sm {% if show_favorites %}btn-warning{% else %}btn-outline-warning{% endif %}">
-                                <i class="bi bi-star-fill"></i> Mis Favoritos
-                            </a>
-                            <a href="?loved=1" class="btn btn-sm {% if show_loved %}btn-danger{% else %}btn-outline-danger{% endif %}">
-                                <i class="bi bi-heart-fill"></i> Me encantan
-                            </a>
-                            {% if show_favorites %}
-                            <span class="badge bg-warning text-dark align-self-center">
-                                Mostrando solo favoritos
-                            </span>
-                            {% endif %}
-                            {% if show_loved %}
-                            <span class="badge bg-danger align-self-center">
-                                Mostrando publicaciones que me encantan
-                            </span>
-                            {% endif %}
-                        </div>
-                    </form>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#createPostCollapse" aria-expanded="false" aria-controls="createPostCollapse">
+                        <i class="bi bi-plus-circle"></i> Publicar
+                    </button>
+                    <button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#searchCollapse" aria-expanded="false" aria-controls="searchCollapse">
+                        <i class="bi bi-search"></i> Buscar
+                    </button>
                 </div>
             </div>
 
-            <!-- Crear nueva publicación -->
-            <div class="card mb-4">
+            <!-- Buscador (Colapsable) -->
+            <div class="collapse mb-4" id="searchCollapse">
+                <div class="card">
+                    <div class="card-body">
+                        <form method="get" action="{% url 'social_feed' %}" id="searchForm">
+                            <div class="input-group mb-2">
+                                <input 
+                                    type="text" 
+                                    class="form-control" 
+                                    name="q" 
+                                    placeholder="Buscar publicaciones por contenido o usuario..." 
+                                    value="{{ search_query }}"
+                                >
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-search"></i> Buscar
+                                </button>
+                                {% if search_query or show_favorites or show_loved %}
+                                <a href="{% url 'social_feed' %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x"></i> Limpiar
+                                </a>
+                                {% endif %}
+                            </div>
+                            <div class="d-flex gap-2">
+                                <a href="?favorites=1" class="btn btn-sm {% if show_favorites %}btn-warning{% else %}btn-outline-warning{% endif %}">
+                                    <i class="bi bi-star-fill"></i> Mis Favoritos
+                                </a>
+                                <a href="?loved=1" class="btn btn-sm {% if show_loved %}btn-danger{% else %}btn-outline-danger{% endif %}">
+                                    <i class="bi bi-heart-fill"></i> Me encantan
+                                </a>
+                                {% if show_favorites %}
+                                <span class="badge bg-warning text-dark align-self-center">
+                                    Mostrando solo favoritos
+                                </span>
+                                {% endif %}
+                                {% if show_loved %}
+                                <span class="badge bg-danger align-self-center">
+                                    Mostrando publicaciones que me encantan
+                                </span>
+                                {% endif %}
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Crear nueva publicación (Colapsable) -->
+            <div class="collapse mb-4" id="createPostCollapse">
+                <div class="card">
                 <div class="card-body">
                     <div class="d-flex align-items-start">
                         <div class="avatar-circle me-3">
@@ -117,6 +128,7 @@
                             </form>
                         </div>
                     </div>
+                </div>
                 </div>
             </div>
 

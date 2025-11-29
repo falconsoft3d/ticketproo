@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - Vista Pública{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header público -->
+    <div class="row mb-4">
+        <div class="col-md-12 text-center">
+            <div class="badge bg-success mb-2">Vista Pública</div>
+            <h2>
+                <i class="bi bi-plus-circle me-2"></i>Crear Nueva Orden
+            </h2>
+            <p class="text-muted">{{ original_work_order.company.name }}</p>
+            
+            <!-- Navegación -->
+            <div class="btn-group mt-3" role="group">
+                <a href="{% url 'public_work_order' original_work_order.public_share_token %}" 
+                   class="btn btn-outline-primary">
+                    <i class="bi bi-info-circle me-1"></i>Información
+                </a>
+                <a href="{% url 'public_work_order_tasks' original_work_order.public_share_token %}" 
+                   class="btn btn-outline-info">
+                    <i class="bi bi-list-task me-1"></i>Tareas
+                </a>
+                <a href="{% url 'public_work_order_create' original_work_order.public_share_token %}" 
+                   class="btn btn-outline-success active">
+                    <i class="bi bi-plus-circle me-1"></i>Crear Orden
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Formulario de creación -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-plus-circle me-2"></i>Nueva Orden de Trabajo
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>¿Necesitas algo más?</strong><br>
+                        Completa este formulario para crear una nueva orden de trabajo. 
+                        Te contactaremos pronto para comenzar el trabajo.
+                    </div>
+
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Título -->
+                        <div class="mb-4">
+                            <label for="{{ form.title.id_for_label }}" class="form-label fw-bold">
+                                <i class="bi bi-pencil me-1"></i>{{ form.title.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.title.errors }}
+                                </div>
+                            {% endif %}
+                            <small class="text-muted">
+                                Describe brevemente lo que necesitas en pocas palabras.
+                            </small>
+                        </div>
+
+                        <!-- Descripción -->
+                        <div class="mb-4">
+                            <label for="{{ form.description.id_for_label }}" class="form-label fw-bold">
+                                <i class="bi bi-file-text me-1"></i>{{ form.description.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.description.errors }}
+                                </div>
+                            {% endif %}
+                            <small class="text-muted">
+                                Proporciona todos los detalles importantes sobre lo que necesitas. 
+                                Mientras más información proporciones, mejor podremos ayudarte.
+                            </small>
+                        </div>
+
+                        <!-- Prioridad -->
+                        <div class="mb-4">
+                            <label for="{{ form.priority.id_for_label }}" class="form-label fw-bold">
+                                <i class="bi bi-exclamation-triangle me-1"></i>{{ form.priority.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.priority }}
+                            {% if form.priority.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.priority.errors }}
+                                </div>
+                            {% endif %}
+                            <small class="text-muted">
+                                Selecciona la urgencia de tu solicitud.
+                            </small>
+                        </div>
+
+                        <!-- Información de la empresa -->
+                        <div class="alert alert-light border">
+                            <h6 class="mb-2">
+                                <i class="bi bi-building me-1"></i>Empresa:
+                            </h6>
+                            <div class="d-flex align-items-center">
+                                <span class="badge rounded-pill me-2" 
+                                      style="background-color: {{ original_work_order.company.color }}; color: white;">
+                                    <i class="bi bi-building"></i>
+                                </span>
+                                <strong>{{ original_work_order.company.name }}</strong>
+                            </div>
+                            <small class="text-muted mt-2 d-block">
+                                Esta orden se asociará automáticamente a tu empresa.
+                            </small>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{% url 'public_work_order' original_work_order.public_share_token %}" 
+                               class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle me-1"></i>Crear Orden de Trabajo
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información adicional -->
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="mb-3">
+                        <i class="bi bi-question-circle me-1"></i>¿Qué sucede después?
+                    </h6>
+                    <ol class="mb-0">
+                        <li class="mb-2">Tu orden se creará en estado <span class="badge bg-secondary">Borrador</span></li>
+                        <li class="mb-2">Nuestro equipo revisará tu solicitud</li>
+                        <li class="mb-2">Te contactaremos para confirmar los detalles</li>
+                        <li>Una vez aprobada, comenzaremos a trabajar en tu orden</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-control:focus, .form-select:focus {
+    border-color: #198754;
+    box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+}
+
+.needs-validation .form-control:invalid {
+    border-color: #dc3545;
+}
+
+.needs-validation .form-control:valid {
+    border-color: #198754;
+}
+</style>
+
+<script>
+// Validación de formulario Bootstrap
+(function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms).forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+                event.preventDefault()
+                event.stopPropagation()
+            }
+            form.classList.add('was-validated')
+        }, false)
+    })
+})()
+</script>
+{% endblock %}

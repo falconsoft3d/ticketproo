@@ -2173,7 +2173,7 @@ class WorkOrder(models.Model):
         help_text='Fecha límite para completar la orden (opcional)'
     )
     is_public = models.BooleanField(
-        default=False,
+        default=True,
         verbose_name='Publicar públicamente',
         help_text='Permite que esta orden sea visible públicamente'
     )

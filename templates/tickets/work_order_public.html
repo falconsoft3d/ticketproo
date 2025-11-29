@@ -24,6 +24,10 @@
                    class="btn btn-outline-info">
                     <i class="bi bi-list-task me-1"></i>Tareas
                 </a>
+                <a href="{% url 'public_work_order_create' work_order.public_share_token %}" 
+                   class="btn btn-outline-success">
+                    <i class="bi bi-plus-circle me-1"></i>Crear Orden
+                </a>
             </div>
         </div>
     </div>
@@ -236,6 +240,140 @@
                                 </div>
                             </div>
                         </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Calificaciones -->
+            {% if work_order.status == 'finished' %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-star-fill me-1"></i>Calificación
+                        {% if avg_rating %}
+                            <span class="badge bg-warning text-dark ms-2">
+                                {{ avg_rating }} <i class="bi bi-star-fill"></i>
+                            </span>
+                            <small class="text-muted">({{ rating_count }} calificación{{ rating_count|pluralize:"es" }})</small>
+                        {% endif %}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <!-- Formulario de calificación -->
+                    <form method="post" class="mb-4">
+                        {% csrf_token %}
+                        <h6 class="mb-3">Califica este trabajo:</h6>
+                        <div class="mb-3">
+                            {{ rating_form.rating }}
+                        </div>
+                        <div class="mb-3">
+                            {{ rating_form.rater_name }}
+                        </div>
+                        <div class="mb-3">
+                            {{ rating_form.comment }}
+                        </div>
+                        <button type="submit" name="submit_rating" class="btn btn-warning">
+                            <i class="bi bi-star-fill me-1"></i>Enviar Calificación
+                        </button>
+                    </form>
+
+                    <!-- Mostrar calificaciones existentes -->
+                    {% if ratings %}
+                    <hr>
+                    <h6 class="mb-3">Calificaciones anteriores:</h6>
+                    {% for rating in ratings %}
+                    <div class="border-bottom pb-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <strong>{{ rating.rater_name }}</strong>
+                            <span class="text-warning">
+                                {% for i in "12345" %}
+                                    {% if forloop.counter <= rating.rating %}
+                                        <i class="bi bi-star-fill"></i>
+                                    {% else %}
+                                        <i class="bi bi-star"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </span>
+                        </div>
+                        {% if rating.comment %}
+                        <p class="mb-1 text-muted">{{ rating.comment }}</p>
+                        {% endif %}
+                        <small class="text-muted">{{ rating.created_at|date:"d/m/Y H:i" }}</small>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Comentarios -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-chat-left-text me-1"></i>Comentarios
+                        <span class="badge bg-secondary ms-2">{{ comments.count }}</span>
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <!-- Formulario de comentario -->
+                    <form method="post" class="mb-4">
+                        {% csrf_token %}
+                        <h6 class="mb-3">Agregar un comentario:</h6>
+                        <div class="mb-3">
+                            {{ comment_form.author_name }}
+                        </div>
+                        <div class="mb-3">
+                            {{ comment_form.comment }}
+                        </div>
+                        <button type="submit" name="submit_comment" class="btn btn-primary">
+                            <i class="bi bi-chat-left-text me-1"></i>Enviar Comentario
+                        </button>
+                    </form>
+
+                    <!-- Mostrar comentarios existentes -->
+                    {% if comments %}
+                    <hr>
+                    <h6 class="mb-3">Comentarios anteriores:</h6>
+                    {% for comment in comments %}
+                    <div class="border-bottom pb-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <strong>{{ comment.author_name }}</strong>
+                            <small class="text-muted">{{ comment.created_at|date:"d/m/Y H:i" }}</small>
+                        </div>
+                        <p class="mb-0">{{ comment.comment|linebreaks }}</p>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <p class="text-muted text-center mb-0">No hay comentarios aún. ¡Sé el primero en comentar!</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Otras órdenes de trabajo -->
+            {% if other_work_orders %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-list-ul me-1"></i>Otras órdenes de {{ work_order.company.name }}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for order in other_work_orders %}
+                        <a href="{% url 'public_work_order' order.public_share_token %}" 
+                           class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ order.title }}</h6>
+                                    <small class="text-muted">{{ order.order_number }}</small>
+                                </div>
+                                <span class="badge {{ order.get_status_badge_class }}">
+                                    {{ order.get_status_display }}
+                                </span>
+                            </div>
+                        </a>
                         {% endfor %}
                     </div>
                 </div>
