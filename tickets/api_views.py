@@ -496,14 +496,13 @@ def my_pending_work_orders(request):
         from .models import WorkOrder
         from django.db.models import Q
         
-        # Obtener órdenes de trabajo del usuario que no estén terminadas
-        # Estados del modelo: 'draft', 'accepted', 'finished'
+        # Obtener órdenes de trabajo del usuario que no estén completadas
         work_orders = WorkOrder.objects.filter(
             Q(assigned_to=request.user) | Q(created_by=request.user)
         ).exclude(
-            status='finished'
+            status__in=['completed', 'cancelled']
         ).select_related(
-            'company', 'project', 'created_by', 'assigned_to'
+            'client', 'ticket', 'created_by', 'assigned_to'
         ).order_by('-priority', 'due_date')[:20]  # Limitar a 20
         
         orders_data = []
@@ -514,7 +513,7 @@ def my_pending_work_orders(request):
                 'description': order.description[:100] + '...' if order.description and len(order.description) > 100 else (order.description or ''),
                 'status': order.status,
                 'priority': order.priority,
-                'client': order.company.name if order.company else None,
+                'client': order.client.name if order.client else None,
                 'due_date': order.due_date.strftime('%d/%m/%Y') if order.due_date else None,
                 'assigned_to': order.assigned_to.get_full_name() if order.assigned_to else None,
                 'url': f'/work-orders/{order.id}/',

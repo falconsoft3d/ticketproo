@@ -1561,6 +1561,17 @@
             0
         </span>
     </button>
+
+    <!-- Botón flotante para calificar servicio (izquierda) -->
+    <a href="{% url 'qa_rating_public' %}" class="btn btn-warning shadow-lg" 
+            style="position: fixed; left: 0; top: calc(50% + 15px); transform: translateY(-50%); z-index: 1050; 
+                   border-radius: 0 8px 8px 0; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
+                   border-left: none; transition: all 0.3s ease;"
+            onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
+            onmouseout="this.style.transform = 'translateY(-50%) scale(1)'"
+            title="Calificar Nuestro Servicio">
+        <span style="font-size: 24px;">😊</span>
+    </a>
     
     <!-- Botón flotante para Red Social (izquierda) -->
     <a href="{% url 'social_feed' %}" class="btn btn-info shadow-lg" 
@@ -6602,207 +6613,5 @@
     </script>
     {% endif %}
 
-    <!-- Botones flotantes de calificación rápida (izquierda) -->
-    <div class="rating-float-buttons">
-        <a href="{% url 'qa_rating_public' %}?rating=happy" class="rating-float-btn rating-happy" title="Servicio excelente 😊" data-rating="happy">
-            <span class="rating-emoji">😊</span>
-            <span class="rating-count" id="happy-count">0</span>
-        </a>
-        <a href="{% url 'qa_rating_public' %}?rating=neutral" class="rating-float-btn rating-neutral rating-hidden" title="Servicio aceptable 😐" data-rating="neutral">
-            <span class="rating-emoji">😐</span>
-            <span class="rating-count" id="neutral-count">0</span>
-        </a>
-        <a href="{% url 'qa_rating_public' %}?rating=sad" class="rating-float-btn rating-sad rating-hidden" title="Servicio deficiente 😞" data-rating="sad">
-            <span class="rating-emoji">😞</span>
-            <span class="rating-count" id="sad-count">0</span>
-        </a>
-    </div>
-
-    <style>
-        .rating-float-buttons {
-            position: fixed;
-            left: 20px;
-            top: calc(50% + 6cm);
-            transform: translateY(-50%);
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            z-index: 1040;
-        }
-
-        .rating-float-btn {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            cursor: pointer;
-            border: 2px solid transparent;
-            position: relative;
-        }
-
-        /* Ocultar botones por defecto (excepto el feliz) */
-        .rating-float-btn.rating-hidden {
-            opacity: 0;
-            transform: translateY(-60px) scale(0.3);
-            pointer-events: none;
-        }
-
-        /* Mostrar todos los botones al hacer hover en el contenedor */
-        .rating-float-buttons:hover .rating-float-btn.rating-hidden {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-            pointer-events: auto;
-        }
-
-        /* Animación de rebote al expandirse */
-        .rating-float-buttons:hover .rating-float-btn.rating-neutral {
-            transition-delay: 0.05s;
-        }
-
-        .rating-float-buttons:hover .rating-float-btn.rating-sad {
-            transition-delay: 0.1s;
-        }
-
-        .rating-float-btn:hover {
-            transform: scale(1.15);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
-        }
-
-        .rating-float-btn .rating-emoji {
-            font-size: 22px;
-            line-height: 1;
-            filter: grayscale(0.3);
-            transition: filter 0.3s ease;
-        }
-
-        .rating-float-btn:hover .rating-emoji {
-            filter: grayscale(0);
-        }
-
-        .rating-float-btn .rating-count {
-            position: absolute;
-            top: 2px;
-            right: 2px;
-            font-size: 10px;
-            font-weight: bold;
-            background: white;
-            border-radius: 10px;
-            padding: 2px 5px;
-            line-height: 1;
-            min-width: 18px;
-            text-align: center;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-            transition: all 0.3s ease;
-        }
-
-        .rating-float-btn.rating-happy {
-            border-color: #28a745;
-        }
-
-        .rating-float-btn.rating-happy .rating-count {
-            color: #28a745;
-            border: 1px solid #28a745;
-        }
-
-        .rating-float-btn.rating-happy:hover {
-            background: #d4edda;
-            border-color: #28a745;
-        }
-
-        .rating-float-btn.rating-happy:hover .rating-count {
-            color: #1e7e34;
-            border-color: #1e7e34;
-            transform: scale(1.1);
-        }
-
-        .rating-float-btn.rating-neutral {
-            border-color: #ffc107;
-        }
-
-        .rating-float-btn.rating-neutral .rating-count {
-            color: #ffc107;
-            border: 1px solid #ffc107;
-        }
-
-        .rating-float-btn.rating-neutral:hover {
-            background: #fff3cd;
-            border-color: #ffc107;
-        }
-
-        .rating-float-btn.rating-neutral:hover .rating-count {
-            color: #d39e00;
-            border-color: #d39e00;
-            transform: scale(1.1);
-        }
-
-        .rating-float-btn.rating-sad {
-            border-color: #dc3545;
-        }
-
-        .rating-float-btn.rating-sad .rating-count {
-            color: #dc3545;
-            border: 1px solid #dc3545;
-        }
-
-        .rating-float-btn.rating-sad:hover {
-            background: #f8d7da;
-            border-color: #dc3545;
-        }
-
-        .rating-float-btn.rating-sad:hover .rating-count {
-            color: #bd2130;
-            border-color: #bd2130;
-            transform: scale(1.1);
-        }
-
-        /* Responsive: ocultar en pantallas pequeñas */
-        @media (max-width: 768px) {
-            .rating-float-buttons {
-                left: 10px;
-            }
-            
-            .rating-float-btn {
-                width: 45px;
-                height: 45px;
-            }
-            
-            .rating-float-btn .rating-emoji {
-                font-size: 20px;
-            }
-
-            .rating-float-btn .rating-count {
-                font-size: 9px;
-                padding: 1px 4px;
-                min-width: 16px;
-            }
-        }
-
-        @media (max-width: 576px) {
-            .rating-float-buttons {
-                display: none;
-            }
-        }
-    </style>
-
-    <script>
-    // Cargar contadores de calificaciones
-    document.addEventListener('DOMContentLoaded', function() {
-        fetch('{% url "qa_rating_counts" %}')
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('happy-count').textContent = data.happy || 0;
-                document.getElementById('neutral-count').textContent = data.neutral || 0;
-                document.getElementById('sad-count').textContent = data.sad || 0;
-            })
-            .catch(error => console.error('Error al cargar contadores:', error));
-    });
-    </script>
 </body>
 </html>
