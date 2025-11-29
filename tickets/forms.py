@@ -2320,9 +2320,8 @@ class WorkOrderForm(forms.ModelForm):
             'status': forms.Select(attrs={
                 'class': 'form-select'
             }),
-            'due_date': forms.DateInput(attrs={
-                'class': 'form-control',
-                'type': 'date'
+            'due_date': DateInput(attrs={
+                'class': 'form-control'
             }),
             'estimated_hours': forms.NumberInput(attrs={
                 'class': 'form-control',

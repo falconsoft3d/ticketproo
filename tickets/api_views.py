@@ -496,11 +496,12 @@ def my_pending_work_orders(request):
         from .models import WorkOrder
         from django.db.models import Q
         
-        # Obtener órdenes de trabajo del usuario que no estén completadas
+        # Obtener órdenes de trabajo del usuario que no estén terminadas
+        # Estados del modelo: 'draft', 'accepted', 'finished'
         work_orders = WorkOrder.objects.filter(
             Q(assigned_to=request.user) | Q(created_by=request.user)
         ).exclude(
-            status__in=['completed', 'cancelled']
+            status='finished'  # Excluir solo las terminadas
         ).select_related(
             'client', 'ticket', 'created_by', 'assigned_to'
         ).order_by('-priority', 'due_date')[:20]  # Limitar a 20

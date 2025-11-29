@@ -1549,12 +1549,12 @@
     </button>
     
     <!-- Botón flotante para órdenes de trabajo pendientes (izquierda) - Solo para agentes -->
-    <button id="workOrdersSidebarToggle" class="btn btn-warning shadow-lg" 
+    <button id="workOrdersSidebarToggle" class="btn shadow-lg" 
             style="position: fixed; left: 0; top: calc(50% - 65px); transform: translateY(-50%); z-index: 1050; 
                    border-radius: 0 8px 8px 0; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
-                   border-left: none; transition: all 0.3s ease;"
-            onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'"
-            onmouseout="this.style.transform = 'translateY(-50%) scale(1)'"
+                   border-left: none; transition: all 0.3s ease; background-color: #ff6b6b; color: white;"
+            onmouseover="this.style.transform = 'translateY(-50%) scale(1.1)'; this.style.backgroundColor = '#ff5252'"
+            onmouseout="this.style.transform = 'translateY(-50%) scale(1)'; this.style.backgroundColor = '#ff6b6b'"
             title="Mis Órdenes de Trabajo Pendientes">
         <i class="bi bi-tools"></i>
         <span id="pendingWorkOrdersBadge" class="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger" style="font-size: 0.7em;">
@@ -1695,11 +1695,11 @@
     <!-- Barra lateral para órdenes de trabajo pendientes -->
     <div id="workOrdersSidebar" class="shadow-lg" 
          style="position: fixed; left: -400px; top: 0; width: 400px; height: 100vh; 
-                background: white; z-index: 1040; transition: left 0.3s ease; border-right: 3px solid #ffc107;
+                background: white; z-index: 1040; transition: left 0.3s ease; border-right: 3px solid #ff6b6b;
                 overflow: hidden; display: flex; flex-direction: column;">
         
         <!-- Header de la barra lateral -->
-        <div class="p-3 bg-warning text-dark d-flex justify-content-between align-items-center">
+        <div class="p-3 text-white d-flex justify-content-between align-items-center" style="background-color: #ff6b6b;">
             <div>
                 <h6 class="mb-0">
                     <i class="bi bi-tools me-2"></i>
@@ -1707,7 +1707,7 @@
                 </h6>
                 <small class="opacity-75">Pendientes de terminar</small>
             </div>
-            <button id="closeWorkOrdersSidebar" class="btn btn-sm btn-outline-dark">
+            <button id="closeWorkOrdersSidebar" class="btn btn-sm btn-outline-light">
                 <i class="bi bi-x-lg"></i>
             </button>
         </div>
@@ -1730,7 +1730,7 @@
 
         <!-- Footer con botón para ver todas -->
         <div class="p-3 border-top bg-light">
-            <a href="{% url 'work_order_list' %}" class="btn btn-warning w-100">
+            <a href="{% url 'work_order_list' %}" class="btn w-100 text-white" style="background-color: #ff6b6b;">
                 <i class="bi bi-list-check me-2"></i>
                 Ver Todas las Órdenes
             </a>
