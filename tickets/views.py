@@ -5026,27 +5026,117 @@ def work_order_change_status_view(request, pk):
 
 def work_order_public_view(request, token):
     """Vista pública para órdenes de trabajo compartidas"""
+    from .forms import WorkOrderRatingForm, WorkOrderCommentForm, WorkOrderPublicCreateForm
+    
     work_order = get_object_or_404(WorkOrder, public_share_token=token, is_public=True)
     
     # Manejar aprobación por POST
-    if request.method == 'POST' and 'approve_work_order' in request.POST:
-        if work_order.status == 'draft':
-            work_order.status = 'accepted'
-            work_order.save()
-            messages.success(request, '¡Orden de trabajo aprobada exitosamente!')
-        else:
-            messages.info(request, 'Esta orden ya ha sido procesada.')
+    if request.method == 'POST':
+        if 'approve_work_order' in request.POST:
+            if work_order.status == 'draft':
+                work_order.status = 'accepted'
+                work_order.save()
+                messages.success(request, '¡Orden de trabajo aprobada exitosamente!')
+            else:
+                messages.info(request, 'Esta orden ya ha sido procesada.')
+            return redirect('public_work_order', token=token)
         
-        return redirect('tickets:public_work_order', token=token)
+        # Manejar envío de calificación
+        elif 'submit_rating' in request.POST:
+            rating_form = WorkOrderRatingForm(request.POST)
+            if rating_form.is_valid():
+                rating = rating_form.save(commit=False)
+                rating.work_order = work_order
+                rating.save()
+                messages.success(request, '¡Gracias por tu calificación!')
+                return redirect('public_work_order', token=token)
+        
+        # Manejar envío de comentario
+        elif 'submit_comment' in request.POST:
+            comment_form = WorkOrderCommentForm(request.POST)
+            if comment_form.is_valid():
+                comment = comment_form.save(commit=False)
+                comment.work_order = work_order
+                comment.save()
+                messages.success(request, '¡Comentario agregado exitosamente!')
+                return redirect('public_work_order', token=token)
+    
+    # Obtener otras órdenes de trabajo de la misma empresa
+    other_work_orders = WorkOrder.objects.filter(
+        company=work_order.company,
+        is_public=True
+    ).exclude(id=work_order.id).order_by('-created_at')[:5]
+    
+    # Obtener calificaciones y comentarios
+    ratings = work_order.ratings.all().order_by('-created_at')
+    comments = work_order.public_comments.filter(is_public=True).order_by('-created_at')
+    
+    # Calcular promedio de calificaciones
+    avg_rating = ratings.aggregate(models.Avg('rating'))['rating__avg']
+    
+    # Inicializar formularios
+    rating_form = WorkOrderRatingForm()
+    comment_form = WorkOrderCommentForm()
+    create_form = WorkOrderPublicCreateForm()
     
     context = {
         'work_order': work_order,
         'attachments': work_order.attachments.all(),
+        'other_work_orders': other_work_orders,
+        'ratings': ratings,
+        'comments': comments,
+        'avg_rating': round(avg_rating, 1) if avg_rating else None,
+        'rating_count': ratings.count(),
+        'rating_form': rating_form,
+        'comment_form': comment_form,
+        'create_form': create_form,
         'page_title': f'Orden: {work_order.order_number}',
         'is_public_view': True
     }
     
     return render(request, 'tickets/work_order_public.html', context)
+
+
+def work_order_public_create_view(request, token):
+    """Vista para crear una nueva orden de trabajo desde la vista pública"""
+    from .forms import WorkOrderPublicCreateForm
+    
+    # Obtener la orden de trabajo original para obtener la empresa
+    original_work_order = get_object_or_404(WorkOrder, public_share_token=token, is_public=True)
+    
+    if request.method == 'POST':
+        form = WorkOrderPublicCreateForm(request.POST)
+        if form.is_valid():
+            work_order = form.save(commit=False)
+            work_order.company = original_work_order.company
+            work_order.status = 'draft'
+            work_order.is_public = True
+            
+            # Asignar al mismo usuario que creó la orden original o al primer staff disponible
+            if original_work_order.created_by:
+                work_order.created_by = original_work_order.created_by
+            else:
+                # Buscar el primer staff disponible
+                first_staff = User.objects.filter(is_staff=True).first()
+                if first_staff:
+                    work_order.created_by = first_staff
+            
+            work_order.save()
+            messages.success(request, '¡Nueva orden de trabajo creada exitosamente! Te contactaremos pronto.')
+            
+            # Redirigir a la nueva orden creada
+            return redirect('public_work_order', token=work_order.public_share_token)
+    else:
+        form = WorkOrderPublicCreateForm()
+    
+    context = {
+        'form': form,
+        'original_work_order': original_work_order,
+        'page_title': 'Crear Nueva Orden de Trabajo',
+        'is_public_view': True
+    }
+    
+    return render(request, 'tickets/work_order_public_create.html', context)
 
 
 # ===========================================

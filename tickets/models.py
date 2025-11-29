@@ -2757,6 +2757,86 @@ class WorkOrderTaskTimeSession(models.Model):
         return None
 
 
+class WorkOrderRating(models.Model):
+    """Modelo para calificaciones de órdenes de trabajo desde clientes"""
+    
+    work_order = models.ForeignKey(
+        WorkOrder,
+        on_delete=models.CASCADE,
+        related_name='ratings',
+        verbose_name='Orden de Trabajo'
+    )
+    rating = models.IntegerField(
+        verbose_name='Calificación',
+        help_text='Calificación de 1 a 5 estrellas',
+        choices=[(1, '1 estrella'), (2, '2 estrellas'), (3, '3 estrellas'), (4, '4 estrellas'), (5, '5 estrellas')]
+    )
+    comment = models.TextField(
+        blank=True,
+        verbose_name='Comentario',
+        help_text='Comentario opcional sobre el servicio'
+    )
+    rated_by_name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre',
+        help_text='Nombre de quien califica'
+    )
+    rated_by_email = models.EmailField(
+        verbose_name='Email',
+        help_text='Email de quien califica'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de calificación'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Calificación de Orden de Trabajo'
+        verbose_name_plural = 'Calificaciones de Órdenes de Trabajo'
+    
+    def __str__(self):
+        return f"{self.work_order} - {self.rating} estrellas por {self.rated_by_name}"
+
+
+class WorkOrderComment(models.Model):
+    """Modelo para comentarios públicos en órdenes de trabajo"""
+    
+    work_order = models.ForeignKey(
+        WorkOrder,
+        on_delete=models.CASCADE,
+        related_name='public_comments',
+        verbose_name='Orden de Trabajo'
+    )
+    comment = models.TextField(
+        verbose_name='Comentario'
+    )
+    author_name = models.CharField(
+        max_length=200,
+        verbose_name='Nombre del autor'
+    )
+    author_email = models.EmailField(
+        verbose_name='Email del autor'
+    )
+    is_public = models.BooleanField(
+        default=True,
+        verbose_name='Visible públicamente',
+        help_text='Si está marcado, el comentario será visible en la vista pública'
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Fecha de creación'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Comentario de Orden de Trabajo'
+        verbose_name_plural = 'Comentarios de Órdenes de Trabajo'
+    
+    def __str__(self):
+        return f"{self.work_order} - {self.author_name} ({self.created_at.strftime('%d/%m/%Y')})"
+
+
 class Task(models.Model):
     """Modelo para gestionar tareas que pueden ser asignadas a múltiples usuarios"""
     

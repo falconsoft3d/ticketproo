@@ -5,7 +5,7 @@ import os
 from .models import (
     Ticket, TicketAttachment, Category, TicketComment, UserNote, 
     TimeEntry, TimeEntryAuditLog, PublicTimeAccess, Project, Company, SystemConfiguration, Document, UserProfile,
-    WorkOrder, WorkOrderAttachment, Task, Opportunity, OpportunityStatus, 
+    WorkOrder, WorkOrderAttachment, WorkOrderRating, WorkOrderComment, Task, Opportunity, OpportunityStatus, 
     OpportunityNote, OpportunityStatusHistory, Concept, Exam, ExamQuestion, 
     ExamAttempt, ExamAnswer, ContactoWeb, Employee, JobApplicationToken,
     LandingPage, LandingPageSubmission, WorkOrderTask, WorkOrderTaskTimeEntry,
@@ -899,6 +899,55 @@ class WorkOrderTaskTimeSessionAdmin(admin.ModelAdmin):
     
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('task', 'user', 'task__work_order')
+
+
+@admin.register(WorkOrderRating)
+class WorkOrderRatingAdmin(admin.ModelAdmin):
+    """Administrador para calificaciones de órdenes de trabajo"""
+    list_display = ('work_order', 'rating', 'rated_by_name', 'rated_by_email', 'created_at')
+    list_filter = ('rating', 'created_at')
+    search_fields = ('work_order__title', 'rated_by_name', 'rated_by_email', 'comment')
+    ordering = ('-created_at',)
+    readonly_fields = ('created_at',)
+    date_hierarchy = 'created_at'
+    
+    fieldsets = (
+        ('Información de la calificación', {
+            'fields': ('work_order', 'rating', 'comment')
+        }),
+        ('Información del calificador', {
+            'fields': ('rated_by_name', 'rated_by_email')
+        }),
+        ('Fechas', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        })
+    )
+
+
+@admin.register(WorkOrderComment)
+class WorkOrderCommentAdmin(admin.ModelAdmin):
+    """Administrador para comentarios de órdenes de trabajo"""
+    list_display = ('work_order', 'author_name', 'author_email', 'is_public', 'created_at')
+    list_filter = ('is_public', 'created_at')
+    search_fields = ('work_order__title', 'author_name', 'author_email', 'comment')
+    list_editable = ('is_public',)
+    ordering = ('-created_at',)
+    readonly_fields = ('created_at',)
+    date_hierarchy = 'created_at'
+    
+    fieldsets = (
+        ('Información del comentario', {
+            'fields': ('work_order', 'comment', 'is_public')
+        }),
+        ('Información del autor', {
+            'fields': ('author_name', 'author_email')
+        }),
+        ('Fechas', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        })
+    )
 
 
 @admin.register(Task)

@@ -1563,7 +1563,7 @@
     </button>
 
     <!-- Botón flotante para calificar servicio (izquierda) -->
-    <a href="{% url 'qa_rating_public' %}" class="btn btn-warning shadow-lg" 
+    <a id="ratingToggle" href="{% url 'qa_rating_public' %}" class="btn btn-warning shadow-lg" 
             style="position: fixed; left: 0; top: calc(50% + 15px); transform: translateY(-50%); z-index: 1050; 
                    border-radius: 0 8px 8px 0; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
                    border-left: none; transition: all 0.3s ease;"
@@ -1574,7 +1574,7 @@
     </a>
     
     <!-- Botón flotante para Red Social (izquierda) -->
-    <a href="{% url 'social_feed' %}" class="btn btn-info shadow-lg" 
+    <a id="socialFeedToggle" href="{% url 'social_feed' %}" class="btn btn-info shadow-lg" 
             style="position: fixed; left: 0; top: calc(50% - 305px); transform: translateY(-50%); z-index: 1050; 
                    border-radius: 0 8px 8px 0; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
                    border-left: none; transition: all 0.3s ease;"
@@ -2402,6 +2402,8 @@
     <!-- Scripts principales del sistema -->
     <script>
         // Funciones auxiliares para manejar visibilidad de botones flotantes
+        
+        // Funciones para botones del lado DERECHO
         function hideOtherFloatingButtons(except = []) {
             const floatingButtons = [
                 'shortUrlStatsToggle',
@@ -2420,7 +2422,6 @@
                     if (button) {
                         button.style.opacity = '0.3';
                         button.style.pointerEvents = 'none';
-                        // Para el dropdown de shortUrlStatsToggle mantener translateY
                         if (buttonId === 'shortUrlStatsToggle') {
                             button.style.transform = 'translateY(-50%) translateX(100px) scale(0.8)';
                         } else {
@@ -2448,12 +2449,52 @@
                 if (button) {
                     button.style.opacity = '1';
                     button.style.pointerEvents = 'auto';
-                    // Para el dropdown de shortUrlStatsToggle mantener translateY
                     if (buttonId === 'shortUrlStatsToggle') {
                         button.style.transform = 'translateY(-50%)';
                     } else {
                         button.style.transform = 'translateY(-50%) translateX(0) scale(1)';
                     }
+                }
+            });
+        }
+        
+        // Funciones para botones del lado IZQUIERDO
+        function hideLeftFloatingButtons(except = []) {
+            const leftButtons = [
+                'eventsSidebarToggle',
+                'workOrdersSidebarToggle',
+                'quickTaskToggle',
+                'ratingToggle',
+                'socialFeedToggle'
+            ];
+            
+            leftButtons.forEach(buttonId => {
+                if (!except.includes(buttonId)) {
+                    const button = document.getElementById(buttonId);
+                    if (button) {
+                        button.style.opacity = '0.3';
+                        button.style.pointerEvents = 'none';
+                        button.style.transform = 'translateY(-50%) translateX(-100px) scale(0.8)';
+                    }
+                }
+            });
+        }
+        
+        function showLeftFloatingButtons() {
+            const leftButtons = [
+                'eventsSidebarToggle',
+                'workOrdersSidebarToggle',
+                'quickTaskToggle',
+                'ratingToggle',
+                'socialFeedToggle'
+            ];
+            
+            leftButtons.forEach(buttonId => {
+                const button = document.getElementById(buttonId);
+                if (button) {
+                    button.style.opacity = '1';
+                    button.style.pointerEvents = 'auto';
+                    button.style.transform = 'translateY(-50%) translateX(0) scale(1)';
                 }
             });
         }
@@ -4854,6 +4895,9 @@
                 toggle.style.left = '400px'; // Mover el botón al lado de la barra
                 eventsSidebarOpen = true;
                 
+                // Ocultar todos los demás botones flotantes del lado izquierdo
+                hideLeftFloatingButtons(['eventsSidebarToggle']);
+                
                 // Cargar eventos cuando se abre
                 loadUpcomingEvents();
                 
@@ -4872,6 +4916,9 @@
             sidebar.style.left = '-400px';
             toggle.style.left = '0'; // Volver al borde izquierdo
             eventsSidebarOpen = false;
+            
+            // Mostrar todos los botones flotantes del lado izquierdo de nuevo
+            showLeftFloatingButtons();
             
             // Detener auto-refresh
             stopEventsAutoRefresh();
@@ -5022,6 +5069,9 @@
                 toggle.style.left = '400px';
                 workOrdersSidebarOpen = true;
                 
+                // Ocultar todos los demás botones flotantes del lado izquierdo
+                hideLeftFloatingButtons(['workOrdersSidebarToggle']);
+                
                 // Cargar órdenes de trabajo cuando se abre
                 loadPendingWorkOrders();
                 
@@ -5040,6 +5090,9 @@
             sidebar.style.left = '-400px';
             toggle.style.left = '0';
             workOrdersSidebarOpen = false;
+            
+            // Mostrar todos los botones flotantes del lado izquierdo de nuevo
+            showLeftFloatingButtons();
             
             // Detener auto-refresh
             stopWorkOrdersAutoRefresh();
@@ -5168,6 +5221,13 @@
         }
 
         function loadPendingWorkOrdersCount() {
+            // Verificar que el elemento existe antes de cargar
+            const badge = document.getElementById('pendingWorkOrdersBadge');
+            if (!badge) {
+                console.log('[Órdenes] Badge no encontrado - usuario no es agente o elemento no existe');
+                return;
+            }
+            
             // Cargar solo el contador sin abrir el sidebar
             fetch('/api/my-pending-work-orders/')
                 .then(response => response.json())
@@ -6111,12 +6171,20 @@
                 }
                 
                 // Cargar conteo inicial
+                console.log('[Init] Cargando contadores iniciales...');
                 loadActiveUsersCount();
                 loadPendingTodosCount();
                 loadActiveUsersSidebar(); // Cargar lista inicial de usuarios activos
                 loadUpcomingEvents(); // Cargar lista inicial de eventos
                 loadPendingTasksCount(); // Cargar conteo de tareas pendientes
-                loadPendingWorkOrdersCount(); // Cargar conteo de órdenes de trabajo pendientes
+                
+                // Cargar contador de órdenes con delay para asegurar que el DOM esté listo
+                setTimeout(() => {
+                    console.log('[Init] Verificando elemento pendingWorkOrdersBadge...');
+                    const badge = document.getElementById('pendingWorkOrdersBadge');
+                    console.log('[Init] Badge encontrado:', badge);
+                    loadPendingWorkOrdersCount();
+                }, 100);
                 
                 // Recargar conteo cada 2 minutos
                 setInterval(loadActiveUsersCount, 120000);

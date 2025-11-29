@@ -52,7 +52,7 @@ from .models import (
     MonthlyCumplimiento, DailyCumplimiento, QRCode, CrmQuestion, SupportMeeting, SupportMeetingPoint, ScheduledTask,
     ClientRequest, ClientRequestResponse, ClientRequestTemplate, ClientRequestTemplateItem, Event, Trip, TripStop,
     MultiMeasurement, MultiMeasurementRecord, PersonalBudget, BudgetIncomeItem, BudgetExpenseItem, BudgetTransaction,
-    DynamicTable, DynamicTableField
+    DynamicTable, DynamicTableField, WorkOrderRating, WorkOrderComment
 )
 
 class CategoryForm(forms.ModelForm):
@@ -4770,6 +4770,94 @@ class WorkOrderTaskBulkForm(forms.Form):
             raise forms.ValidationError('No puedes crear más de 50 tareas a la vez.')
         
         return lines
+
+
+class WorkOrderRatingForm(forms.ModelForm):
+    """Formulario para calificar órdenes de trabajo desde la vista pública"""
+    
+    class Meta:
+        model = WorkOrderRating
+        fields = ['rating', 'comment', 'rated_by_name', 'rated_by_email']
+        widgets = {
+            'rating': forms.RadioSelect(
+                choices=[(5, '⭐⭐⭐⭐⭐'), (4, '⭐⭐⭐⭐'), (3, '⭐⭐⭐'), (2, '⭐⭐'), (1, '⭐')],
+                attrs={'class': 'form-check-input'}
+            ),
+            'comment': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Cuéntanos sobre tu experiencia con este servicio...'
+            }),
+            'rated_by_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Tu nombre'
+            }),
+            'rated_by_email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'tu@email.com'
+            }),
+        }
+        labels = {
+            'rating': '¿Cómo calificarías nuestro servicio?',
+            'comment': 'Comentario (opcional)',
+            'rated_by_name': 'Nombre',
+            'rated_by_email': 'Email',
+        }
+
+
+class WorkOrderCommentForm(forms.ModelForm):
+    """Formulario para comentarios públicos en órdenes de trabajo"""
+    
+    class Meta:
+        model = WorkOrderComment
+        fields = ['comment', 'author_name', 'author_email']
+        widgets = {
+            'comment': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Escribe tu comentario o pregunta aquí...'
+            }),
+            'author_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Tu nombre'
+            }),
+            'author_email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'tu@email.com'
+            }),
+        }
+        labels = {
+            'comment': 'Comentario',
+            'author_name': 'Nombre',
+            'author_email': 'Email',
+        }
+
+
+class WorkOrderPublicCreateForm(forms.ModelForm):
+    """Formulario simplificado para crear órdenes de trabajo desde vista pública"""
+    
+    class Meta:
+        model = WorkOrder
+        fields = ['title', 'description', 'priority']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título descriptivo de tu solicitud'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 6,
+                'placeholder': 'Describe detalladamente lo que necesitas...'
+            }),
+            'priority': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+        }
+        labels = {
+            'title': 'Título de la solicitud',
+            'description': 'Descripción detallada',
+            'priority': 'Prioridad',
+        }
 
 
 class SharedFileForm(forms.ModelForm):

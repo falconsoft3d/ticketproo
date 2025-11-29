@@ -220,6 +220,7 @@ urlpatterns = [
     
     # URL pública para órdenes de trabajo compartidas (sin autenticación)
     path('work-order/public/<uuid:token>/', views.work_order_public_view, name='public_work_order'),
+    path('work-order/public/<uuid:token>/create/', views.work_order_public_create_view, name='public_work_order_create'),
     path('work-order/public/<uuid:token>/tasks/', views.work_order_public_task_view, name='public_work_order_tasks'),
     path('work-order/public/<uuid:token>/tasks/<int:task_pk>/time/start/', views.work_order_public_task_time_start_view, name='public_work_order_task_time_start'),
     path('work-order/public/<uuid:token>/tasks/<int:task_pk>/time/stop/', views.work_order_public_task_time_stop_view, name='public_work_order_task_time_stop'),
